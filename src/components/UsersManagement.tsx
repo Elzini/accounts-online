@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, Shield, Check, X, Save, UserPlus, Pencil } from 'lucide-react';
+import { Users, Shield, Check, X, Save, UserPlus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -13,8 +13,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ActivePage } from '@/types';
-import { useUsers, useUpdateUserPermissions, useUpdateUsername, useCreateUser } from '@/hooks/useUsers';
+import { useUsers, useUpdateUserPermissions, useUpdateUsername, useCreateUser, useDeleteUser } from '@/hooks/useUsers';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
@@ -38,12 +48,15 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
   const updatePermissions = useUpdateUserPermissions();
   const updateUsername = useUpdateUsername();
   const createUser = useCreateUser();
+  const deleteUserMutation = useDeleteUser();
   const { permissions: myPermissions, user } = useAuth();
   
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [selectedPermissions, setSelectedPermissions] = useState<UserPermission[]>([]);
   const [editingUsername, setEditingUsername] = useState<string | null>(null);
   const [newUsername, setNewUsername] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<{ id: string; username: string } | null>(null);
   
   // Add user dialog state
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -138,6 +151,18 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
     setNewUserPassword('');
     setNewUserName('');
     setNewUserPermissions([]);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    try {
+      await deleteUserMutation.mutateAsync(userToDelete.id);
+      toast.success('تم حذف المستخدم بنجاح');
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+    } catch (error) {
+      toast.error('حدث خطأ أثناء حذف المستخدم');
+    }
   };
 
   const formatDate = (date: string) => {
@@ -286,14 +311,29 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
                         </Button>
                       </div>
                     ) : (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => startEditing(u.user_id, u.permissions)}
-                        disabled={isCurrentUser}
-                      >
-                        تعديل الصلاحيات
-                      </Button>
+                      <div className="flex gap-2 justify-center">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => startEditing(u.user_id, u.permissions)}
+                          disabled={isCurrentUser}
+                        >
+                          تعديل الصلاحيات
+                        </Button>
+                        {!isCurrentUser && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => {
+                              setUserToDelete({ id: u.user_id, username: u.username });
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>
@@ -405,6 +445,27 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete User Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>هل أنت متأكد من حذف المستخدم؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم حذف المستخدم "{userToDelete?.username}" وجميع صلاحياته نهائياً. لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel onClick={() => setUserToDelete(null)}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteUserMutation.isPending ? 'جاري الحذف...' : 'حذف المستخدم'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
