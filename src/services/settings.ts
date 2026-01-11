@@ -4,7 +4,27 @@ export interface AppSettings {
   app_name: string;
   app_subtitle: string;
   primary_color: string;
+  dashboard_title: string;
+  purchases_title: string;
+  sales_title: string;
+  customers_title: string;
+  suppliers_title: string;
+  reports_title: string;
+  welcome_message: string;
 }
+
+export const defaultSettings: AppSettings = {
+  app_name: 'أشبال النمر',
+  app_subtitle: 'لتجارة السيارات',
+  primary_color: '#3b82f6',
+  dashboard_title: 'لوحة التحكم',
+  purchases_title: 'المشتريات',
+  sales_title: 'المبيعات',
+  customers_title: 'العملاء',
+  suppliers_title: 'الموردين',
+  reports_title: 'التقارير',
+  welcome_message: 'مرحباً بك في نظام إدارة معرض أشبال النمر للسيارات',
+};
 
 export async function fetchAppSettings(): Promise<AppSettings> {
   const { data, error } = await supabase
@@ -13,16 +33,13 @@ export async function fetchAppSettings(): Promise<AppSettings> {
   
   if (error) throw error;
   
-  const settings: AppSettings = {
-    app_name: 'أشبال النمر',
-    app_subtitle: 'لتجارة السيارات',
-    primary_color: '#3b82f6',
-  };
+  const settings: AppSettings = { ...defaultSettings };
   
   data?.forEach(row => {
-    if (row.key === 'app_name') settings.app_name = row.value || settings.app_name;
-    if (row.key === 'app_subtitle') settings.app_subtitle = row.value || settings.app_subtitle;
-    if (row.key === 'primary_color') settings.primary_color = row.value || settings.primary_color;
+    const key = row.key as keyof AppSettings;
+    if (key in settings && row.value) {
+      settings[key] = row.value;
+    }
   });
   
   return settings;

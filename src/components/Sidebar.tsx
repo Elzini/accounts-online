@@ -7,13 +7,13 @@ import {
   FileText,
   TrendingUp,
   Package,
-  Car,
   UserCog,
   Settings
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAppSettings } from '@/hooks/useSettings';
 import logo from '@/assets/logo.png';
 
 interface SidebarProps {
@@ -21,23 +21,24 @@ interface SidebarProps {
   setActivePage: (page: ActivePage) => void;
 }
 
-const menuItems = [
-  { id: 'dashboard' as ActivePage, label: 'الرئيسية', icon: LayoutDashboard },
-  { id: 'customers' as ActivePage, label: 'العملاء', icon: Users, permission: 'sales' as const },
-  { id: 'suppliers' as ActivePage, label: 'الموردين', icon: Truck, permission: 'purchases' as const },
-  { id: 'purchases' as ActivePage, label: 'المشتريات', icon: ShoppingCart, permission: 'purchases' as const },
-  { id: 'sales' as ActivePage, label: 'المبيعات', icon: DollarSign, permission: 'sales' as const },
-];
-
-const reportItems = [
-  { id: 'inventory-report' as ActivePage, label: 'تقرير المخزون', icon: Package, permission: 'reports' as const },
-  { id: 'profit-report' as ActivePage, label: 'تقرير الأرباح', icon: TrendingUp, permission: 'reports' as const },
-  { id: 'purchases-report' as ActivePage, label: 'تقرير المشتريات', icon: FileText, permission: 'reports' as const },
-  { id: 'sales-report' as ActivePage, label: 'تقرير المبيعات', icon: DollarSign, permission: 'reports' as const },
-];
-
 export function Sidebar({ activePage, setActivePage }: SidebarProps) {
   const { permissions } = useAuth();
+  const { data: settings } = useAppSettings();
+
+  const menuItems = [
+    { id: 'dashboard' as ActivePage, label: settings?.dashboard_title || 'الرئيسية', icon: LayoutDashboard },
+    { id: 'customers' as ActivePage, label: settings?.customers_title || 'العملاء', icon: Users, permission: 'sales' as const },
+    { id: 'suppliers' as ActivePage, label: settings?.suppliers_title || 'الموردين', icon: Truck, permission: 'purchases' as const },
+    { id: 'purchases' as ActivePage, label: settings?.purchases_title || 'المشتريات', icon: ShoppingCart, permission: 'purchases' as const },
+    { id: 'sales' as ActivePage, label: settings?.sales_title || 'المبيعات', icon: DollarSign, permission: 'sales' as const },
+  ];
+
+  const reportItems = [
+    { id: 'inventory-report' as ActivePage, label: 'تقرير المخزون', icon: Package, permission: 'reports' as const },
+    { id: 'profit-report' as ActivePage, label: 'تقرير الأرباح', icon: TrendingUp, permission: 'reports' as const },
+    { id: 'purchases-report' as ActivePage, label: 'تقرير المشتريات', icon: FileText, permission: 'reports' as const },
+    { id: 'sales-report' as ActivePage, label: 'تقرير المبيعات', icon: DollarSign, permission: 'reports' as const },
+  ];
 
   const hasAccess = (permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users') => {
     if (!permission) return true;
@@ -53,8 +54,8 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
         <div className="flex items-center gap-3">
           <img src={logo} alt="Logo" className="w-12 h-12 rounded-xl object-cover" />
           <div>
-            <h1 className="font-bold text-lg text-white">أشبال النمر</h1>
-            <p className="text-xs text-sidebar-foreground/70">لتجارة السيارات</p>
+            <h1 className="font-bold text-lg text-white">{settings?.app_name || 'أشبال النمر'}</h1>
+            <p className="text-xs text-sidebar-foreground/70">{settings?.app_subtitle || 'لتجارة السيارات'}</p>
           </div>
         </div>
       </div>
@@ -90,7 +91,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
         {/* Reports */}
         {hasAccess('reports') && (
           <div className="mb-6">
-            <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">التقارير</p>
+            <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">{settings?.reports_title || 'التقارير'}</p>
             <ul className="space-y-1">
               {reportItems.filter(item => hasAccess(item.permission)).map((item) => {
                 const Icon = item.icon;
