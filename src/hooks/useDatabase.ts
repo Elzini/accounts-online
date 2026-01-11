@@ -167,3 +167,11 @@ export function useStats() {
     queryFn: db.fetchStats,
   });
 }
+
+// Monthly chart data hook
+export function useMonthlyChartData() {
+  return useQuery({
+    queryKey: ['monthly-chart-data'],
+    queryFn: db.fetchMonthlyChartData,
+  });
+}
