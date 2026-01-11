@@ -1,6 +1,8 @@
+import { useState, useMemo } from 'react';
 import { DollarSign, Calendar, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { SearchFilter } from '@/components/ui/search-filter';
 import { ActivePage } from '@/types';
 import { useSales } from '@/hooks/useDatabase';
 
@@ -10,6 +12,7 @@ interface SalesTableProps {
 
 export function SalesTable({ setActivePage }: SalesTableProps) {
   const { data: sales = [], isLoading } = useSales();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA').format(value);
@@ -18,6 +21,18 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
   const formatDate = (date: string) => {
     return new Intl.DateTimeFormat('ar-SA').format(new Date(date));
   };
+
+  const filteredSales = useMemo(() => {
+    if (!searchQuery.trim()) return sales;
+    
+    const query = searchQuery.toLowerCase();
+    return sales.filter(sale =>
+      sale.customer?.name?.toLowerCase().includes(query) ||
+      sale.car?.name?.toLowerCase().includes(query) ||
+      sale.car?.model?.toLowerCase().includes(query) ||
+      sale.sale_number.toString().includes(query)
+    );
+  }, [sales, searchQuery]);
 
   if (isLoading) {
     return (
@@ -44,6 +59,13 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
         </Button>
       </div>
 
+      {/* Search */}
+      <SearchFilter
+        searchPlaceholder="البحث بالعميل، السيارة، رقم البيع..."
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+
       {/* Table */}
       <div className="bg-card rounded-2xl card-shadow overflow-hidden">
         <Table>
@@ -58,7 +80,7 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sales.map((sale) => (
+            {filteredSales.map((sale) => (
               <TableRow key={sale.id} className="hover:bg-muted/30 transition-colors">
                 <TableCell className="font-medium">{sale.sale_number}</TableCell>
                 <TableCell className="font-semibold">{sale.customer?.name || '-'}</TableCell>
@@ -97,6 +119,12 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
             >
               تسجيل أول عملية بيع
             </Button>
+          </div>
+        )}
+
+        {sales.length > 0 && filteredSales.length === 0 && (
+          <div className="p-12 text-center">
+            <p className="text-muted-foreground">لا توجد نتائج مطابقة للبحث</p>
           </div>
         )}
       </div>

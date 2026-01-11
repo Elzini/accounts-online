@@ -1,7 +1,9 @@
+import { useState, useMemo } from 'react';
 import { ShoppingCart, Car, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { SearchFilter } from '@/components/ui/search-filter';
 import { ActivePage } from '@/types';
 import { useCars } from '@/hooks/useDatabase';
 
@@ -11,6 +13,8 @@ interface PurchasesTableProps {
 
 export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const { data: cars = [], isLoading } = useCars();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA').format(value);
@@ -19,6 +23,34 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const formatDate = (date: string) => {
     return new Intl.DateTimeFormat('ar-SA').format(new Date(date));
   };
+
+  const filteredCars = useMemo(() => {
+    let result = cars;
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(car =>
+        car.name.toLowerCase().includes(query) ||
+        car.model?.toLowerCase().includes(query) ||
+        car.color?.toLowerCase().includes(query) ||
+        car.chassis_number.toLowerCase().includes(query) ||
+        car.inventory_number.toString().includes(query)
+      );
+    }
+    
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      result = result.filter(car => car.status === statusFilter);
+    }
+    
+    return result;
+  }, [cars, searchQuery, statusFilter]);
+
+  const filterOptions = [
+    { value: 'available', label: 'متاحة' },
+    { value: 'sold', label: 'مباعة' },
+  ];
 
   if (isLoading) {
     return (
@@ -45,6 +77,17 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
         </Button>
       </div>
 
+      {/* Search and Filter */}
+      <SearchFilter
+        searchPlaceholder="البحث بالاسم، الموديل، الهيكل..."
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        filterOptions={filterOptions}
+        filterValue={statusFilter}
+        onFilterChange={setStatusFilter}
+        filterPlaceholder="الحالة"
+      />
+
       {/* Table */}
       <div className="bg-card rounded-2xl card-shadow overflow-hidden">
         <Table>
@@ -61,7 +104,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {cars.map((car) => (
+            {filteredCars.map((car) => (
               <TableRow key={car.id} className="hover:bg-muted/30 transition-colors">
                 <TableCell className="font-medium">{car.inventory_number}</TableCell>
                 <TableCell>
@@ -100,6 +143,12 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
             >
               إضافة أول سيارة
             </Button>
+          </div>
+        )}
+
+        {cars.length > 0 && filteredCars.length === 0 && (
+          <div className="p-12 text-center">
+            <p className="text-muted-foreground">لا توجد نتائج مطابقة للبحث</p>
           </div>
         )}
       </div>
