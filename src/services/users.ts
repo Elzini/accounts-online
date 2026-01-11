@@ -70,3 +70,39 @@ export async function updateUserPermissions(userId: string, permissions: UserPer
     if (error) throw error;
   }
 }
+
+export async function updateUsername(userId: string, username: string) {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ username })
+    .eq('user_id', userId);
+  
+  if (error) throw error;
+}
+
+export async function createUser(email: string, password: string, username: string, permissions: UserPermission[]) {
+  // Create user using admin API (this requires service role, so we'll use signUp)
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        username
+      }
+    }
+  });
+
+  if (error) throw error;
+  if (!data.user) throw new Error('فشل إنشاء المستخدم');
+
+  // Add permissions for the new user
+  if (permissions.length > 0) {
+    const { error: permError } = await supabase
+      .from('user_roles')
+      .insert(permissions.map(p => ({ user_id: data.user!.id, permission: p })));
+    
+    if (permError) throw permError;
+  }
+
+  return data.user;
+}

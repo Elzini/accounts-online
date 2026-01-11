@@ -1,10 +1,20 @@
 import { useState } from 'react';
-import { Users, Shield, Check, X, Save } from 'lucide-react';
+import { Users, Shield, Check, X, Save, UserPlus, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { ActivePage } from '@/types';
-import { useUsers, useUpdateUserPermissions } from '@/hooks/useUsers';
+import { useUsers, useUpdateUserPermissions, useUpdateUsername, useCreateUser } from '@/hooks/useUsers';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
@@ -16,19 +26,31 @@ interface UsersManagementProps {
 }
 
 const PERMISSIONS: { key: UserPermission; label: string }[] = [
-  { key: 'sales', label: 'صلاحية المبيعات' },
-  { key: 'purchases', label: 'صلاحية المشتريات' },
-  { key: 'reports', label: 'صلاحية التقارير' },
-  { key: 'admin', label: 'صلاحية الإدارة' },
-  { key: 'users', label: 'صلاحية المستخدمين' },
+  { key: 'sales', label: 'المبيعات' },
+  { key: 'purchases', label: 'المشتريات' },
+  { key: 'reports', label: 'التقارير' },
+  { key: 'admin', label: 'الإدارة' },
+  { key: 'users', label: 'المستخدمين' },
 ];
 
 export function UsersManagement({ setActivePage }: UsersManagementProps) {
   const { data: users = [], isLoading } = useUsers();
   const updatePermissions = useUpdateUserPermissions();
+  const updateUsername = useUpdateUsername();
+  const createUser = useCreateUser();
   const { permissions: myPermissions, user } = useAuth();
+  
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [selectedPermissions, setSelectedPermissions] = useState<UserPermission[]>([]);
+  const [editingUsername, setEditingUsername] = useState<string | null>(null);
+  const [newUsername, setNewUsername] = useState('');
+  
+  // Add user dialog state
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserPermissions, setNewUserPermissions] = useState<UserPermission[]>([]);
 
   const canManageUsers = myPermissions.admin || myPermissions.users;
 
@@ -50,6 +72,14 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
     );
   };
 
+  const toggleNewUserPermission = (permission: UserPermission) => {
+    setNewUserPermissions(prev => 
+      prev.includes(permission) 
+        ? prev.filter(p => p !== permission)
+        : [...prev, permission]
+    );
+  };
+
   const savePermissions = async (userId: string) => {
     try {
       await updatePermissions.mutateAsync({ userId, permissions: selectedPermissions });
@@ -58,6 +88,56 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
     } catch (error) {
       toast.error('حدث خطأ أثناء تحديث الصلاحيات');
     }
+  };
+
+  const startEditingUsername = (userId: string, currentUsername: string) => {
+    setEditingUsername(userId);
+    setNewUsername(currentUsername);
+  };
+
+  const saveUsername = async (userId: string) => {
+    if (!newUsername.trim()) {
+      toast.error('اسم المستخدم مطلوب');
+      return;
+    }
+    try {
+      await updateUsername.mutateAsync({ userId, username: newUsername.trim() });
+      toast.success('تم تحديث اسم المستخدم بنجاح');
+      setEditingUsername(null);
+    } catch (error) {
+      toast.error('حدث خطأ أثناء تحديث اسم المستخدم');
+    }
+  };
+
+  const handleAddUser = async () => {
+    if (!newUserEmail.trim() || !newUserPassword.trim() || !newUserName.trim()) {
+      toast.error('جميع الحقول مطلوبة');
+      return;
+    }
+    if (newUserPassword.length < 6) {
+      toast.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+      return;
+    }
+    try {
+      await createUser.mutateAsync({
+        email: newUserEmail.trim(),
+        password: newUserPassword,
+        username: newUserName.trim(),
+        permissions: newUserPermissions,
+      });
+      toast.success('تم إضافة المستخدم بنجاح');
+      setAddDialogOpen(false);
+      resetAddForm();
+    } catch (error: any) {
+      toast.error(error.message || 'حدث خطأ أثناء إضافة المستخدم');
+    }
+  };
+
+  const resetAddForm = () => {
+    setNewUserEmail('');
+    setNewUserPassword('');
+    setNewUserName('');
+    setNewUserPermissions([]);
   };
 
   const formatDate = (date: string) => {
@@ -93,6 +173,13 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
           <h1 className="text-3xl font-bold text-foreground">إدارة المستخدمين</h1>
           <p className="text-muted-foreground mt-1">إدارة المستخدمين وصلاحياتهم</p>
         </div>
+        <Button 
+          onClick={() => setAddDialogOpen(true)}
+          className="gradient-primary hover:opacity-90"
+        >
+          <UserPlus className="w-5 h-5 ml-2" />
+          إضافة مستخدم
+        </Button>
       </div>
 
       {/* Users Table */}
@@ -114,19 +201,56 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
           <TableBody>
             {users.map((u, index) => {
               const isEditing = editingUser === u.user_id;
+              const isEditingName = editingUsername === u.user_id;
               const isCurrentUser = u.user_id === user?.id;
               
               return (
                 <TableRow key={u.id} className="hover:bg-muted/30 transition-colors">
                   <TableCell className="font-medium">{index + 1}</TableCell>
                   <TableCell className="font-semibold">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-primary" />
-                      {u.username}
-                      {isCurrentUser && (
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">أنت</span>
-                      )}
-                    </div>
+                    {isEditingName ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={newUsername}
+                          onChange={(e) => setNewUsername(e.target.value)}
+                          className="w-32 h-8"
+                        />
+                        <Button 
+                          size="sm" 
+                          onClick={() => saveUsername(u.user_id)}
+                          disabled={updateUsername.isPending}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Save className="w-3 h-3" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setEditingUsername(null)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-primary" />
+                        {u.username}
+                        {isCurrentUser && (
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">أنت</span>
+                        )}
+                        {!isCurrentUser && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => startEditingUsername(u.user_id, u.username)}
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>{formatDate(u.created_at)}</TableCell>
                   {PERMISSIONS.map(p => (
@@ -168,7 +292,7 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
                         onClick={() => startEditing(u.user_id, u.permissions)}
                         disabled={isCurrentUser}
                       >
-                        تعديل
+                        تعديل الصلاحيات
                       </Button>
                     )}
                   </TableCell>
@@ -211,6 +335,76 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
           </div>
         </div>
       </div>
+
+      {/* Add User Dialog */}
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>إضافة مستخدم جديد</DialogTitle>
+            <DialogDescription>
+              قم بإدخال بيانات المستخدم الجديد وتحديد صلاحياته
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="username">اسم المستخدم</Label>
+              <Input
+                id="username"
+                value={newUserName}
+                onChange={(e) => setNewUserName(e.target.value)}
+                placeholder="أدخل اسم المستخدم"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="email">البريد الإلكتروني</Label>
+              <Input
+                id="email"
+                type="email"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                placeholder="example@email.com"
+                dir="ltr"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="password">كلمة المرور</Label>
+              <Input
+                id="password"
+                type="password"
+                value={newUserPassword}
+                onChange={(e) => setNewUserPassword(e.target.value)}
+                placeholder="6 أحرف على الأقل"
+                dir="ltr"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>الصلاحيات</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {PERMISSIONS.map(p => (
+                  <div key={p.key} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`new-${p.key}`}
+                      checked={newUserPermissions.includes(p.key)}
+                      onCheckedChange={() => toggleNewUserPermission(p.key)}
+                    />
+                    <Label htmlFor={`new-${p.key}`} className="text-sm cursor-pointer">
+                      {p.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setAddDialogOpen(false); resetAddForm(); }}>
+              إلغاء
+            </Button>
+            <Button onClick={handleAddUser} disabled={createUser.isPending}>
+              {createUser.isPending ? 'جاري الإضافة...' : 'إضافة المستخدم'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
