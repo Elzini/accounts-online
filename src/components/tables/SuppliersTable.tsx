@@ -3,6 +3,7 @@ import { Truck, Phone, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SearchFilter } from '@/components/ui/search-filter';
+import { SupplierActions } from '@/components/actions/SupplierActions';
 import { ActivePage } from '@/types';
 import { useSuppliers } from '@/hooks/useDatabase';
 
@@ -70,6 +71,7 @@ export function SuppliersTable({ setActivePage }: SuppliersTableProps) {
               <TableHead className="text-right font-bold">رقم الهاتف</TableHead>
               <TableHead className="text-right font-bold">العنوان</TableHead>
               <TableHead className="text-right font-bold">ملاحظات</TableHead>
+              <TableHead className="text-right font-bold">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -91,6 +93,9 @@ export function SuppliersTable({ setActivePage }: SuppliersTableProps) {
                   </div>
                 </TableCell>
                 <TableCell className="max-w-[200px] truncate">{supplier.notes || '-'}</TableCell>
+                <TableCell>
+                  <SupplierActions supplier={supplier} />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

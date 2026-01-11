@@ -3,8 +3,11 @@ import * as db from '@/services/database';
 import type { Database } from '@/integrations/supabase/types';
 
 type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
+type CustomerUpdate = Database['public']['Tables']['customers']['Update'];
 type SupplierInsert = Database['public']['Tables']['suppliers']['Insert'];
+type SupplierUpdate = Database['public']['Tables']['suppliers']['Update'];
 type CarInsert = Database['public']['Tables']['cars']['Insert'];
+type CarUpdate = Database['public']['Tables']['cars']['Update'];
 type SaleInsert = Database['public']['Tables']['sales']['Insert'];
 
 // Customers hooks
@@ -20,6 +23,29 @@ export function useAddCustomer() {
   
   return useMutation({
     mutationFn: (customer: CustomerInsert) => db.addCustomer(customer),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+  });
+}
+
+export function useUpdateCustomer() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, customer }: { id: string; customer: CustomerUpdate }) => 
+      db.updateCustomer(id, customer),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+  });
+}
+
+export function useDeleteCustomer() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => db.deleteCustomer(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
     },
@@ -45,6 +71,29 @@ export function useAddSupplier() {
   });
 }
 
+export function useUpdateSupplier() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, supplier }: { id: string; supplier: SupplierUpdate }) => 
+      db.updateSupplier(id, supplier),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+    },
+  });
+}
+
+export function useDeleteSupplier() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => db.deleteSupplier(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+    },
+  });
+}
+
 // Cars hooks
 export function useCars() {
   return useQuery({
@@ -58,6 +107,31 @@ export function useAddCar() {
   
   return useMutation({
     mutationFn: (car: CarInsert) => db.addCar(car),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+    },
+  });
+}
+
+export function useUpdateCar() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, car }: { id: string; car: CarUpdate }) => 
+      db.updateCar(id, car),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+    },
+  });
+}
+
+export function useDeleteCar() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => db.deleteCar(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cars'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
