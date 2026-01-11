@@ -1,6 +1,8 @@
+import { useState, useMemo } from 'react';
 import { UserPlus, Phone, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { SearchFilter } from '@/components/ui/search-filter';
 import { ActivePage } from '@/types';
 import { useCustomers } from '@/hooks/useDatabase';
 
@@ -10,6 +12,19 @@ interface CustomersTableProps {
 
 export function CustomersTable({ setActivePage }: CustomersTableProps) {
   const { data: customers = [], isLoading } = useCustomers();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredCustomers = useMemo(() => {
+    if (!searchQuery.trim()) return customers;
+    
+    const query = searchQuery.toLowerCase();
+    return customers.filter(customer =>
+      customer.name.toLowerCase().includes(query) ||
+      customer.phone.includes(query) ||
+      customer.id_number?.toLowerCase().includes(query) ||
+      customer.address?.toLowerCase().includes(query)
+    );
+  }, [customers, searchQuery]);
 
   if (isLoading) {
     return (
@@ -36,6 +51,13 @@ export function CustomersTable({ setActivePage }: CustomersTableProps) {
         </Button>
       </div>
 
+      {/* Search */}
+      <SearchFilter
+        searchPlaceholder="البحث بالاسم، الهاتف، الهوية..."
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+
       {/* Table */}
       <div className="bg-card rounded-2xl card-shadow overflow-hidden">
         <Table>
@@ -49,7 +71,7 @@ export function CustomersTable({ setActivePage }: CustomersTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {customers.map((customer, index) => (
+            {filteredCustomers.map((customer, index) => (
               <TableRow key={customer.id} className="hover:bg-muted/30 transition-colors">
                 <TableCell className="font-medium">{index + 1}</TableCell>
                 <TableCell className="font-semibold text-foreground">{customer.name}</TableCell>
@@ -80,6 +102,12 @@ export function CustomersTable({ setActivePage }: CustomersTableProps) {
             >
               إضافة أول عميل
             </Button>
+          </div>
+        )}
+
+        {customers.length > 0 && filteredCustomers.length === 0 && (
+          <div className="p-12 text-center">
+            <p className="text-muted-foreground">لا توجد نتائج مطابقة للبحث</p>
           </div>
         )}
       </div>

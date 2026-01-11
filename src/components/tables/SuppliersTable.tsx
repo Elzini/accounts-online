@@ -1,6 +1,8 @@
+import { useState, useMemo } from 'react';
 import { Truck, Phone, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { SearchFilter } from '@/components/ui/search-filter';
 import { ActivePage } from '@/types';
 import { useSuppliers } from '@/hooks/useDatabase';
 
@@ -10,6 +12,20 @@ interface SuppliersTableProps {
 
 export function SuppliersTable({ setActivePage }: SuppliersTableProps) {
   const { data: suppliers = [], isLoading } = useSuppliers();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredSuppliers = useMemo(() => {
+    if (!searchQuery.trim()) return suppliers;
+    
+    const query = searchQuery.toLowerCase();
+    return suppliers.filter(supplier =>
+      supplier.name.toLowerCase().includes(query) ||
+      supplier.phone.includes(query) ||
+      supplier.registration_number?.toLowerCase().includes(query) ||
+      supplier.address?.toLowerCase().includes(query) ||
+      supplier.notes?.toLowerCase().includes(query)
+    );
+  }, [suppliers, searchQuery]);
 
   if (isLoading) {
     return (
@@ -36,6 +52,13 @@ export function SuppliersTable({ setActivePage }: SuppliersTableProps) {
         </Button>
       </div>
 
+      {/* Search */}
+      <SearchFilter
+        searchPlaceholder="البحث بالاسم، الهاتف، السجل..."
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+
       {/* Table */}
       <div className="bg-card rounded-2xl card-shadow overflow-hidden">
         <Table>
@@ -50,7 +73,7 @@ export function SuppliersTable({ setActivePage }: SuppliersTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {suppliers.map((supplier, index) => (
+            {filteredSuppliers.map((supplier, index) => (
               <TableRow key={supplier.id} className="hover:bg-muted/30 transition-colors">
                 <TableCell className="font-medium">{index + 1}</TableCell>
                 <TableCell className="font-semibold text-foreground">{supplier.name}</TableCell>
@@ -82,6 +105,12 @@ export function SuppliersTable({ setActivePage }: SuppliersTableProps) {
             >
               إضافة أول مورد
             </Button>
+          </div>
+        )}
+
+        {suppliers.length > 0 && filteredSuppliers.length === 0 && (
+          <div className="p-12 text-center">
+            <p className="text-muted-foreground">لا توجد نتائج مطابقة للبحث</p>
           </div>
         )}
       </div>
