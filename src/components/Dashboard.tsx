@@ -2,6 +2,9 @@ import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, Fi
 import { StatCard } from './StatCard';
 import { Button } from '@/components/ui/button';
 import { ActivePage } from '@/types';
+import { useMonthlyChartData } from '@/hooks/useDatabase';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from 'recharts';
 
 interface DashboardProps {
   stats: {
@@ -13,13 +16,35 @@ interface DashboardProps {
   setActivePage: (page: ActivePage) => void;
 }
 
+const chartConfig = {
+  sales: {
+    label: 'المبيعات',
+    color: 'hsl(var(--primary))',
+  },
+  profit: {
+    label: 'الأرباح',
+    color: 'hsl(var(--success))',
+  },
+};
+
 export function Dashboard({ stats, setActivePage }: DashboardProps) {
+  const { data: chartData, isLoading: chartLoading } = useMonthlyChartData();
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA', {
       style: 'currency',
       currency: 'SAR',
       minimumFractionDigits: 0,
     }).format(value);
+  };
+
+  const formatChartValue = (value: number) => {
+    if (value >= 1000000) {
+      return `${(value / 1000000).toFixed(1)}م`;
+    } else if (value >= 1000) {
+      return `${(value / 1000).toFixed(0)}ك`;
+    }
+    return value.toString();
   };
 
   return (
@@ -60,6 +85,82 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           gradient="danger"
           subtitle="عملية بيع"
         />
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Sales Chart */}
+        <div className="bg-card rounded-2xl p-6 card-shadow">
+          <h2 className="text-xl font-bold text-card-foreground mb-6">المبيعات الشهرية</h2>
+          {chartLoading ? (
+            <div className="h-64 flex items-center justify-center">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <ChartContainer config={chartConfig} className="h-64 w-full">
+              <BarChart data={chartData || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                />
+                <YAxis 
+                  tickFormatter={formatChartValue}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                />
+                <ChartTooltip 
+                  content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} 
+                />
+                <Bar 
+                  dataKey="sales" 
+                  name="المبيعات"
+                  fill="hsl(var(--primary))" 
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ChartContainer>
+          )}
+        </div>
+
+        {/* Profit Chart */}
+        <div className="bg-card rounded-2xl p-6 card-shadow">
+          <h2 className="text-xl font-bold text-card-foreground mb-6">الأرباح الشهرية</h2>
+          {chartLoading ? (
+            <div className="h-64 flex items-center justify-center">
+              <div className="w-8 h-8 border-4 border-success border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <ChartContainer config={chartConfig} className="h-64 w-full">
+              <LineChart data={chartData || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                />
+                <YAxis 
+                  tickFormatter={formatChartValue}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                />
+                <ChartTooltip 
+                  content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} 
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="profit" 
+                  name="الأرباح"
+                  stroke="hsl(var(--success))" 
+                  strokeWidth={3}
+                  dot={{ fill: 'hsl(var(--success))', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: 'hsl(var(--success))' }}
+                />
+              </LineChart>
+            </ChartContainer>
+          )}
+        </div>
       </div>
 
       {/* Quick Actions */}

@@ -221,3 +221,53 @@ export async function fetchStats() {
     monthSales: monthSales || 0,
   };
 }
+
+// Monthly chart data
+export async function fetchMonthlyChartData() {
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+  sixMonthsAgo.setDate(1);
+  const startDate = sixMonthsAgo.toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('sales')
+    .select('sale_date, sale_price, profit')
+    .gte('sale_date', startDate)
+    .order('sale_date', { ascending: true });
+
+  if (error) throw error;
+
+  // Group by month
+  const monthlyData: Record<string, { sales: number; profit: number }> = {};
+  
+  data?.forEach(sale => {
+    const date = new Date(sale.sale_date);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = { sales: 0, profit: 0 };
+    }
+    
+    monthlyData[monthKey].sales += Number(sale.sale_price) || 0;
+    monthlyData[monthKey].profit += Number(sale.profit) || 0;
+  });
+
+  // Convert to array with Arabic month names
+  const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+  
+  const result = [];
+  for (let i = 0; i < 6; i++) {
+    const date = new Date();
+    date.setMonth(date.getMonth() - (5 - i));
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const monthName = arabicMonths[date.getMonth()];
+    
+    result.push({
+      month: monthName,
+      sales: monthlyData[monthKey]?.sales || 0,
+      profit: monthlyData[monthKey]?.profit || 0,
+    });
+  }
+
+  return result;
+}
