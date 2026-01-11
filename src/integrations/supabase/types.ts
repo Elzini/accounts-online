@@ -14,16 +14,249 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cars: {
+        Row: {
+          chassis_number: string
+          color: string | null
+          created_at: string
+          id: string
+          inventory_number: number
+          model: string | null
+          name: string
+          purchase_date: string
+          purchase_price: number
+          status: string
+          supplier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          chassis_number: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          inventory_number?: number
+          model?: string | null
+          name: string
+          purchase_date?: string
+          purchase_price: number
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          chassis_number?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          inventory_number?: number
+          model?: string | null
+          name?: string
+          purchase_date?: string
+          purchase_price?: number
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cars_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          id_number: string | null
+          name: string
+          phone: string
+          registration_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          id_number?: string | null
+          name: string
+          phone: string
+          registration_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          id_number?: string | null
+          name?: string
+          phone?: string
+          registration_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      sales: {
+        Row: {
+          car_id: string
+          commission: number | null
+          created_at: string
+          customer_id: string
+          id: string
+          other_expenses: number | null
+          profit: number
+          sale_date: string
+          sale_number: number
+          sale_price: number
+          seller_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          car_id: string
+          commission?: number | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          other_expenses?: number | null
+          profit: number
+          sale_date?: string
+          sale_number?: number
+          sale_price: number
+          seller_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          car_id?: string
+          commission?: number | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          other_expenses?: number | null
+          profit?: number
+          sale_date?: string
+          sale_number?: number
+          sale_price?: number
+          seller_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          id_number: string | null
+          name: string
+          notes: string | null
+          phone: string
+          registration_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          id_number?: string | null
+          name: string
+          notes?: string | null
+          phone: string
+          registration_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          id_number?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string
+          registration_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          permission: Database["public"]["Enums"]["user_permission"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission: Database["public"]["Enums"]["user_permission"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission?: Database["public"]["Enums"]["user_permission"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_permission: {
+        Args: {
+          _permission: Database["public"]["Enums"]["user_permission"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      user_permission: "sales" | "purchases" | "reports" | "admin" | "users"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +383,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_permission: ["sales", "purchases", "reports", "admin", "users"],
+    },
   },
 } as const

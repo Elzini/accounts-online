@@ -3,24 +3,26 @@ import { ArrowRight, Save, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Customer, ActivePage } from '@/types';
+import { ActivePage } from '@/types';
 import { toast } from 'sonner';
+import { useAddCustomer } from '@/hooks/useDatabase';
 
 interface CustomerFormProps {
-  onSave: (customer: Omit<Customer, 'id' | 'createdAt'>) => void;
   setActivePage: (page: ActivePage) => void;
 }
 
-export function CustomerForm({ onSave, setActivePage }: CustomerFormProps) {
+export function CustomerForm({ setActivePage }: CustomerFormProps) {
   const [formData, setFormData] = useState({
     name: '',
-    idNumber: '',
-    registrationNumber: '',
+    id_number: '',
+    registration_number: '',
     phone: '',
     address: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const addCustomer = useAddCustomer();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name || !formData.phone) {
@@ -28,9 +30,13 @@ export function CustomerForm({ onSave, setActivePage }: CustomerFormProps) {
       return;
     }
 
-    onSave(formData);
-    toast.success('تم إضافة العميل بنجاح');
-    setActivePage('customers');
+    try {
+      await addCustomer.mutateAsync(formData);
+      toast.success('تم إضافة العميل بنجاح');
+      setActivePage('customers');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء إضافة العميل');
+    }
   };
 
   return (
@@ -64,21 +70,21 @@ export function CustomerForm({ onSave, setActivePage }: CustomerFormProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="idNumber">رقم الهوية</Label>
+              <Label htmlFor="id_number">رقم الهوية</Label>
               <Input
-                id="idNumber"
-                value={formData.idNumber}
-                onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
+                id="id_number"
+                value={formData.id_number}
+                onChange={(e) => setFormData({ ...formData, id_number: e.target.value })}
                 placeholder="أدخل رقم الهوية"
                 className="h-12"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="registrationNumber">رقم السجل</Label>
+              <Label htmlFor="registration_number">رقم السجل</Label>
               <Input
-                id="registrationNumber"
-                value={formData.registrationNumber}
-                onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
+                id="registration_number"
+                value={formData.registration_number}
+                onChange={(e) => setFormData({ ...formData, registration_number: e.target.value })}
                 placeholder="أدخل رقم السجل"
                 className="h-12"
               />
@@ -110,9 +116,13 @@ export function CustomerForm({ onSave, setActivePage }: CustomerFormProps) {
 
           {/* Actions */}
           <div className="flex gap-4 pt-4">
-            <Button type="submit" className="flex-1 h-12 gradient-primary hover:opacity-90">
+            <Button 
+              type="submit" 
+              className="flex-1 h-12 gradient-primary hover:opacity-90"
+              disabled={addCustomer.isPending}
+            >
               <Save className="w-5 h-5 ml-2" />
-              حفظ البيانات
+              {addCustomer.isPending ? 'جاري الحفظ...' : 'حفظ البيانات'}
             </Button>
             <Button 
               type="button" 

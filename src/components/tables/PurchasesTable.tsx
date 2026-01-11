@@ -2,21 +2,31 @@ import { ShoppingCart, Car, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Car as CarType, ActivePage } from '@/types';
+import { ActivePage } from '@/types';
+import { useCars } from '@/hooks/useDatabase';
 
 interface PurchasesTableProps {
-  cars: CarType[];
   setActivePage: (page: ActivePage) => void;
 }
 
-export function PurchasesTable({ cars, setActivePage }: PurchasesTableProps) {
+export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
+  const { data: cars = [], isLoading } = useCars();
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA').format(value);
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string) => {
     return new Intl.DateTimeFormat('ar-SA').format(new Date(date));
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -53,21 +63,21 @@ export function PurchasesTable({ cars, setActivePage }: PurchasesTableProps) {
           <TableBody>
             {cars.map((car) => (
               <TableRow key={car.id} className="hover:bg-muted/30 transition-colors">
-                <TableCell className="font-medium">{car.inventoryNumber}</TableCell>
+                <TableCell className="font-medium">{car.inventory_number}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Car className="w-4 h-4 text-primary" />
                     <span className="font-semibold">{car.name}</span>
                   </div>
                 </TableCell>
-                <TableCell>{car.model}</TableCell>
-                <TableCell>{car.color}</TableCell>
-                <TableCell dir="ltr" className="text-right font-mono text-sm">{car.chassisNumber}</TableCell>
-                <TableCell className="font-semibold text-primary">{formatCurrency(car.purchasePrice)} ريال</TableCell>
+                <TableCell>{car.model || '-'}</TableCell>
+                <TableCell>{car.color || '-'}</TableCell>
+                <TableCell dir="ltr" className="text-right font-mono text-sm">{car.chassis_number}</TableCell>
+                <TableCell className="font-semibold text-primary">{formatCurrency(Number(car.purchase_price))} ريال</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span>{formatDate(car.purchaseDate)}</span>
+                    <span>{formatDate(car.purchase_date)}</span>
                   </div>
                 </TableCell>
                 <TableCell>

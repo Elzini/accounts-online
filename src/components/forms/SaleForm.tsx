@@ -4,97 +4,72 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Car, Customer, Sale, ActivePage } from '@/types';
+import { ActivePage } from '@/types';
 import { toast } from 'sonner';
+import { useCustomers, useCars, useAddSale } from '@/hooks/useDatabase';
 
 interface SaleFormProps {
-  customers: Customer[];
-  cars: Car[];
-  nextSaleId: number;
-  onSave: (sale: Omit<Sale, 'id' | 'profit'>) => void;
   setActivePage: (page: ActivePage) => void;
 }
 
-export function SaleForm({ customers, cars, nextSaleId, onSave, setActivePage }: SaleFormProps) {
-  const availableCars = cars.filter(car => car.status === 'available');
-  
+export function SaleForm({ setActivePage }: SaleFormProps) {
+  const { data: customers = [] } = useCustomers();
+  const { data: allCars = [] } = useCars();
+  const addSale = useAddSale();
+
+  const availableCars = allCars.filter(car => car.status === 'available');
+
   const [formData, setFormData] = useState({
-    customerId: '',
-    customerName: '',
-    carId: '',
-    chassisNumber: '',
-    inventoryNumber: '',
-    carName: '',
-    model: '',
-    color: '',
-    purchasePrice: '',
-    salePrice: '',
-    sellerName: '',
+    customer_id: '',
+    car_id: '',
+    sale_price: '',
+    seller_name: '',
     commission: '',
-    otherExpenses: '',
-    saleDate: new Date().toISOString().split('T')[0],
+    other_expenses: '',
+    sale_date: new Date().toISOString().split('T')[0],
   });
 
+  const [selectedCar, setSelectedCar] = useState<typeof allCars[0] | null>(null);
   const [profit, setProfit] = useState(0);
 
   useEffect(() => {
-    const salePrice = parseFloat(formData.salePrice) || 0;
-    const purchasePrice = parseFloat(formData.purchasePrice) || 0;
+    const salePrice = parseFloat(formData.sale_price) || 0;
+    const purchasePrice = selectedCar ? Number(selectedCar.purchase_price) : 0;
     const commission = parseFloat(formData.commission) || 0;
-    const otherExpenses = parseFloat(formData.otherExpenses) || 0;
+    const otherExpenses = parseFloat(formData.other_expenses) || 0;
     setProfit(salePrice - purchasePrice - commission - otherExpenses);
-  }, [formData.salePrice, formData.purchasePrice, formData.commission, formData.otherExpenses]);
-
-  const handleCustomerChange = (customerId: string) => {
-    const customer = customers.find(c => c.id.toString() === customerId);
-    setFormData({
-      ...formData,
-      customerId,
-      customerName: customer?.name || '',
-    });
-  };
+  }, [formData.sale_price, formData.commission, formData.other_expenses, selectedCar]);
 
   const handleCarChange = (carId: string) => {
-    const car = availableCars.find(c => c.id.toString() === carId);
-    if (car) {
-      setFormData({
-        ...formData,
-        carId,
-        chassisNumber: car.chassisNumber,
-        inventoryNumber: car.inventoryNumber.toString(),
-        carName: car.name,
-        model: car.model,
-        color: car.color,
-        purchasePrice: car.purchasePrice.toString(),
-      });
-    }
+    const car = availableCars.find(c => c.id === carId);
+    setSelectedCar(car || null);
+    setFormData({ ...formData, car_id: carId });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.customerId || !formData.carId || !formData.salePrice) {
+    if (!formData.customer_id || !formData.car_id || !formData.sale_price) {
       toast.error('الرجاء ملء الحقول المطلوبة');
       return;
     }
 
-    onSave({
-      carId: parseInt(formData.carId),
-      customerId: parseInt(formData.customerId),
-      customerName: formData.customerName,
-      carName: formData.carName,
-      model: formData.model,
-      color: formData.color,
-      chassisNumber: formData.chassisNumber,
-      purchasePrice: parseFloat(formData.purchasePrice),
-      salePrice: parseFloat(formData.salePrice),
-      sellerName: formData.sellerName,
-      commission: parseFloat(formData.commission) || 0,
-      otherExpenses: parseFloat(formData.otherExpenses) || 0,
-      saleDate: new Date(formData.saleDate),
-    });
-    toast.success('تم تسجيل عملية البيع بنجاح');
-    setActivePage('sales');
+    try {
+      await addSale.mutateAsync({
+        car_id: formData.car_id,
+        customer_id: formData.customer_id,
+        sale_price: parseFloat(formData.sale_price),
+        seller_name: formData.seller_name || null,
+        commission: parseFloat(formData.commission) || 0,
+        other_expenses: parseFloat(formData.other_expenses) || 0,
+        profit: profit,
+        sale_date: formData.sale_date,
+      });
+      toast.success('تم تسجيل عملية البيع بنجاح');
+      setActivePage('sales');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء تسجيل البيع');
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -112,7 +87,7 @@ export function SaleForm({ customers, cars, nextSaleId, onSave, setActivePage }:
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">تسجيل عملية بيع</h1>
-              <p className="text-white/80 text-sm">رقم البيع: {nextSaleId}</p>
+              <p className="text-white/80 text-sm">تسجيل بيع سيارة</p>
             </div>
           </div>
         </div>
@@ -120,110 +95,78 @@ export function SaleForm({ customers, cars, nextSaleId, onSave, setActivePage }:
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Customer Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>رقم العميل *</Label>
-              <Select value={formData.customerId} onValueChange={handleCustomerChange}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="اختر العميل" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id.toString()}>
-                      {customer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="customerName">اسم العميل</Label>
-              <Input
-                id="customerName"
-                value={formData.customerName}
-                readOnly
-                className="h-12 bg-muted"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label>العميل *</Label>
+            <Select value={formData.customer_id} onValueChange={(v) => setFormData({ ...formData, customer_id: v })}>
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder="اختر العميل" />
+              </SelectTrigger>
+              <SelectContent>
+                {customers.map((customer) => (
+                  <SelectItem key={customer.id} value={customer.id}>
+                    {customer.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Car Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>رقم الهيكل *</Label>
-              <Select value={formData.carId} onValueChange={handleCarChange}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="اختر السيارة" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableCars.map((car) => (
-                    <SelectItem key={car.id} value={car.id.toString()}>
-                      {car.chassisNumber} - {car.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="inventoryNumber">رقم المخزون</Label>
-              <Input
-                id="inventoryNumber"
-                value={formData.inventoryNumber}
-                readOnly
-                className="h-12 bg-muted"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label>السيارة *</Label>
+            <Select value={formData.car_id} onValueChange={handleCarChange}>
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder="اختر السيارة" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableCars.map((car) => (
+                  <SelectItem key={car.id} value={car.id}>
+                    {car.name} - {car.model} ({car.chassis_number})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Car Details */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="carName">اسم السيارة</Label>
-              <Input id="carName" value={formData.carName} readOnly className="h-12 bg-muted" />
+          {selectedCar && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-muted/50">
+              <div>
+                <p className="text-sm text-muted-foreground">اسم السيارة</p>
+                <p className="font-semibold">{selectedCar.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">الموديل</p>
+                <p className="font-semibold">{selectedCar.model || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">سعر الشراء</p>
+                <p className="font-semibold">{formatCurrency(Number(selectedCar.purchase_price))} ريال</p>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="model">الموديل</Label>
-              <Input id="model" value={formData.model} readOnly className="h-12 bg-muted" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="color">اللون</Label>
-              <Input id="color" value={formData.color} readOnly className="h-12 bg-muted" />
-            </div>
-          </div>
+          )}
 
           {/* Prices */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="purchasePrice">سعر الشراء</Label>
-              <Input
-                id="purchasePrice"
-                value={formData.purchasePrice}
-                readOnly
-                className="h-12 bg-muted"
-                dir="ltr"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="salePrice">سعر البيع *</Label>
-              <Input
-                id="salePrice"
-                type="number"
-                value={formData.salePrice}
-                onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
-                placeholder="0"
-                className="h-12"
-                dir="ltr"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="sale_price">سعر البيع *</Label>
+            <Input
+              id="sale_price"
+              type="number"
+              value={formData.sale_price}
+              onChange={(e) => setFormData({ ...formData, sale_price: e.target.value })}
+              placeholder="0"
+              className="h-12"
+              dir="ltr"
+            />
           </div>
 
           {/* Seller & Expenses */}
           <div className="space-y-2">
-            <Label htmlFor="sellerName">اسم البائع</Label>
+            <Label htmlFor="seller_name">اسم البائع</Label>
             <Input
-              id="sellerName"
-              value={formData.sellerName}
-              onChange={(e) => setFormData({ ...formData, sellerName: e.target.value })}
+              id="seller_name"
+              value={formData.seller_name}
+              onChange={(e) => setFormData({ ...formData, seller_name: e.target.value })}
               placeholder="أدخل اسم البائع"
               className="h-12"
             />
@@ -243,12 +186,12 @@ export function SaleForm({ customers, cars, nextSaleId, onSave, setActivePage }:
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="otherExpenses">مصروفات أخرى</Label>
+              <Label htmlFor="other_expenses">مصروفات أخرى</Label>
               <Input
-                id="otherExpenses"
+                id="other_expenses"
                 type="number"
-                value={formData.otherExpenses}
-                onChange={(e) => setFormData({ ...formData, otherExpenses: e.target.value })}
+                value={formData.other_expenses}
+                onChange={(e) => setFormData({ ...formData, other_expenses: e.target.value })}
                 placeholder="0"
                 className="h-12"
                 dir="ltr"
@@ -257,12 +200,12 @@ export function SaleForm({ customers, cars, nextSaleId, onSave, setActivePage }:
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="saleDate">تاريخ البيع</Label>
+            <Label htmlFor="sale_date">تاريخ البيع</Label>
             <Input
-              id="saleDate"
+              id="sale_date"
               type="date"
-              value={formData.saleDate}
-              onChange={(e) => setFormData({ ...formData, saleDate: e.target.value })}
+              value={formData.sale_date}
+              onChange={(e) => setFormData({ ...formData, sale_date: e.target.value })}
               className="h-12"
               dir="ltr"
             />
@@ -278,9 +221,13 @@ export function SaleForm({ customers, cars, nextSaleId, onSave, setActivePage }:
 
           {/* Actions */}
           <div className="flex gap-4 pt-4">
-            <Button type="submit" className="flex-1 h-12 gradient-success hover:opacity-90">
+            <Button 
+              type="submit" 
+              className="flex-1 h-12 gradient-success hover:opacity-90"
+              disabled={addSale.isPending}
+            >
               <Save className="w-5 h-5 ml-2" />
-              حفظ البيانات
+              {addSale.isPending ? 'جاري الحفظ...' : 'حفظ البيانات'}
             </Button>
             <Button 
               type="button" 
