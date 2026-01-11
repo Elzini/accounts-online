@@ -3,8 +3,9 @@ import { StatCard } from './StatCard';
 import { Button } from '@/components/ui/button';
 import { ActivePage } from '@/types';
 import { useMonthlyChartData } from '@/hooks/useDatabase';
+import { useAppSettings } from '@/hooks/useSettings';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid } from 'recharts';
 
 interface DashboardProps {
   stats: {
@@ -29,6 +30,7 @@ const chartConfig = {
 
 export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const { data: chartData, isLoading: chartLoading } = useMonthlyChartData();
+  const { data: settings } = useAppSettings();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA', {
@@ -51,8 +53,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">لوحة التحكم</h1>
-        <p className="text-muted-foreground mt-1">مرحباً بك في نظام إدارة معرض أشبال النمر للسيارات</p>
+        <h1 className="text-3xl font-bold text-foreground">{settings?.dashboard_title || 'لوحة التحكم'}</h1>
+        <p className="text-muted-foreground mt-1">{settings?.welcome_message || 'مرحباً بك في نظام إدارة معرض أشبال النمر للسيارات'}</p>
       </div>
 
       {/* Stats Grid */}
