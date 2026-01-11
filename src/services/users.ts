@@ -1,0 +1,72 @@
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+type UserPermission = Database['public']['Enums']['user_permission'];
+
+export interface UserWithPermissions {
+  id: string;
+  user_id: string;
+  username: string;
+  created_at: string;
+  permissions: UserPermission[];
+}
+
+export async function fetchUsers(): Promise<UserWithPermissions[]> {
+  const { data: profiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (profilesError) throw profilesError;
+
+  const { data: roles, error: rolesError } = await supabase
+    .from('user_roles')
+    .select('user_id, permission');
+
+  if (rolesError) throw rolesError;
+
+  return profiles.map(profile => ({
+    id: profile.id,
+    user_id: profile.user_id,
+    username: profile.username,
+    created_at: profile.created_at,
+    permissions: roles
+      .filter(r => r.user_id === profile.user_id)
+      .map(r => r.permission),
+  }));
+}
+
+export async function addUserPermission(userId: string, permission: UserPermission) {
+  const { error } = await supabase
+    .from('user_roles')
+    .insert({ user_id: userId, permission });
+  
+  if (error && !error.message.includes('duplicate')) throw error;
+}
+
+export async function removeUserPermission(userId: string, permission: UserPermission) {
+  const { error } = await supabase
+    .from('user_roles')
+    .delete()
+    .eq('user_id', userId)
+    .eq('permission', permission);
+  
+  if (error) throw error;
+}
+
+export async function updateUserPermissions(userId: string, permissions: UserPermission[]) {
+  // Delete all existing permissions
+  await supabase
+    .from('user_roles')
+    .delete()
+    .eq('user_id', userId);
+
+  // Add new permissions
+  if (permissions.length > 0) {
+    const { error } = await supabase
+      .from('user_roles')
+      .insert(permissions.map(p => ({ user_id: userId, permission: p })));
+    
+    if (error) throw error;
+  }
+}
