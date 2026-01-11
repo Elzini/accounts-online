@@ -8,11 +8,13 @@ import {
   TrendingUp,
   Package,
   Car,
-  UserCog
+  UserCog,
+  Settings
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import logo from '@/assets/logo.png';
 
 interface SidebarProps {
   activePage: ActivePage;
@@ -49,9 +51,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
       {/* Logo */}
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-            <Car className="w-7 h-7 text-white" />
-          </div>
+          <img src={logo} alt="Logo" className="w-12 h-12 rounded-xl object-cover" />
           <div>
             <h1 className="font-bold text-lg text-white">أشبال النمر</h1>
             <p className="text-xs text-sidebar-foreground/70">لتجارة السيارات</p>
@@ -133,6 +133,20 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
                 >
                   <UserCog className="w-5 h-5" />
                   <span className="font-medium">إدارة المستخدمين</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => setActivePage('app-settings')}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                    activePage === 'app-settings'
+                      ? "gradient-primary text-white shadow-lg" 
+                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
+                  )}
+                >
+                  <Settings className="w-5 h-5" />
+                  <span className="font-medium">إعدادات النظام</span>
                 </button>
               </li>
             </ul>
