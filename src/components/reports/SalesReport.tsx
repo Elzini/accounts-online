@@ -1,10 +1,25 @@
+import { useState, useMemo } from 'react';
 import { useSales } from '@/hooks/useDatabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DollarSign, ShoppingCart, TrendingUp, Calendar } from 'lucide-react';
+import { DateRangeFilter } from '@/components/ui/date-range-filter';
 
 export function SalesReport() {
   const { data: sales, isLoading } = useSales();
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const filteredSales = useMemo(() => {
+    if (!sales) return [];
+    
+    return sales.filter(sale => {
+      const saleDate = new Date(sale.sale_date);
+      if (startDate && saleDate < new Date(startDate)) return false;
+      if (endDate && saleDate > new Date(endDate + 'T23:59:59')) return false;
+      return true;
+    });
+  }, [sales, startDate, endDate]);
 
   if (isLoading) {
     return (
@@ -14,7 +29,7 @@ export function SalesReport() {
     );
   }
 
-  const salesData = sales || [];
+  const salesData = filteredSales;
   
   const totalSales = salesData.reduce((sum, sale) => sum + Number(sale.sale_price), 0);
   const totalProfit = salesData.reduce((sum, sale) => sum + Number(sale.profit), 0);
@@ -55,9 +70,17 @@ export function SalesReport() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">تقرير المبيعات</h2>
-        <p className="text-muted-foreground">إحصائيات وتفاصيل عمليات البيع</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">تقرير المبيعات</h2>
+          <p className="text-muted-foreground">إحصائيات وتفاصيل عمليات البيع</p>
+        </div>
+        <DateRangeFilter
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+        />
       </div>
 
       {/* Stats Cards */}
@@ -158,7 +181,7 @@ export function SalesReport() {
         <CardContent>
           {salesData.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              لا توجد مبيعات مسجلة
+              لا توجد مبيعات مسجلة في هذه الفترة
             </div>
           ) : (
             <Table>
