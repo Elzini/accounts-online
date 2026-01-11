@@ -13,6 +13,7 @@ import { SalesTable } from '@/components/tables/SalesTable';
 import { InventoryReport } from '@/components/reports/InventoryReport';
 import { ProfitReport } from '@/components/reports/ProfitReport';
 import { PurchasesReport } from '@/components/reports/PurchasesReport';
+import { UsersManagement } from '@/components/UsersManagement';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,7 @@ import { ActivePage } from '@/types';
 const Index = () => {
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
   const { data: stats } = useStats();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
 
   const defaultStats = { availableCars: 0, todaySales: 0, totalProfit: 0, monthSales: 0 };
 
@@ -39,6 +40,7 @@ const Index = () => {
       case 'inventory-report': return <InventoryReport />;
       case 'profit-report': return <ProfitReport />;
       case 'purchases-report': return <PurchasesReport />;
+      case 'users-management': return <UsersManagement setActivePage={setActivePage} />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };
@@ -47,8 +49,14 @@ const Index = () => {
     <div className="flex min-h-screen bg-background">
       <Sidebar activePage={activePage} setActivePage={setActivePage} />
       <main className="flex-1 p-8 overflow-auto">
-        <div className="flex justify-end mb-4">
-          <Button variant="ghost" onClick={signOut} className="gap-2"><LogOut className="w-4 h-4" />تسجيل خروج</Button>
+        <div className="flex justify-between items-center mb-4">
+          <p className="text-sm text-muted-foreground">
+            مرحباً، {user?.email}
+          </p>
+          <Button variant="ghost" onClick={signOut} className="gap-2">
+            <LogOut className="w-4 h-4" />
+            تسجيل خروج
+          </Button>
         </div>
         {renderContent()}
       </main>
