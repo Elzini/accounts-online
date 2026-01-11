@@ -80,6 +80,24 @@ export async function updateUsername(userId: string, username: string) {
   if (error) throw error;
 }
 
+export async function deleteUser(userId: string) {
+  // First delete all user roles
+  const { error: rolesError } = await supabase
+    .from('user_roles')
+    .delete()
+    .eq('user_id', userId);
+  
+  if (rolesError) throw rolesError;
+
+  // Then delete the profile
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .delete()
+    .eq('user_id', userId);
+  
+  if (profileError) throw profileError;
+}
+
 export async function createUser(email: string, password: string, username: string, permissions: UserPermission[]) {
   // Create user using admin API (this requires service role, so we'll use signUp)
   const { data, error } = await supabase.auth.signUp({
