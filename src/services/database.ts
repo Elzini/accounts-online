@@ -3,10 +3,13 @@ import type { Database } from '@/integrations/supabase/types';
 
 type Customer = Database['public']['Tables']['customers']['Row'];
 type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
+type CustomerUpdate = Database['public']['Tables']['customers']['Update'];
 type Supplier = Database['public']['Tables']['suppliers']['Row'];
 type SupplierInsert = Database['public']['Tables']['suppliers']['Insert'];
+type SupplierUpdate = Database['public']['Tables']['suppliers']['Update'];
 type Car = Database['public']['Tables']['cars']['Row'];
 type CarInsert = Database['public']['Tables']['cars']['Insert'];
+type CarUpdate = Database['public']['Tables']['cars']['Update'];
 type Sale = Database['public']['Tables']['sales']['Row'];
 type SaleInsert = Database['public']['Tables']['sales']['Insert'];
 
@@ -32,6 +35,27 @@ export async function addCustomer(customer: CustomerInsert) {
   return data;
 }
 
+export async function updateCustomer(id: string, customer: CustomerUpdate) {
+  const { data, error } = await supabase
+    .from('customers')
+    .update(customer)
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteCustomer(id: string) {
+  const { error } = await supabase
+    .from('customers')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+}
+
 // Suppliers
 export async function fetchSuppliers() {
   const { data, error } = await supabase
@@ -52,6 +76,27 @@ export async function addSupplier(supplier: SupplierInsert) {
   
   if (error) throw error;
   return data;
+}
+
+export async function updateSupplier(id: string, supplier: SupplierUpdate) {
+  const { data, error } = await supabase
+    .from('suppliers')
+    .update(supplier)
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteSupplier(id: string) {
+  const { error } = await supabase
+    .from('suppliers')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
 }
 
 // Cars
@@ -77,6 +122,27 @@ export async function addCar(car: CarInsert) {
   
   if (error) throw error;
   return data;
+}
+
+export async function updateCar(id: string, car: CarUpdate) {
+  const { data, error } = await supabase
+    .from('cars')
+    .update(car)
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteCar(id: string) {
+  const { error } = await supabase
+    .from('cars')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
 }
 
 export async function updateCarStatus(carId: string, status: 'available' | 'sold') {

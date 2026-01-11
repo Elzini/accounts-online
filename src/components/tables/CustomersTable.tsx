@@ -3,6 +3,7 @@ import { UserPlus, Phone, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SearchFilter } from '@/components/ui/search-filter';
+import { CustomerActions } from '@/components/actions/CustomerActions';
 import { ActivePage } from '@/types';
 import { useCustomers } from '@/hooks/useDatabase';
 
@@ -68,6 +69,7 @@ export function CustomersTable({ setActivePage }: CustomersTableProps) {
               <TableHead className="text-right font-bold">رقم الهوية</TableHead>
               <TableHead className="text-right font-bold">رقم الهاتف</TableHead>
               <TableHead className="text-right font-bold">العنوان</TableHead>
+              <TableHead className="text-right font-bold">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -87,6 +89,9 @@ export function CustomersTable({ setActivePage }: CustomersTableProps) {
                     <MapPin className="w-4 h-4 text-muted-foreground" />
                     <span>{customer.address || '-'}</span>
                   </div>
+                </TableCell>
+                <TableCell>
+                  <CustomerActions customer={customer} />
                 </TableCell>
               </TableRow>
             ))}

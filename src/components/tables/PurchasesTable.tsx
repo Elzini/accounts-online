@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { SearchFilter } from '@/components/ui/search-filter';
+import { CarActions } from '@/components/actions/CarActions';
 import { ActivePage } from '@/types';
 import { useCars } from '@/hooks/useDatabase';
 
@@ -101,6 +102,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
               <TableHead className="text-right font-bold">سعر الشراء</TableHead>
               <TableHead className="text-right font-bold">تاريخ الشراء</TableHead>
               <TableHead className="text-right font-bold">الحالة</TableHead>
+              <TableHead className="text-right font-bold">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -128,6 +130,9 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                     className={car.status === 'available' ? 'bg-success hover:bg-success/90' : ''}>
                     {car.status === 'available' ? 'متاحة' : 'مباعة'}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <CarActions car={car} />
                 </TableCell>
               </TableRow>
             ))}
