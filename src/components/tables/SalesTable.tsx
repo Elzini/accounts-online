@@ -1,21 +1,31 @@
 import { DollarSign, Calendar, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Sale, ActivePage } from '@/types';
+import { ActivePage } from '@/types';
+import { useSales } from '@/hooks/useDatabase';
 
 interface SalesTableProps {
-  sales: Sale[];
   setActivePage: (page: ActivePage) => void;
 }
 
-export function SalesTable({ sales, setActivePage }: SalesTableProps) {
+export function SalesTable({ setActivePage }: SalesTableProps) {
+  const { data: sales = [], isLoading } = useSales();
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA').format(value);
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string) => {
     return new Intl.DateTimeFormat('ar-SA').format(new Date(date));
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -42,7 +52,6 @@ export function SalesTable({ sales, setActivePage }: SalesTableProps) {
               <TableHead className="text-right font-bold">رقم البيع</TableHead>
               <TableHead className="text-right font-bold">العميل</TableHead>
               <TableHead className="text-right font-bold">السيارة</TableHead>
-              <TableHead className="text-right font-bold">سعر الشراء</TableHead>
               <TableHead className="text-right font-bold">سعر البيع</TableHead>
               <TableHead className="text-right font-bold">الربح</TableHead>
               <TableHead className="text-right font-bold">تاريخ البيع</TableHead>
@@ -51,28 +60,27 @@ export function SalesTable({ sales, setActivePage }: SalesTableProps) {
           <TableBody>
             {sales.map((sale) => (
               <TableRow key={sale.id} className="hover:bg-muted/30 transition-colors">
-                <TableCell className="font-medium">{sale.id}</TableCell>
-                <TableCell className="font-semibold">{sale.customerName}</TableCell>
+                <TableCell className="font-medium">{sale.sale_number}</TableCell>
+                <TableCell className="font-semibold">{sale.customer?.name || '-'}</TableCell>
                 <TableCell>
                   <div>
-                    <p className="font-medium">{sale.carName}</p>
-                    <p className="text-sm text-muted-foreground">{sale.model} - {sale.color}</p>
+                    <p className="font-medium">{sale.car?.name || '-'}</p>
+                    <p className="text-sm text-muted-foreground">{sale.car?.model} - {sale.car?.color}</p>
                   </div>
                 </TableCell>
-                <TableCell>{formatCurrency(sale.purchasePrice)} ريال</TableCell>
-                <TableCell className="font-semibold text-primary">{formatCurrency(sale.salePrice)} ريال</TableCell>
+                <TableCell className="font-semibold text-primary">{formatCurrency(Number(sale.sale_price))} ريال</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <TrendingUp className={`w-4 h-4 ${sale.profit >= 0 ? 'text-success' : 'text-destructive'}`} />
-                    <span className={`font-bold ${sale.profit >= 0 ? 'text-success' : 'text-destructive'}`}>
-                      {formatCurrency(sale.profit)} ريال
+                    <TrendingUp className={`w-4 h-4 ${Number(sale.profit) >= 0 ? 'text-success' : 'text-destructive'}`} />
+                    <span className={`font-bold ${Number(sale.profit) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {formatCurrency(Number(sale.profit))} ريال
                     </span>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span>{formatDate(sale.saleDate)}</span>
+                    <span>{formatDate(sale.sale_date)}</span>
                   </div>
                 </TableCell>
               </TableRow>

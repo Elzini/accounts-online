@@ -4,25 +4,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Supplier, ActivePage } from '@/types';
+import { ActivePage } from '@/types';
 import { toast } from 'sonner';
+import { useAddSupplier } from '@/hooks/useDatabase';
 
 interface SupplierFormProps {
-  onSave: (supplier: Omit<Supplier, 'id' | 'createdAt'>) => void;
   setActivePage: (page: ActivePage) => void;
 }
 
-export function SupplierForm({ onSave, setActivePage }: SupplierFormProps) {
+export function SupplierForm({ setActivePage }: SupplierFormProps) {
   const [formData, setFormData] = useState({
     name: '',
-    idNumber: '',
-    registrationNumber: '',
+    id_number: '',
+    registration_number: '',
     phone: '',
     address: '',
     notes: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const addSupplier = useAddSupplier();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name || !formData.phone) {
@@ -30,9 +32,13 @@ export function SupplierForm({ onSave, setActivePage }: SupplierFormProps) {
       return;
     }
 
-    onSave(formData);
-    toast.success('تم إضافة المورد بنجاح');
-    setActivePage('suppliers');
+    try {
+      await addSupplier.mutateAsync(formData);
+      toast.success('تم إضافة المورد بنجاح');
+      setActivePage('suppliers');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء إضافة المورد');
+    }
   };
 
   return (
@@ -66,21 +72,21 @@ export function SupplierForm({ onSave, setActivePage }: SupplierFormProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="idNumber">رقم الهوية</Label>
+              <Label htmlFor="id_number">رقم الهوية</Label>
               <Input
-                id="idNumber"
-                value={formData.idNumber}
-                onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
+                id="id_number"
+                value={formData.id_number}
+                onChange={(e) => setFormData({ ...formData, id_number: e.target.value })}
                 placeholder="أدخل رقم الهوية"
                 className="h-12"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="registrationNumber">رقم السجل</Label>
+              <Label htmlFor="registration_number">رقم السجل</Label>
               <Input
-                id="registrationNumber"
-                value={formData.registrationNumber}
-                onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
+                id="registration_number"
+                value={formData.registration_number}
+                onChange={(e) => setFormData({ ...formData, registration_number: e.target.value })}
                 placeholder="أدخل رقم السجل"
                 className="h-12"
               />
@@ -123,9 +129,13 @@ export function SupplierForm({ onSave, setActivePage }: SupplierFormProps) {
 
           {/* Actions */}
           <div className="flex gap-4 pt-4">
-            <Button type="submit" className="flex-1 h-12 gradient-warning hover:opacity-90">
+            <Button 
+              type="submit" 
+              className="flex-1 h-12 gradient-warning hover:opacity-90"
+              disabled={addSupplier.isPending}
+            >
               <Save className="w-5 h-5 ml-2" />
-              حفظ البيانات
+              {addSupplier.isPending ? 'جاري الحفظ...' : 'حفظ البيانات'}
             </Button>
             <Button 
               type="button" 

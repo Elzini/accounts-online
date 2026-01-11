@@ -1,14 +1,24 @@
 import { UserPlus, Phone, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Customer, ActivePage } from '@/types';
+import { ActivePage } from '@/types';
+import { useCustomers } from '@/hooks/useDatabase';
 
 interface CustomersTableProps {
-  customers: Customer[];
   setActivePage: (page: ActivePage) => void;
 }
 
-export function CustomersTable({ customers, setActivePage }: CustomersTableProps) {
+export function CustomersTable({ setActivePage }: CustomersTableProps) {
+  const { data: customers = [], isLoading } = useCustomers();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -43,7 +53,7 @@ export function CustomersTable({ customers, setActivePage }: CustomersTableProps
               <TableRow key={customer.id} className="hover:bg-muted/30 transition-colors">
                 <TableCell className="font-medium">{index + 1}</TableCell>
                 <TableCell className="font-semibold text-foreground">{customer.name}</TableCell>
-                <TableCell dir="ltr" className="text-right">{customer.idNumber || '-'}</TableCell>
+                <TableCell dir="ltr" className="text-right">{customer.id_number || '-'}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-muted-foreground" />

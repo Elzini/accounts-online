@@ -4,57 +4,55 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Car, Supplier, ActivePage } from '@/types';
+import { ActivePage } from '@/types';
 import { toast } from 'sonner';
+import { useSuppliers, useAddCar } from '@/hooks/useDatabase';
 
 interface PurchaseFormProps {
-  suppliers: Supplier[];
-  nextCarId: number;
-  onSave: (car: Omit<Car, 'id' | 'inventoryNumber' | 'status'>) => void;
   setActivePage: (page: ActivePage) => void;
 }
 
-export function PurchaseForm({ suppliers, nextCarId, onSave, setActivePage }: PurchaseFormProps) {
+export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
+  const { data: suppliers = [] } = useSuppliers();
+  const addCar = useAddCar();
+
   const [formData, setFormData] = useState({
-    supplierId: '',
-    supplierName: '',
-    chassisNumber: '',
+    supplier_id: '',
+    chassis_number: '',
     name: '',
     model: '',
     color: '',
-    purchasePrice: '',
-    purchaseDate: new Date().toISOString().split('T')[0],
+    purchase_price: '',
+    purchase_date: new Date().toISOString().split('T')[0],
   });
 
-  const handleSupplierChange = (supplierId: string) => {
-    const supplier = suppliers.find(s => s.id.toString() === supplierId);
-    setFormData({
-      ...formData,
-      supplierId,
-      supplierName: supplier?.name || '',
-    });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.supplierId || !formData.chassisNumber || !formData.name || !formData.purchasePrice) {
+    if (!formData.supplier_id || !formData.chassis_number || !formData.name || !formData.purchase_price) {
       toast.error('الرجاء ملء الحقول المطلوبة');
       return;
     }
 
-    onSave({
-      chassisNumber: formData.chassisNumber,
-      name: formData.name,
-      model: formData.model,
-      color: formData.color,
-      purchasePrice: parseFloat(formData.purchasePrice),
-      purchaseDate: new Date(formData.purchaseDate),
-      supplierId: parseInt(formData.supplierId),
-      supplierName: formData.supplierName,
-    });
-    toast.success('تم إضافة السيارة للمخزون بنجاح');
-    setActivePage('purchases');
+    try {
+      await addCar.mutateAsync({
+        supplier_id: formData.supplier_id,
+        chassis_number: formData.chassis_number,
+        name: formData.name,
+        model: formData.model || null,
+        color: formData.color || null,
+        purchase_price: parseFloat(formData.purchase_price),
+        purchase_date: formData.purchase_date,
+      });
+      toast.success('تم إضافة السيارة للمخزون بنجاح');
+      setActivePage('purchases');
+    } catch (error: any) {
+      if (error.message?.includes('duplicate')) {
+        toast.error('رقم الهيكل موجود مسبقاً');
+      } else {
+        toast.error('حدث خطأ أثناء إضافة السيارة');
+      }
+    }
   };
 
   return (
@@ -68,46 +66,35 @@ export function PurchaseForm({ suppliers, nextCarId, onSave, setActivePage }: Pu
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">إضافة سيارة جديدة</h1>
-              <p className="text-white/80 text-sm">رقم السيارة: {nextCarId} | رقم المخزون: {nextCarId}</p>
+              <p className="text-white/80 text-sm">إضافة سيارة للمخزون</p>
             </div>
           </div>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>رقم المورد *</Label>
-              <Select value={formData.supplierId} onValueChange={handleSupplierChange}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="اختر المورد" />
-                </SelectTrigger>
-                <SelectContent>
-                  {suppliers.map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id.toString()}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="supplierName">اسم المورد</Label>
-              <Input
-                id="supplierName"
-                value={formData.supplierName}
-                readOnly
-                className="h-12 bg-muted"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label>المورد *</Label>
+            <Select value={formData.supplier_id} onValueChange={(v) => setFormData({ ...formData, supplier_id: v })}>
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder="اختر المورد" />
+              </SelectTrigger>
+              <SelectContent>
+                {suppliers.map((supplier) => (
+                  <SelectItem key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="chassisNumber">رقم الهيكل *</Label>
+            <Label htmlFor="chassis_number">رقم الهيكل *</Label>
             <Input
-              id="chassisNumber"
-              value={formData.chassisNumber}
-              onChange={(e) => setFormData({ ...formData, chassisNumber: e.target.value })}
+              id="chassis_number"
+              value={formData.chassis_number}
+              onChange={(e) => setFormData({ ...formData, chassis_number: e.target.value })}
               placeholder="أدخل رقم الهيكل"
               className="h-12"
               dir="ltr"
@@ -149,12 +136,12 @@ export function PurchaseForm({ suppliers, nextCarId, onSave, setActivePage }: Pu
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="purchasePrice">سعر الشراء *</Label>
+              <Label htmlFor="purchase_price">سعر الشراء *</Label>
               <Input
-                id="purchasePrice"
+                id="purchase_price"
                 type="number"
-                value={formData.purchasePrice}
-                onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
+                value={formData.purchase_price}
+                onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
                 placeholder="0"
                 className="h-12"
                 dir="ltr"
@@ -163,12 +150,12 @@ export function PurchaseForm({ suppliers, nextCarId, onSave, setActivePage }: Pu
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="purchaseDate">تاريخ الشراء</Label>
+            <Label htmlFor="purchase_date">تاريخ الشراء</Label>
             <Input
-              id="purchaseDate"
+              id="purchase_date"
               type="date"
-              value={formData.purchaseDate}
-              onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
+              value={formData.purchase_date}
+              onChange={(e) => setFormData({ ...formData, purchase_date: e.target.value })}
               className="h-12"
               dir="ltr"
             />
@@ -176,9 +163,13 @@ export function PurchaseForm({ suppliers, nextCarId, onSave, setActivePage }: Pu
 
           {/* Actions */}
           <div className="flex gap-4 pt-4">
-            <Button type="submit" className="flex-1 h-12 gradient-primary hover:opacity-90">
+            <Button 
+              type="submit" 
+              className="flex-1 h-12 gradient-primary hover:opacity-90"
+              disabled={addCar.isPending}
+            >
               <Save className="w-5 h-5 ml-2" />
-              حفظ البيانات
+              {addCar.isPending ? 'جاري الحفظ...' : 'حفظ البيانات'}
             </Button>
             <Button 
               type="button" 
