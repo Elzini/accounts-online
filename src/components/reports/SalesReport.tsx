@@ -2,16 +2,18 @@ import { useState, useMemo } from 'react';
 import { useSales } from '@/hooks/useDatabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, ShoppingCart, TrendingUp, Calendar, Printer } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp, Calendar, Printer, FileSpreadsheet } from 'lucide-react';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { Button } from '@/components/ui/button';
 import { usePrintReport } from '@/hooks/usePrintReport';
+import { useExcelExport } from '@/hooks/useExcelExport';
 
 export function SalesReport() {
   const { data: sales, isLoading } = useSales();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const { printReport } = usePrintReport();
+  const { exportToExcel } = useExcelExport();
 
   const filteredSales = useMemo(() => {
     if (!sales) return [];
@@ -106,6 +108,39 @@ export function SalesReport() {
     });
   };
 
+  const handleExportExcel = () => {
+    exportToExcel({
+      title: 'تقرير المبيعات',
+      columns: [
+        { header: 'رقم البيع', key: 'sale_number' },
+        { header: 'العميل', key: 'customer' },
+        { header: 'السيارة', key: 'car' },
+        { header: 'سعر البيع', key: 'sale_price' },
+        { header: 'العمولة', key: 'commission' },
+        { header: 'المصاريف', key: 'expenses' },
+        { header: 'الربح', key: 'profit' },
+        { header: 'التاريخ', key: 'date' },
+      ],
+      data: salesData.map(sale => ({
+        sale_number: sale.sale_number,
+        customer: sale.customer?.name || '-',
+        car: sale.car?.name || '-',
+        sale_price: Number(sale.sale_price),
+        commission: Number(sale.commission || 0),
+        expenses: Number(sale.other_expenses || 0),
+        profit: Number(sale.profit),
+        date: formatDate(sale.sale_date),
+      })),
+      summaryData: [
+        { label: 'إجمالي المبيعات', value: totalSales },
+        { label: 'إجمالي الأرباح', value: totalProfit },
+        { label: 'إجمالي العمولات', value: totalCommissions },
+        { label: 'عدد المبيعات', value: salesData.length },
+      ],
+      fileName: `تقرير_المبيعات_${new Date().toLocaleDateString('ar-SA')}`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -120,9 +155,13 @@ export function SalesReport() {
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
           />
-          <Button onClick={handlePrint} className="gap-2">
+          <Button onClick={handlePrint} variant="outline" className="gap-2">
             <Printer className="w-4 h-4" />
-            طباعة التقرير
+            طباعة
+          </Button>
+          <Button onClick={handleExportExcel} className="gap-2">
+            <FileSpreadsheet className="w-4 h-4" />
+            تصدير Excel
           </Button>
         </div>
       </div>

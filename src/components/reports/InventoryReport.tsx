@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Package, Car, CheckCircle, Printer } from 'lucide-react';
+import { Package, Car, CheckCircle, Printer, FileSpreadsheet } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCars } from '@/hooks/useDatabase';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { usePrintReport } from '@/hooks/usePrintReport';
+import { useExcelExport } from '@/hooks/useExcelExport';
 
 export function InventoryReport() {
   const { data: cars = [], isLoading } = useCars();
