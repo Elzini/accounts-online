@@ -108,7 +108,7 @@ export async function fetchCars() {
       *,
       supplier:suppliers(name)
     `)
-    .order('created_at', { ascending: false });
+    .order('inventory_number', { ascending: true });
   
   if (error) throw error;
   return data;
