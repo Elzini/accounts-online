@@ -12,6 +12,7 @@ type CarInsert = Database['public']['Tables']['cars']['Insert'];
 type CarUpdate = Database['public']['Tables']['cars']['Update'];
 type Sale = Database['public']['Tables']['sales']['Row'];
 type SaleInsert = Database['public']['Tables']['sales']['Insert'];
+type SaleUpdate = Database['public']['Tables']['sales']['Update'];
 
 // Customers
 export async function fetchCustomers() {
@@ -182,6 +183,30 @@ export async function addSale(sale: SaleInsert) {
   await updateCarStatus(sale.car_id, 'sold');
   
   return data;
+}
+
+export async function updateSale(id: string, sale: SaleUpdate) {
+  const { data, error } = await supabase
+    .from('sales')
+    .update(sale)
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteSale(id: string, carId: string) {
+  const { error } = await supabase
+    .from('sales')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+  
+  // Update car status back to available
+  await updateCarStatus(carId, 'available');
 }
 
 // Stats

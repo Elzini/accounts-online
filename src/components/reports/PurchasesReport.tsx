@@ -36,6 +36,7 @@ export function PurchasesReport() {
         { header: 'رقم المخزون', key: 'inventory_number' },
         { header: 'السيارة', key: 'name' },
         { header: 'الموديل', key: 'model' },
+        { header: 'رقم الهيكل', key: 'chassis_number' },
         { header: 'سعر الشراء', key: 'purchase_price' },
         { header: 'تاريخ الشراء', key: 'purchase_date' },
         { header: 'الحالة', key: 'status' },
@@ -44,6 +45,7 @@ export function PurchasesReport() {
         inventory_number: car.inventory_number,
         name: car.name,
         model: car.model || '-',
+        chassis_number: car.chassis_number,
         purchase_price: `${formatCurrency(Number(car.purchase_price))} ريال`,
         purchase_date: formatDate(car.purchase_date),
         status: car.status === 'available' ? 'متاحة' : 'مباعة',
@@ -127,21 +129,23 @@ export function PurchasesReport() {
         ) : (
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
+            <TableRow className="bg-muted/50">
                 <TableHead className="text-right font-bold">رقم المخزون</TableHead>
                 <TableHead className="text-right font-bold">السيارة</TableHead>
                 <TableHead className="text-right font-bold">الموديل</TableHead>
+                <TableHead className="text-right font-bold">رقم الهيكل</TableHead>
                 <TableHead className="text-right font-bold">سعر الشراء</TableHead>
                 <TableHead className="text-right font-bold">تاريخ الشراء</TableHead>
                 <TableHead className="text-right font-bold">الحالة</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCars.map((car) => (
+            {filteredCars.map((car) => (
                 <TableRow key={car.id}>
                   <TableCell>{car.inventory_number}</TableCell>
                   <TableCell className="font-semibold">{car.name}</TableCell>
                   <TableCell>{car.model || '-'}</TableCell>
+                  <TableCell className="font-mono text-sm">{car.chassis_number}</TableCell>
                   <TableCell>{formatCurrency(Number(car.purchase_price))} ريال</TableCell>
                   <TableCell>{formatDate(car.purchase_date)}</TableCell>
                   <TableCell>

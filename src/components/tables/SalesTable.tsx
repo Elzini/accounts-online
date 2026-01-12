@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { SearchFilter } from '@/components/ui/search-filter';
 import { ActivePage } from '@/types';
 import { useSales } from '@/hooks/useDatabase';
+import { SaleActions } from '@/components/actions/SaleActions';
 
 interface SalesTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -77,10 +78,11 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
               <TableHead className="text-right font-bold">سعر البيع</TableHead>
               <TableHead className="text-right font-bold">الربح</TableHead>
               <TableHead className="text-right font-bold">تاريخ البيع</TableHead>
+              <TableHead className="text-right font-bold">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredSales.map((sale) => (
+          {filteredSales.map((sale) => (
               <TableRow key={sale.id} className="hover:bg-muted/30 transition-colors">
                 <TableCell className="font-medium">{sale.sale_number}</TableCell>
                 <TableCell className="font-semibold">{sale.customer?.name || '-'}</TableCell>
@@ -104,6 +106,9 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <span>{formatDate(sale.sale_date)}</span>
                   </div>
+                </TableCell>
+                <TableCell>
+                  <SaleActions sale={sale} />
                 </TableCell>
               </TableRow>
             ))}

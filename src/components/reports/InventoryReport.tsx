@@ -7,11 +7,13 @@ import { useCars } from '@/hooks/useDatabase';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function InventoryReport() {
   const { data: cars = [], isLoading } = useCars();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const { printReport } = usePrintReport();
 
   const filteredCars = useMemo(() => {
@@ -19,9 +21,10 @@ export function InventoryReport() {
       const purchaseDate = new Date(car.purchase_date);
       if (startDate && purchaseDate < new Date(startDate)) return false;
       if (endDate && purchaseDate > new Date(endDate + 'T23:59:59')) return false;
+      if (statusFilter !== 'all' && car.status !== statusFilter) return false;
       return true;
     });
-  }, [cars, startDate, endDate]);
+  }, [cars, startDate, endDate, statusFilter]);
   
   const availableCars = filteredCars.filter(c => c.status === 'available');
   const soldCars = filteredCars.filter(c => c.status === 'sold');
@@ -68,7 +71,17 @@ export function InventoryReport() {
           <h1 className="text-3xl font-bold text-foreground">تقرير المخزون</h1>
           <p className="text-muted-foreground">حالة السيارات في المخزون</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="حالة السيارة" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">جميع السيارات</SelectItem>
+              <SelectItem value="available">المتاحة فقط</SelectItem>
+              <SelectItem value="sold">المباعة فقط</SelectItem>
+            </SelectContent>
+          </Select>
           <DateRangeFilter
             startDate={startDate}
             endDate={endDate}
