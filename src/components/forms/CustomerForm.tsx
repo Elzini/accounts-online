@@ -34,8 +34,15 @@ export function CustomerForm({ setActivePage }: CustomerFormProps) {
       await addCustomer.mutateAsync(formData);
       toast.success('تم إضافة العميل بنجاح');
       setActivePage('customers');
-    } catch (error) {
-      toast.error('حدث خطأ أثناء إضافة العميل');
+    } catch (error: any) {
+      console.error('Error adding customer:', error);
+      if (error?.code === '42501' || error?.message?.includes('row-level security')) {
+        toast.error('ليس لديك صلاحية لإضافة عميل');
+      } else if (error?.code === '23514' || error?.message?.includes('check constraint')) {
+        toast.error('البيانات المدخلة غير صالحة - تأكد من صحة المعلومات');
+      } else {
+        toast.error('حدث خطأ أثناء إضافة العميل: ' + (error?.message || 'خطأ غير معروف'));
+      }
     }
   };
 

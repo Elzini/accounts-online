@@ -36,8 +36,15 @@ export function SupplierForm({ setActivePage }: SupplierFormProps) {
       await addSupplier.mutateAsync(formData);
       toast.success('تم إضافة المورد بنجاح');
       setActivePage('suppliers');
-    } catch (error) {
-      toast.error('حدث خطأ أثناء إضافة المورد');
+    } catch (error: any) {
+      console.error('Error adding supplier:', error);
+      if (error?.code === '42501' || error?.message?.includes('row-level security')) {
+        toast.error('ليس لديك صلاحية لإضافة مورد');
+      } else if (error?.code === '23514' || error?.message?.includes('check constraint')) {
+        toast.error('البيانات المدخلة غير صالحة - تأكد من صحة المعلومات');
+      } else {
+        toast.error('حدث خطأ أثناء إضافة المورد: ' + (error?.message || 'خطأ غير معروف'));
+      }
     }
   };
 
