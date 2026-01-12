@@ -1,4 +1,4 @@
-import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, FileText } from 'lucide-react';
+import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, FileText, Users } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { Button } from '@/components/ui/button';
 import { ActivePage } from '@/types';
@@ -223,7 +223,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         {/* Reports */}
         <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
           <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">التقارير</h2>
-          <div className="space-y-2 md:space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
             <Button 
               onClick={() => setActivePage('inventory-report')}
               variant="ghost"
@@ -263,6 +263,36 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
               </div>
               <span className="font-medium">تقرير المبيعات</span>
+            </Button>
+            <Button 
+              onClick={() => setActivePage('customers-report')}
+              variant="ghost"
+              className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-purple-500/10 text-sm"
+            >
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
+              </div>
+              <span className="font-medium">تقرير العملاء</span>
+            </Button>
+            <Button 
+              onClick={() => setActivePage('suppliers-report')}
+              variant="ghost"
+              className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-orange-500/10 text-sm"
+            >
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                <Truck className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />
+              </div>
+              <span className="font-medium">تقرير الموردين</span>
+            </Button>
+            <Button 
+              onClick={() => setActivePage('commissions-report')}
+              variant="ghost"
+              className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-yellow-500/10 text-sm"
+            >
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
+                <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-yellow-500" />
+              </div>
+              <span className="font-medium">تقرير العمولات</span>
             </Button>
           </div>
         </div>
