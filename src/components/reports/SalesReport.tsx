@@ -2,13 +2,16 @@ import { useState, useMemo } from 'react';
 import { useSales } from '@/hooks/useDatabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, ShoppingCart, TrendingUp, Calendar } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp, Calendar, FileDown } from 'lucide-react';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
+import { Button } from '@/components/ui/button';
+import { usePdfExport } from '@/hooks/usePdfExport';
 
 export function SalesReport() {
   const { data: sales, isLoading } = useSales();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const { exportToPdf } = usePdfExport();
 
   const filteredSales = useMemo(() => {
     if (!sales) return [];
@@ -44,6 +47,8 @@ export function SalesReport() {
     }).format(amount);
   };
 
+  const formatCurrencySimple = (value: number) => new Intl.NumberFormat('ar-SA').format(value);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ar-SA');
   };
@@ -68,6 +73,40 @@ export function SalesReport() {
       ...data
     }));
 
+  const handleExportPdf = () => {
+    exportToPdf({
+      title: 'تقرير المبيعات',
+      subtitle: 'إحصائيات وتفاصيل عمليات البيع',
+      columns: [
+        { header: 'رقم البيع', key: 'sale_number' },
+        { header: 'العميل', key: 'customer' },
+        { header: 'السيارة', key: 'car' },
+        { header: 'سعر البيع', key: 'sale_price' },
+        { header: 'العمولة', key: 'commission' },
+        { header: 'المصاريف', key: 'expenses' },
+        { header: 'الربح', key: 'profit' },
+        { header: 'التاريخ', key: 'date' },
+      ],
+      data: salesData.map(sale => ({
+        sale_number: sale.sale_number,
+        customer: sale.customer?.name || '-',
+        car: sale.car?.name || '-',
+        sale_price: `${formatCurrencySimple(Number(sale.sale_price))} ريال`,
+        commission: `${formatCurrencySimple(Number(sale.commission || 0))} ريال`,
+        expenses: `${formatCurrencySimple(Number(sale.other_expenses || 0))} ريال`,
+        profit: `${formatCurrencySimple(Number(sale.profit))} ريال`,
+        date: formatDate(sale.sale_date),
+      })),
+      summaryCards: [
+        { label: 'إجمالي المبيعات', value: `${formatCurrencySimple(totalSales)} ريال` },
+        { label: 'إجمالي الأرباح', value: `${formatCurrencySimple(totalProfit)} ريال` },
+        { label: 'إجمالي العمولات', value: `${formatCurrencySimple(totalCommissions)} ريال` },
+        { label: 'عدد المبيعات', value: String(salesData.length) },
+      ],
+      fileName: `تقرير_المبيعات_${new Date().toLocaleDateString('ar-SA')}`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -75,12 +114,18 @@ export function SalesReport() {
           <h2 className="text-2xl font-bold text-foreground">تقرير المبيعات</h2>
           <p className="text-muted-foreground">إحصائيات وتفاصيل عمليات البيع</p>
         </div>
-        <DateRangeFilter
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-        />
+        <div className="flex items-center gap-4">
+          <DateRangeFilter
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+          />
+          <Button onClick={handleExportPdf} className="gap-2">
+            <FileDown className="w-4 h-4" />
+            تصدير PDF
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
