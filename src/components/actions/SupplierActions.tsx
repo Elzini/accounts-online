@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,15 +18,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { useUpdateSupplier, useDeleteSupplier } from '@/hooks/useDatabase';
-import { toast } from 'sonner';
-import type { Database } from '@/integrations/supabase/types';
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useUpdateSupplier, useDeleteSupplier } from "@/hooks/useDatabase";
+import { toast } from "sonner";
+import type { Database } from "@/integrations/supabase/types";
 
-type Supplier = Database['public']['Tables']['suppliers']['Row'];
+type Supplier = Database["public"]["Tables"]["suppliers"]["Row"];
 
 interface EditSupplierDialogProps {
   supplier: Supplier;
@@ -38,22 +38,22 @@ export function EditSupplierDialog({ supplier, open, onOpenChange }: EditSupplie
   const [formData, setFormData] = useState({
     name: supplier.name,
     phone: supplier.phone,
-    id_number: supplier.id_number || '',
-    address: supplier.address || '',
-    registration_number: supplier.registration_number || '',
-    notes: supplier.notes || '',
+    id_number: supplier.id_number || "",
+    address: supplier.address || "",
+    registration_number: supplier.registration_number || "",
+    notes: supplier.notes || "",
   });
-  
+
   const updateSupplier = useUpdateSupplier();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await updateSupplier.mutateAsync({ id: supplier.id, supplier: formData });
-      toast.success('تم تحديث بيانات المورد بنجاح');
+      toast.success("تم تحديث بيانات المورد بنجاح");
       onOpenChange(false);
     } catch (error) {
-      toast.error('حدث خطأ أثناء تحديث البيانات');
+      toast.error("حدث خطأ أثناء تحديث البيانات");
     }
   };
 
@@ -62,9 +62,7 @@ export function EditSupplierDialog({ supplier, open, onOpenChange }: EditSupplie
       <DialogContent className="sm:max-w-[425px]" dir="rtl">
         <DialogHeader>
           <DialogTitle>تعديل بيانات المورد</DialogTitle>
-          <DialogDescription>
-            قم بتعديل بيانات المورد ثم اضغط حفظ
-          </DialogDescription>
+          <DialogDescription>قم بتعديل بيانات المورد ثم اضغط حفظ</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
@@ -95,7 +93,7 @@ export function EditSupplierDialog({ supplier, open, onOpenChange }: EditSupplie
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="registration_number">رقم السجل التجاري</Label>
+              <Label htmlFor="registration_number">الرقم الضريبي </Label>
               <Input
                 id="registration_number"
                 value={formData.registration_number}
@@ -121,7 +119,7 @@ export function EditSupplierDialog({ supplier, open, onOpenChange }: EditSupplie
           </div>
           <DialogFooter>
             <Button type="submit" disabled={updateSupplier.isPending}>
-              {updateSupplier.isPending ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+              {updateSupplier.isPending ? "جاري الحفظ..." : "حفظ التغييرات"}
             </Button>
           </DialogFooter>
         </form>
@@ -142,10 +140,10 @@ export function DeleteSupplierDialog({ supplier, open, onOpenChange }: DeleteSup
   const handleDelete = async () => {
     try {
       await deleteSupplier.mutateAsync(supplier.id);
-      toast.success('تم حذف المورد بنجاح');
+      toast.success("تم حذف المورد بنجاح");
       onOpenChange(false);
     } catch (error) {
-      toast.error('حدث خطأ أثناء حذف المورد');
+      toast.error("حدث خطأ أثناء حذف المورد");
     }
   };
 
@@ -164,7 +162,7 @@ export function DeleteSupplierDialog({ supplier, open, onOpenChange }: DeleteSup
             onClick={handleDelete}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {deleteSupplier.isPending ? 'جاري الحذف...' : 'حذف'}
+            {deleteSupplier.isPending ? "جاري الحذف..." : "حذف"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -183,12 +181,7 @@ export function SupplierActions({ supplier }: SupplierActionsProps) {
   return (
     <>
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setEditOpen(true)}
-          className="h-8 w-8"
-        >
+        <Button variant="ghost" size="icon" onClick={() => setEditOpen(true)} className="h-8 w-8">
           <Pencil className="h-4 w-4" />
         </Button>
         <Button
