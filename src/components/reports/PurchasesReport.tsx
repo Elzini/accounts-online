@@ -1,17 +1,17 @@
 import { useState, useMemo } from 'react';
-import { FileText, ShoppingCart, Truck, FileDown } from 'lucide-react';
+import { FileText, ShoppingCart, Truck, Printer } from 'lucide-react';
 import { useCars } from '@/hooks/useDatabase';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { usePdfExport } from '@/hooks/usePdfExport';
+import { usePrintReport } from '@/hooks/usePrintReport';
 
 export function PurchasesReport() {
   const { data: cars = [], isLoading } = useCars();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const { exportToPdf } = usePdfExport();
+  const { printReport } = usePrintReport();
 
   const filteredCars = useMemo(() => {
     return cars.filter(car => {
@@ -26,8 +26,8 @@ export function PurchasesReport() {
   const formatCurrency = (value: number) => new Intl.NumberFormat('ar-SA').format(value);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ar-SA');
 
-  const handleExportPdf = () => {
-    exportToPdf({
+  const handlePrint = () => {
+    printReport({
       title: 'تقرير المشتريات',
       subtitle: 'تفاصيل عمليات شراء السيارات',
       columns: [
@@ -51,7 +51,6 @@ export function PurchasesReport() {
         { label: 'إجمالي المشتريات', value: `${formatCurrency(totalPurchases)} ريال` },
         { label: 'السيارات المتاحة', value: String(filteredCars.filter(c => c.status === 'available').length) },
       ],
-      fileName: `تقرير_المشتريات_${new Date().toLocaleDateString('ar-SA')}`,
     });
   };
 
@@ -71,9 +70,9 @@ export function PurchasesReport() {
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
           />
-          <Button onClick={handleExportPdf} className="gap-2">
-            <FileDown className="w-4 h-4" />
-            تصدير PDF
+          <Button onClick={handlePrint} className="gap-2">
+            <Printer className="w-4 h-4" />
+            طباعة التقرير
           </Button>
         </div>
       </div>

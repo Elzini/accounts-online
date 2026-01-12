@@ -1,16 +1,16 @@
 import { useState, useMemo } from 'react';
-import { TrendingUp, DollarSign, ShoppingCart, FileDown } from 'lucide-react';
+import { TrendingUp, DollarSign, ShoppingCart, Printer } from 'lucide-react';
 import { useSales } from '@/hooks/useDatabase';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { usePdfExport } from '@/hooks/usePdfExport';
+import { usePrintReport } from '@/hooks/usePrintReport';
 
 export function ProfitReport() {
   const { data: sales = [], isLoading } = useSales();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const { exportToPdf } = usePdfExport();
+  const { printReport } = usePrintReport();
 
   const filteredSales = useMemo(() => {
     return sales.filter(sale => {
@@ -28,8 +28,8 @@ export function ProfitReport() {
   const formatCurrency = (value: number) => new Intl.NumberFormat('ar-SA').format(value);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ar-SA');
 
-  const handleExportPdf = () => {
-    exportToPdf({
+  const handlePrint = () => {
+    printReport({
       title: 'تقرير الأرباح',
       subtitle: 'تفاصيل الأرباح والمصاريف',
       columns: [
@@ -54,7 +54,6 @@ export function ProfitReport() {
         { label: 'إجمالي العمولات', value: `${formatCurrency(totalCommissions)} ريال` },
         { label: 'المصاريف الأخرى', value: `${formatCurrency(totalExpenses)} ريال` },
       ],
-      fileName: `تقرير_الأرباح_${new Date().toLocaleDateString('ar-SA')}`,
     });
   };
 
@@ -74,9 +73,9 @@ export function ProfitReport() {
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
           />
-          <Button onClick={handleExportPdf} className="gap-2">
-            <FileDown className="w-4 h-4" />
-            تصدير PDF
+          <Button onClick={handlePrint} className="gap-2">
+            <Printer className="w-4 h-4" />
+            طباعة التقرير
           </Button>
         </div>
       </div>

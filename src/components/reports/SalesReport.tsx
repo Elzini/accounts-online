@@ -2,16 +2,16 @@ import { useState, useMemo } from 'react';
 import { useSales } from '@/hooks/useDatabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, ShoppingCart, TrendingUp, Calendar, FileDown } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp, Calendar, Printer } from 'lucide-react';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { Button } from '@/components/ui/button';
-import { usePdfExport } from '@/hooks/usePdfExport';
+import { usePrintReport } from '@/hooks/usePrintReport';
 
 export function SalesReport() {
   const { data: sales, isLoading } = useSales();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const { exportToPdf } = usePdfExport();
+  const { printReport } = usePrintReport();
 
   const filteredSales = useMemo(() => {
     if (!sales) return [];
@@ -73,8 +73,8 @@ export function SalesReport() {
       ...data
     }));
 
-  const handleExportPdf = () => {
-    exportToPdf({
+  const handlePrint = () => {
+    printReport({
       title: 'تقرير المبيعات',
       subtitle: 'إحصائيات وتفاصيل عمليات البيع',
       columns: [
@@ -103,7 +103,6 @@ export function SalesReport() {
         { label: 'إجمالي العمولات', value: `${formatCurrencySimple(totalCommissions)} ريال` },
         { label: 'عدد المبيعات', value: String(salesData.length) },
       ],
-      fileName: `تقرير_المبيعات_${new Date().toLocaleDateString('ar-SA')}`,
     });
   };
 
@@ -121,9 +120,9 @@ export function SalesReport() {
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
           />
-          <Button onClick={handleExportPdf} className="gap-2">
-            <FileDown className="w-4 h-4" />
-            تصدير PDF
+          <Button onClick={handlePrint} className="gap-2">
+            <Printer className="w-4 h-4" />
+            طباعة التقرير
           </Button>
         </div>
       </div>
