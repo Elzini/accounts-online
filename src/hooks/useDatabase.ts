@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as db from '@/services/database';
 import type { Database } from '@/integrations/supabase/types';
+import type { MultiCarSaleData } from '@/services/database';
 
 type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
 type CustomerUpdate = Database['public']['Tables']['customers']['Update'];
@@ -10,6 +11,7 @@ type CarInsert = Database['public']['Tables']['cars']['Insert'];
 type CarUpdate = Database['public']['Tables']['cars']['Update'];
 type SaleInsert = Database['public']['Tables']['sales']['Insert'];
 type SaleUpdate = Database['public']['Tables']['sales']['Update'];
+type PurchaseBatchInsert = Database['public']['Tables']['purchase_batches']['Insert'];
 
 // Customers hooks
 export function useCustomers() {
@@ -201,5 +203,63 @@ export function useMonthlyChartData() {
   return useQuery({
     queryKey: ['monthly-chart-data'],
     queryFn: db.fetchMonthlyChartData,
+  });
+}
+
+// Purchase Batches hooks
+export function usePurchaseBatches() {
+  return useQuery({
+    queryKey: ['purchase-batches'],
+    queryFn: db.fetchPurchaseBatches,
+  });
+}
+
+export function useAddPurchaseBatch() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ batch, cars }: { batch: PurchaseBatchInsert; cars: Array<Omit<CarInsert, 'batch_id'>> }) => 
+      db.addPurchaseBatch(batch, cars),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-batches'] });
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+    },
+  });
+}
+
+// Multi-car Sales hooks
+export function useSalesWithItems() {
+  return useQuery({
+    queryKey: ['sales-with-items'],
+    queryFn: db.fetchSalesWithItems,
+  });
+}
+
+export function useAddMultiCarSale() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (saleData: MultiCarSaleData) => db.addMultiCarSale(saleData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-with-items'] });
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+    },
+  });
+}
+
+export function useDeleteMultiCarSale() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (saleId: string) => db.deleteMultiCarSale(saleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-with-items'] });
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+    },
   });
 }

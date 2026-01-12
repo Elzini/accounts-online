@@ -13,6 +13,28 @@ type CarUpdate = Database['public']['Tables']['cars']['Update'];
 type Sale = Database['public']['Tables']['sales']['Row'];
 type SaleInsert = Database['public']['Tables']['sales']['Insert'];
 type SaleUpdate = Database['public']['Tables']['sales']['Update'];
+type PurchaseBatch = Database['public']['Tables']['purchase_batches']['Row'];
+type PurchaseBatchInsert = Database['public']['Tables']['purchase_batches']['Insert'];
+type SaleItem = Database['public']['Tables']['sale_items']['Row'];
+type SaleItemInsert = Database['public']['Tables']['sale_items']['Insert'];
+
+// Types for multi-car operations
+export interface CarWithSaleInfo extends Omit<CarInsert, 'batch_id'> {
+  sale_price?: number;
+}
+
+export interface MultiCarSaleData {
+  customer_id: string;
+  seller_name?: string;
+  commission?: number;
+  other_expenses?: number;
+  sale_date: string;
+  cars: Array<{
+    car_id: string;
+    sale_price: number;
+    purchase_price: number;
+  }>;
+}
 
 // Customers
 export async function fetchCustomers() {
@@ -312,4 +334,150 @@ export async function fetchMonthlyChartData() {
   }
 
   return result;
+}
+
+// Purchase Batches
+export async function addPurchaseBatch(
+  batchData: PurchaseBatchInsert,
+  cars: Array<Omit<CarInsert, 'batch_id'>>
+) {
+  // Create the batch first
+  const { data: batch, error: batchError } = await supabase
+    .from('purchase_batches')
+    .insert(batchData)
+    .select()
+    .single();
+  
+  if (batchError) throw batchError;
+
+  // Add all cars with the batch_id
+  const carsWithBatch = cars.map(car => ({
+    ...car,
+    batch_id: batch.id,
+    supplier_id: batchData.supplier_id,
+    purchase_date: batchData.purchase_date,
+  }));
+
+  const { data: addedCars, error: carsError } = await supabase
+    .from('cars')
+    .insert(carsWithBatch)
+    .select();
+  
+  if (carsError) throw carsError;
+
+  return { batch, cars: addedCars };
+}
+
+export async function fetchPurchaseBatches() {
+  const { data, error } = await supabase
+    .from('purchase_batches')
+    .select(`
+      *,
+      supplier:suppliers(name),
+      cars:cars(*)
+    `)
+    .order('created_at', { ascending: false });
+  
+  if (error) throw error;
+  return data;
+}
+
+// Multi-car Sales
+export async function addMultiCarSale(saleData: MultiCarSaleData) {
+  // Calculate totals
+  const totalSalePrice = saleData.cars.reduce((sum, car) => sum + car.sale_price, 0);
+  const totalPurchasePrice = saleData.cars.reduce((sum, car) => sum + car.purchase_price, 0);
+  const commission = saleData.commission || 0;
+  const otherExpenses = saleData.other_expenses || 0;
+  const totalProfit = totalSalePrice - totalPurchasePrice - commission - otherExpenses;
+
+  // Use the first car as the primary car for the sale record
+  const primaryCar = saleData.cars[0];
+
+  // Create the main sale record
+  const { data: sale, error: saleError } = await supabase
+    .from('sales')
+    .insert({
+      customer_id: saleData.customer_id,
+      car_id: primaryCar.car_id,
+      sale_price: totalSalePrice,
+      seller_name: saleData.seller_name || null,
+      commission: commission,
+      other_expenses: otherExpenses,
+      profit: totalProfit,
+      sale_date: saleData.sale_date,
+    })
+    .select()
+    .single();
+  
+  if (saleError) throw saleError;
+
+  // Add sale items for each car
+  const saleItems = saleData.cars.map(car => ({
+    sale_id: sale.id,
+    car_id: car.car_id,
+    sale_price: car.sale_price,
+    profit: car.sale_price - car.purchase_price,
+  }));
+
+  const { error: itemsError } = await supabase
+    .from('sale_items')
+    .insert(saleItems);
+  
+  if (itemsError) throw itemsError;
+
+  // Update all cars status to sold
+  for (const car of saleData.cars) {
+    await updateCarStatus(car.car_id, 'sold');
+  }
+
+  return sale;
+}
+
+export async function fetchSalesWithItems() {
+  const { data, error } = await supabase
+    .from('sales')
+    .select(`
+      *,
+      customer:customers(name),
+      sale_items:sale_items(
+        *,
+        car:cars(*)
+      )
+    `)
+    .order('created_at', { ascending: false });
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteMultiCarSale(saleId: string) {
+  // Get sale items first to restore car statuses
+  const { data: saleItems, error: fetchError } = await supabase
+    .from('sale_items')
+    .select('car_id')
+    .eq('sale_id', saleId);
+  
+  if (fetchError) throw fetchError;
+
+  // Delete sale items
+  const { error: itemsError } = await supabase
+    .from('sale_items')
+    .delete()
+    .eq('sale_id', saleId);
+  
+  if (itemsError) throw itemsError;
+
+  // Delete the sale
+  const { error: saleError } = await supabase
+    .from('sales')
+    .delete()
+    .eq('id', saleId);
+  
+  if (saleError) throw saleError;
+
+  // Restore car statuses
+  for (const item of saleItems || []) {
+    await updateCarStatus(item.car_id, 'available');
+  }
 }
