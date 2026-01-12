@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
+import { MobileSidebar } from '@/components/MobileSidebar';
 import { Dashboard } from '@/components/Dashboard';
 import { CustomerForm } from '@/components/forms/CustomerForm';
 import { SupplierForm } from '@/components/forms/SupplierForm';
@@ -20,6 +21,7 @@ import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { ActivePage } from '@/types';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index = () => {
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
@@ -49,17 +51,26 @@ const Index = () => {
     }
   };
 
+  const isMobile = useIsMobile();
+
   return (
     <div className="flex min-h-screen bg-background">
-      <Sidebar activePage={activePage} setActivePage={setActivePage} />
-      <main className="flex-1 p-8 overflow-auto">
-        <div className="flex justify-between items-center mb-4">
-          <p className="text-sm text-muted-foreground">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block">
+        <Sidebar activePage={activePage} setActivePage={setActivePage} />
+      </div>
+      
+      {/* Mobile Sidebar */}
+      <MobileSidebar activePage={activePage} setActivePage={setActivePage} />
+      
+      <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto w-full">
+        <div className="flex justify-between items-center mb-4 pt-14 lg:pt-0">
+          <p className="text-xs md:text-sm text-muted-foreground truncate max-w-[200px] md:max-w-none">
             مرحباً، {user?.email}
           </p>
-          <Button variant="ghost" onClick={signOut} className="gap-2">
+          <Button variant="ghost" onClick={signOut} className="gap-2 text-sm">
             <LogOut className="w-4 h-4" />
-            تسجيل خروج
+            <span className="hidden sm:inline">تسجيل خروج</span>
           </Button>
         </div>
         {renderContent()}

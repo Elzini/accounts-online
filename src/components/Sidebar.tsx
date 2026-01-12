@@ -48,7 +48,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
   const canManageUsers = permissions.admin || permissions.users;
 
   return (
-    <aside className="w-64 min-h-screen gradient-dark text-sidebar-foreground flex flex-col">
+    <aside className="w-64 min-h-screen gradient-dark text-sidebar-foreground flex flex-col shrink-0">
       {/* Logo */}
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center gap-3">

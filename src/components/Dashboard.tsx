@@ -52,15 +52,15 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 md:space-y-8 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">{settings?.dashboard_title || 'لوحة التحكم'}</h1>
-        <p className="text-muted-foreground mt-1">{settings?.welcome_message || 'مرحباً بك في نظام إدارة معرض أشبال النمر للسيارات'}</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">{settings?.dashboard_title || 'لوحة التحكم'}</h1>
+        <p className="text-sm md:text-base text-muted-foreground mt-1">{settings?.welcome_message || 'مرحباً بك في نظام إدارة معرض أشبال النمر للسيارات'}</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 md:gap-6">
         <StatCard
           title="السيارات المتاحة"
           value={stats.availableCars}
@@ -106,10 +106,10 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Sales Chart */}
-        <div className="bg-card rounded-2xl p-6 card-shadow">
-          <h2 className="text-xl font-bold text-card-foreground mb-6">المبيعات الشهرية</h2>
+        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+          <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">المبيعات الشهرية</h2>
           {chartLoading ? (
             <div className="h-64 flex items-center justify-center">
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -143,8 +143,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         </div>
 
         {/* Profit Chart */}
-        <div className="bg-card rounded-2xl p-6 card-shadow">
-          <h2 className="text-xl font-bold text-card-foreground mb-6">الأرباح الشهرية</h2>
+        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+          <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">الأرباح الشهرية</h2>
           {chartLoading ? (
             <div className="h-64 flex items-center justify-center">
               <div className="w-8 h-8 border-4 border-success border-t-transparent rounded-full animate-spin" />
@@ -182,85 +182,85 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Main Actions */}
-        <div className="bg-card rounded-2xl p-6 card-shadow">
-          <h2 className="text-xl font-bold text-card-foreground mb-6">الإجراءات السريعة</h2>
-          <div className="grid grid-cols-2 gap-4">
+        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+          <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">الإجراءات السريعة</h2>
+          <div className="grid grid-cols-2 gap-2 md:gap-4">
             <Button 
               onClick={() => setActivePage('purchases')}
-              className="h-auto py-4 flex flex-col items-center gap-2 gradient-primary hover:opacity-90"
+              className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 gradient-primary hover:opacity-90 text-xs md:text-sm"
             >
-              <ShoppingCart className="w-6 h-6" />
+              <ShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
               <span>المشتريات</span>
             </Button>
             <Button 
               onClick={() => setActivePage('sales')}
-              className="h-auto py-4 flex flex-col items-center gap-2 gradient-success hover:opacity-90"
+              className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 gradient-success hover:opacity-90 text-xs md:text-sm"
             >
-              <DollarSign className="w-6 h-6" />
+              <DollarSign className="w-5 h-5 md:w-6 md:h-6" />
               <span>المبيعات</span>
             </Button>
             <Button 
               onClick={() => setActivePage('add-customer')}
               variant="outline"
-              className="h-auto py-4 flex flex-col items-center gap-2 border-2 hover:bg-primary hover:text-primary-foreground"
+              className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-xs md:text-sm"
             >
-              <UserPlus className="w-6 h-6" />
+              <UserPlus className="w-5 h-5 md:w-6 md:h-6" />
               <span>إضافة عميل</span>
             </Button>
             <Button 
               onClick={() => setActivePage('add-supplier')}
               variant="outline"
-              className="h-auto py-4 flex flex-col items-center gap-2 border-2 hover:bg-primary hover:text-primary-foreground"
+              className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-xs md:text-sm"
             >
-              <Truck className="w-6 h-6" />
+              <Truck className="w-5 h-5 md:w-6 md:h-6" />
               <span>إضافة مورد</span>
             </Button>
           </div>
         </div>
 
         {/* Reports */}
-        <div className="bg-card rounded-2xl p-6 card-shadow">
-          <h2 className="text-xl font-bold text-card-foreground mb-6">التقارير</h2>
-          <div className="space-y-3">
+        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+          <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">التقارير</h2>
+          <div className="space-y-2 md:space-y-3">
             <Button 
               onClick={() => setActivePage('inventory-report')}
               variant="ghost"
-              className="w-full justify-start gap-3 h-12 hover:bg-primary/10"
+              className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-primary/10 text-sm"
             >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Package className="w-5 h-5 text-primary" />
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Package className="w-4 h-4 md:w-5 md:h-5 text-primary" />
               </div>
               <span className="font-medium">تقرير المخزون</span>
             </Button>
             <Button 
               onClick={() => setActivePage('profit-report')}
               variant="ghost"
-              className="w-full justify-start gap-3 h-12 hover:bg-success/10"
+              className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-success/10 text-sm"
             >
-              <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-success" />
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
+                <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-success" />
               </div>
               <span className="font-medium">تقرير الأرباح</span>
             </Button>
             <Button 
               onClick={() => setActivePage('purchases-report')}
               variant="ghost"
-              className="w-full justify-start gap-3 h-12 hover:bg-warning/10"
+              className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-warning/10 text-sm"
             >
-              <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-warning" />
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
+                <FileText className="w-4 h-4 md:w-5 md:h-5 text-warning" />
               </div>
               <span className="font-medium">تقرير المشتريات</span>
             </Button>
             <Button 
               onClick={() => setActivePage('sales-report')}
               variant="ghost"
-              className="w-full justify-start gap-3 h-12 hover:bg-blue-500/10"
+              className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-blue-500/10 text-sm"
             >
-              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-blue-500" />
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
               </div>
               <span className="font-medium">تقرير المبيعات</span>
             </Button>
