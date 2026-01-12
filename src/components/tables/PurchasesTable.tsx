@@ -62,16 +62,16 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 md:space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">المشتريات</h1>
-          <p className="text-muted-foreground mt-1">إدارة مخزون السيارات</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">المشتريات</h1>
+          <p className="text-sm text-muted-foreground mt-1">إدارة مخزون السيارات</p>
         </div>
         <Button 
           onClick={() => setActivePage('add-purchase')}
-          className="gradient-primary hover:opacity-90"
+          className="gradient-primary hover:opacity-90 w-full sm:w-auto"
         >
           <ShoppingCart className="w-5 h-5 ml-2" />
           إضافة سيارة
@@ -90,8 +90,8 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       />
 
       {/* Table */}
-      <div className="bg-card rounded-2xl card-shadow overflow-hidden">
-        <Table>
+      <div className="bg-card rounded-xl md:rounded-2xl card-shadow overflow-hidden overflow-x-auto">
+        <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead className="text-right font-bold">رقم المخزون</TableHead>
