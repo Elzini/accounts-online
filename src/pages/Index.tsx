@@ -15,6 +15,8 @@ import { InventoryReport } from '@/components/reports/InventoryReport';
 import { ProfitReport } from '@/components/reports/ProfitReport';
 import { PurchasesReport } from '@/components/reports/PurchasesReport';
 import { SalesReport } from '@/components/reports/SalesReport';
+import { CustomersReport } from '@/components/reports/CustomersReport';
+import { SuppliersReport } from '@/components/reports/SuppliersReport';
 import { UsersManagement } from '@/components/UsersManagement';
 import { AppSettingsPage } from '@/components/AppSettings';
 import { useStats } from '@/hooks/useDatabase';
@@ -45,6 +47,8 @@ const Index = () => {
       case 'profit-report': return <ProfitReport />;
       case 'purchases-report': return <PurchasesReport />;
       case 'sales-report': return <SalesReport />;
+      case 'customers-report': return <CustomersReport />;
+      case 'suppliers-report': return <SuppliersReport />;
       case 'users-management': return <UsersManagement setActivePage={setActivePage} />;
       case 'app-settings': return <AppSettingsPage setActivePage={setActivePage} />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;

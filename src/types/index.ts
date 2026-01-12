@@ -65,5 +65,7 @@ export type ActivePage =
   | 'profit-report'
   | 'purchases-report'
   | 'sales-report'
+  | 'customers-report'
+  | 'suppliers-report'
   | 'users-management'
   | 'app-settings';
