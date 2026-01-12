@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
-import { TrendingUp, DollarSign, ShoppingCart, Printer } from 'lucide-react';
+import { TrendingUp, DollarSign, ShoppingCart, Printer, FileSpreadsheet } from 'lucide-react';
 import { useSales } from '@/hooks/useDatabase';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { usePrintReport } from '@/hooks/usePrintReport';
+import { useExcelExport } from '@/hooks/useExcelExport';
 
 export function ProfitReport() {
   const { data: sales = [], isLoading } = useSales();

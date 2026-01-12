@@ -1,17 +1,19 @@
 import { useState, useMemo } from 'react';
-import { FileText, ShoppingCart, Truck, Printer } from 'lucide-react';
+import { FileText, ShoppingCart, Truck, Printer, FileSpreadsheet } from 'lucide-react';
 import { useCars } from '@/hooks/useDatabase';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { usePrintReport } from '@/hooks/usePrintReport';
+import { useExcelExport } from '@/hooks/useExcelExport';
 
 export function PurchasesReport() {
   const { data: cars = [], isLoading } = useCars();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const { printReport } = usePrintReport();
+  const { exportToExcel } = useExcelExport();
 
   const filteredCars = useMemo(() => {
     return cars.filter(car => {
