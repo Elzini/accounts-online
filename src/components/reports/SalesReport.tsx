@@ -83,6 +83,7 @@ export function SalesReport() {
         { header: 'رقم البيع', key: 'sale_number' },
         { header: 'العميل', key: 'customer' },
         { header: 'السيارة', key: 'car' },
+        { header: 'رقم الهيكل', key: 'chassis_number' },
         { header: 'سعر البيع', key: 'sale_price' },
         { header: 'العمولة', key: 'commission' },
         { header: 'المصاريف', key: 'expenses' },
@@ -93,6 +94,7 @@ export function SalesReport() {
         sale_number: sale.sale_number,
         customer: sale.customer?.name || '-',
         car: sale.car?.name || '-',
+        chassis_number: sale.car?.chassis_number || '-',
         sale_price: `${formatCurrencySimple(Number(sale.sale_price))} ريال`,
         commission: `${formatCurrencySimple(Number(sale.commission || 0))} ريال`,
         expenses: `${formatCurrencySimple(Number(sale.other_expenses || 0))} ريال`,
@@ -115,6 +117,7 @@ export function SalesReport() {
         { header: 'رقم البيع', key: 'sale_number' },
         { header: 'العميل', key: 'customer' },
         { header: 'السيارة', key: 'car' },
+        { header: 'رقم الهيكل', key: 'chassis_number' },
         { header: 'سعر البيع', key: 'sale_price' },
         { header: 'العمولة', key: 'commission' },
         { header: 'المصاريف', key: 'expenses' },
@@ -125,6 +128,7 @@ export function SalesReport() {
         sale_number: sale.sale_number,
         customer: sale.customer?.name || '-',
         car: sale.car?.name || '-',
+        chassis_number: sale.car?.chassis_number || '-',
         sale_price: Number(sale.sale_price),
         commission: Number(sale.commission || 0),
         expenses: Number(sale.other_expenses || 0),
@@ -273,6 +277,7 @@ export function SalesReport() {
                   <TableHead className="text-right">رقم البيع</TableHead>
                   <TableHead className="text-right">العميل</TableHead>
                   <TableHead className="text-right">السيارة</TableHead>
+                  <TableHead className="text-right">رقم الهيكل</TableHead>
                   <TableHead className="text-right">سعر البيع</TableHead>
                   <TableHead className="text-right">العمولة</TableHead>
                   <TableHead className="text-right">المصاريف</TableHead>
@@ -286,6 +291,7 @@ export function SalesReport() {
                     <TableCell className="font-medium">{sale.sale_number}</TableCell>
                     <TableCell>{sale.customer?.name || '-'}</TableCell>
                     <TableCell>{sale.car?.name || '-'}</TableCell>
+                    <TableCell className="font-mono text-sm">{sale.car?.chassis_number || '-'}</TableCell>
                     <TableCell>{formatCurrency(Number(sale.sale_price))}</TableCell>
                     <TableCell>{formatCurrency(Number(sale.commission || 0))}</TableCell>
                     <TableCell>{formatCurrency(Number(sale.other_expenses || 0))}</TableCell>

@@ -9,6 +9,7 @@ type SupplierUpdate = Database['public']['Tables']['suppliers']['Update'];
 type CarInsert = Database['public']['Tables']['cars']['Insert'];
 type CarUpdate = Database['public']['Tables']['cars']['Update'];
 type SaleInsert = Database['public']['Tables']['sales']['Insert'];
+type SaleUpdate = Database['public']['Tables']['sales']['Update'];
 
 // Customers hooks
 export function useCustomers() {
@@ -152,6 +153,33 @@ export function useAddSale() {
   
   return useMutation({
     mutationFn: (sale: SaleInsert) => db.addSale(sale),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+    },
+  });
+}
+
+export function useUpdateSale() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, sale }: { id: string; sale: SaleUpdate }) => 
+      db.updateSale(id, sale),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+    },
+  });
+}
+
+export function useDeleteSale() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ saleId, carId }: { saleId: string; carId: string }) => 
+      db.deleteSale(saleId, carId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales'] });
       queryClient.invalidateQueries({ queryKey: ['cars'] });
