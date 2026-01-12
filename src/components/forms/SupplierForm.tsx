@@ -32,6 +32,24 @@ export function SupplierForm({ setActivePage }: SupplierFormProps) {
       return;
     }
 
+    // Validate phone length (5-30 characters)
+    if (formData.phone.length < 5 || formData.phone.length > 30) {
+      toast.error('رقم الهاتف يجب أن يكون بين 5 و 30 حرفاً');
+      return;
+    }
+
+    // Validate name length (1-200 characters)
+    if (formData.name.length < 1 || formData.name.length > 200) {
+      toast.error('اسم المورد يجب أن يكون بين 1 و 200 حرف');
+      return;
+    }
+
+    // Validate notes length (max 1000 characters)
+    if (formData.notes && formData.notes.length > 1000) {
+      toast.error('الملاحظات يجب أن تكون أقل من 1000 حرف');
+      return;
+    }
+
     try {
       await addSupplier.mutateAsync(formData);
       toast.success('تم إضافة المورد بنجاح');
@@ -40,10 +58,16 @@ export function SupplierForm({ setActivePage }: SupplierFormProps) {
       console.error('Error adding supplier:', error);
       if (error?.code === '42501' || error?.message?.includes('row-level security')) {
         toast.error('ليس لديك صلاحية لإضافة مورد');
-      } else if (error?.code === '23514' || error?.message?.includes('check constraint')) {
-        toast.error('البيانات المدخلة غير صالحة - تأكد من صحة المعلومات');
+      } else if (error?.code === '23514') {
+        if (error?.message?.includes('phone')) {
+          toast.error('رقم الهاتف يجب أن يكون بين 5 و 30 حرفاً');
+        } else if (error?.message?.includes('name')) {
+          toast.error('اسم المورد يجب أن يكون بين 1 و 200 حرف');
+        } else {
+          toast.error('البيانات المدخلة غير صالحة - تأكد من صحة المعلومات');
+        }
       } else {
-        toast.error('حدث خطأ أثناء إضافة المورد: ' + (error?.message || 'خطأ غير معروف'));
+        toast.error('حدث خطأ أثناء إضافة المورد');
       }
     }
   };
@@ -101,15 +125,20 @@ export function SupplierForm({ setActivePage }: SupplierFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">رقم الهاتف *</Label>
+            <Label htmlFor="phone">رقم الهاتف * (5-30 حرفاً)</Label>
             <Input
               id="phone"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="أدخل رقم الهاتف"
+              placeholder="أدخل رقم الهاتف (مثال: 05xxxxxxxx)"
               className="h-12"
               dir="ltr"
+              minLength={5}
+              maxLength={30}
             />
+            {formData.phone && formData.phone.length < 5 && (
+              <p className="text-xs text-destructive">رقم الهاتف قصير جداً (الحد الأدنى 5 أحرف)</p>
+            )}
           </div>
 
           <div className="space-y-2">
