@@ -30,6 +30,18 @@ export function CustomerForm({ setActivePage }: CustomerFormProps) {
       return;
     }
 
+    // Validate phone length (5-30 characters)
+    if (formData.phone.length < 5 || formData.phone.length > 30) {
+      toast.error('رقم الهاتف يجب أن يكون بين 5 و 30 حرفاً');
+      return;
+    }
+
+    // Validate name length (1-200 characters)
+    if (formData.name.length < 1 || formData.name.length > 200) {
+      toast.error('اسم العميل يجب أن يكون بين 1 و 200 حرف');
+      return;
+    }
+
     try {
       await addCustomer.mutateAsync(formData);
       toast.success('تم إضافة العميل بنجاح');
@@ -38,10 +50,16 @@ export function CustomerForm({ setActivePage }: CustomerFormProps) {
       console.error('Error adding customer:', error);
       if (error?.code === '42501' || error?.message?.includes('row-level security')) {
         toast.error('ليس لديك صلاحية لإضافة عميل');
-      } else if (error?.code === '23514' || error?.message?.includes('check constraint')) {
-        toast.error('البيانات المدخلة غير صالحة - تأكد من صحة المعلومات');
+      } else if (error?.code === '23514') {
+        if (error?.message?.includes('phone')) {
+          toast.error('رقم الهاتف يجب أن يكون بين 5 و 30 حرفاً');
+        } else if (error?.message?.includes('name')) {
+          toast.error('اسم العميل يجب أن يكون بين 1 و 200 حرف');
+        } else {
+          toast.error('البيانات المدخلة غير صالحة - تأكد من صحة المعلومات');
+        }
       } else {
-        toast.error('حدث خطأ أثناء إضافة العميل: ' + (error?.message || 'خطأ غير معروف'));
+        toast.error('حدث خطأ أثناء إضافة العميل');
       }
     }
   };
@@ -99,15 +117,20 @@ export function CustomerForm({ setActivePage }: CustomerFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">رقم الهاتف *</Label>
+            <Label htmlFor="phone">رقم الهاتف * (5-30 حرفاً)</Label>
             <Input
               id="phone"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="أدخل رقم الهاتف"
+              placeholder="أدخل رقم الهاتف (مثال: 05xxxxxxxx)"
               className="h-12"
               dir="ltr"
+              minLength={5}
+              maxLength={30}
             />
+            {formData.phone && formData.phone.length < 5 && (
+              <p className="text-xs text-destructive">رقم الهاتف قصير جداً (الحد الأدنى 5 أحرف)</p>
+            )}
           </div>
 
           <div className="space-y-2">
