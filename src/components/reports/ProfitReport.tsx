@@ -1,13 +1,16 @@
 import { useState, useMemo } from 'react';
-import { TrendingUp, DollarSign, ShoppingCart } from 'lucide-react';
+import { TrendingUp, DollarSign, ShoppingCart, FileDown } from 'lucide-react';
 import { useSales } from '@/hooks/useDatabase';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { usePdfExport } from '@/hooks/usePdfExport';
 
 export function ProfitReport() {
   const { data: sales = [], isLoading } = useSales();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const { exportToPdf } = usePdfExport();
 
   const filteredSales = useMemo(() => {
     return sales.filter(sale => {
@@ -25,6 +28,36 @@ export function ProfitReport() {
   const formatCurrency = (value: number) => new Intl.NumberFormat('ar-SA').format(value);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ar-SA');
 
+  const handleExportPdf = () => {
+    exportToPdf({
+      title: 'تقرير الأرباح',
+      subtitle: 'تفاصيل الأرباح والمصاريف',
+      columns: [
+        { header: 'التاريخ', key: 'date' },
+        { header: 'السيارة', key: 'car' },
+        { header: 'سعر البيع', key: 'sale_price' },
+        { header: 'العمولة', key: 'commission' },
+        { header: 'المصاريف', key: 'expenses' },
+        { header: 'الربح', key: 'profit' },
+      ],
+      data: filteredSales.map(sale => ({
+        date: formatDate(sale.sale_date),
+        car: sale.car?.name || '-',
+        sale_price: `${formatCurrency(Number(sale.sale_price))} ريال`,
+        commission: `${formatCurrency(Number(sale.commission || 0))} ريال`,
+        expenses: `${formatCurrency(Number(sale.other_expenses || 0))} ريال`,
+        profit: `${formatCurrency(Number(sale.profit))} ريال`,
+      })),
+      summaryCards: [
+        { label: 'صافي الأرباح', value: `${formatCurrency(totalProfit)} ريال` },
+        { label: 'إجمالي المبيعات', value: `${formatCurrency(totalSales)} ريال` },
+        { label: 'إجمالي العمولات', value: `${formatCurrency(totalCommissions)} ريال` },
+        { label: 'المصاريف الأخرى', value: `${formatCurrency(totalExpenses)} ريال` },
+      ],
+      fileName: `تقرير_الأرباح_${new Date().toLocaleDateString('ar-SA')}`,
+    });
+  };
+
   if (isLoading) return <div className="flex justify-center p-12"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
@@ -34,12 +67,18 @@ export function ProfitReport() {
           <h1 className="text-3xl font-bold text-foreground">تقرير الأرباح</h1>
           <p className="text-muted-foreground">تفاصيل الأرباح والمصاريف</p>
         </div>
-        <DateRangeFilter
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-        />
+        <div className="flex items-center gap-4">
+          <DateRangeFilter
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+          />
+          <Button onClick={handleExportPdf} className="gap-2">
+            <FileDown className="w-4 h-4" />
+            تصدير PDF
+          </Button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
