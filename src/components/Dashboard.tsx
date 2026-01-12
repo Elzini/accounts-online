@@ -13,6 +13,8 @@ interface DashboardProps {
     todaySales: number;
     totalProfit: number;
     monthSales: number;
+    totalPurchases: number;
+    monthSalesAmount: number;
   };
   setActivePage: (page: ActivePage) => void;
 }
@@ -58,7 +60,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           title="السيارات المتاحة"
           value={stats.availableCars}
@@ -67,11 +69,18 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           subtitle="سيارة في المخزون"
         />
         <StatCard
-          title="مبيعات اليوم"
-          value={stats.todaySales}
+          title="إجمالي المشتريات"
+          value={formatCurrency(stats.totalPurchases)}
           icon={ShoppingCart}
+          gradient="danger"
+          subtitle="ريال سعودي"
+        />
+        <StatCard
+          title="مبيعات الشهر"
+          value={formatCurrency(stats.monthSalesAmount)}
+          icon={TrendingUp}
           gradient="success"
-          subtitle="عملية بيع"
+          subtitle="ريال سعودي"
         />
         <StatCard
           title="إجمالي الأرباح"
@@ -81,10 +90,17 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           subtitle="ريال سعودي"
         />
         <StatCard
-          title="مبيعات الشهر"
+          title="مبيعات اليوم"
+          value={stats.todaySales}
+          icon={ShoppingCart}
+          gradient="primary"
+          subtitle="عملية بيع"
+        />
+        <StatCard
+          title="عدد مبيعات الشهر"
           value={stats.monthSales}
           icon={TrendingUp}
-          gradient="danger"
+          gradient="success"
           subtitle="عملية بيع"
         />
       </div>
