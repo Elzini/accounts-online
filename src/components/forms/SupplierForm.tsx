@@ -82,12 +82,12 @@ export function SupplierForm({ setActivePage }: SupplierFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="registration_number">رقم السجل</Label>
+              <Label htmlFor="registration_number">الرقم الضريبي</Label>
               <Input
                 id="registration_number"
                 value={formData.registration_number}
                 onChange={(e) => setFormData({ ...formData, registration_number: e.target.value })}
-                placeholder="أدخل رقم السجل"
+                placeholder="أدخل الرقم الضريبي"
                 className="h-12"
               />
             </div>

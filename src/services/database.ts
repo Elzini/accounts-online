@@ -208,17 +208,34 @@ export async function fetchStats() {
   
   const totalProfit = profitData?.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0) || 0;
 
-  // Month sales
+  // Month sales count
   const { count: monthSales } = await supabase
     .from('sales')
     .select('*', { count: 'exact', head: true })
     .gte('sale_date', startOfMonth);
+
+  // Total purchases (sum of all car purchase prices)
+  const { data: purchasesData } = await supabase
+    .from('cars')
+    .select('purchase_price');
+  
+  const totalPurchases = purchasesData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
+
+  // Month sales amount (sum of sale prices this month)
+  const { data: monthSalesData } = await supabase
+    .from('sales')
+    .select('sale_price')
+    .gte('sale_date', startOfMonth);
+  
+  const monthSalesAmount = monthSalesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
 
   return {
     availableCars: availableCars || 0,
     todaySales: todaySales || 0,
     totalProfit,
     monthSales: monthSales || 0,
+    totalPurchases,
+    monthSalesAmount,
   };
 }
 

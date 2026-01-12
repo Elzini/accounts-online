@@ -26,7 +26,7 @@ const Index = () => {
   const { data: stats } = useStats();
   const { signOut, user } = useAuth();
 
-  const defaultStats = { availableCars: 0, todaySales: 0, totalProfit: 0, monthSales: 0 };
+  const defaultStats = { availableCars: 0, todaySales: 0, totalProfit: 0, monthSales: 0, totalPurchases: 0, monthSalesAmount: 0 };
 
   const renderContent = () => {
     switch (activePage) {
