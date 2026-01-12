@@ -1,17 +1,17 @@
 import { useState, useMemo } from 'react';
-import { Package, Car, CheckCircle, FileDown } from 'lucide-react';
+import { Package, Car, CheckCircle, Printer } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCars } from '@/hooks/useDatabase';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
-import { usePdfExport } from '@/hooks/usePdfExport';
+import { usePrintReport } from '@/hooks/usePrintReport';
 
 export function InventoryReport() {
   const { data: cars = [], isLoading } = useCars();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const { exportToPdf } = usePdfExport();
+  const { printReport } = usePrintReport();
 
   const filteredCars = useMemo(() => {
     return cars.filter(car => {
@@ -29,8 +29,8 @@ export function InventoryReport() {
   const formatCurrency = (value: number) => new Intl.NumberFormat('ar-SA').format(value);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ar-SA');
 
-  const handleExportPdf = () => {
-    exportToPdf({
+  const handlePrint = () => {
+    printReport({
       title: 'تقرير المخزون',
       subtitle: 'حالة السيارات في المخزون',
       columns: [
@@ -55,7 +55,6 @@ export function InventoryReport() {
         { label: 'سيارات مباعة', value: String(soldCars.length) },
         { label: 'قيمة المخزون', value: `${formatCurrency(totalValue)} ريال` },
       ],
-      fileName: `تقرير_المخزون_${new Date().toLocaleDateString('ar-SA')}`,
     });
   };
 
@@ -75,9 +74,9 @@ export function InventoryReport() {
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
           />
-          <Button onClick={handleExportPdf} className="gap-2">
-            <FileDown className="w-4 h-4" />
-            تصدير PDF
+          <Button onClick={handlePrint} className="gap-2">
+            <Printer className="w-4 h-4" />
+            طباعة التقرير
           </Button>
         </div>
       </div>
