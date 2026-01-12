@@ -40,6 +40,7 @@ export type Database = {
       }
       cars: {
         Row: {
+          batch_id: string | null
           chassis_number: string
           color: string | null
           created_at: string
@@ -54,6 +55,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          batch_id?: string | null
           chassis_number: string
           color?: string | null
           created_at?: string
@@ -68,6 +70,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          batch_id?: string | null
           chassis_number?: string
           color?: string | null
           created_at?: string
@@ -82,6 +85,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "cars_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cars_supplier_id_fkey"
             columns: ["supplier_id"]
@@ -147,6 +157,83 @@ export type Database = {
           username?: string
         }
         Relationships: []
+      }
+      purchase_batches: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          purchase_date: string
+          supplier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          purchase_date?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          purchase_date?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_batches_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_items: {
+        Row: {
+          car_id: string
+          created_at: string
+          id: string
+          profit: number
+          sale_id: string
+          sale_price: number
+        }
+        Insert: {
+          car_id: string
+          created_at?: string
+          id?: string
+          profit: number
+          sale_id: string
+          sale_price: number
+        }
+        Update: {
+          car_id?: string
+          created_at?: string
+          id?: string
+          profit?: number
+          sale_id?: string
+          sale_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sales: {
         Row: {
