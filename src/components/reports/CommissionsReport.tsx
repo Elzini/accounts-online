@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DollarSign, Users, TrendingUp, Calendar, Printer, FileSpreadsheet } from 'lucide-react';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 
@@ -12,8 +13,21 @@ export function CommissionsReport() {
   const { data: sales, isLoading } = useSales();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [selectedSeller, setSelectedSeller] = useState<string>('all');
   const { printReport } = usePrintReport();
   const { exportToExcel } = useExcelExport();
+
+  // Get unique sellers
+  const sellers = useMemo(() => {
+    if (!sales) return [];
+    const sellerNames = new Set<string>();
+    sales.forEach(sale => {
+      if (sale.seller_name) {
+        sellerNames.add(sale.seller_name);
+      }
+    });
+    return Array.from(sellerNames).sort();
+  }, [sales]);
 
   const filteredSales = useMemo(() => {
     if (!sales) return [];
@@ -22,9 +36,10 @@ export function CommissionsReport() {
       const saleDate = new Date(sale.sale_date);
       if (startDate && saleDate < new Date(startDate)) return false;
       if (endDate && saleDate > new Date(endDate + 'T23:59:59')) return false;
+      if (selectedSeller !== 'all' && sale.seller_name !== selectedSeller) return false;
       return true;
     });
-  }, [sales, startDate, endDate]);
+  }, [sales, startDate, endDate, selectedSeller]);
 
   // Group commissions by seller
   const sellerStats = useMemo(() => {
@@ -90,29 +105,49 @@ export function CommissionsReport() {
     return new Date(dateString).toLocaleDateString('ar-SA');
   };
 
+  const reportTitle = selectedSeller === 'all' 
+    ? 'تقرير العمولات - إجمالي' 
+    : `تقرير عمولات البائع: ${selectedSeller}`;
+
   const handlePrint = () => {
     printReport({
-      title: 'تقرير العمولات',
+      title: reportTitle,
       subtitle: 'تفاصيل عمولات البائعين',
-      columns: [
+      columns: selectedSeller === 'all' ? [
         { header: 'البائع', key: 'seller' },
         { header: 'عدد المبيعات', key: 'sales_count' },
         { header: 'إجمالي المبيعات', key: 'total_sales' },
         { header: 'إجمالي العمولات', key: 'total_commissions' },
         { header: 'متوسط العمولة', key: 'avg_commission' },
         { header: 'إجمالي الأرباح', key: 'total_profit' },
+      ] : [
+        { header: 'رقم البيع', key: 'sale_number' },
+        { header: 'العميل', key: 'customer' },
+        { header: 'السيارة', key: 'car' },
+        { header: 'سعر البيع', key: 'sale_price' },
+        { header: 'العمولة', key: 'commission' },
+        { header: 'التاريخ', key: 'date' },
       ],
-      data: sellerStats.map(seller => ({
-        seller: seller.name,
-        sales_count: seller.salesCount,
-        total_sales: `${formatCurrencySimple(seller.totalSalesAmount)} ريال`,
-        total_commissions: `${formatCurrencySimple(seller.totalCommissions)} ريال`,
-        avg_commission: `${formatCurrencySimple(seller.salesCount > 0 ? seller.totalCommissions / seller.salesCount : 0)} ريال`,
-        total_profit: `${formatCurrencySimple(seller.totalProfit)} ريال`,
-      })),
+      data: selectedSeller === 'all' 
+        ? sellerStats.map(seller => ({
+            seller: seller.name,
+            sales_count: seller.salesCount,
+            total_sales: `${formatCurrencySimple(seller.totalSalesAmount)} ريال`,
+            total_commissions: `${formatCurrencySimple(seller.totalCommissions)} ريال`,
+            avg_commission: `${formatCurrencySimple(seller.salesCount > 0 ? seller.totalCommissions / seller.salesCount : 0)} ريال`,
+            total_profit: `${formatCurrencySimple(seller.totalProfit)} ريال`,
+          }))
+        : filteredSales.map(sale => ({
+            sale_number: sale.sale_number,
+            customer: sale.customer?.name || '-',
+            car: sale.car?.name || '-',
+            sale_price: `${formatCurrencySimple(Number(sale.sale_price))} ريال`,
+            commission: `${formatCurrencySimple(Number(sale.commission || 0))} ريال`,
+            date: formatDate(sale.sale_date),
+          })),
       summaryCards: [
         { label: 'إجمالي العمولات', value: `${formatCurrencySimple(totalCommissions)} ريال` },
-        { label: 'عدد البائعين', value: String(totalSellers) },
+        { label: selectedSeller === 'all' ? 'عدد البائعين' : 'البائع', value: selectedSeller === 'all' ? String(totalSellers) : selectedSeller },
         { label: 'عدد المبيعات', value: String(totalSalesCount) },
         { label: 'متوسط العمولة', value: `${formatCurrencySimple(averageCommission)} ريال` },
       ],
@@ -121,30 +156,46 @@ export function CommissionsReport() {
 
   const handleExportExcel = () => {
     exportToExcel({
-      title: 'تقرير العمولات',
-      columns: [
+      title: reportTitle,
+      columns: selectedSeller === 'all' ? [
         { header: 'البائع', key: 'seller' },
         { header: 'عدد المبيعات', key: 'sales_count' },
         { header: 'إجمالي المبيعات', key: 'total_sales' },
         { header: 'إجمالي العمولات', key: 'total_commissions' },
         { header: 'متوسط العمولة', key: 'avg_commission' },
         { header: 'إجمالي الأرباح', key: 'total_profit' },
+      ] : [
+        { header: 'رقم البيع', key: 'sale_number' },
+        { header: 'العميل', key: 'customer' },
+        { header: 'السيارة', key: 'car' },
+        { header: 'سعر البيع', key: 'sale_price' },
+        { header: 'العمولة', key: 'commission' },
+        { header: 'التاريخ', key: 'date' },
       ],
-      data: sellerStats.map(seller => ({
-        seller: seller.name,
-        sales_count: seller.salesCount,
-        total_sales: seller.totalSalesAmount,
-        total_commissions: seller.totalCommissions,
-        avg_commission: seller.salesCount > 0 ? seller.totalCommissions / seller.salesCount : 0,
-        total_profit: seller.totalProfit,
-      })),
+      data: selectedSeller === 'all'
+        ? sellerStats.map(seller => ({
+            seller: seller.name,
+            sales_count: seller.salesCount,
+            total_sales: seller.totalSalesAmount,
+            total_commissions: seller.totalCommissions,
+            avg_commission: seller.salesCount > 0 ? seller.totalCommissions / seller.salesCount : 0,
+            total_profit: seller.totalProfit,
+          }))
+        : filteredSales.map(sale => ({
+            sale_number: sale.sale_number,
+            customer: sale.customer?.name || '-',
+            car: sale.car?.name || '-',
+            sale_price: Number(sale.sale_price),
+            commission: Number(sale.commission || 0),
+            date: formatDate(sale.sale_date),
+          })),
       summaryData: [
         { label: 'إجمالي العمولات', value: totalCommissions },
-        { label: 'عدد البائعين', value: totalSellers },
+        { label: selectedSeller === 'all' ? 'عدد البائعين' : 'البائع', value: selectedSeller === 'all' ? totalSellers : selectedSeller },
         { label: 'عدد المبيعات', value: totalSalesCount },
         { label: 'متوسط العمولة', value: averageCommission },
       ],
-      fileName: `تقرير_العمولات_${new Date().toLocaleDateString('ar-SA')}`,
+      fileName: `تقرير_العمولات_${selectedSeller === 'all' ? 'إجمالي' : selectedSeller}_${new Date().toLocaleDateString('ar-SA')}`,
     });
   };
 
@@ -155,7 +206,18 @@ export function CommissionsReport() {
           <h2 className="text-2xl font-bold text-foreground">تقرير العمولات</h2>
           <p className="text-muted-foreground">تفاصيل عمولات البائعين</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <Select value={selectedSeller} onValueChange={setSelectedSeller}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="اختر البائع" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">جميع البائعين (إجمالي)</SelectItem>
+              {sellers.map(seller => (
+                <SelectItem key={seller} value={seller}>{seller}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <DateRangeFilter
             startDate={startDate}
             endDate={endDate}
@@ -196,8 +258,8 @@ export function CommissionsReport() {
                 <Users className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">عدد البائعين</p>
-                <p className="text-2xl font-bold text-foreground">{totalSellers}</p>
+                <p className="text-sm text-muted-foreground">{selectedSeller === 'all' ? 'عدد البائعين' : 'البائع'}</p>
+                <p className="text-2xl font-bold text-foreground">{selectedSeller === 'all' ? totalSellers : selectedSeller}</p>
               </div>
             </div>
           </CardContent>
@@ -232,49 +294,53 @@ export function CommissionsReport() {
         </Card>
       </div>
 
-      {/* Sellers Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>ملخص عمولات البائعين</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {sellerStats.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              لا توجد مبيعات مسجلة في هذه الفترة
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right">البائع</TableHead>
-                  <TableHead className="text-right">عدد المبيعات</TableHead>
-                  <TableHead className="text-right">إجمالي المبيعات</TableHead>
-                  <TableHead className="text-right">إجمالي العمولات</TableHead>
-                  <TableHead className="text-right">متوسط العمولة</TableHead>
-                  <TableHead className="text-right">إجمالي الأرباح</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sellerStats.map((seller, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{seller.name}</TableCell>
-                    <TableCell>{seller.salesCount}</TableCell>
-                    <TableCell>{formatCurrency(seller.totalSalesAmount)}</TableCell>
-                    <TableCell className="text-yellow-600 font-medium">{formatCurrency(seller.totalCommissions)}</TableCell>
-                    <TableCell>{formatCurrency(seller.salesCount > 0 ? seller.totalCommissions / seller.salesCount : 0)}</TableCell>
-                    <TableCell className="text-green-600 font-medium">{formatCurrency(seller.totalProfit)}</TableCell>
+      {/* Sellers Summary - Show only when all sellers selected */}
+      {selectedSeller === 'all' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>ملخص عمولات البائعين</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {sellerStats.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                لا توجد مبيعات مسجلة في هذه الفترة
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right">البائع</TableHead>
+                    <TableHead className="text-right">عدد المبيعات</TableHead>
+                    <TableHead className="text-right">إجمالي المبيعات</TableHead>
+                    <TableHead className="text-right">إجمالي العمولات</TableHead>
+                    <TableHead className="text-right">متوسط العمولة</TableHead>
+                    <TableHead className="text-right">إجمالي الأرباح</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {sellerStats.map((seller, index) => (
+                    <TableRow key={index} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedSeller(seller.name)}>
+                      <TableCell className="font-medium">{seller.name}</TableCell>
+                      <TableCell>{seller.salesCount}</TableCell>
+                      <TableCell>{formatCurrency(seller.totalSalesAmount)}</TableCell>
+                      <TableCell className="text-yellow-600 font-medium">{formatCurrency(seller.totalCommissions)}</TableCell>
+                      <TableCell>{formatCurrency(seller.salesCount > 0 ? seller.totalCommissions / seller.salesCount : 0)}</TableCell>
+                      <TableCell className="text-green-600 font-medium">{formatCurrency(seller.totalProfit)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Detailed Sales with Commissions */}
       <Card>
         <CardHeader>
-          <CardTitle>تفاصيل المبيعات والعمولات</CardTitle>
+          <CardTitle>
+            {selectedSeller === 'all' ? 'تفاصيل جميع المبيعات والعمولات' : `تفاصيل مبيعات ${selectedSeller}`}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {filteredSales.length === 0 ? (
@@ -286,7 +352,7 @@ export function CommissionsReport() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-right">رقم البيع</TableHead>
-                  <TableHead className="text-right">البائع</TableHead>
+                  {selectedSeller === 'all' && <TableHead className="text-right">البائع</TableHead>}
                   <TableHead className="text-right">العميل</TableHead>
                   <TableHead className="text-right">السيارة</TableHead>
                   <TableHead className="text-right">سعر البيع</TableHead>
@@ -298,7 +364,7 @@ export function CommissionsReport() {
                 {filteredSales.map((sale) => (
                   <TableRow key={sale.id}>
                     <TableCell className="font-medium">{sale.sale_number}</TableCell>
-                    <TableCell>{sale.seller_name || 'غير محدد'}</TableCell>
+                    {selectedSeller === 'all' && <TableCell>{sale.seller_name || 'غير محدد'}</TableCell>}
                     <TableCell>{sale.customer?.name || '-'}</TableCell>
                     <TableCell>{sale.car?.name || '-'}</TableCell>
                     <TableCell>{formatCurrency(Number(sale.sale_price))}</TableCell>
