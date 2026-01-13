@@ -11,6 +11,17 @@ export interface AppSettings {
   suppliers_title: string;
   reports_title: string;
   welcome_message: string;
+  // Login page settings
+  login_title: string;
+  login_subtitle: string;
+  login_bg_color: string;
+  login_card_color: string;
+  login_header_gradient_start: string;
+  login_header_gradient_end: string;
+  login_button_text: string;
+  signup_button_text: string;
+  login_switch_text: string;
+  signup_switch_text: string;
 }
 
 export const defaultSettings: AppSettings = {
@@ -24,6 +35,17 @@ export const defaultSettings: AppSettings = {
   suppliers_title: 'الموردين',
   reports_title: 'التقارير',
   welcome_message: 'مرحباً بك في نظام إدارة معرض أشبال النمر للسيارات',
+  // Login page defaults
+  login_title: 'أشبال النمر',
+  login_subtitle: 'نظام إدارة معرض السيارات',
+  login_bg_color: 'hsl(222.2, 84%, 4.9%)',
+  login_card_color: 'hsl(222.2, 84%, 6%)',
+  login_header_gradient_start: 'hsl(221.2, 83.2%, 53.3%)',
+  login_header_gradient_end: 'hsl(250, 95%, 65%)',
+  login_button_text: 'تسجيل الدخول',
+  signup_button_text: 'إنشاء حساب',
+  login_switch_text: 'ليس لديك حساب؟ إنشاء حساب جديد',
+  signup_switch_text: 'لديك حساب؟ تسجيل الدخول',
 };
 
 export async function fetchAppSettings(): Promise<AppSettings> {
