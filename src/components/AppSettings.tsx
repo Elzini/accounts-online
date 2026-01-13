@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, FileText, LayoutDashboard, Tag } from 'lucide-react';
+import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,6 +46,18 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
   const [suppliersTitle, setSuppliersTitle] = useState('');
   const [reportsTitle, setReportsTitle] = useState('');
   
+  // Login page settings
+  const [loginTitle, setLoginTitle] = useState('');
+  const [loginSubtitle, setLoginSubtitle] = useState('');
+  const [loginBgColor, setLoginBgColor] = useState('');
+  const [loginCardColor, setLoginCardColor] = useState('');
+  const [loginGradientStart, setLoginGradientStart] = useState('');
+  const [loginGradientEnd, setLoginGradientEnd] = useState('');
+  const [loginButtonText, setLoginButtonText] = useState('');
+  const [signupButtonText, setSignupButtonText] = useState('');
+  const [loginSwitchText, setLoginSwitchText] = useState('');
+  const [signupSwitchText, setSignupSwitchText] = useState('');
+  
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -65,6 +77,17 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
       setCustomersTitle(settings.customers_title || defaultSettings.customers_title);
       setSuppliersTitle(settings.suppliers_title || defaultSettings.suppliers_title);
       setReportsTitle(settings.reports_title || defaultSettings.reports_title);
+      // Login settings
+      setLoginTitle(settings.login_title || defaultSettings.login_title);
+      setLoginSubtitle(settings.login_subtitle || defaultSettings.login_subtitle);
+      setLoginBgColor(settings.login_bg_color || defaultSettings.login_bg_color);
+      setLoginCardColor(settings.login_card_color || defaultSettings.login_card_color);
+      setLoginGradientStart(settings.login_header_gradient_start || defaultSettings.login_header_gradient_start);
+      setLoginGradientEnd(settings.login_header_gradient_end || defaultSettings.login_header_gradient_end);
+      setLoginButtonText(settings.login_button_text || defaultSettings.login_button_text);
+      setSignupButtonText(settings.signup_button_text || defaultSettings.signup_button_text);
+      setLoginSwitchText(settings.login_switch_text || defaultSettings.login_switch_text);
+      setSignupSwitchText(settings.signup_switch_text || defaultSettings.signup_switch_text);
     }
   }, [settings]);
 
@@ -110,6 +133,31 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
       }
       
       toast.success('تم حفظ تسميات الأقسام بنجاح');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء حفظ الإعدادات');
+    }
+  };
+
+  const handleSaveLoginSettings = async () => {
+    try {
+      const updates = [
+        { key: 'login_title', value: loginTitle },
+        { key: 'login_subtitle', value: loginSubtitle },
+        { key: 'login_bg_color', value: loginBgColor },
+        { key: 'login_card_color', value: loginCardColor },
+        { key: 'login_header_gradient_start', value: loginGradientStart },
+        { key: 'login_header_gradient_end', value: loginGradientEnd },
+        { key: 'login_button_text', value: loginButtonText },
+        { key: 'signup_button_text', value: signupButtonText },
+        { key: 'login_switch_text', value: loginSwitchText },
+        { key: 'signup_switch_text', value: signupSwitchText },
+      ];
+      
+      for (const update of updates) {
+        await updateSetting.mutateAsync(update);
+      }
+      
+      toast.success('تم حفظ إعدادات شاشة الدخول بنجاح');
     } catch (error) {
       toast.error('حدث خطأ أثناء حفظ الإعدادات');
     }
@@ -164,7 +212,7 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
       </div>
 
       <Tabs defaultValue="branding" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
           <TabsTrigger value="branding" className="flex items-center gap-2">
             <Palette className="w-4 h-4" />
             <span className="hidden sm:inline">الهوية</span>
@@ -172,6 +220,10 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
           <TabsTrigger value="labels" className="flex items-center gap-2">
             <Tag className="w-4 h-4" />
             <span className="hidden sm:inline">التسميات</span>
+          </TabsTrigger>
+          <TabsTrigger value="login" className="flex items-center gap-2">
+            <LogIn className="w-4 h-4" />
+            <span className="hidden sm:inline">شاشة الدخول</span>
           </TabsTrigger>
           <TabsTrigger value="danger" className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
@@ -376,6 +428,199 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Login Page Tab */}
+        <TabsContent value="login" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Login Text Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LogIn className="w-5 h-5" />
+                  نصوص شاشة الدخول
+                </CardTitle>
+                <CardDescription>
+                  تخصيص العناوين والنصوص في شاشة تسجيل الدخول
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-title">عنوان شاشة الدخول</Label>
+                  <Input
+                    id="login-title"
+                    value={loginTitle}
+                    onChange={(e) => setLoginTitle(e.target.value)}
+                    placeholder="أشبال النمر"
+                    disabled={!isAdmin}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="login-subtitle">الوصف الفرعي</Label>
+                  <Input
+                    id="login-subtitle"
+                    value={loginSubtitle}
+                    onChange={(e) => setLoginSubtitle(e.target.value)}
+                    placeholder="نظام إدارة معرض السيارات"
+                    disabled={!isAdmin}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="login-button-text">نص زر تسجيل الدخول</Label>
+                  <Input
+                    id="login-button-text"
+                    value={loginButtonText}
+                    onChange={(e) => setLoginButtonText(e.target.value)}
+                    placeholder="تسجيل الدخول"
+                    disabled={!isAdmin}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-button-text">نص زر إنشاء حساب</Label>
+                  <Input
+                    id="signup-button-text"
+                    value={signupButtonText}
+                    onChange={(e) => setSignupButtonText(e.target.value)}
+                    placeholder="إنشاء حساب"
+                    disabled={!isAdmin}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="login-switch-text">نص التبديل لإنشاء حساب</Label>
+                  <Input
+                    id="login-switch-text"
+                    value={loginSwitchText}
+                    onChange={(e) => setLoginSwitchText(e.target.value)}
+                    placeholder="ليس لديك حساب؟ إنشاء حساب جديد"
+                    disabled={!isAdmin}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-switch-text">نص التبديل لتسجيل الدخول</Label>
+                  <Input
+                    id="signup-switch-text"
+                    value={signupSwitchText}
+                    onChange={(e) => setSignupSwitchText(e.target.value)}
+                    placeholder="لديك حساب؟ تسجيل الدخول"
+                    disabled={!isAdmin}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Login Colors Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="w-5 h-5" />
+                  ألوان شاشة الدخول
+                </CardTitle>
+                <CardDescription>
+                  تخصيص ألوان الخلفية والتدرجات اللونية
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-bg-color">لون خلفية الصفحة</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="login-bg-color"
+                      value={loginBgColor}
+                      onChange={(e) => setLoginBgColor(e.target.value)}
+                      placeholder="hsl(222.2, 84%, 4.9%)"
+                      disabled={!isAdmin}
+                      className="flex-1"
+                    />
+                    <div 
+                      className="w-12 h-10 rounded-md border"
+                      style={{ backgroundColor: loginBgColor }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="login-card-color">لون البطاقة</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="login-card-color"
+                      value={loginCardColor}
+                      onChange={(e) => setLoginCardColor(e.target.value)}
+                      placeholder="hsl(222.2, 84%, 6%)"
+                      disabled={!isAdmin}
+                      className="flex-1"
+                    />
+                    <div 
+                      className="w-12 h-10 rounded-md border"
+                      style={{ backgroundColor: loginCardColor }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="login-gradient-start">لون بداية التدرج</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="login-gradient-start"
+                      value={loginGradientStart}
+                      onChange={(e) => setLoginGradientStart(e.target.value)}
+                      placeholder="hsl(221.2, 83.2%, 53.3%)"
+                      disabled={!isAdmin}
+                      className="flex-1"
+                    />
+                    <div 
+                      className="w-12 h-10 rounded-md border"
+                      style={{ backgroundColor: loginGradientStart }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="login-gradient-end">لون نهاية التدرج</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="login-gradient-end"
+                      value={loginGradientEnd}
+                      onChange={(e) => setLoginGradientEnd(e.target.value)}
+                      placeholder="hsl(250, 95%, 65%)"
+                      disabled={!isAdmin}
+                      className="flex-1"
+                    />
+                    <div 
+                      className="w-12 h-10 rounded-md border"
+                      style={{ backgroundColor: loginGradientEnd }}
+                    />
+                  </div>
+                </div>
+
+                {/* Preview */}
+                <div className="mt-6 p-4 rounded-lg border">
+                  <Label className="mb-3 block">معاينة التدرج اللوني</Label>
+                  <div 
+                    className="h-20 rounded-lg"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${loginGradientStart}, ${loginGradientEnd})`
+                    }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {isAdmin && (
+            <Button 
+              onClick={handleSaveLoginSettings} 
+              className="w-full mt-6 gradient-primary"
+              disabled={updateSetting.isPending}
+            >
+              <Save className="w-4 h-4 ml-2" />
+              {updateSetting.isPending ? 'جاري الحفظ...' : 'حفظ إعدادات شاشة الدخول'}
+            </Button>
+          )}
         </TabsContent>
 
         {/* Danger Tab */}

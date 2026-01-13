@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAppSettings } from '@/hooks/useSettings';
+import { defaultSettings } from '@/services/settings';
 import { toast } from 'sonner';
+import logo from '@/assets/logo.png';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +18,19 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const { data: settings } = useAppSettings();
+
+  // Get settings with fallback to defaults
+  const loginTitle = settings?.login_title || defaultSettings.login_title;
+  const loginSubtitle = settings?.login_subtitle || defaultSettings.login_subtitle;
+  const loginBgColor = settings?.login_bg_color || defaultSettings.login_bg_color;
+  const loginCardColor = settings?.login_card_color || defaultSettings.login_card_color;
+  const loginGradientStart = settings?.login_header_gradient_start || defaultSettings.login_header_gradient_start;
+  const loginGradientEnd = settings?.login_header_gradient_end || defaultSettings.login_header_gradient_end;
+  const loginButtonText = settings?.login_button_text || defaultSettings.login_button_text;
+  const signupButtonText = settings?.signup_button_text || defaultSettings.signup_button_text;
+  const loginSwitchText = settings?.login_switch_text || defaultSettings.login_switch_text;
+  const signupSwitchText = settings?.signup_switch_text || defaultSettings.signup_switch_text;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,24 +75,35 @@ export default function Auth() {
     }
   };
 
+  const headerGradient = `linear-gradient(135deg, ${loginGradientStart}, ${loginGradientEnd})`;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ backgroundColor: loginBgColor }}
+    >
       <div className="w-full max-w-md">
-        <div className="bg-card rounded-2xl card-shadow overflow-hidden">
+        <div 
+          className="rounded-2xl card-shadow overflow-hidden"
+          style={{ backgroundColor: loginCardColor }}
+        >
           {/* Header */}
-          <div className="gradient-primary p-8 text-center">
-            <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-4">
-              <Car className="w-10 h-10 text-white" />
+          <div 
+            className="p-8 text-center"
+            style={{ background: headerGradient }}
+          >
+            <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-4 overflow-hidden">
+              <img src={logo} alt="Logo" className="w-16 h-16 object-contain" />
             </div>
-            <h1 className="text-2xl font-bold text-white">أشبال النمر</h1>
-            <p className="text-white/80 text-sm mt-1">نظام إدارة معرض السيارات</p>
+            <h1 className="text-2xl font-bold text-white">{loginTitle}</h1>
+            <p className="text-white/80 text-sm mt-1">{loginSubtitle}</p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
             <div className="text-center mb-6">
               <h2 className="text-xl font-bold text-foreground">
-                {isLogin ? 'تسجيل الدخول' : 'إنشاء حساب جديد'}
+                {isLogin ? loginButtonText : signupButtonText}
               </h2>
             </div>
 
@@ -133,10 +160,11 @@ export default function Auth() {
 
             <Button 
               type="submit" 
-              className="w-full h-12 gradient-primary hover:opacity-90"
+              className="w-full h-12 hover:opacity-90"
+              style={{ background: headerGradient }}
               disabled={loading}
             >
-              {loading ? 'جاري التحميل...' : (isLogin ? 'تسجيل الدخول' : 'إنشاء حساب')}
+              {loading ? 'جاري التحميل...' : (isLogin ? loginButtonText : signupButtonText)}
             </Button>
 
             <div className="text-center">
@@ -145,7 +173,7 @@ export default function Auth() {
                 onClick={() => setIsLogin(!isLogin)}
                 className="text-sm text-primary hover:underline"
               >
-                {isLogin ? 'ليس لديك حساب؟ إنشاء حساب جديد' : 'لديك حساب؟ تسجيل الدخول'}
+                {isLogin ? loginSwitchText : signupSwitchText}
               </button>
             </div>
           </form>
