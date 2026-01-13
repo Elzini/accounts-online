@@ -22,6 +22,7 @@ export interface AppSettings {
   signup_button_text: string;
   login_switch_text: string;
   signup_switch_text: string;
+  login_logo_url: string;
 }
 
 export const defaultSettings: AppSettings = {
@@ -46,7 +47,25 @@ export const defaultSettings: AppSettings = {
   signup_button_text: 'إنشاء حساب',
   login_switch_text: 'ليس لديك حساب؟ إنشاء حساب جديد',
   signup_switch_text: 'لديك حساب؟ تسجيل الدخول',
+  login_logo_url: '',
 };
+
+export async function uploadLoginLogo(file: File): Promise<string> {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `login-logo-${Date.now()}.${fileExt}`;
+  
+  const { error: uploadError } = await supabase.storage
+    .from('app-logos')
+    .upload(fileName, file, { upsert: true });
+  
+  if (uploadError) throw uploadError;
+  
+  const { data } = supabase.storage
+    .from('app-logos')
+    .getPublicUrl(fileName);
+  
+  return data.publicUrl;
+}
 
 export async function fetchAppSettings(): Promise<AppSettings> {
   const { data, error } = await supabase

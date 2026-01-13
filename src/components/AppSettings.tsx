@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn } from 'lucide-react';
+import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +21,7 @@ import { useAppSettings, useUpdateAppSetting, useResetDatabase } from '@/hooks/u
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
-import { defaultSettings } from '@/services/settings';
+import { defaultSettings, uploadLoginLogo } from '@/services/settings';
 
 interface AppSettingsProps {
   setActivePage: (page: ActivePage) => void;
@@ -57,11 +57,14 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
   const [signupButtonText, setSignupButtonText] = useState('');
   const [loginSwitchText, setLoginSwitchText] = useState('');
   const [signupSwitchText, setSignupSwitchText] = useState('');
+  const [loginLogoUrl, setLoginLogoUrl] = useState('');
+  const [loginLogoUploading, setLoginLogoUploading] = useState(false);
   
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const loginLogoInputRef = useRef<HTMLInputElement>(null);
 
   const isAdmin = permissions.admin;
 
@@ -88,6 +91,7 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
       setSignupButtonText(settings.signup_button_text || defaultSettings.signup_button_text);
       setLoginSwitchText(settings.login_switch_text || defaultSettings.login_switch_text);
       setSignupSwitchText(settings.signup_switch_text || defaultSettings.signup_switch_text);
+      setLoginLogoUrl(settings.login_logo_url || '');
     }
   }, [settings]);
 
@@ -160,6 +164,44 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
       toast.success('تم حفظ إعدادات شاشة الدخول بنجاح');
     } catch (error) {
       toast.error('حدث خطأ أثناء حفظ الإعدادات');
+    }
+  };
+
+  const handleLoginLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('حجم الصورة يجب أن يكون أقل من 2 ميجابايت');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('يرجى اختيار ملف صورة');
+      return;
+    }
+
+    setLoginLogoUploading(true);
+    try {
+      const url = await uploadLoginLogo(file);
+      setLoginLogoUrl(url);
+      await updateSetting.mutateAsync({ key: 'login_logo_url', value: url });
+      toast.success('تم رفع الشعار بنجاح');
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast.error('حدث خطأ أثناء رفع الشعار');
+    } finally {
+      setLoginLogoUploading(false);
+    }
+  };
+
+  const handleRemoveLoginLogo = async () => {
+    try {
+      setLoginLogoUrl('');
+      await updateSetting.mutateAsync({ key: 'login_logo_url', value: '' });
+      toast.success('تم إزالة الشعار');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء إزالة الشعار');
     }
   };
 
@@ -432,7 +474,79 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
 
         {/* Login Page Tab */}
         <TabsContent value="login" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {/* Login Logo Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Image className="w-5 h-5" />
+                  شعار شاشة الدخول
+                </CardTitle>
+                <CardDescription>
+                  رفع شعار مخصص لشاشة تسجيل الدخول
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col items-center gap-4">
+                  <div 
+                    className="w-32 h-32 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary transition-colors"
+                    onClick={() => isAdmin && loginLogoInputRef.current?.click()}
+                  >
+                    {loginLogoUrl ? (
+                      <img 
+                        src={loginLogoUrl} 
+                        alt="Login Logo" 
+                        className="w-full h-full object-contain p-2"
+                      />
+                    ) : (
+                      <div className="text-center p-4">
+                        <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">اضغط للرفع</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <input
+                    ref={loginLogoInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLoginLogoUpload}
+                    className="hidden"
+                    disabled={!isAdmin}
+                  />
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => loginLogoInputRef.current?.click()}
+                      disabled={!isAdmin || loginLogoUploading}
+                    >
+                      <Upload className="w-4 h-4 ml-2" />
+                      {loginLogoUploading ? 'جاري الرفع...' : 'رفع شعار'}
+                    </Button>
+                    
+                    {loginLogoUrl && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleRemoveLoginLogo}
+                        disabled={!isAdmin}
+                      >
+                        إزالة
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground text-center">
+                    الحد الأقصى 2 ميجابايت
+                    <br />
+                    PNG, JPG, WebP
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Login Text Settings */}
             <Card>
               <CardHeader>

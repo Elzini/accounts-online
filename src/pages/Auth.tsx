@@ -31,6 +31,7 @@ export default function Auth() {
   const signupButtonText = settings?.signup_button_text || defaultSettings.signup_button_text;
   const loginSwitchText = settings?.login_switch_text || defaultSettings.login_switch_text;
   const signupSwitchText = settings?.signup_switch_text || defaultSettings.signup_switch_text;
+  const loginLogoUrl = settings?.login_logo_url || '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,7 +94,11 @@ export default function Auth() {
             style={{ background: headerGradient }}
           >
             <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-4 overflow-hidden">
-              <img src={logo} alt="Logo" className="w-16 h-16 object-contain" />
+              <img 
+                src={loginLogoUrl || logo} 
+                alt="Logo" 
+                className="w-16 h-16 object-contain" 
+              />
             </div>
             <h1 className="text-2xl font-bold text-white">{loginTitle}</h1>
             <p className="text-white/80 text-sm mt-1">{loginSubtitle}</p>
