@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, Save, Truck } from 'lucide-react';
+import { ArrowRight, Save, Truck, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,12 +7,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
 import { useAddSupplier } from '@/hooks/useDatabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SupplierFormProps {
   setActivePage: (page: ActivePage) => void;
 }
 
 export function SupplierForm({ setActivePage }: SupplierFormProps) {
+  const { permissions } = useAuth();
+  const canAdd = permissions.admin || permissions.purchases;
   const [formData, setFormData] = useState({
     name: '',
     id_number: '',
@@ -71,6 +74,19 @@ export function SupplierForm({ setActivePage }: SupplierFormProps) {
       }
     }
   };
+
+  if (!canAdd) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center">
+        <Shield className="w-16 h-16 text-muted-foreground mb-4" />
+        <h2 className="text-xl font-bold text-foreground mb-2">غير مصرح</h2>
+        <p className="text-muted-foreground">ليس لديك صلاحية لإضافة موردين</p>
+        <Button onClick={() => setActivePage('dashboard')} className="mt-4">
+          العودة للرئيسية
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">

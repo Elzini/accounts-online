@@ -81,21 +81,15 @@ export async function updateUsername(userId: string, username: string) {
 }
 
 export async function deleteUser(userId: string) {
-  // First delete all user roles
-  const { error: rolesError } = await supabase
-    .from('user_roles')
-    .delete()
-    .eq('user_id', userId);
-  
-  if (rolesError) throw rolesError;
+  // Use edge function to delete user (requires service role)
+  const { data, error } = await supabase.functions.invoke('delete-user', {
+    body: { userId }
+  });
 
-  // Then delete the profile
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .delete()
-    .eq('user_id', userId);
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
   
-  if (profileError) throw profileError;
+  return data;
 }
 
 export async function createUser(email: string, password: string, username: string, permissions: UserPermission[]) {

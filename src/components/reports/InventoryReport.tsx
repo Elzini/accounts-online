@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Package, Car, CheckCircle, Printer, FileSpreadsheet } from 'lucide-react';
+import { Package, Car, CheckCircle, Printer, Search } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useCars } from '@/hooks/useDatabase';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { usePrintReport } from '@/hooks/usePrintReport';
-import { useExcelExport } from '@/hooks/useExcelExport';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function InventoryReport() {
@@ -14,6 +14,7 @@ export function InventoryReport() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const { printReport } = usePrintReport();
 
   const filteredCars = useMemo(() => {
@@ -22,9 +23,18 @@ export function InventoryReport() {
       if (startDate && purchaseDate < new Date(startDate)) return false;
       if (endDate && purchaseDate > new Date(endDate + 'T23:59:59')) return false;
       if (statusFilter !== 'all' && car.status !== statusFilter) return false;
+      
+      // Search by name or chassis number
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesName = car.name.toLowerCase().includes(query);
+        const matchesChassis = car.chassis_number.toLowerCase().includes(query);
+        if (!matchesName && !matchesChassis) return false;
+      }
+      
       return true;
     });
-  }, [cars, startDate, endDate, statusFilter]);
+  }, [cars, startDate, endDate, statusFilter, searchQuery]);
   
   const availableCars = filteredCars.filter(c => c.status === 'available');
   const soldCars = filteredCars.filter(c => c.status === 'sold');
@@ -40,6 +50,7 @@ export function InventoryReport() {
       columns: [
         { header: 'رقم المخزون', key: 'inventory_number' },
         { header: 'اسم السيارة', key: 'name' },
+        { header: 'رقم الشاسيه', key: 'chassis_number' },
         { header: 'الموديل', key: 'model' },
         { header: 'سعر الشراء', key: 'purchase_price' },
         { header: 'تاريخ الشراء', key: 'purchase_date' },
@@ -48,6 +59,7 @@ export function InventoryReport() {
       data: filteredCars.map(car => ({
         inventory_number: car.inventory_number,
         name: car.name,
+        chassis_number: car.chassis_number,
         model: car.model || '-',
         purchase_price: `${formatCurrency(Number(car.purchase_price))} ريال`,
         purchase_date: formatDate(car.purchase_date),
@@ -72,6 +84,15 @@ export function InventoryReport() {
           <p className="text-muted-foreground">حالة السيارات في المخزون</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="بحث بالاسم أو رقم الشاسيه..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pr-10 w-[250px]"
+            />
+          </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="حالة السيارة" />
@@ -156,6 +177,7 @@ export function InventoryReport() {
               <TableRow className="bg-muted/50">
                 <TableHead className="text-right font-bold">رقم المخزون</TableHead>
                 <TableHead className="text-right font-bold">اسم السيارة</TableHead>
+                <TableHead className="text-right font-bold">رقم الشاسيه</TableHead>
                 <TableHead className="text-right font-bold">الموديل</TableHead>
                 <TableHead className="text-right font-bold">سعر الشراء</TableHead>
                 <TableHead className="text-right font-bold">تاريخ الشراء</TableHead>
@@ -167,6 +189,7 @@ export function InventoryReport() {
                 <TableRow key={car.id}>
                   <TableCell>{car.inventory_number}</TableCell>
                   <TableCell className="font-semibold">{car.name}</TableCell>
+                  <TableCell className="font-mono text-sm">{car.chassis_number}</TableCell>
                   <TableCell>{car.model}</TableCell>
                   <TableCell>{formatCurrency(Number(car.purchase_price))} ريال</TableCell>
                   <TableCell>{formatDate(car.purchase_date)}</TableCell>
