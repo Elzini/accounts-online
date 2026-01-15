@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ActivePage } from '@/types';
 import { useMonthlyChartData } from '@/hooks/useDatabase';
 import { useAppSettings } from '@/hooks/useSettings';
+import { useAuth } from '@/contexts/AuthContext';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid } from 'recharts';
 
@@ -33,6 +34,11 @@ const chartConfig = {
 export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const { data: chartData, isLoading: chartLoading } = useMonthlyChartData();
   const { data: settings } = useAppSettings();
+  const { permissions } = useAuth();
+
+  const canSales = permissions.admin || permissions.sales;
+  const canPurchases = permissions.admin || permissions.purchases;
+  const canReports = permissions.admin || permissions.reports;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA', {
@@ -190,6 +196,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             <Button 
               onClick={() => setActivePage('purchases')}
               className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 gradient-primary hover:opacity-90 text-xs md:text-sm"
+              disabled={!canPurchases}
             >
               <ShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
               <span>المشتريات</span>
@@ -197,6 +204,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             <Button 
               onClick={() => setActivePage('sales')}
               className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 gradient-success hover:opacity-90 text-xs md:text-sm"
+              disabled={!canSales}
             >
               <DollarSign className="w-5 h-5 md:w-6 md:h-6" />
               <span>المبيعات</span>
@@ -205,6 +213,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               onClick={() => setActivePage('add-customer')}
               variant="outline"
               className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-xs md:text-sm"
+              disabled={!canSales}
             >
               <UserPlus className="w-5 h-5 md:w-6 md:h-6" />
               <span>إضافة عميل</span>
@@ -213,6 +222,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               onClick={() => setActivePage('add-supplier')}
               variant="outline"
               className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-xs md:text-sm"
+              disabled={!canPurchases}
             >
               <Truck className="w-5 h-5 md:w-6 md:h-6" />
               <span>إضافة مورد</span>

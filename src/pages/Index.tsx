@@ -20,6 +20,7 @@ import { SuppliersReport } from '@/components/reports/SuppliersReport';
 import { CommissionsReport } from '@/components/reports/CommissionsReport';
 import { UsersManagement } from '@/components/UsersManagement';
 import { AppSettingsPage } from '@/components/AppSettings';
+import { CarSearch } from '@/components/CarSearch';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -74,10 +75,13 @@ const Index = () => {
           <p className="text-xs md:text-sm text-muted-foreground truncate max-w-[200px] md:max-w-none">
             مرحباً، {user?.email}
           </p>
-          <Button variant="ghost" onClick={signOut} className="gap-2 text-sm">
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">تسجيل خروج</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <CarSearch />
+            <Button variant="ghost" onClick={signOut} className="gap-2 text-sm">
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">تسجيل خروج</span>
+            </Button>
+          </div>
         </div>
         {renderContent()}
       </main>
