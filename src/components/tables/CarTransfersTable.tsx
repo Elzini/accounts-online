@@ -40,12 +40,13 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCarTransfers, useAddCarTransfer, useUpdateCarTransfer, useDeleteCarTransfer, usePartnerDealerships } from '@/hooks/useTransfers';
-import { useCars } from '@/hooks/useDatabase';
+import { useCars, useUpdateCar } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ActivePage } from '@/types';
 import { CarTransfer } from '@/services/transfers';
 import { format } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface CarTransfersTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -58,6 +59,8 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
   const addMutation = useAddCarTransfer();
   const updateMutation = useUpdateCarTransfer();
   const deleteMutation = useDeleteCarTransfer();
+  const updateCarMutation = useUpdateCar();
+  const queryClient = useQueryClient();
   const { permissions } = useAuth();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -122,6 +125,9 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
     if (!editingTransfer) return;
 
     try {
+      const previousStatus = editingTransfer.status;
+      const newStatus = formData.status;
+
       await updateMutation.mutateAsync({
         id: editingTransfer.id,
         data: {
@@ -136,11 +142,44 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
           notes: formData.notes || null,
         },
       });
+
+      // If status changed to 'returned', update car status to 'available'
+      if (previousStatus !== 'returned' && newStatus === 'returned') {
+        await updateCarMutation.mutateAsync({
+          id: formData.car_id,
+          car: { status: 'available' },
+        });
+        queryClient.invalidateQueries({ queryKey: ['cars'] });
+      }
+
       toast.success('تم تحديث التحويل بنجاح');
       setEditingTransfer(null);
       resetForm();
     } catch (error) {
       toast.error('حدث خطأ أثناء تحديث التحويل');
+    }
+  };
+
+  const handleQuickReturn = async (transfer: CarTransfer) => {
+    try {
+      await updateMutation.mutateAsync({
+        id: transfer.id,
+        data: {
+          status: 'returned',
+          return_date: format(new Date(), 'yyyy-MM-dd'),
+        },
+      });
+
+      // Update car status to 'available'
+      await updateCarMutation.mutateAsync({
+        id: transfer.car_id,
+        car: { status: 'available' },
+      });
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+
+      toast.success('تم إرجاع السيارة بنجاح');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء إرجاع السيارة');
     }
   };
 
@@ -410,6 +449,31 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
                   {canEdit && (
                     <TableCell>
                       <div className="flex gap-2">
+                        {transfer.status === 'pending' && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="icon" className="text-orange-600 hover:text-orange-700" title="إرجاع السيارة">
+                                <RotateCcw className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>إرجاع السيارة</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  هل تريد إرجاع السيارة "{transfer.car?.name} {transfer.car?.model}" من المعرض "{transfer.partner_dealership?.name}"؟
+                                  <br />
+                                  سيتم تحديث حالة السيارة إلى "متاحة" في المخزون.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleQuickReturn(transfer)}>
+                                  تأكيد الإرجاع
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                         <Dialog open={editingTransfer?.id === transfer.id} onOpenChange={(open) => !open && setEditingTransfer(null)}>
                           <DialogTrigger asChild>
                             <Button variant="ghost" size="icon" onClick={() => openEditDialog(transfer)}>
