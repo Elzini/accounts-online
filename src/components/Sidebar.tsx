@@ -49,6 +49,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
     { id: 'suppliers-report' as ActivePage, label: 'تقرير الموردين', icon: Truck, permission: 'reports' as const },
     { id: 'commissions-report' as ActivePage, label: 'تقرير العمولات', icon: DollarSign, permission: 'reports' as const },
     { id: 'transfers-report' as ActivePage, label: 'تقرير التحويلات', icon: ArrowLeftRight, permission: 'reports' as const },
+    { id: 'partner-report' as ActivePage, label: 'تقرير المعرض الشريك', icon: Building2, permission: 'reports' as const },
   ];
 
   const hasAccess = (permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users') => {

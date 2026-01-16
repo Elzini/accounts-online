@@ -21,6 +21,7 @@ import { CustomersReport } from '@/components/reports/CustomersReport';
 import { SuppliersReport } from '@/components/reports/SuppliersReport';
 import { CommissionsReport } from '@/components/reports/CommissionsReport';
 import { TransfersReport } from '@/components/reports/TransfersReport';
+import { PartnerDealershipReport } from '@/components/reports/PartnerDealershipReport';
 import { UsersManagement } from '@/components/UsersManagement';
 import { AppSettingsPage } from '@/components/AppSettings';
 import { CarSearch } from '@/components/CarSearch';
@@ -58,6 +59,7 @@ const Index = () => {
       case 'suppliers-report': return <SuppliersReport />;
       case 'commissions-report': return <CommissionsReport />;
       case 'transfers-report': return <TransfersReport />;
+      case 'partner-report': return <PartnerDealershipReport setActivePage={setActivePage} />;
       case 'users-management': return <UsersManagement setActivePage={setActivePage} />;
       case 'app-settings': return <AppSettingsPage setActivePage={setActivePage} />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;

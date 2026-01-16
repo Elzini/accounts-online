@@ -71,5 +71,6 @@ export type ActivePage =
   | 'partner-dealerships'
   | 'car-transfers'
   | 'transfers-report'
+  | 'partner-report'
   | 'users-management'
   | 'app-settings';
