@@ -40,6 +40,7 @@ export type Database = {
       }
       car_transfers: {
         Row: {
+          actual_commission: number | null
           agreed_commission: number | null
           car_id: string
           commission_percentage: number | null
@@ -48,12 +49,15 @@ export type Database = {
           notes: string | null
           partner_dealership_id: string
           return_date: string | null
+          sale_id: string | null
+          sale_price: number | null
           status: Database["public"]["Enums"]["transfer_status"]
           transfer_date: string
           transfer_type: Database["public"]["Enums"]["transfer_type"]
           updated_at: string
         }
         Insert: {
+          actual_commission?: number | null
           agreed_commission?: number | null
           car_id: string
           commission_percentage?: number | null
@@ -62,12 +66,15 @@ export type Database = {
           notes?: string | null
           partner_dealership_id: string
           return_date?: string | null
+          sale_id?: string | null
+          sale_price?: number | null
           status?: Database["public"]["Enums"]["transfer_status"]
           transfer_date?: string
           transfer_type: Database["public"]["Enums"]["transfer_type"]
           updated_at?: string
         }
         Update: {
+          actual_commission?: number | null
           agreed_commission?: number | null
           car_id?: string
           commission_percentage?: number | null
@@ -76,6 +83,8 @@ export type Database = {
           notes?: string | null
           partner_dealership_id?: string
           return_date?: string | null
+          sale_id?: string | null
+          sale_price?: number | null
           status?: Database["public"]["Enums"]["transfer_status"]
           transfer_date?: string
           transfer_type?: Database["public"]["Enums"]["transfer_type"]
@@ -94,6 +103,13 @@ export type Database = {
             columns: ["partner_dealership_id"]
             isOneToOne: false
             referencedRelation: "partner_dealerships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_transfers_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
             referencedColumns: ["id"]
           },
         ]

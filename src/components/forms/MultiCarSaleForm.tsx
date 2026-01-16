@@ -1,12 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ArrowRight, Save, DollarSign, Plus, X, Car } from 'lucide-react';
+import { ArrowRight, Save, DollarSign, Plus, X, Car, ArrowLeftRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
 import { useCustomers, useCars, useAddMultiCarSale } from '@/hooks/useDatabase';
+import { useCarTransfers, getPendingTransferForCar, linkTransferToSale } from '@/hooks/useTransfers';
+import { CarTransfer } from '@/services/transfers';
 
 interface MultiCarSaleFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -19,6 +22,7 @@ interface SelectedCarItem {
   car_name: string;
   model: string;
   chassis_number: string;
+  pendingTransfer?: CarTransfer | null;
 }
 
 export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
@@ -61,9 +65,17 @@ export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
     setTotalProfit(saleTotal - purchaseTotal - commission - otherExpenses);
   }, [selectedCars, formData.commission, formData.other_expenses]);
 
-  const handleAddCar = (carId: string) => {
+  const handleAddCar = async (carId: string) => {
     const car = availableCars.find(c => c.id === carId);
     if (!car) return;
+
+    // Check if car has a pending transfer
+    let pendingTransfer: CarTransfer | null = null;
+    try {
+      pendingTransfer = await getPendingTransferForCar(carId);
+    } catch (error) {
+      console.error('Error checking pending transfer:', error);
+    }
 
     setSelectedCars([...selectedCars, {
       car_id: car.id,
@@ -72,6 +84,7 @@ export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
       car_name: car.name,
       model: car.model || '',
       chassis_number: car.chassis_number,
+      pendingTransfer,
     }]);
   };
 
@@ -105,7 +118,7 @@ export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
     }
 
     try {
-      await addMultiCarSale.mutateAsync({
+      const sale = await addMultiCarSale.mutateAsync({
         customer_id: formData.customer_id,
         seller_name: formData.seller_name || undefined,
         commission: parseFloat(formData.commission) || 0,
@@ -117,7 +130,30 @@ export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
           purchase_price: car.purchase_price,
         })),
       });
-      toast.success(`تم تسجيل عملية بيع ${selectedCars.length} سيارة بنجاح`);
+
+      // Link pending transfers to this sale
+      for (const car of selectedCars) {
+        if (car.pendingTransfer) {
+          try {
+            await linkTransferToSale(
+              car.pendingTransfer.id,
+              sale.id,
+              parseFloat(car.sale_price),
+              car.pendingTransfer.agreed_commission,
+              car.pendingTransfer.commission_percentage
+            );
+          } catch (error) {
+            console.error('Error linking transfer to sale:', error);
+          }
+        }
+      }
+
+      const transferredCarsCount = selectedCars.filter(c => c.pendingTransfer).length;
+      const message = transferredCarsCount > 0
+        ? `تم تسجيل بيع ${selectedCars.length} سيارة وربط ${transferredCarsCount} تحويل بنجاح`
+        : `تم تسجيل عملية بيع ${selectedCars.length} سيارة بنجاح`;
+      
+      toast.success(message);
       setActivePage('sales');
     } catch (error) {
       console.error('Sale error:', error);
@@ -200,8 +236,24 @@ export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
                   <div key={car.car_id} className="bg-muted/50 rounded-xl p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h4 className="font-semibold">{car.car_name} - {car.model}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold">{car.car_name} - {car.model}</h4>
+                          {car.pendingTransfer && (
+                            <Badge variant="outline" className="gap-1 text-blue-600 border-blue-300">
+                              <ArrowLeftRight className="w-3 h-3" />
+                              محولة لـ {car.pendingTransfer.partner_dealership?.name}
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-muted-foreground">رقم الهيكل: {car.chassis_number}</p>
+                        {car.pendingTransfer && (
+                          <p className="text-xs text-blue-600 mt-1">
+                            العمولة: {car.pendingTransfer.agreed_commission > 0 
+                              ? `${formatCurrency(car.pendingTransfer.agreed_commission)} ريال`
+                              : `${car.pendingTransfer.commission_percentage}%`
+                            }
+                          </p>
+                        )}
                       </div>
                       <Button
                         type="button"

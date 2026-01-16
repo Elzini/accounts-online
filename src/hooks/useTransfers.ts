@@ -8,9 +8,13 @@ import {
   addCarTransfer,
   updateCarTransfer,
   deleteCarTransfer,
+  getPendingTransferForCar,
+  linkTransferToSale,
   PartnerDealershipInsert,
   CarTransferInsert,
 } from '@/services/transfers';
+
+export { getPendingTransferForCar, linkTransferToSale };
 
 // Partner Dealerships hooks
 export function usePartnerDealerships() {
