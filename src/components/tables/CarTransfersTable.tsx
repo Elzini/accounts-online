@@ -202,9 +202,10 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
       toast.success('تم إضافة السيارة الواردة بنجاح');
       setIsIncomingDialogOpen(false);
       resetIncomingForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding incoming car:', error);
-      toast.error('حدث خطأ أثناء إضافة السيارة الواردة');
+      const errorMessage = error?.message || error?.error_description || 'حدث خطأ أثناء إضافة السيارة الواردة';
+      toast.error(errorMessage);
     }
   };
 
