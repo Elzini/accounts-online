@@ -38,6 +38,66 @@ export type Database = {
         }
         Relationships: []
       }
+      car_transfers: {
+        Row: {
+          agreed_commission: number | null
+          car_id: string
+          commission_percentage: number | null
+          created_at: string
+          id: string
+          notes: string | null
+          partner_dealership_id: string
+          return_date: string | null
+          status: Database["public"]["Enums"]["transfer_status"]
+          transfer_date: string
+          transfer_type: Database["public"]["Enums"]["transfer_type"]
+          updated_at: string
+        }
+        Insert: {
+          agreed_commission?: number | null
+          car_id: string
+          commission_percentage?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          partner_dealership_id: string
+          return_date?: string | null
+          status?: Database["public"]["Enums"]["transfer_status"]
+          transfer_date?: string
+          transfer_type: Database["public"]["Enums"]["transfer_type"]
+          updated_at?: string
+        }
+        Update: {
+          agreed_commission?: number | null
+          car_id?: string
+          commission_percentage?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          partner_dealership_id?: string
+          return_date?: string | null
+          status?: Database["public"]["Enums"]["transfer_status"]
+          transfer_date?: string
+          transfer_type?: Database["public"]["Enums"]["transfer_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "car_transfers_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_transfers_partner_dealership_id_fkey"
+            columns: ["partner_dealership_id"]
+            isOneToOne: false
+            referencedRelation: "partner_dealerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cars: {
         Row: {
           batch_id: string | null
@@ -130,6 +190,39 @@ export type Database = {
           name?: string
           phone?: string
           registration_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      partner_dealerships: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string
           updated_at?: string
         }
         Relationships: []
@@ -367,6 +460,8 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      transfer_status: "pending" | "sold" | "returned"
+      transfer_type: "outgoing" | "incoming"
       user_permission: "sales" | "purchases" | "reports" | "admin" | "users"
     }
     CompositeTypes: {
@@ -495,6 +590,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      transfer_status: ["pending", "sold", "returned"],
+      transfer_type: ["outgoing", "incoming"],
       user_permission: ["sales", "purchases", "reports", "admin", "users"],
     },
   },
