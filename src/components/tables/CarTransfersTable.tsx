@@ -66,6 +66,7 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isIncomingDialogOpen, setIsIncomingDialogOpen] = useState(false);
+  const [isEditIncomingDialogOpen, setIsEditIncomingDialogOpen] = useState(false);
   const [editingTransfer, setEditingTransfer] = useState<CarTransfer | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -244,6 +245,67 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
     } catch (error) {
       toast.error('حدث خطأ أثناء تحديث التحويل');
     }
+  };
+
+  // Handle updating incoming car - updates both car and transfer
+  const handleUpdateIncomingCar = async () => {
+    if (!editingTransfer) return;
+
+    try {
+      // Update the car details
+      await updateCarMutation.mutateAsync({
+        id: editingTransfer.car_id,
+        car: {
+          name: incomingCarData.name,
+          model: incomingCarData.model || null,
+          color: incomingCarData.color || null,
+          chassis_number: incomingCarData.chassis_number,
+          purchase_price: incomingCarData.purchase_price,
+          purchase_date: incomingCarData.purchase_date,
+        },
+      });
+
+      // Update the transfer details
+      await updateMutation.mutateAsync({
+        id: editingTransfer.id,
+        data: {
+          partner_dealership_id: incomingCarData.partner_dealership_id,
+          transfer_date: incomingCarData.transfer_date,
+          agreed_commission: incomingCarData.agreed_commission,
+          commission_percentage: incomingCarData.commission_percentage,
+          notes: incomingCarData.notes || null,
+        },
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+      queryClient.invalidateQueries({ queryKey: ['carTransfers'] });
+      
+      toast.success('تم تحديث بيانات السيارة الواردة بنجاح');
+      setIsEditIncomingDialogOpen(false);
+      setEditingTransfer(null);
+      resetIncomingForm();
+    } catch (error) {
+      console.error('Error updating incoming car:', error);
+      toast.error('حدث خطأ أثناء تحديث بيانات السيارة');
+    }
+  };
+
+  const openEditIncomingDialog = (transfer: CarTransfer) => {
+    setEditingTransfer(transfer);
+    setIncomingCarData({
+      name: transfer.car?.name || '',
+      model: transfer.car?.model || '',
+      color: transfer.car?.color || '',
+      chassis_number: transfer.car?.chassis_number || '',
+      purchase_price: transfer.car?.purchase_price || 0,
+      purchase_date: format(new Date(), 'yyyy-MM-dd'),
+      partner_dealership_id: transfer.partner_dealership_id,
+      transfer_date: transfer.transfer_date,
+      agreed_commission: transfer.agreed_commission,
+      commission_percentage: transfer.commission_percentage,
+      notes: transfer.notes || '',
+    });
+    setIsEditIncomingDialogOpen(true);
   };
 
   const handleQuickReturn = async (transfer: CarTransfer) => {
@@ -684,22 +746,34 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
-                        <Dialog open={editingTransfer?.id === transfer.id} onOpenChange={(open) => !open && setEditingTransfer(null)}>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(transfer)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-md">
-                            <DialogHeader>
-                              <DialogTitle>تعديل التحويل</DialogTitle>
-                            </DialogHeader>
-                            <FormFields />
-                            <Button onClick={handleUpdate} className="w-full mt-4">
-                              حفظ التعديلات
-                            </Button>
-                          </DialogContent>
-                        </Dialog>
+                        {/* Edit button - different dialog for incoming vs outgoing */}
+                        {transfer.transfer_type === 'incoming' ? (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => openEditIncomingDialog(transfer)}
+                            title="تعديل بيانات السيارة"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        ) : (
+                          <Dialog open={editingTransfer?.id === transfer.id && !isEditIncomingDialogOpen} onOpenChange={(open) => !open && setEditingTransfer(null)}>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => openEditDialog(transfer)}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>تعديل التحويل</DialogTitle>
+                              </DialogHeader>
+                              <FormFields />
+                              <Button onClick={handleUpdate} className="w-full mt-4">
+                                حفظ التعديلات
+                              </Button>
+                            </DialogContent>
+                          </Dialog>
+                        )}
                         {permissions.admin && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -736,6 +810,25 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
             </div>
           )}
         </div>
+
+        {/* Edit Incoming Car Dialog */}
+        <Dialog open={isEditIncomingDialogOpen} onOpenChange={(open) => {
+          setIsEditIncomingDialogOpen(open);
+          if (!open) {
+            setEditingTransfer(null);
+            resetIncomingForm();
+          }
+        }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>تعديل بيانات السيارة الواردة</DialogTitle>
+            </DialogHeader>
+            <IncomingCarFormFields />
+            <Button onClick={handleUpdateIncomingCar} className="w-full mt-4">
+              حفظ التعديلات
+            </Button>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
