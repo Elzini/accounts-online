@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, Save, DollarSign } from 'lucide-react';
+import { ArrowRight, Save, DollarSign, ArrowLeftRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
 import { useCustomers, useCars, useAddSale } from '@/hooks/useDatabase';
+import { getPendingTransferForCar, linkTransferToSale } from '@/hooks/useTransfers';
+import { CarTransfer } from '@/services/transfers';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface SaleFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -16,8 +20,10 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
   const { data: customers = [] } = useCustomers();
   const { data: allCars = [] } = useCars();
   const addSale = useAddSale();
+  const queryClient = useQueryClient();
 
-  const availableCars = allCars.filter(car => car.status === 'available');
+  // Include both available and transferred cars for sale
+  const availableCars = allCars.filter(car => car.status === 'available' || car.status === 'transferred');
 
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -30,6 +36,7 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
   });
 
   const [selectedCar, setSelectedCar] = useState<typeof allCars[0] | null>(null);
+  const [pendingTransfer, setPendingTransfer] = useState<CarTransfer | null>(null);
   const [profit, setProfit] = useState(0);
 
   useEffect(() => {
@@ -40,10 +47,23 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
     setProfit(salePrice - purchasePrice - commission - otherExpenses);
   }, [formData.sale_price, formData.commission, formData.other_expenses, selectedCar]);
 
-  const handleCarChange = (carId: string) => {
+  const handleCarChange = async (carId: string) => {
     const car = availableCars.find(c => c.id === carId);
     setSelectedCar(car || null);
     setFormData({ ...formData, car_id: carId });
+    
+    // Check for pending transfer
+    if (car?.status === 'transferred') {
+      try {
+        const transfer = await getPendingTransferForCar(carId);
+        setPendingTransfer(transfer);
+      } catch (error) {
+        console.error('Error checking pending transfer:', error);
+        setPendingTransfer(null);
+      }
+    } else {
+      setPendingTransfer(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,7 +75,7 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
     }
 
     try {
-      await addSale.mutateAsync({
+      const sale = await addSale.mutateAsync({
         car_id: formData.car_id,
         customer_id: formData.customer_id,
         sale_price: parseFloat(formData.sale_price),
@@ -65,7 +85,27 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
         profit: profit,
         sale_date: formData.sale_date,
       });
-      toast.success('تم تسجيل عملية البيع بنجاح');
+
+      // Link pending transfer to this sale if exists
+      if (pendingTransfer) {
+        try {
+          await linkTransferToSale(
+            pendingTransfer.id,
+            sale.id,
+            parseFloat(formData.sale_price),
+            pendingTransfer.agreed_commission,
+            pendingTransfer.commission_percentage
+          );
+          queryClient.invalidateQueries({ queryKey: ['carTransfers'] });
+          toast.success('تم تسجيل عملية البيع وربط التحويل بنجاح');
+        } catch (error) {
+          console.error('Error linking transfer to sale:', error);
+          toast.success('تم تسجيل عملية البيع (حدث خطأ في ربط التحويل)');
+        }
+      } else {
+        toast.success('تم تسجيل عملية البيع بنجاح');
+      }
+      
       setActivePage('sales');
     } catch (error) {
       toast.error('حدث خطأ أثناء تسجيل البيع');
@@ -121,7 +161,12 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
               <SelectContent>
                 {availableCars.map((car) => (
                   <SelectItem key={car.id} value={car.id}>
-                    {car.name} - {car.model} ({car.chassis_number})
+                    <div className="flex items-center gap-2">
+                      <span>{car.name} - {car.model} ({car.chassis_number})</span>
+                      {car.status === 'transferred' && (
+                        <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs">محولة</Badge>
+                      )}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -130,19 +175,48 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
 
           {/* Car Details */}
           {selectedCar && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-muted/50">
-              <div>
-                <p className="text-sm text-muted-foreground">اسم السيارة</p>
-                <p className="font-semibold">{selectedCar.name}</p>
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-muted/50">
+                <div>
+                  <p className="text-sm text-muted-foreground">اسم السيارة</p>
+                  <p className="font-semibold">{selectedCar.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">الموديل</p>
+                  <p className="font-semibold">{selectedCar.model || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">سعر الشراء</p>
+                  <p className="font-semibold">{formatCurrency(Number(selectedCar.purchase_price))} ريال</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">الموديل</p>
-                <p className="font-semibold">{selectedCar.model || '-'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">سعر الشراء</p>
-                <p className="font-semibold">{formatCurrency(Number(selectedCar.purchase_price))} ريال</p>
-              </div>
+              
+              {pendingTransfer && (
+                <div className="p-4 rounded-xl bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ArrowLeftRight className="w-4 h-4 text-orange-600" />
+                    <span className="font-semibold text-orange-700 dark:text-orange-400">سيارة محولة</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">المعرض الشريك</p>
+                      <p className="font-medium">{pendingTransfer.partner_dealership?.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">العمولة المتفق عليها</p>
+                      <p className="font-medium text-orange-600">
+                        {pendingTransfer.agreed_commission > 0 
+                          ? `${formatCurrency(pendingTransfer.agreed_commission)} ريال`
+                          : `${pendingTransfer.commission_percentage}%`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-orange-600 mt-2">
+                    سيتم ربط هذا البيع بالتحويل تلقائياً وحساب العمولة
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

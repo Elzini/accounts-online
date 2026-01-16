@@ -30,8 +30,9 @@ export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
   const { data: allCars = [] } = useCars();
   const addMultiCarSale = useAddMultiCarSale();
 
+  // Include both available and transferred cars for sale
   const availableCars = useMemo(() => 
-    allCars.filter(car => car.status === 'available'),
+    allCars.filter(car => car.status === 'available' || car.status === 'transferred'),
     [allCars]
   );
 
