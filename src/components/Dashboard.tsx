@@ -1,12 +1,14 @@
-import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, FileText, Users } from 'lucide-react';
+import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, FileText, Users, ArrowDownLeft, ArrowUpRight, Building2 } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { Button } from '@/components/ui/button';
 import { ActivePage } from '@/types';
 import { useMonthlyChartData } from '@/hooks/useDatabase';
 import { useAppSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCarTransfers, usePartnerDealerships } from '@/hooks/useTransfers';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid } from 'recharts';
+import { useMemo } from 'react';
 
 interface DashboardProps {
   stats: {
@@ -35,10 +37,37 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const { data: chartData, isLoading: chartLoading } = useMonthlyChartData();
   const { data: settings } = useAppSettings();
   const { permissions } = useAuth();
+  const { data: transfers } = useCarTransfers();
+  const { data: dealerships } = usePartnerDealerships();
 
   const canSales = permissions.admin || permissions.sales;
   const canPurchases = permissions.admin || permissions.purchases;
   const canReports = permissions.admin || permissions.reports;
+
+  // Calculate transfer stats by dealership
+  const transferStats = useMemo(() => {
+    if (!transfers || !dealerships) return { incoming: [], outgoing: [] };
+
+    const incomingByDealership = dealerships.map(d => {
+      const dealershipTransfers = transfers.filter(
+        t => t.partner_dealership_id === d.id && t.transfer_type === 'incoming'
+      );
+      const pending = dealershipTransfers.filter(t => t.status === 'pending').length;
+      const total = dealershipTransfers.length;
+      return { id: d.id, name: d.name, pending, total };
+    }).filter(d => d.total > 0);
+
+    const outgoingByDealership = dealerships.map(d => {
+      const dealershipTransfers = transfers.filter(
+        t => t.partner_dealership_id === d.id && t.transfer_type === 'outgoing'
+      );
+      const pending = dealershipTransfers.filter(t => t.status === 'pending').length;
+      const total = dealershipTransfers.length;
+      return { id: d.id, name: d.name, pending, total };
+    }).filter(d => d.total > 0);
+
+    return { incoming: incomingByDealership, outgoing: outgoingByDealership };
+  }, [transfers, dealerships]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA', {
@@ -186,6 +215,111 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           )}
         </div>
       </div>
+
+      {/* Partner Dealership Transfers */}
+      {(transferStats.incoming.length > 0 || transferStats.outgoing.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          {/* Incoming Cars */}
+          <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+            <div className="flex items-center justify-between mb-4 md:mb-6">
+              <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
+                <ArrowDownLeft className="w-5 h-5 text-blue-500" />
+                السيارات الواردة من المعارض
+              </h2>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setActivePage('car-transfers')}
+                className="text-primary"
+              >
+                عرض الكل
+              </Button>
+            </div>
+            {transferStats.incoming.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>لا توجد سيارات واردة</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {transferStats.incoming.map((d) => (
+                  <div 
+                    key={d.id} 
+                    className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-950/50 cursor-pointer transition-colors"
+                    onClick={() => setActivePage('partner-report')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                        <Building2 className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold">{d.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {d.pending > 0 && <span className="text-yellow-600">{d.pending} قيد الانتظار</span>}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-2xl font-bold text-blue-600">{d.total}</p>
+                      <p className="text-xs text-muted-foreground">سيارة</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Outgoing Cars */}
+          <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+            <div className="flex items-center justify-between mb-4 md:mb-6">
+              <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
+                <ArrowUpRight className="w-5 h-5 text-orange-500" />
+                السيارات الصادرة للمعارض
+              </h2>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setActivePage('car-transfers')}
+                className="text-primary"
+              >
+                عرض الكل
+              </Button>
+            </div>
+            {transferStats.outgoing.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>لا توجد سيارات صادرة</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {transferStats.outgoing.map((d) => (
+                  <div 
+                    key={d.id} 
+                    className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-950/50 cursor-pointer transition-colors"
+                    onClick={() => setActivePage('partner-report')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                        <Building2 className="w-5 h-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold">{d.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {d.pending > 0 && <span className="text-yellow-600">{d.pending} قيد الانتظار</span>}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-2xl font-bold text-orange-600">{d.total}</p>
+                      <p className="text-xs text-muted-foreground">سيارة</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
