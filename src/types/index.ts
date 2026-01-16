@@ -68,5 +68,8 @@ export type ActivePage =
   | 'customers-report'
   | 'suppliers-report'
   | 'commissions-report'
+  | 'partner-dealerships'
+  | 'car-transfers'
+  | 'transfers-report'
   | 'users-management'
   | 'app-settings';

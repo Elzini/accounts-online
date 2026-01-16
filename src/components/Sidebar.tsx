@@ -8,7 +8,9 @@ import {
   TrendingUp,
   Package,
   UserCog,
-  Settings
+  Settings,
+  Building2,
+  ArrowLeftRight
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -33,6 +35,11 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
     { id: 'sales' as ActivePage, label: settings?.sales_title || 'المبيعات', icon: DollarSign, permission: 'sales' as const },
   ];
 
+  const transferItems = [
+    { id: 'partner-dealerships' as ActivePage, label: 'المعارض الشريكة', icon: Building2 },
+    { id: 'car-transfers' as ActivePage, label: 'تحويلات السيارات', icon: ArrowLeftRight },
+  ];
+
   const reportItems = [
     { id: 'inventory-report' as ActivePage, label: 'تقرير المخزون', icon: Package, permission: 'reports' as const },
     { id: 'profit-report' as ActivePage, label: 'تقرير الأرباح', icon: TrendingUp, permission: 'reports' as const },
@@ -41,6 +48,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
     { id: 'customers-report' as ActivePage, label: 'تقرير العملاء', icon: Users, permission: 'reports' as const },
     { id: 'suppliers-report' as ActivePage, label: 'تقرير الموردين', icon: Truck, permission: 'reports' as const },
     { id: 'commissions-report' as ActivePage, label: 'تقرير العمولات', icon: DollarSign, permission: 'reports' as const },
+    { id: 'transfers-report' as ActivePage, label: 'تقرير التحويلات', icon: ArrowLeftRight, permission: 'reports' as const },
   ];
 
   const hasAccess = (permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users') => {
@@ -90,6 +98,35 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
             })}
           </ul>
         </div>
+
+        {/* Transfers */}
+        {(permissions.admin || permissions.sales || permissions.purchases) && (
+          <div className="mb-6">
+            <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">التحويلات</p>
+            <ul className="space-y-1">
+              {transferItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activePage === item.id;
+                return (
+                  <li key={item.id}>
+                    <button
+                      onClick={() => setActivePage(item.id)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                        isActive 
+                          ? "gradient-primary text-white shadow-lg" 
+                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
+                      )}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium">{item.label}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
 
         {/* Reports */}
         {hasAccess('reports') && (
