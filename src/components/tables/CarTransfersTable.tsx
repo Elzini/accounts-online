@@ -404,7 +404,8 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
 
   const canEdit = permissions.admin || permissions.sales || permissions.purchases;
 
-  const FormFields = () => (
+  // Form fields JSX - defined as variables to avoid re-creation
+  const formFieldsJSX = (
     <div className="space-y-4">
       <div>
         <Label>السيارة *</Label>
@@ -505,7 +506,7 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
     </div>
   );
 
-  const IncomingCarFormFields = () => (
+  const incomingCarFormFieldsJSX = (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -656,7 +657,7 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
                     <DialogHeader>
                       <DialogTitle>إضافة تحويل صادر</DialogTitle>
                     </DialogHeader>
-                    <FormFields />
+                    {formFieldsJSX}
                     <Button onClick={handleAdd} className="w-full mt-4">
                       إضافة
                     </Button>
@@ -673,7 +674,7 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
                     <DialogHeader>
                       <DialogTitle>إضافة سيارة واردة من معرض شريك</DialogTitle>
                     </DialogHeader>
-                    <IncomingCarFormFields />
+                    {incomingCarFormFieldsJSX}
                     <Button onClick={handleAddIncomingCar} className="w-full mt-4">
                       إضافة السيارة
                     </Button>
@@ -767,7 +768,7 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
                               <DialogHeader>
                                 <DialogTitle>تعديل التحويل</DialogTitle>
                               </DialogHeader>
-                              <FormFields />
+                              {formFieldsJSX}
                               <Button onClick={handleUpdate} className="w-full mt-4">
                                 حفظ التعديلات
                               </Button>
@@ -823,7 +824,7 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
             <DialogHeader>
               <DialogTitle>تعديل بيانات السيارة الواردة</DialogTitle>
             </DialogHeader>
-            <IncomingCarFormFields />
+            {incomingCarFormFieldsJSX}
             <Button onClick={handleUpdateIncomingCar} className="w-full mt-4">
               حفظ التعديلات
             </Button>
