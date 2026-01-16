@@ -60,7 +60,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
   const canManageUsers = permissions.admin || permissions.users;
 
   return (
-    <aside className="w-64 min-h-screen gradient-dark text-sidebar-foreground flex flex-col shrink-0">
+    <aside className="w-64 min-h-screen max-h-[100dvh] gradient-dark text-sidebar-foreground flex flex-col shrink-0">
       {/* Logo */}
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
@@ -73,7 +73,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
       </div>
 
       {/* Main Menu */}
-      <nav className="flex-1 p-4 overflow-y-auto">
+      <nav className="flex-1 min-h-0 p-4 overflow-y-auto">
         <div className="mb-6">
           <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">القائمة الرئيسية</p>
           <ul className="space-y-1">

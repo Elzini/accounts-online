@@ -30,7 +30,7 @@ export function MobileSidebar({ activePage, setActivePage }: MobileSidebarProps)
           <span className="sr-only">فتح القائمة</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="p-0 w-72 border-none">
+      <SheetContent side="right" className="p-0 w-72 border-none overflow-y-auto overscroll-contain">
         <Sidebar activePage={activePage} setActivePage={handlePageChange} />
       </SheetContent>
     </Sheet>
