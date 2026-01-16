@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Car, Mail, Lock, User } from 'lucide-react';
+import { Car, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,12 +11,10 @@ import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
   const { data: settings } = useAppSettings();
 
@@ -28,9 +26,6 @@ export default function Auth() {
   const loginGradientStart = settings?.login_header_gradient_start || defaultSettings.login_header_gradient_start;
   const loginGradientEnd = settings?.login_header_gradient_end || defaultSettings.login_header_gradient_end;
   const loginButtonText = settings?.login_button_text || defaultSettings.login_button_text;
-  const signupButtonText = settings?.signup_button_text || defaultSettings.signup_button_text;
-  const loginSwitchText = settings?.login_switch_text || defaultSettings.login_switch_text;
-  const signupSwitchText = settings?.signup_switch_text || defaultSettings.signup_switch_text;
   const loginLogoUrl = settings?.login_logo_url || '';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,36 +33,16 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast.error('بيانات الدخول غير صحيحة');
-          } else {
-            toast.error('حدث خطأ أثناء تسجيل الدخول');
-          }
+      const { error } = await signIn(email, password);
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('بيانات الدخول غير صحيحة');
         } else {
-          toast.success('تم تسجيل الدخول بنجاح');
-          navigate('/');
+          toast.error('حدث خطأ أثناء تسجيل الدخول');
         }
       } else {
-        if (!username.trim()) {
-          toast.error('الرجاء إدخال اسم المستخدم');
-          setLoading(false);
-          return;
-        }
-        
-        const { error } = await signUp(email, password, username);
-        if (error) {
-          if (error.message.includes('already registered')) {
-            toast.error('البريد الإلكتروني مسجل بالفعل');
-          } else {
-            toast.error('حدث خطأ أثناء إنشاء الحساب');
-          }
-        } else {
-          toast.success('تم إنشاء الحساب بنجاح');
-          navigate('/');
-        }
+        toast.success('تم تسجيل الدخول بنجاح');
+        navigate('/');
       }
     } catch (err) {
       toast.error('حدث خطأ غير متوقع');
@@ -108,25 +83,9 @@ export default function Auth() {
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
             <div className="text-center mb-6">
               <h2 className="text-xl font-bold text-foreground">
-                {isLogin ? loginButtonText : signupButtonText}
+                {loginButtonText}
               </h2>
             </div>
-
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="username">اسم المستخدم</Label>
-                <div className="relative">
-                  <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="أدخل اسم المستخدم"
-                    className="h-12 pr-10"
-                  />
-                </div>
-              </div>
-            )}
 
             <div className="space-y-2">
               <Label htmlFor="email">البريد الإلكتروني</Label>
@@ -169,18 +128,8 @@ export default function Auth() {
               style={{ background: headerGradient }}
               disabled={loading}
             >
-              {loading ? 'جاري التحميل...' : (isLogin ? loginButtonText : signupButtonText)}
+              {loading ? 'جاري التحميل...' : loginButtonText}
             </Button>
-
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-primary hover:underline"
-              >
-                {isLogin ? loginSwitchText : signupSwitchText}
-              </button>
-            </div>
           </form>
         </div>
       </div>
