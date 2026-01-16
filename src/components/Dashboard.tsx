@@ -140,82 +140,6 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         />
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        {/* Sales Chart */}
-        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-          <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">المبيعات الشهرية</h2>
-          {chartLoading ? (
-            <div className="h-64 flex items-center justify-center">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <ChartContainer config={chartConfig} className="h-64 w-full">
-              <BarChart data={chartData || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="month" 
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                />
-                <YAxis 
-                  tickFormatter={formatChartValue}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                />
-                <ChartTooltip 
-                  content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} 
-                />
-                <Bar 
-                  dataKey="sales" 
-                  name="المبيعات"
-                  fill="hsl(var(--primary))" 
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ChartContainer>
-          )}
-        </div>
-
-        {/* Profit Chart */}
-        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-          <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">الأرباح الشهرية</h2>
-          {chartLoading ? (
-            <div className="h-64 flex items-center justify-center">
-              <div className="w-8 h-8 border-4 border-success border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <ChartContainer config={chartConfig} className="h-64 w-full">
-              <LineChart data={chartData || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="month" 
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                />
-                <YAxis 
-                  tickFormatter={formatChartValue}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                />
-                <ChartTooltip 
-                  content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} 
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="profit" 
-                  name="الأرباح"
-                  stroke="hsl(var(--success))" 
-                  strokeWidth={3}
-                  dot={{ fill: 'hsl(var(--success))', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, fill: 'hsl(var(--success))' }}
-                />
-              </LineChart>
-            </ChartContainer>
-          )}
-        </div>
-      </div>
-
       {/* Partner Dealership Transfers - Always visible */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Incoming Cars */}
@@ -318,6 +242,82 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             )}
           </div>
         </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        {/* Sales Chart */}
+        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+          <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">المبيعات الشهرية</h2>
+          {chartLoading ? (
+            <div className="h-64 flex items-center justify-center">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <ChartContainer config={chartConfig} className="h-64 w-full">
+              <BarChart data={chartData || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                />
+                <YAxis 
+                  tickFormatter={formatChartValue}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                />
+                <ChartTooltip 
+                  content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} 
+                />
+                <Bar 
+                  dataKey="sales" 
+                  name="المبيعات"
+                  fill="hsl(var(--primary))" 
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ChartContainer>
+          )}
+        </div>
+
+        {/* Profit Chart */}
+        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+          <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">الأرباح الشهرية</h2>
+          {chartLoading ? (
+            <div className="h-64 flex items-center justify-center">
+              <div className="w-8 h-8 border-4 border-success border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <ChartContainer config={chartConfig} className="h-64 w-full">
+              <LineChart data={chartData || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                />
+                <YAxis 
+                  tickFormatter={formatChartValue}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                />
+                <ChartTooltip 
+                  content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} 
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="profit" 
+                  name="الأرباح"
+                  stroke="hsl(var(--success))" 
+                  strokeWidth={3}
+                  dot={{ fill: 'hsl(var(--success))', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: 'hsl(var(--success))' }}
+                />
+              </LineChart>
+            </ChartContainer>
+          )}
+        </div>
+      </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
