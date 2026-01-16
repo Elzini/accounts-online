@@ -216,9 +216,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         </div>
       </div>
 
-      {/* Partner Dealership Transfers */}
-      {(transferStats.incoming.length > 0 || transferStats.outgoing.length > 0) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+      {/* Partner Dealership Transfers - Always visible */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Incoming Cars */}
           <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
             <div className="flex items-center justify-between mb-4 md:mb-6">
@@ -319,7 +318,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
