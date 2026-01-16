@@ -22,6 +22,9 @@ export interface CarTransfer {
   commission_percentage: number;
   status: 'pending' | 'sold' | 'returned';
   notes: string | null;
+  sale_id: string | null;
+  actual_commission: number;
+  sale_price: number;
   created_at: string;
   updated_at: string;
   car?: {
@@ -59,6 +62,59 @@ export interface CarTransferInsert {
   commission_percentage?: number;
   status?: 'pending' | 'sold' | 'returned';
   notes?: string | null;
+  sale_id?: string | null;
+  actual_commission?: number;
+  sale_price?: number;
+}
+
+// Function to get pending transfer for a car
+export async function getPendingTransferForCar(carId: string): Promise<CarTransfer | null> {
+  const { data, error } = await supabase
+    .from('car_transfers')
+    .select(`
+      *,
+      car:cars(id, name, model, color, chassis_number, inventory_number, purchase_price, status),
+      partner_dealership:partner_dealerships(id, name, phone)
+    `)
+    .eq('car_id', carId)
+    .eq('status', 'pending')
+    .maybeSingle();
+  
+  if (error) throw error;
+  return data;
+}
+
+// Function to link transfer to sale and update status
+export async function linkTransferToSale(
+  transferId: string, 
+  saleId: string, 
+  salePrice: number,
+  agreedCommission: number,
+  commissionPercentage: number
+): Promise<CarTransfer> {
+  // Calculate actual commission
+  const actualCommission = agreedCommission > 0 
+    ? agreedCommission 
+    : (salePrice * commissionPercentage / 100);
+
+  const { data, error } = await supabase
+    .from('car_transfers')
+    .update({
+      sale_id: saleId,
+      status: 'sold',
+      sale_price: salePrice,
+      actual_commission: actualCommission,
+    })
+    .eq('id', transferId)
+    .select(`
+      *,
+      car:cars(id, name, model, color, chassis_number, inventory_number, purchase_price, status),
+      partner_dealership:partner_dealerships(id, name, phone)
+    `)
+    .single();
+  
+  if (error) throw error;
+  return data;
 }
 
 // Partner Dealerships

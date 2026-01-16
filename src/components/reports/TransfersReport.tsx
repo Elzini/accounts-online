@@ -66,7 +66,8 @@ export function TransfersReport() {
   const soldTransfers = filteredTransfers.filter(t => t.status === 'sold');
   const returnedTransfers = filteredTransfers.filter(t => t.status === 'returned');
 
-  const totalCommission = filteredTransfers.reduce((sum, t) => sum + (t.agreed_commission || 0), 0);
+  const totalCommission = filteredTransfers.reduce((sum, t) => sum + (t.actual_commission || t.agreed_commission || 0), 0);
+  const totalSalePrice = filteredTransfers.filter(t => t.status === 'sold').reduce((sum, t) => sum + (t.sale_price || 0), 0);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(value);
