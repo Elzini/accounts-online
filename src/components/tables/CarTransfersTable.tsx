@@ -113,6 +113,16 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
         status: formData.status,
         notes: formData.notes || null,
       });
+
+      // Update car status to 'transferred' when adding a new transfer
+      if (formData.status === 'pending') {
+        await updateCarMutation.mutateAsync({
+          id: formData.car_id,
+          car: { status: 'transferred' },
+        });
+        queryClient.invalidateQueries({ queryKey: ['cars'] });
+      }
+
       toast.success('تم إضافة التحويل بنجاح');
       setIsAddDialogOpen(false);
       resetForm();

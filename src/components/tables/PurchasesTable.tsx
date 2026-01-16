@@ -126,9 +126,9 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={car.status === 'available' ? 'default' : 'secondary'} 
-                    className={car.status === 'available' ? 'bg-success hover:bg-success/90' : ''}>
-                    {car.status === 'available' ? 'متاحة' : 'مباعة'}
+                  <Badge variant={car.status === 'available' ? 'default' : car.status === 'transferred' ? 'default' : 'secondary'} 
+                    className={car.status === 'available' ? 'bg-success hover:bg-success/90' : car.status === 'transferred' ? 'bg-orange-500 hover:bg-orange-600' : ''}>
+                    {car.status === 'available' ? 'متاحة' : car.status === 'transferred' ? 'محولة' : 'مباعة'}
                   </Badge>
                 </TableCell>
                 <TableCell>

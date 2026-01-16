@@ -129,7 +129,7 @@ export function SuppliersReport() {
             model: car.model || '-',
             color: car.color || '-',
             purchase_price: `${formatCurrencySimple(Number(car.purchase_price))} ريال`,
-            status: car.status === 'available' ? 'متاحة' : 'مباعة',
+            status: car.status === 'available' ? 'متاحة' : car.status === 'transferred' ? 'محولة' : 'مباعة',
             date: formatDate(car.purchase_date),
           })),
       summaryCards: [
@@ -184,7 +184,7 @@ export function SuppliersReport() {
             color: car.color || '-',
             chassis: car.chassis_number,
             purchase_price: Number(car.purchase_price),
-            status: car.status === 'available' ? 'متاحة' : 'مباعة',
+            status: car.status === 'available' ? 'متاحة' : car.status === 'transferred' ? 'محولة' : 'مباعة',
             date: formatDate(car.purchase_date),
           })),
       summaryData: [
@@ -415,8 +415,9 @@ export function SuppliersReport() {
                       <TableCell>{car.color || '-'}</TableCell>
                       <TableCell>{formatCurrency(Number(car.purchase_price))}</TableCell>
                       <TableCell>
-                        <Badge variant={car.status === 'available' ? 'default' : 'secondary'}>
-                          {car.status === 'available' ? 'متاحة' : 'مباعة'}
+                        <Badge variant={car.status === 'available' ? 'default' : car.status === 'transferred' ? 'default' : 'secondary'}
+                          className={car.status === 'transferred' ? 'bg-orange-500' : ''}>
+                          {car.status === 'available' ? 'متاحة' : car.status === 'transferred' ? 'محولة' : 'مباعة'}
                         </Badge>
                       </TableCell>
                       <TableCell>{formatDate(car.purchase_date)}</TableCell>
