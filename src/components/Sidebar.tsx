@@ -73,7 +73,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
       </div>
 
       {/* Main Menu */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-4 overflow-y-auto">
         <div className="mb-6">
           <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">القائمة الرئيسية</p>
           <ul className="space-y-1">
