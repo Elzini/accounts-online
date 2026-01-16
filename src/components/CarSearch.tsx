@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Car, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Car, CheckCircle, XCircle, ArrowRightLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useCars } from '@/hooks/useDatabase';
@@ -80,11 +80,19 @@ export function CarSearch() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold">{car.name}</h3>
-                        <Badge className={car.status === 'available' ? 'bg-success' : 'bg-muted'}>
+                        <Badge className={
+                          car.status === 'available' ? 'bg-success' : 
+                          car.status === 'transferred' ? 'bg-orange-500' : 'bg-muted'
+                        }>
                           {car.status === 'available' ? (
                             <span className="flex items-center gap-1">
                               <CheckCircle className="w-3 h-3" />
                               متاحة
+                            </span>
+                          ) : car.status === 'transferred' ? (
+                            <span className="flex items-center gap-1">
+                              <ArrowRightLeft className="w-3 h-3" />
+                              محولة
                             </span>
                           ) : (
                             <span className="flex items-center gap-1">

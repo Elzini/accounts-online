@@ -48,7 +48,7 @@ export function PurchasesReport() {
         chassis_number: car.chassis_number,
         purchase_price: `${formatCurrency(Number(car.purchase_price))} ريال`,
         purchase_date: formatDate(car.purchase_date),
-        status: car.status === 'available' ? 'متاحة' : 'مباعة',
+        status: car.status === 'available' ? 'متاحة' : car.status === 'transferred' ? 'محولة' : 'مباعة',
       })),
       summaryCards: [
         { label: 'عدد المشتريات', value: String(filteredCars.length) },
@@ -149,8 +149,8 @@ export function PurchasesReport() {
                   <TableCell>{formatCurrency(Number(car.purchase_price))} ريال</TableCell>
                   <TableCell>{formatDate(car.purchase_date)}</TableCell>
                   <TableCell>
-                    <Badge className={car.status === 'available' ? 'bg-success' : ''}>
-                      {car.status === 'available' ? 'متاحة' : 'مباعة'}
+                    <Badge className={car.status === 'available' ? 'bg-success' : car.status === 'transferred' ? 'bg-orange-500' : ''}>
+                      {car.status === 'available' ? 'متاحة' : car.status === 'transferred' ? 'محولة' : 'مباعة'}
                     </Badge>
                   </TableCell>
                 </TableRow>

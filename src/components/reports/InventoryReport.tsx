@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Package, Car, CheckCircle, Printer, Search } from 'lucide-react';
+import { Package, Car, CheckCircle, Printer, Search, ArrowRightLeft } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,7 +38,9 @@ export function InventoryReport() {
   
   const availableCars = filteredCars.filter(c => c.status === 'available');
   const soldCars = filteredCars.filter(c => c.status === 'sold');
+  const transferredCars = filteredCars.filter(c => c.status === 'transferred');
   const totalValue = availableCars.reduce((sum, car) => sum + Number(car.purchase_price), 0);
+  const transferredValue = transferredCars.reduce((sum, car) => sum + Number(car.purchase_price), 0);
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('ar-SA').format(value);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ar-SA');
@@ -63,11 +65,12 @@ export function InventoryReport() {
         model: car.model || '-',
         purchase_price: `${formatCurrency(Number(car.purchase_price))} ريال`,
         purchase_date: formatDate(car.purchase_date),
-        status: car.status === 'available' ? 'متاحة' : 'مباعة',
+        status: car.status === 'available' ? 'متاحة' : car.status === 'transferred' ? 'محولة' : 'مباعة',
       })),
       summaryCards: [
         { label: 'إجمالي السيارات', value: String(filteredCars.length) },
         { label: 'سيارات متاحة', value: String(availableCars.length) },
+        { label: 'سيارات محولة', value: String(transferredCars.length) },
         { label: 'سيارات مباعة', value: String(soldCars.length) },
         { label: 'قيمة المخزون', value: `${formatCurrency(totalValue)} ريال` },
       ],
@@ -100,6 +103,7 @@ export function InventoryReport() {
             <SelectContent>
               <SelectItem value="all">جميع السيارات</SelectItem>
               <SelectItem value="available">المتاحة فقط</SelectItem>
+              <SelectItem value="transferred">المحولة فقط</SelectItem>
               <SelectItem value="sold">المباعة فقط</SelectItem>
             </SelectContent>
           </Select>
@@ -136,6 +140,17 @@ export function InventoryReport() {
             <div>
               <p className="text-sm text-muted-foreground">سيارات متاحة</p>
               <p className="text-2xl font-bold text-success">{availableCars.length}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-card rounded-2xl p-6 card-shadow">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-orange-500 flex items-center justify-center">
+              <ArrowRightLeft className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">سيارات محولة</p>
+              <p className="text-2xl font-bold text-orange-600">{transferredCars.length}</p>
             </div>
           </div>
         </div>
@@ -194,8 +209,8 @@ export function InventoryReport() {
                   <TableCell>{formatCurrency(Number(car.purchase_price))} ريال</TableCell>
                   <TableCell>{formatDate(car.purchase_date)}</TableCell>
                   <TableCell>
-                    <Badge className={car.status === 'available' ? 'bg-success' : ''}>
-                      {car.status === 'available' ? 'متاحة' : 'مباعة'}
+                    <Badge className={car.status === 'available' ? 'bg-success' : car.status === 'transferred' ? 'bg-orange-500' : ''}>
+                      {car.status === 'available' ? 'متاحة' : car.status === 'transferred' ? 'محولة' : 'مباعة'}
                     </Badge>
                   </TableCell>
                 </TableRow>
