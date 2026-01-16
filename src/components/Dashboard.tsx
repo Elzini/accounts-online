@@ -1,6 +1,7 @@
 import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, FileText, Users, ArrowDownLeft, ArrowUpRight, Building2 } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ActivePage } from '@/types';
 import { useMonthlyChartData } from '@/hooks/useDatabase';
 import { useAppSettings } from '@/hooks/useSettings';
@@ -44,9 +45,9 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const canPurchases = permissions.admin || permissions.purchases;
   const canReports = permissions.admin || permissions.reports;
 
-  // Calculate transfer stats by dealership
+  // Calculate transfer stats by dealership - with car details
   const transferStats = useMemo(() => {
-    if (!transfers || !dealerships) return { incoming: [], outgoing: [] };
+    if (!transfers || !dealerships) return { incoming: [], outgoing: [], incomingCars: [], outgoingCars: [] };
 
     const incomingByDealership = dealerships.map(d => {
       const dealershipTransfers = transfers.filter(
@@ -66,7 +67,31 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       return { id: d.id, name: d.name, pending, total };
     }).filter(d => d.total > 0);
 
-    return { incoming: incomingByDealership, outgoing: outgoingByDealership };
+    // Get pending incoming cars with details
+    const incomingCars = transfers
+      .filter(t => t.transfer_type === 'incoming' && t.status === 'pending')
+      .map(t => ({
+        id: t.id,
+        dealershipName: t.partner_dealership?.name || '',
+        carName: t.car?.name || '',
+        model: t.car?.model || '',
+        chassisNumber: t.car?.chassis_number || '',
+        status: t.status,
+      }));
+
+    // Get pending outgoing cars with details
+    const outgoingCars = transfers
+      .filter(t => t.transfer_type === 'outgoing' && t.status === 'pending')
+      .map(t => ({
+        id: t.id,
+        dealershipName: t.partner_dealership?.name || '',
+        carName: t.car?.name || '',
+        model: t.car?.model || '',
+        chassisNumber: t.car?.chassis_number || '',
+        status: t.status,
+      }));
+
+    return { incoming: incomingByDealership, outgoing: outgoingByDealership, incomingCars, outgoingCars };
   }, [transfers, dealerships]);
 
   const formatCurrency = (value: number) => {
@@ -140,108 +165,108 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         />
       </div>
 
-      {/* Partner Dealership Transfers - Always visible */}
+      {/* Partner Dealership Transfers - with car details */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          {/* Incoming Cars */}
-          <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-            <div className="flex items-center justify-between mb-4 md:mb-6">
-              <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
-                <ArrowDownLeft className="w-5 h-5 text-blue-500" />
-                السيارات الواردة من المعارض
-              </h2>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setActivePage('car-transfers')}
-                className="text-primary"
-              >
-                عرض الكل
-              </Button>
+        {/* Incoming Cars */}
+        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
+              <ArrowDownLeft className="w-5 h-5 text-blue-500" />
+              السيارات الواردة من المعارض
+            </h2>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setActivePage('car-transfers')}
+              className="text-primary"
+            >
+              عرض الكل
+            </Button>
+          </div>
+          {transferStats.incomingCars.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>لا توجد سيارات واردة قيد الانتظار</p>
             </div>
-            {transferStats.incoming.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>لا توجد سيارات واردة</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {transferStats.incoming.map((d) => (
-                  <div 
-                    key={d.id} 
-                    className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-950/50 cursor-pointer transition-colors"
-                    onClick={() => setActivePage('partner-report')}
-                  >
+          ) : (
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {transferStats.incomingCars.map((car) => (
+                <div 
+                  key={car.id} 
+                  className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-950/50 cursor-pointer transition-colors"
+                  onClick={() => setActivePage('car-transfers')}
+                >
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                        <Building2 className="w-5 h-5 text-blue-600" />
+                        <Car className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="font-semibold">{d.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {d.pending > 0 && <span className="text-yellow-600">{d.pending} قيد الانتظار</span>}
-                        </p>
+                        <p className="font-semibold">{car.carName} {car.model}</p>
+                        <p className="text-sm text-muted-foreground">شاسيه: {car.chassisNumber}</p>
                       </div>
                     </div>
                     <div className="text-left">
-                      <p className="text-2xl font-bold text-blue-600">{d.total}</p>
-                      <p className="text-xs text-muted-foreground">سيارة</p>
+                      <p className="text-sm font-medium text-blue-600">{car.dealershipName}</p>
+                      <Badge variant="outline" className="text-xs">قيد الانتظار</Badge>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Outgoing Cars */}
-          <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-            <div className="flex items-center justify-between mb-4 md:mb-6">
-              <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
-                <ArrowUpRight className="w-5 h-5 text-orange-500" />
-                السيارات الصادرة للمعارض
-              </h2>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setActivePage('car-transfers')}
-                className="text-primary"
-              >
-                عرض الكل
-              </Button>
+                </div>
+              ))}
             </div>
-            {transferStats.outgoing.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>لا توجد سيارات صادرة</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {transferStats.outgoing.map((d) => (
-                  <div 
-                    key={d.id} 
-                    className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-950/50 cursor-pointer transition-colors"
-                    onClick={() => setActivePage('partner-report')}
-                  >
+          )}
+        </div>
+
+        {/* Outgoing Cars */}
+        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
+              <ArrowUpRight className="w-5 h-5 text-orange-500" />
+              السيارات الصادرة للمعارض
+            </h2>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setActivePage('car-transfers')}
+              className="text-primary"
+            >
+              عرض الكل
+            </Button>
+          </div>
+          {transferStats.outgoingCars.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>لا توجد سيارات صادرة قيد الانتظار</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {transferStats.outgoingCars.map((car) => (
+                <div 
+                  key={car.id} 
+                  className="p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-950/50 cursor-pointer transition-colors"
+                  onClick={() => setActivePage('car-transfers')}
+                >
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                        <Building2 className="w-5 h-5 text-orange-600" />
+                        <Car className="w-5 h-5 text-orange-600" />
                       </div>
                       <div>
-                        <p className="font-semibold">{d.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {d.pending > 0 && <span className="text-yellow-600">{d.pending} قيد الانتظار</span>}
-                        </p>
+                        <p className="font-semibold">{car.carName} {car.model}</p>
+                        <p className="text-sm text-muted-foreground">شاسيه: {car.chassisNumber}</p>
                       </div>
                     </div>
                     <div className="text-left">
-                      <p className="text-2xl font-bold text-orange-600">{d.total}</p>
-                      <p className="text-xs text-muted-foreground">سيارة</p>
+                      <p className="text-sm font-medium text-orange-600">{car.dealershipName}</p>
+                      <Badge variant="outline" className="text-xs">قيد الانتظار</Badge>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+      </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
