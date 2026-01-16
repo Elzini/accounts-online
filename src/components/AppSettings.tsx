@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn, Image } from 'lucide-react';
+import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn, Image, Lock, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -65,6 +66,15 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loginLogoInputRef = useRef<HTMLInputElement>(null);
+  
+  // Password change states
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordChanging, setPasswordChanging] = useState(false);
 
   const isAdmin = permissions.admin;
 
@@ -240,6 +250,62 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('يرجى ملء جميع الحقول');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('كلمة المرور الجديدة غير متطابقة');
+      return;
+    }
+
+    setPasswordChanging(true);
+    try {
+      // First verify current password by trying to sign in
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) {
+        toast.error('حدث خطأ في جلب بيانات المستخدم');
+        return;
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        toast.error('كلمة المرور الحالية غير صحيحة');
+        return;
+      }
+
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) {
+        toast.error('حدث خطأ أثناء تغيير كلمة المرور');
+        return;
+      }
+
+      toast.success('تم تغيير كلمة المرور بنجاح');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      toast.error('حدث خطأ غير متوقع');
+    } finally {
+      setPasswordChanging(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -254,7 +320,7 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
       </div>
 
       <Tabs defaultValue="branding" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
           <TabsTrigger value="branding" className="flex items-center gap-2">
             <Palette className="w-4 h-4" />
             <span className="hidden sm:inline">الهوية</span>
@@ -266,6 +332,10 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
           <TabsTrigger value="login" className="flex items-center gap-2">
             <LogIn className="w-4 h-4" />
             <span className="hidden sm:inline">شاشة الدخول</span>
+          </TabsTrigger>
+          <TabsTrigger value="password" className="flex items-center gap-2">
+            <Lock className="w-4 h-4" />
+            <span className="hidden sm:inline">كلمة المرور</span>
           </TabsTrigger>
           <TabsTrigger value="danger" className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
@@ -735,6 +805,94 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
               {updateSetting.isPending ? 'جاري الحفظ...' : 'حفظ إعدادات شاشة الدخول'}
             </Button>
           )}
+        </TabsContent>
+
+        {/* Password Tab */}
+        <TabsContent value="password" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="w-5 h-5" />
+                تغيير كلمة المرور
+              </CardTitle>
+              <CardDescription>
+                قم بتغيير كلمة مرور حسابك الحالي
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 max-w-md">
+              <div className="space-y-2">
+                <Label htmlFor="current-password">كلمة المرور الحالية</Label>
+                <div className="relative">
+                  <Input
+                    id="current-password"
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="أدخل كلمة المرور الحالية"
+                    className="pl-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="new-password">كلمة المرور الجديدة</Label>
+                <div className="relative">
+                  <Input
+                    id="new-password"
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="أدخل كلمة المرور الجديدة (6 أحرف على الأقل)"
+                    className="pl-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">تأكيد كلمة المرور الجديدة</Label>
+                <div className="relative">
+                  <Input
+                    id="confirm-password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="أعد إدخال كلمة المرور الجديدة"
+                    className="pl-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button 
+                onClick={handleChangePassword} 
+                className="w-full gradient-primary"
+                disabled={passwordChanging}
+              >
+                <Lock className="w-4 h-4 ml-2" />
+                {passwordChanging ? 'جاري التغيير...' : 'تغيير كلمة المرور'}
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Danger Tab */}
