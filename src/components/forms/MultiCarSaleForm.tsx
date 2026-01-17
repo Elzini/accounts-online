@@ -215,7 +215,7 @@ export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
                       <SelectItem key={car.id} value={car.id}>
                         <div className="flex items-center gap-2">
                           <Car className="w-4 h-4" />
-                          <span>{car.name} - {car.model}</span>
+                          <span>{car.name} - {car.model} ({car.chassis_number})</span>
                         </div>
                       </SelectItem>
                     ))}
