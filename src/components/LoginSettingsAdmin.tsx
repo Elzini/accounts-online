@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Save, Upload, Palette, LogIn, Image } from 'lucide-react';
+import { Save, Upload, Palette, LogIn, Image, Eye, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -372,13 +372,147 @@ export function LoginSettingsAdmin() {
               </div>
             </div>
 
-            {/* Preview */}
-            <div className="mt-6 p-4 rounded-lg border">
-              <Label className="mb-3 block">معاينة التدرج اللوني</Label>
-              <div 
-                className="h-20 rounded-lg"
-                style={{ background: headerGradient }}
-              />
+          </CardContent>
+        </Card>
+
+        {/* Live Preview Section */}
+        <Card className="lg:col-span-2 xl:col-span-3">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              معاينة مباشرة
+            </CardTitle>
+            <CardDescription>
+              شاهد كيف ستظهر شاشات الدخول والتسجيل للمستخدمين
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {/* Login Preview */}
+              <div className="space-y-2">
+                <Label className="text-lg font-semibold flex items-center gap-2">
+                  <LogIn className="w-4 h-4" />
+                  معاينة صفحة الدخول
+                </Label>
+                <div 
+                  className="rounded-xl overflow-hidden border-2 shadow-lg"
+                  style={{ backgroundColor: settings.login_bg_color }}
+                >
+                  <div className="p-6 flex items-center justify-center min-h-[400px]">
+                    <div 
+                      className="w-full max-w-sm rounded-xl shadow-2xl overflow-hidden border border-white/10"
+                      style={{ backgroundColor: settings.login_card_color }}
+                    >
+                      {/* Card Header */}
+                      <div 
+                        className="p-6 text-center"
+                        style={{ background: headerGradient }}
+                      >
+                        {settings.login_logo_url && (
+                          <div className="mb-4 flex justify-center">
+                            <img 
+                              src={settings.login_logo_url} 
+                              alt="Logo" 
+                              className="w-16 h-16 object-contain bg-white/10 rounded-xl p-2"
+                            />
+                          </div>
+                        )}
+                        <h2 className="text-xl font-bold text-white">
+                          {settings.login_title || 'أشبال النمر'}
+                        </h2>
+                        <p className="text-white/80 text-sm mt-1">
+                          {settings.login_subtitle || 'نظام إدارة معرض السيارات'}
+                        </p>
+                      </div>
+                      
+                      {/* Card Content */}
+                      <div className="p-6 space-y-4">
+                        <div className="space-y-2">
+                          <div className="text-xs text-gray-400">البريد الإلكتروني</div>
+                          <div className="h-10 rounded-lg bg-white/5 border border-white/10"></div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="text-xs text-gray-400">كلمة المرور</div>
+                          <div className="h-10 rounded-lg bg-white/5 border border-white/10"></div>
+                        </div>
+                        <div 
+                          className="h-10 rounded-lg flex items-center justify-center text-white font-medium text-sm"
+                          style={{ background: headerGradient }}
+                        >
+                          {settings.login_button_text || 'تسجيل الدخول'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Register Preview */}
+              <div className="space-y-2">
+                <Label className="text-lg font-semibold flex items-center gap-2">
+                  <Building2 className="w-4 h-4" />
+                  معاينة صفحة التسجيل
+                </Label>
+                <div 
+                  className="rounded-xl overflow-hidden border-2 shadow-lg"
+                  style={{ backgroundColor: settings.login_bg_color }}
+                >
+                  <div className="p-6 flex items-center justify-center min-h-[400px]">
+                    <div 
+                      className="w-full max-w-sm rounded-xl shadow-2xl overflow-hidden border border-white/10"
+                      style={{ backgroundColor: settings.login_card_color }}
+                    >
+                      {/* Card Header */}
+                      <div 
+                        className="p-6 text-center"
+                        style={{ background: headerGradient }}
+                      >
+                        {settings.login_logo_url && (
+                          <div className="mb-4 flex justify-center">
+                            <img 
+                              src={settings.login_logo_url} 
+                              alt="Logo" 
+                              className="w-16 h-16 object-contain bg-white/10 rounded-xl p-2"
+                            />
+                          </div>
+                        )}
+                        <h2 className="text-xl font-bold text-white">
+                          {settings.register_title || 'تسجيل شركة جديدة'}
+                        </h2>
+                        <p className="text-white/80 text-sm mt-1">
+                          {settings.register_subtitle || 'أنشئ حساب شركتك الآن'}
+                        </p>
+                      </div>
+                      
+                      {/* Card Content */}
+                      <div className="p-6 space-y-3">
+                        <div className="space-y-1">
+                          <div className="text-xs text-gray-400">اسم الشركة</div>
+                          <div className="h-9 rounded-lg bg-white/5 border border-white/10"></div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-xs text-gray-400">اسم المستخدم</div>
+                          <div className="h-9 rounded-lg bg-white/5 border border-white/10"></div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-xs text-gray-400">البريد الإلكتروني</div>
+                          <div className="h-9 rounded-lg bg-white/5 border border-white/10"></div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-xs text-gray-400">كلمة المرور</div>
+                          <div className="h-9 rounded-lg bg-white/5 border border-white/10"></div>
+                        </div>
+                        <div 
+                          className="h-10 rounded-lg flex items-center justify-center text-white font-medium text-sm mt-4"
+                          style={{ background: headerGradient }}
+                        >
+                          {settings.register_button_text || 'تسجيل الشركة'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
