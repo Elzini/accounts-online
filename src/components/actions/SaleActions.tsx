@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -22,12 +22,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUpdateSale, useDeleteSale } from '@/hooks/useDatabase';
+import { useTaxSettings } from '@/hooks/useAccounting';
+import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
 type Sale = Database['public']['Tables']['sales']['Row'] & {
   car?: Database['public']['Tables']['cars']['Row'] | null;
-  customer?: { name: string } | null;
+  customer?: { name: string; phone?: string; address?: string; id_number?: string } | null;
 };
 
 interface EditSaleDialogProps {
@@ -220,15 +222,69 @@ interface SaleActionsProps {
 export function SaleActions({ sale }: SaleActionsProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const { data: taxSettings } = useTaxSettings();
+
+  // Calculate tax
+  const taxRate = taxSettings?.is_active ? (taxSettings?.tax_rate || 0) : 0;
+  const salePrice = Number(sale.sale_price);
+  const taxAmount = salePrice * (taxRate / (100 + taxRate));
+  const subtotal = salePrice - taxAmount;
+
+  // Build address string
+  const buildAddress = () => {
+    const parts = [];
+    if (taxSettings?.building_number) parts.push(`مبنى ${taxSettings.building_number}`);
+    if (taxSettings?.national_address) parts.push(taxSettings.national_address);
+    if (taxSettings?.city) parts.push(taxSettings.city);
+    if (taxSettings?.postal_code) parts.push(`ص.ب ${taxSettings.postal_code}`);
+    return parts.length > 0 ? parts.join('، ') : 'المملكة العربية السعودية';
+  };
+
+  const invoiceData = {
+    invoiceNumber: sale.sale_number,
+    invoiceDate: sale.sale_date,
+    invoiceType: 'sale' as const,
+    sellerName: taxSettings?.company_name_ar || 'الشركة',
+    sellerTaxNumber: taxSettings?.tax_number || '',
+    sellerAddress: buildAddress(),
+    buyerName: sale.customer?.name || 'عميل',
+    buyerPhone: sale.customer?.phone,
+    buyerAddress: sale.customer?.address,
+    buyerIdNumber: sale.customer?.id_number,
+    items: [
+      {
+        description: `${sale.car?.name || 'سيارة'} ${sale.car?.model || ''} - ${sale.car?.color || ''} - شاسيه: ${sale.car?.chassis_number || ''}`,
+        quantity: 1,
+        unitPrice: subtotal,
+        taxRate: taxRate,
+        total: salePrice,
+      }
+    ],
+    subtotal,
+    taxAmount,
+    total: salePrice,
+    taxSettings,
+  };
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setInvoiceOpen(true)}
+          className="h-8 w-8 text-primary hover:text-primary"
+          title="عرض الفاتورة"
+        >
+          <FileText className="h-4 w-4" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setEditOpen(true)}
           className="h-8 w-8"
+          title="تعديل"
         >
           <Pencil className="h-4 w-4" />
         </Button>
@@ -237,12 +293,18 @@ export function SaleActions({ sale }: SaleActionsProps) {
           size="icon"
           onClick={() => setDeleteOpen(true)}
           className="h-8 w-8 text-destructive hover:text-destructive"
+          title="حذف"
         >
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
       <EditSaleDialog sale={sale} open={editOpen} onOpenChange={setEditOpen} />
       <DeleteSaleDialog sale={sale} open={deleteOpen} onOpenChange={setDeleteOpen} />
+      <InvoicePreviewDialog 
+        open={invoiceOpen} 
+        onOpenChange={setInvoiceOpen} 
+        data={invoiceData}
+      />
     </>
   );
 }

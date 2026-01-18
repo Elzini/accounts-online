@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -22,6 +22,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUpdateCar, useDeleteCar, useSuppliers } from '@/hooks/useDatabase';
+import { useTaxSettings } from '@/hooks/useAccounting';
+import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import {
   Select,
   SelectContent,
@@ -32,7 +34,9 @@ import {
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
-type Car = Database['public']['Tables']['cars']['Row'];
+type Car = Database['public']['Tables']['cars']['Row'] & {
+  supplier?: { name: string; phone?: string; address?: string } | null;
+};
 
 interface EditCarDialogProps {
   car: Car;
@@ -222,15 +226,68 @@ interface CarActionsProps {
 export function CarActions({ car }: CarActionsProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const { data: taxSettings } = useTaxSettings();
+
+  // Calculate tax for purchase
+  const taxRate = taxSettings?.is_active && taxSettings?.apply_to_purchases ? (taxSettings?.tax_rate || 0) : 0;
+  const purchasePrice = Number(car.purchase_price);
+  const taxAmount = purchasePrice * (taxRate / (100 + taxRate));
+  const subtotal = purchasePrice - taxAmount;
+
+  // Build address string
+  const buildAddress = () => {
+    const parts = [];
+    if (taxSettings?.building_number) parts.push(`مبنى ${taxSettings.building_number}`);
+    if (taxSettings?.national_address) parts.push(taxSettings.national_address);
+    if (taxSettings?.city) parts.push(taxSettings.city);
+    if (taxSettings?.postal_code) parts.push(`ص.ب ${taxSettings.postal_code}`);
+    return parts.length > 0 ? parts.join('، ') : 'المملكة العربية السعودية';
+  };
+
+  const invoiceData = {
+    invoiceNumber: car.inventory_number,
+    invoiceDate: car.purchase_date,
+    invoiceType: 'purchase' as const,
+    sellerName: car.supplier?.name || 'مورد',
+    sellerTaxNumber: '',
+    sellerAddress: car.supplier?.address || '',
+    buyerName: taxSettings?.company_name_ar || 'الشركة',
+    buyerPhone: '',
+    buyerAddress: buildAddress(),
+    items: [
+      {
+        description: `${car.name} ${car.model || ''} - ${car.color || ''} - شاسيه: ${car.chassis_number}`,
+        quantity: 1,
+        unitPrice: subtotal,
+        taxRate: taxRate,
+        total: purchasePrice,
+      }
+    ],
+    subtotal,
+    taxAmount,
+    total: purchasePrice,
+    taxSettings,
+  };
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setInvoiceOpen(true)}
+          className="h-8 w-8 text-primary hover:text-primary"
+          title="عرض فاتورة الشراء"
+        >
+          <FileText className="h-4 w-4" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setEditOpen(true)}
           className="h-8 w-8"
+          title="تعديل"
         >
           <Pencil className="h-4 w-4" />
         </Button>
@@ -239,12 +296,18 @@ export function CarActions({ car }: CarActionsProps) {
           size="icon"
           onClick={() => setDeleteOpen(true)}
           className="h-8 w-8 text-destructive hover:text-destructive"
+          title="حذف"
         >
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
       <EditCarDialog car={car} open={editOpen} onOpenChange={setEditOpen} />
       <DeleteCarDialog car={car} open={deleteOpen} onOpenChange={setDeleteOpen} />
+      <InvoicePreviewDialog 
+        open={invoiceOpen} 
+        onOpenChange={setInvoiceOpen} 
+        data={invoiceData}
+      />
     </>
   );
 }
