@@ -478,7 +478,13 @@ export type Database = {
     Enums: {
       transfer_status: "pending" | "sold" | "returned"
       transfer_type: "outgoing" | "incoming"
-      user_permission: "sales" | "purchases" | "reports" | "admin" | "users"
+      user_permission:
+        | "sales"
+        | "purchases"
+        | "reports"
+        | "admin"
+        | "users"
+        | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -608,7 +614,14 @@ export const Constants = {
     Enums: {
       transfer_status: ["pending", "sold", "returned"],
       transfer_type: ["outgoing", "incoming"],
-      user_permission: ["sales", "purchases", "reports", "admin", "users"],
+      user_permission: [
+        "sales",
+        "purchases",
+        "reports",
+        "admin",
+        "users",
+        "super_admin",
+      ],
     },
   },
 } as const
