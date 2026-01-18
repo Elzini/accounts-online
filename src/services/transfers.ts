@@ -67,6 +67,20 @@ export interface CarTransferInsert {
   sale_price?: number;
 }
 
+// Helper function to get current user's company_id
+async function getCurrentCompanyId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_id')
+    .eq('user_id', user.id)
+    .single();
+  
+  return profile?.company_id || null;
+}
+
 // Function to get pending transfer for a car
 export async function getPendingTransferForCar(carId: string): Promise<CarTransfer | null> {
   const { data, error } = await supabase
@@ -129,9 +143,12 @@ export async function fetchPartnerDealerships(): Promise<PartnerDealership[]> {
 }
 
 export async function addPartnerDealership(dealership: PartnerDealershipInsert): Promise<PartnerDealership> {
+  const companyId = await getCurrentCompanyId();
+  if (!companyId) throw new Error('No company found for user');
+  
   const { data, error } = await supabase
     .from('partner_dealerships')
-    .insert(dealership)
+    .insert({ ...dealership, company_id: companyId })
     .select()
     .single();
   
@@ -176,9 +193,12 @@ export async function fetchCarTransfers(): Promise<CarTransfer[]> {
 }
 
 export async function addCarTransfer(transfer: CarTransferInsert): Promise<CarTransfer> {
+  const companyId = await getCurrentCompanyId();
+  if (!companyId) throw new Error('No company found for user');
+  
   const { data, error } = await supabase
     .from('car_transfers')
-    .insert(transfer)
+    .insert({ ...transfer, company_id: companyId })
     .select(`
       *,
       car:cars(id, name, model, color, chassis_number, inventory_number, purchase_price, status),
