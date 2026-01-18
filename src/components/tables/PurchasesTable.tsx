@@ -7,6 +7,7 @@ import { SearchFilter } from '@/components/ui/search-filter';
 import { CarActions } from '@/components/actions/CarActions';
 import { ActivePage } from '@/types';
 import { useCars } from '@/hooks/useDatabase';
+import { useTaxSettings } from '@/hooks/useAccounting';
 
 interface PurchasesTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -14,8 +15,11 @@ interface PurchasesTableProps {
 
 export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const { data: cars = [], isLoading } = useCars();
+  const { data: taxSettings } = useTaxSettings();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  const taxRate = taxSettings?.is_active && taxSettings?.apply_to_purchases ? (taxSettings.tax_rate || 15) : 0;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA').format(value);
@@ -23,6 +27,17 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
 
   const formatDate = (date: string) => {
     return new Intl.DateTimeFormat('ar-SA').format(new Date(date));
+  };
+
+  // Calculate tax details for each purchase
+  const calculateTaxDetails = (purchasePrice: number) => {
+    const baseAmount = purchasePrice / (1 + taxRate / 100);
+    const taxAmount = purchasePrice - baseAmount;
+    return {
+      baseAmount: Math.round(baseAmount * 100) / 100,
+      taxAmount: Math.round(taxAmount * 100) / 100,
+      totalWithTax: purchasePrice,
+    };
   };
 
   const filteredCars = useMemo(() => {
@@ -91,7 +106,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
 
       {/* Table */}
       <div className="bg-card rounded-xl md:rounded-2xl card-shadow overflow-hidden overflow-x-auto">
-        <Table className="min-w-[900px]">
+        <Table className="min-w-[1200px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead className="text-right font-bold">رقم المخزون</TableHead>
@@ -99,14 +114,18 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
               <TableHead className="text-right font-bold">الموديل</TableHead>
               <TableHead className="text-right font-bold">اللون</TableHead>
               <TableHead className="text-right font-bold">رقم الهيكل</TableHead>
-              <TableHead className="text-right font-bold">سعر الشراء</TableHead>
+              <TableHead className="text-right font-bold">المبلغ الأصلي</TableHead>
+              <TableHead className="text-right font-bold">الضريبة ({taxRate}%)</TableHead>
+              <TableHead className="text-right font-bold">الإجمالي مع الضريبة</TableHead>
               <TableHead className="text-right font-bold">تاريخ الشراء</TableHead>
               <TableHead className="text-right font-bold">الحالة</TableHead>
               <TableHead className="text-right font-bold">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCars.map((car) => (
+            {filteredCars.map((car) => {
+              const taxDetails = calculateTaxDetails(Number(car.purchase_price));
+              return (
               <TableRow key={car.id} className="hover:bg-muted/30 transition-colors">
                 <TableCell className="font-medium">{car.inventory_number}</TableCell>
                 <TableCell>
@@ -118,7 +137,9 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                 <TableCell>{car.model || '-'}</TableCell>
                 <TableCell>{car.color || '-'}</TableCell>
                 <TableCell dir="ltr" className="text-right font-mono text-sm">{car.chassis_number}</TableCell>
-                <TableCell className="font-semibold text-primary">{formatCurrency(Number(car.purchase_price))} ريال</TableCell>
+                <TableCell className="font-medium">{formatCurrency(taxDetails.baseAmount)} ريال</TableCell>
+                <TableCell className="text-orange-600 font-medium">{formatCurrency(taxDetails.taxAmount)} ريال</TableCell>
+                <TableCell className="font-semibold text-primary">{formatCurrency(taxDetails.totalWithTax)} ريال</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -135,7 +156,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                   <CarActions car={car} />
                 </TableCell>
               </TableRow>
-            ))}
+            );})}
           </TableBody>
         </Table>
         
