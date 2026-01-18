@@ -116,7 +116,9 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground">{settings?.dashboard_title || 'لوحة التحكم'}</h1>
-        <p className="text-sm md:text-base text-muted-foreground mt-1">{settings?.welcome_message || 'مرحباً بك في نظام إدارة معرض أشبال النمر للسيارات'}</p>
+        <p className="text-sm md:text-base text-muted-foreground mt-1">
+          {settings?.welcome_message || 'مرحباً بك في منصة إدارة المعارض للسيارات'}
+        </p>
       </div>
 
       {/* Stats Grid */}
