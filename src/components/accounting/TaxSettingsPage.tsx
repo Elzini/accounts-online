@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,15 +13,15 @@ export function TaxSettingsPage() {
   const upsertTaxSettings = useUpsertTaxSettings();
 
   const [formData, setFormData] = useState({
-    tax_name: taxSettings?.tax_name || 'ضريبة القيمة المضافة',
-    tax_rate: taxSettings?.tax_rate || 15,
-    is_active: taxSettings?.is_active ?? true,
-    apply_to_sales: taxSettings?.apply_to_sales ?? true,
-    apply_to_purchases: taxSettings?.apply_to_purchases ?? true,
+    tax_name: 'ضريبة القيمة المضافة',
+    tax_rate: 15,
+    is_active: true,
+    apply_to_sales: true,
+    apply_to_purchases: true,
   });
 
   // Update form when data loads
-  useState(() => {
+  useEffect(() => {
     if (taxSettings) {
       setFormData({
         tax_name: taxSettings.tax_name,
@@ -31,7 +31,7 @@ export function TaxSettingsPage() {
         apply_to_purchases: taxSettings.apply_to_purchases,
       });
     }
-  });
+  }, [taxSettings]);
 
   const handleSave = async () => {
     try {
