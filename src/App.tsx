@@ -9,6 +9,7 @@ import { CompanyProvider } from "@/contexts/CompanyContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Register from "./pages/Register";
+import Companies from "./pages/Companies";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Index />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/companies" 
+        element={
+          <ProtectedRoute>
+            <Companies />
           </ProtectedRoute>
         } 
       />
