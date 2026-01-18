@@ -1,14 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Building2, Mail, Lock, Phone, User, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAppSettings } from '@/hooks/useSettings';
 import { defaultSettings } from '@/services/settings';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
+
+interface GlobalSettings {
+  login_bg_color: string;
+  login_card_color: string;
+  login_header_gradient_start: string;
+  login_header_gradient_end: string;
+  login_logo_url: string;
+  register_title: string;
+  register_subtitle: string;
+  register_button_text: string;
+}
 
 export default function Register() {
   const [companyName, setCompanyName] = useState('');
@@ -19,14 +29,45 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const navigate = useNavigate();
-  const { data: settings } = useAppSettings();
 
-  // Get settings with fallback to defaults
-  const loginBgColor = settings?.login_bg_color || defaultSettings.login_bg_color;
-  const loginCardColor = settings?.login_card_color || defaultSettings.login_card_color;
-  const loginGradientStart = settings?.login_header_gradient_start || defaultSettings.login_header_gradient_start;
-  const loginGradientEnd = settings?.login_header_gradient_end || defaultSettings.login_header_gradient_end;
-  const loginLogoUrl = settings?.login_logo_url || '';
+  // Use global settings (company_id = null) for public pages
+  const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
+    login_bg_color: defaultSettings.login_bg_color,
+    login_card_color: defaultSettings.login_card_color,
+    login_header_gradient_start: defaultSettings.login_header_gradient_start,
+    login_header_gradient_end: defaultSettings.login_header_gradient_end,
+    login_logo_url: '',
+    register_title: 'تسجيل شركة جديدة',
+    register_subtitle: 'أنشئ حساب شركتك الآن',
+    register_button_text: 'تسجيل الشركة',
+  });
+
+  // Fetch global settings (not tied to any company)
+  useEffect(() => {
+    const fetchGlobalSettings = async () => {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('key, value')
+        .is('company_id', null);
+      
+      if (error) {
+        console.error('Error fetching global settings:', error);
+        return;
+      }
+
+      if (data) {
+        const newSettings = { ...globalSettings };
+        data.forEach(row => {
+          if (row.key in newSettings && row.value) {
+            (newSettings as any)[row.key] = row.value;
+          }
+        });
+        setGlobalSettings(newSettings);
+      }
+    };
+
+    fetchGlobalSettings();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,18 +131,18 @@ export default function Register() {
     }
   };
 
-  const headerGradient = `linear-gradient(135deg, ${loginGradientStart}, ${loginGradientEnd})`;
+  const headerGradient = `linear-gradient(135deg, ${globalSettings.login_header_gradient_start}, ${globalSettings.login_header_gradient_end})`;
 
   if (emailSent) {
     return (
       <div 
         className="min-h-screen flex items-center justify-center p-4"
-        style={{ backgroundColor: loginBgColor }}
+        style={{ backgroundColor: globalSettings.login_bg_color }}
       >
         <div className="w-full max-w-md">
           <div 
             className="rounded-2xl card-shadow overflow-hidden"
-            style={{ backgroundColor: loginCardColor }}
+            style={{ backgroundColor: globalSettings.login_card_color }}
           >
             {/* Header */}
             <div 
@@ -148,12 +189,12 @@ export default function Register() {
   return (
     <div 
       className="min-h-screen flex items-center justify-center p-4"
-      style={{ backgroundColor: loginBgColor }}
+      style={{ backgroundColor: globalSettings.login_bg_color }}
     >
       <div className="w-full max-w-md">
         <div 
           className="rounded-2xl card-shadow overflow-hidden"
-          style={{ backgroundColor: loginCardColor }}
+          style={{ backgroundColor: globalSettings.login_card_color }}
         >
           {/* Header */}
           <div 
@@ -162,13 +203,13 @@ export default function Register() {
           >
             <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-4 overflow-hidden">
               <img 
-                src={loginLogoUrl || logo} 
+                src={globalSettings.login_logo_url || logo} 
                 alt="Logo" 
                 className="w-16 h-16 object-contain" 
               />
             </div>
-            <h1 className="text-2xl font-bold text-white">تسجيل شركة جديدة</h1>
-            <p className="text-white/80 text-sm mt-1">أنشئ حساب شركتك الآن</p>
+            <h1 className="text-2xl font-bold text-white">{globalSettings.register_title}</h1>
+            <p className="text-white/80 text-sm mt-1">{globalSettings.register_subtitle}</p>
           </div>
 
           {/* Form */}
@@ -265,7 +306,7 @@ export default function Register() {
               style={{ background: headerGradient }}
               disabled={loading}
             >
-              {loading ? 'جاري التسجيل...' : 'تسجيل الشركة'}
+              {loading ? 'جاري التسجيل...' : globalSettings.register_button_text}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
