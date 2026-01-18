@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { LogOut } from 'lucide-react';
+import { LogOut, Building2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileSidebar } from '@/components/MobileSidebar';
 import { Dashboard } from '@/components/Dashboard';
@@ -32,9 +33,10 @@ import { ActivePage } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index = () => {
+  const navigate = useNavigate();
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
   const { data: stats } = useStats();
-  const { signOut, user } = useAuth();
+  const { signOut, user, permissions } = useAuth();
 
   const defaultStats = { availableCars: 0, todaySales: 0, totalProfit: 0, monthSales: 0, totalPurchases: 0, monthSalesAmount: 0 };
 
@@ -84,6 +86,16 @@ const Index = () => {
             مرحباً، {user?.email}
           </p>
           <div className="flex items-center gap-2">
+            {permissions.super_admin && (
+              <Button
+                variant="outline"
+                onClick={() => navigate('/companies')}
+                className="gap-2 text-sm"
+              >
+                <Building2 className="w-4 h-4" />
+                <span className="hidden sm:inline">إدارة الشركات</span>
+              </Button>
+            )}
             <CarSearch />
             <Button variant="ghost" onClick={signOut} className="gap-2 text-sm">
               <LogOut className="w-4 h-4" />
