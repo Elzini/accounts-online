@@ -26,7 +26,7 @@ export interface AppSettings {
 }
 
 export const defaultSettings: AppSettings = {
-  app_name: 'أشبال النمر',
+  app_name: 'منصة إدارة المعارض',
   app_subtitle: 'لتجارة السيارات',
   primary_color: '#3b82f6',
   dashboard_title: 'لوحة التحكم',
@@ -35,9 +35,9 @@ export const defaultSettings: AppSettings = {
   customers_title: 'العملاء',
   suppliers_title: 'الموردين',
   reports_title: 'التقارير',
-  welcome_message: 'مرحباً بك في نظام إدارة معرض أشبال النمر للسيارات',
+  welcome_message: 'مرحباً بك في منصة إدارة المعارض للسيارات',
   // Login page defaults
-  login_title: 'أشبال النمر',
+  login_title: 'منصة إدارة المعارض',
   login_subtitle: 'نظام إدارة معرض السيارات',
   login_bg_color: 'hsl(222.2, 84%, 4.9%)',
   login_card_color: 'hsl(222.2, 84%, 6%)',
