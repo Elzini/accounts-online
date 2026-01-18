@@ -35,6 +35,7 @@ import { ExpensesPage } from '@/components/expenses/ExpensesPage';
 import { QuotationsPage } from '@/components/quotations/QuotationsPage';
 import { InstallmentsPage } from '@/components/installments/InstallmentsPage';
 import { VouchersPage } from '@/components/vouchers/VouchersPage';
+import { AuditLogsPage } from '@/components/audit/AuditLogsPage';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -82,6 +83,7 @@ const Index = () => {
       case 'quotations': return <QuotationsPage />;
       case 'installments': return <InstallmentsPage />;
       case 'vouchers': return <VouchersPage />;
+      case 'audit-logs': return <AuditLogsPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };

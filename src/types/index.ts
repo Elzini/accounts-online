@@ -83,4 +83,5 @@ export type ActivePage =
   | 'expenses'
   | 'quotations'
   | 'installments'
-  | 'vouchers';
+  | 'vouchers'
+  | 'audit-logs';
