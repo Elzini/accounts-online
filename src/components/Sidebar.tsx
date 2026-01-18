@@ -11,7 +11,11 @@ import {
   Settings,
   Building2,
   ArrowLeftRight,
-  Crown
+  Crown,
+  Calculator,
+  BookOpen,
+  Percent,
+  PieChart
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
@@ -58,6 +62,13 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
     { id: 'commissions-report' as ActivePage, label: 'تقرير العمولات', icon: DollarSign, permission: 'reports' as const },
     { id: 'transfers-report' as ActivePage, label: 'تقرير التحويلات', icon: ArrowLeftRight, permission: 'reports' as const },
     { id: 'partner-report' as ActivePage, label: 'تقرير المعرض الشريك', icon: Building2, permission: 'reports' as const },
+  ];
+
+  const accountingItems = [
+    { id: 'tax-settings' as ActivePage, label: 'إعدادات الضريبة', icon: Percent },
+    { id: 'chart-of-accounts' as ActivePage, label: 'شجرة الحسابات', icon: BookOpen },
+    { id: 'journal-entries' as ActivePage, label: 'دفتر اليومية', icon: Calculator },
+    { id: 'financial-reports' as ActivePage, label: 'التقارير المالية', icon: PieChart },
   ];
 
   const hasAccess = (permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users') => {
@@ -151,6 +162,35 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
             <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">{settings?.reports_title || 'التقارير'}</p>
             <ul className="space-y-1">
               {reportItems.filter(item => hasAccess(item.permission)).map((item) => {
+                const Icon = item.icon;
+                const isActive = activePage === item.id;
+                return (
+                  <li key={item.id}>
+                    <button
+                      onClick={() => setActivePage(item.id)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                        isActive 
+                          ? "gradient-primary text-white shadow-lg" 
+                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
+                      )}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium">{item.label}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {/* Accounting */}
+        {(permissions.admin || permissions.reports) && (
+          <div className="mb-6">
+            <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">المحاسبة</p>
+            <ul className="space-y-1">
+              {accountingItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activePage === item.id;
                 return (

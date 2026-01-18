@@ -74,4 +74,8 @@ export type ActivePage =
   | 'partner-report'
   | 'users-management'
   | 'app-settings'
-  | 'companies-management';
+  | 'companies-management'
+  | 'tax-settings'
+  | 'chart-of-accounts'
+  | 'journal-entries'
+  | 'financial-reports';
