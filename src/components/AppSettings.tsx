@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn, Image, Lock, Eye, EyeOff } from 'lucide-react';
+import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn, Image, Lock, Eye, EyeOff, Building2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,8 @@ import {
 import { ActivePage } from '@/types';
 import { useAppSettings, useUpdateAppSetting, useResetDatabase } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
+import { useCompanySettings, useUpdateCompanySettings, useUploadCompanyLogo } from '@/hooks/useCompanySettings';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 import { defaultSettings, uploadLoginLogo } from '@/services/settings';
@@ -33,6 +35,19 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
   const updateSetting = useUpdateAppSetting();
   const resetDb = useResetDatabase();
   const { permissions } = useAuth();
+  const { companyId, company } = useCompany();
+  
+  // Company settings hooks
+  const { data: companySettings, isLoading: companySettingsLoading } = useCompanySettings(companyId);
+  const updateCompanySettings = useUpdateCompanySettings(companyId);
+  const uploadCompanyLogo = useUploadCompanyLogo(companyId);
+  
+  // Company settings state
+  const [companyLogoPreview, setCompanyLogoPreview] = useState<string | null>(null);
+  const [companyAppName, setCompanyAppName] = useState('');
+  const [companyAppSubtitle, setCompanyAppSubtitle] = useState('');
+  const [companyWelcomeMessage, setCompanyWelcomeMessage] = useState('');
+  const companyLogoInputRef = useRef<HTMLInputElement>(null);
   
   // Branding settings
   const [appName, setAppName] = useState('');
@@ -75,6 +90,16 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordChanging, setPasswordChanging] = useState(false);
+
+  // Load company settings when available
+  useEffect(() => {
+    if (companySettings) {
+      setCompanyLogoPreview(companySettings.logo_url || null);
+      setCompanyAppName(companySettings.app_name || '');
+      setCompanyAppSubtitle(companySettings.app_subtitle || '');
+      setCompanyWelcomeMessage(companySettings.welcome_message || '');
+    }
+  }, [companySettings]);
 
   const isAdmin = permissions.admin;
 
@@ -230,6 +255,63 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
     }
   };
 
+  // Company logo handlers
+  const handleCompanyLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('حجم الصورة يجب أن يكون أقل من 2 ميجابايت');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('يرجى اختيار ملف صورة');
+      return;
+    }
+
+    try {
+      // Show preview immediately
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCompanyLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload to storage
+      const url = await uploadCompanyLogo.mutateAsync(file);
+      setCompanyLogoPreview(url);
+      toast.success('تم رفع شعار الشركة بنجاح');
+    } catch (error) {
+      console.error('Error uploading company logo:', error);
+      toast.error('حدث خطأ أثناء رفع الشعار');
+    }
+  };
+
+  const handleRemoveCompanyLogo = async () => {
+    try {
+      await updateCompanySettings.mutateAsync({ logo_url: '' });
+      setCompanyLogoPreview(null);
+      toast.success('تم إزالة شعار الشركة');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء إزالة الشعار');
+    }
+  };
+
+  const handleSaveCompanySettings = async () => {
+    try {
+      await updateCompanySettings.mutateAsync({
+        welcome_message: companyWelcomeMessage,
+        app_name: companyAppName,
+        app_subtitle: companyAppSubtitle,
+      });
+      toast.success('تم حفظ إعدادات الشركة بنجاح');
+    } catch (error) {
+      console.error('Error saving company settings:', error);
+      toast.error('حدث خطأ أثناء حفظ الإعدادات');
+    }
+  };
+
   const handleLogoClick = () => {
     fileInputRef.current?.click();
   };
@@ -319,8 +401,12 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
         </div>
       </div>
 
-      <Tabs defaultValue="branding" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+      <Tabs defaultValue="company" className="w-full">
+        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
+          <TabsTrigger value="company" className="flex items-center gap-2">
+            <Building2 className="w-4 h-4" />
+            <span className="hidden sm:inline">شركتي</span>
+          </TabsTrigger>
           <TabsTrigger value="branding" className="flex items-center gap-2">
             <Palette className="w-4 h-4" />
             <span className="hidden sm:inline">الهوية</span>
@@ -342,6 +428,142 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
             <span className="hidden sm:inline">الخطر</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* Company Settings Tab */}
+        <TabsContent value="company" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Company Logo Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Image className="w-5 h-5" />
+                  شعار الشركة
+                </CardTitle>
+                <CardDescription>
+                  شعار شركتك الذي سيظهر في الشريط الجانبي
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <div 
+                    className="relative w-32 h-32 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary hover:bg-primary/5 transition-all group"
+                    onClick={() => companyLogoInputRef.current?.click()}
+                  >
+                    {companyLogoPreview ? (
+                      <>
+                        <img 
+                          src={companyLogoPreview} 
+                          alt="Company Logo" 
+                          className="w-full h-full object-contain p-2"
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <Upload className="w-6 h-6 text-white" />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center text-muted-foreground">
+                        <Upload className="w-8 h-8 mx-auto mb-2" />
+                        <span className="text-xs">رفع شعار</span>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    ref={companyLogoInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCompanyLogoUpload}
+                    className="hidden"
+                  />
+                  <div className="flex-1 space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      انقر على الصورة لرفع شعار جديد
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      الحد الأقصى: 2 ميجابايت | PNG, JPG, SVG
+                    </p>
+                    {companyLogoPreview && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRemoveCompanyLogo}
+                        className="text-destructive hover:text-destructive"
+                        disabled={uploadCompanyLogo.isPending}
+                      >
+                        <X className="w-4 h-4 ml-1" />
+                        إزالة الشعار
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Company Info Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="w-5 h-5" />
+                  معلومات الشركة
+                </CardTitle>
+                <CardDescription>
+                  اسم ووصف شركتك الذي سيظهر للمستخدمين
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="company-app-name">اسم الشركة في التطبيق</Label>
+                  <Input
+                    id="company-app-name"
+                    value={companyAppName}
+                    onChange={(e) => setCompanyAppName(e.target.value)}
+                    placeholder={company?.name || 'اسم الشركة'}
+                    disabled={!isAdmin}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    سيظهر هذا الاسم في الشريط الجانبي ولوحة التحكم
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="company-app-subtitle">وصف الشركة</Label>
+                  <Input
+                    id="company-app-subtitle"
+                    value={companyAppSubtitle}
+                    onChange={(e) => setCompanyAppSubtitle(e.target.value)}
+                    placeholder="وصف قصير للشركة"
+                    disabled={!isAdmin}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="company-welcome-message">رسالة الترحيب</Label>
+                  <Textarea
+                    id="company-welcome-message"
+                    value={companyWelcomeMessage}
+                    onChange={(e) => setCompanyWelcomeMessage(e.target.value)}
+                    placeholder="رسالة ترحيب تظهر في لوحة التحكم..."
+                    disabled={!isAdmin}
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    ستظهر هذه الرسالة في لوحة التحكم لجميع مستخدمي الشركة
+                  </p>
+                </div>
+
+                {isAdmin && (
+                  <Button 
+                    onClick={handleSaveCompanySettings} 
+                    className="w-full gradient-primary"
+                    disabled={updateCompanySettings.isPending}
+                  >
+                    <Save className="w-4 h-4 ml-2" />
+                    {updateCompanySettings.isPending ? 'جاري الحفظ...' : 'حفظ إعدادات الشركة'}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         {/* Branding Tab */}
         <TabsContent value="branding" className="mt-6">
