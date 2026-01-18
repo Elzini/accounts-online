@@ -33,7 +33,7 @@ export function LoginSettingsAdmin() {
     login_button_text: defaultSettings.login_button_text,
     login_logo_url: '',
     register_title: 'تسجيل شركة جديدة',
-    register_subtitle: 'أنشئ حساب شركتك الآن',
+    register_subtitle: 'انضم إلى منصة إدارة المعارض',
     register_button_text: 'تسجيل الشركة',
   });
   
