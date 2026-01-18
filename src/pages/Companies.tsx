@@ -14,7 +14,9 @@ import {
   Eye,
   Shield,
   LogOut,
-  ArrowRight
+  ArrowRight,
+  Settings,
+  LogIn
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +24,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -52,6 +55,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import logo from '@/assets/logo.png';
+import { LoginSettingsAdmin } from '@/components/LoginSettingsAdmin';
 
 interface Company {
   id: string;
@@ -307,24 +311,36 @@ export default function Companies() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        <div className="space-y-6 animate-fade-in">
-          {/* Page Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold text-foreground flex items-center gap-3">
-                <Building2 className="w-8 h-8 text-primary" />
-                جميع الشركات
-              </h2>
-              <p className="text-muted-foreground mt-1">إدارة جميع الشركات المسجلة في النظام</p>
+        <Tabs defaultValue="companies" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-grid">
+            <TabsTrigger value="companies" className="flex items-center gap-2">
+              <Building2 className="w-4 h-4" />
+              <span>الشركات</span>
+            </TabsTrigger>
+            <TabsTrigger value="login-settings" className="flex items-center gap-2">
+              <LogIn className="w-4 h-4" />
+              <span>إعدادات شاشة الدخول</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="companies" className="space-y-6">
+            {/* Page Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-bold text-foreground flex items-center gap-3">
+                  <Building2 className="w-8 h-8 text-primary" />
+                  جميع الشركات
+                </h2>
+                <p className="text-muted-foreground mt-1">إدارة جميع الشركات المسجلة في النظام</p>
+              </div>
+              <Button 
+                onClick={() => setAddDialogOpen(true)}
+                className="gradient-primary hover:opacity-90"
+              >
+                <Plus className="w-5 h-5 ml-2" />
+                إضافة شركة
+              </Button>
             </div>
-            <Button 
-              onClick={() => setAddDialogOpen(true)}
-              className="gradient-primary hover:opacity-90"
-            >
-              <Plus className="w-5 h-5 ml-2" />
-              إضافة شركة
-            </Button>
-          </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -480,7 +496,21 @@ export default function Companies() {
               </div>
             )}
           </div>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="login-settings">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-3xl font-bold text-foreground flex items-center gap-3">
+                  <LogIn className="w-8 h-8 text-primary" />
+                  إعدادات شاشة الدخول والتسجيل
+                </h2>
+                <p className="text-muted-foreground mt-1">تخصيص مظهر صفحات الدخول وتسجيل الشركات الجديدة</p>
+              </div>
+              <LoginSettingsAdmin />
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Add Company Dialog */}

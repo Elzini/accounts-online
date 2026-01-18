@@ -1,15 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Car, Mail, Lock, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAppSettings } from '@/hooks/useSettings';
 import { defaultSettings } from '@/services/settings';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
+
+interface GlobalSettings {
+  login_title: string;
+  login_subtitle: string;
+  login_bg_color: string;
+  login_card_color: string;
+  login_header_gradient_start: string;
+  login_header_gradient_end: string;
+  login_button_text: string;
+  login_logo_url: string;
+}
 
 export default function Auth() {
   const [email, setEmail] = useState('');
@@ -17,17 +27,45 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const { data: settings } = useAppSettings();
 
-  // Get settings with fallback to defaults
-  const loginTitle = settings?.login_title || defaultSettings.login_title;
-  const loginSubtitle = settings?.login_subtitle || defaultSettings.login_subtitle;
-  const loginBgColor = settings?.login_bg_color || defaultSettings.login_bg_color;
-  const loginCardColor = settings?.login_card_color || defaultSettings.login_card_color;
-  const loginGradientStart = settings?.login_header_gradient_start || defaultSettings.login_header_gradient_start;
-  const loginGradientEnd = settings?.login_header_gradient_end || defaultSettings.login_header_gradient_end;
-  const loginButtonText = settings?.login_button_text || defaultSettings.login_button_text;
-  const loginLogoUrl = settings?.login_logo_url || '';
+  // Use global settings (company_id = null) for public pages
+  const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
+    login_title: defaultSettings.login_title,
+    login_subtitle: defaultSettings.login_subtitle,
+    login_bg_color: defaultSettings.login_bg_color,
+    login_card_color: defaultSettings.login_card_color,
+    login_header_gradient_start: defaultSettings.login_header_gradient_start,
+    login_header_gradient_end: defaultSettings.login_header_gradient_end,
+    login_button_text: defaultSettings.login_button_text,
+    login_logo_url: '',
+  });
+
+  // Fetch global settings (not tied to any company)
+  useEffect(() => {
+    const fetchGlobalSettings = async () => {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('key, value')
+        .is('company_id', null);
+      
+      if (error) {
+        console.error('Error fetching global settings:', error);
+        return;
+      }
+
+      if (data) {
+        const newSettings = { ...globalSettings };
+        data.forEach(row => {
+          if (row.key in newSettings && row.value) {
+            (newSettings as any)[row.key] = row.value;
+          }
+        });
+        setGlobalSettings(newSettings);
+      }
+    };
+
+    fetchGlobalSettings();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent, redirectToCompanies: boolean = false) => {
     e.preventDefault();
@@ -86,17 +124,17 @@ export default function Auth() {
     }
   };
 
-  const headerGradient = `linear-gradient(135deg, ${loginGradientStart}, ${loginGradientEnd})`;
+  const headerGradient = `linear-gradient(135deg, ${globalSettings.login_header_gradient_start}, ${globalSettings.login_header_gradient_end})`;
 
   return (
     <div 
       className="min-h-screen flex items-center justify-center p-4"
-      style={{ backgroundColor: loginBgColor }}
+      style={{ backgroundColor: globalSettings.login_bg_color }}
     >
       <div className="w-full max-w-md">
         <div 
           className="rounded-2xl card-shadow overflow-hidden"
-          style={{ backgroundColor: loginCardColor }}
+          style={{ backgroundColor: globalSettings.login_card_color }}
         >
           {/* Header */}
           <div 
@@ -105,20 +143,20 @@ export default function Auth() {
           >
             <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-4 overflow-hidden">
               <img 
-                src={loginLogoUrl || logo} 
+                src={globalSettings.login_logo_url || logo} 
                 alt="Logo" 
                 className="w-16 h-16 object-contain" 
               />
             </div>
-            <h1 className="text-2xl font-bold text-white">{loginTitle}</h1>
-            <p className="text-white/80 text-sm mt-1">{loginSubtitle}</p>
+            <h1 className="text-2xl font-bold text-white">{globalSettings.login_title}</h1>
+            <p className="text-white/80 text-sm mt-1">{globalSettings.login_subtitle}</p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
             <div className="text-center mb-6">
               <h2 className="text-xl font-bold text-foreground">
-                {loginButtonText}
+                {globalSettings.login_button_text}
               </h2>
             </div>
 
@@ -163,7 +201,7 @@ export default function Auth() {
               style={{ background: headerGradient }}
               disabled={loading}
             >
-              {loading ? 'جاري التحميل...' : loginButtonText}
+              {loading ? 'جاري التحميل...' : globalSettings.login_button_text}
             </Button>
 
             <Button 
