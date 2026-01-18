@@ -13,6 +13,7 @@ import {
   ArrowLeftRight,
   Crown
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,6 +26,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activePage, setActivePage }: SidebarProps) {
+  const navigate = useNavigate();
   const { permissions } = useAuth();
   const { data: settings } = useAppSettings();
 
@@ -165,8 +167,13 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
             <p className="text-xs font-semibold text-warning/70 mb-3 px-3">مدير النظام</p>
             <ul className="space-y-1">
               <li>
-                <a
-                  href="/companies"
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Close mobile sheet (because MobileSidebar closes on any setActivePage call)
+                    setActivePage('dashboard');
+                    navigate('/companies');
+                  }}
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
                     "text-warning/80 hover:bg-warning/20 hover:text-warning"
@@ -174,7 +181,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
                 >
                   <Crown className="w-5 h-5" />
                   <span className="font-medium">إدارة الشركات</span>
-                </a>
+                </button>
               </li>
             </ul>
           </div>
