@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 export interface Company {
   id: string;
@@ -26,10 +27,12 @@ const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const { user, session } = useAuth();
+  const queryClient = useQueryClient();
   const [company, setCompany] = useState<Company | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [previousCompanyId, setPreviousCompanyId] = useState<string | null>(null);
 
   const fetchCompanyData = async () => {
     if (!user) {
@@ -58,6 +61,12 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         .single();
       
       if (profile?.company_id) {
+        // If company changed, clear the cache to prevent showing old data
+        if (previousCompanyId && previousCompanyId !== profile.company_id) {
+          queryClient.clear();
+        }
+        
+        setPreviousCompanyId(profile.company_id);
         setCompanyId(profile.company_id);
         
         // Fetch company details
@@ -68,6 +77,14 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
           .single();
         
         setCompany(companyData);
+      } else {
+        // User has no company, clear any cached data
+        if (previousCompanyId) {
+          queryClient.clear();
+          setPreviousCompanyId(null);
+        }
+        setCompanyId(null);
+        setCompany(null);
       }
     } catch (error) {
       console.error('Error fetching company data:', error);
@@ -97,8 +114,11 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     if (session) {
       fetchCompanyData();
     } else {
+      // User logged out - clear all cached data
+      queryClient.clear();
       setCompany(null);
       setCompanyId(null);
+      setPreviousCompanyId(null);
       setIsSuperAdmin(false);
       setLoading(false);
     }
