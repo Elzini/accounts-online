@@ -165,18 +165,16 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
             <p className="text-xs font-semibold text-warning/70 mb-3 px-3">مدير النظام</p>
             <ul className="space-y-1">
               <li>
-                <button
-                  onClick={() => setActivePage('companies-management')}
+                <a
+                  href="/companies"
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
-                    activePage === 'companies-management'
-                      ? "bg-warning text-warning-foreground shadow-lg" 
-                      : "text-warning/80 hover:bg-warning/20 hover:text-warning"
+                    "text-warning/80 hover:bg-warning/20 hover:text-warning"
                   )}
                 >
                   <Crown className="w-5 h-5" />
                   <span className="font-medium">إدارة الشركات</span>
-                </button>
+                </a>
               </li>
             </ul>
           </div>
