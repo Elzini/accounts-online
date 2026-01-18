@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import SuperAdminAuth from "./pages/SuperAdminAuth";
 import Register from "./pages/Register";
 import Companies from "./pages/Companies";
 import NotFound from "./pages/NotFound";
@@ -84,6 +85,14 @@ function AppRoutes() {
         } 
       />
       <Route 
+        path="/auth/super-admin" 
+        element={
+          <PublicRoute>
+            <SuperAdminAuth />
+          </PublicRoute>
+        } 
+      />
+      <Route 
         path="/register" 
         element={
           <PublicRoute>
@@ -91,7 +100,6 @@ function AppRoutes() {
           </PublicRoute>
         } 
       />
-      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
