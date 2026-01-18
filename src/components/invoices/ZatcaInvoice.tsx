@@ -1,7 +1,9 @@
-import { forwardRef } from 'react';
+import { forwardRef, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { QRCodeSVG } from 'qrcode.react';
 import { TaxSettings } from '@/services/accounting';
+import { generateZatcaQRData, formatDateTimeISO } from '@/lib/zatcaQR';
 
 interface InvoiceItem {
   description: string;
@@ -61,9 +63,16 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
     const formattedTime = format(new Date(invoiceDate), 'HH:mm:ss');
     const taxRate = taxSettings?.tax_rate || 15;
 
-    // Generate simple QR code data (in real implementation, use ZATCA SDK)
-    const qrData = `${sellerName}|${sellerTaxNumber}|${formattedDate}|${total}|${taxAmount}`;
-    const qrBase64 = btoa(qrData);
+    // Generate ZATCA-compliant QR code data using TLV encoding
+    const qrData = useMemo(() => {
+      return generateZatcaQRData({
+        sellerName: sellerName,
+        vatNumber: sellerTaxNumber || '',
+        invoiceDateTime: formatDateTimeISO(invoiceDate),
+        invoiceTotal: total,
+        vatAmount: taxAmount,
+      });
+    }, [sellerName, sellerTaxNumber, invoiceDate, total, taxAmount]);
 
     return (
       <div
@@ -187,24 +196,16 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
             <p>This invoice is issued according to the e-invoicing system in the Kingdom of Saudi Arabia</p>
           </div>
           <div className="text-center">
-            <div className="w-24 h-24 border-2 border-gray-800 rounded-lg flex items-center justify-center bg-white mb-1">
-              {/* Simple QR placeholder - in production use a real QR library */}
-              <div className="text-xs text-gray-400 text-center p-2">
-                <svg viewBox="0 0 100 100" className="w-16 h-16">
-                  <rect x="10" y="10" width="20" height="20" fill="black"/>
-                  <rect x="70" y="10" width="20" height="20" fill="black"/>
-                  <rect x="10" y="70" width="20" height="20" fill="black"/>
-                  <rect x="40" y="10" width="10" height="10" fill="black"/>
-                  <rect x="40" y="40" width="20" height="20" fill="black"/>
-                  <rect x="10" y="40" width="10" height="10" fill="black"/>
-                  <rect x="70" y="40" width="10" height="10" fill="black"/>
-                  <rect x="80" y="50" width="10" height="10" fill="black"/>
-                  <rect x="70" y="70" width="10" height="10" fill="black"/>
-                  <rect x="80" y="80" width="10" height="10" fill="black"/>
-                </svg>
-              </div>
+            <div className="w-28 h-28 border-2 border-gray-800 rounded-lg flex items-center justify-center bg-white mb-1 p-1">
+              <QRCodeSVG
+                value={qrData}
+                size={100}
+                level="M"
+                includeMargin={false}
+              />
             </div>
             <p className="text-xs text-gray-500">رمز الاستجابة السريعة</p>
+            <p className="text-xs text-gray-400">ZATCA QR Code</p>
           </div>
         </div>
 
