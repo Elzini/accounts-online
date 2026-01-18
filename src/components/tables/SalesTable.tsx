@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { SearchFilter } from '@/components/ui/search-filter';
 import { ActivePage } from '@/types';
 import { useSales } from '@/hooks/useDatabase';
+import { useTaxSettings } from '@/hooks/useAccounting';
 import { SaleActions } from '@/components/actions/SaleActions';
 
 interface SalesTableProps {
@@ -13,7 +14,10 @@ interface SalesTableProps {
 
 export function SalesTable({ setActivePage }: SalesTableProps) {
   const { data: sales = [], isLoading } = useSales();
+  const { data: taxSettings } = useTaxSettings();
   const [searchQuery, setSearchQuery] = useState('');
+
+  const taxRate = taxSettings?.is_active && taxSettings?.apply_to_sales ? (taxSettings.tax_rate || 15) : 0;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA').format(value);
@@ -21,6 +25,17 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
 
   const formatDate = (date: string) => {
     return new Intl.DateTimeFormat('ar-SA').format(new Date(date));
+  };
+
+  // Calculate tax details for each sale
+  const calculateTaxDetails = (salePrice: number) => {
+    const baseAmount = salePrice / (1 + taxRate / 100);
+    const taxAmount = salePrice - baseAmount;
+    return {
+      baseAmount: Math.round(baseAmount * 100) / 100,
+      taxAmount: Math.round(taxAmount * 100) / 100,
+      totalWithTax: salePrice,
+    };
   };
 
   const filteredSales = useMemo(() => {
@@ -69,20 +84,24 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
 
       {/* Table */}
       <div className="bg-card rounded-xl md:rounded-2xl card-shadow overflow-hidden overflow-x-auto">
-        <Table className="min-w-[700px]">
+        <Table className="min-w-[1000px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead className="text-right font-bold">رقم البيع</TableHead>
               <TableHead className="text-right font-bold">العميل</TableHead>
               <TableHead className="text-right font-bold">السيارة</TableHead>
-              <TableHead className="text-right font-bold">سعر البيع</TableHead>
+              <TableHead className="text-right font-bold">المبلغ الأصلي</TableHead>
+              <TableHead className="text-right font-bold">الضريبة ({taxRate}%)</TableHead>
+              <TableHead className="text-right font-bold">الإجمالي مع الضريبة</TableHead>
               <TableHead className="text-right font-bold">الربح</TableHead>
               <TableHead className="text-right font-bold">تاريخ البيع</TableHead>
               <TableHead className="text-right font-bold">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-          {filteredSales.map((sale) => (
+          {filteredSales.map((sale) => {
+              const taxDetails = calculateTaxDetails(Number(sale.sale_price));
+              return (
               <TableRow key={sale.id} className="hover:bg-muted/30 transition-colors">
                 <TableCell className="font-medium">{sale.sale_number}</TableCell>
                 <TableCell className="font-semibold">{sale.customer?.name || '-'}</TableCell>
@@ -92,7 +111,9 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
                     <p className="text-sm text-muted-foreground">{sale.car?.model} - {sale.car?.color}</p>
                   </div>
                 </TableCell>
-                <TableCell className="font-semibold text-primary">{formatCurrency(Number(sale.sale_price))} ريال</TableCell>
+                <TableCell className="font-medium">{formatCurrency(taxDetails.baseAmount)} ريال</TableCell>
+                <TableCell className="text-orange-600 font-medium">{formatCurrency(taxDetails.taxAmount)} ريال</TableCell>
+                <TableCell className="font-semibold text-primary">{formatCurrency(taxDetails.totalWithTax)} ريال</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <TrendingUp className={`w-4 h-4 ${Number(sale.profit) >= 0 ? 'text-success' : 'text-destructive'}`} />
@@ -111,7 +132,7 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
                   <SaleActions sale={sale} />
                 </TableCell>
               </TableRow>
-            ))}
+            );})}
           </TableBody>
         </Table>
         
