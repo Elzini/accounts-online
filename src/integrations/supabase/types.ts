@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_categories: {
+        Row: {
+          code: string
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+          parent_id: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          parent_id?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          parent_id?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           company_id: string | null
@@ -281,6 +335,107 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string
+          entry_date: string
+          entry_number: number
+          id: string
+          is_posted: boolean
+          reference_id: string | null
+          reference_type: string | null
+          total_credit: number
+          total_debit: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          entry_date?: string
+          entry_number?: number
+          id?: string
+          is_posted?: boolean
+          reference_id?: string | null
+          reference_type?: string | null
+          total_credit?: number
+          total_debit?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          entry_date?: string
+          entry_number?: number
+          id?: string
+          is_posted?: boolean
+          reference_id?: string | null
+          reference_type?: string | null
+          total_credit?: number
+          total_debit?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entry_lines: {
+        Row: {
+          account_id: string
+          created_at: string
+          credit: number
+          debit: number
+          description: string | null
+          id: string
+          journal_entry_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          credit?: number
+          debit?: number
+          description?: string | null
+          id?: string
+          journal_entry_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          credit?: number
+          debit?: number
+          description?: string | null
+          id?: string
+          journal_entry_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entry_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -568,6 +723,50 @@ export type Database = {
           },
         ]
       }
+      tax_settings: {
+        Row: {
+          apply_to_purchases: boolean
+          apply_to_sales: boolean
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          tax_name: string
+          tax_rate: number
+          updated_at: string
+        }
+        Insert: {
+          apply_to_purchases?: boolean
+          apply_to_sales?: boolean
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          tax_name?: string
+          tax_rate?: number
+          updated_at?: string
+        }
+        Update: {
+          apply_to_purchases?: boolean
+          apply_to_sales?: boolean
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          tax_name?: string
+          tax_rate?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -594,6 +793,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_default_accounts: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_permission: {
         Args: {
