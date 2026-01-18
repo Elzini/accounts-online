@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Car, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -130,6 +130,13 @@ export default function Auth() {
             >
               {loading ? 'جاري التحميل...' : loginButtonText}
             </Button>
+
+            <p className="text-center text-sm text-muted-foreground">
+              ليس لديك حساب؟{' '}
+              <Link to="/register" className="text-primary hover:underline font-medium">
+                تسجيل شركة جديدة
+              </Link>
+            </p>
           </form>
         </div>
       </div>

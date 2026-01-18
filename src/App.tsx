@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,14 @@ function AppRoutes() {
         element={
           <PublicRoute>
             <Auth />
+          </PublicRoute>
+        } 
+      />
+      <Route 
+        path="/register" 
+        element={
+          <PublicRoute>
+            <Register />
           </PublicRoute>
         } 
       />
