@@ -50,6 +50,22 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
     );
   }, [sales, searchQuery]);
 
+  // Calculate totals for summary
+  const totals = useMemo(() => {
+    return filteredSales.reduce(
+      (acc, sale) => {
+        const details = calculateTaxDetails(Number(sale.sale_price));
+        return {
+          baseAmount: acc.baseAmount + details.baseAmount,
+          taxAmount: acc.taxAmount + details.taxAmount,
+          totalWithTax: acc.totalWithTax + details.totalWithTax,
+          profit: acc.profit + Number(sale.profit),
+        };
+      },
+      { baseAmount: 0, taxAmount: 0, totalWithTax: 0, profit: 0 }
+    );
+  }, [filteredSales, taxRate]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -135,6 +151,32 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
             );})}
           </TableBody>
         </Table>
+
+        {/* Tax Summary */}
+        {filteredSales.length > 0 && (
+          <div className="border-t bg-muted/30 p-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-card rounded-lg p-3 border">
+                <p className="text-sm text-muted-foreground">إجمالي المبلغ الأصلي</p>
+                <p className="text-lg font-bold text-foreground">{formatCurrency(Math.round(totals.baseAmount))} ريال</p>
+              </div>
+              <div className="bg-card rounded-lg p-3 border">
+                <p className="text-sm text-muted-foreground">إجمالي الضريبة ({taxRate}%)</p>
+                <p className="text-lg font-bold text-orange-600">{formatCurrency(Math.round(totals.taxAmount))} ريال</p>
+              </div>
+              <div className="bg-card rounded-lg p-3 border">
+                <p className="text-sm text-muted-foreground">إجمالي المبيعات مع الضريبة</p>
+                <p className="text-lg font-bold text-primary">{formatCurrency(Math.round(totals.totalWithTax))} ريال</p>
+              </div>
+              <div className="bg-card rounded-lg p-3 border">
+                <p className="text-sm text-muted-foreground">إجمالي الأرباح</p>
+                <p className={`text-lg font-bold ${totals.profit >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  {formatCurrency(Math.round(totals.profit))} ريال
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         
         {sales.length === 0 && (
           <div className="p-12 text-center">
