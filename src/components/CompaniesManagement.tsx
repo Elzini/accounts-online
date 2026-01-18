@@ -12,7 +12,8 @@ import {
   Check,
   X,
   Eye,
-  Shield
+  Shield,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { CompanySettingsDialog } from './CompanySettingsDialog';
 
 interface CompaniesManagementProps {
   setActivePage: (page: ActivePage) => void;
@@ -82,6 +84,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   
   const [formData, setFormData] = useState({
@@ -409,18 +412,32 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
                   </TableCell>
                   <TableCell>{formatDate(company.created_at)}</TableCell>
                   <TableCell>
-                    <div className="flex gap-2 justify-center">
+                    <div className="flex gap-1 justify-center">
                       <Button 
                         size="sm" 
                         variant="outline"
                         onClick={() => openDetailsDialog(company)}
+                        title="عرض التفاصيل"
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
                       <Button 
                         size="sm" 
                         variant="outline"
+                        onClick={() => {
+                          setSelectedCompany(company);
+                          setSettingsDialogOpen(true);
+                        }}
+                        title="إعدادات الشركة"
+                        className="text-primary hover:text-primary"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
                         onClick={() => openEditDialog(company)}
+                        title="تعديل"
                       >
                         <Pencil className="w-4 h-4" />
                       </Button>
@@ -432,6 +449,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
                           setSelectedCompany(company);
                           setDeleteDialogOpen(true);
                         }}
+                        title="حذف"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -684,6 +702,16 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Company Settings Dialog */}
+      {selectedCompany && (
+        <CompanySettingsDialog
+          open={settingsDialogOpen}
+          onOpenChange={setSettingsDialogOpen}
+          companyId={selectedCompany.id}
+          companyName={selectedCompany.name}
+        />
+      )}
     </div>
   );
 }
