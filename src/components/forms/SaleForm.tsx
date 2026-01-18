@@ -173,19 +173,23 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
       invoiceNumber: savedSaleData.sale_number || Date.now(),
       invoiceDate: formData.sale_date,
       invoiceType: 'sale' as const,
-      sellerName: company?.name || taxSettings?.company_name_ar || 'الشركة',
+      // البائع = الشركة
+      sellerName: taxSettings?.company_name_ar || company?.name || 'الشركة',
       sellerTaxNumber: taxSettings?.tax_number || '',
       sellerAddress: taxSettings?.national_address || company?.address || '',
+      // المشتري = العميل
       buyerName: selectedCustomer?.name || 'العميل',
       buyerPhone: selectedCustomer?.phone || '',
       buyerAddress: selectedCustomer?.address || '',
       buyerIdNumber: selectedCustomer?.id_number || '',
+      buyerTaxNumber: selectedCustomer?.registration_number || '', // الرقم الضريبي للعميل
       items: [
         {
           description: `${selectedCar.name} ${selectedCar.model || ''} - ${selectedCar.chassis_number}`,
           quantity: 1,
           unitPrice: baseAmount,
           taxRate: taxRate,
+          taxAmount: taxAmount,
           total: price,
         },
       ],

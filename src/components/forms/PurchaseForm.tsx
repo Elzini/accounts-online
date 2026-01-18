@@ -117,18 +117,22 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
       invoiceNumber: savedCarData.inventory_number || Date.now(),
       invoiceDate: formData.purchase_date,
       invoiceType: 'purchase' as const,
+      // البائع = المورد
       sellerName: selectedSupplier?.name || 'المورد',
-      sellerTaxNumber: selectedSupplier?.id_number || '',
+      sellerTaxNumber: selectedSupplier?.registration_number || '', // الرقم الضريبي للمورد
       sellerAddress: selectedSupplier?.address || '',
-      buyerName: company?.name || taxSettings?.company_name_ar || 'الشركة',
+      // المشتري = الشركة
+      buyerName: taxSettings?.company_name_ar || company?.name || 'الشركة',
       buyerPhone: company?.phone || '',
       buyerAddress: taxSettings?.national_address || company?.address || '',
+      buyerTaxNumber: taxSettings?.tax_number || '', // الرقم الضريبي للشركة
       items: [
         {
           description: `${formData.name} ${formData.model || ''} - ${formData.chassis_number}`,
           quantity: 1,
           unitPrice: baseAmount,
           taxRate: taxRate,
+          taxAmount: taxAmount,
           total: price,
         },
       ],
