@@ -1,0 +1,43 @@
+-- Update the create_company_for_new_user function to give admin permissions to the company founder
+CREATE OR REPLACE FUNCTION public.create_company_for_new_user()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  new_company_id UUID;
+  user_count INTEGER;
+BEGIN
+  -- Create a new company for the user
+  INSERT INTO public.companies (name)
+  VALUES (COALESCE(NEW.username, 'شركتي'))
+  RETURNING id INTO new_company_id;
+  
+  -- Update the profile with the company_id
+  UPDATE public.profiles
+  SET company_id = new_company_id
+  WHERE id = NEW.id;
+  
+  -- Check if this is the very first user (super admin)
+  SELECT COUNT(*) INTO user_count FROM public.profiles;
+  
+  IF user_count = 1 THEN
+    -- First user becomes super_admin
+    INSERT INTO public.user_roles (user_id, permission)
+    VALUES (NEW.user_id, 'super_admin')
+    ON CONFLICT DO NOTHING;
+  END IF;
+  
+  -- Give admin permissions to the company founder (all new company owners get full access)
+  INSERT INTO public.user_roles (user_id, permission) VALUES
+    (NEW.user_id, 'admin'),
+    (NEW.user_id, 'sales'),
+    (NEW.user_id, 'purchases'),
+    (NEW.user_id, 'reports'),
+    (NEW.user_id, 'users')
+  ON CONFLICT DO NOTHING;
+  
+  RETURN NEW;
+END;
+$function$;
