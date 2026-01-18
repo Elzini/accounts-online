@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowRight, Save, ShoppingCart, Plus, X, Car } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ArrowRight, Save, ShoppingCart, Plus, X, Car, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
 import { useSuppliers, useAddPurchaseBatch } from '@/hooks/useDatabase';
+import { useTaxSettings } from '@/hooks/useAccounting';
 
 interface BatchPurchaseFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -33,6 +34,7 @@ const createEmptyCar = (): CarItem => ({
 
 export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
   const { data: suppliers = [] } = useSuppliers();
+  const { data: taxSettings } = useTaxSettings();
   const addPurchaseBatch = useAddPurchaseBatch();
 
   const [batchData, setBatchData] = useState({
@@ -66,8 +68,28 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA').format(value);
+    return new Intl.NumberFormat('ar-SA').format(Math.round(value * 100) / 100);
   };
+
+  // Calculate tax details for total
+  const taxDetails = useMemo(() => {
+    const total = calculateTotal();
+    const isActive = taxSettings?.is_active && taxSettings?.apply_to_purchases;
+    const taxRate = isActive ? (taxSettings?.tax_rate || 0) : 0;
+    
+    // السعر المدخل يعتبر شامل الضريبة
+    const baseAmount = isActive ? total / (1 + taxRate / 100) : total;
+    const taxAmount = isActive ? total - baseAmount : 0;
+    
+    return {
+      isActive,
+      taxRate,
+      baseAmount,
+      taxAmount,
+      totalWithTax: total,
+      taxName: taxSettings?.tax_name || 'ضريبة القيمة المضافة'
+    };
+  }, [cars, taxSettings]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -276,6 +298,39 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
               ))}
             </div>
           </div>
+
+          {/* Tax Details */}
+          {calculateTotal() > 0 && (
+            <div className="bg-muted/50 p-4 rounded-xl border">
+              <div className="flex items-center gap-2 mb-3">
+                <Receipt className="w-5 h-5 text-primary" />
+                <span className="font-semibold">تفاصيل الفاتورة</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-background rounded-lg">
+                  <p className="text-sm text-muted-foreground">أصل المبلغ</p>
+                  <p className="text-lg font-bold">{formatCurrency(taxDetails.baseAmount)} ريال</p>
+                </div>
+                <div className="text-center p-3 bg-background rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    {taxDetails.taxName} ({taxDetails.taxRate}%)
+                  </p>
+                  <p className="text-lg font-bold text-orange-600">
+                    {taxDetails.isActive ? formatCurrency(taxDetails.taxAmount) : '0'} ريال
+                  </p>
+                </div>
+                <div className="text-center p-3 bg-primary/10 rounded-lg">
+                  <p className="text-sm text-muted-foreground">الإجمالي شامل الضريبة</p>
+                  <p className="text-lg font-bold text-primary">{formatCurrency(taxDetails.totalWithTax)} ريال</p>
+                </div>
+              </div>
+              {!taxDetails.isActive && (
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  الضريبة غير مفعلة على المشتريات
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Total Display */}
           <div className="bg-primary/10 p-4 rounded-xl">

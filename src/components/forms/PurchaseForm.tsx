@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowRight, Save, ShoppingCart } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { ArrowRight, Save, ShoppingCart, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
 import { useSuppliers, useAddCar } from '@/hooks/useDatabase';
+import { useTaxSettings } from '@/hooks/useAccounting';
 
 interface PurchaseFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -14,6 +15,7 @@ interface PurchaseFormProps {
 
 export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
   const { data: suppliers = [] } = useSuppliers();
+  const { data: taxSettings } = useTaxSettings();
   const addCar = useAddCar();
 
   const [formData, setFormData] = useState({
@@ -25,6 +27,30 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
     purchase_price: '',
     purchase_date: new Date().toISOString().split('T')[0],
   });
+
+  // Calculate tax details
+  const taxDetails = useMemo(() => {
+    const price = parseFloat(formData.purchase_price) || 0;
+    const isActive = taxSettings?.is_active && taxSettings?.apply_to_purchases;
+    const taxRate = isActive ? (taxSettings?.tax_rate || 0) : 0;
+    
+    // السعر المدخل يعتبر شامل الضريبة
+    const baseAmount = isActive ? price / (1 + taxRate / 100) : price;
+    const taxAmount = isActive ? price - baseAmount : 0;
+    
+    return {
+      isActive,
+      taxRate,
+      baseAmount,
+      taxAmount,
+      totalWithTax: price,
+      taxName: taxSettings?.tax_name || 'ضريبة القيمة المضافة'
+    };
+  }, [formData.purchase_price, taxSettings]);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('ar-SA').format(Math.round(value * 100) / 100);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,6 +186,39 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
               dir="ltr"
             />
           </div>
+
+          {/* Tax Details */}
+          {formData.purchase_price && (
+            <div className="bg-muted/50 p-4 rounded-xl border">
+              <div className="flex items-center gap-2 mb-3">
+                <Receipt className="w-5 h-5 text-primary" />
+                <span className="font-semibold">تفاصيل الفاتورة</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-background rounded-lg">
+                  <p className="text-sm text-muted-foreground">أصل المبلغ</p>
+                  <p className="text-lg font-bold">{formatCurrency(taxDetails.baseAmount)} ريال</p>
+                </div>
+                <div className="text-center p-3 bg-background rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    {taxDetails.taxName} ({taxDetails.taxRate}%)
+                  </p>
+                  <p className="text-lg font-bold text-orange-600">
+                    {taxDetails.isActive ? formatCurrency(taxDetails.taxAmount) : '0'} ريال
+                  </p>
+                </div>
+                <div className="text-center p-3 bg-primary/10 rounded-lg">
+                  <p className="text-sm text-muted-foreground">الإجمالي شامل الضريبة</p>
+                  <p className="text-lg font-bold text-primary">{formatCurrency(taxDetails.totalWithTax)} ريال</p>
+                </div>
+              </div>
+              {!taxDetails.isActive && (
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  الضريبة غير مفعلة على المشتريات
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-4 pt-4">
