@@ -26,6 +26,10 @@ import { PartnerDealershipReport } from '@/components/reports/PartnerDealershipR
 import { UsersManagement } from '@/components/UsersManagement';
 import { AppSettingsPage } from '@/components/AppSettings';
 import { CarSearch } from '@/components/CarSearch';
+import { TaxSettingsPage } from '@/components/accounting/TaxSettingsPage';
+import { ChartOfAccountsPage } from '@/components/accounting/ChartOfAccountsPage';
+import { JournalEntriesPage } from '@/components/accounting/JournalEntriesPage';
+import { FinancialReportsPage } from '@/components/accounting/FinancialReportsPage';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -64,6 +68,10 @@ const Index = () => {
       case 'partner-report': return <PartnerDealershipReport setActivePage={setActivePage} />;
       case 'users-management': return <UsersManagement setActivePage={setActivePage} />;
       case 'app-settings': return <AppSettingsPage setActivePage={setActivePage} />;
+      case 'tax-settings': return <TaxSettingsPage />;
+      case 'chart-of-accounts': return <ChartOfAccountsPage />;
+      case 'journal-entries': return <JournalEntriesPage />;
+      case 'financial-reports': return <FinancialReportsPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };
