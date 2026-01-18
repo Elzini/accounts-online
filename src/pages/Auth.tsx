@@ -31,6 +31,18 @@ export default function Auth() {
 
   const handleSubmit = async (e: React.FormEvent, redirectToCompanies: boolean = false) => {
     e.preventDefault();
+    
+    // Validate fields before submitting
+    if (!email || !password) {
+      toast.error('يرجى إدخال البريد الإلكتروني وكلمة المرور');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -59,6 +71,7 @@ export default function Auth() {
             return;
           } else {
             toast.error('ليس لديك صلاحية الوصول لإدارة الشركات');
+            navigate('/');
             return;
           }
         }
