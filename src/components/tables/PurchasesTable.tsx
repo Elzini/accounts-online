@@ -63,6 +63,21 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
     return result;
   }, [cars, searchQuery, statusFilter]);
 
+  // Calculate totals for summary
+  const totals = useMemo(() => {
+    return filteredCars.reduce(
+      (acc, car) => {
+        const details = calculateTaxDetails(Number(car.purchase_price));
+        return {
+          baseAmount: acc.baseAmount + details.baseAmount,
+          taxAmount: acc.taxAmount + details.taxAmount,
+          totalWithTax: acc.totalWithTax + details.totalWithTax,
+        };
+      },
+      { baseAmount: 0, taxAmount: 0, totalWithTax: 0 }
+    );
+  }, [filteredCars, taxRate]);
+
   const filterOptions = [
     { value: 'available', label: 'متاحة' },
     { value: 'sold', label: 'مباعة' },
@@ -159,6 +174,26 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
             );})}
           </TableBody>
         </Table>
+
+        {/* Tax Summary */}
+        {filteredCars.length > 0 && (
+          <div className="border-t bg-muted/30 p-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-card rounded-lg p-3 border">
+                <p className="text-sm text-muted-foreground">إجمالي المبلغ الأصلي</p>
+                <p className="text-lg font-bold text-foreground">{formatCurrency(Math.round(totals.baseAmount))} ريال</p>
+              </div>
+              <div className="bg-card rounded-lg p-3 border">
+                <p className="text-sm text-muted-foreground">إجمالي الضريبة ({taxRate}%)</p>
+                <p className="text-lg font-bold text-orange-600">{formatCurrency(Math.round(totals.taxAmount))} ريال</p>
+              </div>
+              <div className="bg-card rounded-lg p-3 border">
+                <p className="text-sm text-muted-foreground">إجمالي المشتريات مع الضريبة</p>
+                <p className="text-lg font-bold text-primary">{formatCurrency(Math.round(totals.totalWithTax))} ريال</p>
+              </div>
+            </div>
+          </div>
+        )}
         
         {cars.length === 0 && (
           <div className="p-12 text-center">
