@@ -30,6 +30,7 @@ import { TaxSettingsPage } from '@/components/accounting/TaxSettingsPage';
 import { ChartOfAccountsPage } from '@/components/accounting/ChartOfAccountsPage';
 import { JournalEntriesPage } from '@/components/accounting/JournalEntriesPage';
 import { FinancialReportsPage } from '@/components/accounting/FinancialReportsPage';
+import { GeneralLedgerPage } from '@/components/accounting/GeneralLedgerPage';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,7 @@ const Index = () => {
       case 'chart-of-accounts': return <ChartOfAccountsPage />;
       case 'journal-entries': return <JournalEntriesPage />;
       case 'financial-reports': return <FinancialReportsPage />;
+      case 'general-ledger': return <GeneralLedgerPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };

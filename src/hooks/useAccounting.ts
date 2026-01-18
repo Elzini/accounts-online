@@ -15,6 +15,7 @@ import {
   getAccountBalances,
   getTrialBalance,
   getIncomeStatement,
+  getGeneralLedger,
   TaxSettings,
   AccountCategory,
   JournalEntry,
@@ -199,5 +200,16 @@ export function useIncomeStatement(startDate?: string, endDate?: string) {
     queryKey: ['income-statement', companyId, startDate, endDate],
     queryFn: () => companyId ? getIncomeStatement(companyId, startDate, endDate) : null,
     enabled: !!companyId,
+  });
+}
+
+// General Ledger
+export function useGeneralLedger(accountId: string | null, startDate?: string, endDate?: string) {
+  const { companyId } = useCompany();
+  
+  return useQuery({
+    queryKey: ['general-ledger', companyId, accountId, startDate, endDate],
+    queryFn: () => companyId && accountId ? getGeneralLedger(companyId, accountId, startDate, endDate) : null,
+    enabled: !!companyId && !!accountId,
   });
 }

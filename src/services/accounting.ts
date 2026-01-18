@@ -347,3 +347,110 @@ export async function getIncomeStatement(companyId: string, startDate?: string, 
     netIncome: totalRevenue - totalExpenses,
   };
 }
+
+// General Ledger - حركة حساب معين
+export async function getGeneralLedger(
+  companyId: string, 
+  accountId: string,
+  startDate?: string,
+  endDate?: string
+): Promise<{
+  account: AccountCategory;
+  entries: Array<{
+    id: string;
+    date: string;
+    entry_number: number;
+    description: string;
+    debit: number;
+    credit: number;
+    balance: number;
+    reference_type: string | null;
+  }>;
+  openingBalance: number;
+  totalDebit: number;
+  totalCredit: number;
+  closingBalance: number;
+}> {
+  // Get account details
+  const { data: account, error: accountError } = await supabase
+    .from('account_categories')
+    .select('*')
+    .eq('id', accountId)
+    .single();
+  
+  if (accountError) throw accountError;
+
+  // Build query for journal entry lines
+  let query = supabase
+    .from('journal_entry_lines')
+    .select(`
+      id,
+      debit,
+      credit,
+      description,
+      journal_entry:journal_entries!inner(
+        id,
+        entry_number,
+        entry_date,
+        description,
+        reference_type,
+        company_id,
+        is_posted
+      )
+    `)
+    .eq('account_id', accountId)
+    .eq('journal_entry.company_id', companyId)
+    .eq('journal_entry.is_posted', true)
+    .order('journal_entry(entry_date)', { ascending: true })
+    .order('journal_entry(entry_number)', { ascending: true });
+
+  if (startDate) {
+    query = query.gte('journal_entry.entry_date', startDate);
+  }
+  if (endDate) {
+    query = query.lte('journal_entry.entry_date', endDate);
+  }
+
+  const { data: lines, error: linesError } = await query;
+  if (linesError) throw linesError;
+
+  // Calculate running balance
+  let runningBalance = 0;
+  const isDebitNormal = ['assets', 'expenses'].includes(account.type);
+
+  const entries = (lines || []).map((line: any) => {
+    const debit = Number(line.debit) || 0;
+    const credit = Number(line.credit) || 0;
+    
+    // For debit-normal accounts: debit increases, credit decreases
+    // For credit-normal accounts: credit increases, debit decreases
+    if (isDebitNormal) {
+      runningBalance += debit - credit;
+    } else {
+      runningBalance += credit - debit;
+    }
+
+    return {
+      id: line.id,
+      date: line.journal_entry.entry_date,
+      entry_number: line.journal_entry.entry_number,
+      description: line.description || line.journal_entry.description,
+      debit,
+      credit,
+      balance: runningBalance,
+      reference_type: line.journal_entry.reference_type,
+    };
+  });
+
+  const totalDebit = entries.reduce((sum, e) => sum + e.debit, 0);
+  const totalCredit = entries.reduce((sum, e) => sum + e.credit, 0);
+
+  return {
+    account: account as AccountCategory,
+    entries,
+    openingBalance: 0,
+    totalDebit,
+    totalCredit,
+    closingBalance: runningBalance,
+  };
+}
