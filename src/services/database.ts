@@ -18,6 +18,20 @@ type PurchaseBatchInsert = Database['public']['Tables']['purchase_batches']['Ins
 type SaleItem = Database['public']['Tables']['sale_items']['Row'];
 type SaleItemInsert = Database['public']['Tables']['sale_items']['Insert'];
 
+// Helper function to get current user's company_id
+async function getCurrentCompanyId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_id')
+    .eq('user_id', user.id)
+    .single();
+  
+  return profile?.company_id || null;
+}
+
 // Types for multi-car operations
 export interface CarWithSaleInfo extends Omit<CarInsert, 'batch_id'> {
   sale_price?: number;
@@ -48,9 +62,12 @@ export async function fetchCustomers() {
 }
 
 export async function addCustomer(customer: CustomerInsert) {
+  const companyId = await getCurrentCompanyId();
+  if (!companyId) throw new Error('No company found for user');
+  
   const { data, error } = await supabase
     .from('customers')
-    .insert(customer)
+    .insert({ ...customer, company_id: companyId })
     .select()
     .single();
   
@@ -91,9 +108,12 @@ export async function fetchSuppliers() {
 }
 
 export async function addSupplier(supplier: SupplierInsert) {
+  const companyId = await getCurrentCompanyId();
+  if (!companyId) throw new Error('No company found for user');
+  
   const { data, error } = await supabase
     .from('suppliers')
-    .insert(supplier)
+    .insert({ ...supplier, company_id: companyId })
     .select()
     .single();
   
@@ -137,9 +157,12 @@ export async function fetchCars() {
 }
 
 export async function addCar(car: CarInsert) {
+  const companyId = await getCurrentCompanyId();
+  if (!companyId) throw new Error('No company found for user');
+  
   const { data, error } = await supabase
     .from('cars')
-    .insert(car)
+    .insert({ ...car, company_id: companyId })
     .select()
     .single();
   
@@ -193,9 +216,12 @@ export async function fetchSales() {
 }
 
 export async function addSale(sale: SaleInsert) {
+  const companyId = await getCurrentCompanyId();
+  if (!companyId) throw new Error('No company found for user');
+  
   const { data, error } = await supabase
     .from('sales')
-    .insert(sale)
+    .insert({ ...sale, company_id: companyId })
     .select()
     .single();
   
@@ -341,21 +367,25 @@ export async function addPurchaseBatch(
   batchData: PurchaseBatchInsert,
   cars: Array<Omit<CarInsert, 'batch_id'>>
 ) {
+  const companyId = await getCurrentCompanyId();
+  if (!companyId) throw new Error('No company found for user');
+  
   // Create the batch first
   const { data: batch, error: batchError } = await supabase
     .from('purchase_batches')
-    .insert(batchData)
+    .insert({ ...batchData, company_id: companyId })
     .select()
     .single();
   
   if (batchError) throw batchError;
 
-  // Add all cars with the batch_id
+  // Add all cars with the batch_id and company_id
   const carsWithBatch = cars.map(car => ({
     ...car,
     batch_id: batch.id,
     supplier_id: batchData.supplier_id,
     purchase_date: batchData.purchase_date,
+    company_id: companyId,
   }));
 
   const { data: addedCars, error: carsError } = await supabase
@@ -384,6 +414,9 @@ export async function fetchPurchaseBatches() {
 
 // Multi-car Sales
 export async function addMultiCarSale(saleData: MultiCarSaleData) {
+  const companyId = await getCurrentCompanyId();
+  if (!companyId) throw new Error('No company found for user');
+  
   // Calculate totals
   const totalSalePrice = saleData.cars.reduce((sum, car) => sum + car.sale_price, 0);
   const totalPurchasePrice = saleData.cars.reduce((sum, car) => sum + car.purchase_price, 0);
@@ -406,6 +439,7 @@ export async function addMultiCarSale(saleData: MultiCarSaleData) {
       other_expenses: otherExpenses,
       profit: totalProfit,
       sale_date: saleData.sale_date,
+      company_id: companyId,
     })
     .select()
     .single();

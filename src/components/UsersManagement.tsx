@@ -41,6 +41,7 @@ const PERMISSIONS: { key: UserPermission; label: string }[] = [
   { key: 'reports', label: 'التقارير' },
   { key: 'admin', label: 'الإدارة' },
   { key: 'users', label: 'المستخدمين' },
+  { key: 'super_admin', label: 'مدير النظام' },
 ];
 
 export function UsersManagement({ setActivePage }: UsersManagementProps) {
@@ -65,7 +66,7 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
   const [newUserName, setNewUserName] = useState('');
   const [newUserPermissions, setNewUserPermissions] = useState<UserPermission[]>([]);
 
-  const canManageUsers = myPermissions.admin || myPermissions.users;
+  const canManageUsers = myPermissions.admin || myPermissions.users || myPermissions.super_admin;
 
   const startEditing = (userId: string, currentPermissions: UserPermission[]) => {
     setEditingUser(userId);
@@ -367,11 +368,15 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
           </div>
           <div className="p-3 rounded-lg bg-muted/50">
             <p className="font-semibold text-sm">صلاحية الإدارة</p>
-            <p className="text-xs text-muted-foreground">صلاحيات كاملة على النظام</p>
+            <p className="text-xs text-muted-foreground">صلاحيات كاملة على الشركة</p>
           </div>
           <div className="p-3 rounded-lg bg-muted/50">
             <p className="font-semibold text-sm">صلاحية المستخدمين</p>
-            <p className="text-xs text-muted-foreground">إدارة المستخدمين والصلاحيات</p>
+            <p className="text-xs text-muted-foreground">إدارة مستخدمي الشركة والصلاحيات</p>
+          </div>
+          <div className="p-3 rounded-lg bg-warning/10">
+            <p className="font-semibold text-sm text-warning">مدير النظام</p>
+            <p className="text-xs text-muted-foreground">صلاحيات كاملة على جميع الشركات</p>
           </div>
         </div>
       </div>

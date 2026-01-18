@@ -8,6 +8,7 @@ interface UserPermissions {
   reports: boolean;
   admin: boolean;
   users: boolean;
+  super_admin: boolean;
 }
 
 interface AuthContextType {
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     reports: false,
     admin: false,
     users: false,
+    super_admin: false,
   });
 
   const fetchPermissions = async (userId: string) => {
@@ -51,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       reports: false,
       admin: false,
       users: false,
+      super_admin: false,
     };
 
     data?.forEach((role) => {
@@ -82,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             reports: false,
             admin: false,
             users: false,
+            super_admin: false,
           });
         }
       }

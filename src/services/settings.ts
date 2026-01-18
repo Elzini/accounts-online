@@ -50,6 +50,20 @@ export const defaultSettings: AppSettings = {
   login_logo_url: '',
 };
 
+// Helper function to get current user's company_id
+async function getCurrentCompanyId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_id')
+    .eq('user_id', user.id)
+    .single();
+  
+  return profile?.company_id || null;
+}
+
 export async function uploadLoginLogo(file: File): Promise<string> {
   const fileExt = file.name.split('.').pop();
   const fileName = `login-logo-${Date.now()}.${fileExt}`;
@@ -87,9 +101,17 @@ export async function fetchAppSettings(): Promise<AppSettings> {
 }
 
 export async function updateAppSetting(key: string, value: string) {
+  const companyId = await getCurrentCompanyId();
+  
   const { error } = await supabase
     .from('app_settings')
-    .upsert({ key, value }, { onConflict: 'key' });
+    .upsert({ 
+      key, 
+      value, 
+      company_id: companyId 
+    }, { 
+      onConflict: 'key' 
+    });
   
   if (error) throw error;
 }
