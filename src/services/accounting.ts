@@ -9,6 +9,13 @@ export interface TaxSettings {
   is_active: boolean;
   apply_to_sales: boolean;
   apply_to_purchases: boolean;
+  tax_number: string | null;
+  company_name_ar: string | null;
+  national_address: string | null;
+  commercial_register: string | null;
+  city: string | null;
+  postal_code: string | null;
+  building_number: string | null;
   created_at: string;
   updated_at: string;
 }

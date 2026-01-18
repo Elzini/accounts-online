@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { useTaxSettings, useUpsertTaxSettings } from '@/hooks/useAccounting';
 import { toast } from 'sonner';
-import { Loader2, Percent, Save } from 'lucide-react';
+import { Loader2, Percent, Save, Building2, MapPin } from 'lucide-react';
 
 export function TaxSettingsPage() {
   const { data: taxSettings, isLoading } = useTaxSettings();
@@ -18,6 +19,13 @@ export function TaxSettingsPage() {
     is_active: true,
     apply_to_sales: true,
     apply_to_purchases: true,
+    tax_number: '',
+    company_name_ar: '',
+    national_address: '',
+    commercial_register: '',
+    city: '',
+    postal_code: '',
+    building_number: '',
   });
 
   // Update form when data loads
@@ -29,6 +37,13 @@ export function TaxSettingsPage() {
         is_active: taxSettings.is_active,
         apply_to_sales: taxSettings.apply_to_sales,
         apply_to_purchases: taxSettings.apply_to_purchases,
+        tax_number: taxSettings.tax_number || '',
+        company_name_ar: taxSettings.company_name_ar || '',
+        national_address: taxSettings.national_address || '',
+        commercial_register: taxSettings.commercial_register || '',
+        city: taxSettings.city || '',
+        postal_code: taxSettings.postal_code || '',
+        building_number: taxSettings.building_number || '',
       });
     }
   }, [taxSettings]);
@@ -53,15 +68,115 @@ export function TaxSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">إعدادات الضريبة</h1>
-        <p className="text-muted-foreground">إدارة إعدادات الضريبة للشركة</p>
+        <h1 className="text-2xl font-bold text-foreground">إعدادات الضريبة والفوترة</h1>
+        <p className="text-muted-foreground">إدارة بيانات الضريبة والفوترة الإلكترونية المطابقة لهيئة الزكاة والضريبة</p>
       </div>
 
+      {/* Company Info Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5" />
+            بيانات الشركة للفوترة الإلكترونية
+          </CardTitle>
+          <CardDescription>
+            بيانات الشركة المطلوبة للفاتورة الإلكترونية حسب متطلبات هيئة الزكاة والضريبة والجمارك
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="company_name_ar">اسم الشركة (بالعربي) *</Label>
+              <Input
+                id="company_name_ar"
+                value={formData.company_name_ar}
+                onChange={(e) => setFormData({ ...formData, company_name_ar: e.target.value })}
+                placeholder="مثال: شركة السيارات المتحدة"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tax_number">الرقم الضريبي (VAT Number) *</Label>
+              <Input
+                id="tax_number"
+                value={formData.tax_number}
+                onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
+                placeholder="مثال: 300000000000003"
+                maxLength={15}
+                dir="ltr"
+              />
+              <p className="text-xs text-muted-foreground">الرقم الضريبي مكون من 15 رقم</p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="commercial_register">السجل التجاري</Label>
+              <Input
+                id="commercial_register"
+                value={formData.commercial_register}
+                onChange={(e) => setFormData({ ...formData, commercial_register: e.target.value })}
+                placeholder="مثال: 1010000000"
+                dir="ltr"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="city">المدينة</Label>
+              <Input
+                id="city"
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                placeholder="مثال: الرياض"
+              />
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <MapPin className="w-4 h-4" />
+            <span className="text-sm font-medium">العنوان الوطني</span>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="building_number">رقم المبنى</Label>
+              <Input
+                id="building_number"
+                value={formData.building_number}
+                onChange={(e) => setFormData({ ...formData, building_number: e.target.value })}
+                placeholder="مثال: 1234"
+                dir="ltr"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="postal_code">الرمز البريدي</Label>
+              <Input
+                id="postal_code"
+                value={formData.postal_code}
+                onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
+                placeholder="مثال: 12345"
+                dir="ltr"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-1">
+              <Label htmlFor="national_address">العنوان التفصيلي</Label>
+              <Input
+                id="national_address"
+                value={formData.national_address}
+                onChange={(e) => setFormData({ ...formData, national_address: e.target.value })}
+                placeholder="الحي، الشارع"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tax Settings Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Percent className="w-5 h-5" />
-            إعدادات الضريبة الموحدة
+            إعدادات الضريبة
           </CardTitle>
           <CardDescription>
             تكوين نسبة الضريبة وتطبيقها على المبيعات والمشتريات

@@ -727,33 +727,54 @@ export type Database = {
         Row: {
           apply_to_purchases: boolean
           apply_to_sales: boolean
+          building_number: string | null
+          city: string | null
+          commercial_register: string | null
           company_id: string
+          company_name_ar: string | null
           created_at: string
           id: string
           is_active: boolean
+          national_address: string | null
+          postal_code: string | null
           tax_name: string
+          tax_number: string | null
           tax_rate: number
           updated_at: string
         }
         Insert: {
           apply_to_purchases?: boolean
           apply_to_sales?: boolean
+          building_number?: string | null
+          city?: string | null
+          commercial_register?: string | null
           company_id: string
+          company_name_ar?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
+          national_address?: string | null
+          postal_code?: string | null
           tax_name?: string
+          tax_number?: string | null
           tax_rate?: number
           updated_at?: string
         }
         Update: {
           apply_to_purchases?: boolean
           apply_to_sales?: boolean
+          building_number?: string | null
+          city?: string | null
+          commercial_register?: string | null
           company_id?: string
+          company_name_ar?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
+          national_address?: string | null
+          postal_code?: string | null
           tax_name?: string
+          tax_number?: string | null
           tax_rate?: number
           updated_at?: string
         }
