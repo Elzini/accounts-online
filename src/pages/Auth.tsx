@@ -209,16 +209,16 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                   دخول مدير النظام
                 </Link>
               ) : (
-                <Link to="/auth" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
+                <Link to="/auth/company" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
                   <Building2 className="w-4 h-4" />
                   دخول الشركات
                 </Link>
               )}
 
-              <Button type="button" variant="ghost" className="h-auto px-2" onClick={() => navigate(-1)} disabled={loading}>
-                <ArrowLeft className="w-4 h-4 ml-2" />
+              <Link to="/auth" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
                 رجوع
-              </Button>
+              </Link>
             </div>
 
             {mode === 'company' && (
