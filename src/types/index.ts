@@ -79,4 +79,8 @@ export type ActivePage =
   | 'chart-of-accounts'
   | 'journal-entries'
   | 'financial-reports'
-  | 'general-ledger';
+  | 'general-ledger'
+  | 'expenses'
+  | 'quotations'
+  | 'installments'
+  | 'vouchers';

@@ -31,6 +31,10 @@ import { ChartOfAccountsPage } from '@/components/accounting/ChartOfAccountsPage
 import { JournalEntriesPage } from '@/components/accounting/JournalEntriesPage';
 import { FinancialReportsPage } from '@/components/accounting/FinancialReportsPage';
 import { GeneralLedgerPage } from '@/components/accounting/GeneralLedgerPage';
+import { ExpensesPage } from '@/components/expenses/ExpensesPage';
+import { QuotationsPage } from '@/components/quotations/QuotationsPage';
+import { InstallmentsPage } from '@/components/installments/InstallmentsPage';
+import { VouchersPage } from '@/components/vouchers/VouchersPage';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -74,6 +78,10 @@ const Index = () => {
       case 'journal-entries': return <JournalEntriesPage />;
       case 'financial-reports': return <FinancialReportsPage />;
       case 'general-ledger': return <GeneralLedgerPage />;
+      case 'expenses': return <ExpensesPage />;
+      case 'quotations': return <QuotationsPage />;
+      case 'installments': return <InstallmentsPage />;
+      case 'vouchers': return <VouchersPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };

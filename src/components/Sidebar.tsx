@@ -15,7 +15,11 @@ import {
   Calculator,
   BookOpen,
   Percent,
-  PieChart
+  PieChart,
+  Receipt,
+  CreditCard,
+  FileCheck,
+  Wallet
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
@@ -50,6 +54,13 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
   const transferItems = [
     { id: 'partner-dealerships' as ActivePage, label: 'المعارض الشريكة', icon: Building2 },
     { id: 'car-transfers' as ActivePage, label: 'تحويلات السيارات', icon: ArrowLeftRight },
+  ];
+
+  const financeItems = [
+    { id: 'expenses' as ActivePage, label: 'المصروفات', icon: Wallet },
+    { id: 'quotations' as ActivePage, label: 'عروض الأسعار', icon: FileCheck },
+    { id: 'installments' as ActivePage, label: 'الأقساط', icon: CreditCard },
+    { id: 'vouchers' as ActivePage, label: 'سندات القبض والصرف', icon: Receipt },
   ];
 
   const reportItems = [
@@ -157,7 +168,34 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
           </div>
         )}
 
-        {/* Reports */}
+        {/* Finance Section */}
+        {(permissions.admin || permissions.sales || permissions.purchases) && (
+          <div className="mb-6">
+            <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">المالية</p>
+            <ul className="space-y-1">
+              {financeItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activePage === item.id;
+                return (
+                  <li key={item.id}>
+                    <button
+                      onClick={() => setActivePage(item.id)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                        isActive 
+                          ? "gradient-primary text-white shadow-lg" 
+                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
+                      )}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium">{item.label}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
         {hasAccess('reports') && (
           <div className="mb-6">
             <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">{settings?.reports_title || 'التقارير'}</p>
