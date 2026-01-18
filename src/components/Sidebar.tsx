@@ -18,7 +18,7 @@ import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppSettings } from '@/hooks/useSettings';
-import logo from '@/assets/logo.png';
+import defaultLogo from '@/assets/logo.png';
 
 interface SidebarProps {
   activePage: ActivePage;
@@ -29,6 +29,11 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
   const navigate = useNavigate();
   const { permissions } = useAuth();
   const { data: settings } = useAppSettings();
+
+  // Use company logo if available, otherwise use default
+  const logoUrl = settings?.company_logo_url || defaultLogo;
+  const appName = settings?.app_name || 'منصة إدارة المعارض';
+  const appSubtitle = settings?.app_subtitle || 'لتجارة السيارات';
 
   const menuItems = [
     { id: 'dashboard' as ActivePage, label: settings?.dashboard_title || 'الرئيسية', icon: LayoutDashboard },
@@ -67,10 +72,18 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
       {/* Logo */}
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="Logo" className="w-12 h-12 rounded-xl object-cover" />
+          <img 
+            src={logoUrl} 
+            alt="Logo" 
+            className="w-12 h-12 rounded-xl object-cover bg-white/10" 
+            onError={(e) => {
+              // Fallback to default logo if company logo fails to load
+              (e.target as HTMLImageElement).src = defaultLogo;
+            }}
+          />
           <div>
-            <h1 className="font-bold text-lg text-white">{settings?.app_name || 'أشبال النمر'}</h1>
-            <p className="text-xs text-sidebar-foreground/70">{settings?.app_subtitle || 'لتجارة السيارات'}</p>
+            <h1 className="font-bold text-lg text-white">{appName}</h1>
+            <p className="text-xs text-sidebar-foreground/70">{appSubtitle}</p>
           </div>
         </div>
       </div>
