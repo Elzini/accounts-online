@@ -67,22 +67,36 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
     const formattedTime = format(new Date(invoiceDate), 'HH:mm:ss');
     const taxRate = taxSettings?.tax_rate || 15;
 
+    // Get the actual VAT number for ZATCA QR - must be the company's VAT number
+    const companyVatNumber = taxSettings?.tax_number || '';
+    
+    // For QR code, we need the seller's VAT number (which is the company for sales, or supplier for purchases)
+    // For ZATCA compliance, the QR must contain the seller's VAT registration number
+    const qrVatNumber = invoiceType === 'sale' ? companyVatNumber : sellerTaxNumber;
+    const qrSellerName = invoiceType === 'sale' 
+      ? (taxSettings?.company_name_ar || sellerName) 
+      : sellerName;
+
     // Generate ZATCA-compliant QR code data using TLV encoding
     const qrData = useMemo(() => {
       return generateZatcaQRData({
-        sellerName: sellerName,
-        vatNumber: sellerTaxNumber || '',
+        sellerName: qrSellerName,
+        vatNumber: qrVatNumber,
         invoiceDateTime: formatDateTimeISO(invoiceDate),
         invoiceTotal: total,
         vatAmount: taxAmount,
       });
-    }, [sellerName, sellerTaxNumber, invoiceDate, total, taxAmount]);
+    }, [qrSellerName, qrVatNumber, invoiceDate, total, taxAmount]);
 
     // Calculate item tax amount if not provided
     const itemsWithTax = items.map(item => ({
       ...item,
       taxAmount: item.taxAmount ?? (item.unitPrice * item.quantity * (item.taxRate / 100))
     }));
+
+    // Get display values for seller and buyer based on invoice type
+    const displaySellerTaxNumber = invoiceType === 'sale' ? companyVatNumber : sellerTaxNumber;
+    const displayBuyerTaxNumber = invoiceType === 'sale' ? (buyerTaxNumber || buyerIdNumber) : companyVatNumber;
 
     return (
       <div
@@ -156,13 +170,15 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
               </div>
               <div className="flex gap-2">
                 <span className="text-gray-500">رقم تسجيل ضريبة القيمة المضافة للبائع:</span>
-                <span className="font-medium" dir="ltr">{sellerTaxNumber || '-'}</span>
+                <span className="font-medium text-emerald-700 font-bold" dir="ltr">
+                  {displaySellerTaxNumber || 'غير مسجل'}
+                </span>
               </div>
               <div className="flex gap-2 col-span-2">
                 <span className="text-gray-500">العنوان الوطني:</span>
                 <span className="font-medium">{sellerAddress || taxSettings?.national_address || '-'}</span>
               </div>
-              {taxSettings?.commercial_register && (
+              {taxSettings?.commercial_register && invoiceType === 'sale' && (
                 <div className="flex gap-2">
                   <span className="text-gray-500">السجل التجاري:</span>
                   <span className="font-medium">{taxSettings.commercial_register}</span>
@@ -183,7 +199,9 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
               </div>
               <div className="flex gap-2">
                 <span className="text-gray-500">رقم تسجيل ضريبة القيمة المضافة للمشتري:</span>
-                <span className="font-medium" dir="ltr">{buyerTaxNumber || buyerIdNumber || '-'}</span>
+                <span className="font-medium text-emerald-700 font-bold" dir="ltr">
+                  {displayBuyerTaxNumber || 'غير مسجل'}
+                </span>
               </div>
               {buyerPhone && (
                 <div className="flex gap-2">
