@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ArrowRight, Save, DollarSign, ArrowLeftRight } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { ArrowRight, Save, DollarSign, ArrowLeftRight, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,7 @@ import { useCustomers, useCars, useAddSale } from '@/hooks/useDatabase';
 import { getPendingTransferForCar, linkTransferToSale } from '@/hooks/useTransfers';
 import { CarTransfer } from '@/services/transfers';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTaxSettings } from '@/hooks/useAccounting';
 
 interface SaleFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -19,6 +20,7 @@ interface SaleFormProps {
 export function SaleForm({ setActivePage }: SaleFormProps) {
   const { data: customers = [] } = useCustomers();
   const { data: allCars = [] } = useCars();
+  const { data: taxSettings } = useTaxSettings();
   const addSale = useAddSale();
   const queryClient = useQueryClient();
 
@@ -46,6 +48,26 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
     const otherExpenses = parseFloat(formData.other_expenses) || 0;
     setProfit(salePrice - purchasePrice - commission - otherExpenses);
   }, [formData.sale_price, formData.commission, formData.other_expenses, selectedCar]);
+
+  // Calculate tax details
+  const taxDetails = useMemo(() => {
+    const price = parseFloat(formData.sale_price) || 0;
+    const isActive = taxSettings?.is_active && taxSettings?.apply_to_sales;
+    const taxRate = isActive ? (taxSettings?.tax_rate || 0) : 0;
+    
+    // السعر المدخل يعتبر شامل الضريبة
+    const baseAmount = isActive ? price / (1 + taxRate / 100) : price;
+    const taxAmount = isActive ? price - baseAmount : 0;
+    
+    return {
+      isActive,
+      taxRate,
+      baseAmount,
+      taxAmount,
+      totalWithTax: price,
+      taxName: taxSettings?.tax_name || 'ضريبة القيمة المضافة'
+    };
+  }, [formData.sale_price, taxSettings]);
 
   const handleCarChange = async (carId: string) => {
     const car = availableCars.find(c => c.id === carId);
@@ -284,6 +306,39 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
               dir="ltr"
             />
           </div>
+
+          {/* Tax Details */}
+          {formData.sale_price && (
+            <div className="bg-muted/50 p-4 rounded-xl border">
+              <div className="flex items-center gap-2 mb-3">
+                <Receipt className="w-5 h-5 text-success" />
+                <span className="font-semibold">تفاصيل الفاتورة</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-background rounded-lg">
+                  <p className="text-sm text-muted-foreground">أصل المبلغ</p>
+                  <p className="text-lg font-bold">{formatCurrency(taxDetails.baseAmount)} ريال</p>
+                </div>
+                <div className="text-center p-3 bg-background rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    {taxDetails.taxName} ({taxDetails.taxRate}%)
+                  </p>
+                  <p className="text-lg font-bold text-orange-600">
+                    {taxDetails.isActive ? formatCurrency(taxDetails.taxAmount) : '0'} ريال
+                  </p>
+                </div>
+                <div className="text-center p-3 bg-success/10 rounded-lg">
+                  <p className="text-sm text-muted-foreground">الإجمالي شامل الضريبة</p>
+                  <p className="text-lg font-bold text-success">{formatCurrency(taxDetails.totalWithTax)} ريال</p>
+                </div>
+              </div>
+              {!taxDetails.isActive && (
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  الضريبة غير مفعلة على المبيعات
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Profit Display */}
           <div className={`p-4 rounded-xl ${profit >= 0 ? 'bg-success/10' : 'bg-destructive/10'}`}>
