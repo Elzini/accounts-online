@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CompanyProvider, useCompany } from "@/contexts/CompanyContext";
 import Index from "./pages/Index";
+import AuthChoice from "./pages/AuthChoice";
 import Auth from "./pages/Auth";
 import SuperAdminAuth from "./pages/SuperAdminAuth";
 import Register from "./pages/Register";
@@ -119,6 +120,14 @@ function AppRoutes() {
       />
       <Route 
         path="/auth" 
+        element={
+          <PublicRoute>
+            <AuthChoice />
+          </PublicRoute>
+        } 
+      />
+      <Route 
+        path="/auth/company" 
         element={
           <PublicRoute>
             <Auth />
