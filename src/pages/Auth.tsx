@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Car, Mail, Lock } from 'lucide-react';
+import { Car, Mail, Lock, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAppSettings } from '@/hooks/useSettings';
 import { defaultSettings } from '@/services/settings';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
 
 export default function Auth() {
@@ -28,19 +29,40 @@ export default function Auth() {
   const loginButtonText = settings?.login_button_text || defaultSettings.login_button_text;
   const loginLogoUrl = settings?.login_logo_url || '';
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, redirectToCompanies: boolean = false) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = await signIn(email, password);
+      const { error, data } = await signIn(email, password);
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
           toast.error('بيانات الدخول غير صحيحة');
+        } else if (error.message.includes('Email not confirmed')) {
+          toast.error('يرجى تأكيد البريد الإلكتروني أولاً');
         } else {
           toast.error('حدث خطأ أثناء تسجيل الدخول');
         }
       } else {
+        // Check if user is super_admin when redirectToCompanies is true
+        if (redirectToCompanies && data?.user) {
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('permission')
+            .eq('user_id', data.user.id)
+            .eq('permission', 'super_admin')
+            .single();
+          
+          if (roleData) {
+            toast.success('تم تسجيل الدخول بنجاح');
+            navigate('/companies');
+            return;
+          } else {
+            toast.error('ليس لديك صلاحية الوصول لإدارة الشركات');
+            return;
+          }
+        }
+        
         toast.success('تم تسجيل الدخول بنجاح');
         navigate('/');
       }
@@ -129,6 +151,17 @@ export default function Auth() {
               disabled={loading}
             >
               {loading ? 'جاري التحميل...' : loginButtonText}
+            </Button>
+
+            <Button 
+              type="button"
+              variant="outline"
+              className="w-full h-12 border-2 hover:bg-muted/50"
+              disabled={loading}
+              onClick={(e) => handleSubmit(e as any, true)}
+            >
+              <Building2 className="w-5 h-5 ml-2" />
+              دخول إدارة الشركات (مدير النظام)
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
