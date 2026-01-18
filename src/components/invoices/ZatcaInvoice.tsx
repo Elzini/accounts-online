@@ -4,12 +4,14 @@ import { ar } from 'date-fns/locale';
 import { QRCodeSVG } from 'qrcode.react';
 import { TaxSettings } from '@/services/accounting';
 import { generateZatcaQRData, formatDateTimeISO } from '@/lib/zatcaQR';
+import logoImage from '@/assets/logo.png';
 
 interface InvoiceItem {
   description: string;
   quantity: number;
   unitPrice: number;
   taxRate: number;
+  taxAmount?: number;
   total: number;
 }
 
@@ -25,6 +27,7 @@ interface InvoiceData {
   buyerPhone?: string;
   buyerAddress?: string;
   buyerIdNumber?: string;
+  buyerTaxNumber?: string;
   // Items
   items: InvoiceItem[];
   // Totals
@@ -52,6 +55,7 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
       buyerPhone,
       buyerAddress,
       buyerIdNumber,
+      buyerTaxNumber,
       items,
       subtotal,
       taxAmount,
@@ -74,144 +78,185 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
       });
     }, [sellerName, sellerTaxNumber, invoiceDate, total, taxAmount]);
 
+    // Calculate item tax amount if not provided
+    const itemsWithTax = items.map(item => ({
+      ...item,
+      taxAmount: item.taxAmount ?? (item.unitPrice * item.quantity * (item.taxRate / 100))
+    }));
+
     return (
       <div
         ref={ref}
-        className="bg-white p-8 max-w-[210mm] mx-auto text-black"
+        className="bg-white max-w-[210mm] mx-auto text-black"
         style={{ fontFamily: 'Cairo, Arial, sans-serif' }}
         dir="rtl"
       >
-        {/* Header */}
-        <div className="border-b-2 border-gray-800 pb-4 mb-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {invoiceType === 'sale' ? 'فاتورة ضريبية' : 'فاتورة شراء'}
-              </h1>
-              <p className="text-sm text-gray-600">Tax Invoice</p>
-            </div>
-            <div className="text-left">
-              <p className="text-lg font-bold">رقم الفاتورة: {invoiceNumber}</p>
-              <p className="text-sm">Invoice No: {invoiceNumber}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Invoice Info */}
-        <div className="grid grid-cols-2 gap-6 mb-6">
-          {/* Seller Info */}
-          <div className="border rounded-lg p-4 bg-gray-50">
-            <h3 className="font-bold text-gray-900 mb-2 border-b pb-1">
-              {invoiceType === 'sale' ? 'البائع / Seller' : 'المورد / Supplier'}
-            </h3>
-            <div className="space-y-1 text-sm">
-              <p><span className="font-medium">الاسم:</span> {sellerName}</p>
-              <p><span className="font-medium">الرقم الضريبي:</span> <span dir="ltr">{sellerTaxNumber}</span></p>
-              {taxSettings?.commercial_register && (
-                <p><span className="font-medium">السجل التجاري:</span> {taxSettings.commercial_register}</p>
-              )}
-              <p><span className="font-medium">العنوان:</span> {sellerAddress}</p>
-              {taxSettings?.city && (
-                <p><span className="font-medium">المدينة:</span> {taxSettings.city}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Buyer Info */}
-          <div className="border rounded-lg p-4 bg-gray-50">
-            <h3 className="font-bold text-gray-900 mb-2 border-b pb-1">
-              {invoiceType === 'sale' ? 'المشتري / Buyer' : 'الشركة / Company'}
-            </h3>
-            <div className="space-y-1 text-sm">
-              <p><span className="font-medium">الاسم:</span> {buyerName}</p>
-              {buyerPhone && <p><span className="font-medium">الهاتف:</span> {buyerPhone}</p>}
-              {buyerIdNumber && <p><span className="font-medium">رقم الهوية:</span> {buyerIdNumber}</p>}
-              {buyerAddress && <p><span className="font-medium">العنوان:</span> {buyerAddress}</p>}
-            </div>
-          </div>
-        </div>
-
-        {/* Date Info */}
-        <div className="flex justify-between mb-6 text-sm bg-gray-100 p-3 rounded-lg">
-          <div>
-            <span className="font-medium">تاريخ الفاتورة:</span> {formattedDate}
-          </div>
-          <div>
-            <span className="font-medium">الوقت:</span> {formattedTime}
-          </div>
-          <div>
-            <span className="font-medium">نوع الفاتورة:</span> فاتورة ضريبية
-          </div>
-        </div>
-
-        {/* Items Table */}
-        <table className="w-full mb-6 border-collapse">
-          <thead>
-            <tr className="bg-gray-800 text-white">
-              <th className="border border-gray-700 p-2 text-right">#</th>
-              <th className="border border-gray-700 p-2 text-right">الوصف / Description</th>
-              <th className="border border-gray-700 p-2 text-center">الكمية</th>
-              <th className="border border-gray-700 p-2 text-left">سعر الوحدة</th>
-              <th className="border border-gray-700 p-2 text-center">نسبة الضريبة</th>
-              <th className="border border-gray-700 p-2 text-left">الإجمالي</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, index) => (
-              <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                <td className="border border-gray-300 p-2 text-right">{index + 1}</td>
-                <td className="border border-gray-300 p-2 text-right">{item.description}</td>
-                <td className="border border-gray-300 p-2 text-center">{item.quantity}</td>
-                <td className="border border-gray-300 p-2 text-left">{item.unitPrice.toLocaleString()} ر.س</td>
-                <td className="border border-gray-300 p-2 text-center">{item.taxRate}%</td>
-                <td className="border border-gray-300 p-2 text-left font-medium">{item.total.toLocaleString()} ر.س</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Totals */}
-        <div className="flex justify-end mb-6">
-          <div className="w-72 border rounded-lg overflow-hidden">
-            <div className="flex justify-between p-3 bg-gray-50 border-b">
-              <span>المجموع قبل الضريبة (Subtotal)</span>
-              <span className="font-medium">{subtotal.toLocaleString()} ر.س</span>
-            </div>
-            <div className="flex justify-between p-3 bg-gray-50 border-b">
-              <span>ضريبة القيمة المضافة ({taxRate}%)</span>
-              <span className="font-medium">{taxAmount.toLocaleString()} ر.س</span>
-            </div>
-            <div className="flex justify-between p-3 bg-gray-800 text-white">
-              <span className="font-bold">الإجمالي شامل الضريبة</span>
-              <span className="font-bold text-lg">{total.toLocaleString()} ر.س</span>
-            </div>
-          </div>
-        </div>
-
-        {/* QR Code Section */}
-        <div className="flex justify-between items-end border-t pt-4">
-          <div className="text-xs text-gray-500 max-w-[60%]">
-            <p className="font-bold mb-1">ملاحظات / Notes:</p>
-            <p>هذه الفاتورة صادرة وفقاً لنظام الفوترة الإلكترونية في المملكة العربية السعودية</p>
-            <p>This invoice is issued according to the e-invoicing system in the Kingdom of Saudi Arabia</p>
-          </div>
-          <div className="text-center">
-            <div className="w-28 h-28 border-2 border-gray-800 rounded-lg flex items-center justify-center bg-white mb-1 p-1">
-              <QRCodeSVG
-                value={qrData}
-                size={100}
-                level="M"
-                includeMargin={false}
+        {/* Header - Green Section */}
+        <div className="bg-emerald-600 text-white p-6 rounded-t-lg">
+          <div className="flex justify-between items-center">
+            {/* Left - Logo */}
+            <div className="flex items-center">
+              <img 
+                src={logoImage} 
+                alt="Logo" 
+                className="h-16 w-auto object-contain bg-white rounded p-1"
               />
             </div>
-            <p className="text-xs text-gray-500">رمز الاستجابة السريعة</p>
-            <p className="text-xs text-gray-400">ZATCA QR Code</p>
+
+            {/* Center - QR Code */}
+            <div className="flex flex-col items-center">
+              <div className="bg-white p-2 rounded-lg shadow-lg">
+                <QRCodeSVG
+                  value={qrData}
+                  size={90}
+                  level="M"
+                  includeMargin={false}
+                  fgColor="#047857"
+                />
+              </div>
+              <div className="flex gap-4 mt-2 text-sm">
+                <div className="text-center">
+                  <span className="opacity-75">التاريخ</span>
+                  <p className="font-bold">{formattedDate}</p>
+                </div>
+                <div className="text-center">
+                  <span className="opacity-75">الوقت</span>
+                  <p className="font-bold">{formattedTime}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right - Invoice Title */}
+            <div className="text-left">
+              <h1 className="text-3xl font-bold">
+                فاتورة
+              </h1>
+              <h2 className="text-2xl font-bold">
+                ضريبية
+              </h2>
+              <div className="mt-2 bg-white/20 px-3 py-1 rounded text-sm">
+                <span>رقم الفاتورة: </span>
+                <span className="font-bold">{invoiceNumber}</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="mt-6 pt-4 border-t text-center text-xs text-gray-500">
-          <p>شكراً لتعاملكم معنا - Thank you for your business</p>
+        {/* Content Section */}
+        <div className="p-6 bg-gray-50">
+          {/* Seller Info Section */}
+          <div className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
+            <h3 className="text-emerald-700 font-bold text-lg mb-3 border-b border-emerald-200 pb-2">
+              معلومات البائع
+            </h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex gap-2">
+                <span className="text-gray-500">اسم البائع:</span>
+                <span className="font-medium">{sellerName}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-gray-500">رقم تسجيل ضريبة القيمة المضافة للبائع:</span>
+                <span className="font-medium" dir="ltr">{sellerTaxNumber || '-'}</span>
+              </div>
+              <div className="flex gap-2 col-span-2">
+                <span className="text-gray-500">العنوان الوطني:</span>
+                <span className="font-medium">{sellerAddress || taxSettings?.national_address || '-'}</span>
+              </div>
+              {taxSettings?.commercial_register && (
+                <div className="flex gap-2">
+                  <span className="text-gray-500">السجل التجاري:</span>
+                  <span className="font-medium">{taxSettings.commercial_register}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Buyer Info Section */}
+          <div className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
+            <h3 className="text-emerald-700 font-bold text-lg mb-3 border-b border-emerald-200 pb-2">
+              معلومات المشتري
+            </h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex gap-2">
+                <span className="text-gray-500">اسم المشتري:</span>
+                <span className="font-medium">{buyerName}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-gray-500">رقم تسجيل ضريبة القيمة المضافة للمشتري:</span>
+                <span className="font-medium" dir="ltr">{buyerTaxNumber || buyerIdNumber || '-'}</span>
+              </div>
+              {buyerPhone && (
+                <div className="flex gap-2">
+                  <span className="text-gray-500">رقم الهاتف:</span>
+                  <span className="font-medium" dir="ltr">{buyerPhone}</span>
+                </div>
+              )}
+              {buyerAddress && (
+                <div className="flex gap-2">
+                  <span className="text-gray-500">العنوان:</span>
+                  <span className="font-medium">{buyerAddress}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Products Table */}
+          <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 mb-4">
+            <h3 className="text-emerald-700 font-bold text-lg p-4 border-b border-emerald-200">
+              المنتجات
+            </h3>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-emerald-50 text-emerald-800">
+                  <th className="p-3 text-right border-b border-emerald-200">#</th>
+                  <th className="p-3 text-right border-b border-emerald-200">اسم المنتج</th>
+                  <th className="p-3 text-center border-b border-emerald-200">الكمية</th>
+                  <th className="p-3 text-center border-b border-emerald-200">السعر</th>
+                  <th className="p-3 text-center border-b border-emerald-200">ضريبة القيمة المضافة</th>
+                  <th className="p-3 text-center border-b border-emerald-200">المجموع الكلي</th>
+                </tr>
+              </thead>
+              <tbody>
+                {itemsWithTax.map((item, index) => (
+                  <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="p-3 text-right border-b border-gray-100">{index + 1}</td>
+                    <td className="p-3 text-right border-b border-gray-100">{item.description}</td>
+                    <td className="p-3 text-center border-b border-gray-100">{item.quantity}</td>
+                    <td className="p-3 text-center border-b border-gray-100">{item.unitPrice.toLocaleString('ar-SA')}</td>
+                    <td className="p-3 text-center border-b border-gray-100">
+                      {item.taxAmount.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="p-3 text-center border-b border-gray-100 font-medium">
+                      {item.total.toLocaleString('ar-SA')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Totals Section */}
+          <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
+            <div className="flex justify-between items-center p-4 border-b border-gray-100">
+              <span className="text-gray-600 font-medium">المجموع</span>
+              <span className="font-bold text-lg">{subtotal.toLocaleString('ar-SA')} ر.س</span>
+            </div>
+            <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
+              <span className="text-gray-600 font-medium">ضريبة القيمة المضافة ({taxRate}%)</span>
+              <span className="font-bold text-lg">{taxAmount.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س</span>
+            </div>
+            <div className="flex justify-between items-center p-4 bg-emerald-600 text-white">
+              <span className="font-bold text-lg">المجموع مع الضريبة ({taxRate}%)</span>
+              <span className="font-bold text-xl">{total.toLocaleString('ar-SA')} ر.س</span>
+            </div>
+          </div>
+
+          {/* Footer Notes */}
+          <div className="mt-4 text-center text-xs text-gray-500">
+            <p>هذه الفاتورة صادرة وفقاً لنظام الفوترة الإلكترونية في المملكة العربية السعودية</p>
+            <p className="mt-1">This invoice is issued according to the e-invoicing system in the Kingdom of Saudi Arabia</p>
+            <p className="mt-2 text-gray-400">شكراً لتعاملكم معنا</p>
+          </div>
         </div>
       </div>
     );
