@@ -68,6 +68,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
     { id: 'tax-settings' as ActivePage, label: 'إعدادات الضريبة', icon: Percent },
     { id: 'chart-of-accounts' as ActivePage, label: 'شجرة الحسابات', icon: BookOpen },
     { id: 'journal-entries' as ActivePage, label: 'دفتر اليومية', icon: Calculator },
+    { id: 'general-ledger' as ActivePage, label: 'دفتر الأستاذ', icon: FileText },
     { id: 'financial-reports' as ActivePage, label: 'التقارير المالية', icon: PieChart },
   ];
 
