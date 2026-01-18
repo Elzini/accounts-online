@@ -10,7 +10,8 @@ import {
   UserCog,
   Settings,
   Building2,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Crown
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -57,8 +58,8 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
     return permissions.admin || permissions[permission];
   };
 
-  const canManageUsers = permissions.admin || permissions.users;
-
+  const canManageUsers = permissions.admin || permissions.users || permissions.super_admin;
+  const isSuperAdmin = permissions.super_admin;
   return (
     <aside className="w-64 min-h-screen max-h-[100dvh] gradient-dark text-sidebar-foreground flex flex-col shrink-0">
       {/* Logo */}
@@ -154,6 +155,29 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
                   </li>
                 );
               })}
+            </ul>
+          </div>
+        )}
+
+        {/* Super Admin - Companies */}
+        {isSuperAdmin && (
+          <div className="mb-6">
+            <p className="text-xs font-semibold text-warning/70 mb-3 px-3">مدير النظام</p>
+            <ul className="space-y-1">
+              <li>
+                <button
+                  onClick={() => setActivePage('companies-management')}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                    activePage === 'companies-management'
+                      ? "bg-warning text-warning-foreground shadow-lg" 
+                      : "text-warning/80 hover:bg-warning/20 hover:text-warning"
+                  )}
+                >
+                  <Crown className="w-5 h-5" />
+                  <span className="font-medium">إدارة الشركات</span>
+                </button>
+              </li>
             </ul>
           </div>
         )}

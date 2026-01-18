@@ -24,6 +24,7 @@ import { TransfersReport } from '@/components/reports/TransfersReport';
 import { PartnerDealershipReport } from '@/components/reports/PartnerDealershipReport';
 import { UsersManagement } from '@/components/UsersManagement';
 import { AppSettingsPage } from '@/components/AppSettings';
+import { CompaniesManagement } from '@/components/CompaniesManagement';
 import { CarSearch } from '@/components/CarSearch';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,6 +63,7 @@ const Index = () => {
       case 'partner-report': return <PartnerDealershipReport setActivePage={setActivePage} />;
       case 'users-management': return <UsersManagement setActivePage={setActivePage} />;
       case 'app-settings': return <AppSettingsPage setActivePage={setActivePage} />;
+      case 'companies-management': return <CompaniesManagement setActivePage={setActivePage} />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };

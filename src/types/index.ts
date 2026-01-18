@@ -73,4 +73,5 @@ export type ActivePage =
   | 'transfers-report'
   | 'partner-report'
   | 'users-management'
-  | 'app-settings';
+  | 'app-settings'
+  | 'companies-management';
