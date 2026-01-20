@@ -25,6 +25,15 @@ export function CustomerForm({ setActivePage }: CustomerFormProps) {
 
   const addCustomer = useAddCustomer();
 
+  // Validate Saudi VAT number (15 digits starting with 3)
+  const isValidSaudiVatNumber = (vatNumber: string): boolean => {
+    if (!vatNumber) return true; // Optional field
+    const cleanVat = vatNumber.trim();
+    if (cleanVat.length === 0) return true;
+    const vatRegex = /^3\d{14}$/;
+    return vatRegex.test(cleanVat);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -42,6 +51,12 @@ export function CustomerForm({ setActivePage }: CustomerFormProps) {
     // Validate name length (1-200 characters)
     if (formData.name.length < 1 || formData.name.length > 200) {
       toast.error('اسم العميل يجب أن يكون بين 1 و 200 حرف');
+      return;
+    }
+
+    // Validate Saudi VAT number
+    if (!isValidSaudiVatNumber(formData.registration_number)) {
+      toast.error('الرقم الضريبي يجب أن يكون 15 رقم ويبدأ بـ 3');
       return;
     }
 
@@ -121,14 +136,22 @@ export function CustomerForm({ setActivePage }: CustomerFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="registration_number">الرقم الضريبي</Label>
+              <Label htmlFor="registration_number">الرقم الضريبي (15 رقم يبدأ بـ 3)</Label>
               <Input
                 id="registration_number"
                 value={formData.registration_number}
-                onChange={(e) => setFormData({ ...formData, registration_number: e.target.value })}
-                placeholder="أدخل الرقم الضريبي"
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 15);
+                  setFormData({ ...formData, registration_number: value });
+                }}
+                placeholder="3xxxxxxxxxxxxxx"
                 className="h-12"
+                dir="ltr"
+                maxLength={15}
               />
+              {formData.registration_number && !isValidSaudiVatNumber(formData.registration_number) && (
+                <p className="text-xs text-destructive">الرقم الضريبي يجب أن يكون 15 رقم ويبدأ بـ 3</p>
+              )}
             </div>
           </div>
 
