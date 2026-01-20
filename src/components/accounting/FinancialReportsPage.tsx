@@ -188,17 +188,31 @@ export function FinancialReportsPage() {
       { header: 'الرصيد', key: 'balance' },
     ];
     
-    const assetsData = balanceSheet.assets.map(item => ({
+    const currentAssetsData = balanceSheet.currentAssets.map(item => ({
       code: item.account.code,
       name: item.account.name,
-      category: 'أصول',
+      category: 'أصول متداولة',
       balance: item.balance.toLocaleString(),
     }));
 
-    const liabilitiesData = balanceSheet.liabilities.map(item => ({
+    const fixedAssetsData = balanceSheet.fixedAssets.map(item => ({
       code: item.account.code,
       name: item.account.name,
-      category: 'خصوم',
+      category: 'أصول ثابتة',
+      balance: item.balance.toLocaleString(),
+    }));
+
+    const currentLiabilitiesData = balanceSheet.currentLiabilities.map(item => ({
+      code: item.account.code,
+      name: item.account.name,
+      category: 'خصوم متداولة',
+      balance: item.balance.toLocaleString(),
+    }));
+
+    const longTermLiabilitiesData = balanceSheet.longTermLiabilities.map(item => ({
+      code: item.account.code,
+      name: item.account.name,
+      category: 'خصوم طويلة الأجل',
       balance: item.balance.toLocaleString(),
     }));
 
@@ -218,9 +232,11 @@ export function FinancialReportsPage() {
       });
     }
 
-    const data = [...assetsData, ...liabilitiesData, ...equityData];
+    const data = [...currentAssetsData, ...fixedAssetsData, ...currentLiabilitiesData, ...longTermLiabilitiesData, ...equityData];
 
     const summaryCards = [
+      { label: 'الأصول المتداولة', value: balanceSheet.totalCurrentAssets.toLocaleString() + ' ر.س' },
+      { label: 'الأصول الثابتة', value: balanceSheet.totalFixedAssets.toLocaleString() + ' ر.س' },
       { label: 'إجمالي الأصول', value: balanceSheet.totalAssets.toLocaleString() + ' ر.س' },
       { label: 'إجمالي الخصوم', value: balanceSheet.totalLiabilities.toLocaleString() + ' ر.س' },
       { label: 'حقوق الملكية', value: balanceSheet.totalEquity.toLocaleString() + ' ر.س' },
@@ -983,46 +999,106 @@ export function FinancialReportsPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Assets */}
-                  <div className="border rounded-lg p-4">
-                    <h3 className="font-bold text-lg mb-4 text-blue-600 dark:text-blue-400 border-b pb-2">الأصول</h3>
-                    <Table>
-                      <TableBody>
-                        {balanceSheet.assets.map((item) => (
-                          <TableRow key={item.account.id}>
-                            <TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell>
-                            <TableCell>{item.account.name}</TableCell>
-                            <TableCell className="text-left">{item.balance.toLocaleString()}</TableCell>
-                          </TableRow>
-                        ))}
-                        <TableRow className="bg-blue-50 dark:bg-blue-900/20 font-bold">
-                          <TableCell colSpan={2}>إجمالي الأصول</TableCell>
-                          <TableCell className="text-left text-blue-600 dark:text-blue-400">{balanceSheet.totalAssets.toLocaleString()}</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  {/* Liabilities & Equity */}
-                  <div className="space-y-4">
-                    {/* Liabilities */}
-                    <div className="border rounded-lg p-4">
-                      <h3 className="font-bold text-lg mb-4 text-red-600 dark:text-red-400 border-b pb-2">الخصوم</h3>
+                  <div className="border rounded-lg p-4 space-y-4">
+                    {/* Current Assets - الأصول المتداولة */}
+                    <div>
+                      <h3 className="font-bold text-lg mb-4 text-primary border-b pb-2">الأصول المتداولة</h3>
                       <Table>
                         <TableBody>
-                          {balanceSheet.liabilities.map((item) => (
+                          {balanceSheet.currentAssets.map((item) => (
                             <TableRow key={item.account.id}>
                               <TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell>
                               <TableCell>{item.account.name}</TableCell>
                               <TableCell className="text-left">{item.balance.toLocaleString()}</TableCell>
                             </TableRow>
                           ))}
-                          <TableRow className="bg-red-50 dark:bg-red-900/20 font-bold">
-                            <TableCell colSpan={2}>إجمالي الخصوم</TableCell>
-                            <TableCell className="text-left text-red-600 dark:text-red-400">{balanceSheet.totalLiabilities.toLocaleString()}</TableCell>
+                          <TableRow className="bg-primary/10 font-bold">
+                            <TableCell colSpan={2}>إجمالي الأصول المتداولة</TableCell>
+                            <TableCell className="text-left text-primary">{balanceSheet.totalCurrentAssets.toLocaleString()}</TableCell>
                           </TableRow>
                         </TableBody>
                       </Table>
                     </div>
+
+                    {/* Fixed Assets - الأصول الثابتة */}
+                    {balanceSheet.fixedAssets.length > 0 && (
+                      <div>
+                        <h3 className="font-bold text-lg mb-4 text-muted-foreground border-b pb-2">الأصول الثابتة</h3>
+                        <Table>
+                          <TableBody>
+                            {balanceSheet.fixedAssets.map((item) => (
+                              <TableRow key={item.account.id}>
+                                <TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell>
+                                <TableCell>{item.account.name}</TableCell>
+                                <TableCell className="text-left">{item.balance.toLocaleString()}</TableCell>
+                              </TableRow>
+                            ))}
+                            <TableRow className="bg-muted/50 font-bold">
+                              <TableCell colSpan={2}>إجمالي الأصول الثابتة</TableCell>
+                              <TableCell className="text-left">{balanceSheet.totalFixedAssets.toLocaleString()}</TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+
+                    {/* Total Assets */}
+                    <div className="bg-primary/20 p-3 rounded-lg">
+                      <div className="flex justify-between items-center font-bold text-lg">
+                        <span>إجمالي الأصول</span>
+                        <span className="text-primary">{balanceSheet.totalAssets.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Liabilities & Equity */}
+                  <div className="space-y-4">
+                    {/* Current Liabilities - الخصوم المتداولة */}
+                    <div className="border rounded-lg p-4">
+                      <h3 className="font-bold text-lg mb-4 text-destructive border-b pb-2">الخصوم المتداولة</h3>
+                      <Table>
+                        <TableBody>
+                          {balanceSheet.currentLiabilities.map((item) => (
+                            <TableRow key={item.account.id}>
+                              <TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell>
+                              <TableCell>{item.account.name}</TableCell>
+                              <TableCell className="text-left">{item.balance.toLocaleString()}</TableCell>
+                            </TableRow>
+                          ))}
+                          {balanceSheet.currentLiabilities.length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={3} className="text-center text-muted-foreground">لا توجد خصوم متداولة</TableCell>
+                            </TableRow>
+                          )}
+                          <TableRow className="bg-destructive/10 font-bold">
+                            <TableCell colSpan={2}>إجمالي الخصوم المتداولة</TableCell>
+                            <TableCell className="text-left text-destructive">{balanceSheet.totalCurrentLiabilities.toLocaleString()}</TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* Long-term Liabilities - الخصوم طويلة الأجل */}
+                    {balanceSheet.longTermLiabilities.length > 0 && (
+                      <div className="border rounded-lg p-4">
+                        <h3 className="font-bold text-lg mb-4 text-muted-foreground border-b pb-2">الخصوم طويلة الأجل</h3>
+                        <Table>
+                          <TableBody>
+                            {balanceSheet.longTermLiabilities.map((item) => (
+                              <TableRow key={item.account.id}>
+                                <TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell>
+                                <TableCell>{item.account.name}</TableCell>
+                                <TableCell className="text-left">{item.balance.toLocaleString()}</TableCell>
+                              </TableRow>
+                            ))}
+                            <TableRow className="bg-muted/50 font-bold">
+                              <TableCell colSpan={2}>إجمالي الخصوم طويلة الأجل</TableCell>
+                              <TableCell className="text-left">{balanceSheet.totalLongTermLiabilities.toLocaleString()}</TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
 
                     {/* Equity */}
                     <div className="border rounded-lg p-4">

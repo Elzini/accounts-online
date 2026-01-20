@@ -493,10 +493,16 @@ export async function getGeneralLedger(
 
 // Balance Sheet - الميزانية العمومية
 export async function getBalanceSheet(companyId: string): Promise<{
-  assets: Array<{ account: AccountCategory; balance: number }>;
-  liabilities: Array<{ account: AccountCategory; balance: number }>;
+  currentAssets: Array<{ account: AccountCategory; balance: number }>;
+  fixedAssets: Array<{ account: AccountCategory; balance: number }>;
+  currentLiabilities: Array<{ account: AccountCategory; balance: number }>;
+  longTermLiabilities: Array<{ account: AccountCategory; balance: number }>;
   equity: Array<{ account: AccountCategory; balance: number }>;
+  totalCurrentAssets: number;
+  totalFixedAssets: number;
   totalAssets: number;
+  totalCurrentLiabilities: number;
+  totalLongTermLiabilities: number;
   totalLiabilities: number;
   totalEquity: number;
   retainedEarnings: number;
@@ -539,15 +545,37 @@ export async function getBalanceSheet(companyId: string): Promise<{
   const revenueAccounts = accounts.filter(a => a.type === 'revenue');
   const expenseAccounts = accounts.filter(a => a.type === 'expenses');
 
-  const assets = assetAccounts.map(account => ({
-    account,
-    balance: calculateBalance(account),
-  })).filter(a => a.balance !== 0);
+  // تصنيف الأصول: متداولة (11, 12, 13) وثابتة (14, 15, 16, 17)
+  // Current Assets: النقد (11), الذمم المدينة (12), المخزون (13)
+  // Fixed Assets: الأصول الثابتة (14), الاستثمارات (15), الأصول غير الملموسة (16)
+  const currentAssetCodes = ['11', '12', '13'];
+  const isCurrentAsset = (code: string) => currentAssetCodes.some(c => code.startsWith(c));
 
-  const liabilities = liabilityAccounts.map(account => ({
-    account,
-    balance: calculateBalance(account),
-  })).filter(l => l.balance !== 0);
+  const currentAssets = assetAccounts
+    .filter(a => isCurrentAsset(a.code))
+    .map(account => ({ account, balance: calculateBalance(account) }))
+    .filter(a => a.balance !== 0);
+
+  const fixedAssets = assetAccounts
+    .filter(a => !isCurrentAsset(a.code))
+    .map(account => ({ account, balance: calculateBalance(account) }))
+    .filter(a => a.balance !== 0);
+
+  // تصنيف الخصوم: متداولة (21, 22) وطويلة الأجل (23, 24)
+  // Current Liabilities: الدائنون (21), المصروفات المستحقة (22)
+  // Long-term Liabilities: القروض طويلة الأجل (23)
+  const currentLiabilityCodes = ['21', '22'];
+  const isCurrentLiability = (code: string) => currentLiabilityCodes.some(c => code.startsWith(c));
+
+  const currentLiabilities = liabilityAccounts
+    .filter(a => isCurrentLiability(a.code))
+    .map(account => ({ account, balance: calculateBalance(account) }))
+    .filter(l => l.balance !== 0);
+
+  const longTermLiabilities = liabilityAccounts
+    .filter(a => !isCurrentLiability(a.code))
+    .map(account => ({ account, balance: calculateBalance(account) }))
+    .filter(l => l.balance !== 0);
 
   const equity = equityAccounts.map(account => ({
     account,
@@ -559,15 +587,26 @@ export async function getBalanceSheet(companyId: string): Promise<{
   const totalExpenses = expenseAccounts.reduce((sum, a) => sum + Math.abs(calculateBalance(a)), 0);
   const retainedEarnings = totalRevenue - totalExpenses;
 
-  const totalAssets = assets.reduce((sum, a) => sum + a.balance, 0);
-  const totalLiabilities = liabilities.reduce((sum, l) => sum + l.balance, 0);
+  const totalCurrentAssets = currentAssets.reduce((sum, a) => sum + a.balance, 0);
+  const totalFixedAssets = fixedAssets.reduce((sum, a) => sum + a.balance, 0);
+  const totalAssets = totalCurrentAssets + totalFixedAssets;
+  
+  const totalCurrentLiabilities = currentLiabilities.reduce((sum, l) => sum + l.balance, 0);
+  const totalLongTermLiabilities = longTermLiabilities.reduce((sum, l) => sum + l.balance, 0);
+  const totalLiabilities = totalCurrentLiabilities + totalLongTermLiabilities;
   const totalEquity = equity.reduce((sum, e) => sum + e.balance, 0) + retainedEarnings;
 
   return {
-    assets,
-    liabilities,
+    currentAssets,
+    fixedAssets,
+    currentLiabilities,
+    longTermLiabilities,
     equity,
+    totalCurrentAssets,
+    totalFixedAssets,
     totalAssets,
+    totalCurrentLiabilities,
+    totalLongTermLiabilities,
     totalLiabilities,
     totalEquity,
     retainedEarnings,
