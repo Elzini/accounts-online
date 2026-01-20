@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -22,7 +21,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Save, Settings2, Building2, BookOpen, DollarSign, ShoppingCart } from 'lucide-react';
+import { Loader2, Save, Settings2, Building2, ToggleLeft, BookOpen } from 'lucide-react';
 
 interface CompanyAccountingSettingsProps {
   companyId: string;
@@ -69,6 +68,52 @@ const defaultSettings: Omit<AccountingSettings, 'company_id'> = {
   vat_recoverable_account_id: null,
   suppliers_account_id: null,
 };
+
+// Account mapping configuration
+const accountMappings = [
+  { 
+    label: 'حساب الصندوق',
+    salesKey: 'sales_cash_account_id',
+    purchaseKey: 'purchase_cash_account_id',
+    types: ['assets'],
+  },
+  { 
+    label: 'حساب المبيعات النقدية',
+    salesKey: 'sales_revenue_account_id',
+    purchaseKey: null,
+    types: ['revenue'],
+  },
+  { 
+    label: 'حساب المخزون',
+    salesKey: 'inventory_account_id',
+    purchaseKey: 'purchase_inventory_account_id',
+    types: ['assets'],
+  },
+  { 
+    label: 'تكلفة البضاعة المباعة',
+    salesKey: 'cogs_account_id',
+    purchaseKey: null,
+    types: ['expenses'],
+  },
+  { 
+    label: 'حساب الموردين الرئيسي',
+    salesKey: null,
+    purchaseKey: 'suppliers_account_id',
+    types: ['liabilities'],
+  },
+  { 
+    label: 'حساب ضريبة المدخلات',
+    salesKey: null,
+    purchaseKey: 'vat_recoverable_account_id',
+    types: ['assets', 'liabilities'],
+  },
+  { 
+    label: 'حساب ضريبة المخرجات',
+    salesKey: 'vat_payable_account_id',
+    purchaseKey: null,
+    types: ['liabilities'],
+  },
+];
 
 export function CompanyAccountingSettings({ 
   companyId, 
@@ -186,26 +231,33 @@ export function CompanyAccountingSettings({
     return accounts.filter(a => types.includes(a.type));
   };
 
+  const getAccountDisplay = (accountId: string | null) => {
+    if (!accountId) return null;
+    const account = accounts.find(a => a.id === accountId);
+    return account ? `${account.code}` : null;
+  };
+
   const renderAccountSelect = (
-    label: string,
     value: string | null,
     onChange: (value: string | null) => void,
-    types: string[]
+    types: string[],
+    disabled?: boolean
   ) => {
     const filteredAccounts = getAccountsByType(types);
+    const selectedCode = getAccountDisplay(value);
     
     return (
-      <div className="space-y-2">
-        <Label className="text-sm">{label}</Label>
+      <div className="flex items-center gap-2">
         <Select 
           value={value || 'default'} 
           onValueChange={(v) => onChange(v === 'default' ? null : v)}
+          disabled={disabled}
         >
-          <SelectTrigger>
-            <SelectValue placeholder="حساب افتراضي" />
+          <SelectTrigger className="w-full h-9 text-sm">
+            <SelectValue placeholder="تلقائي" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="default">حساب افتراضي (تلقائي)</SelectItem>
+            <SelectItem value="default">تلقائي</SelectItem>
             {filteredAccounts.map(account => (
               <SelectItem key={account.id} value={account.id}>
                 {account.code} - {account.name}
@@ -213,13 +265,18 @@ export function CompanyAccountingSettings({
             ))}
           </SelectContent>
         </Select>
+        {selectedCode && (
+          <span className="text-xs font-mono bg-muted px-2 py-1 rounded min-w-[60px] text-center">
+            {selectedCode}
+          </span>
+        )}
       </div>
     );
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto" dir="rtl">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings2 className="w-5 h-5 text-primary" />
@@ -236,23 +293,97 @@ export function CompanyAccountingSettings({
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="space-y-6 py-4">
-            {/* Master Controls */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <BookOpen className="w-4 h-4" />
-                  التحكم في توليد القيود
-                </CardTitle>
-                <CardDescription>
-                  تفعيل أو تعطيل توليد القيود المحاسبية التلقائية
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-                  <div>
-                    <Label className="text-base font-medium">توليد القيود التلقائي</Label>
-                    <p className="text-sm text-muted-foreground">تفعيل توليد قيود اليومية تلقائياً</p>
+          <Tabs defaultValue="accounts" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="accounts" className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                تخصيص الحسابات
+              </TabsTrigger>
+              <TabsTrigger value="control" className="flex items-center gap-2">
+                <ToggleLeft className="w-4 h-4" />
+                التحكم في القيود
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Accounts Customization Tab */}
+            <TabsContent value="accounts" className="space-y-4">
+              <div className="border rounded-lg overflow-hidden">
+                {/* Header Row */}
+                <div className="grid grid-cols-3 bg-muted/50 border-b">
+                  <div className="p-3 text-center font-semibold border-l">الوصف</div>
+                  <div className="p-3 text-center font-semibold border-l text-green-700">حسابات المبيعات</div>
+                  <div className="p-3 text-center font-semibold text-blue-700">حسابات المشتريات</div>
+                </div>
+
+                {/* Account Rows */}
+                {accountMappings.map((mapping, index) => (
+                  <div 
+                    key={mapping.label} 
+                    className={`grid grid-cols-3 ${index !== accountMappings.length - 1 ? 'border-b' : ''}`}
+                  >
+                    {/* Label */}
+                    <div className="p-3 bg-muted/20 border-l flex items-center">
+                      <span className="text-sm font-medium">{mapping.label}</span>
+                    </div>
+                    
+                    {/* Sales Account */}
+                    <div className="p-2 border-l">
+                      {mapping.salesKey ? (
+                        renderAccountSelect(
+                          formData[mapping.salesKey as keyof AccountingSettings] as string | null,
+                          (v) => setFormData({ ...formData, [mapping.salesKey as string]: v }),
+                          mapping.types,
+                          !formData.auto_sales_entries
+                        )
+                      ) : (
+                        <div className="h-9 flex items-center justify-center text-muted-foreground text-sm">
+                          —
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Purchase Account */}
+                    <div className="p-2">
+                      {mapping.purchaseKey ? (
+                        renderAccountSelect(
+                          formData[mapping.purchaseKey as keyof AccountingSettings] as string | null,
+                          (v) => setFormData({ ...formData, [mapping.purchaseKey as string]: v }),
+                          mapping.types,
+                          !formData.auto_purchase_entries
+                        )
+                      ) : (
+                        <div className="h-9 flex items-center justify-center text-muted-foreground text-sm">
+                          —
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {accounts.length === 0 && (
+                <div className="text-center p-4 bg-warning/10 rounded-lg border border-warning/20">
+                  <p className="text-warning font-medium">لا توجد حسابات محاسبية لهذه الشركة</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    يجب إنشاء دليل الحسابات أولاً لتخصيص الحسابات
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Control Tab */}
+            <TabsContent value="control" className="space-y-4">
+              <div className="space-y-3">
+                {/* Master Toggle */}
+                <div className="flex items-center justify-between p-4 rounded-lg border-2 border-primary/20 bg-primary/5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <BookOpen className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <Label className="text-base font-semibold">توليد القيود التلقائي</Label>
+                      <p className="text-sm text-muted-foreground">تفعيل توليد قيود اليومية تلقائياً عند إجراء العمليات</p>
+                    </div>
                   </div>
                   <Switch
                     checked={formData.auto_journal_entries_enabled}
@@ -262,10 +393,16 @@ export function CompanyAccountingSettings({
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div>
-                    <Label className="font-medium">قيود المبيعات</Label>
-                    <p className="text-sm text-muted-foreground">توليد قيد تلقائي عند كل عملية بيع</p>
+                {/* Sales Toggle */}
+                <div className={`flex items-center justify-between p-4 rounded-lg border ${!formData.auto_journal_entries_enabled ? 'opacity-50' : ''}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                      <span className="text-green-700 text-lg">💰</span>
+                    </div>
+                    <div>
+                      <Label className="font-medium">قيود المبيعات</Label>
+                      <p className="text-sm text-muted-foreground">توليد قيد محاسبي تلقائي عند كل عملية بيع</p>
+                    </div>
                   </div>
                   <Switch
                     checked={formData.auto_sales_entries}
@@ -276,10 +413,16 @@ export function CompanyAccountingSettings({
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div>
-                    <Label className="font-medium">قيود المشتريات</Label>
-                    <p className="text-sm text-muted-foreground">توليد قيد تلقائي عند كل عملية شراء</p>
+                {/* Purchase Toggle */}
+                <div className={`flex items-center justify-between p-4 rounded-lg border ${!formData.auto_journal_entries_enabled ? 'opacity-50' : ''}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                      <span className="text-blue-700 text-lg">🛒</span>
+                    </div>
+                    <div>
+                      <Label className="font-medium">قيود المشتريات</Label>
+                      <p className="text-sm text-muted-foreground">توليد قيد محاسبي تلقائي عند كل عملية شراء</p>
+                    </div>
                   </div>
                   <Switch
                     checked={formData.auto_purchase_entries}
@@ -289,105 +432,31 @@ export function CompanyAccountingSettings({
                     disabled={!formData.auto_journal_entries_enabled}
                   />
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Sales Accounts */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-success" />
-                  حسابات المبيعات
-                </CardTitle>
-                <CardDescription>
-                  تخصيص الحسابات المستخدمة في قيود المبيعات
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-2">
-                {renderAccountSelect(
-                  'حساب النقدية / البنك',
-                  formData.sales_cash_account_id,
-                  (v) => setFormData({ ...formData, sales_cash_account_id: v }),
-                  ['assets']
-                )}
-                {renderAccountSelect(
-                  'حساب إيرادات المبيعات',
-                  formData.sales_revenue_account_id,
-                  (v) => setFormData({ ...formData, sales_revenue_account_id: v }),
-                  ['revenue']
-                )}
-                {renderAccountSelect(
-                  'حساب تكلفة البضاعة المباعة',
-                  formData.cogs_account_id,
-                  (v) => setFormData({ ...formData, cogs_account_id: v }),
-                  ['expenses']
-                )}
-                {renderAccountSelect(
-                  'حساب المخزون',
-                  formData.inventory_account_id,
-                  (v) => setFormData({ ...formData, inventory_account_id: v }),
-                  ['assets']
-                )}
-                {renderAccountSelect(
-                  'حساب ضريبة القيمة المضافة المستحقة',
-                  formData.vat_payable_account_id,
-                  (v) => setFormData({ ...formData, vat_payable_account_id: v }),
-                  ['liabilities']
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Purchase Accounts */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <ShoppingCart className="w-4 h-4 text-blue-600" />
-                  حسابات المشتريات
-                </CardTitle>
-                <CardDescription>
-                  تخصيص الحسابات المستخدمة في قيود المشتريات
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-2">
-                {renderAccountSelect(
-                  'حساب النقدية / البنك',
-                  formData.purchase_cash_account_id,
-                  (v) => setFormData({ ...formData, purchase_cash_account_id: v }),
-                  ['assets']
-                )}
-                {renderAccountSelect(
-                  'حساب المخزون',
-                  formData.purchase_inventory_account_id,
-                  (v) => setFormData({ ...formData, purchase_inventory_account_id: v }),
-                  ['assets']
-                )}
-                {renderAccountSelect(
-                  'حساب الموردين',
-                  formData.suppliers_account_id,
-                  (v) => setFormData({ ...formData, suppliers_account_id: v }),
-                  ['liabilities']
-                )}
-                {renderAccountSelect(
-                  'حساب ضريبة القيمة المضافة المستردة',
-                  formData.vat_recoverable_account_id,
-                  (v) => setFormData({ ...formData, vat_recoverable_account_id: v }),
-                  ['liabilities', 'assets']
-                )}
-              </CardContent>
-            </Card>
-
-            {accounts.length === 0 && (
-              <div className="text-center p-4 bg-warning/10 rounded-lg border border-warning/20">
-                <p className="text-warning font-medium">لا توجد حسابات محاسبية لهذه الشركة</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  يجب إنشاء دليل الحسابات أولاً لتخصيص الحسابات
-                </p>
+                {/* Status Summary */}
+                <div className="mt-6 p-4 rounded-lg bg-muted/50 border">
+                  <h4 className="font-medium mb-3">ملخص الحالة</h4>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className={`p-3 rounded-lg ${formData.auto_journal_entries_enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      <div className="text-lg font-bold">{formData.auto_journal_entries_enabled ? '✓' : '✗'}</div>
+                      <div className="text-xs">النظام العام</div>
+                    </div>
+                    <div className={`p-3 rounded-lg ${formData.auto_sales_entries && formData.auto_journal_entries_enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      <div className="text-lg font-bold">{formData.auto_sales_entries && formData.auto_journal_entries_enabled ? '✓' : '✗'}</div>
+                      <div className="text-xs">قيود المبيعات</div>
+                    </div>
+                    <div className={`p-3 rounded-lg ${formData.auto_purchase_entries && formData.auto_journal_entries_enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      <div className="text-lg font-bold">{formData.auto_purchase_entries && formData.auto_journal_entries_enabled ? '✓' : '✗'}</div>
+                      <div className="text-xs">قيود المشتريات</div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
+            </TabsContent>
+          </Tabs>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             إلغاء
           </Button>
