@@ -1,19 +1,19 @@
 /**
  * ZATCA TLV Encoding for QR Code
- * According to ZATCA e-invoicing requirements
+ * According to ZATCA e-invoicing requirements (Phase 1 & 2)
  * 
  * Tags:
- * 1 - Seller Name
- * 2 - VAT Registration Number
- * 3 - Invoice Date/Time (ISO 8601)
- * 4 - Invoice Total (with VAT)
- * 5 - VAT Amount
+ * 1 - Seller Name (UTF-8)
+ * 2 - VAT Registration Number (15 digits starting with 3)
+ * 3 - Invoice Date/Time (format: yyyy-MM-ddTHH:mm:ssZ)
+ * 4 - Invoice Total with VAT (decimal with 2 places)
+ * 5 - VAT Amount (decimal with 2 places)
  */
 
 interface ZatcaQRData {
   sellerName: string;
   vatNumber: string;
-  invoiceDateTime: string; // ISO 8601 format
+  invoiceDateTime: string; // ISO 8601 format or Date string
   invoiceTotal: number;
   vatAmount: number;
 }
@@ -26,6 +26,11 @@ function encodeTLV(tag: number, value: string): Uint8Array {
   const encoder = new TextEncoder();
   const valueBytes = encoder.encode(value);
   const length = valueBytes.length;
+  
+  // Check if length fits in 1 byte (max 255)
+  if (length > 255) {
+    throw new Error(`TLV value too long for tag ${tag}: ${length} bytes`);
+  }
   
   const result = new Uint8Array(2 + length);
   result[0] = tag;
@@ -63,15 +68,66 @@ function uint8ArrayToBase64(bytes: Uint8Array): string {
 }
 
 /**
+ * Format number to ZATCA-compliant decimal string (2 decimal places)
+ */
+function formatAmount(amount: number): string {
+  return amount.toFixed(2);
+}
+
+/**
+ * Format date to ZATCA-compliant format: yyyy-MM-ddTHH:mm:ssZ
+ */
+export function formatDateTimeForZatca(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  
+  // Format as: 2024-01-15T14:30:00Z
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}Z`;
+}
+
+/**
+ * Validate VAT number format (Saudi: 15 digits starting with 3)
+ */
+function validateVatNumber(vatNumber: string): boolean {
+  if (!vatNumber) return false;
+  // Saudi VAT number: 15 digits, starts with 3
+  const cleaned = vatNumber.replace(/\D/g, '');
+  return cleaned.length === 15 && cleaned.startsWith('3');
+}
+
+/**
  * Generate ZATCA-compliant QR code data (Base64 encoded TLV)
+ * Phase 1: Contains Tags 1-5
  */
 export function generateZatcaQRData(data: ZatcaQRData): string {
+  // Validate required fields
+  if (!data.sellerName || data.sellerName.trim() === '') {
+    console.warn('ZATCA QR: Seller name is required');
+  }
+  
+  if (!validateVatNumber(data.vatNumber)) {
+    console.warn('ZATCA QR: VAT number must be 15 digits starting with 3');
+  }
+  
+  // Clean and format VAT number (remove any non-digits)
+  const cleanVatNumber = data.vatNumber ? data.vatNumber.replace(/\D/g, '') : '';
+  
+  // Format date/time
+  const formattedDateTime = formatDateTimeForZatca(data.invoiceDateTime);
+  
+  // Build TLV fields in order (Tags 1-5)
   const fields = [
-    encodeTLV(1, data.sellerName),
-    encodeTLV(2, data.vatNumber),
-    encodeTLV(3, data.invoiceDateTime),
-    encodeTLV(4, data.invoiceTotal.toFixed(2)),
-    encodeTLV(5, data.vatAmount.toFixed(2)),
+    encodeTLV(1, data.sellerName.trim()),
+    encodeTLV(2, cleanVatNumber),
+    encodeTLV(3, formattedDateTime),
+    encodeTLV(4, formatAmount(data.invoiceTotal)),
+    encodeTLV(5, formatAmount(data.vatAmount)),
   ];
   
   const combined = combineTLV(fields);
@@ -79,9 +135,56 @@ export function generateZatcaQRData(data: ZatcaQRData): string {
 }
 
 /**
- * Format date to ISO 8601 format for ZATCA
+ * @deprecated Use formatDateTimeForZatca instead
  */
 export function formatDateTimeISO(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toISOString();
+  return formatDateTimeForZatca(date);
+}
+
+/**
+ * Decode ZATCA QR data for verification (utility function)
+ */
+export function decodeZatcaQRData(base64Data: string): ZatcaQRData | null {
+  try {
+    const binary = atob(base64Data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    
+    const decoder = new TextDecoder();
+    const result: Partial<ZatcaQRData> = {};
+    
+    let offset = 0;
+    while (offset < bytes.length) {
+      const tag = bytes[offset];
+      const length = bytes[offset + 1];
+      const value = decoder.decode(bytes.slice(offset + 2, offset + 2 + length));
+      
+      switch (tag) {
+        case 1:
+          result.sellerName = value;
+          break;
+        case 2:
+          result.vatNumber = value;
+          break;
+        case 3:
+          result.invoiceDateTime = value;
+          break;
+        case 4:
+          result.invoiceTotal = parseFloat(value);
+          break;
+        case 5:
+          result.vatAmount = parseFloat(value);
+          break;
+      }
+      
+      offset += 2 + length;
+    }
+    
+    return result as ZatcaQRData;
+  } catch (error) {
+    console.error('Failed to decode ZATCA QR data:', error);
+    return null;
+  }
 }
