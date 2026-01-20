@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { 
   useTrialBalance, 
   useIncomeStatement, 
@@ -15,9 +16,11 @@ import {
   useJournalEntriesReport,
   useComprehensiveTrialBalance 
 } from '@/hooks/useAccounting';
-import { Loader2, FileText, TrendingUp, Scale, CalendarIcon, Building2, BookOpen, ClipboardList, Printer } from 'lucide-react';
+import { usePrintReport } from '@/hooks/usePrintReport';
+import { useExcelExport } from '@/hooks/useExcelExport';
+import { usePdfExport } from '@/hooks/usePdfExport';
+import { Loader2, FileText, TrendingUp, Scale, CalendarIcon, Building2, ClipboardList, Printer, Download, FileSpreadsheet } from 'lucide-react';
 import { format } from 'date-fns';
-import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 export function FinancialReportsPage() {
@@ -44,7 +47,287 @@ export function FinancialReportsPage() {
   );
   const { data: comprehensiveTrial, isLoading: isLoadingComprehensive } = useComprehensiveTrialBalance();
 
+  const { printReport } = usePrintReport();
+  const { exportToExcel } = useExcelExport();
+  const { exportToPdf } = usePdfExport();
+
   const isLoading = isLoadingTrial || isLoadingIncome || isLoadingBalances || isLoadingBalanceSheet || isLoadingJournal || isLoadingComprehensive;
+
+  // Export functions for Trial Balance
+  const exportTrialBalance = (type: 'print' | 'excel' | 'pdf') => {
+    if (!trialBalance) return;
+    
+    const columns = [
+      { header: 'الرمز', key: 'code' },
+      { header: 'اسم الحساب', key: 'name' },
+      { header: 'النوع', key: 'type' },
+      { header: 'مدين', key: 'debit' },
+      { header: 'دائن', key: 'credit' },
+    ];
+    
+    const data = trialBalance.accounts.map(item => ({
+      code: item.account.code,
+      name: item.account.name,
+      type: getTypeLabel(item.account.type),
+      debit: item.debit > 0 ? item.debit.toLocaleString() : '-',
+      credit: item.credit > 0 ? item.credit.toLocaleString() : '-',
+    }));
+
+    const summaryCards = [
+      { label: 'إجمالي المدين', value: trialBalance.totalDebit.toLocaleString() + ' ر.س' },
+      { label: 'إجمالي الدائن', value: trialBalance.totalCredit.toLocaleString() + ' ر.س' },
+      { label: 'الحالة', value: trialBalance.totalDebit === trialBalance.totalCredit ? 'متوازن ✓' : 'غير متوازن ✗' },
+    ];
+
+    if (type === 'print') {
+      printReport({ title: 'ميزان المراجعة', columns, data, summaryCards });
+    } else if (type === 'excel') {
+      exportToExcel({ title: 'ميزان المراجعة', columns, data, fileName: 'trial-balance', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
+    } else {
+      exportToPdf({ title: 'ميزان المراجعة', columns, data, fileName: 'trial-balance', summaryCards });
+    }
+  };
+
+  // Export functions for Comprehensive Trial Balance
+  const exportComprehensiveTrial = (type: 'print' | 'excel' | 'pdf') => {
+    if (!comprehensiveTrial) return;
+    
+    const columns = [
+      { header: 'الرمز', key: 'code' },
+      { header: 'اسم الحساب', key: 'name' },
+      { header: 'حركة مدين', key: 'periodDebit' },
+      { header: 'حركة دائن', key: 'periodCredit' },
+      { header: 'رصيد مدين', key: 'closingDebit' },
+      { header: 'رصيد دائن', key: 'closingCredit' },
+    ];
+    
+    const data = comprehensiveTrial.accounts.map(item => ({
+      code: item.account.code,
+      name: item.account.name,
+      periodDebit: item.periodDebit > 0 ? item.periodDebit.toLocaleString() : '-',
+      periodCredit: item.periodCredit > 0 ? item.periodCredit.toLocaleString() : '-',
+      closingDebit: item.closingDebit > 0 ? item.closingDebit.toLocaleString() : '-',
+      closingCredit: item.closingCredit > 0 ? item.closingCredit.toLocaleString() : '-',
+    }));
+
+    const summaryCards = [
+      { label: 'حركة مدين', value: comprehensiveTrial.totals.periodDebit.toLocaleString() + ' ر.س' },
+      { label: 'حركة دائن', value: comprehensiveTrial.totals.periodCredit.toLocaleString() + ' ر.س' },
+    ];
+
+    if (type === 'print') {
+      printReport({ title: 'ميزان المراجعة الشامل', columns, data, summaryCards });
+    } else if (type === 'excel') {
+      exportToExcel({ title: 'ميزان المراجعة الشامل', columns, data, fileName: 'comprehensive-trial-balance', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
+    } else {
+      exportToPdf({ title: 'ميزان المراجعة الشامل', columns, data, fileName: 'comprehensive-trial-balance', summaryCards });
+    }
+  };
+
+  // Export functions for Income Statement
+  const exportIncomeStatement = (type: 'print' | 'excel' | 'pdf') => {
+    if (!incomeStatement) return;
+    
+    const columns = [
+      { header: 'الرمز', key: 'code' },
+      { header: 'اسم الحساب', key: 'name' },
+      { header: 'النوع', key: 'type' },
+      { header: 'المبلغ', key: 'amount' },
+    ];
+    
+    const revenueData = incomeStatement.revenue.map(item => ({
+      code: item.account.code,
+      name: item.account.name,
+      type: 'إيرادات',
+      amount: item.amount.toLocaleString(),
+    }));
+
+    const expenseData = incomeStatement.expenses.map(item => ({
+      code: item.account.code,
+      name: item.account.name,
+      type: 'مصروفات',
+      amount: item.amount.toLocaleString(),
+    }));
+
+    const data = [...revenueData, ...expenseData];
+
+    const summaryCards = [
+      { label: 'إجمالي الإيرادات', value: incomeStatement.totalRevenue.toLocaleString() + ' ر.س' },
+      { label: 'إجمالي المصروفات', value: incomeStatement.totalExpenses.toLocaleString() + ' ر.س' },
+      { label: 'صافي الربح', value: incomeStatement.netIncome.toLocaleString() + ' ر.س' },
+    ];
+
+    const dateSubtitle = dateRange.from && dateRange.to 
+      ? `من ${format(dateRange.from, 'yyyy/MM/dd')} إلى ${format(dateRange.to, 'yyyy/MM/dd')}`
+      : undefined;
+
+    if (type === 'print') {
+      printReport({ title: 'قائمة الدخل', subtitle: dateSubtitle, columns, data, summaryCards });
+    } else if (type === 'excel') {
+      exportToExcel({ title: 'قائمة الدخل', columns, data, fileName: 'income-statement', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
+    } else {
+      exportToPdf({ title: 'قائمة الدخل', subtitle: dateSubtitle, columns, data, fileName: 'income-statement', summaryCards });
+    }
+  };
+
+  // Export functions for Balance Sheet
+  const exportBalanceSheet = (type: 'print' | 'excel' | 'pdf') => {
+    if (!balanceSheet) return;
+    
+    const columns = [
+      { header: 'الرمز', key: 'code' },
+      { header: 'اسم الحساب', key: 'name' },
+      { header: 'التصنيف', key: 'category' },
+      { header: 'الرصيد', key: 'balance' },
+    ];
+    
+    const assetsData = balanceSheet.assets.map(item => ({
+      code: item.account.code,
+      name: item.account.name,
+      category: 'أصول',
+      balance: item.balance.toLocaleString(),
+    }));
+
+    const liabilitiesData = balanceSheet.liabilities.map(item => ({
+      code: item.account.code,
+      name: item.account.name,
+      category: 'خصوم',
+      balance: item.balance.toLocaleString(),
+    }));
+
+    const equityData = balanceSheet.equity.map(item => ({
+      code: item.account.code,
+      name: item.account.name,
+      category: 'حقوق الملكية',
+      balance: item.balance.toLocaleString(),
+    }));
+
+    if (balanceSheet.retainedEarnings !== 0) {
+      equityData.push({
+        code: '-',
+        name: 'الأرباح المحتجزة',
+        category: 'حقوق الملكية',
+        balance: balanceSheet.retainedEarnings.toLocaleString(),
+      });
+    }
+
+    const data = [...assetsData, ...liabilitiesData, ...equityData];
+
+    const summaryCards = [
+      { label: 'إجمالي الأصول', value: balanceSheet.totalAssets.toLocaleString() + ' ر.س' },
+      { label: 'إجمالي الخصوم', value: balanceSheet.totalLiabilities.toLocaleString() + ' ر.س' },
+      { label: 'حقوق الملكية', value: balanceSheet.totalEquity.toLocaleString() + ' ر.س' },
+    ];
+
+    if (type === 'print') {
+      printReport({ title: 'الميزانية العمومية', columns, data, summaryCards });
+    } else if (type === 'excel') {
+      exportToExcel({ title: 'الميزانية العمومية', columns, data, fileName: 'balance-sheet', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
+    } else {
+      exportToPdf({ title: 'الميزانية العمومية', columns, data, fileName: 'balance-sheet', summaryCards });
+    }
+  };
+
+  // Export functions for Journal Entries
+  const exportJournalEntries = (type: 'print' | 'excel' | 'pdf') => {
+    if (!journalEntries.length) return;
+    
+    const columns = [
+      { header: 'رقم القيد', key: 'entry_number' },
+      { header: 'التاريخ', key: 'date' },
+      { header: 'النوع', key: 'type' },
+      { header: 'الوصف', key: 'description' },
+      { header: 'مدين', key: 'debit' },
+      { header: 'دائن', key: 'credit' },
+    ];
+    
+    const data = journalEntries.map((entry: any) => ({
+      entry_number: entry.entry_number,
+      date: entry.entry_date,
+      type: getReferenceTypeLabel(entry.reference_type),
+      description: entry.description,
+      debit: entry.total_debit.toLocaleString(),
+      credit: entry.total_credit.toLocaleString(),
+    }));
+
+    const totalDebit = journalEntries.reduce((sum: number, e: any) => sum + e.total_debit, 0);
+    const totalCredit = journalEntries.reduce((sum: number, e: any) => sum + e.total_credit, 0);
+
+    const summaryCards = [
+      { label: 'عدد القيود', value: journalEntries.length.toString() },
+      { label: 'إجمالي المدين', value: totalDebit.toLocaleString() + ' ر.س' },
+      { label: 'إجمالي الدائن', value: totalCredit.toLocaleString() + ' ر.س' },
+    ];
+
+    const dateSubtitle = dateRange.from && dateRange.to 
+      ? `من ${format(dateRange.from, 'yyyy/MM/dd')} إلى ${format(dateRange.to, 'yyyy/MM/dd')}`
+      : undefined;
+
+    if (type === 'print') {
+      printReport({ title: 'كشف القيود', subtitle: dateSubtitle, columns, data, summaryCards });
+    } else if (type === 'excel') {
+      exportToExcel({ title: 'كشف القيود', columns, data, fileName: 'journal-entries', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
+    } else {
+      exportToPdf({ title: 'كشف القيود', subtitle: dateSubtitle, columns, data, fileName: 'journal-entries', summaryCards });
+    }
+  };
+
+  // Export functions for Account Balances
+  const exportAccountBalances = (type: 'print' | 'excel' | 'pdf') => {
+    if (!accountBalances.length) return;
+    
+    const columns = [
+      { header: 'الرمز', key: 'code' },
+      { header: 'اسم الحساب', key: 'name' },
+      { header: 'النوع', key: 'type' },
+      { header: 'إجمالي المدين', key: 'debit_total' },
+      { header: 'إجمالي الدائن', key: 'credit_total' },
+      { header: 'الرصيد', key: 'balance' },
+    ];
+    
+    const data = accountBalances.map(item => ({
+      code: item.account.code,
+      name: item.account.name,
+      type: getTypeLabel(item.account.type),
+      debit_total: (item.debit_total ?? 0).toLocaleString(),
+      credit_total: (item.credit_total ?? 0).toLocaleString(),
+      balance: (item.balance ?? 0).toLocaleString(),
+    }));
+
+    if (type === 'print') {
+      printReport({ title: 'أرصدة الحسابات', columns, data });
+    } else if (type === 'excel') {
+      exportToExcel({ title: 'أرصدة الحسابات', columns, data, fileName: 'account-balances' });
+    } else {
+      exportToPdf({ title: 'أرصدة الحسابات', columns, data, fileName: 'account-balances' });
+    }
+  };
+
+  // Export Actions Component
+  const ExportActions = ({ onExport }: { onExport: (type: 'print' | 'excel' | 'pdf') => void }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Download className="w-4 h-4" />
+          تصدير
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => onExport('print')} className="gap-2 cursor-pointer">
+          <Printer className="w-4 h-4" />
+          طباعة
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onExport('pdf')} className="gap-2 cursor-pointer">
+          <FileText className="w-4 h-4" />
+          تصدير PDF
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onExport('excel')} className="gap-2 cursor-pointer">
+          <FileSpreadsheet className="w-4 h-4" />
+          تصدير Excel
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   if (isLoading) {
     return (
@@ -104,6 +387,7 @@ export function FinancialReportsPage() {
                   <CardDescription>عرض جميع القيود المحاسبية</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <ExportActions onExport={exportJournalEntries} />
                   <Select value={referenceType} onValueChange={setReferenceType}>
                     <SelectTrigger className="w-32">
                       <SelectValue placeholder="النوع" />
@@ -165,11 +449,11 @@ export function FinancialReportsPage() {
                             <span className="text-sm">{entry.entry_date}</span>
                             <span className={cn(
                               "text-xs px-2 py-0.5 rounded",
-                              entry.reference_type === 'sale' && "bg-green-100 text-green-700",
-                              entry.reference_type === 'purchase' && "bg-blue-100 text-blue-700",
-                              entry.reference_type === 'expense' && "bg-orange-100 text-orange-700",
-                              entry.reference_type === 'manual' && "bg-gray-100 text-gray-700",
-                              !entry.reference_type && "bg-gray-100 text-gray-700"
+                              entry.reference_type === 'sale' && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                              entry.reference_type === 'purchase' && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+                              entry.reference_type === 'expense' && "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+                              entry.reference_type === 'manual' && "bg-muted text-muted-foreground",
+                              !entry.reference_type && "bg-muted text-muted-foreground"
                             )}>
                               {getReferenceTypeLabel(entry.reference_type)}
                             </span>
@@ -194,10 +478,10 @@ export function FinancialReportsPage() {
                                   <span className="font-mono text-xs text-muted-foreground ml-2">{line.account?.code}</span>
                                   {line.account?.name}
                                 </TableCell>
-                                <TableCell className="text-center text-green-600">
+                                <TableCell className="text-center text-green-600 dark:text-green-400">
                                   {line.debit > 0 ? line.debit.toLocaleString() : '-'}
                                 </TableCell>
-                                <TableCell className="text-center text-red-600">
+                                <TableCell className="text-center text-red-600 dark:text-red-400">
                                   {line.credit > 0 ? line.credit.toLocaleString() : '-'}
                                 </TableCell>
                               </TableRow>
@@ -217,11 +501,16 @@ export function FinancialReportsPage() {
         <TabsContent value="trial-balance">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Scale className="w-5 h-5" />
-                ميزان المراجعة
-              </CardTitle>
-              <CardDescription>ملخص أرصدة جميع الحسابات المدينة والدائنة</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Scale className="w-5 h-5" />
+                    ميزان المراجعة
+                  </CardTitle>
+                  <CardDescription>ملخص أرصدة جميع الحسابات المدينة والدائنة</CardDescription>
+                </div>
+                <ExportActions onExport={exportTrialBalance} />
+              </div>
             </CardHeader>
             <CardContent>
               {!trialBalance || trialBalance.accounts.length === 0 ? (
@@ -261,7 +550,7 @@ export function FinancialReportsPage() {
                   </Table>
                   <div className={cn(
                     "p-4 rounded-lg text-center font-medium",
-                    trialBalance.totalDebit === trialBalance.totalCredit ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                    trialBalance.totalDebit === trialBalance.totalCredit ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                   )}>
                     {trialBalance.totalDebit === trialBalance.totalCredit ? '✓ الميزان متوازن' : '✗ الميزان غير متوازن'}
                   </div>
@@ -271,15 +560,20 @@ export function FinancialReportsPage() {
           </Card>
         </TabsContent>
 
-        {/* Comprehensive Trial Balance - ميزان المراجعة الشامل */}
+        {/* Comprehensive Trial Balance */}
         <TabsContent value="comprehensive-trial">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Scale className="w-5 h-5" />
-                ميزان المراجعة الشامل
-              </CardTitle>
-              <CardDescription>عرض أرصدة افتتاحية وحركة الفترة والأرصدة الختامية</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Scale className="w-5 h-5" />
+                    ميزان المراجعة الشامل
+                  </CardTitle>
+                  <CardDescription>عرض أرصدة افتتاحية وحركة الفترة والأرصدة الختامية</CardDescription>
+                </div>
+                <ExportActions onExport={exportComprehensiveTrial} />
+              </div>
             </CardHeader>
             <CardContent>
               {!comprehensiveTrial || comprehensiveTrial.accounts.length === 0 ? (
@@ -290,14 +584,14 @@ export function FinancialReportsPage() {
                     <TableRow>
                       <TableHead rowSpan={2}>الرمز</TableHead>
                       <TableHead rowSpan={2}>اسم الحساب</TableHead>
-                      <TableHead colSpan={2} className="text-center border-x bg-blue-50">حركة الفترة</TableHead>
-                      <TableHead colSpan={2} className="text-center bg-green-50">الرصيد الختامي</TableHead>
+                      <TableHead colSpan={2} className="text-center border-x bg-blue-50 dark:bg-blue-900/20">حركة الفترة</TableHead>
+                      <TableHead colSpan={2} className="text-center bg-green-50 dark:bg-green-900/20">الرصيد الختامي</TableHead>
                     </TableRow>
                     <TableRow>
-                      <TableHead className="text-center border-r bg-blue-50">مدين</TableHead>
-                      <TableHead className="text-center bg-blue-50">دائن</TableHead>
-                      <TableHead className="text-center border-r bg-green-50">مدين</TableHead>
-                      <TableHead className="text-center bg-green-50">دائن</TableHead>
+                      <TableHead className="text-center border-r bg-blue-50 dark:bg-blue-900/20">مدين</TableHead>
+                      <TableHead className="text-center bg-blue-50 dark:bg-blue-900/20">دائن</TableHead>
+                      <TableHead className="text-center border-r bg-green-50 dark:bg-green-900/20">مدين</TableHead>
+                      <TableHead className="text-center bg-green-50 dark:bg-green-900/20">دائن</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -307,16 +601,16 @@ export function FinancialReportsPage() {
                         <TableCell>{item.account.name}</TableCell>
                         <TableCell className="text-center border-r">{item.periodDebit > 0 ? item.periodDebit.toLocaleString() : '-'}</TableCell>
                         <TableCell className="text-center">{item.periodCredit > 0 ? item.periodCredit.toLocaleString() : '-'}</TableCell>
-                        <TableCell className="text-center border-r text-green-600">{item.closingDebit > 0 ? item.closingDebit.toLocaleString() : '-'}</TableCell>
-                        <TableCell className="text-center text-red-600">{item.closingCredit > 0 ? item.closingCredit.toLocaleString() : '-'}</TableCell>
+                        <TableCell className="text-center border-r text-green-600 dark:text-green-400">{item.closingDebit > 0 ? item.closingDebit.toLocaleString() : '-'}</TableCell>
+                        <TableCell className="text-center text-red-600 dark:text-red-400">{item.closingCredit > 0 ? item.closingCredit.toLocaleString() : '-'}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow className="bg-muted/50 font-bold">
                       <TableCell colSpan={2}>الإجمالي</TableCell>
                       <TableCell className="text-center border-r">{comprehensiveTrial.totals.periodDebit.toLocaleString()}</TableCell>
                       <TableCell className="text-center">{comprehensiveTrial.totals.periodCredit.toLocaleString()}</TableCell>
-                      <TableCell className="text-center border-r text-green-600">{comprehensiveTrial.totals.closingDebit.toLocaleString()}</TableCell>
-                      <TableCell className="text-center text-red-600">{comprehensiveTrial.totals.closingCredit.toLocaleString()}</TableCell>
+                      <TableCell className="text-center border-r text-green-600 dark:text-green-400">{comprehensiveTrial.totals.closingDebit.toLocaleString()}</TableCell>
+                      <TableCell className="text-center text-red-600 dark:text-red-400">{comprehensiveTrial.totals.closingCredit.toLocaleString()}</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -338,6 +632,7 @@ export function FinancialReportsPage() {
                   <CardDescription>ملخص الإيرادات والمصروفات وصافي الربح</CardDescription>
                 </div>
                 <div className="flex gap-2">
+                  <ExportActions onExport={exportIncomeStatement} />
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="gap-2">
@@ -380,7 +675,7 @@ export function FinancialReportsPage() {
                 <div className="space-y-6">
                   {/* Revenue */}
                   <div>
-                    <h3 className="font-bold text-lg mb-3 text-green-600">الإيرادات</h3>
+                    <h3 className="font-bold text-lg mb-3 text-green-600 dark:text-green-400">الإيرادات</h3>
                     <Table>
                       <TableBody>
                       {incomeStatement.revenue.map((item) => (
@@ -390,9 +685,9 @@ export function FinancialReportsPage() {
                             <TableCell className="text-left">{item.amount.toLocaleString()}</TableCell>
                           </TableRow>
                         ))}
-                        <TableRow className="bg-green-50 font-bold">
+                        <TableRow className="bg-green-50 dark:bg-green-900/20 font-bold">
                           <TableCell colSpan={2}>إجمالي الإيرادات</TableCell>
-                          <TableCell className="text-left text-green-600">
+                          <TableCell className="text-left text-green-600 dark:text-green-400">
                             {incomeStatement.totalRevenue.toLocaleString()}
                           </TableCell>
                         </TableRow>
@@ -402,7 +697,7 @@ export function FinancialReportsPage() {
 
                   {/* Expenses */}
                   <div>
-                    <h3 className="font-bold text-lg mb-3 text-red-600">المصروفات</h3>
+                    <h3 className="font-bold text-lg mb-3 text-red-600 dark:text-red-400">المصروفات</h3>
                     <Table>
                       <TableBody>
                       {incomeStatement.expenses.map((item) => (
@@ -412,9 +707,9 @@ export function FinancialReportsPage() {
                             <TableCell className="text-left">{item.amount.toLocaleString()}</TableCell>
                           </TableRow>
                         ))}
-                        <TableRow className="bg-red-50 font-bold">
+                        <TableRow className="bg-red-50 dark:bg-red-900/20 font-bold">
                           <TableCell colSpan={2}>إجمالي المصروفات</TableCell>
-                          <TableCell className="text-left text-red-600">
+                          <TableCell className="text-left text-red-600 dark:text-red-400">
                             {incomeStatement.totalExpenses.toLocaleString()}
                           </TableCell>
                         </TableRow>
@@ -425,13 +720,13 @@ export function FinancialReportsPage() {
                   {/* Net Income */}
                   <div className={cn(
                     "p-6 rounded-lg",
-                    incomeStatement.netIncome >= 0 ? "bg-green-100" : "bg-red-100"
+                    incomeStatement.netIncome >= 0 ? "bg-green-100 dark:bg-green-900/30" : "bg-red-100 dark:bg-red-900/30"
                   )}>
                     <div className="flex items-center justify-between">
                       <span className="text-xl font-bold">صافي الربح / (الخسارة)</span>
                       <span className={cn(
                         "text-2xl font-bold",
-                        incomeStatement.netIncome >= 0 ? "text-green-700" : "text-red-700"
+                        incomeStatement.netIncome >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"
                       )}>
                         {incomeStatement.netIncome.toLocaleString()} ر.س
                       </span>
@@ -443,15 +738,20 @@ export function FinancialReportsPage() {
           </Card>
         </TabsContent>
 
-        {/* Balance Sheet - الميزانية العمومية */}
+        {/* Balance Sheet */}
         <TabsContent value="balance-sheet">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
-                الميزانية العمومية
-              </CardTitle>
-              <CardDescription>عرض الأصول والخصوم وحقوق الملكية</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="w-5 h-5" />
+                    الميزانية العمومية
+                  </CardTitle>
+                  <CardDescription>عرض الأصول والخصوم وحقوق الملكية</CardDescription>
+                </div>
+                <ExportActions onExport={exportBalanceSheet} />
+              </div>
             </CardHeader>
             <CardContent>
               {!balanceSheet ? (
@@ -460,7 +760,7 @@ export function FinancialReportsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Assets */}
                   <div className="border rounded-lg p-4">
-                    <h3 className="font-bold text-lg mb-4 text-blue-600 border-b pb-2">الأصول</h3>
+                    <h3 className="font-bold text-lg mb-4 text-blue-600 dark:text-blue-400 border-b pb-2">الأصول</h3>
                     <Table>
                       <TableBody>
                         {balanceSheet.assets.map((item) => (
@@ -470,9 +770,9 @@ export function FinancialReportsPage() {
                             <TableCell className="text-left">{item.balance.toLocaleString()}</TableCell>
                           </TableRow>
                         ))}
-                        <TableRow className="bg-blue-50 font-bold">
+                        <TableRow className="bg-blue-50 dark:bg-blue-900/20 font-bold">
                           <TableCell colSpan={2}>إجمالي الأصول</TableCell>
-                          <TableCell className="text-left text-blue-600">{balanceSheet.totalAssets.toLocaleString()}</TableCell>
+                          <TableCell className="text-left text-blue-600 dark:text-blue-400">{balanceSheet.totalAssets.toLocaleString()}</TableCell>
                         </TableRow>
                       </TableBody>
                     </Table>
@@ -482,7 +782,7 @@ export function FinancialReportsPage() {
                   <div className="space-y-4">
                     {/* Liabilities */}
                     <div className="border rounded-lg p-4">
-                      <h3 className="font-bold text-lg mb-4 text-red-600 border-b pb-2">الخصوم</h3>
+                      <h3 className="font-bold text-lg mb-4 text-red-600 dark:text-red-400 border-b pb-2">الخصوم</h3>
                       <Table>
                         <TableBody>
                           {balanceSheet.liabilities.map((item) => (
@@ -492,9 +792,9 @@ export function FinancialReportsPage() {
                               <TableCell className="text-left">{item.balance.toLocaleString()}</TableCell>
                             </TableRow>
                           ))}
-                          <TableRow className="bg-red-50 font-bold">
+                          <TableRow className="bg-red-50 dark:bg-red-900/20 font-bold">
                             <TableCell colSpan={2}>إجمالي الخصوم</TableCell>
-                            <TableCell className="text-left text-red-600">{balanceSheet.totalLiabilities.toLocaleString()}</TableCell>
+                            <TableCell className="text-left text-red-600 dark:text-red-400">{balanceSheet.totalLiabilities.toLocaleString()}</TableCell>
                           </TableRow>
                         </TableBody>
                       </Table>
@@ -502,7 +802,7 @@ export function FinancialReportsPage() {
 
                     {/* Equity */}
                     <div className="border rounded-lg p-4">
-                      <h3 className="font-bold text-lg mb-4 text-purple-600 border-b pb-2">حقوق الملكية</h3>
+                      <h3 className="font-bold text-lg mb-4 text-purple-600 dark:text-purple-400 border-b pb-2">حقوق الملكية</h3>
                       <Table>
                         <TableBody>
                           {balanceSheet.equity.map((item) => (
@@ -518,15 +818,15 @@ export function FinancialReportsPage() {
                               <TableCell className="font-medium">الأرباح المحتجزة</TableCell>
                               <TableCell className={cn(
                                 "text-left font-medium",
-                                balanceSheet.retainedEarnings >= 0 ? "text-green-600" : "text-red-600"
+                                balanceSheet.retainedEarnings >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                               )}>
                                 {balanceSheet.retainedEarnings.toLocaleString()}
                               </TableCell>
                             </TableRow>
                           )}
-                          <TableRow className="bg-purple-50 font-bold">
+                          <TableRow className="bg-purple-50 dark:bg-purple-900/20 font-bold">
                             <TableCell colSpan={2}>إجمالي حقوق الملكية</TableCell>
-                            <TableCell className="text-left text-purple-600">{balanceSheet.totalEquity.toLocaleString()}</TableCell>
+                            <TableCell className="text-left text-purple-600 dark:text-purple-400">{balanceSheet.totalEquity.toLocaleString()}</TableCell>
                           </TableRow>
                         </TableBody>
                       </Table>
@@ -539,8 +839,8 @@ export function FinancialReportsPage() {
                 <div className={cn(
                   "mt-6 p-4 rounded-lg text-center font-medium",
                   Math.abs(balanceSheet.totalAssets - (balanceSheet.totalLiabilities + balanceSheet.totalEquity)) < 0.01
-                    ? "bg-green-100 text-green-800" 
-                    : "bg-red-100 text-red-800"
+                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" 
+                    : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                 )}>
                   {Math.abs(balanceSheet.totalAssets - (balanceSheet.totalLiabilities + balanceSheet.totalEquity)) < 0.01
                     ? '✓ الميزانية متوازنة (الأصول = الخصوم + حقوق الملكية)' 
@@ -556,11 +856,16 @@ export function FinancialReportsPage() {
         <TabsContent value="account-balances">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                أرصدة الحسابات
-              </CardTitle>
-              <CardDescription>عرض أرصدة جميع الحسابات في الدفتر</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    أرصدة الحسابات
+                  </CardTitle>
+                  <CardDescription>عرض أرصدة جميع الحسابات في الدفتر</CardDescription>
+                </div>
+                <ExportActions onExport={exportAccountBalances} />
+              </div>
             </CardHeader>
             <CardContent>
               {accountBalances.length === 0 ? (
@@ -587,7 +892,7 @@ export function FinancialReportsPage() {
                         <TableCell className="text-left">{(item.credit_total ?? 0).toLocaleString()}</TableCell>
                         <TableCell className={cn(
                           "text-left font-medium",
-                          (item.balance ?? 0) >= 0 ? "text-green-600" : "text-red-600"
+                          (item.balance ?? 0) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                         )}>
                           {(item.balance ?? 0).toLocaleString()}
                         </TableCell>
