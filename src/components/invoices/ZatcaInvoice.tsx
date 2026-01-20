@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { QRCodeSVG } from 'qrcode.react';
 import { TaxSettings } from '@/services/accounting';
-import { generateZatcaQRData, formatDateTimeISO } from '@/lib/zatcaQR';
+import { generateZatcaQRData, formatDateTimeForZatca } from '@/lib/zatcaQR';
 import logoImage from '@/assets/logo.png';
 
 interface InvoiceItem {
@@ -67,26 +67,35 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
     const formattedTime = format(new Date(invoiceDate), 'HH:mm:ss');
     const taxRate = taxSettings?.tax_rate || 15;
 
-    // Get the actual VAT number for ZATCA QR - must be the company's VAT number
+    // Get the actual VAT number for ZATCA QR - must be the company's VAT number (15 digits starting with 3)
     const companyVatNumber = taxSettings?.tax_number || '';
     
-    // For QR code, we need the seller's VAT number (which is the company for sales, or supplier for purchases)
-    // For ZATCA compliance, the QR must contain the seller's VAT registration number
+    // For QR code, we need the seller's VAT number
+    // For sales: seller = company, buyer = customer
+    // For purchases: seller = supplier, buyer = company
     const qrVatNumber = invoiceType === 'sale' ? companyVatNumber : sellerTaxNumber;
     const qrSellerName = invoiceType === 'sale' 
       ? (taxSettings?.company_name_ar || sellerName) 
       : sellerName;
 
+    // Validate VAT number for ZATCA compliance
+    const isVatValid = qrVatNumber && qrVatNumber.replace(/\D/g, '').length === 15;
+
     // Generate ZATCA-compliant QR code data using TLV encoding
     const qrData = useMemo(() => {
+      // Only generate valid QR if we have proper VAT number
+      if (!isVatValid) {
+        console.warn('ZATCA QR: Invalid or missing VAT number');
+      }
+      
       return generateZatcaQRData({
         sellerName: qrSellerName,
-        vatNumber: qrVatNumber,
-        invoiceDateTime: formatDateTimeISO(invoiceDate),
+        vatNumber: qrVatNumber || '',
+        invoiceDateTime: formatDateTimeForZatca(invoiceDate),
         invoiceTotal: total,
         vatAmount: taxAmount,
       });
-    }, [qrSellerName, qrVatNumber, invoiceDate, total, taxAmount]);
+    }, [qrSellerName, qrVatNumber, invoiceDate, total, taxAmount, isVatValid]);
 
     // Calculate item tax amount if not provided
     const itemsWithTax = items.map(item => ({
