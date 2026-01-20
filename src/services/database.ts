@@ -43,6 +43,7 @@ export interface MultiCarSaleData {
   commission?: number;
   other_expenses?: number;
   sale_date: string;
+  payment_account_id?: string;
   cars: Array<{
     car_id: string;
     sale_price: number;
@@ -471,6 +472,7 @@ export async function addMultiCarSale(saleData: MultiCarSaleData) {
       profit: totalProfit,
       sale_date: saleData.sale_date,
       company_id: companyId,
+      payment_account_id: saleData.payment_account_id || null,
     })
     .select()
     .single();
