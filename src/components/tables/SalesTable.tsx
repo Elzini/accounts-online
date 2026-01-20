@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { DollarSign, Calendar, TrendingUp } from 'lucide-react';
+import { DollarSign, Calendar, TrendingUp, Wallet, Building2, CreditCard, Banknote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SearchFilter } from '@/components/ui/search-filter';
@@ -36,6 +36,16 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
       taxAmount: Math.round(taxAmount * 100) / 100,
       totalWithTax: salePrice,
     };
+  };
+
+  // Get payment method label and icon
+  const getPaymentMethodInfo = (code?: string) => {
+    switch (code) {
+      case '1101': return { label: 'نقداً', icon: Banknote, color: 'text-green-600' };
+      case '1102': return { label: 'تحويل بنكي', icon: Building2, color: 'text-blue-600' };
+      case '1103': return { label: 'نقاط البيع', icon: CreditCard, color: 'text-purple-600' };
+      default: return { label: '-', icon: Wallet, color: 'text-muted-foreground' };
+    }
   };
 
   const filteredSales = useMemo(() => {
@@ -110,6 +120,7 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
               <TableHead className="text-right font-bold">الضريبة ({taxRate}%)</TableHead>
               <TableHead className="text-right font-bold">الإجمالي مع الضريبة</TableHead>
               <TableHead className="text-right font-bold">الربح</TableHead>
+              <TableHead className="text-right font-bold">طريقة الاستلام</TableHead>
               <TableHead className="text-right font-bold">تاريخ البيع</TableHead>
               <TableHead className="text-right font-bold">الإجراءات</TableHead>
             </TableRow>
@@ -121,6 +132,9 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
               const saleItems = (sale as any).sale_items || [];
               const isMultiCar = saleItems.length > 1;
               const carCount = saleItems.length > 0 ? saleItems.length : 1;
+              const paymentAccount = (sale as any).payment_account;
+              const paymentInfo = getPaymentMethodInfo(paymentAccount?.code);
+              const PaymentIcon = paymentInfo.icon;
               
               return (
               <TableRow key={sale.id} className="hover:bg-muted/30 transition-colors">
@@ -152,6 +166,12 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
                     <span className={`font-bold ${Number(sale.profit) >= 0 ? 'text-success' : 'text-destructive'}`}>
                       {formatCurrency(Number(sale.profit))} ريال
                     </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <PaymentIcon className={`w-4 h-4 ${paymentInfo.color}`} />
+                    <span className={paymentInfo.color}>{paymentInfo.label}</span>
                   </div>
                 </TableCell>
                 <TableCell>
