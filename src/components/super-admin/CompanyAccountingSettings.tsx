@@ -69,49 +69,63 @@ const defaultSettings: Omit<AccountingSettings, 'company_id'> = {
   suppliers_account_id: null,
 };
 
-// Account mapping configuration
+// Account mapping configuration with ZATCA compliant suggested accounts
 const accountMappings = [
   { 
     label: 'حساب الصندوق',
     salesKey: 'sales_cash_account_id',
     purchaseKey: 'purchase_cash_account_id',
     types: ['assets'],
+    suggestedCode: '1100',
+    suggestedName: 'النقدية والبنوك',
   },
   { 
-    label: 'حساب المبيعات النقدية',
+    label: 'حساب إيرادات المبيعات',
     salesKey: 'sales_revenue_account_id',
     purchaseKey: null,
     types: ['revenue'],
+    suggestedCode: '4100',
+    suggestedName: 'إيرادات المبيعات',
   },
   { 
     label: 'حساب المخزون',
     salesKey: 'inventory_account_id',
     purchaseKey: 'purchase_inventory_account_id',
     types: ['assets'],
+    suggestedCode: '1200',
+    suggestedName: 'المخزون',
   },
   { 
     label: 'تكلفة البضاعة المباعة',
     salesKey: 'cogs_account_id',
     purchaseKey: null,
     types: ['expenses'],
+    suggestedCode: '5100',
+    suggestedName: 'تكلفة البضاعة المباعة',
   },
   { 
-    label: 'حساب الموردين الرئيسي',
+    label: 'حساب الموردين (الدائنون)',
     salesKey: null,
     purchaseKey: 'suppliers_account_id',
     types: ['liabilities'],
+    suggestedCode: '2100',
+    suggestedName: 'الموردون (الدائنون)',
   },
   { 
-    label: 'حساب ضريبة المدخلات',
+    label: 'ضريبة القيمة المضافة القابلة للاسترداد',
     salesKey: null,
     purchaseKey: 'vat_recoverable_account_id',
     types: ['assets', 'liabilities'],
+    suggestedCode: '2300',
+    suggestedName: 'ضريبة القيمة المضافة القابلة للاسترداد',
   },
   { 
-    label: 'حساب ضريبة المخرجات',
+    label: 'ضريبة القيمة المضافة المستحقة',
     salesKey: 'vat_payable_account_id',
     purchaseKey: null,
     types: ['liabilities'],
+    suggestedCode: '2200',
+    suggestedName: 'ضريبة القيمة المضافة المستحقة',
   },
 ];
 
@@ -237,27 +251,61 @@ export function CompanyAccountingSettings({
     return account ? `${account.code}` : null;
   };
 
+  // Find account by suggested code
+  const findAccountByCode = (suggestedCode: string) => {
+    return accounts.find(a => a.code === suggestedCode);
+  };
+
+  // Get display name for suggested account
+  const getSuggestedAccountDisplay = (suggestedCode: string, suggestedName: string) => {
+    const account = findAccountByCode(suggestedCode);
+    if (account) {
+      return `${account.code} - ${account.name}`;
+    }
+    return `${suggestedCode} - ${suggestedName}`;
+  };
+
   const renderAccountSelect = (
     value: string | null,
     onChange: (value: string | null) => void,
     types: string[],
-    disabled?: boolean
+    disabled?: boolean,
+    suggestedCode?: string,
+    suggestedName?: string
   ) => {
     const filteredAccounts = getAccountsByType(types);
     const selectedCode = getAccountDisplay(value);
+    const suggestedAccount = suggestedCode ? findAccountByCode(suggestedCode) : null;
+    const displayPlaceholder = suggestedCode && suggestedName 
+      ? getSuggestedAccountDisplay(suggestedCode, suggestedName)
+      : 'اختر الحساب';
     
     return (
       <div className="flex items-center gap-2">
         <Select 
           value={value || 'default'} 
-          onValueChange={(v) => onChange(v === 'default' ? null : v)}
+          onValueChange={(v) => {
+            if (v === 'default') {
+              if (suggestedAccount) {
+                onChange(suggestedAccount.id);
+              } else {
+                onChange(null);
+              }
+            } else {
+              onChange(v);
+            }
+          }}
           disabled={disabled}
         >
           <SelectTrigger className="w-full h-9 text-sm">
-            <SelectValue placeholder="تلقائي" />
+            <SelectValue placeholder={displayPlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="default">تلقائي</SelectItem>
+            {suggestedAccount && (
+              <SelectItem value="default" className="text-primary font-medium">
+                ✓ {suggestedAccount.code} - {suggestedAccount.name} (مقترح)
+              </SelectItem>
+            )}
             {filteredAccounts.map(account => (
               <SelectItem key={account.id} value={account.id}>
                 {account.code} - {account.name}
@@ -311,8 +359,8 @@ export function CompanyAccountingSettings({
                 {/* Header Row */}
                 <div className="grid grid-cols-3 bg-muted/50 border-b">
                   <div className="p-3 text-center font-semibold border-l">الوصف</div>
-                  <div className="p-3 text-center font-semibold border-l text-green-700">حسابات المبيعات</div>
-                  <div className="p-3 text-center font-semibold text-blue-700">حسابات المشتريات</div>
+                  <div className="p-3 text-center font-semibold border-l text-success">حسابات المبيعات</div>
+                  <div className="p-3 text-center font-semibold text-primary">حسابات المشتريات</div>
                 </div>
 
                 {/* Account Rows */}
@@ -323,7 +371,10 @@ export function CompanyAccountingSettings({
                   >
                     {/* Label */}
                     <div className="p-3 bg-muted/20 border-l flex items-center">
-                      <span className="text-sm font-medium">{mapping.label}</span>
+                      <div>
+                        <span className="text-sm font-medium block">{mapping.label}</span>
+                        <span className="text-xs text-muted-foreground">{mapping.suggestedCode} - {mapping.suggestedName}</span>
+                      </div>
                     </div>
                     
                     {/* Sales Account */}
@@ -333,7 +384,9 @@ export function CompanyAccountingSettings({
                           formData[mapping.salesKey as keyof AccountingSettings] as string | null,
                           (v) => setFormData({ ...formData, [mapping.salesKey as string]: v }),
                           mapping.types,
-                          !formData.auto_sales_entries
+                          !formData.auto_sales_entries,
+                          mapping.suggestedCode,
+                          mapping.suggestedName
                         )
                       ) : (
                         <div className="h-9 flex items-center justify-center text-muted-foreground text-sm">
@@ -349,7 +402,9 @@ export function CompanyAccountingSettings({
                           formData[mapping.purchaseKey as keyof AccountingSettings] as string | null,
                           (v) => setFormData({ ...formData, [mapping.purchaseKey as string]: v }),
                           mapping.types,
-                          !formData.auto_purchase_entries
+                          !formData.auto_purchase_entries,
+                          mapping.suggestedCode,
+                          mapping.suggestedName
                         )
                       ) : (
                         <div className="h-9 flex items-center justify-center text-muted-foreground text-sm">
@@ -396,8 +451,8 @@ export function CompanyAccountingSettings({
                 {/* Sales Toggle */}
                 <div className={`flex items-center justify-between p-4 rounded-lg border ${!formData.auto_journal_entries_enabled ? 'opacity-50' : ''}`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                      <span className="text-green-700 text-lg">💰</span>
+                    <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
+                      <span className="text-success text-lg">💰</span>
                     </div>
                     <div>
                       <Label className="font-medium">قيود المبيعات</Label>
@@ -416,8 +471,8 @@ export function CompanyAccountingSettings({
                 {/* Purchase Toggle */}
                 <div className={`flex items-center justify-between p-4 rounded-lg border ${!formData.auto_journal_entries_enabled ? 'opacity-50' : ''}`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                      <span className="text-blue-700 text-lg">🛒</span>
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-primary text-lg">🛒</span>
                     </div>
                     <div>
                       <Label className="font-medium">قيود المشتريات</Label>
@@ -437,15 +492,15 @@ export function CompanyAccountingSettings({
                 <div className="mt-6 p-4 rounded-lg bg-muted/50 border">
                   <h4 className="font-medium mb-3">ملخص الحالة</h4>
                   <div className="grid grid-cols-3 gap-4 text-center">
-                    <div className={`p-3 rounded-lg ${formData.auto_journal_entries_enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <div className={`p-3 rounded-lg ${formData.auto_journal_entries_enabled ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                       <div className="text-lg font-bold">{formData.auto_journal_entries_enabled ? '✓' : '✗'}</div>
                       <div className="text-xs">النظام العام</div>
                     </div>
-                    <div className={`p-3 rounded-lg ${formData.auto_sales_entries && formData.auto_journal_entries_enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <div className={`p-3 rounded-lg ${formData.auto_sales_entries && formData.auto_journal_entries_enabled ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                       <div className="text-lg font-bold">{formData.auto_sales_entries && formData.auto_journal_entries_enabled ? '✓' : '✗'}</div>
                       <div className="text-xs">قيود المبيعات</div>
                     </div>
-                    <div className={`p-3 rounded-lg ${formData.auto_purchase_entries && formData.auto_journal_entries_enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <div className={`p-3 rounded-lg ${formData.auto_purchase_entries && formData.auto_journal_entries_enabled ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                       <div className="text-lg font-bold">{formData.auto_purchase_entries && formData.auto_journal_entries_enabled ? '✓' : '✗'}</div>
                       <div className="text-xs">قيود المشتريات</div>
                     </div>
