@@ -9,6 +9,7 @@ import {
   restoreBackup,
   updateBackupSchedule,
   downloadBackupAsJson,
+  restoreFromLocalFile,
   Backup,
   BackupSchedule
 } from '@/services/backups';
@@ -111,6 +112,22 @@ export function useDownloadBackup() {
     },
     onError: (error) => {
       toast.error('فشل تحميل النسخة: ' + (error as Error).message);
+    }
+  });
+}
+
+export function useRestoreFromLocalFile() {
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+
+  return useMutation({
+    mutationFn: (file: File) => restoreFromLocalFile(companyId!, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+      toast.success('تم استعادة النسخة الاحتياطية من الملف بنجاح');
+    },
+    onError: (error) => {
+      toast.error('فشل استعادة النسخة: ' + (error as Error).message);
     }
   });
 }

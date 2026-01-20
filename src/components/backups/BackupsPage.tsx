@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import {
@@ -13,7 +13,8 @@ import {
   Loader2,
   Settings,
   HardDrive,
-  Calendar
+  Calendar,
+  Upload
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -57,7 +58,8 @@ import {
   useDeleteBackup,
   useRestoreBackup,
   useUpdateBackupSchedule,
-  useDownloadBackup
+  useDownloadBackup,
+  useRestoreFromLocalFile
 } from '@/hooks/useBackups';
 import { Backup } from '@/services/backups';
 
@@ -69,11 +71,29 @@ export function BackupsPage() {
   const restoreBackup = useRestoreBackup();
   const updateSchedule = useUpdateBackupSchedule();
   const downloadBackup = useDownloadBackup();
+  const restoreFromFile = useRestoreFromLocalFile();
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newBackupName, setNewBackupName] = useState('');
   const [newBackupDescription, setNewBackupDescription] = useState('');
+  const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.name.endsWith('.json')) {
+      alert('يرجى اختيار ملف JSON');
+      return;
+    }
+    
+    await restoreFromFile.mutateAsync(file);
+    setIsRestoreDialogOpen(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
   const handleCreateBackup = async () => {
     if (!newBackupName.trim()) return;
     
@@ -132,13 +152,67 @@ export function BackupsPage() {
           </p>
         </div>
         
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              إنشاء نسخة احتياطية
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Dialog open={isRestoreDialogOpen} onOpenChange={setIsRestoreDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Upload className="w-4 h-4" />
+                استعادة من ملف
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>استعادة من ملف محلي</DialogTitle>
+                <DialogDescription>
+                  اختر ملف النسخة الاحتياطية (JSON) لاستعادة البيانات منه.
+                  <span className="block mt-2 text-destructive font-medium">
+                    تحذير: سيتم استبدال جميع البيانات الحالية!
+                  </span>
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="backup-file-input"
+                />
+                <Button
+                  variant="outline"
+                  className="w-full h-24 border-dashed gap-2"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={restoreFromFile.isPending}
+                >
+                  {restoreFromFile.isPending ? (
+                    <>
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                      جاري الاستعادة...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-6 h-6" />
+                      اختر ملف النسخة الاحتياطية
+                    </>
+                  )}
+                </Button>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsRestoreDialogOpen(false)}>
+                  إلغاء
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                إنشاء نسخة احتياطية
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>إنشاء نسخة احتياطية جديدة</DialogTitle>
@@ -179,7 +253,8 @@ export function BackupsPage() {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Backup Schedule Card */}
