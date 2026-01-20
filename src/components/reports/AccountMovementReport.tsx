@@ -1,22 +1,27 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Loader2, Printer, FileDown, FileSpreadsheet, Wallet, Building2, Users, CreditCard } from 'lucide-react';
+import { Loader2, Printer, FileDown, FileSpreadsheet, Wallet, Building2, Users, CreditCard, Search, Package, TrendingUp, TrendingDown, Landmark, Check, ChevronsUpDown } from 'lucide-react';
 import { useAccounts, useGeneralLedger } from '@/hooks/useAccounting';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { usePdfExport } from '@/hooks/usePdfExport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export function AccountMovementReport() {
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: ledgerData, isLoading: ledgerLoading } = useGeneralLedger(
     selectedAccountId || null,
@@ -28,8 +33,13 @@ export function AccountMovementReport() {
   const { exportToPdf } = usePdfExport();
   const { exportToExcel } = useExcelExport();
 
-  // Filter key accounts (Cash, Bank, Partner, POS)
-  const keyAccounts = useMemo(() => {
+  // All accounts sorted by code
+  const allAccounts = useMemo(() => {
+    return [...accounts].sort((a, b) => a.code.localeCompare(b.code));
+  }, [accounts]);
+
+  // Quick access accounts (Cash, Bank, Partner, POS)
+  const quickAccounts = useMemo(() => {
     return accounts.filter(account => {
       const code = account.code;
       return (
@@ -41,22 +51,63 @@ export function AccountMovementReport() {
     }).sort((a, b) => a.code.localeCompare(b.code));
   }, [accounts]);
 
+  // Filtered accounts based on search
+  const filteredAccounts = useMemo(() => {
+    if (!searchQuery) return allAccounts;
+    const query = searchQuery.toLowerCase();
+    return allAccounts.filter(account => 
+      account.code.toLowerCase().includes(query) ||
+      account.name.toLowerCase().includes(query)
+    );
+  }, [allAccounts, searchQuery]);
+
+  // Group accounts by type
+  const groupedAccounts = useMemo(() => {
+    const groups: Record<string, typeof filteredAccounts> = {
+      assets: [],
+      liabilities: [],
+      equity: [],
+      revenue: [],
+      expenses: [],
+    };
+    
+    filteredAccounts.forEach(account => {
+      if (groups[account.type]) {
+        groups[account.type].push(account);
+      }
+    });
+    
+    return groups;
+  }, [filteredAccounts]);
+
   const selectedAccount = accounts.find(a => a.id === selectedAccountId);
 
-  const getAccountIcon = (code: string) => {
-    if (code.startsWith('110')) return <Wallet className="h-4 w-4" />;
-    if (code.startsWith('111')) return <Building2 className="h-4 w-4" />;
-    if (code === '3102') return <Users className="h-4 w-4" />;
-    if (code.startsWith('112')) return <CreditCard className="h-4 w-4" />;
-    return <Wallet className="h-4 w-4" />;
+  const getAccountIcon = (type: string, code: string) => {
+    if (code.startsWith('110')) return <Wallet className="h-4 w-4 shrink-0" />;
+    if (code.startsWith('111')) return <Building2 className="h-4 w-4 shrink-0" />;
+    if (code.startsWith('112')) return <CreditCard className="h-4 w-4 shrink-0" />;
+    if (code === '3102') return <Users className="h-4 w-4 shrink-0" />;
+    if (code.startsWith('13')) return <Package className="h-4 w-4 shrink-0" />;
+    
+    switch (type) {
+      case 'assets': return <Wallet className="h-4 w-4 shrink-0" />;
+      case 'liabilities': return <Landmark className="h-4 w-4 shrink-0" />;
+      case 'equity': return <Users className="h-4 w-4 shrink-0" />;
+      case 'revenue': return <TrendingUp className="h-4 w-4 shrink-0" />;
+      case 'expenses': return <TrendingDown className="h-4 w-4 shrink-0" />;
+      default: return <Wallet className="h-4 w-4 shrink-0" />;
+    }
   };
 
-  const getAccountTypeLabel = (code: string) => {
-    if (code.startsWith('110')) return 'صندوق';
-    if (code.startsWith('111')) return 'بنك';
-    if (code === '3102') return 'جاري شريك';
-    if (code.startsWith('112')) return 'نقاط بيع';
-    return 'حساب';
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'assets': return 'أصول';
+      case 'liabilities': return 'خصوم';
+      case 'equity': return 'حقوق ملكية';
+      case 'revenue': return 'إيرادات';
+      case 'expenses': return 'مصروفات';
+      default: return 'حساب';
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -169,7 +220,7 @@ export function AccountMovementReport() {
             تقرير حركة الحسابات
           </CardTitle>
           <CardDescription>
-            عرض حركة الصناديق والبنوك وحسابات الشركاء مع الرصيد الحالي
+            عرض حركة جميع الحسابات مع الرصيد الحالي
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -177,25 +228,72 @@ export function AccountMovementReport() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>اختر الحساب</Label>
-              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر حساب لعرض حركته" />
-                </SelectTrigger>
-                <SelectContent>
-                  {keyAccounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      <div className="flex items-center gap-2">
-                        {getAccountIcon(account.code)}
-                        <span className="text-muted-foreground">{account.code}</span>
-                        <span>{account.name}</span>
-                        <span className="text-xs bg-muted px-2 py-0.5 rounded">
-                          {getAccountTypeLabel(account.code)}
-                        </span>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between h-10"
+                  >
+                    {selectedAccount ? (
+                      <div className="flex items-center gap-2 truncate">
+                        {getAccountIcon(selectedAccount.type, selectedAccount.code)}
+                        <span className="text-muted-foreground">{selectedAccount.code}</span>
+                        <span className="truncate">{selectedAccount.name}</span>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    ) : (
+                      <span className="text-muted-foreground">ابحث واختر حساب...</span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[400px] p-0 bg-popover border shadow-lg z-50" align="start">
+                  <Command>
+                    <CommandInput 
+                      placeholder="ابحث برقم أو اسم الحساب..." 
+                      value={searchQuery}
+                      onValueChange={setSearchQuery}
+                      className="h-10"
+                    />
+                    <CommandList>
+                      <CommandEmpty>لا توجد نتائج</CommandEmpty>
+                      <ScrollArea className="h-[300px]">
+                        {Object.entries(groupedAccounts).map(([type, accts]) => (
+                          accts.length > 0 && (
+                            <CommandGroup key={type} heading={getTypeLabel(type)}>
+                              {accts.map((account) => (
+                                <CommandItem
+                                  key={account.id}
+                                  value={`${account.code} ${account.name}`}
+                                  onSelect={() => {
+                                    setSelectedAccountId(account.id);
+                                    setOpen(false);
+                                    setSearchQuery('');
+                                  }}
+                                  className="cursor-pointer"
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      selectedAccountId === account.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <div className="flex items-center gap-2 flex-1">
+                                    {getAccountIcon(account.type, account.code)}
+                                    <span className="text-muted-foreground font-mono text-sm">{account.code}</span>
+                                    <span className="truncate">{account.name}</span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          )
+                        ))}
+                      </ScrollArea>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <Label>من تاريخ</Label>
@@ -219,7 +317,8 @@ export function AccountMovementReport() {
 
           {/* Quick Account Selection */}
           <div className="flex flex-wrap gap-2">
-            {keyAccounts.slice(0, 6).map((account) => (
+            <span className="text-sm text-muted-foreground self-center ml-2">اختصارات:</span>
+            {quickAccounts.slice(0, 6).map((account) => (
               <Button
                 key={account.id}
                 variant={selectedAccountId === account.id ? 'default' : 'outline'}
@@ -227,7 +326,7 @@ export function AccountMovementReport() {
                 onClick={() => setSelectedAccountId(account.id)}
                 className="flex items-center gap-2"
               >
-                {getAccountIcon(account.code)}
+                {getAccountIcon(account.type, account.code)}
                 {account.name}
               </Button>
             ))}
