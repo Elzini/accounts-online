@@ -296,11 +296,11 @@ export function FinancialReportsPage() {
 
 function getTypeLabel(type: string): string {
   const types: Record<string, string> = {
-    asset: 'أصول',
-    liability: 'خصوم',
+    assets: 'أصول',
+    liabilities: 'خصوم',
     equity: 'حقوق الملكية',
     revenue: 'إيرادات',
-    expense: 'مصروفات',
+    expenses: 'مصروفات',
   };
   return types[type] || type;
 }
