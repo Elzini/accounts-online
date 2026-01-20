@@ -172,10 +172,15 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         {/* Incoming Cars */}
         <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
           <div className="flex items-center justify-between mb-4 md:mb-6">
-            <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
-              <ArrowDownLeft className="w-5 h-5 text-blue-500" />
-              السيارات الواردة من المعارض
-            </h2>
+            <div>
+              <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
+                <ArrowDownLeft className="w-5 h-5 text-blue-500" />
+                السيارات الواردة من المعارض
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                <span className="font-semibold text-blue-600">{transferStats.incomingCars.length}</span> سيارة قيد الانتظار
+              </p>
+            </div>
             <Button 
               variant="ghost" 
               size="sm" 
@@ -222,10 +227,15 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         {/* Outgoing Cars */}
         <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
           <div className="flex items-center justify-between mb-4 md:mb-6">
-            <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
-              <ArrowUpRight className="w-5 h-5 text-orange-500" />
-              السيارات الصادرة للمعارض
-            </h2>
+            <div>
+              <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
+                <ArrowUpRight className="w-5 h-5 text-orange-500" />
+                السيارات الصادرة للمعارض
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                <span className="font-semibold text-orange-600">{transferStats.outgoingCars.length}</span> سيارة قيد الانتظار
+              </p>
+            </div>
             <Button 
               variant="ghost" 
               size="sm" 
