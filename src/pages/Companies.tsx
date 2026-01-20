@@ -17,7 +17,8 @@ import {
   ArrowRight,
   Settings,
   LogIn,
-  BookOpen
+  BookOpen,
+  FileBarChart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,6 +60,7 @@ import logo from '@/assets/logo.png';
 import { LoginSettingsAdmin } from '@/components/LoginSettingsAdmin';
 import { AllUsersManagement } from '@/components/super-admin/AllUsersManagement';
 import { CompanyAccountingSettings } from '@/components/super-admin/CompanyAccountingSettings';
+import { CompaniesReport } from '@/components/super-admin/CompaniesReport';
 
 interface Company {
   id: string;
@@ -316,10 +318,14 @@ export default function Companies() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="companies" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
             <TabsTrigger value="companies" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               <span>الشركات</span>
+            </TabsTrigger>
+            <TabsTrigger value="report" className="flex items-center gap-2">
+              <FileBarChart className="w-4 h-4" />
+              <span>التقرير الشامل</span>
             </TabsTrigger>
             <TabsTrigger value="all-users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -330,6 +336,10 @@ export default function Companies() {
               <span>شاشة الدخول</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="report">
+            <CompaniesReport />
+          </TabsContent>
 
           <TabsContent value="companies" className="space-y-6">
             {/* Page Header */}
