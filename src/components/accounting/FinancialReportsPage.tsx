@@ -19,9 +19,10 @@ import {
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { usePdfExport } from '@/hooks/usePdfExport';
-import { Loader2, FileText, TrendingUp, Scale, CalendarIcon, Building2, ClipboardList, Printer, Download, FileSpreadsheet } from 'lucide-react';
+import { Loader2, FileText, TrendingUp, Scale, CalendarIcon, Building2, ClipboardList, Printer, Download, FileSpreadsheet, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { AccountMovementReport } from '@/components/reports/AccountMovementReport';
 
 export function FinancialReportsPage() {
   const [dateRange, setDateRange] = useState<{
@@ -351,6 +352,10 @@ export function FinancialReportsPage() {
               <ClipboardList className="w-4 h-4" />
               كشف القيود
             </TabsTrigger>
+            <TabsTrigger value="account-movement" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+              <Wallet className="w-4 h-4" />
+              حركة الحسابات
+            </TabsTrigger>
             <TabsTrigger value="trial-balance" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
               <Scale className="w-4 h-4" />
               ميزان المراجعة
@@ -373,6 +378,11 @@ export function FinancialReportsPage() {
             </TabsTrigger>
           </TabsList>
         </ScrollArea>
+
+        {/* Account Movement Report - حركة الحسابات */}
+        <TabsContent value="account-movement">
+          <AccountMovementReport />
+        </TabsContent>
 
         {/* Journal Entries Report - كشف القيود */}
         <TabsContent value="journal-entries">
