@@ -250,6 +250,7 @@ export type Database = {
           inventory_number: number
           model: string | null
           name: string
+          payment_account_id: string | null
           purchase_date: string
           purchase_price: number
           status: string
@@ -266,6 +267,7 @@ export type Database = {
           inventory_number?: number
           model?: string | null
           name: string
+          payment_account_id?: string | null
           purchase_date?: string
           purchase_price: number
           status?: string
@@ -282,6 +284,7 @@ export type Database = {
           inventory_number?: number
           model?: string | null
           name?: string
+          payment_account_id?: string | null
           purchase_date?: string
           purchase_price?: number
           status?: string
@@ -301,6 +304,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cars_payment_account_id_fkey"
+            columns: ["payment_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
             referencedColumns: ["id"]
           },
           {
@@ -1150,6 +1160,7 @@ export type Database = {
           customer_id: string
           id: string
           other_expenses: number | null
+          payment_account_id: string | null
           profit: number
           sale_date: string
           sale_number: number
@@ -1165,6 +1176,7 @@ export type Database = {
           customer_id: string
           id?: string
           other_expenses?: number | null
+          payment_account_id?: string | null
           profit: number
           sale_date?: string
           sale_number?: number
@@ -1180,6 +1192,7 @@ export type Database = {
           customer_id?: string
           id?: string
           other_expenses?: number | null
+          payment_account_id?: string | null
           profit?: number
           sale_date?: string
           sale_number?: number
@@ -1207,6 +1220,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_payment_account_id_fkey"
+            columns: ["payment_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
             referencedColumns: ["id"]
           },
         ]
