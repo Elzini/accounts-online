@@ -281,18 +281,47 @@ export async function getTrialBalance(companyId: string): Promise<{
   totalDebit: number;
   totalCredit: number;
 }> {
-  const balances = await getAccountBalances(companyId);
+  const accounts = await fetchAccounts(companyId);
   
-  const accounts = balances.map(item => ({
-    account: item.account,
-    debit: item.balance > 0 ? item.balance : 0,
-    credit: item.balance < 0 ? Math.abs(item.balance) : 0,
-  }));
+  const { data: lines, error } = await supabase
+    .from('journal_entry_lines')
+    .select(`
+      account_id,
+      debit,
+      credit,
+      journal_entry:journal_entries!inner(company_id, is_posted)
+    `)
+    .eq('journal_entry.company_id', companyId)
+    .eq('journal_entry.is_posted', true);
+  
+  if (error) throw error;
 
-  const totalDebit = accounts.reduce((sum, a) => sum + a.debit, 0);
-  const totalCredit = accounts.reduce((sum, a) => sum + a.credit, 0);
+  // Aggregate totals per account
+  const balances = new Map<string, { debit: number; credit: number }>();
+  
+  (lines || []).forEach((line: any) => {
+    const current = balances.get(line.account_id) || { debit: 0, credit: 0 };
+    current.debit += Number(line.debit) || 0;
+    current.credit += Number(line.credit) || 0;
+    balances.set(line.account_id, current);
+  });
 
-  return { accounts, totalDebit, totalCredit };
+  // Build trial balance with actual debit/credit totals
+  const trialAccounts = accounts
+    .map(account => {
+      const totals = balances.get(account.id) || { debit: 0, credit: 0 };
+      return {
+        account,
+        debit: totals.debit,
+        credit: totals.credit,
+      };
+    })
+    .filter(item => item.debit > 0 || item.credit > 0);
+
+  const totalDebit = trialAccounts.reduce((sum, a) => sum + a.debit, 0);
+  const totalCredit = trialAccounts.reduce((sum, a) => sum + a.credit, 0);
+
+  return { accounts: trialAccounts, totalDebit, totalCredit };
 }
 
 export async function getIncomeStatement(companyId: string, startDate?: string, endDate?: string): Promise<{
