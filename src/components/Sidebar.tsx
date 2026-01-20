@@ -20,7 +20,8 @@ import {
   CreditCard,
   FileCheck,
   Wallet,
-  ClipboardList
+  ClipboardList,
+  Database
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
@@ -325,6 +326,20 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
                 >
                   <ClipboardList className="w-5 h-5" />
                   <span className="font-medium">سجل التدقيق</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => setActivePage('backups')}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                    activePage === 'backups'
+                      ? "gradient-primary text-white shadow-lg" 
+                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
+                  )}
+                >
+                  <Database className="w-5 h-5" />
+                  <span className="font-medium">النسخ الاحتياطي</span>
                 </button>
               </li>
             </ul>

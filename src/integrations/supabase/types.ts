@@ -153,6 +153,112 @@ export type Database = {
           },
         ]
       }
+      backup_schedules: {
+        Row: {
+          company_id: string
+          created_at: string
+          frequency: string
+          id: string
+          is_enabled: boolean
+          last_backup_at: string | null
+          next_backup_at: string | null
+          retention_days: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          frequency?: string
+          id?: string
+          is_enabled?: boolean
+          last_backup_at?: string | null
+          next_backup_at?: string | null
+          retention_days?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          frequency?: string
+          id?: string
+          is_enabled?: boolean
+          last_backup_at?: string | null
+          next_backup_at?: string | null
+          retention_days?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backup_schedules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      backups: {
+        Row: {
+          backup_data: Json | null
+          backup_type: string
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          error_message: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          name: string
+          records_count: Json | null
+          status: string
+          tables_included: string[]
+        }
+        Insert: {
+          backup_data?: Json | null
+          backup_type?: string
+          company_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          error_message?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          name: string
+          records_count?: Json | null
+          status?: string
+          tables_included?: string[]
+        }
+        Update: {
+          backup_data?: Json | null
+          backup_type?: string
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          error_message?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          name?: string
+          records_count?: Json | null
+          status?: string
+          tables_included?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backups_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       car_transfers: {
         Row: {
           actual_commission: number | null
