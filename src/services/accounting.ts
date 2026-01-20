@@ -736,3 +736,153 @@ export async function getComprehensiveTrialBalance(companyId: string): Promise<{
 
   return { accounts: trialAccounts, totals };
 }
+
+// VAT Settlement Report - تقرير تسوية ضريبة القيمة المضافة
+export interface VATSettlementReport {
+  vatPayable: {
+    account: AccountCategory | null;
+    balance: number; // ضريبة المخرجات - على المبيعات
+  };
+  vatRecoverable: {
+    account: AccountCategory | null;
+    balance: number; // ضريبة المدخلات - على المشتريات
+  };
+  netVAT: number; // الفرق - المبلغ المستحق للهيئة أو لصالح الشركة
+  status: 'payable' | 'receivable' | 'settled'; // حالة التسوية
+  transactions: Array<{
+    date: string;
+    description: string;
+    type: 'sales' | 'purchases';
+    taxAmount: number;
+    entryNumber: number;
+  }>;
+}
+
+export async function getVATSettlementReport(
+  companyId: string,
+  startDate?: string,
+  endDate?: string
+): Promise<VATSettlementReport> {
+  // Get company accounting settings to find VAT accounts
+  const { data: settings, error: settingsError } = await supabase
+    .from('company_accounting_settings')
+    .select('vat_payable_account_id, vat_recoverable_account_id')
+    .eq('company_id', companyId)
+    .maybeSingle();
+
+  if (settingsError) throw settingsError;
+
+  // Fetch accounts
+  const accounts = await fetchAccounts(companyId);
+  
+  // Find VAT accounts by settings or by code pattern
+  let vatPayableAccount = settings?.vat_payable_account_id 
+    ? accounts.find(a => a.id === settings.vat_payable_account_id)
+    : accounts.find(a => a.code === '2201');
+  
+  let vatRecoverableAccount = settings?.vat_recoverable_account_id
+    ? accounts.find(a => a.id === settings.vat_recoverable_account_id)
+    : accounts.find(a => a.code === '2202');
+
+  // Build query for journal entries with VAT accounts
+  let query = supabase
+    .from('journal_entry_lines')
+    .select(`
+      id,
+      account_id,
+      debit,
+      credit,
+      description,
+      journal_entry:journal_entries!inner(
+        id,
+        entry_number,
+        entry_date,
+        description,
+        reference_type,
+        company_id,
+        is_posted
+      )
+    `)
+    .eq('journal_entry.company_id', companyId)
+    .eq('journal_entry.is_posted', true);
+
+  // Filter by accounts
+  const vatAccountIds = [vatPayableAccount?.id, vatRecoverableAccount?.id].filter(Boolean);
+  if (vatAccountIds.length > 0) {
+    query = query.in('account_id', vatAccountIds);
+  }
+
+  if (startDate) {
+    query = query.gte('journal_entry.entry_date', startDate);
+  }
+  if (endDate) {
+    query = query.lte('journal_entry.entry_date', endDate);
+  }
+
+  query = query.order('journal_entry(entry_date)', { ascending: true });
+
+  const { data: lines, error: linesError } = await query;
+  if (linesError) throw linesError;
+
+  // Calculate balances
+  let vatPayableBalance = 0; // Credit increases (liability)
+  let vatRecoverableBalance = 0; // Debit increases (asset)
+  const transactions: VATSettlementReport['transactions'] = [];
+
+  (lines || []).forEach((line: any) => {
+    const debit = Number(line.debit) || 0;
+    const credit = Number(line.credit) || 0;
+    
+    if (line.account_id === vatPayableAccount?.id) {
+      // VAT Payable - liability account (credit increases)
+      vatPayableBalance += credit - debit;
+      if (credit > 0) {
+        transactions.push({
+          date: line.journal_entry.entry_date,
+          description: line.description || line.journal_entry.description,
+          type: 'sales',
+          taxAmount: credit,
+          entryNumber: line.journal_entry.entry_number,
+        });
+      }
+    } else if (line.account_id === vatRecoverableAccount?.id) {
+      // VAT Recoverable - asset account (debit increases)
+      vatRecoverableBalance += debit - credit;
+      if (debit > 0) {
+        transactions.push({
+          date: line.journal_entry.entry_date,
+          description: line.description || line.journal_entry.description,
+          type: 'purchases',
+          taxAmount: debit,
+          entryNumber: line.journal_entry.entry_number,
+        });
+      }
+    }
+  });
+
+  // Net VAT = VAT Payable - VAT Recoverable
+  // Positive = company owes ZATCA
+  // Negative = company is owed by ZATCA
+  const netVAT = vatPayableBalance - vatRecoverableBalance;
+
+  let status: 'payable' | 'receivable' | 'settled' = 'settled';
+  if (netVAT > 0) {
+    status = 'payable'; // الشركة مدينة لهيئة الزكاة
+  } else if (netVAT < 0) {
+    status = 'receivable'; // الشركة دائنة لهيئة الزكاة (مسترد)
+  }
+
+  return {
+    vatPayable: {
+      account: vatPayableAccount || null,
+      balance: vatPayableBalance,
+    },
+    vatRecoverable: {
+      account: vatRecoverableAccount || null,
+      balance: vatRecoverableBalance,
+    },
+    netVAT,
+    status,
+    transactions,
+  };
+}

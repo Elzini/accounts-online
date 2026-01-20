@@ -20,6 +20,7 @@ import {
   getVouchersReport,
   getJournalEntriesReport,
   getComprehensiveTrialBalance,
+  getVATSettlementReport,
   TaxSettings,
   AccountCategory,
   JournalEntry,
@@ -258,6 +259,17 @@ export function useComprehensiveTrialBalance() {
   return useQuery({
     queryKey: ['comprehensive-trial-balance', companyId],
     queryFn: () => companyId ? getComprehensiveTrialBalance(companyId) : null,
+    enabled: !!companyId,
+  });
+}
+
+// VAT Settlement Report - تقرير تسوية ضريبة القيمة المضافة
+export function useVATSettlementReport(startDate?: string, endDate?: string) {
+  const { companyId } = useCompany();
+  
+  return useQuery({
+    queryKey: ['vat-settlement-report', companyId, startDate, endDate],
+    queryFn: () => companyId ? getVATSettlementReport(companyId, startDate, endDate) : null,
     enabled: !!companyId,
   });
 }
