@@ -550,6 +550,33 @@ export type Database = {
           },
         ]
       }
+      default_company_settings: {
+        Row: {
+          created_at: string
+          id: string
+          setting_key: string
+          setting_type: string
+          setting_value: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          setting_key: string
+          setting_type: string
+          setting_value?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          setting_key?: string
+          setting_type?: string
+          setting_value?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expense_categories: {
         Row: {
           company_id: string
@@ -1425,6 +1452,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_default_settings_to_company: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       create_default_accounts: {
         Args: { p_company_id: string }
         Returns: undefined
