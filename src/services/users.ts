@@ -11,6 +11,20 @@ export interface UserWithPermissions {
   permissions: UserPermission[];
 }
 
+// Helper function to get current user's company_id
+async function getCurrentCompanyId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_id')
+    .eq('user_id', user.id)
+    .single();
+  
+  return profile?.company_id || null;
+}
+
 export async function fetchUsers(): Promise<UserWithPermissions[]> {
   const { data: profiles, error: profilesError } = await supabase
     .from('profiles')
@@ -93,6 +107,10 @@ export async function deleteUser(userId: string) {
 }
 
 export async function createUser(email: string, password: string, username: string, permissions: UserPermission[]) {
+  // Get current user's company_id to assign to new user
+  const currentCompanyId = await getCurrentCompanyId();
+  if (!currentCompanyId) throw new Error('لا يمكن العثور على الشركة الحالية');
+
   // Create user using admin API (this requires service role, so we'll use signUp)
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -106,6 +124,64 @@ export async function createUser(email: string, password: string, username: stri
 
   if (error) throw error;
   if (!data.user) throw new Error('فشل إنشاء المستخدم');
+
+  // Wait a bit for the trigger to create the profile
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  // Update the new user's profile to link to the current company (not create a new one)
+  // First, get the profile that was created by the trigger
+  const { data: newProfile, error: profileFetchError } = await supabase
+    .from('profiles')
+    .select('id, company_id')
+    .eq('user_id', data.user.id)
+    .single();
+
+  if (profileFetchError) {
+    console.error('Error fetching new user profile:', profileFetchError);
+  }
+
+  // If the trigger created a new company for this user, we need to:
+  // 1. Delete that automatically created company (if it was created)
+  // 2. Update the profile to point to the correct company
+  if (newProfile && newProfile.company_id && newProfile.company_id !== currentCompanyId) {
+    const autoCreatedCompanyId = newProfile.company_id;
+    
+    // Update profile to correct company
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ company_id: currentCompanyId })
+      .eq('user_id', data.user.id);
+    
+    if (updateError) {
+      console.error('Error updating profile company_id:', updateError);
+    }
+
+    // Delete the auto-created company (only if no other users are using it)
+    const { data: otherUsers } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('company_id', autoCreatedCompanyId);
+    
+    if (!otherUsers || otherUsers.length === 0) {
+      // Safe to delete the auto-created company
+      await supabase
+        .from('companies')
+        .delete()
+        .eq('id', autoCreatedCompanyId);
+    }
+  } else if (newProfile && !newProfile.company_id) {
+    // Profile exists but no company_id, just update it
+    await supabase
+      .from('profiles')
+      .update({ company_id: currentCompanyId })
+      .eq('user_id', data.user.id);
+  }
+
+  // Clear any auto-assigned permissions and add the ones we want
+  await supabase
+    .from('user_roles')
+    .delete()
+    .eq('user_id', data.user.id);
 
   // Add permissions for the new user
   if (permissions.length > 0) {
