@@ -268,18 +268,18 @@ export function FinancialReportsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {accountBalances.map((account) => (
-                      <TableRow key={account.id}>
-                        <TableCell className="font-mono">{account.code}</TableCell>
-                        <TableCell>{account.name}</TableCell>
-                        <TableCell>{getTypeLabel(account.type)}</TableCell>
-                        <TableCell className="text-left">{(account.total_debit ?? 0).toLocaleString()}</TableCell>
-                        <TableCell className="text-left">{(account.total_credit ?? 0).toLocaleString()}</TableCell>
+                    {accountBalances.map((item) => (
+                      <TableRow key={item.account.id}>
+                        <TableCell className="font-mono">{item.account.code}</TableCell>
+                        <TableCell>{item.account.name}</TableCell>
+                        <TableCell>{getTypeLabel(item.account.type)}</TableCell>
+                        <TableCell className="text-left">{(item.debit_total ?? 0).toLocaleString()}</TableCell>
+                        <TableCell className="text-left">{(item.credit_total ?? 0).toLocaleString()}</TableCell>
                         <TableCell className={cn(
                           "text-left font-medium",
-                          (account.balance ?? 0) >= 0 ? "text-green-600" : "text-red-600"
+                          (item.balance ?? 0) >= 0 ? "text-green-600" : "text-red-600"
                         )}>
-                          {(account.balance ?? 0).toLocaleString()}
+                          {(item.balance ?? 0).toLocaleString()}
                         </TableCell>
                       </TableRow>
                     ))}
