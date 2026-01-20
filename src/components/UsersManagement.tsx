@@ -35,13 +35,13 @@ interface UsersManagementProps {
   setActivePage: (page: ActivePage) => void;
 }
 
+// Exclude super_admin from displayed permissions
 const PERMISSIONS: { key: UserPermission; label: string }[] = [
   { key: 'sales', label: 'المبيعات' },
   { key: 'purchases', label: 'المشتريات' },
   { key: 'reports', label: 'التقارير' },
   { key: 'admin', label: 'الإدارة' },
   { key: 'users', label: 'المستخدمين' },
-  { key: 'super_admin', label: 'مدير النظام' },
 ];
 
 export function UsersManagement({ setActivePage }: UsersManagementProps) {
@@ -225,7 +225,10 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((u, index) => {
+            {users
+              // Filter out super_admin users from the list
+              .filter(u => !u.permissions.includes('super_admin'))
+              .map((u, index) => {
               const isEditing = editingUser === u.user_id;
               const isEditingName = editingUsername === u.user_id;
               const isCurrentUser = u.user_id === user?.id;
@@ -373,10 +376,6 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
           <div className="p-3 rounded-lg bg-muted/50">
             <p className="font-semibold text-sm">صلاحية المستخدمين</p>
             <p className="text-xs text-muted-foreground">إدارة مستخدمي الشركة والصلاحيات</p>
-          </div>
-          <div className="p-3 rounded-lg bg-warning/10">
-            <p className="font-semibold text-sm text-warning">مدير النظام</p>
-            <p className="text-xs text-muted-foreground">صلاحيات كاملة على جميع الشركات</p>
           </div>
         </div>
       </div>
