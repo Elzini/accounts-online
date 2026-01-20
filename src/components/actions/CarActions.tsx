@@ -22,8 +22,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUpdateCar, useDeleteCar, useSuppliers } from '@/hooks/useDatabase';
-import { useTaxSettings } from '@/hooks/useAccounting';
+import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
+import { PaymentAccountSelector } from '@/components/forms/PaymentAccountSelector';
 import {
   Select,
   SelectContent,
@@ -54,6 +55,7 @@ export function EditCarDialog({ car, open, onOpenChange }: EditCarDialogProps) {
     purchase_price: car.purchase_price.toString(),
     purchase_date: car.purchase_date,
     supplier_id: car.supplier_id || '',
+    payment_account_id: car.payment_account_id || '',
   });
   
   const updateCar = useUpdateCar();
@@ -67,6 +69,7 @@ export function EditCarDialog({ car, open, onOpenChange }: EditCarDialogProps) {
           ...formData,
           purchase_price: parseFloat(formData.purchase_price),
           supplier_id: formData.supplier_id || null,
+          payment_account_id: formData.payment_account_id || null,
         }
       });
       toast.success('تم تحديث بيانات السيارة بنجاح');
@@ -147,23 +150,31 @@ export function EditCarDialog({ car, open, onOpenChange }: EditCarDialogProps) {
                 />
               </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="supplier">المورد</Label>
-              <Select 
-                value={formData.supplier_id} 
-                onValueChange={(value) => setFormData({ ...formData, supplier_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر المورد" />
-                </SelectTrigger>
-                <SelectContent>
-                  {suppliers.map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="supplier">المورد</Label>
+                <Select 
+                  value={formData.supplier_id} 
+                  onValueChange={(value) => setFormData({ ...formData, supplier_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر المورد" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suppliers.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <PaymentAccountSelector
+                value={formData.payment_account_id}
+                onChange={(v) => setFormData({ ...formData, payment_account_id: v })}
+                label="طريقة الدفع"
+                type="payment"
+              />
             </div>
           </div>
           <DialogFooter>
