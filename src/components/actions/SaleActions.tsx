@@ -24,6 +24,7 @@ import { Label } from '@/components/ui/label';
 import { useUpdateSale, useDeleteSale } from '@/hooks/useDatabase';
 import { useTaxSettings } from '@/hooks/useAccounting';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
+import { PaymentAccountSelector } from '@/components/forms/PaymentAccountSelector';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -54,6 +55,7 @@ export function EditSaleDialog({ sale, open, onOpenChange }: EditSaleDialogProps
     commission: (sale.commission || 0).toString(),
     other_expenses: (sale.other_expenses || 0).toString(),
     sale_date: sale.sale_date,
+    payment_account_id: sale.payment_account_id || '',
   });
   
   const updateSale = useUpdateSale();
@@ -77,6 +79,7 @@ export function EditSaleDialog({ sale, open, onOpenChange }: EditSaleDialogProps
           other_expenses: parseFloat(formData.other_expenses) || 0,
           sale_date: formData.sale_date,
           profit: profit,
+          payment_account_id: formData.payment_account_id || null,
         }
       });
       toast.success('تم تحديث بيانات البيع بنجاح');
@@ -152,14 +155,22 @@ export function EditSaleDialog({ sale, open, onOpenChange }: EditSaleDialogProps
                 />
               </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="sale_date">تاريخ البيع</Label>
-              <Input
-                id="sale_date"
-                type="date"
-                value={formData.sale_date}
-                onChange={(e) => setFormData({ ...formData, sale_date: e.target.value })}
-                required
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="sale_date">تاريخ البيع</Label>
+                <Input
+                  id="sale_date"
+                  type="date"
+                  value={formData.sale_date}
+                  onChange={(e) => setFormData({ ...formData, sale_date: e.target.value })}
+                  required
+                />
+              </div>
+              <PaymentAccountSelector
+                value={formData.payment_account_id}
+                onChange={(v) => setFormData({ ...formData, payment_account_id: v })}
+                label="طريقة الاستلام"
+                type="receipt"
               />
             </div>
             
