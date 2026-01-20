@@ -149,7 +149,8 @@ export async function fetchCars() {
     .from('cars')
     .select(`
       *,
-      supplier:suppliers(name)
+      supplier:suppliers(name),
+      payment_account:account_categories!cars_payment_account_id_fkey(id, name, code)
     `)
     .order('inventory_number', { ascending: true });
   
@@ -212,7 +213,8 @@ export async function fetchSales() {
       sale_items:sale_items(
         *,
         car:cars(*)
-      )
+      ),
+      payment_account:account_categories!sales_payment_account_id_fkey(id, name, code)
     `)
     .order('created_at', { ascending: false });
   

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ShoppingCart, Car, Calendar } from 'lucide-react';
+import { ShoppingCart, Car, Calendar, Wallet, Building2, CreditCard, Banknote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +38,16 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       taxAmount: Math.round(taxAmount * 100) / 100,
       totalWithTax: purchasePrice,
     };
+  };
+
+  // Get payment method label and icon
+  const getPaymentMethodInfo = (code?: string) => {
+    switch (code) {
+      case '1101': return { label: 'نقداً', icon: Banknote, color: 'text-green-600' };
+      case '1102': return { label: 'تحويل بنكي', icon: Building2, color: 'text-blue-600' };
+      case '1103': return { label: 'نقاط البيع', icon: CreditCard, color: 'text-purple-600' };
+      default: return { label: '-', icon: Wallet, color: 'text-muted-foreground' };
+    }
   };
 
   const filteredCars = useMemo(() => {
@@ -132,6 +142,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
               <TableHead className="text-right font-bold">المبلغ الأصلي</TableHead>
               <TableHead className="text-right font-bold">الضريبة ({taxRate}%)</TableHead>
               <TableHead className="text-right font-bold">الإجمالي مع الضريبة</TableHead>
+              <TableHead className="text-right font-bold">طريقة الدفع</TableHead>
               <TableHead className="text-right font-bold">تاريخ الشراء</TableHead>
               <TableHead className="text-right font-bold">الحالة</TableHead>
               <TableHead className="text-right font-bold">الإجراءات</TableHead>
@@ -140,6 +151,9 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
           <TableBody>
             {filteredCars.map((car) => {
               const taxDetails = calculateTaxDetails(Number(car.purchase_price));
+              const paymentAccount = (car as any).payment_account;
+              const paymentInfo = getPaymentMethodInfo(paymentAccount?.code);
+              const PaymentIcon = paymentInfo.icon;
               return (
               <TableRow key={car.id} className="hover:bg-muted/30 transition-colors">
                 <TableCell className="font-medium">{car.inventory_number}</TableCell>
@@ -155,6 +169,12 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                 <TableCell className="font-medium">{formatCurrency(taxDetails.baseAmount)} ريال</TableCell>
                 <TableCell className="text-orange-600 font-medium">{formatCurrency(taxDetails.taxAmount)} ريال</TableCell>
                 <TableCell className="font-semibold text-primary">{formatCurrency(taxDetails.totalWithTax)} ريال</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <PaymentIcon className={`w-4 h-4 ${paymentInfo.color}`} />
+                    <span className={paymentInfo.color}>{paymentInfo.label}</span>
+                  </div>
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
