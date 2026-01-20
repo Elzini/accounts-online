@@ -339,3 +339,95 @@ export function downloadBackupAsJson(backup: Backup): void {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+export async function restoreFromLocalFile(
+  companyId: string, 
+  file: File
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onload = async (e) => {
+      try {
+        const content = e.target?.result as string;
+        const backupData = JSON.parse(content) as BackupData;
+        
+        // Validate backup data structure
+        if (!backupData.customers && !backupData.cars && !backupData.sales) {
+          throw new Error('ملف النسخة الاحتياطية غير صالح');
+        }
+
+        // Delete existing data (in correct order to respect foreign keys)
+        await supabase.from('journal_entry_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('journal_entries').delete().eq('company_id', companyId);
+        await supabase.from('sale_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('sales').delete().eq('company_id', companyId);
+        await supabase.from('cars').delete().eq('company_id', companyId);
+        await supabase.from('purchase_batches').delete().eq('company_id', companyId);
+        await supabase.from('expenses').delete().eq('company_id', companyId);
+        await supabase.from('quotations').delete().eq('company_id', companyId);
+        await (supabase as any).from('installments').delete().eq('company_id', companyId);
+        await supabase.from('vouchers').delete().eq('company_id', companyId);
+        await supabase.from('car_transfers').delete().eq('company_id', companyId);
+        await supabase.from('customers').delete().eq('company_id', companyId);
+        await supabase.from('suppliers').delete().eq('company_id', companyId);
+        await supabase.from('partner_dealerships').delete().eq('company_id', companyId);
+        await supabase.from('account_categories').delete().eq('company_id', companyId);
+
+        // Restore data (in correct order)
+        if (backupData.account_categories?.length) {
+          await supabase.from('account_categories').insert(backupData.account_categories as any);
+        }
+        if (backupData.customers?.length) {
+          await supabase.from('customers').insert(backupData.customers as any);
+        }
+        if (backupData.suppliers?.length) {
+          await supabase.from('suppliers').insert(backupData.suppliers as any);
+        }
+        if (backupData.partner_dealerships?.length) {
+          await supabase.from('partner_dealerships').insert(backupData.partner_dealerships as any);
+        }
+        if (backupData.purchase_batches?.length) {
+          await supabase.from('purchase_batches').insert(backupData.purchase_batches as any);
+        }
+        if (backupData.cars?.length) {
+          await supabase.from('cars').insert(backupData.cars as any);
+        }
+        if (backupData.sales?.length) {
+          await supabase.from('sales').insert(backupData.sales as any);
+        }
+        if (backupData.sale_items?.length) {
+          await supabase.from('sale_items').insert(backupData.sale_items as any);
+        }
+        if (backupData.journal_entries?.length) {
+          await supabase.from('journal_entries').insert(backupData.journal_entries as any);
+        }
+        if (backupData.journal_entry_lines?.length) {
+          await supabase.from('journal_entry_lines').insert(backupData.journal_entry_lines as any);
+        }
+        if (backupData.expenses?.length) {
+          await supabase.from('expenses').insert(backupData.expenses as any);
+        }
+        if (backupData.quotations?.length) {
+          await supabase.from('quotations').insert(backupData.quotations as any);
+        }
+        if (backupData.installments?.length) {
+          await (supabase as any).from('installments').insert(backupData.installments);
+        }
+        if (backupData.vouchers?.length) {
+          await supabase.from('vouchers').insert(backupData.vouchers as any);
+        }
+        if (backupData.car_transfers?.length) {
+          await supabase.from('car_transfers').insert(backupData.car_transfers as any);
+        }
+
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    };
+    
+    reader.onerror = () => reject(new Error('فشل قراءة الملف'));
+    reader.readAsText(file);
+  });
+}
