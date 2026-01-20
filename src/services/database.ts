@@ -207,7 +207,11 @@ export async function fetchSales() {
     .select(`
       *,
       car:cars(*),
-      customer:customers(name)
+      customer:customers(name, phone, address, id_number, registration_number),
+      sale_items:sale_items(
+        *,
+        car:cars(*)
+      )
     `)
     .order('created_at', { ascending: false });
   
@@ -246,6 +250,25 @@ export async function updateSale(id: string, sale: SaleUpdate) {
 }
 
 export async function deleteSale(id: string, carId: string) {
+  // First check if there are sale_items for this sale (multi-car sale)
+  const { data: saleItems, error: fetchError } = await supabase
+    .from('sale_items')
+    .select('car_id')
+    .eq('sale_id', id);
+  
+  if (fetchError) throw fetchError;
+
+  // If there are sale_items, delete them first
+  if (saleItems && saleItems.length > 0) {
+    const { error: itemsError } = await supabase
+      .from('sale_items')
+      .delete()
+      .eq('sale_id', id);
+    
+    if (itemsError) throw itemsError;
+  }
+
+  // Delete the sale
   const { error } = await supabase
     .from('sales')
     .delete()
@@ -253,8 +276,16 @@ export async function deleteSale(id: string, carId: string) {
   
   if (error) throw error;
   
-  // Update car status back to available
-  await updateCarStatus(carId, 'available');
+  // Restore all cars to available status
+  if (saleItems && saleItems.length > 0) {
+    // Multi-car sale: restore all cars from sale_items
+    for (const item of saleItems) {
+      await updateCarStatus(item.car_id, 'available');
+    }
+  } else {
+    // Single car sale: restore the main car
+    await updateCarStatus(carId, 'available');
+  }
 }
 
 // Stats

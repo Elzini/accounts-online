@@ -27,9 +27,18 @@ import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
+type SaleItem = {
+  id: string;
+  car_id: string;
+  sale_price: number;
+  profit: number;
+  car?: Database['public']['Tables']['cars']['Row'] | null;
+};
+
 type Sale = Database['public']['Tables']['sales']['Row'] & {
   car?: Database['public']['Tables']['cars']['Row'] | null;
-  customer?: { name: string; phone?: string; address?: string; id_number?: string } | null;
+  customer?: { name: string; phone?: string; address?: string; id_number?: string; registration_number?: string } | null;
+  sale_items?: SaleItem[] | null;
 };
 
 interface EditSaleDialogProps {
@@ -241,6 +250,33 @@ export function SaleActions({ sale }: SaleActionsProps) {
     return parts.length > 0 ? parts.join('، ') : 'المملكة العربية السعودية';
   };
 
+  // Build invoice items from sale_items if available (multi-car sale), otherwise from main car
+  const buildInvoiceItems = () => {
+    if (sale.sale_items && sale.sale_items.length > 0) {
+      return sale.sale_items.map(item => {
+        const itemPrice = Number(item.sale_price);
+        const itemTaxAmount = itemPrice * (taxRate / (100 + taxRate));
+        const itemSubtotal = itemPrice - itemTaxAmount;
+        return {
+          description: `${item.car?.name || 'سيارة'} ${item.car?.model || ''} - ${item.car?.color || ''} - شاسيه: ${item.car?.chassis_number || ''}`,
+          quantity: 1,
+          unitPrice: itemSubtotal,
+          taxRate: taxRate,
+          total: itemPrice,
+        };
+      });
+    }
+    return [
+      {
+        description: `${sale.car?.name || 'سيارة'} ${sale.car?.model || ''} - ${sale.car?.color || ''} - شاسيه: ${sale.car?.chassis_number || ''}`,
+        quantity: 1,
+        unitPrice: subtotal,
+        taxRate: taxRate,
+        total: salePrice,
+      }
+    ];
+  };
+
   const invoiceData = {
     invoiceNumber: sale.sale_number,
     invoiceDate: sale.sale_date,
@@ -252,15 +288,8 @@ export function SaleActions({ sale }: SaleActionsProps) {
     buyerPhone: sale.customer?.phone,
     buyerAddress: sale.customer?.address,
     buyerIdNumber: sale.customer?.id_number,
-    items: [
-      {
-        description: `${sale.car?.name || 'سيارة'} ${sale.car?.model || ''} - ${sale.car?.color || ''} - شاسيه: ${sale.car?.chassis_number || ''}`,
-        quantity: 1,
-        unitPrice: subtotal,
-        taxRate: taxRate,
-        total: salePrice,
-      }
-    ],
+    buyerTaxNumber: sale.customer?.registration_number,
+    items: buildInvoiceItems(),
     subtotal,
     taxAmount,
     total: salePrice,
