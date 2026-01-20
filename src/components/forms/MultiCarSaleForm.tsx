@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { useCustomers, useCars, useAddMultiCarSale } from '@/hooks/useDatabase';
 import { useCarTransfers, getPendingTransferForCar, linkTransferToSale } from '@/hooks/useTransfers';
 import { CarTransfer } from '@/services/transfers';
+import { useAccounts } from '@/hooks/useAccounting';
+import { PaymentAccountSelector } from './PaymentAccountSelector';
 
 interface MultiCarSaleFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -28,6 +30,7 @@ interface SelectedCarItem {
 export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
   const { data: customers = [] } = useCustomers();
   const { data: allCars = [] } = useCars();
+  const { data: accounts = [] } = useAccounts();
   const addMultiCarSale = useAddMultiCarSale();
 
   // Include both available and transferred cars for sale
@@ -42,7 +45,18 @@ export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
     commission: '',
     other_expenses: '',
     sale_date: new Date().toISOString().split('T')[0],
+    payment_account_id: '',
   });
+
+  // Set default payment account (الصندوق الرئيسي)
+  useEffect(() => {
+    if (accounts.length > 0 && !formData.payment_account_id) {
+      const cashAccount = accounts.find(a => a.code === '1101');
+      if (cashAccount) {
+        setFormData(prev => ({ ...prev, payment_account_id: cashAccount.id }));
+      }
+    }
+  }, [accounts, formData.payment_account_id]);
 
   const [selectedCars, setSelectedCars] = useState<SelectedCarItem[]>([]);
   const [totalProfit, setTotalProfit] = useState(0);
@@ -125,6 +139,7 @@ export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
         commission: parseFloat(formData.commission) || 0,
         other_expenses: parseFloat(formData.other_expenses) || 0,
         sale_date: formData.sale_date,
+        payment_account_id: formData.payment_account_id || undefined,
         cars: selectedCars.map(car => ({
           car_id: car.car_id,
           sale_price: parseFloat(car.sale_price),
@@ -329,15 +344,23 @@ export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="sale_date">تاريخ البيع</Label>
-            <Input
-              id="sale_date"
-              type="date"
-              value={formData.sale_date}
-              onChange={(e) => setFormData({ ...formData, sale_date: e.target.value })}
-              className="h-12"
-              dir="ltr"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="sale_date">تاريخ البيع</Label>
+              <Input
+                id="sale_date"
+                type="date"
+                value={formData.sale_date}
+                onChange={(e) => setFormData({ ...formData, sale_date: e.target.value })}
+                className="h-12"
+                dir="ltr"
+              />
+            </div>
+            <PaymentAccountSelector
+              value={formData.payment_account_id}
+              onChange={(v) => setFormData({ ...formData, payment_account_id: v })}
+              label="طريقة الاستلام"
+              type="receipt"
             />
           </div>
 
