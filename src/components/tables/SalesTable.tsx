@@ -117,15 +117,31 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
           <TableBody>
           {filteredSales.map((sale) => {
               const taxDetails = calculateTaxDetails(Number(sale.sale_price));
+              // Check if this is a multi-car sale
+              const saleItems = (sale as any).sale_items || [];
+              const isMultiCar = saleItems.length > 1;
+              const carCount = saleItems.length > 0 ? saleItems.length : 1;
+              
               return (
               <TableRow key={sale.id} className="hover:bg-muted/30 transition-colors">
                 <TableCell className="font-medium">{sale.sale_number}</TableCell>
                 <TableCell className="font-semibold">{sale.customer?.name || '-'}</TableCell>
                 <TableCell>
-                  <div>
-                    <p className="font-medium">{sale.car?.name || '-'}</p>
-                    <p className="text-sm text-muted-foreground">{sale.car?.model} - {sale.car?.color}</p>
-                  </div>
+                  {isMultiCar ? (
+                    <div>
+                      <p className="font-medium text-primary">{carCount} سيارات</p>
+                      <div className="text-sm text-muted-foreground max-h-20 overflow-y-auto">
+                        {saleItems.map((item: any, idx: number) => (
+                          <p key={item.id || idx}>{item.car?.name || 'سيارة'} - {item.car?.model || ''}</p>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="font-medium">{sale.car?.name || '-'}</p>
+                      <p className="text-sm text-muted-foreground">{sale.car?.model} - {sale.car?.color}</p>
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className="font-medium">{formatCurrency(taxDetails.baseAmount)} ريال</TableCell>
                 <TableCell className="text-orange-600 font-medium">{formatCurrency(taxDetails.taxAmount)} ريال</TableCell>
