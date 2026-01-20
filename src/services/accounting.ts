@@ -490,3 +490,249 @@ export async function getGeneralLedger(
     closingBalance: runningBalance,
   };
 }
+
+// Balance Sheet - الميزانية العمومية
+export async function getBalanceSheet(companyId: string): Promise<{
+  assets: Array<{ account: AccountCategory; balance: number }>;
+  liabilities: Array<{ account: AccountCategory; balance: number }>;
+  equity: Array<{ account: AccountCategory; balance: number }>;
+  totalAssets: number;
+  totalLiabilities: number;
+  totalEquity: number;
+  retainedEarnings: number;
+}> {
+  const accounts = await fetchAccounts(companyId);
+  
+  const { data: lines, error } = await supabase
+    .from('journal_entry_lines')
+    .select(`
+      account_id,
+      debit,
+      credit,
+      journal_entry:journal_entries!inner(company_id, is_posted)
+    `)
+    .eq('journal_entry.company_id', companyId)
+    .eq('journal_entry.is_posted', true);
+  
+  if (error) throw error;
+
+  const balances = new Map<string, { debit: number; credit: number }>();
+  
+  (lines || []).forEach((line: any) => {
+    const current = balances.get(line.account_id) || { debit: 0, credit: 0 };
+    current.debit += Number(line.debit) || 0;
+    current.credit += Number(line.credit) || 0;
+    balances.set(line.account_id, current);
+  });
+
+  const calculateBalance = (account: AccountCategory) => {
+    const totals = balances.get(account.id) || { debit: 0, credit: 0 };
+    if (['liabilities', 'equity', 'revenue'].includes(account.type)) {
+      return totals.credit - totals.debit;
+    }
+    return totals.debit - totals.credit;
+  };
+
+  const assetAccounts = accounts.filter(a => a.type === 'assets');
+  const liabilityAccounts = accounts.filter(a => a.type === 'liabilities');
+  const equityAccounts = accounts.filter(a => a.type === 'equity');
+  const revenueAccounts = accounts.filter(a => a.type === 'revenue');
+  const expenseAccounts = accounts.filter(a => a.type === 'expenses');
+
+  const assets = assetAccounts.map(account => ({
+    account,
+    balance: calculateBalance(account),
+  })).filter(a => a.balance !== 0);
+
+  const liabilities = liabilityAccounts.map(account => ({
+    account,
+    balance: calculateBalance(account),
+  })).filter(l => l.balance !== 0);
+
+  const equity = equityAccounts.map(account => ({
+    account,
+    balance: calculateBalance(account),
+  })).filter(e => e.balance !== 0);
+
+  // Calculate retained earnings (net income)
+  const totalRevenue = revenueAccounts.reduce((sum, a) => sum + calculateBalance(a), 0);
+  const totalExpenses = expenseAccounts.reduce((sum, a) => sum + Math.abs(calculateBalance(a)), 0);
+  const retainedEarnings = totalRevenue - totalExpenses;
+
+  const totalAssets = assets.reduce((sum, a) => sum + a.balance, 0);
+  const totalLiabilities = liabilities.reduce((sum, l) => sum + l.balance, 0);
+  const totalEquity = equity.reduce((sum, e) => sum + e.balance, 0) + retainedEarnings;
+
+  return {
+    assets,
+    liabilities,
+    equity,
+    totalAssets,
+    totalLiabilities,
+    totalEquity,
+    retainedEarnings,
+  };
+}
+
+// Vouchers Report - كشف السندات
+export async function getVouchersReport(
+  companyId: string,
+  startDate?: string,
+  endDate?: string,
+  voucherType?: 'receipt' | 'payment'
+): Promise<Array<{
+  id: string;
+  voucher_number: number;
+  voucher_date: string;
+  voucher_type: string;
+  description: string;
+  amount: number;
+  payment_method: string | null;
+  related_to: string | null;
+}>> {
+  let query = supabase
+    .from('vouchers')
+    .select('*')
+    .eq('company_id', companyId)
+    .order('voucher_date', { ascending: false });
+
+  if (startDate) {
+    query = query.gte('voucher_date', startDate);
+  }
+  if (endDate) {
+    query = query.lte('voucher_date', endDate);
+  }
+  if (voucherType) {
+    query = query.eq('voucher_type', voucherType);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  return data || [];
+}
+
+// Journal Entry Details Report - كشف القيود
+export async function getJournalEntriesReport(
+  companyId: string,
+  startDate?: string,
+  endDate?: string,
+  referenceType?: string
+): Promise<Array<{
+  id: string;
+  entry_number: number;
+  entry_date: string;
+  description: string;
+  reference_type: string | null;
+  total_debit: number;
+  total_credit: number;
+  lines: JournalEntryLine[];
+}>> {
+  let query = supabase
+    .from('journal_entries')
+    .select(`
+      *,
+      lines:journal_entry_lines(
+        *,
+        account:account_categories(*)
+      )
+    `)
+    .eq('company_id', companyId)
+    .eq('is_posted', true)
+    .order('entry_date', { ascending: false });
+
+  if (startDate) {
+    query = query.gte('entry_date', startDate);
+  }
+  if (endDate) {
+    query = query.lte('entry_date', endDate);
+  }
+  if (referenceType) {
+    query = query.eq('reference_type', referenceType);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  return (data || []) as any;
+}
+
+// Comprehensive Trial Balance - ميزان المراجعة الشامل
+export async function getComprehensiveTrialBalance(companyId: string): Promise<{
+  accounts: Array<{ 
+    account: AccountCategory; 
+    openingDebit: number;
+    openingCredit: number;
+    periodDebit: number;
+    periodCredit: number;
+    closingDebit: number;
+    closingCredit: number;
+  }>;
+  totals: {
+    openingDebit: number;
+    openingCredit: number;
+    periodDebit: number;
+    periodCredit: number;
+    closingDebit: number;
+    closingCredit: number;
+  };
+}> {
+  const accounts = await fetchAccounts(companyId);
+  
+  const { data: lines, error } = await supabase
+    .from('journal_entry_lines')
+    .select(`
+      account_id,
+      debit,
+      credit,
+      journal_entry:journal_entries!inner(company_id, is_posted)
+    `)
+    .eq('journal_entry.company_id', companyId)
+    .eq('journal_entry.is_posted', true);
+  
+  if (error) throw error;
+
+  const balances = new Map<string, { debit: number; credit: number }>();
+  
+  (lines || []).forEach((line: any) => {
+    const current = balances.get(line.account_id) || { debit: 0, credit: 0 };
+    current.debit += Number(line.debit) || 0;
+    current.credit += Number(line.credit) || 0;
+    balances.set(line.account_id, current);
+  });
+
+  const trialAccounts = accounts
+    .map(account => {
+      const totals = balances.get(account.id) || { debit: 0, credit: 0 };
+      const netBalance = totals.debit - totals.credit;
+      
+      return {
+        account,
+        openingDebit: 0,
+        openingCredit: 0,
+        periodDebit: totals.debit,
+        periodCredit: totals.credit,
+        closingDebit: netBalance > 0 ? netBalance : 0,
+        closingCredit: netBalance < 0 ? Math.abs(netBalance) : 0,
+      };
+    })
+    .filter(item => item.periodDebit > 0 || item.periodCredit > 0);
+
+  const totals = trialAccounts.reduce((acc, item) => ({
+    openingDebit: acc.openingDebit + item.openingDebit,
+    openingCredit: acc.openingCredit + item.openingCredit,
+    periodDebit: acc.periodDebit + item.periodDebit,
+    periodCredit: acc.periodCredit + item.periodCredit,
+    closingDebit: acc.closingDebit + item.closingDebit,
+    closingCredit: acc.closingCredit + item.closingCredit,
+  }), {
+    openingDebit: 0,
+    openingCredit: 0,
+    periodDebit: 0,
+    periodCredit: 0,
+    closingDebit: 0,
+    closingCredit: 0,
+  });
+
+  return { accounts: trialAccounts, totals };
+}

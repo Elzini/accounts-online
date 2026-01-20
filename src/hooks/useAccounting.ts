@@ -16,6 +16,10 @@ import {
   getTrialBalance,
   getIncomeStatement,
   getGeneralLedger,
+  getBalanceSheet,
+  getVouchersReport,
+  getJournalEntriesReport,
+  getComprehensiveTrialBalance,
   TaxSettings,
   AccountCategory,
   JournalEntry,
@@ -211,5 +215,49 @@ export function useGeneralLedger(accountId: string | null, startDate?: string, e
     queryKey: ['general-ledger', companyId, accountId, startDate, endDate],
     queryFn: () => companyId && accountId ? getGeneralLedger(companyId, accountId, startDate, endDate) : null,
     enabled: !!companyId && !!accountId,
+  });
+}
+
+// Balance Sheet - الميزانية العمومية
+export function useBalanceSheet() {
+  const { companyId } = useCompany();
+  
+  return useQuery({
+    queryKey: ['balance-sheet', companyId],
+    queryFn: () => companyId ? getBalanceSheet(companyId) : null,
+    enabled: !!companyId,
+  });
+}
+
+// Vouchers Report - كشف السندات
+export function useVouchersReport(startDate?: string, endDate?: string, voucherType?: 'receipt' | 'payment') {
+  const { companyId } = useCompany();
+  
+  return useQuery({
+    queryKey: ['vouchers-report', companyId, startDate, endDate, voucherType],
+    queryFn: () => companyId ? getVouchersReport(companyId, startDate, endDate, voucherType) : [],
+    enabled: !!companyId,
+  });
+}
+
+// Journal Entries Report - كشف القيود
+export function useJournalEntriesReport(startDate?: string, endDate?: string, referenceType?: string) {
+  const { companyId } = useCompany();
+  
+  return useQuery({
+    queryKey: ['journal-entries-report', companyId, startDate, endDate, referenceType],
+    queryFn: () => companyId ? getJournalEntriesReport(companyId, startDate, endDate, referenceType) : [],
+    enabled: !!companyId,
+  });
+}
+
+// Comprehensive Trial Balance - ميزان المراجعة الشامل
+export function useComprehensiveTrialBalance() {
+  const { companyId } = useCompany();
+  
+  return useQuery({
+    queryKey: ['comprehensive-trial-balance', companyId],
+    queryFn: () => companyId ? getComprehensiveTrialBalance(companyId) : null,
+    enabled: !!companyId,
   });
 }
