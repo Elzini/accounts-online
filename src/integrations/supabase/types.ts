@@ -376,6 +376,7 @@ export type Database = {
           updated_at: string
           vat_payable_account_id: string | null
           vat_recoverable_account_id: string | null
+          vat_settlement_account_id: string | null
         }
         Insert: {
           auto_expense_entries?: boolean
@@ -397,6 +398,7 @@ export type Database = {
           updated_at?: string
           vat_payable_account_id?: string | null
           vat_recoverable_account_id?: string | null
+          vat_settlement_account_id?: string | null
         }
         Update: {
           auto_expense_entries?: boolean
@@ -418,6 +420,7 @@ export type Database = {
           updated_at?: string
           vat_payable_account_id?: string | null
           vat_recoverable_account_id?: string | null
+          vat_settlement_account_id?: string | null
         }
         Relationships: [
           {
@@ -500,6 +503,13 @@ export type Database = {
           {
             foreignKeyName: "company_accounting_settings_vat_recoverable_account_id_fkey"
             columns: ["vat_recoverable_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_accounting_settings_vat_settlement_account_id_fkey"
+            columns: ["vat_settlement_account_id"]
             isOneToOne: false
             referencedRelation: "account_categories"
             referencedColumns: ["id"]

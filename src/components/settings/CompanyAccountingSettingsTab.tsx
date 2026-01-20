@@ -35,9 +35,10 @@ interface AccountingSettings {
   cogs_account_id: string | null;
   inventory_account_id: string | null;
   vat_payable_account_id: string | null;
+  vat_recoverable_account_id: string | null;
+  vat_settlement_account_id: string | null;
   purchase_cash_account_id: string | null;
   purchase_inventory_account_id: string | null;
-  vat_recoverable_account_id: string | null;
   suppliers_account_id: string | null;
   expense_cash_account_id: string | null;
   expense_account_id: string | null;
@@ -53,9 +54,10 @@ const defaultSettings: Omit<AccountingSettings, 'company_id'> = {
   cogs_account_id: null,
   inventory_account_id: null,
   vat_payable_account_id: null,
+  vat_recoverable_account_id: null,
+  vat_settlement_account_id: null,
   purchase_cash_account_id: null,
   purchase_inventory_account_id: null,
-  vat_recoverable_account_id: null,
   suppliers_account_id: null,
   expense_cash_account_id: null,
   expense_account_id: null,
@@ -122,6 +124,14 @@ const vatAccountMappings = [
     types: ['liabilities'],
     suggestedCode: '2202',
     suggestedName: 'ضريبة القيمة المضافة المستردة',
+  },
+  { 
+    label: 'حساب تسوية ضريبة القيمة المضافة',
+    description: 'VAT Settlement - تسوية الضريبة مع هيئة الزكاة',
+    key: 'vat_settlement_account_id',
+    types: ['liabilities'],
+    suggestedCode: '2203',
+    suggestedName: 'حساب تسوية ضريبة القيمة المضافة',
   },
 ];
 
@@ -208,9 +218,10 @@ export function CompanyAccountingSettingsTab() {
             cogs_account_id: settings.cogs_account_id,
             inventory_account_id: settings.inventory_account_id,
             vat_payable_account_id: settings.vat_payable_account_id,
+            vat_recoverable_account_id: settings.vat_recoverable_account_id,
+            vat_settlement_account_id: settings.vat_settlement_account_id,
             purchase_cash_account_id: settings.purchase_cash_account_id,
             purchase_inventory_account_id: settings.purchase_inventory_account_id,
-            vat_recoverable_account_id: settings.vat_recoverable_account_id,
             suppliers_account_id: settings.suppliers_account_id,
             expense_cash_account_id: settings.expense_cash_account_id,
             expense_account_id: settings.expense_account_id,
@@ -232,9 +243,10 @@ export function CompanyAccountingSettingsTab() {
             cogs_account_id: settings.cogs_account_id,
             inventory_account_id: settings.inventory_account_id,
             vat_payable_account_id: settings.vat_payable_account_id,
+            vat_recoverable_account_id: settings.vat_recoverable_account_id,
+            vat_settlement_account_id: settings.vat_settlement_account_id,
             purchase_cash_account_id: settings.purchase_cash_account_id,
             purchase_inventory_account_id: settings.purchase_inventory_account_id,
-            vat_recoverable_account_id: settings.vat_recoverable_account_id,
             suppliers_account_id: settings.suppliers_account_id,
             expense_cash_account_id: settings.expense_cash_account_id,
             expense_account_id: settings.expense_account_id,
