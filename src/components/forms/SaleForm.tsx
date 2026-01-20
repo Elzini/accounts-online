@@ -11,9 +11,10 @@ import { useCustomers, useCars, useAddSale } from '@/hooks/useDatabase';
 import { getPendingTransferForCar, linkTransferToSale } from '@/hooks/useTransfers';
 import { CarTransfer } from '@/services/transfers';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTaxSettings } from '@/hooks/useAccounting';
+import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import { useCompany } from '@/contexts/CompanyContext';
+import { PaymentAccountSelector } from './PaymentAccountSelector';
 
 interface SaleFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -23,6 +24,7 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
   const { data: customers = [] } = useCustomers();
   const { data: allCars = [] } = useCars();
   const { data: taxSettings } = useTaxSettings();
+  const { data: accounts = [] } = useAccounts();
   const { company } = useCompany();
   const addSale = useAddSale();
   const queryClient = useQueryClient();
@@ -38,6 +40,7 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
     commission: '',
     other_expenses: '',
     sale_date: new Date().toISOString().split('T')[0],
+    payment_account_id: '',
   });
 
   const [selectedCar, setSelectedCar] = useState<typeof allCars[0] | null>(null);
@@ -45,6 +48,16 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
   const [profit, setProfit] = useState(0);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [savedSaleData, setSavedSaleData] = useState<any>(null);
+
+  // Set default payment account (الصندوق الرئيسي)
+  useEffect(() => {
+    if (accounts.length > 0 && !formData.payment_account_id) {
+      const cashAccount = accounts.find(a => a.code === '1101');
+      if (cashAccount) {
+        setFormData(prev => ({ ...prev, payment_account_id: cashAccount.id }));
+      }
+    }
+  }, [accounts, formData.payment_account_id]);
 
   useEffect(() => {
     const salePrice = parseFloat(formData.sale_price) || 0;
@@ -113,6 +126,7 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
         other_expenses: parseFloat(formData.other_expenses) || 0,
         profit: profit,
         sale_date: formData.sale_date,
+        payment_account_id: formData.payment_account_id || null,
       });
 
       // Store sale data for invoice
@@ -358,15 +372,23 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="sale_date">تاريخ البيع</Label>
-              <Input
-                id="sale_date"
-                type="date"
-                value={formData.sale_date}
-                onChange={(e) => setFormData({ ...formData, sale_date: e.target.value })}
-                className="h-12"
-                dir="ltr"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="sale_date">تاريخ البيع</Label>
+                <Input
+                  id="sale_date"
+                  type="date"
+                  value={formData.sale_date}
+                  onChange={(e) => setFormData({ ...formData, sale_date: e.target.value })}
+                  className="h-12"
+                  dir="ltr"
+                />
+              </div>
+              <PaymentAccountSelector
+                value={formData.payment_account_id}
+                onChange={(v) => setFormData({ ...formData, payment_account_id: v })}
+                label="طريقة الاستلام"
+                type="receipt"
               />
             </div>
 

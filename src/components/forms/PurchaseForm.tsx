@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ArrowRight, Save, ShoppingCart, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
 import { useSuppliers, useAddCar } from '@/hooks/useDatabase';
-import { useTaxSettings } from '@/hooks/useAccounting';
+import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import { useCompany } from '@/contexts/CompanyContext';
+import { PaymentAccountSelector } from './PaymentAccountSelector';
 
 interface PurchaseFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -18,6 +19,7 @@ interface PurchaseFormProps {
 export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
   const { data: suppliers = [] } = useSuppliers();
   const { data: taxSettings } = useTaxSettings();
+  const { data: accounts = [] } = useAccounts();
   const { company } = useCompany();
   const addCar = useAddCar();
 
@@ -29,7 +31,18 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
     color: '',
     purchase_price: '',
     purchase_date: new Date().toISOString().split('T')[0],
+    payment_account_id: '',
   });
+
+  // Set default payment account (الصندوق الرئيسي)
+  useEffect(() => {
+    if (accounts.length > 0 && !formData.payment_account_id) {
+      const cashAccount = accounts.find(a => a.code === '1101');
+      if (cashAccount) {
+        setFormData(prev => ({ ...prev, payment_account_id: cashAccount.id }));
+      }
+    }
+  }, [accounts, formData.payment_account_id]);
 
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [savedCarData, setSavedCarData] = useState<any>(null);
@@ -77,6 +90,7 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
         color: formData.color || null,
         purchase_price: parseFloat(formData.purchase_price),
         purchase_date: formData.purchase_date,
+        payment_account_id: formData.payment_account_id || null,
       });
       
       // Store saved data for invoice
@@ -238,15 +252,23 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="purchase_date">تاريخ الشراء</Label>
-              <Input
-                id="purchase_date"
-                type="date"
-                value={formData.purchase_date}
-                onChange={(e) => setFormData({ ...formData, purchase_date: e.target.value })}
-                className="h-12"
-                dir="ltr"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="purchase_date">تاريخ الشراء</Label>
+                <Input
+                  id="purchase_date"
+                  type="date"
+                  value={formData.purchase_date}
+                  onChange={(e) => setFormData({ ...formData, purchase_date: e.target.value })}
+                  className="h-12"
+                  dir="ltr"
+                />
+              </div>
+              <PaymentAccountSelector
+                value={formData.payment_account_id}
+                onChange={(v) => setFormData({ ...formData, payment_account_id: v })}
+                label="طريقة الدفع"
+                type="payment"
               />
             </div>
 
