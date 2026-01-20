@@ -56,6 +56,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import logo from '@/assets/logo.png';
 import { LoginSettingsAdmin } from '@/components/LoginSettingsAdmin';
+import { AllUsersManagement } from '@/components/super-admin/AllUsersManagement';
 
 interface Company {
   id: string;
@@ -312,14 +313,18 @@ export default function Companies() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="companies" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
             <TabsTrigger value="companies" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               <span>الشركات</span>
             </TabsTrigger>
+            <TabsTrigger value="all-users" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span>المستخدمين</span>
+            </TabsTrigger>
             <TabsTrigger value="login-settings" className="flex items-center gap-2">
               <LogIn className="w-4 h-4" />
-              <span>إعدادات شاشة الدخول</span>
+              <span>شاشة الدخول</span>
             </TabsTrigger>
           </TabsList>
 
@@ -496,6 +501,10 @@ export default function Companies() {
               </div>
             )}
           </div>
+          </TabsContent>
+
+          <TabsContent value="all-users">
+            <AllUsersManagement />
           </TabsContent>
 
           <TabsContent value="login-settings">
