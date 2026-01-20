@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn, Image, Lock, Eye, EyeOff, Building2, X } from 'lucide-react';
+import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn, Image, Lock, Eye, EyeOff, Building2, X, BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,7 @@ import { useCompanySettings, useUpdateCompanySettings, useUploadCompanyLogo } fr
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 import { defaultSettings, uploadLoginLogo } from '@/services/settings';
+import { CompanyAccountingSettingsTab } from '@/components/settings/CompanyAccountingSettingsTab';
 
 interface AppSettingsProps {
   setActivePage: (page: ActivePage) => void;
@@ -402,10 +403,14 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
       </div>
 
       <Tabs defaultValue="company" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid">
           <TabsTrigger value="company" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             <span className="hidden sm:inline">شركتي</span>
+          </TabsTrigger>
+          <TabsTrigger value="accounting" className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            <span className="hidden sm:inline">القيود</span>
           </TabsTrigger>
           <TabsTrigger value="branding" className="flex items-center gap-2">
             <Palette className="w-4 h-4" />
@@ -563,6 +568,11 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Accounting Settings Tab */}
+        <TabsContent value="accounting" className="mt-6">
+          <CompanyAccountingSettingsTab />
         </TabsContent>
 
         {/* Branding Tab */}
