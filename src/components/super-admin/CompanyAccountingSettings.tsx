@@ -43,6 +43,7 @@ interface AccountingSettings {
   auto_journal_entries_enabled: boolean;
   auto_sales_entries: boolean;
   auto_purchase_entries: boolean;
+  auto_expense_entries: boolean;
   sales_cash_account_id: string | null;
   sales_revenue_account_id: string | null;
   cogs_account_id: string | null;
@@ -52,12 +53,15 @@ interface AccountingSettings {
   purchase_inventory_account_id: string | null;
   vat_recoverable_account_id: string | null;
   suppliers_account_id: string | null;
+  expense_cash_account_id: string | null;
+  expense_account_id: string | null;
 }
 
 const defaultSettings: Omit<AccountingSettings, 'company_id'> = {
   auto_journal_entries_enabled: true,
   auto_sales_entries: true,
   auto_purchase_entries: true,
+  auto_expense_entries: true,
   sales_cash_account_id: null,
   sales_revenue_account_id: null,
   cogs_account_id: null,
@@ -67,6 +71,8 @@ const defaultSettings: Omit<AccountingSettings, 'company_id'> = {
   purchase_inventory_account_id: null,
   vat_recoverable_account_id: null,
   suppliers_account_id: null,
+  expense_cash_account_id: null,
+  expense_account_id: null,
 };
 
 // Account mapping configuration with ZATCA compliant suggested accounts for car dealerships
@@ -126,6 +132,24 @@ const accountMappings = [
     types: ['liabilities'],
     suggestedCode: '2201',
     suggestedName: 'ضريبة القيمة المضافة المستحقة',
+  },
+];
+
+// Expense account mappings
+const expenseAccountMappings = [
+  { 
+    label: 'حساب الصندوق (المصروفات)',
+    key: 'expense_cash_account_id',
+    types: ['assets'],
+    suggestedCode: '1101',
+    suggestedName: 'الصندوق الرئيسي',
+  },
+  { 
+    label: 'حساب المصروفات الافتراضي',
+    key: 'expense_account_id',
+    types: ['expenses'],
+    suggestedCode: '5405',
+    suggestedName: 'مصروفات متنوعة',
   },
 ];
 
@@ -192,6 +216,7 @@ export function CompanyAccountingSettings({
             auto_journal_entries_enabled: settings.auto_journal_entries_enabled,
             auto_sales_entries: settings.auto_sales_entries,
             auto_purchase_entries: settings.auto_purchase_entries,
+            auto_expense_entries: settings.auto_expense_entries,
             sales_cash_account_id: settings.sales_cash_account_id,
             sales_revenue_account_id: settings.sales_revenue_account_id,
             cogs_account_id: settings.cogs_account_id,
@@ -201,6 +226,8 @@ export function CompanyAccountingSettings({
             purchase_inventory_account_id: settings.purchase_inventory_account_id,
             vat_recoverable_account_id: settings.vat_recoverable_account_id,
             suppliers_account_id: settings.suppliers_account_id,
+            expense_cash_account_id: settings.expense_cash_account_id,
+            expense_account_id: settings.expense_account_id,
           })
           .eq('id', existingSettings.id);
         
@@ -213,6 +240,7 @@ export function CompanyAccountingSettings({
             auto_journal_entries_enabled: settings.auto_journal_entries_enabled,
             auto_sales_entries: settings.auto_sales_entries,
             auto_purchase_entries: settings.auto_purchase_entries,
+            auto_expense_entries: settings.auto_expense_entries,
             sales_cash_account_id: settings.sales_cash_account_id,
             sales_revenue_account_id: settings.sales_revenue_account_id,
             cogs_account_id: settings.cogs_account_id,
@@ -222,6 +250,8 @@ export function CompanyAccountingSettings({
             purchase_inventory_account_id: settings.purchase_inventory_account_id,
             vat_recoverable_account_id: settings.vat_recoverable_account_id,
             suppliers_account_id: settings.suppliers_account_id,
+            expense_cash_account_id: settings.expense_cash_account_id,
+            expense_account_id: settings.expense_account_id,
           });
         
         if (error) throw error;
@@ -416,6 +446,40 @@ export function CompanyAccountingSettings({
                 ))}
               </div>
 
+              {/* Expense Accounts Section */}
+              <div className="mt-4">
+                <h4 className="text-sm font-semibold mb-3 text-orange-600">حسابات المصروفات</h4>
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="grid grid-cols-2 bg-muted/50 border-b">
+                    <div className="p-3 text-center font-semibold border-l">الوصف</div>
+                    <div className="p-3 text-center font-semibold text-orange-600">الحساب</div>
+                  </div>
+                  {expenseAccountMappings.map((mapping, index) => (
+                    <div 
+                      key={mapping.label} 
+                      className={`grid grid-cols-2 ${index !== expenseAccountMappings.length - 1 ? 'border-b' : ''}`}
+                    >
+                      <div className="p-3 bg-muted/20 border-l flex items-center">
+                        <div>
+                          <span className="text-sm font-medium block">{mapping.label}</span>
+                          <span className="text-xs text-muted-foreground">{mapping.suggestedCode} - {mapping.suggestedName}</span>
+                        </div>
+                      </div>
+                      <div className="p-2">
+                        {renderAccountSelect(
+                          formData[mapping.key as keyof AccountingSettings] as string | null,
+                          (v) => setFormData({ ...formData, [mapping.key]: v }),
+                          mapping.types,
+                          !formData.auto_expense_entries,
+                          mapping.suggestedCode,
+                          mapping.suggestedName
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {accounts.length === 0 && (
                 <div className="text-center p-4 bg-warning/10 rounded-lg border border-warning/20">
                   <p className="text-warning font-medium">لا توجد حسابات محاسبية لهذه الشركة</p>
@@ -488,10 +552,30 @@ export function CompanyAccountingSettings({
                   />
                 </div>
 
+                {/* Expense Toggle */}
+                <div className={`flex items-center justify-between p-4 rounded-lg border ${!formData.auto_journal_entries_enabled ? 'opacity-50' : ''}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                      <span className="text-orange-500 text-lg">📋</span>
+                    </div>
+                    <div>
+                      <Label className="font-medium">قيود المصروفات</Label>
+                      <p className="text-sm text-muted-foreground">توليد قيد محاسبي تلقائي عند كل عملية صرف</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={formData.auto_expense_entries}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, auto_expense_entries: checked })
+                    }
+                    disabled={!formData.auto_journal_entries_enabled}
+                  />
+                </div>
+
                 {/* Status Summary */}
                 <div className="mt-6 p-4 rounded-lg bg-muted/50 border">
                   <h4 className="font-medium mb-3">ملخص الحالة</h4>
-                  <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="grid grid-cols-4 gap-4 text-center">
                     <div className={`p-3 rounded-lg ${formData.auto_journal_entries_enabled ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                       <div className="text-lg font-bold">{formData.auto_journal_entries_enabled ? '✓' : '✗'}</div>
                       <div className="text-xs">النظام العام</div>
@@ -503,6 +587,10 @@ export function CompanyAccountingSettings({
                     <div className={`p-3 rounded-lg ${formData.auto_purchase_entries && formData.auto_journal_entries_enabled ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                       <div className="text-lg font-bold">{formData.auto_purchase_entries && formData.auto_journal_entries_enabled ? '✓' : '✗'}</div>
                       <div className="text-xs">قيود المشتريات</div>
+                    </div>
+                    <div className={`p-3 rounded-lg ${formData.auto_expense_entries && formData.auto_journal_entries_enabled ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                      <div className="text-lg font-bold">{formData.auto_expense_entries && formData.auto_journal_entries_enabled ? '✓' : '✗'}</div>
+                      <div className="text-xs">قيود المصروفات</div>
                     </div>
                   </div>
                 </div>

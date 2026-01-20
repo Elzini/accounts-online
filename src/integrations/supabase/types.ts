@@ -347,12 +347,15 @@ export type Database = {
       }
       company_accounting_settings: {
         Row: {
+          auto_expense_entries: boolean
           auto_journal_entries_enabled: boolean
           auto_purchase_entries: boolean
           auto_sales_entries: boolean
           cogs_account_id: string | null
           company_id: string
           created_at: string
+          expense_account_id: string | null
+          expense_cash_account_id: string | null
           id: string
           inventory_account_id: string | null
           purchase_cash_account_id: string | null
@@ -365,12 +368,15 @@ export type Database = {
           vat_recoverable_account_id: string | null
         }
         Insert: {
+          auto_expense_entries?: boolean
           auto_journal_entries_enabled?: boolean
           auto_purchase_entries?: boolean
           auto_sales_entries?: boolean
           cogs_account_id?: string | null
           company_id: string
           created_at?: string
+          expense_account_id?: string | null
+          expense_cash_account_id?: string | null
           id?: string
           inventory_account_id?: string | null
           purchase_cash_account_id?: string | null
@@ -383,12 +389,15 @@ export type Database = {
           vat_recoverable_account_id?: string | null
         }
         Update: {
+          auto_expense_entries?: boolean
           auto_journal_entries_enabled?: boolean
           auto_purchase_entries?: boolean
           auto_sales_entries?: boolean
           cogs_account_id?: string | null
           company_id?: string
           created_at?: string
+          expense_account_id?: string | null
+          expense_cash_account_id?: string | null
           id?: string
           inventory_account_id?: string | null
           purchase_cash_account_id?: string | null
@@ -413,6 +422,20 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: true
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_accounting_settings_expense_account_id_fkey"
+            columns: ["expense_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_accounting_settings_expense_cash_account_id_fkey"
+            columns: ["expense_cash_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
             referencedColumns: ["id"]
           },
           {
