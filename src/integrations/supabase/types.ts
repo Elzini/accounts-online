@@ -345,6 +345,134 @@ export type Database = {
         }
         Relationships: []
       }
+      company_accounting_settings: {
+        Row: {
+          auto_journal_entries_enabled: boolean
+          auto_purchase_entries: boolean
+          auto_sales_entries: boolean
+          cogs_account_id: string | null
+          company_id: string
+          created_at: string
+          id: string
+          inventory_account_id: string | null
+          purchase_cash_account_id: string | null
+          purchase_inventory_account_id: string | null
+          sales_cash_account_id: string | null
+          sales_revenue_account_id: string | null
+          suppliers_account_id: string | null
+          updated_at: string
+          vat_payable_account_id: string | null
+          vat_recoverable_account_id: string | null
+        }
+        Insert: {
+          auto_journal_entries_enabled?: boolean
+          auto_purchase_entries?: boolean
+          auto_sales_entries?: boolean
+          cogs_account_id?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          inventory_account_id?: string | null
+          purchase_cash_account_id?: string | null
+          purchase_inventory_account_id?: string | null
+          sales_cash_account_id?: string | null
+          sales_revenue_account_id?: string | null
+          suppliers_account_id?: string | null
+          updated_at?: string
+          vat_payable_account_id?: string | null
+          vat_recoverable_account_id?: string | null
+        }
+        Update: {
+          auto_journal_entries_enabled?: boolean
+          auto_purchase_entries?: boolean
+          auto_sales_entries?: boolean
+          cogs_account_id?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          inventory_account_id?: string | null
+          purchase_cash_account_id?: string | null
+          purchase_inventory_account_id?: string | null
+          sales_cash_account_id?: string | null
+          sales_revenue_account_id?: string | null
+          suppliers_account_id?: string | null
+          updated_at?: string
+          vat_payable_account_id?: string | null
+          vat_recoverable_account_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_accounting_settings_cogs_account_id_fkey"
+            columns: ["cogs_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_accounting_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_accounting_settings_inventory_account_id_fkey"
+            columns: ["inventory_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_accounting_settings_purchase_cash_account_id_fkey"
+            columns: ["purchase_cash_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_accounting_settings_purchase_inventory_account_id_fkey"
+            columns: ["purchase_inventory_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_accounting_settings_sales_cash_account_id_fkey"
+            columns: ["sales_cash_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_accounting_settings_sales_revenue_account_id_fkey"
+            columns: ["sales_revenue_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_accounting_settings_suppliers_account_id_fkey"
+            columns: ["suppliers_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_accounting_settings_vat_payable_account_id_fkey"
+            columns: ["vat_payable_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_accounting_settings_vat_recoverable_account_id_fkey"
+            columns: ["vat_recoverable_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null

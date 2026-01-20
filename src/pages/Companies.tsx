@@ -16,7 +16,8 @@ import {
   LogOut,
   ArrowRight,
   Settings,
-  LogIn
+  LogIn,
+  BookOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +58,7 @@ import { useNavigate } from 'react-router-dom';
 import logo from '@/assets/logo.png';
 import { LoginSettingsAdmin } from '@/components/LoginSettingsAdmin';
 import { AllUsersManagement } from '@/components/super-admin/AllUsersManagement';
+import { CompanyAccountingSettings } from '@/components/super-admin/CompanyAccountingSettings';
 
 interface Company {
   id: string;
@@ -90,6 +92,7 @@ export default function Companies() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [accountingSettingsOpen, setAccountingSettingsOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   
   const [formData, setFormData] = useState({
@@ -460,18 +463,32 @@ export default function Companies() {
                       </TableCell>
                       <TableCell>{formatDate(company.created_at)}</TableCell>
                       <TableCell>
-                        <div className="flex gap-2 justify-center">
+                        <div className="flex gap-1 justify-center">
                           <Button 
                             size="sm" 
                             variant="outline"
                             onClick={() => openDetailsDialog(company)}
+                            title="عرض التفاصيل"
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
                           <Button 
                             size="sm" 
                             variant="outline"
+                            onClick={() => {
+                              setSelectedCompany(company);
+                              setAccountingSettingsOpen(true);
+                            }}
+                            title="إعدادات القيود"
+                            className="text-primary hover:text-primary"
+                          >
+                            <BookOpen className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
                             onClick={() => openEditDialog(company)}
+                            title="تعديل"
                           >
                             <Pencil className="w-4 h-4" />
                           </Button>
@@ -483,6 +500,7 @@ export default function Companies() {
                               setSelectedCompany(company);
                               setDeleteDialogOpen(true);
                             }}
+                            title="حذف"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -745,6 +763,16 @@ export default function Companies() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Company Accounting Settings Dialog */}
+      {selectedCompany && (
+        <CompanyAccountingSettings
+          companyId={selectedCompany.id}
+          companyName={selectedCompany.name}
+          open={accountingSettingsOpen}
+          onOpenChange={setAccountingSettingsOpen}
+        />
+      )}
     </div>
   );
 }
