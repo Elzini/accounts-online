@@ -18,7 +18,8 @@ import {
   Settings,
   LogIn,
   BookOpen,
-  FileBarChart
+  FileBarChart,
+  Cog
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +62,7 @@ import { LoginSettingsAdmin } from '@/components/LoginSettingsAdmin';
 import { AllUsersManagement } from '@/components/super-admin/AllUsersManagement';
 import { CompanyAccountingSettings } from '@/components/super-admin/CompanyAccountingSettings';
 import { CompaniesReport } from '@/components/super-admin/CompaniesReport';
+import { DefaultCompanySettings } from '@/components/super-admin/DefaultCompanySettings';
 
 interface Company {
   id: string;
@@ -318,10 +320,14 @@ export default function Companies() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="companies" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="companies" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               <span>الشركات</span>
+            </TabsTrigger>
+            <TabsTrigger value="default-settings" className="flex items-center gap-2">
+              <Cog className="w-4 h-4" />
+              <span>الإعدادات الافتراضية</span>
             </TabsTrigger>
             <TabsTrigger value="report" className="flex items-center gap-2">
               <FileBarChart className="w-4 h-4" />
@@ -336,6 +342,10 @@ export default function Companies() {
               <span>شاشة الدخول</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="default-settings">
+            <DefaultCompanySettings />
+          </TabsContent>
 
           <TabsContent value="report">
             <CompaniesReport />
