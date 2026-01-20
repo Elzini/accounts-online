@@ -253,7 +253,10 @@ export function useAddPurchaseBatch() {
   const { companyId } = useCompany();
   
   return useMutation({
-    mutationFn: ({ batch, cars }: { batch: PurchaseBatchInsert; cars: Array<Omit<CarInsert, 'batch_id'>> }) => 
+    mutationFn: ({ batch, cars }: { 
+      batch: PurchaseBatchInsert & { payment_account_id?: string }; 
+      cars: Array<Omit<CarInsert, 'batch_id'>> 
+    }) => 
       db.addPurchaseBatch(batch, cars),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-batches', companyId] });
