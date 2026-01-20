@@ -14,15 +14,17 @@ import {
   useAccountBalances, 
   useBalanceSheet,
   useJournalEntriesReport,
-  useComprehensiveTrialBalance 
+  useComprehensiveTrialBalance,
+  useVATSettlementReport
 } from '@/hooks/useAccounting';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { usePdfExport } from '@/hooks/usePdfExport';
-import { Loader2, FileText, TrendingUp, Scale, CalendarIcon, Building2, ClipboardList, Printer, Download, FileSpreadsheet, Wallet } from 'lucide-react';
+import { Loader2, FileText, TrendingUp, Scale, CalendarIcon, Building2, ClipboardList, Printer, Download, FileSpreadsheet, Wallet, Receipt, ArrowUpCircle, ArrowDownCircle, MinusCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AccountMovementReport } from '@/components/reports/AccountMovementReport';
+import { Badge } from '@/components/ui/badge';
 
 export function FinancialReportsPage() {
   const [dateRange, setDateRange] = useState<{
@@ -47,12 +49,16 @@ export function FinancialReportsPage() {
     referenceType === 'all' ? undefined : referenceType
   );
   const { data: comprehensiveTrial, isLoading: isLoadingComprehensive } = useComprehensiveTrialBalance();
+  const { data: vatSettlement, isLoading: isLoadingVAT } = useVATSettlementReport(
+    dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
+    dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
+  );
 
   const { printReport } = usePrintReport();
   const { exportToExcel } = useExcelExport();
   const { exportToPdf } = usePdfExport();
 
-  const isLoading = isLoadingTrial || isLoadingIncome || isLoadingBalances || isLoadingBalanceSheet || isLoadingJournal || isLoadingComprehensive;
+  const isLoading = isLoadingTrial || isLoadingIncome || isLoadingBalances || isLoadingBalanceSheet || isLoadingJournal || isLoadingComprehensive || isLoadingVAT;
 
   // Export functions for Trial Balance
   const exportTrialBalance = (type: 'print' | 'excel' | 'pdf') => {
@@ -304,6 +310,52 @@ export function FinancialReportsPage() {
     }
   };
 
+  // Export functions for VAT Settlement
+  const exportVATSettlement = (type: 'print' | 'excel' | 'pdf') => {
+    if (!vatSettlement) return;
+    
+    const columns = [
+      { header: 'رقم القيد', key: 'entryNumber' },
+      { header: 'التاريخ', key: 'date' },
+      { header: 'النوع', key: 'type' },
+      { header: 'الوصف', key: 'description' },
+      { header: 'مبلغ الضريبة', key: 'taxAmount' },
+    ];
+    
+    const data = vatSettlement.transactions.map(t => ({
+      entryNumber: t.entryNumber,
+      date: t.date,
+      type: t.type === 'sales' ? 'مبيعات (مخرجات)' : 'مشتريات (مدخلات)',
+      description: t.description,
+      taxAmount: t.taxAmount.toLocaleString(),
+    }));
+
+    const statusLabel = vatSettlement.status === 'payable' 
+      ? 'مستحق للهيئة' 
+      : vatSettlement.status === 'receivable' 
+        ? 'مسترد من الهيئة' 
+        : 'متوازن';
+
+    const summaryCards = [
+      { label: 'ضريبة المخرجات (المبيعات)', value: vatSettlement.vatPayable.balance.toLocaleString() + ' ر.س' },
+      { label: 'ضريبة المدخلات (المشتريات)', value: vatSettlement.vatRecoverable.balance.toLocaleString() + ' ر.س' },
+      { label: 'صافي الضريبة', value: Math.abs(vatSettlement.netVAT).toLocaleString() + ' ر.س' },
+      { label: 'الحالة', value: statusLabel },
+    ];
+
+    const dateSubtitle = dateRange.from && dateRange.to 
+      ? `من ${format(dateRange.from, 'yyyy/MM/dd')} إلى ${format(dateRange.to, 'yyyy/MM/dd')}`
+      : undefined;
+
+    if (type === 'print') {
+      printReport({ title: 'تقرير تسوية ضريبة القيمة المضافة', subtitle: dateSubtitle, columns, data, summaryCards });
+    } else if (type === 'excel') {
+      exportToExcel({ title: 'تقرير تسوية ضريبة القيمة المضافة', columns, data, fileName: 'vat-settlement', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
+    } else {
+      exportToPdf({ title: 'تقرير تسوية ضريبة القيمة المضافة', subtitle: dateSubtitle, columns, data, fileName: 'vat-settlement', summaryCards });
+    }
+  };
+
   // Export Actions Component
   const ExportActions = ({ onExport }: { onExport: (type: 'print' | 'excel' | 'pdf') => void }) => (
     <DropdownMenu>
@@ -376,12 +428,174 @@ export function FinancialReportsPage() {
               <FileText className="w-4 h-4" />
               أرصدة الحسابات
             </TabsTrigger>
+            <TabsTrigger value="vat-settlement" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+              <Receipt className="w-4 h-4" />
+              تسوية الضريبة
+            </TabsTrigger>
           </TabsList>
         </ScrollArea>
 
         {/* Account Movement Report - حركة الحسابات */}
         <TabsContent value="account-movement">
           <AccountMovementReport />
+        </TabsContent>
+
+        {/* VAT Settlement Report - تقرير تسوية ضريبة القيمة المضافة */}
+        <TabsContent value="vat-settlement">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Receipt className="w-5 h-5" />
+                    تقرير تسوية ضريبة القيمة المضافة
+                  </CardTitle>
+                  <CardDescription>حساب الفرق بين الضريبة المستحقة والمستردة</CardDescription>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <ExportActions onExport={exportVATSettlement} />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className={cn("justify-start text-right font-normal gap-2", !dateRange.from && "text-muted-foreground")}>
+                        <CalendarIcon className="h-4 w-4" />
+                        {dateRange.from ? (
+                          dateRange.to ? (
+                            <>
+                              {format(dateRange.from, "yyyy/MM/dd")} - {format(dateRange.to, "yyyy/MM/dd")}
+                            </>
+                          ) : (
+                            format(dateRange.from, "yyyy/MM/dd")
+                          )
+                        ) : (
+                          <span>اختر الفترة</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={dateRange.from}
+                        selected={dateRange}
+                        onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
+                        numberOfMonths={2}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {vatSettlement ? (
+                <>
+                  {/* Summary Cards */}
+                  <div className="grid gap-4 md:grid-cols-4">
+                    <Card className="border-primary/20">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <ArrowUpCircle className="w-5 h-5 text-destructive" />
+                          <span className="text-sm text-muted-foreground">ضريبة المخرجات (المبيعات)</span>
+                        </div>
+                        <p className="text-2xl font-bold">{vatSettlement.vatPayable.balance.toLocaleString()} <span className="text-sm font-normal">ر.س</span></p>
+                        {vatSettlement.vatPayable.account && (
+                          <p className="text-xs text-muted-foreground mt-1">{vatSettlement.vatPayable.account.code} - {vatSettlement.vatPayable.account.name}</p>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-primary/20">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <ArrowDownCircle className="w-5 h-5 text-primary" />
+                          <span className="text-sm text-muted-foreground">ضريبة المدخلات (المشتريات)</span>
+                        </div>
+                        <p className="text-2xl font-bold">{vatSettlement.vatRecoverable.balance.toLocaleString()} <span className="text-sm font-normal">ر.س</span></p>
+                        {vatSettlement.vatRecoverable.account && (
+                          <p className="text-xs text-muted-foreground mt-1">{vatSettlement.vatRecoverable.account.code} - {vatSettlement.vatRecoverable.account.name}</p>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    <Card className={cn(
+                      "border-2",
+                      vatSettlement.status === 'payable' ? "border-destructive/50 bg-destructive/5" : 
+                      vatSettlement.status === 'receivable' ? "border-primary/50 bg-primary/5" : 
+                      "border-muted"
+                    )}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <MinusCircle className="w-5 h-5" />
+                          <span className="text-sm text-muted-foreground">صافي الضريبة</span>
+                        </div>
+                        <p className={cn(
+                          "text-2xl font-bold",
+                          vatSettlement.status === 'payable' ? "text-destructive" : 
+                          vatSettlement.status === 'receivable' ? "text-primary" : ""
+                        )}>
+                          {Math.abs(vatSettlement.netVAT).toLocaleString()} <span className="text-sm font-normal">ر.س</span>
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-primary/20">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Receipt className="w-5 h-5" />
+                          <span className="text-sm text-muted-foreground">حالة التسوية</span>
+                        </div>
+                        <Badge variant={
+                          vatSettlement.status === 'payable' ? 'destructive' : 
+                          vatSettlement.status === 'receivable' ? 'default' : 
+                          'secondary'
+                        } className="text-base px-3 py-1">
+                          {vatSettlement.status === 'payable' ? 'مستحق للهيئة' : 
+                           vatSettlement.status === 'receivable' ? 'مسترد من الهيئة' : 
+                           'متوازن'}
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Transactions Table */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">تفاصيل الحركات الضريبية</h3>
+                    {vatSettlement.transactions.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">لا توجد حركات ضريبية في هذه الفترة</p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>رقم القيد</TableHead>
+                            <TableHead>التاريخ</TableHead>
+                            <TableHead>النوع</TableHead>
+                            <TableHead>الوصف</TableHead>
+                            <TableHead className="text-left">مبلغ الضريبة</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {vatSettlement.transactions.map((t, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell className="font-mono">{t.entryNumber}</TableCell>
+                              <TableCell>{t.date}</TableCell>
+                              <TableCell>
+                                <Badge variant={t.type === 'sales' ? 'destructive' : 'default'}>
+                                  {t.type === 'sales' ? 'مخرجات' : 'مدخلات'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{t.description}</TableCell>
+                              <TableCell className="text-left font-medium">{t.taxAmount.toLocaleString()}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">لا توجد بيانات ضريبية. تأكد من تفعيل إعدادات الضريبة وربط الحسابات.</p>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Journal Entries Report - كشف القيود */}
