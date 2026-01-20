@@ -103,21 +103,25 @@ const accountMappings = [
     suggestedCode: '2101',
     suggestedName: 'الموردون',
   },
-  { 
-    label: 'ضريبة القيمة المضافة المستردة',
-    salesKey: null,
-    purchaseKey: 'vat_recoverable_account_id',
-    types: ['liabilities'],
-    suggestedCode: '2202',
-    suggestedName: 'ضريبة القيمة المضافة المستردة',
-  },
+];
+
+// VAT account mappings according to ZATCA requirements
+const vatAccountMappings = [
   { 
     label: 'ضريبة القيمة المضافة المستحقة',
-    salesKey: 'vat_payable_account_id',
-    purchaseKey: null,
+    description: 'Output VAT - على المبيعات (15%)',
+    key: 'vat_payable_account_id',
     types: ['liabilities'],
     suggestedCode: '2201',
     suggestedName: 'ضريبة القيمة المضافة المستحقة',
+  },
+  { 
+    label: 'ضريبة القيمة المضافة المستردة',
+    description: 'Input VAT - على المشتريات (15%)',
+    key: 'vat_recoverable_account_id',
+    types: ['liabilities'],
+    suggestedCode: '2202',
+    suggestedName: 'ضريبة القيمة المضافة المستردة',
   },
 ];
 
@@ -497,20 +501,62 @@ export function CompanyAccountingSettingsTab() {
             ))}
           </div>
 
+          {/* VAT Accounts Section - ZATCA Compliant */}
+          <div className="mt-6">
+            <h4 className="text-sm font-semibold mb-3 text-emerald-600 flex items-center gap-2">
+              <span>🏛️</span> حسابات ضريبة القيمة المضافة (ZATCA)
+            </h4>
+            <div className="border rounded-lg overflow-hidden border-emerald-200">
+              <div className="grid grid-cols-2 bg-emerald-50 dark:bg-emerald-950/20 border-b">
+                <div className="p-3 text-center font-semibold border-l">الوصف</div>
+                <div className="p-3 text-center font-semibold text-emerald-600">الحساب</div>
+              </div>
+              {vatAccountMappings.map((mapping, index) => (
+                <div 
+                  key={mapping.label} 
+                  className={`grid grid-cols-2 ${index !== vatAccountMappings.length - 1 ? 'border-b' : ''}`}
+                >
+                  <div className="p-3 bg-emerald-50/50 dark:bg-emerald-950/10 border-l flex items-center">
+                    <div>
+                      <span className="text-sm font-medium block">{mapping.label}</span>
+                      <span className="text-xs text-muted-foreground">{mapping.description}</span>
+                      <span className="text-xs text-emerald-600 block">{mapping.suggestedCode} - {mapping.suggestedName}</span>
+                    </div>
+                  </div>
+                  <div className="p-2">
+                    {renderAccountSelect(
+                      formData[mapping.key as keyof AccountingSettings] as string | null,
+                      (v) => setFormData({ ...formData, [mapping.key]: v }),
+                      mapping.types,
+                      false,
+                      mapping.suggestedCode,
+                      mapping.suggestedName
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2 p-2 bg-muted/50 rounded">
+              💡 وفقاً لمتطلبات هيئة الزكاة والضريبة والجمارك (ZATCA): نسبة الضريبة 15% - يتم احتساب صافي الضريبة = المستحقة - المستردة
+            </p>
+          </div>
+
           {/* Expense Accounts Section */}
           <div className="mt-6">
-            <h4 className="text-sm font-semibold mb-3 text-orange-600">حسابات المصروفات</h4>
-            <div className="border rounded-lg overflow-hidden">
-              <div className="grid grid-cols-2 bg-muted/50 border-b">
+            <h4 className="text-sm font-semibold mb-3 text-amber-600 flex items-center gap-2">
+              <span>📋</span> حسابات المصروفات
+            </h4>
+            <div className="border rounded-lg overflow-hidden border-amber-200">
+              <div className="grid grid-cols-2 bg-amber-50 dark:bg-amber-950/20 border-b">
                 <div className="p-3 text-center font-semibold border-l">الوصف</div>
-                <div className="p-3 text-center font-semibold text-orange-600">الحساب</div>
+                <div className="p-3 text-center font-semibold text-amber-600">الحساب</div>
               </div>
               {expenseAccountMappings.map((mapping, index) => (
                 <div 
                   key={mapping.label} 
                   className={`grid grid-cols-2 ${index !== expenseAccountMappings.length - 1 ? 'border-b' : ''}`}
                 >
-                  <div className="p-3 bg-muted/20 border-l flex items-center">
+                  <div className="p-3 bg-amber-50/50 dark:bg-amber-950/10 border-l flex items-center">
                     <div>
                       <span className="text-sm font-medium block">{mapping.label}</span>
                       <span className="text-xs text-muted-foreground">{mapping.suggestedCode} - {mapping.suggestedName}</span>
