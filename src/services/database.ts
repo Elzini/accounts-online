@@ -396,7 +396,7 @@ export async function fetchMonthlyChartData() {
 
 // Purchase Batches
 export async function addPurchaseBatch(
-  batchData: PurchaseBatchInsert,
+  batchData: PurchaseBatchInsert & { payment_account_id?: string },
   cars: Array<Omit<CarInsert, 'batch_id'>>
 ) {
   const companyId = await getCurrentCompanyId();
@@ -405,19 +405,25 @@ export async function addPurchaseBatch(
   // Create the batch first
   const { data: batch, error: batchError } = await supabase
     .from('purchase_batches')
-    .insert({ ...batchData, company_id: companyId })
+    .insert({ 
+      supplier_id: batchData.supplier_id,
+      purchase_date: batchData.purchase_date,
+      notes: batchData.notes,
+      company_id: companyId 
+    })
     .select()
     .single();
   
   if (batchError) throw batchError;
 
-  // Add all cars with the batch_id and company_id
+  // Add all cars with the batch_id, company_id, and payment_account_id
   const carsWithBatch = cars.map(car => ({
     ...car,
     batch_id: batch.id,
     supplier_id: batchData.supplier_id,
     purchase_date: batchData.purchase_date,
     company_id: companyId,
+    payment_account_id: batchData.payment_account_id || null,
   }));
 
   const { data: addedCars, error: carsError } = await supabase

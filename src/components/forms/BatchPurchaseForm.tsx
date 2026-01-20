@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ArrowRight, Save, ShoppingCart, Plus, X, Car, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,9 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
 import { useSuppliers, useAddPurchaseBatch } from '@/hooks/useDatabase';
-import { useTaxSettings } from '@/hooks/useAccounting';
+import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import { useCompany } from '@/contexts/CompanyContext';
+import { PaymentAccountSelector } from './PaymentAccountSelector';
 
 interface BatchPurchaseFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -37,6 +38,7 @@ const createEmptyCar = (): CarItem => ({
 export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
   const { data: suppliers = [] } = useSuppliers();
   const { data: taxSettings } = useTaxSettings();
+  const { data: accounts = [] } = useAccounts();
   const { company } = useCompany();
   const addPurchaseBatch = useAddPurchaseBatch();
 
@@ -44,7 +46,18 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
     supplier_id: '',
     purchase_date: new Date().toISOString().split('T')[0],
     notes: '',
+    payment_account_id: '',
   });
+
+  // Set default payment account (الصندوق الرئيسي)
+  useEffect(() => {
+    if (accounts.length > 0 && !batchData.payment_account_id) {
+      const cashAccount = accounts.find(a => a.code === '1101');
+      if (cashAccount) {
+        setBatchData(prev => ({ ...prev, payment_account_id: cashAccount.id }));
+      }
+    }
+  }, [accounts, batchData.payment_account_id]);
 
   const [cars, setCars] = useState<CarItem[]>([createEmptyCar()]);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
@@ -128,6 +141,7 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
           supplier_id: batchData.supplier_id,
           purchase_date: batchData.purchase_date,
           notes: batchData.notes || null,
+          payment_account_id: batchData.payment_account_id || undefined,
         },
         cars: cars.map(car => ({
           chassis_number: car.chassis_number,
@@ -251,16 +265,24 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes">ملاحظات (اختياري)</Label>
-              <Textarea
-                id="notes"
-                value={batchData.notes}
-                onChange={(e) => setBatchData({ ...batchData, notes: e.target.value })}
-                placeholder="ملاحظات إضافية على الفاتورة"
-                className="resize-none"
-                rows={2}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <PaymentAccountSelector
+                value={batchData.payment_account_id}
+                onChange={(v) => setBatchData({ ...batchData, payment_account_id: v })}
+                label="طريقة الدفع"
+                type="payment"
               />
+              <div className="space-y-2">
+                <Label htmlFor="notes">ملاحظات (اختياري)</Label>
+                <Textarea
+                  id="notes"
+                  value={batchData.notes}
+                  onChange={(e) => setBatchData({ ...batchData, notes: e.target.value })}
+                  placeholder="ملاحظات إضافية على الفاتورة"
+                  className="resize-none"
+                  rows={2}
+                />
+              </div>
             </div>
 
             {/* Cars Section */}
