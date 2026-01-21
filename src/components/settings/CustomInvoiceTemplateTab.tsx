@@ -1,0 +1,423 @@
+import { useState, useRef, useEffect } from 'react';
+import { FileImage, Upload, X, FileSpreadsheet, Download, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { useCompany } from '@/contexts/CompanyContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
+
+interface TemplateData {
+  background_url?: string | null;
+  excel_data?: any[] | null;
+}
+
+export function CustomInvoiceTemplateTab() {
+  const { company, companyId, refreshCompany } = useCompany();
+  const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
+  const [backgroundPreview, setBackgroundPreview] = useState<string | null>(null);
+  const [excelData, setExcelData] = useState<any[] | null>(null);
+  const [excelFileName, setExcelFileName] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
+  const backgroundInputRef = useRef<HTMLInputElement>(null);
+  const excelInputRef = useRef<HTMLInputElement>(null);
+
+  // Load existing template data
+  useEffect(() => {
+    if (company) {
+      const companyData = company as any;
+      if (companyData.invoice_settings?.custom_background_url) {
+        setBackgroundUrl(companyData.invoice_settings.custom_background_url);
+        setBackgroundPreview(companyData.invoice_settings.custom_background_url);
+      }
+    }
+  }, [company]);
+
+  const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !companyId) return;
+
+    // Validate file type - accept images and PDF
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('يرجى اختيار ملف صورة (PNG, JPG, WEBP) أو PDF');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('حجم الملف يجب أن يكون أقل من 5 ميجابايت');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Show preview for images
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setBackgroundPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // For PDF, show a placeholder
+        setBackgroundPreview('/placeholder.svg');
+      }
+
+      // Upload to storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `invoice-template-${companyId}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('app-logos')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('app-logos')
+        .getPublicUrl(fileName);
+
+      setBackgroundUrl(data.publicUrl);
+      toast.success('تم رفع خلفية القالب بنجاح');
+    } catch (error) {
+      console.error('Error uploading template:', error);
+      toast.error('حدث خطأ أثناء رفع الملف');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv'
+    ];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
+      toast.error('يرجى اختيار ملف Excel (XLSX, XLS) أو CSV');
+      return;
+    }
+
+    try {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = new Uint8Array(event.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          
+          // Get the first sheet
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          
+          // Convert to JSON
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          
+          if (jsonData.length === 0) {
+            toast.error('الملف فارغ أو لا يحتوي على بيانات');
+            return;
+          }
+
+          setExcelData(jsonData);
+          setExcelFileName(file.name);
+          toast.success(`تم استيراد ${jsonData.length} سجل من الملف`);
+        } catch (parseError) {
+          console.error('Error parsing Excel:', parseError);
+          toast.error('حدث خطأ أثناء قراءة الملف');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (error) {
+      console.error('Error reading file:', error);
+      toast.error('حدث خطأ أثناء قراءة الملف');
+    }
+  };
+
+  const handleRemoveBackground = () => {
+    setBackgroundUrl(null);
+    setBackgroundPreview(null);
+    if (backgroundInputRef.current) {
+      backgroundInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveExcel = () => {
+    setExcelData(null);
+    setExcelFileName(null);
+    if (excelInputRef.current) {
+      excelInputRef.current.value = '';
+    }
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!companyId) return;
+
+    setSaving(true);
+    try {
+      // Get existing invoice settings
+      const companyData = company as any;
+      const existingSettings = companyData?.invoice_settings || {};
+
+      const updatedSettings = {
+        ...existingSettings,
+        custom_background_url: backgroundUrl,
+        use_custom_template: !!backgroundUrl,
+      };
+
+      const { error } = await supabase
+        .from('companies')
+        .update({
+          invoice_settings: JSON.parse(JSON.stringify(updatedSettings)),
+        })
+        .eq('id', companyId);
+
+      if (error) throw error;
+
+      await refreshCompany();
+      toast.success('تم حفظ إعدادات القالب المخصص بنجاح');
+    } catch (error) {
+      console.error('Error saving template settings:', error);
+      toast.error('حدث خطأ أثناء حفظ الإعدادات');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const downloadSampleExcel = () => {
+    const sampleData = [
+      {
+        'اسم المنتج': 'سيارة تويوتا كامري 2024',
+        'الكمية': 1,
+        'سعر الوحدة': 85000,
+        'نسبة الضريبة': 15,
+        'الإجمالي': 97750,
+      },
+      {
+        'اسم المنتج': 'سيارة هوندا أكورد 2024',
+        'الكمية': 1,
+        'سعر الوحدة': 78000,
+        'نسبة الضريبة': 15,
+        'الإجمالي': 89700,
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'بيانات الفاتورة');
+    XLSX.writeFile(workbook, 'نموذج_بيانات_الفاتورة.xlsx');
+    toast.success('تم تحميل النموذج بنجاح');
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Custom Background/Template */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileImage className="w-5 h-5" />
+            قالب الفاتورة المخصص
+          </CardTitle>
+          <CardDescription>
+            ارفع تصميم PDF أو صورة لاستخدامها كخلفية للفاتورة. سيتم وضع البيانات فوق هذا التصميم.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start gap-6">
+            {/* Background Preview */}
+            <div className="relative">
+              <div className="w-48 h-64 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center overflow-hidden bg-muted/50">
+                {backgroundPreview ? (
+                  <img 
+                    src={backgroundPreview} 
+                    alt="خلفية القالب" 
+                    className="w-full h-full object-contain p-2"
+                    onError={() => setBackgroundPreview('/placeholder.svg')}
+                  />
+                ) : (
+                  <div className="text-center p-4">
+                    <FileImage className="w-12 h-12 text-muted-foreground/50 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">لم يتم رفع قالب بعد</p>
+                  </div>
+                )}
+              </div>
+              {backgroundPreview && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                  onClick={handleRemoveBackground}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+
+            {/* Upload Actions */}
+            <div className="space-y-3 flex-1">
+              <div>
+                <Label className="text-sm font-medium">رفع تصميم القالب</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  يمكنك رفع صورة (PNG, JPG, WEBP) أو ملف PDF كخلفية للفاتورة
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => backgroundInputRef.current?.click()}
+                disabled={uploading}
+                className="w-full sm:w-auto"
+              >
+                <Upload className="w-4 h-4 ml-2" />
+                {uploading ? 'جاري الرفع...' : 'رفع تصميم'}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                الحجم الأقصى: 5 ميجابايت
+              </p>
+              <input
+                ref={backgroundInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,application/pdf"
+                onChange={handleBackgroundUpload}
+                className="hidden"
+              />
+
+              {backgroundUrl && (
+                <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    ✓ تم رفع القالب المخصص - سيتم استخدامه كخلفية للفواتير
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Excel Import */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5" />
+            استيراد بيانات من Excel
+          </CardTitle>
+          <CardDescription>
+            استورد بيانات المنتجات والأسعار من ملف Excel لإنشاء فواتير بسرعة
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="outline"
+              onClick={() => excelInputRef.current?.click()}
+            >
+              <Upload className="w-4 h-4 ml-2" />
+              استيراد ملف Excel
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={downloadSampleExcel}
+            >
+              <Download className="w-4 h-4 ml-2" />
+              تحميل نموذج Excel
+            </Button>
+          </div>
+          <input
+            ref={excelInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            onChange={handleExcelUpload}
+            className="hidden"
+          />
+
+          {/* Excel Data Preview */}
+          {excelData && excelData.length > 0 && (
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium">{excelFileName}</span>
+                  <span className="text-xs text-muted-foreground">
+                    ({excelData.length} سجل)
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemoveExcel}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="border rounded-lg overflow-hidden">
+                <div className="max-h-60 overflow-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted sticky top-0">
+                      <tr>
+                        {Object.keys(excelData[0]).map((key) => (
+                          <th key={key} className="p-2 text-right font-medium border-b">
+                            {key}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {excelData.slice(0, 5).map((row, index) => (
+                        <tr key={index} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/50'}>
+                          {Object.values(row).map((value, i) => (
+                            <td key={i} className="p-2 border-b">
+                              {String(value)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {excelData.length > 5 && (
+                  <div className="p-2 bg-muted text-center text-xs text-muted-foreground">
+                    + {excelData.length - 5} سجلات إضافية
+                  </div>
+                )}
+              </div>
+
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  💡 يمكنك استخدام هذه البيانات عند إنشاء فاتورة جديدة لملء بنود الفاتورة تلقائياً
+                </p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Tips Card */}
+      <Card className="bg-muted/30">
+        <CardHeader>
+          <CardTitle className="text-base">💡 نصائح لإنشاء قالب مخصص</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            <li>• استخدم تصميم بدقة عالية (300 DPI) للحصول على جودة طباعة ممتازة</li>
+            <li>• اترك مساحة فارغة في الأماكن التي ستُملأ بالبيانات (الجداول، المجاميع)</li>
+            <li>• تأكد من أن حجم الورق A4 (210mm × 297mm)</li>
+            <li>• لأفضل نتيجة، استخدم خلفية بألوان فاتحة لضمان وضوح النصوص</li>
+          </ul>
+        </CardContent>
+      </Card>
+
+      {/* Save Button */}
+      <div className="flex justify-end">
+        <Button onClick={handleSaveTemplate} disabled={saving} className="min-w-[150px]">
+          {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
+        </Button>
+      </div>
+    </div>
+  );
+}
