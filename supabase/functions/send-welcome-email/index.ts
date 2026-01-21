@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -20,9 +21,48 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { email, companyName }: WelcomeEmailRequest = await req.json();
 
-    console.log(`Sending welcome email to ${email} for company ${companyName}`);
+    // Validate email belongs to the authenticated user or user is sending to themselves
+    if (email !== user.email) {
+      return new Response(
+        JSON.stringify({ error: 'Cannot send email to a different address' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Sanitize company name to prevent HTML injection in email
+    const sanitizedCompanyName = companyName
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+    console.log(`Sending welcome email to ${email} for company ${sanitizedCompanyName}`);
 
     const emailResponse = await resend.emails.send({
       from: "نظام إدارة السيارات <onboarding@resend.dev>",
@@ -49,7 +89,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <!-- Content -->
             <div style="padding: 40px 30px;">
-              <h2 style="color: #1f2937; margin: 0 0 20px; font-size: 22px;">أهلاً بشركة ${companyName}!</h2>
+              <h2 style="color: #1f2937; margin: 0 0 20px; font-size: 22px;">أهلاً بشركة ${sanitizedCompanyName}!</h2>
               
               <p style="color: #4b5563; line-height: 1.8; margin: 0 0 20px; font-size: 16px;">
                 شكراً لتسجيلك في نظام إدارة السيارات. نحن سعداء بانضمامك إلينا!

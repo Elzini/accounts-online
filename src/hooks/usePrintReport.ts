@@ -11,6 +11,20 @@ interface PrintReportOptions {
   summaryCards?: { label: string; value: string }[];
 }
 
+// HTML escaping function to prevent XSS attacks
+function escapeHtml(text: string | number | null | undefined): string {
+  if (text === null || text === undefined) return '';
+  const textStr = String(text);
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return textStr.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 export function usePrintReport() {
   const printReport = ({
     title,
@@ -21,33 +35,33 @@ export function usePrintReport() {
   }: PrintReportOptions) => {
     const currentDate = new Date().toLocaleDateString('ar-SA');
 
-    // Create summary cards HTML
+    // Create summary cards HTML with escaped values
     const summaryCardsHtml = summaryCards && summaryCards.length > 0
       ? `
         <div class="summary-cards">
           ${summaryCards.map(card => `
             <div class="summary-card">
-              <div class="card-label">${card.label}</div>
-              <div class="card-value">${card.value}</div>
+              <div class="card-label">${escapeHtml(card.label)}</div>
+              <div class="card-value">${escapeHtml(card.value)}</div>
             </div>
           `).join('')}
         </div>
       `
       : '';
 
-    // Create table HTML
+    // Create table HTML with escaped values
     const tableHtml = data.length > 0
       ? `
         <table>
           <thead>
             <tr>
-              ${columns.map(col => `<th>${col.header}</th>`).join('')}
+              ${columns.map(col => `<th>${escapeHtml(col.header)}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
             ${data.map(row => `
               <tr>
-                ${columns.map(col => `<td>${row[col.key] || '-'}</td>`).join('')}
+                ${columns.map(col => `<td>${escapeHtml(row[col.key]) || '-'}</td>`).join('')}
               </tr>
             `).join('')}
           </tbody>
@@ -62,13 +76,17 @@ export function usePrintReport() {
       return;
     }
 
+    // Escape title and subtitle for safe HTML rendering
+    const safeTitle = escapeHtml(title);
+    const safeSubtitle = subtitle ? escapeHtml(subtitle) : '';
+
     const htmlContent = `
       <!DOCTYPE html>
       <html lang="ar" dir="rtl">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${title}</title>
+        <title>${safeTitle}</title>
         <style>
           * {
             margin: 0;
@@ -261,8 +279,8 @@ export function usePrintReport() {
       <body>
         <div class="header">
           <div class="header-content">
-            <h1>${title}</h1>
-            ${subtitle ? `<div class="subtitle">${subtitle}</div>` : ''}
+            <h1>${safeTitle}</h1>
+            ${safeSubtitle ? `<div class="subtitle">${safeSubtitle}</div>` : ''}
           </div>
           <div class="header-date">
             تاريخ التقرير: ${currentDate}
