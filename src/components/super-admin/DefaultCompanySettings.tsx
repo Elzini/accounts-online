@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Save, Settings, FileText, Calculator, Building2, RefreshCw } from 'lucide-react';
+import { Loader2, Save, Settings, FileText, Calculator, Building2, RefreshCw, Receipt } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -16,6 +16,41 @@ interface DefaultSetting {
   setting_key: string;
   setting_value: string | null;
 }
+
+interface InvoiceSettings {
+  template: 'modern' | 'classic' | 'minimal';
+  primary_color: string;
+  show_logo: boolean;
+  show_qr: boolean;
+  show_terms: boolean;
+  terms_text: string;
+  footer_text: string;
+}
+
+const defaultInvoiceSettings: InvoiceSettings = {
+  template: 'modern',
+  primary_color: '#10b981',
+  show_logo: true,
+  show_qr: true,
+  show_terms: true,
+  terms_text: 'الأسعار شاملة ضريبة القيمة المضافة 15%',
+  footer_text: 'شكراً لتعاملكم معنا',
+};
+
+const templates = [
+  { value: 'modern', label: 'حديث', description: 'تصميم عصري بألوان متدرجة' },
+  { value: 'classic', label: 'كلاسيكي', description: 'تصميم تقليدي ورسمي' },
+  { value: 'minimal', label: 'بسيط', description: 'تصميم نظيف ومبسط' },
+];
+
+const colorOptions = [
+  { value: '#10b981', label: 'أخضر' },
+  { value: '#3b82f6', label: 'أزرق' },
+  { value: '#8b5cf6', label: 'بنفسجي' },
+  { value: '#f59e0b', label: 'برتقالي' },
+  { value: '#ef4444', label: 'أحمر' },
+  { value: '#6366f1', label: 'نيلي' },
+];
 
 export function DefaultCompanySettings() {
   const queryClient = useQueryClient();
@@ -58,6 +93,9 @@ export function DefaultCompanySettings() {
   const [autoPurchaseEntries, setAutoPurchaseEntries] = useState(true);
   const [autoExpenseEntries, setAutoExpenseEntries] = useState(true);
 
+  // Invoice settings state
+  const [invoiceSettings, setInvoiceSettings] = useState<InvoiceSettings>(defaultInvoiceSettings);
+
   // Load settings into state
   useEffect(() => {
     if (defaultSettings.length > 0) {
@@ -89,6 +127,17 @@ export function DefaultCompanySettings() {
       setAutoSalesEntries(getValue('accounting_settings', 'auto_sales_entries') !== 'false');
       setAutoPurchaseEntries(getValue('accounting_settings', 'auto_purchase_entries') !== 'false');
       setAutoExpenseEntries(getValue('accounting_settings', 'auto_expense_entries') !== 'false');
+
+      // Invoice settings
+      const invoiceSettingsStr = getValue('invoice_settings', 'default_invoice_settings');
+      if (invoiceSettingsStr) {
+        try {
+          const parsed = JSON.parse(invoiceSettingsStr);
+          setInvoiceSettings({ ...defaultInvoiceSettings, ...parsed });
+        } catch (e) {
+          console.error('Error parsing invoice settings:', e);
+        }
+      }
     }
   }, [defaultSettings]);
 
@@ -176,6 +225,20 @@ export function DefaultCompanySettings() {
     }
   };
 
+  const handleSaveInvoiceSettings = async () => {
+    try {
+      await updateSetting.mutateAsync({
+        type: 'invoice_settings',
+        key: 'default_invoice_settings',
+        value: JSON.stringify(invoiceSettings),
+      });
+
+      toast.success('تم حفظ إعدادات الفاتورة الافتراضية');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء الحفظ');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -205,7 +268,7 @@ export function DefaultCompanySettings() {
       </div>
 
       <Tabs defaultValue="app" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="app" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
             إعدادات التطبيق
@@ -217,6 +280,10 @@ export function DefaultCompanySettings() {
           <TabsTrigger value="accounting" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
             إعدادات القيود
+          </TabsTrigger>
+          <TabsTrigger value="invoice" className="flex items-center gap-2">
+            <Receipt className="w-4 h-4" />
+            إعدادات الفاتورة
           </TabsTrigger>
         </TabsList>
 
@@ -445,6 +512,135 @@ export function DefaultCompanySettings() {
                   <Save className="h-4 w-4 ml-2" />
                 )}
                 حفظ إعدادات القيود
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Invoice Settings Tab */}
+        <TabsContent value="invoice" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>إعدادات الفاتورة الافتراضية</CardTitle>
+              <CardDescription>تصميم ومحتوى الفاتورة للشركات الجديدة</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Template Selection */}
+              <div className="space-y-3">
+                <Label>قالب الفاتورة</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  {templates.map((template) => (
+                    <div
+                      key={template.value}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        invoiceSettings.template === template.value
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                      onClick={() => setInvoiceSettings(prev => ({ ...prev, template: template.value as any }))}
+                    >
+                      <p className="font-medium text-center">{template.label}</p>
+                      <p className="text-xs text-muted-foreground text-center mt-1">{template.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Color Selection */}
+              <div className="space-y-3">
+                <Label>اللون الرئيسي</Label>
+                <div className="flex flex-wrap gap-3">
+                  {colorOptions.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      className={`w-10 h-10 rounded-full border-2 transition-all ${
+                        invoiceSettings.primary_color === color.value
+                          ? 'ring-2 ring-offset-2 ring-primary'
+                          : ''
+                      }`}
+                      style={{ backgroundColor: color.value }}
+                      onClick={() => setInvoiceSettings(prev => ({ ...prev, primary_color: color.value }))}
+                      title={color.label}
+                    />
+                  ))}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="color"
+                      value={invoiceSettings.primary_color}
+                      onChange={(e) => setInvoiceSettings(prev => ({ ...prev, primary_color: e.target.value }))}
+                      className="w-10 h-10 p-1 cursor-pointer"
+                    />
+                    <span className="text-sm text-muted-foreground">مخصص</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Display Options */}
+              <div className="space-y-4">
+                <Label>خيارات العرض</Label>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <p className="font-medium">عرض الشعار</p>
+                    <p className="text-sm text-muted-foreground">إظهار شعار الشركة في الفاتورة</p>
+                  </div>
+                  <Switch 
+                    checked={invoiceSettings.show_logo} 
+                    onCheckedChange={(checked) => setInvoiceSettings(prev => ({ ...prev, show_logo: checked }))}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <p className="font-medium">عرض رمز QR</p>
+                    <p className="text-sm text-muted-foreground">إظهار رمز الاستجابة السريعة للتحقق</p>
+                  </div>
+                  <Switch 
+                    checked={invoiceSettings.show_qr} 
+                    onCheckedChange={(checked) => setInvoiceSettings(prev => ({ ...prev, show_qr: checked }))}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <p className="font-medium">عرض الشروط والأحكام</p>
+                    <p className="text-sm text-muted-foreground">إظهار نص الشروط في أسفل الفاتورة</p>
+                  </div>
+                  <Switch 
+                    checked={invoiceSettings.show_terms} 
+                    onCheckedChange={(checked) => setInvoiceSettings(prev => ({ ...prev, show_terms: checked }))}
+                  />
+                </div>
+              </div>
+
+              {/* Text Fields */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>نص الشروط والأحكام</Label>
+                  <Input
+                    value={invoiceSettings.terms_text}
+                    onChange={(e) => setInvoiceSettings(prev => ({ ...prev, terms_text: e.target.value }))}
+                    placeholder="الأسعار شاملة ضريبة القيمة المضافة 15%"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>نص التذييل</Label>
+                  <Input
+                    value={invoiceSettings.footer_text}
+                    onChange={(e) => setInvoiceSettings(prev => ({ ...prev, footer_text: e.target.value }))}
+                    placeholder="شكراً لتعاملكم معنا"
+                  />
+                </div>
+              </div>
+
+              <Button onClick={handleSaveInvoiceSettings} disabled={updateSetting.isPending}>
+                {updateSetting.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                ) : (
+                  <Save className="h-4 w-4 ml-2" />
+                )}
+                حفظ إعدادات الفاتورة
               </Button>
             </CardContent>
           </Card>
