@@ -5,10 +5,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Save, Settings, FileText, Calculator, Building2, RefreshCw, Receipt } from 'lucide-react';
+import { Loader2, Save, Settings, FileText, Calculator, Building2, RefreshCw, Receipt, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface DefaultSetting {
   id: string;
@@ -239,6 +250,22 @@ export function DefaultCompanySettings() {
     }
   };
 
+  // Apply defaults to existing companies
+  const applyToExisting = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('apply_defaults_to_existing_companies');
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(`تم تطبيق الإعدادات على ${data?.companies_updated || 0} شركة بنجاح`);
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+    },
+    onError: () => {
+      toast.error('حدث خطأ أثناء تطبيق الإعدادات');
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -260,11 +287,44 @@ export function DefaultCompanySettings() {
         </div>
       </div>
 
-      <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+      <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 flex items-center justify-between">
         <p className="text-amber-700 dark:text-amber-400 text-sm flex items-center gap-2">
           <RefreshCw className="h-4 w-4" />
-          أي تغييرات هنا ستُطبق فقط على الشركات الجديدة ولن تؤثر على الشركات الموجودة
+          أي تغييرات هنا ستُطبق تلقائياً على الشركات الجديدة
         </p>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Zap className="h-4 w-4" />
+              تطبيق على الشركات الموجودة
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>تطبيق الإعدادات على جميع الشركات</AlertDialogTitle>
+              <AlertDialogDescription>
+                سيتم تطبيق جميع الإعدادات الافتراضية (التطبيق، الضريبة، القيود، الفاتورة) على كل الشركات الموجودة.
+                <br /><br />
+                <strong className="text-destructive">تحذير:</strong> هذا الإجراء سيستبدل الإعدادات الحالية لجميع الشركات. لا يمكن التراجع عن هذا الإجراء.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => applyToExisting.mutate()}
+                disabled={applyToExisting.isPending}
+                className="bg-primary"
+              >
+                {applyToExisting.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                ) : (
+                  <Zap className="h-4 w-4 ml-2" />
+                )}
+                تأكيد التطبيق
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       <Tabs defaultValue="app" className="w-full">
