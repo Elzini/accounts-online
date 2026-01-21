@@ -2082,6 +2082,7 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      apply_defaults_to_existing_companies: { Args: never; Returns: Json }
       create_default_accounts: {
         Args: { p_company_id: string }
         Returns: undefined
