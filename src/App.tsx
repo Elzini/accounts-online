@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import SuperAdminAuth from "./pages/SuperAdminAuth";
 import Register from "./pages/Register";
 import Companies from "./pages/Companies";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -150,6 +151,7 @@ function AppRoutes() {
           </PublicRoute>
         } 
       />
+      <Route path="/install" element={<Install />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
