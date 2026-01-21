@@ -1,17 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { FileImage, Upload, X, FileSpreadsheet, Download, Trash2 } from 'lucide-react';
+import { FileImage, Upload, X, FileSpreadsheet, Download, Trash2, Save, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
-
-interface TemplateData {
-  background_url?: string | null;
-  excel_data?: any[] | null;
-}
+import { parseExcelToInvoiceItems } from '@/services/importedInvoiceData';
+import { useImportedInvoiceData, useSaveImportedInvoiceData, useDeleteImportedInvoiceData } from '@/hooks/useImportedInvoiceData';
 
 export function CustomInvoiceTemplateTab() {
   const { company, companyId, refreshCompany } = useCompany();
@@ -21,6 +19,13 @@ export function CustomInvoiceTemplateTab() {
   const [excelFileName, setExcelFileName] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [savingExcelData, setSavingExcelData] = useState(false);
+  
+  // Hooks for saved data
+  const { data: savedTemplates = [], isLoading: loadingTemplates } = useImportedInvoiceData();
+  const saveImportedData = useSaveImportedInvoiceData();
+  const deleteImportedData = useDeleteImportedInvoiceData();
   
   const backgroundInputRef = useRef<HTMLInputElement>(null);
   const excelInputRef = useRef<HTMLInputElement>(null);
@@ -339,7 +344,7 @@ export function CustomInvoiceTemplateTab() {
             <div className="mt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                  <FileSpreadsheet className="w-4 h-4 text-primary" />
                   <span className="text-sm font-medium">{excelFileName}</span>
                   <span className="text-xs text-muted-foreground">
                     ({excelData.length} سجل)
@@ -387,9 +392,90 @@ export function CustomInvoiceTemplateTab() {
                 )}
               </div>
 
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  💡 يمكنك استخدام هذه البيانات عند إنشاء فاتورة جديدة لملء بنود الفاتورة تلقائياً
+              {/* Save Excel Data */}
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <Input
+                  placeholder="اسم القالب (مثال: أسعار 2024)"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={async () => {
+                    if (!templateName.trim()) {
+                      toast.error('يرجى إدخال اسم للقالب');
+                      return;
+                    }
+                    setSavingExcelData(true);
+                    try {
+                      const items = parseExcelToInvoiceItems(excelData);
+                      await saveImportedData.mutateAsync({
+                        name: templateName,
+                        items,
+                        fileName: excelFileName || undefined,
+                      });
+                      toast.success('تم حفظ بيانات القالب بنجاح');
+                      setTemplateName('');
+                      handleRemoveExcel();
+                    } catch (error) {
+                      console.error('Error saving excel data:', error);
+                      toast.error('حدث خطأ أثناء حفظ البيانات');
+                    } finally {
+                      setSavingExcelData(false);
+                    }
+                  }}
+                  disabled={savingExcelData || !templateName.trim()}
+                >
+                  <Save className="w-4 h-4 ml-2" />
+                  {savingExcelData ? 'جاري الحفظ...' : 'حفظ القالب'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Saved Templates */}
+          {savedTemplates.length > 0 && (
+            <div className="mt-6 space-y-3">
+              <div className="flex items-center gap-2">
+                <Database className="w-4 h-4" />
+                <Label className="text-sm font-medium">القوالب المحفوظة</Label>
+              </div>
+              <div className="grid gap-3">
+                {savedTemplates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="flex items-center justify-between p-3 border rounded-lg bg-background"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileSpreadsheet className="w-5 h-5 text-primary" />
+                      <div>
+                        <p className="font-medium">{template.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {template.data.length} بند • {template.file_name || 'بدون ملف'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          await deleteImportedData.mutateAsync(template.id);
+                          toast.success('تم حذف القالب');
+                        } catch (error) {
+                          toast.error('حدث خطأ أثناء الحذف');
+                        }
+                      }}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <p className="text-sm text-primary">
+                  💡 يمكنك استخدام هذه القوالب عند إنشاء فاتورة متعددة البنود من صفحة المبيعات
                 </p>
               </div>
             </div>
