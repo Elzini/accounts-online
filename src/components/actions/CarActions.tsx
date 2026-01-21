@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUpdateCar, useDeleteCar, useSuppliers } from '@/hooks/useDatabase';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
+import { useCompany } from '@/contexts/CompanyContext';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import { PaymentAccountSelector } from '@/components/forms/PaymentAccountSelector';
 import {
@@ -239,6 +240,7 @@ export function CarActions({ car }: CarActionsProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const { data: taxSettings } = useTaxSettings();
+  const { company } = useCompany();
 
   // Calculate tax for purchase
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_purchases ? (taxSettings?.tax_rate || 0) : 0;
@@ -255,6 +257,10 @@ export function CarActions({ car }: CarActionsProps) {
     if (taxSettings?.postal_code) parts.push(`ص.ب ${taxSettings.postal_code}`);
     return parts.length > 0 ? parts.join('، ') : 'المملكة العربية السعودية';
   };
+
+  // Get invoice settings from company
+  const invoiceSettings = (company as any)?.invoice_settings || null;
+  const invoiceLogoUrl = (company as any)?.invoice_logo_url || company?.logo_url;
 
   const invoiceData = {
     invoiceNumber: car.inventory_number,
@@ -279,6 +285,8 @@ export function CarActions({ car }: CarActionsProps) {
     taxAmount,
     total: purchasePrice,
     taxSettings,
+    companyLogoUrl: invoiceLogoUrl,
+    invoiceSettings,
   };
 
   return (

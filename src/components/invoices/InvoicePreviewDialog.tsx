@@ -16,6 +16,16 @@ interface InvoiceItem {
   total: number;
 }
 
+interface InvoiceSettings {
+  template?: 'modern' | 'classic' | 'minimal';
+  primary_color?: string;
+  show_logo?: boolean;
+  show_qr?: boolean;
+  show_terms?: boolean;
+  terms_text?: string;
+  footer_text?: string;
+}
+
 interface InvoiceData {
   invoiceNumber: string | number;
   invoiceDate: string;
@@ -34,6 +44,7 @@ interface InvoiceData {
   total: number;
   taxSettings?: TaxSettings | null;
   companyLogoUrl?: string | null;
+  invoiceSettings?: InvoiceSettings | null;
 }
 
 interface InvoicePreviewDialogProps {

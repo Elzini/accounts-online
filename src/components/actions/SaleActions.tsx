@@ -290,6 +290,10 @@ export function SaleActions({ sale }: SaleActionsProps) {
     ];
   };
 
+  // Get invoice settings from company
+  const invoiceSettings = (company as any)?.invoice_settings || null;
+  const invoiceLogoUrl = (company as any)?.invoice_logo_url || company?.logo_url;
+
   const invoiceData = {
     invoiceNumber: sale.sale_number,
     invoiceDate: sale.sale_date,
@@ -307,7 +311,8 @@ export function SaleActions({ sale }: SaleActionsProps) {
     taxAmount,
     total: salePrice,
     taxSettings,
-    companyLogoUrl: company?.logo_url, // شعار الشركة
+    companyLogoUrl: invoiceLogoUrl,
+    invoiceSettings,
   };
 
   return (
