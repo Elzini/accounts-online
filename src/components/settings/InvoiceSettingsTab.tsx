@@ -23,6 +23,13 @@ interface InvoiceSettings {
   show_terms: boolean;
   terms_text: string;
   footer_text: string;
+  // Layout settings
+  logo_position: 'right' | 'left' | 'center';
+  qr_position: 'right' | 'left' | 'center';
+  seller_position: 'top' | 'bottom';
+  buyer_position: 'top' | 'bottom';
+  seller_title: string;
+  buyer_title: string;
 }
 
 const defaultInvoiceSettings: InvoiceSettings = {
@@ -33,6 +40,13 @@ const defaultInvoiceSettings: InvoiceSettings = {
   show_terms: true,
   terms_text: 'شكراً لتعاملكم معنا',
   footer_text: 'هذه الفاتورة صادرة وفقاً لنظام الفوترة الإلكترونية في المملكة العربية السعودية',
+  // Layout defaults
+  logo_position: 'right',
+  qr_position: 'left',
+  seller_position: 'top',
+  buyer_position: 'bottom',
+  seller_title: 'معلومات البائع',
+  buyer_title: 'معلومات المشتري',
 };
 
 const templates = [
@@ -445,6 +459,107 @@ export function InvoiceSettingsTab() {
               checked={settings.show_terms}
               onCheckedChange={(checked) => setSettings({ ...settings, show_terms: checked })}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Layout Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            تخطيط الفاتورة
+          </CardTitle>
+          <CardDescription>
+            تخصيص مواقع العناصر وأسماء الأقسام
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Logo Position */}
+          <div className="space-y-2">
+            <Label>موقع الشعار</Label>
+            <div className="flex gap-2">
+              {[
+                { value: 'right', label: 'يمين' },
+                { value: 'center', label: 'وسط' },
+                { value: 'left', label: 'يسار' },
+              ].map((pos) => (
+                <Button
+                  key={pos.value}
+                  type="button"
+                  variant={settings.logo_position === pos.value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSettings({ ...settings, logo_position: pos.value as any })}
+                >
+                  {pos.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* QR Position */}
+          <div className="space-y-2">
+            <Label>موقع رمز QR</Label>
+            <div className="flex gap-2">
+              {[
+                { value: 'right', label: 'يمين' },
+                { value: 'center', label: 'وسط' },
+                { value: 'left', label: 'يسار' },
+              ].map((pos) => (
+                <Button
+                  key={pos.value}
+                  type="button"
+                  variant={settings.qr_position === pos.value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSettings({ ...settings, qr_position: pos.value as any })}
+                >
+                  {pos.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Seller/Buyer Order */}
+          <div className="space-y-2">
+            <Label>ترتيب البائع والمشتري</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={settings.seller_position === 'top' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSettings({ ...settings, seller_position: 'top', buyer_position: 'bottom' })}
+              >
+                البائع أولاً
+              </Button>
+              <Button
+                type="button"
+                variant={settings.seller_position === 'bottom' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSettings({ ...settings, seller_position: 'bottom', buyer_position: 'top' })}
+              >
+                المشتري أولاً
+              </Button>
+            </div>
+          </div>
+
+          {/* Section Titles */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>عنوان قسم البائع</Label>
+              <Input
+                value={settings.seller_title}
+                onChange={(e) => setSettings({ ...settings, seller_title: e.target.value })}
+                placeholder="معلومات البائع"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>عنوان قسم المشتري</Label>
+              <Input
+                value={settings.buyer_title}
+                onChange={(e) => setSettings({ ...settings, buyer_title: e.target.value })}
+                placeholder="معلومات المشتري"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>

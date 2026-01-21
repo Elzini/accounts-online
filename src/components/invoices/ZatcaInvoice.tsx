@@ -23,6 +23,13 @@ interface InvoiceSettings {
   show_terms?: boolean;
   terms_text?: string;
   footer_text?: string;
+  // Layout settings
+  logo_position?: 'right' | 'left' | 'center';
+  qr_position?: 'right' | 'left' | 'center';
+  seller_position?: 'top' | 'bottom';
+  buyer_position?: 'top' | 'bottom';
+  seller_title?: string;
+  buyer_title?: string;
 }
 
 interface InvoiceData {
@@ -82,6 +89,13 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
       show_terms: invoiceSettings?.show_terms !== false,
       terms_text: invoiceSettings?.terms_text || 'شكراً لتعاملكم معنا',
       footer_text: invoiceSettings?.footer_text || 'هذه الفاتورة صادرة وفقاً لنظام الفوترة الإلكترونية في المملكة العربية السعودية',
+      // Layout settings
+      logo_position: invoiceSettings?.logo_position || 'right',
+      qr_position: invoiceSettings?.qr_position || 'left',
+      seller_position: invoiceSettings?.seller_position || 'top',
+      buyer_position: invoiceSettings?.buyer_position || 'bottom',
+      seller_title: invoiceSettings?.seller_title || 'معلومات البائع',
+      buyer_title: invoiceSettings?.buyer_title || 'معلومات المشتري',
     };
 
     // Use company logo if available, otherwise fallback to default
@@ -132,10 +146,16 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
           className="text-white p-6 rounded-t-lg"
           style={{ backgroundColor: settings.primary_color }}
         >
-          <div className="flex justify-between items-center">
+          <div className={`flex items-center ${
+            settings.logo_position === 'center' ? 'justify-center' :
+            settings.logo_position === 'left' ? 'flex-row-reverse justify-between' :
+            'justify-between'
+          }`}>
             {/* Company Logo */}
             {settings.show_logo && (
-              <div className="flex items-center">
+              <div className={`flex items-center ${
+                settings.logo_position === 'center' ? 'order-1' : ''
+              }`}>
                 <img 
                   src={displayLogo} 
                   alt="شعار الشركة" 
@@ -149,7 +169,10 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
 
             {/* QR Code */}
             {settings.show_qr && (
-              <div className="flex flex-col items-center">
+              <div className={`flex flex-col items-center ${
+                settings.qr_position === 'center' ? 'order-2' :
+                settings.qr_position === 'right' ? 'order-first' : ''
+              }`}>
                 <div className="bg-white p-2 rounded-lg shadow-lg">
                   <QRCodeSVG
                     value={qrData}
@@ -173,7 +196,9 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
             )}
 
             {/* Invoice Title */}
-            <div className="text-left">
+            <div className={`text-left ${
+              settings.logo_position === 'center' && settings.qr_position === 'center' ? '' : ''
+            }`}>
               <h1 className="text-3xl font-bold">فاتورة</h1>
               <h2 className="text-2xl font-bold">ضريبية</h2>
               <div className="mt-2 bg-white/20 px-3 py-1 rounded text-sm">
@@ -186,71 +211,144 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
 
         {/* Content Section */}
         <div className="p-6 bg-gray-50">
-          {/* Seller Info */}
-          <div className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
-            <h3 
-              className="font-bold text-lg mb-3 border-b pb-2"
-              style={{ color: settings.primary_color, borderColor: settings.primary_color + '40' }}
-            >
-              معلومات البائع
-            </h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex gap-2">
-                <span className="text-gray-500">اسم البائع:</span>
-                <span className="font-medium">{sellerName}</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-gray-500">رقم تسجيل ضريبة القيمة المضافة:</span>
-                <span className="font-medium font-bold" style={{ color: settings.primary_color }} dir="ltr">
-                  {displaySellerTaxNumber || 'غير مسجل'}
-                </span>
-              </div>
-              <div className="flex gap-2 col-span-2">
-                <span className="text-gray-500">العنوان:</span>
-                <span className="font-medium">{sellerAddress || taxSettings?.national_address || '-'}</span>
-              </div>
-              {taxSettings?.commercial_register && invoiceType === 'sale' && (
-                <div className="flex gap-2">
-                  <span className="text-gray-500">السجل التجاري:</span>
-                  <span className="font-medium">{taxSettings.commercial_register}</span>
+          {/* Seller and Buyer Info - Dynamic Order */}
+          {settings.seller_position === 'top' ? (
+            <>
+              {/* Seller Info */}
+              <div className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
+                <h3 
+                  className="font-bold text-lg mb-3 border-b pb-2"
+                  style={{ color: settings.primary_color, borderColor: settings.primary_color + '40' }}
+                >
+                  {settings.seller_title}
+                </h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex gap-2">
+                    <span className="text-gray-500">اسم البائع:</span>
+                    <span className="font-medium">{sellerName}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-gray-500">رقم تسجيل ضريبة القيمة المضافة:</span>
+                    <span className="font-medium font-bold" style={{ color: settings.primary_color }} dir="ltr">
+                      {displaySellerTaxNumber || 'غير مسجل'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2 col-span-2">
+                    <span className="text-gray-500">العنوان:</span>
+                    <span className="font-medium">{sellerAddress || taxSettings?.national_address || '-'}</span>
+                  </div>
+                  {taxSettings?.commercial_register && invoiceType === 'sale' && (
+                    <div className="flex gap-2">
+                      <span className="text-gray-500">السجل التجاري:</span>
+                      <span className="font-medium">{taxSettings.commercial_register}</span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          {/* Buyer Info */}
-          <div className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
-            <h3 
-              className="font-bold text-lg mb-3 border-b pb-2"
-              style={{ color: settings.primary_color, borderColor: settings.primary_color + '40' }}
-            >
-              معلومات المشتري
-            </h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex gap-2">
-                <span className="text-gray-500">اسم المشتري:</span>
-                <span className="font-medium">{buyerName}</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-gray-500">رقم تسجيل ضريبة القيمة المضافة:</span>
-                <span className="font-medium font-bold" style={{ color: settings.primary_color }} dir="ltr">
-                  {displayBuyerTaxNumber || 'غير مسجل'}
-                </span>
-              </div>
-              {buyerPhone && (
-                <div className="flex gap-2">
-                  <span className="text-gray-500">رقم الهاتف:</span>
-                  <span className="font-medium" dir="ltr">{buyerPhone}</span>
+              {/* Buyer Info */}
+              <div className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
+                <h3 
+                  className="font-bold text-lg mb-3 border-b pb-2"
+                  style={{ color: settings.primary_color, borderColor: settings.primary_color + '40' }}
+                >
+                  {settings.buyer_title}
+                </h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex gap-2">
+                    <span className="text-gray-500">اسم المشتري:</span>
+                    <span className="font-medium">{buyerName}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-gray-500">رقم تسجيل ضريبة القيمة المضافة:</span>
+                    <span className="font-medium font-bold" style={{ color: settings.primary_color }} dir="ltr">
+                      {displayBuyerTaxNumber || 'غير مسجل'}
+                    </span>
+                  </div>
+                  {buyerPhone && (
+                    <div className="flex gap-2">
+                      <span className="text-gray-500">رقم الهاتف:</span>
+                      <span className="font-medium" dir="ltr">{buyerPhone}</span>
+                    </div>
+                  )}
+                  {buyerAddress && (
+                    <div className="flex gap-2">
+                      <span className="text-gray-500">العنوان:</span>
+                      <span className="font-medium">{buyerAddress}</span>
+                    </div>
+                  )}
                 </div>
-              )}
-              {buyerAddress && (
-                <div className="flex gap-2">
-                  <span className="text-gray-500">العنوان:</span>
-                  <span className="font-medium">{buyerAddress}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Buyer Info First */}
+              <div className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
+                <h3 
+                  className="font-bold text-lg mb-3 border-b pb-2"
+                  style={{ color: settings.primary_color, borderColor: settings.primary_color + '40' }}
+                >
+                  {settings.buyer_title}
+                </h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex gap-2">
+                    <span className="text-gray-500">اسم المشتري:</span>
+                    <span className="font-medium">{buyerName}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-gray-500">رقم تسجيل ضريبة القيمة المضافة:</span>
+                    <span className="font-medium font-bold" style={{ color: settings.primary_color }} dir="ltr">
+                      {displayBuyerTaxNumber || 'غير مسجل'}
+                    </span>
+                  </div>
+                  {buyerPhone && (
+                    <div className="flex gap-2">
+                      <span className="text-gray-500">رقم الهاتف:</span>
+                      <span className="font-medium" dir="ltr">{buyerPhone}</span>
+                    </div>
+                  )}
+                  {buyerAddress && (
+                    <div className="flex gap-2">
+                      <span className="text-gray-500">العنوان:</span>
+                      <span className="font-medium">{buyerAddress}</span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+
+              {/* Seller Info Second */}
+              <div className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
+                <h3 
+                  className="font-bold text-lg mb-3 border-b pb-2"
+                  style={{ color: settings.primary_color, borderColor: settings.primary_color + '40' }}
+                >
+                  {settings.seller_title}
+                </h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex gap-2">
+                    <span className="text-gray-500">اسم البائع:</span>
+                    <span className="font-medium">{sellerName}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-gray-500">رقم تسجيل ضريبة القيمة المضافة:</span>
+                    <span className="font-medium font-bold" style={{ color: settings.primary_color }} dir="ltr">
+                      {displaySellerTaxNumber || 'غير مسجل'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2 col-span-2">
+                    <span className="text-gray-500">العنوان:</span>
+                    <span className="font-medium">{sellerAddress || taxSettings?.national_address || '-'}</span>
+                  </div>
+                  {taxSettings?.commercial_register && invoiceType === 'sale' && (
+                    <div className="flex gap-2">
+                      <span className="text-gray-500">السجل التجاري:</span>
+                      <span className="font-medium">{taxSettings.commercial_register}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Products Table */}
           <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 mb-4">
