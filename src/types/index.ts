@@ -85,4 +85,6 @@ export type ActivePage =
   | 'installments'
   | 'vouchers'
   | 'audit-logs'
-  | 'backups';
+  | 'backups'
+  | 'financing'
+  | 'banking';

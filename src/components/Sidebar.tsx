@@ -21,7 +21,9 @@ import {
   FileCheck,
   Wallet,
   ClipboardList,
-  Database
+  Database,
+  Landmark,
+  Scale
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
@@ -63,6 +65,8 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
     { id: 'quotations' as ActivePage, label: 'عروض الأسعار', icon: FileCheck },
     { id: 'installments' as ActivePage, label: 'الأقساط', icon: CreditCard },
     { id: 'vouchers' as ActivePage, label: 'سندات القبض والصرف', icon: Receipt },
+    { id: 'financing' as ActivePage, label: 'شركات التمويل', icon: Landmark },
+    { id: 'banking' as ActivePage, label: 'إدارة البنوك', icon: Scale },
   ];
 
   const reportItems = [
