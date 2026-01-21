@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUpdateSale, useDeleteSale } from '@/hooks/useDatabase';
 import { useTaxSettings } from '@/hooks/useAccounting';
+import { useCompany } from '@/contexts/CompanyContext';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import { PaymentAccountSelector } from '@/components/forms/PaymentAccountSelector';
 import { toast } from 'sonner';
@@ -244,6 +245,7 @@ export function SaleActions({ sale }: SaleActionsProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const { data: taxSettings } = useTaxSettings();
+  const { company } = useCompany();
 
   // Calculate tax
   const taxRate = taxSettings?.is_active ? (taxSettings?.tax_rate || 0) : 0;
@@ -292,7 +294,7 @@ export function SaleActions({ sale }: SaleActionsProps) {
     invoiceNumber: sale.sale_number,
     invoiceDate: sale.sale_date,
     invoiceType: 'sale' as const,
-    sellerName: taxSettings?.company_name_ar || 'الشركة',
+    sellerName: taxSettings?.company_name_ar || company?.name || 'الشركة',
     sellerTaxNumber: taxSettings?.tax_number || '',
     sellerAddress: buildAddress(),
     buyerName: sale.customer?.name || 'عميل',
@@ -305,6 +307,7 @@ export function SaleActions({ sale }: SaleActionsProps) {
     taxAmount,
     total: salePrice,
     taxSettings,
+    companyLogoUrl: company?.logo_url, // شعار الشركة
   };
 
   return (

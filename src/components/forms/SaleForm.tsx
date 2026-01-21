@@ -213,6 +213,7 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
       taxAmount: taxAmount,
       total: totalWithTax,
       taxSettings: taxSettings,
+      companyLogoUrl: company?.logo_url, // شعار الشركة
     };
   }, [savedSaleData, selectedCar, formData, taxSettings, selectedCustomer, company]);
 

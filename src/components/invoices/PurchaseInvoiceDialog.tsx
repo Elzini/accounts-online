@@ -1,8 +1,8 @@
 import { useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ZatcaInvoice } from './ZatcaInvoice';
-import { Printer, Download, X } from 'lucide-react';
+import { PurchaseInvoice } from './PurchaseInvoice';
+import { Printer, Download } from 'lucide-react';
 import { TaxSettings } from '@/services/accounting';
 import { useReactToPrint } from 'react-to-print';
 import jsPDF from 'jspdf';
@@ -16,18 +16,16 @@ interface InvoiceItem {
   total: number;
 }
 
-interface InvoiceData {
+interface PurchaseInvoiceData {
   invoiceNumber: string | number;
   invoiceDate: string;
-  invoiceType: 'sale' | 'purchase';
-  sellerName: string;
-  sellerTaxNumber: string;
-  sellerAddress: string;
-  buyerName: string;
-  buyerPhone?: string;
-  buyerAddress?: string;
-  buyerIdNumber?: string;
-  buyerTaxNumber?: string;
+  supplierName: string;
+  supplierTaxNumber?: string;
+  supplierAddress?: string;
+  supplierPhone?: string;
+  companyName: string;
+  companyTaxNumber?: string;
+  companyAddress?: string;
   items: InvoiceItem[];
   subtotal: number;
   taxAmount: number;
@@ -36,18 +34,18 @@ interface InvoiceData {
   companyLogoUrl?: string | null;
 }
 
-interface InvoicePreviewDialogProps {
+interface PurchaseInvoiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  data: InvoiceData;
+  data: PurchaseInvoiceData;
 }
 
-export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePreviewDialogProps) {
+export function PurchaseInvoiceDialog({ open, onOpenChange, data }: PurchaseInvoiceDialogProps) {
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
     contentRef: invoiceRef,
-    documentTitle: `فاتورة_${data.invoiceNumber}`,
+    documentTitle: `فاتورة_مشتريات_${data.invoiceNumber}`,
   });
 
   const handleExportPDF = async () => {
@@ -72,7 +70,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      pdf.save(`فاتورة_${data.invoiceNumber}.pdf`);
+      pdf.save(`فاتورة_مشتريات_${data.invoiceNumber}.pdf`);
     } catch (error) {
       console.error('Error exporting PDF:', error);
     }
@@ -83,7 +81,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
       <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            <span>معاينة الفاتورة</span>
+            <span>معاينة فاتورة المشتريات</span>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => handlePrint()}>
                 <Printer className="w-4 h-4 ml-2" />
@@ -98,7 +96,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
         </DialogHeader>
         
         <div className="border rounded-lg overflow-hidden bg-gray-100 p-4">
-          <ZatcaInvoice ref={invoiceRef} data={data} />
+          <PurchaseInvoice ref={invoiceRef} data={data} />
         </div>
       </DialogContent>
     </Dialog>
