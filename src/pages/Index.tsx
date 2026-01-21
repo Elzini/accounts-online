@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileSidebar } from '@/components/MobileSidebar';
 import { Dashboard } from '@/components/Dashboard';
+import { PWAInstallButton } from '@/components/PWAInstallButton';
 import { CustomerForm } from '@/components/forms/CustomerForm';
 import { SupplierForm } from '@/components/forms/SupplierForm';
 import { BatchPurchaseForm } from '@/components/forms/BatchPurchaseForm';
@@ -112,6 +113,7 @@ const Index = () => {
             مرحباً، {user?.email}
           </p>
           <div className="flex items-center gap-2">
+            <PWAInstallButton />
             {permissions.super_admin && (
               <Button
                 variant="outline"
