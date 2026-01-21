@@ -28,13 +28,15 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
   };
 
   // Calculate tax details for each sale
+  // المبلغ المدخل هو المبلغ الأساسي والضريبة تُحسب عليه
   const calculateTaxDetails = (salePrice: number) => {
-    const baseAmount = salePrice / (1 + taxRate / 100);
-    const taxAmount = salePrice - baseAmount;
+    const baseAmount = salePrice;
+    const taxAmount = salePrice * (taxRate / 100);
+    const totalWithTax = salePrice + taxAmount;
     return {
       baseAmount: Math.round(baseAmount * 100) / 100,
       taxAmount: Math.round(taxAmount * 100) / 100,
-      totalWithTax: salePrice,
+      totalWithTax: Math.round(totalWithTax * 100) / 100,
     };
   };
 

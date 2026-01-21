@@ -68,21 +68,22 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
   }, [formData.sale_price, formData.commission, formData.other_expenses, selectedCar]);
 
   // Calculate tax details
+  // المبلغ المدخل هو المبلغ الأساسي والضريبة تُحسب عليه
   const taxDetails = useMemo(() => {
     const price = parseFloat(formData.sale_price) || 0;
     const isActive = taxSettings?.is_active && taxSettings?.apply_to_sales;
     const taxRate = isActive ? (taxSettings?.tax_rate || 0) : 0;
     
-    // السعر المدخل يعتبر شامل الضريبة
-    const baseAmount = isActive ? price / (1 + taxRate / 100) : price;
-    const taxAmount = isActive ? price - baseAmount : 0;
+    const baseAmount = price;
+    const taxAmount = isActive ? price * (taxRate / 100) : 0;
+    const totalWithTax = price + taxAmount;
     
     return {
       isActive,
       taxRate,
       baseAmount,
       taxAmount,
-      totalWithTax: price,
+      totalWithTax,
       taxName: taxSettings?.tax_name || 'ضريبة القيمة المضافة'
     };
   }, [formData.sale_price, taxSettings]);
@@ -180,8 +181,9 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
     const price = parseFloat(formData.sale_price) || 0;
     const isActive = taxSettings?.is_active && taxSettings?.apply_to_sales;
     const taxRate = isActive ? (taxSettings?.tax_rate || 0) : 0;
-    const baseAmount = isActive ? price / (1 + taxRate / 100) : price;
-    const taxAmount = isActive ? price - baseAmount : 0;
+    const baseAmount = price;
+    const taxAmount = isActive ? price * (taxRate / 100) : 0;
+    const totalWithTax = price + taxAmount;
 
     return {
       invoiceNumber: savedSaleData.sale_number || Date.now(),
@@ -204,12 +206,12 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
           unitPrice: baseAmount,
           taxRate: taxRate,
           taxAmount: taxAmount,
-          total: price,
+          total: totalWithTax,
         },
       ],
       subtotal: baseAmount,
       taxAmount: taxAmount,
-      total: price,
+      total: totalWithTax,
       taxSettings: taxSettings,
     };
   }, [savedSaleData, selectedCar, formData, taxSettings, selectedCustomer, company]);
