@@ -1,15 +1,25 @@
-import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, FileText, Users, ArrowDownLeft, ArrowUpRight, Building2 } from 'lucide-react';
+import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, FileText, Users, ArrowDownLeft, ArrowUpRight, Building2, BarChart3 } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivePage } from '@/types';
 import { useMonthlyChartData } from '@/hooks/useDatabase';
+import { useAdvancedAnalytics } from '@/hooks/useAnalytics';
 import { useAppSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCarTransfers, usePartnerDealerships } from '@/hooks/useTransfers';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid } from 'recharts';
 import { useMemo } from 'react';
+
+// Advanced Dashboard Components
+import { TrendCard } from './dashboard/TrendCard';
+import { InventoryPieChart } from './dashboard/InventoryPieChart';
+import { RevenueAreaChart } from './dashboard/RevenueAreaChart';
+import { TopPerformersCard } from './dashboard/TopPerformersCard';
+import { PerformanceMetrics } from './dashboard/PerformanceMetrics';
+import { RecentActivityCard } from './dashboard/RecentActivityCard';
 
 interface DashboardProps {
   stats: {
@@ -36,6 +46,7 @@ const chartConfig = {
 
 export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const { data: chartData, isLoading: chartLoading } = useMonthlyChartData();
+  const { data: analytics, isLoading: analyticsLoading } = useAdvancedAnalytics();
   const { data: settings } = useAppSettings();
   const { permissions } = useAuth();
   const { data: transfers } = useCarTransfers();
@@ -121,361 +132,477 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 md:gap-6">
-        <StatCard
-          title="السيارات المتاحة"
-          value={stats.availableCars}
-          icon={Car}
-          gradient="primary"
-          subtitle="سيارة في المخزون"
-        />
-        <StatCard
-          title="إجمالي المشتريات"
-          value={formatCurrency(stats.totalPurchases)}
-          icon={ShoppingCart}
-          gradient="danger"
-          subtitle="ريال سعودي"
-        />
-        <StatCard
-          title="مبيعات الشهر"
-          value={formatCurrency(stats.monthSalesAmount)}
-          icon={TrendingUp}
-          gradient="success"
-          subtitle="ريال سعودي"
-        />
-        <StatCard
-          title="إجمالي الأرباح"
-          value={formatCurrency(stats.totalProfit)}
-          icon={DollarSign}
-          gradient="warning"
-          subtitle="ريال سعودي"
-        />
-        <StatCard
-          title="مبيعات اليوم"
-          value={stats.todaySales}
-          icon={ShoppingCart}
-          gradient="primary"
-          subtitle="عملية بيع"
-        />
-        <StatCard
-          title="عدد مبيعات الشهر"
-          value={stats.monthSales}
-          icon={TrendingUp}
-          gradient="success"
-          subtitle="عملية بيع"
-        />
-      </div>
+      {/* Dashboard Tabs */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="w-full max-w-md grid grid-cols-2">
+          <TabsTrigger value="overview" className="gap-2">
+            <Package className="w-4 h-4" />
+            نظرة عامة
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-2">
+            <BarChart3 className="w-4 h-4" />
+            التحليلات المتقدمة
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Partner Dealership Transfers - with car details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        {/* Incoming Cars */}
-        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-          <div className="flex items-center justify-between mb-4 md:mb-6">
-            <div>
-              <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
-                <ArrowDownLeft className="w-5 h-5 text-blue-500" />
-                السيارات الواردة من المعارض
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                <span className="font-semibold text-blue-600">{transferStats.incomingCars.length}</span> سيارة قيد الانتظار
-              </p>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setActivePage('car-transfers')}
-              className="text-primary"
-            >
-              عرض الكل
-            </Button>
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="mt-6 space-y-6">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 md:gap-6">
+            <StatCard
+              title="السيارات المتاحة"
+              value={stats.availableCars}
+              icon={Car}
+              gradient="primary"
+              subtitle="سيارة في المخزون"
+            />
+            <StatCard
+              title="إجمالي المشتريات"
+              value={formatCurrency(stats.totalPurchases)}
+              icon={ShoppingCart}
+              gradient="danger"
+              subtitle="ريال سعودي"
+            />
+            <StatCard
+              title="مبيعات الشهر"
+              value={formatCurrency(stats.monthSalesAmount)}
+              icon={TrendingUp}
+              gradient="success"
+              subtitle="ريال سعودي"
+            />
+            <StatCard
+              title="إجمالي الأرباح"
+              value={formatCurrency(stats.totalProfit)}
+              icon={DollarSign}
+              gradient="warning"
+              subtitle="ريال سعودي"
+            />
+            <StatCard
+              title="مبيعات اليوم"
+              value={stats.todaySales}
+              icon={ShoppingCart}
+              gradient="primary"
+              subtitle="عملية بيع"
+            />
+            <StatCard
+              title="عدد مبيعات الشهر"
+              value={stats.monthSales}
+              icon={TrendingUp}
+              gradient="success"
+              subtitle="عملية بيع"
+            />
           </div>
-          {transferStats.incomingCars.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>لا توجد سيارات واردة قيد الانتظار</p>
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {transferStats.incomingCars.map((car) => (
-                <div 
-                  key={car.id} 
-                  className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-950/50 cursor-pointer transition-colors"
+
+          {/* Partner Dealership Transfers */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            {/* Incoming Cars */}
+            <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+              <div className="flex items-center justify-between mb-4 md:mb-6">
+                <div>
+                  <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
+                    <ArrowDownLeft className="w-5 h-5 text-blue-500" />
+                    السيارات الواردة من المعارض
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    <span className="font-semibold text-blue-600">{transferStats.incomingCars.length}</span> سيارة قيد الانتظار
+                  </p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
                   onClick={() => setActivePage('car-transfers')}
+                  className="text-primary"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                        <Car className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="font-semibold">{car.carName} {car.model}</p>
-                        <p className="text-sm text-muted-foreground">شاسيه: {car.chassisNumber}</p>
+                  عرض الكل
+                </Button>
+              </div>
+              {transferStats.incomingCars.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>لا توجد سيارات واردة قيد الانتظار</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {transferStats.incomingCars.map((car) => (
+                    <div 
+                      key={car.id} 
+                      className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-950/50 cursor-pointer transition-colors"
+                      onClick={() => setActivePage('car-transfers')}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                            <Car className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold">{car.carName} {car.model}</p>
+                            <p className="text-sm text-muted-foreground">شاسيه: {car.chassisNumber}</p>
+                          </div>
+                        </div>
+                        <div className="text-left">
+                          <p className="text-sm font-medium text-blue-600">{car.dealershipName}</p>
+                          <Badge variant="outline" className="text-xs">قيد الانتظار</Badge>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-left">
-                      <p className="text-sm font-medium text-blue-600">{car.dealershipName}</p>
-                      <Badge variant="outline" className="text-xs">قيد الانتظار</Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Outgoing Cars */}
+            <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+              <div className="flex items-center justify-between mb-4 md:mb-6">
+                <div>
+                  <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
+                    <ArrowUpRight className="w-5 h-5 text-orange-500" />
+                    السيارات الصادرة للمعارض
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    <span className="font-semibold text-orange-600">{transferStats.outgoingCars.length}</span> سيارة قيد الانتظار
+                  </p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setActivePage('car-transfers')}
+                  className="text-primary"
+                >
+                  عرض الكل
+                </Button>
+              </div>
+              {transferStats.outgoingCars.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>لا توجد سيارات صادرة قيد الانتظار</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {transferStats.outgoingCars.map((car) => (
+                    <div 
+                      key={car.id} 
+                      className="p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-950/50 cursor-pointer transition-colors"
+                      onClick={() => setActivePage('car-transfers')}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                            <Car className="w-5 h-5 text-orange-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold">{car.carName} {car.model}</p>
+                            <p className="text-sm text-muted-foreground">شاسيه: {car.chassisNumber}</p>
+                          </div>
+                        </div>
+                        <div className="text-left">
+                          <p className="text-sm font-medium text-orange-600">{car.dealershipName}</p>
+                          <Badge variant="outline" className="text-xs">قيد الانتظار</Badge>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            {/* Sales Chart */}
+            <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+              <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">المبيعات الشهرية</h2>
+              {chartLoading ? (
+                <div className="h-64 flex items-center justify-center">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <ChartContainer config={chartConfig} className="h-64 w-full">
+                  <BarChart data={chartData || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      axisLine={{ stroke: 'hsl(var(--border))' }}
+                    />
+                    <YAxis 
+                      tickFormatter={formatChartValue}
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      axisLine={{ stroke: 'hsl(var(--border))' }}
+                    />
+                    <ChartTooltip 
+                      content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} 
+                    />
+                    <Bar 
+                      dataKey="sales" 
+                      name="المبيعات"
+                      fill="hsl(var(--primary))" 
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ChartContainer>
+              )}
+            </div>
+
+            {/* Profit Chart */}
+            <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+              <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">الأرباح الشهرية</h2>
+              {chartLoading ? (
+                <div className="h-64 flex items-center justify-center">
+                  <div className="w-8 h-8 border-4 border-success border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <ChartContainer config={chartConfig} className="h-64 w-full">
+                  <LineChart data={chartData || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      axisLine={{ stroke: 'hsl(var(--border))' }}
+                    />
+                    <YAxis 
+                      tickFormatter={formatChartValue}
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      axisLine={{ stroke: 'hsl(var(--border))' }}
+                    />
+                    <ChartTooltip 
+                      content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} 
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="profit" 
+                      name="الأرباح"
+                      stroke="hsl(var(--success))" 
+                      strokeWidth={3}
+                      dot={{ fill: 'hsl(var(--success))', strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, fill: 'hsl(var(--success))' }}
+                    />
+                  </LineChart>
+                </ChartContainer>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            {/* Main Actions */}
+            <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+              <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">الإجراءات السريعة</h2>
+              <div className="grid grid-cols-2 gap-2 md:gap-4">
+                <Button 
+                  onClick={() => setActivePage('purchases')}
+                  className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 gradient-primary hover:opacity-90 text-xs md:text-sm"
+                  disabled={!canPurchases}
+                >
+                  <ShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
+                  <span>المشتريات</span>
+                </Button>
+                <Button 
+                  onClick={() => setActivePage('sales')}
+                  className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 gradient-success hover:opacity-90 text-xs md:text-sm"
+                  disabled={!canSales}
+                >
+                  <DollarSign className="w-5 h-5 md:w-6 md:h-6" />
+                  <span>المبيعات</span>
+                </Button>
+                <Button 
+                  onClick={() => setActivePage('add-customer')}
+                  variant="outline"
+                  className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-xs md:text-sm"
+                  disabled={!canSales}
+                >
+                  <UserPlus className="w-5 h-5 md:w-6 md:h-6" />
+                  <span>إضافة عميل</span>
+                </Button>
+                <Button 
+                  onClick={() => setActivePage('add-supplier')}
+                  variant="outline"
+                  className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-xs md:text-sm"
+                  disabled={!canPurchases}
+                >
+                  <Truck className="w-5 h-5 md:w-6 md:h-6" />
+                  <span>إضافة مورد</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Reports */}
+            <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+              <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">التقارير</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
+                <Button 
+                  onClick={() => setActivePage('inventory-report')}
+                  variant="ghost"
+                  className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-primary/10 text-sm"
+                >
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Package className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                  </div>
+                  <span className="font-medium">تقرير المخزون</span>
+                </Button>
+                <Button 
+                  onClick={() => setActivePage('profit-report')}
+                  variant="ghost"
+                  className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-success/10 text-sm"
+                >
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-success" />
+                  </div>
+                  <span className="font-medium">تقرير الأرباح</span>
+                </Button>
+                <Button 
+                  onClick={() => setActivePage('purchases-report')}
+                  variant="ghost"
+                  className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-warning/10 text-sm"
+                >
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
+                    <FileText className="w-4 h-4 md:w-5 md:h-5 text-warning" />
+                  </div>
+                  <span className="font-medium">تقرير المشتريات</span>
+                </Button>
+                <Button 
+                  onClick={() => setActivePage('sales-report')}
+                  variant="ghost"
+                  className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-blue-500/10 text-sm"
+                >
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                    <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
+                  </div>
+                  <span className="font-medium">تقرير المبيعات</span>
+                </Button>
+                <Button 
+                  onClick={() => setActivePage('customers-report')}
+                  variant="ghost"
+                  className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-purple-500/10 text-sm"
+                >
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+                    <Users className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
+                  </div>
+                  <span className="font-medium">تقرير العملاء</span>
+                </Button>
+                <Button 
+                  onClick={() => setActivePage('suppliers-report')}
+                  variant="ghost"
+                  className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-orange-500/10 text-sm"
+                >
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                    <Truck className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />
+                  </div>
+                  <span className="font-medium">تقرير الموردين</span>
+                </Button>
+                <Button 
+                  onClick={() => setActivePage('commissions-report')}
+                  variant="ghost"
+                  className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-yellow-500/10 text-sm"
+                >
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
+                    <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-yellow-500" />
+                  </div>
+                  <span className="font-medium">تقرير العمولات</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Advanced Analytics Tab */}
+        <TabsContent value="analytics" className="mt-6 space-y-6">
+          {analyticsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : analytics ? (
+            <>
+              {/* Trend Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <TrendCard
+                  title="مبيعات هذا الشهر"
+                  value={formatCurrency(analytics.salesTrend.thisMonth)}
+                  trend={analytics.salesTrend.percentChange}
+                  icon={DollarSign}
+                  gradient="success"
+                />
+                <TrendCard
+                  title="أرباح هذا الشهر"
+                  value={formatCurrency(analytics.profitTrend.thisMonth)}
+                  trend={analytics.profitTrend.percentChange}
+                  icon={TrendingUp}
+                  gradient="primary"
+                />
+                <TrendCard
+                  title="مشتريات هذا الشهر"
+                  value={formatCurrency(analytics.purchasesTrend.thisMonth)}
+                  trend={analytics.purchasesTrend.percentChange}
+                  icon={ShoppingCart}
+                  gradient="warning"
+                />
+              </div>
+
+              {/* Revenue Area Chart & Inventory Pie Chart */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+                <div className="lg:col-span-2 bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+                  <h3 className="text-lg font-bold text-card-foreground mb-4">تحليل الإيرادات والأرباح</h3>
+                  <RevenueAreaChart data={analytics.revenueByMonth} />
+                </div>
+                <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+                  <h3 className="text-lg font-bold text-card-foreground mb-4">توزيع المخزون</h3>
+                  <InventoryPieChart data={analytics.inventoryByStatus} />
+                </div>
+              </div>
+
+              {/* Performance Metrics & Top Performers */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                <PerformanceMetrics
+                  averageSalePrice={analytics.averageSalePrice}
+                  averageProfitMargin={analytics.averageProfitMargin}
+                  inventoryTurnover={analytics.inventoryTurnover}
+                  averageDaysToSell={analytics.averageDaysToSell}
+                />
+                <TopPerformersCard
+                  topCustomers={analytics.topCustomers}
+                  topSuppliers={analytics.topSuppliers}
+                  topCars={analytics.topSellingCars}
+                />
+              </div>
+
+              {/* Recent Activity */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                <RecentActivityCard recentSales={analytics.recentSales} />
+                
+                {/* Summary Stats */}
+                <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+                  <h3 className="text-lg font-bold text-card-foreground mb-4">ملخص الأداء</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm text-muted-foreground">إجمالي السيارات المتاحة</span>
+                      <span className="font-bold text-primary">{analytics.inventoryByStatus.available}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm text-muted-foreground">إجمالي السيارات المباعة</span>
+                      <span className="font-bold text-success">{analytics.inventoryByStatus.sold}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm text-muted-foreground">السيارات المحولة</span>
+                      <span className="font-bold text-warning">{analytics.inventoryByStatus.transferred}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm text-muted-foreground">عدد أفضل العملاء</span>
+                      <span className="font-bold">{analytics.topCustomers.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm text-muted-foreground">عدد الموردين النشطين</span>
+                      <span className="font-bold">{analytics.topSuppliers.length}</span>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Outgoing Cars */}
-        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-          <div className="flex items-center justify-between mb-4 md:mb-6">
-            <div>
-              <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
-                <ArrowUpRight className="w-5 h-5 text-orange-500" />
-                السيارات الصادرة للمعارض
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                <span className="font-semibold text-orange-600">{transferStats.outgoingCars.length}</span> سيارة قيد الانتظار
-              </p>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setActivePage('car-transfers')}
-              className="text-primary"
-            >
-              عرض الكل
-            </Button>
-          </div>
-          {transferStats.outgoingCars.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>لا توجد سيارات صادرة قيد الانتظار</p>
-            </div>
+              </div>
+            </>
           ) : (
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {transferStats.outgoingCars.map((car) => (
-                <div 
-                  key={car.id} 
-                  className="p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-950/50 cursor-pointer transition-colors"
-                  onClick={() => setActivePage('car-transfers')}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                        <Car className="w-5 h-5 text-orange-600" />
-                      </div>
-                      <div>
-                        <p className="font-semibold">{car.carName} {car.model}</p>
-                        <p className="text-sm text-muted-foreground">شاسيه: {car.chassisNumber}</p>
-                      </div>
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm font-medium text-orange-600">{car.dealershipName}</p>
-                      <Badge variant="outline" className="text-xs">قيد الانتظار</Badge>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="text-center py-12 text-muted-foreground">
+              لا توجد بيانات تحليلية متاحة
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        {/* Sales Chart */}
-        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-          <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">المبيعات الشهرية</h2>
-          {chartLoading ? (
-            <div className="h-64 flex items-center justify-center">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <ChartContainer config={chartConfig} className="h-64 w-full">
-              <BarChart data={chartData || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="month" 
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                />
-                <YAxis 
-                  tickFormatter={formatChartValue}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                />
-                <ChartTooltip 
-                  content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} 
-                />
-                <Bar 
-                  dataKey="sales" 
-                  name="المبيعات"
-                  fill="hsl(var(--primary))" 
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ChartContainer>
-          )}
-        </div>
-
-        {/* Profit Chart */}
-        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-          <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">الأرباح الشهرية</h2>
-          {chartLoading ? (
-            <div className="h-64 flex items-center justify-center">
-              <div className="w-8 h-8 border-4 border-success border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <ChartContainer config={chartConfig} className="h-64 w-full">
-              <LineChart data={chartData || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="month" 
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                />
-                <YAxis 
-                  tickFormatter={formatChartValue}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                />
-                <ChartTooltip 
-                  content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} 
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="profit" 
-                  name="الأرباح"
-                  stroke="hsl(var(--success))" 
-                  strokeWidth={3}
-                  dot={{ fill: 'hsl(var(--success))', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, fill: 'hsl(var(--success))' }}
-                />
-              </LineChart>
-            </ChartContainer>
-          )}
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        {/* Main Actions */}
-        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-          <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">الإجراءات السريعة</h2>
-          <div className="grid grid-cols-2 gap-2 md:gap-4">
-            <Button 
-              onClick={() => setActivePage('purchases')}
-              className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 gradient-primary hover:opacity-90 text-xs md:text-sm"
-              disabled={!canPurchases}
-            >
-              <ShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
-              <span>المشتريات</span>
-            </Button>
-            <Button 
-              onClick={() => setActivePage('sales')}
-              className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 gradient-success hover:opacity-90 text-xs md:text-sm"
-              disabled={!canSales}
-            >
-              <DollarSign className="w-5 h-5 md:w-6 md:h-6" />
-              <span>المبيعات</span>
-            </Button>
-            <Button 
-              onClick={() => setActivePage('add-customer')}
-              variant="outline"
-              className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-xs md:text-sm"
-              disabled={!canSales}
-            >
-              <UserPlus className="w-5 h-5 md:w-6 md:h-6" />
-              <span>إضافة عميل</span>
-            </Button>
-            <Button 
-              onClick={() => setActivePage('add-supplier')}
-              variant="outline"
-              className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-xs md:text-sm"
-              disabled={!canPurchases}
-            >
-              <Truck className="w-5 h-5 md:w-6 md:h-6" />
-              <span>إضافة مورد</span>
-            </Button>
-          </div>
-        </div>
-
-        {/* Reports */}
-        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-          <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">التقارير</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
-            <Button 
-              onClick={() => setActivePage('inventory-report')}
-              variant="ghost"
-              className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-primary/10 text-sm"
-            >
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Package className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-              </div>
-              <span className="font-medium">تقرير المخزون</span>
-            </Button>
-            <Button 
-              onClick={() => setActivePage('profit-report')}
-              variant="ghost"
-              className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-success/10 text-sm"
-            >
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
-                <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-success" />
-              </div>
-              <span className="font-medium">تقرير الأرباح</span>
-            </Button>
-            <Button 
-              onClick={() => setActivePage('purchases-report')}
-              variant="ghost"
-              className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-warning/10 text-sm"
-            >
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
-                <FileText className="w-4 h-4 md:w-5 md:h-5 text-warning" />
-              </div>
-              <span className="font-medium">تقرير المشتريات</span>
-            </Button>
-            <Button 
-              onClick={() => setActivePage('sales-report')}
-              variant="ghost"
-              className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-blue-500/10 text-sm"
-            >
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
-              </div>
-              <span className="font-medium">تقرير المبيعات</span>
-            </Button>
-            <Button 
-              onClick={() => setActivePage('customers-report')}
-              variant="ghost"
-              className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-purple-500/10 text-sm"
-            >
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
-                <Users className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
-              </div>
-              <span className="font-medium">تقرير العملاء</span>
-            </Button>
-            <Button 
-              onClick={() => setActivePage('suppliers-report')}
-              variant="ghost"
-              className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-orange-500/10 text-sm"
-            >
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
-                <Truck className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />
-              </div>
-              <span className="font-medium">تقرير الموردين</span>
-            </Button>
-            <Button 
-              onClick={() => setActivePage('commissions-report')}
-              variant="ghost"
-              className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-yellow-500/10 text-sm"
-            >
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
-                <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-yellow-500" />
-              </div>
-              <span className="font-medium">تقرير العمولات</span>
-            </Button>
-          </div>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
