@@ -259,6 +259,258 @@ export type Database = {
           },
         ]
       }
+      bank_accounts: {
+        Row: {
+          account_category_id: string | null
+          account_name: string
+          account_number: string | null
+          bank_name: string
+          company_id: string
+          created_at: string
+          current_balance: number | null
+          iban: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          opening_balance: number | null
+          swift_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_category_id?: string | null
+          account_name: string
+          account_number?: string | null
+          bank_name: string
+          company_id: string
+          created_at?: string
+          current_balance?: number | null
+          iban?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          opening_balance?: number | null
+          swift_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_category_id?: string | null
+          account_name?: string
+          account_number?: string | null
+          bank_name?: string
+          company_id?: string
+          created_at?: string
+          current_balance?: number | null
+          iban?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          opening_balance?: number | null
+          swift_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_accounts_account_category_id_fkey"
+            columns: ["account_category_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_reconciliations: {
+        Row: {
+          adjusted_book_balance: number | null
+          approved_at: string | null
+          approved_by: string | null
+          bank_account_id: string
+          book_balance: number
+          company_id: string
+          created_at: string
+          difference: number | null
+          id: string
+          notes: string | null
+          prepared_by: string | null
+          reconciliation_date: string
+          statement_ending_balance: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          adjusted_book_balance?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_account_id: string
+          book_balance: number
+          company_id: string
+          created_at?: string
+          difference?: number | null
+          id?: string
+          notes?: string | null
+          prepared_by?: string | null
+          reconciliation_date: string
+          statement_ending_balance: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          adjusted_book_balance?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_account_id?: string
+          book_balance?: number
+          company_id?: string
+          created_at?: string
+          difference?: number | null
+          id?: string
+          notes?: string | null
+          prepared_by?: string | null
+          reconciliation_date?: string
+          statement_ending_balance?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_reconciliations_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_statements: {
+        Row: {
+          bank_account_id: string
+          company_id: string
+          created_at: string
+          file_name: string | null
+          id: string
+          import_date: string
+          imported_by: string | null
+          matched_transactions: number | null
+          notes: string | null
+          statement_date: string
+          status: string
+          total_transactions: number | null
+          unmatched_transactions: number | null
+        }
+        Insert: {
+          bank_account_id: string
+          company_id: string
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          import_date?: string
+          imported_by?: string | null
+          matched_transactions?: number | null
+          notes?: string | null
+          statement_date: string
+          status?: string
+          total_transactions?: number | null
+          unmatched_transactions?: number | null
+        }
+        Update: {
+          bank_account_id?: string
+          company_id?: string
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          import_date?: string
+          imported_by?: string | null
+          matched_transactions?: number | null
+          notes?: string | null
+          statement_date?: string
+          status?: string
+          total_transactions?: number | null
+          unmatched_transactions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_statements_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_transactions: {
+        Row: {
+          balance: number | null
+          bank_account_id: string
+          created_at: string
+          credit: number | null
+          debit: number | null
+          description: string | null
+          id: string
+          is_matched: boolean | null
+          matched_at: string | null
+          matched_by: string | null
+          matched_id: string | null
+          matched_type: string | null
+          notes: string | null
+          reference: string | null
+          statement_id: string
+          transaction_date: string
+          value_date: string | null
+        }
+        Insert: {
+          balance?: number | null
+          bank_account_id: string
+          created_at?: string
+          credit?: number | null
+          debit?: number | null
+          description?: string | null
+          id?: string
+          is_matched?: boolean | null
+          matched_at?: string | null
+          matched_by?: string | null
+          matched_id?: string | null
+          matched_type?: string | null
+          notes?: string | null
+          reference?: string | null
+          statement_id: string
+          transaction_date: string
+          value_date?: string | null
+        }
+        Update: {
+          balance?: number | null
+          bank_account_id?: string
+          created_at?: string
+          credit?: number | null
+          debit?: number | null
+          description?: string | null
+          id?: string
+          is_matched?: boolean | null
+          matched_at?: string | null
+          matched_by?: string | null
+          matched_id?: string | null
+          matched_type?: string | null
+          notes?: string | null
+          reference?: string | null
+          statement_id?: string
+          transaction_date?: string
+          value_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_statement_id_fkey"
+            columns: ["statement_id"]
+            isOneToOne: false
+            referencedRelation: "bank_statements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       car_transfers: {
         Row: {
           actual_commission: number | null
@@ -787,6 +1039,220 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financing_companies: {
+        Row: {
+          api_endpoint: string | null
+          api_key_encrypted: string | null
+          bank_name: string | null
+          commission_rate: number | null
+          company_id: string
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_endpoint?: string | null
+          api_key_encrypted?: string | null
+          bank_name?: string | null
+          commission_rate?: number | null
+          company_id: string
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_endpoint?: string | null
+          api_key_encrypted?: string | null
+          bank_name?: string | null
+          commission_rate?: number | null
+          company_id?: string
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      financing_contracts: {
+        Row: {
+          amount_received_from_bank: number | null
+          bank_reference: string | null
+          bank_transfer_date: string | null
+          car_id: string | null
+          company_id: string
+          contract_date: string
+          contract_number: string
+          created_at: string
+          customer_id: string | null
+          down_payment: number
+          financed_amount: number
+          financing_company_id: string
+          first_payment_date: string
+          id: string
+          last_payment_date: string | null
+          monthly_payment: number
+          notes: string | null
+          number_of_months: number
+          profit_rate: number
+          sale_id: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          amount_received_from_bank?: number | null
+          bank_reference?: string | null
+          bank_transfer_date?: string | null
+          car_id?: string | null
+          company_id: string
+          contract_date?: string
+          contract_number: string
+          created_at?: string
+          customer_id?: string | null
+          down_payment?: number
+          financed_amount: number
+          financing_company_id: string
+          first_payment_date: string
+          id?: string
+          last_payment_date?: string | null
+          monthly_payment: number
+          notes?: string | null
+          number_of_months: number
+          profit_rate?: number
+          sale_id?: string | null
+          status?: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          amount_received_from_bank?: number | null
+          bank_reference?: string | null
+          bank_transfer_date?: string | null
+          car_id?: string | null
+          company_id?: string
+          contract_date?: string
+          contract_number?: string
+          created_at?: string
+          customer_id?: string | null
+          down_payment?: number
+          financed_amount?: number
+          financing_company_id?: string
+          first_payment_date?: string
+          id?: string
+          last_payment_date?: string | null
+          monthly_payment?: number
+          notes?: string | null
+          number_of_months?: number
+          profit_rate?: number
+          sale_id?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financing_contracts_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financing_contracts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financing_contracts_financing_company_id_fkey"
+            columns: ["financing_company_id"]
+            isOneToOne: false
+            referencedRelation: "financing_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financing_contracts_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financing_payments: {
+        Row: {
+          amount: number
+          bank_reference: string | null
+          contract_id: string
+          created_at: string
+          due_date: string
+          id: string
+          notes: string | null
+          paid_amount: number | null
+          paid_date: string | null
+          payment_method: string | null
+          payment_number: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          bank_reference?: string | null
+          contract_id: string
+          created_at?: string
+          due_date: string
+          id?: string
+          notes?: string | null
+          paid_amount?: number | null
+          paid_date?: string | null
+          payment_method?: string | null
+          payment_number: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          bank_reference?: string | null
+          contract_id?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          notes?: string | null
+          paid_amount?: number | null
+          paid_date?: string | null
+          payment_method?: string | null
+          payment_number?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financing_payments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "financing_contracts"
             referencedColumns: ["id"]
           },
         ]
