@@ -2068,6 +2068,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      regenerate_journal_entries: {
+        Args: { p_company_id: string }
+        Returns: string
+      }
       user_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
