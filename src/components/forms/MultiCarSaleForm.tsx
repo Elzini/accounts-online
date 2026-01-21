@@ -1,10 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ArrowRight, Save, DollarSign, Plus, X, Car, ArrowLeftRight } from 'lucide-react';
+import { ArrowRight, Save, DollarSign, Plus, X, Car, ArrowLeftRight, FileSpreadsheet, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
 import { useCustomers, useCars, useAddMultiCarSale } from '@/hooks/useDatabase';
@@ -12,6 +18,7 @@ import { useCarTransfers, getPendingTransferForCar, linkTransferToSale } from '@
 import { CarTransfer } from '@/services/transfers';
 import { useAccounts } from '@/hooks/useAccounting';
 import { PaymentAccountSelector } from './PaymentAccountSelector';
+import { useImportedInvoiceData } from '@/hooks/useImportedInvoiceData';
 
 interface MultiCarSaleFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -31,6 +38,7 @@ export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
   const { data: customers = [] } = useCustomers();
   const { data: allCars = [] } = useCars();
   const { data: accounts = [] } = useAccounts();
+  const { data: savedTemplates = [] } = useImportedInvoiceData();
   const addMultiCarSale = useAddMultiCarSale();
 
   // Include both available and transferred cars for sale
@@ -218,25 +226,73 @@ export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
 
           {/* Cars Section */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <Label className="text-lg font-semibold">السيارات ({selectedCars.length})</Label>
-              {remainingCars.length > 0 && (
-                <Select onValueChange={handleAddCar} value="">
-                  <SelectTrigger className="w-64">
-                    <SelectValue placeholder="إضافة سيارة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {remainingCars.map((car) => (
-                      <SelectItem key={car.id} value={car.id}>
-                        <div className="flex items-center gap-2">
-                          <Car className="w-4 h-4" />
-                          <span>{car.name} - {car.model} ({car.chassis_number})</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+              <div className="flex gap-2">
+                {/* Import from saved templates */}
+                {savedTemplates.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <FileSpreadsheet className="w-4 h-4" />
+                        استيراد من قالب
+                        <ChevronDown className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {savedTemplates.map((template) => (
+                        <DropdownMenuItem
+                          key={template.id}
+                          onClick={() => {
+                            // Try to match template items with available cars
+                            let matchedCount = 0;
+                            template.data.forEach((item) => {
+                              const matchingCar = remainingCars.find(car => 
+                                car.name.includes(item.description) || 
+                                item.description.includes(car.name) ||
+                                car.chassis_number === item.description
+                              );
+                              if (matchingCar) {
+                                handleAddCar(matchingCar.id);
+                                // Set the price after a small delay to ensure the car is added
+                                setTimeout(() => {
+                                  handleCarPriceChange(matchingCar.id, String(item.unitPrice));
+                                }, 100);
+                                matchedCount++;
+                              }
+                            });
+                            if (matchedCount > 0) {
+                              toast.success(`تم استيراد ${matchedCount} بند من القالب`);
+                            } else {
+                              toast.info('لم يتم العثور على سيارات مطابقة في المخزون');
+                            }
+                          }}
+                        >
+                          <FileSpreadsheet className="w-4 h-4 ml-2" />
+                          {template.name} ({template.data.length} بند)
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                {remainingCars.length > 0 && (
+                  <Select onValueChange={handleAddCar} value="">
+                    <SelectTrigger className="w-48 sm:w-64">
+                      <SelectValue placeholder="إضافة سيارة" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {remainingCars.map((car) => (
+                        <SelectItem key={car.id} value={car.id}>
+                          <div className="flex items-center gap-2">
+                            <Car className="w-4 h-4" />
+                            <span>{car.name} - {car.model} ({car.chassis_number})</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
             </div>
 
             {/* Selected Cars List */}
