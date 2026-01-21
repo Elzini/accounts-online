@@ -30,7 +30,10 @@ const Install = () => {
     // Listen for install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      const prompt = e as BeforeInstallPromptEvent;
+      setDeferredPrompt(prompt);
+      // Store globally for desktop fallback
+      (window as any).deferredPrompt = prompt;
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -177,16 +180,31 @@ const Install = () => {
                 </div>
               )}
 
-              {/* Desktop Instructions */}
+              {/* Desktop Instructions - show when no prompt available */}
               {!isIOS && !isAndroid && !deferredPrompt && (
                 <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-2 text-primary">
                     <Chrome className="w-5 h-5" />
                     <span className="font-semibold">تثبيت على الكمبيوتر</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    ابحث عن أيقونة التثبيت في شريط العنوان أو استخدم قائمة المتصفح لتثبيت التطبيق.
+                  <p className="text-sm text-muted-foreground mb-3">
+                    انقر على زر التثبيت أدناه أو ابحث عن أيقونة التثبيت <Download className="w-4 h-4 inline mx-1" /> في شريط العنوان.
                   </p>
+                  <Button 
+                    onClick={() => {
+                      // Try to trigger install if available, otherwise show alert
+                      if ((window as any).deferredPrompt) {
+                        (window as any).deferredPrompt.prompt();
+                      } else {
+                        alert('لتثبيت التطبيق:\n1. افتح قائمة المتصفح (⋮ أو ⋯)\n2. اختر "تثبيت التطبيق" أو "Install App"');
+                      }
+                    }}
+                    className="w-full gap-2"
+                    size="lg"
+                  >
+                    <Download className="w-5 h-5" />
+                    تثبيت التطبيق
+                  </Button>
                 </div>
               )}
             </>
