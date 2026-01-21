@@ -15,19 +15,18 @@ interface InvoiceItem {
   total: number;
 }
 
-interface InvoiceData {
+interface PurchaseInvoiceData {
   invoiceNumber: string | number;
   invoiceDate: string;
-  invoiceType: 'sale' | 'purchase';
-  // Seller/Buyer info
-  sellerName: string;
-  sellerTaxNumber: string;
-  sellerAddress: string;
-  buyerName: string;
-  buyerPhone?: string;
-  buyerAddress?: string;
-  buyerIdNumber?: string;
-  buyerTaxNumber?: string;
+  // Supplier info (البائع)
+  supplierName: string;
+  supplierTaxNumber?: string;
+  supplierAddress?: string;
+  supplierPhone?: string;
+  // Company info (المشتري)
+  companyName: string;
+  companyTaxNumber?: string;
+  companyAddress?: string;
   // Items
   items: InvoiceItem[];
   // Totals
@@ -40,24 +39,22 @@ interface InvoiceData {
   companyLogoUrl?: string | null;
 }
 
-interface ZatcaInvoiceProps {
-  data: InvoiceData;
+interface PurchaseInvoiceProps {
+  data: PurchaseInvoiceData;
 }
 
-export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
+export const PurchaseInvoice = forwardRef<HTMLDivElement, PurchaseInvoiceProps>(
   ({ data }, ref) => {
     const {
       invoiceNumber,
       invoiceDate,
-      invoiceType,
-      sellerName,
-      sellerTaxNumber,
-      sellerAddress,
-      buyerName,
-      buyerPhone,
-      buyerAddress,
-      buyerIdNumber,
-      buyerTaxNumber,
+      supplierName,
+      supplierTaxNumber,
+      supplierAddress,
+      supplierPhone,
+      companyName,
+      companyTaxNumber,
+      companyAddress,
       items,
       subtotal,
       taxAmount,
@@ -73,45 +70,22 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
     const formattedTime = format(new Date(invoiceDate), 'HH:mm:ss');
     const taxRate = taxSettings?.tax_rate || 15;
 
-    // Get the actual VAT number for ZATCA QR - must be the company's VAT number (15 digits starting with 3)
-    const companyVatNumber = taxSettings?.tax_number || '';
-    
-    // For QR code, we need the seller's VAT number
-    // For sales: seller = company, buyer = customer
-    // For purchases: seller = supplier, buyer = company
-    const qrVatNumber = invoiceType === 'sale' ? companyVatNumber : sellerTaxNumber;
-    const qrSellerName = invoiceType === 'sale' 
-      ? (taxSettings?.company_name_ar || sellerName) 
-      : sellerName;
-
-    // Validate VAT number for ZATCA compliance
-    const isVatValid = qrVatNumber && qrVatNumber.replace(/\D/g, '').length === 15;
-
-    // Generate ZATCA-compliant QR code data using TLV encoding
+    // Generate ZATCA-compliant QR code data
     const qrData = useMemo(() => {
-      // Only generate valid QR if we have proper VAT number
-      if (!isVatValid) {
-        console.warn('ZATCA QR: Invalid or missing VAT number');
-      }
-      
       return generateZatcaQRData({
-        sellerName: qrSellerName,
-        vatNumber: qrVatNumber || '',
+        sellerName: supplierName,
+        vatNumber: supplierTaxNumber || '',
         invoiceDateTime: formatDateTimeForZatca(invoiceDate),
         invoiceTotal: total,
         vatAmount: taxAmount,
       });
-    }, [qrSellerName, qrVatNumber, invoiceDate, total, taxAmount, isVatValid]);
+    }, [supplierName, supplierTaxNumber, invoiceDate, total, taxAmount]);
 
     // Calculate item tax amount if not provided
     const itemsWithTax = items.map(item => ({
       ...item,
       taxAmount: item.taxAmount ?? (item.unitPrice * item.quantity * (item.taxRate / 100))
     }));
-
-    // Get display values for seller and buyer based on invoice type
-    const displaySellerTaxNumber = invoiceType === 'sale' ? companyVatNumber : sellerTaxNumber;
-    const displayBuyerTaxNumber = invoiceType === 'sale' ? (buyerTaxNumber || buyerIdNumber) : companyVatNumber;
 
     return (
       <div
@@ -120,8 +94,8 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
         style={{ fontFamily: 'Cairo, Arial, sans-serif' }}
         dir="rtl"
       >
-        {/* Header - Green Section */}
-        <div className="bg-emerald-600 text-white p-6 rounded-t-lg">
+        {/* Header - Blue Section for Purchases */}
+        <div className="bg-blue-600 text-white p-6 rounded-t-lg">
           <div className="flex justify-between items-center">
             {/* Left - Company Logo */}
             <div className="flex items-center">
@@ -143,7 +117,7 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                   size={90}
                   level="M"
                   includeMargin={false}
-                  fgColor="#047857"
+                  fgColor="#2563eb"
                 />
               </div>
               <div className="flex gap-4 mt-2 text-sm">
@@ -164,7 +138,7 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                 فاتورة
               </h1>
               <h2 className="text-2xl font-bold">
-                ضريبية
+                مشتريات
               </h2>
               <div className="mt-2 bg-white/20 px-3 py-1 rounded text-sm">
                 <span>رقم الفاتورة: </span>
@@ -176,27 +150,60 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
 
         {/* Content Section */}
         <div className="p-6 bg-gray-50">
-          {/* Seller Info Section */}
+          {/* Supplier Info Section (البائع) */}
           <div className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
-            <h3 className="text-emerald-700 font-bold text-lg mb-3 border-b border-emerald-200 pb-2">
-              معلومات البائع
+            <h3 className="text-blue-700 font-bold text-lg mb-3 border-b border-blue-200 pb-2">
+              معلومات المورد (البائع)
             </h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex gap-2">
-                <span className="text-gray-500">اسم البائع:</span>
-                <span className="font-medium">{sellerName}</span>
+                <span className="text-gray-500">اسم المورد:</span>
+                <span className="font-medium">{supplierName}</span>
               </div>
               <div className="flex gap-2">
-                <span className="text-gray-500">رقم تسجيل ضريبة القيمة المضافة للبائع:</span>
-                <span className="font-medium text-emerald-700 font-bold" dir="ltr">
-                  {displaySellerTaxNumber || 'غير مسجل'}
+                <span className="text-gray-500">رقم تسجيل ضريبة القيمة المضافة:</span>
+                <span className="font-medium text-blue-700 font-bold" dir="ltr">
+                  {supplierTaxNumber || 'غير مسجل'}
                 </span>
               </div>
-              <div className="flex gap-2 col-span-2">
-                <span className="text-gray-500">العنوان الوطني:</span>
-                <span className="font-medium">{sellerAddress || taxSettings?.national_address || '-'}</span>
+              {supplierPhone && (
+                <div className="flex gap-2">
+                  <span className="text-gray-500">رقم الهاتف:</span>
+                  <span className="font-medium" dir="ltr">{supplierPhone}</span>
+                </div>
+              )}
+              {supplierAddress && (
+                <div className="flex gap-2">
+                  <span className="text-gray-500">العنوان:</span>
+                  <span className="font-medium">{supplierAddress}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Company Info Section (المشتري) */}
+          <div className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
+            <h3 className="text-blue-700 font-bold text-lg mb-3 border-b border-blue-200 pb-2">
+              معلومات الشركة (المشتري)
+            </h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex gap-2">
+                <span className="text-gray-500">اسم الشركة:</span>
+                <span className="font-medium">{companyName}</span>
               </div>
-              {taxSettings?.commercial_register && invoiceType === 'sale' && (
+              <div className="flex gap-2">
+                <span className="text-gray-500">رقم تسجيل ضريبة القيمة المضافة:</span>
+                <span className="font-medium text-blue-700 font-bold" dir="ltr">
+                  {companyTaxNumber || 'غير مسجل'}
+                </span>
+              </div>
+              {companyAddress && (
+                <div className="flex gap-2 col-span-2">
+                  <span className="text-gray-500">العنوان الوطني:</span>
+                  <span className="font-medium">{companyAddress}</span>
+                </div>
+              )}
+              {taxSettings?.commercial_register && (
                 <div className="flex gap-2">
                   <span className="text-gray-500">السجل التجاري:</span>
                   <span className="font-medium">{taxSettings.commercial_register}</span>
@@ -205,51 +212,20 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
             </div>
           </div>
 
-          {/* Buyer Info Section */}
-          <div className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
-            <h3 className="text-emerald-700 font-bold text-lg mb-3 border-b border-emerald-200 pb-2">
-              معلومات المشتري
-            </h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex gap-2">
-                <span className="text-gray-500">اسم المشتري:</span>
-                <span className="font-medium">{buyerName}</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-gray-500">رقم تسجيل ضريبة القيمة المضافة للمشتري:</span>
-                <span className="font-medium text-emerald-700 font-bold" dir="ltr">
-                  {displayBuyerTaxNumber || 'غير مسجل'}
-                </span>
-              </div>
-              {buyerPhone && (
-                <div className="flex gap-2">
-                  <span className="text-gray-500">رقم الهاتف:</span>
-                  <span className="font-medium" dir="ltr">{buyerPhone}</span>
-                </div>
-              )}
-              {buyerAddress && (
-                <div className="flex gap-2">
-                  <span className="text-gray-500">العنوان:</span>
-                  <span className="font-medium">{buyerAddress}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Products Table */}
           <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 mb-4">
-            <h3 className="text-emerald-700 font-bold text-lg p-4 border-b border-emerald-200">
+            <h3 className="text-blue-700 font-bold text-lg p-4 border-b border-blue-200">
               المنتجات
             </h3>
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-emerald-50 text-emerald-800">
-                  <th className="p-3 text-right border-b border-emerald-200">#</th>
-                  <th className="p-3 text-right border-b border-emerald-200">اسم المنتج</th>
-                  <th className="p-3 text-center border-b border-emerald-200">الكمية</th>
-                  <th className="p-3 text-center border-b border-emerald-200">السعر</th>
-                  <th className="p-3 text-center border-b border-emerald-200">ضريبة القيمة المضافة</th>
-                  <th className="p-3 text-center border-b border-emerald-200">المجموع الكلي</th>
+                <tr className="bg-blue-50 text-blue-800">
+                  <th className="p-3 text-right border-b border-blue-200">#</th>
+                  <th className="p-3 text-right border-b border-blue-200">اسم المنتج</th>
+                  <th className="p-3 text-center border-b border-blue-200">الكمية</th>
+                  <th className="p-3 text-center border-b border-blue-200">السعر</th>
+                  <th className="p-3 text-center border-b border-blue-200">ضريبة القيمة المضافة</th>
+                  <th className="p-3 text-center border-b border-blue-200">المجموع الكلي</th>
                 </tr>
               </thead>
               <tbody>
@@ -281,7 +257,7 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
               <span className="text-gray-600 font-medium">ضريبة القيمة المضافة ({taxRate}%)</span>
               <span className="font-bold text-lg">{taxAmount.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س</span>
             </div>
-            <div className="flex justify-between items-center p-4 bg-emerald-600 text-white">
+            <div className="flex justify-between items-center p-4 bg-blue-600 text-white">
               <span className="font-bold text-lg">المجموع مع الضريبة ({taxRate}%)</span>
               <span className="font-bold text-xl">{total.toLocaleString('ar-SA')} ر.س</span>
             </div>
@@ -299,4 +275,4 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
   }
 );
 
-ZatcaInvoice.displayName = 'ZatcaInvoice';
+PurchaseInvoice.displayName = 'PurchaseInvoice';
