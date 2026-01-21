@@ -14,7 +14,8 @@ import {
   Settings,
   HardDrive,
   Calendar,
-  Upload
+  Upload,
+  Eye
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,7 +62,8 @@ import {
   useDownloadBackup,
   useRestoreFromLocalFile
 } from '@/hooks/useBackups';
-import { Backup } from '@/services/backups';
+import { Backup, BackupData } from '@/services/backups';
+import { BackupPreviewDialog } from './BackupPreviewDialog';
 
 export function BackupsPage() {
   const { data: backups, isLoading: backupsLoading } = useBackups();
@@ -77,9 +79,11 @@ export function BackupsPage() {
   const [newBackupName, setNewBackupName] = useState('');
   const [newBackupDescription, setNewBackupDescription] = useState('');
   const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
+  const [previewBackup, setPreviewBackup] = useState<Backup | null>(null);
+  const [localFilePreview, setLocalFilePreview] = useState<{ data: BackupData; file: File } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     
@@ -88,12 +92,37 @@ export function BackupsPage() {
       return;
     }
     
-    await restoreFromFile.mutateAsync(file);
-    setIsRestoreDialogOpen(false);
+    // Read and parse file for preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const data = JSON.parse(content) as BackupData;
+        setLocalFilePreview({ data, file });
+        setIsRestoreDialogOpen(false);
+      } catch {
+        alert('ملف النسخة الاحتياطية غير صالح');
+      }
+    };
+    reader.readAsText(file);
+    
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
+
+  const handleConfirmLocalRestore = async () => {
+    if (!localFilePreview) return;
+    await restoreFromFile.mutateAsync(localFilePreview.file);
+    setLocalFilePreview(null);
+  };
+
+  const handleConfirmCloudRestore = async () => {
+    if (!previewBackup) return;
+    await restoreBackup.mutateAsync(previewBackup.id);
+    setPreviewBackup(null);
+  };
+
   const handleCreateBackup = async () => {
     if (!newBackupName.trim()) return;
     
@@ -175,14 +204,15 @@ export function BackupsPage() {
                   ref={fileInputRef}
                   type="file"
                   accept=".json"
-                  onChange={handleFileUpload}
+                  onChange={handleFileSelect}
                   className="hidden"
                   id="backup-file-input"
                 />
-                <Button
-                  variant="outline"
-                  className="w-full h-24 border-dashed gap-2"
-                  onClick={() => fileInputRef.current?.click()}
+                  <Button
+                    variant="outline"
+                    className="w-full h-24 border-dashed gap-2"
+                    onClick={() => fileInputRef.current?.click()}
+                    type="button"
                   disabled={restoreFromFile.isPending}
                 >
                   {restoreFromFile.isPending ? (
@@ -403,37 +433,25 @@ export function BackupsPage() {
                             <Download className="w-4 h-4" />
                           </Button>
                           
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                disabled={backup.status !== 'completed'}
-                                title="استعادة"
-                              >
-                                <RotateCcw className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>تأكيد الاستعادة</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  سيتم استبدال جميع البيانات الحالية بالبيانات من هذه النسخة الاحتياطية.
-                                  هذا الإجراء لا يمكن التراجع عنه!
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => restoreBackup.mutate(backup.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  {restoreBackup.isPending && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
-                                  تأكيد الاستعادة
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={backup.status !== 'completed' || !backup.backup_data}
+                            title="معاينة واستعادة"
+                            onClick={() => setPreviewBackup(backup)}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={backup.status !== 'completed'}
+                            title="استعادة مباشرة"
+                            onClick={() => setPreviewBackup(backup)}
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </Button>
 
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -474,6 +492,27 @@ export function BackupsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Cloud Backup Preview Dialog */}
+      <BackupPreviewDialog
+        open={!!previewBackup}
+        onOpenChange={(open) => !open && setPreviewBackup(null)}
+        backupData={previewBackup?.backup_data as BackupData | null}
+        backupName={previewBackup?.name}
+        backupDate={previewBackup?.created_at}
+        onConfirmRestore={handleConfirmCloudRestore}
+        isRestoring={restoreBackup.isPending}
+      />
+
+      {/* Local File Preview Dialog */}
+      <BackupPreviewDialog
+        open={!!localFilePreview}
+        onOpenChange={(open) => !open && setLocalFilePreview(null)}
+        backupData={localFilePreview?.data || null}
+        backupName={localFilePreview?.file.name}
+        onConfirmRestore={handleConfirmLocalRestore}
+        isRestoring={restoreFromFile.isPending}
+      />
     </div>
   );
 }
