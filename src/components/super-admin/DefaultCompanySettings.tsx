@@ -36,6 +36,13 @@ interface InvoiceSettings {
   show_terms: boolean;
   terms_text: string;
   footer_text: string;
+  // Layout settings
+  logo_position: 'right' | 'left' | 'center';
+  qr_position: 'right' | 'left' | 'center';
+  seller_position: 'top' | 'bottom';
+  buyer_position: 'top' | 'bottom';
+  seller_title: string;
+  buyer_title: string;
 }
 
 const defaultInvoiceSettings: InvoiceSettings = {
@@ -46,6 +53,13 @@ const defaultInvoiceSettings: InvoiceSettings = {
   show_terms: true,
   terms_text: 'الأسعار شاملة ضريبة القيمة المضافة 15%',
   footer_text: 'شكراً لتعاملكم معنا',
+  // Layout defaults
+  logo_position: 'right',
+  qr_position: 'left',
+  seller_position: 'top',
+  buyer_position: 'bottom',
+  seller_title: 'معلومات البائع',
+  buyer_title: 'معلومات المشتري',
 };
 
 const templates = [
@@ -670,6 +684,98 @@ export function DefaultCompanySettings() {
                     checked={invoiceSettings.show_terms} 
                     onCheckedChange={(checked) => setInvoiceSettings(prev => ({ ...prev, show_terms: checked }))}
                   />
+                </div>
+              </div>
+
+              {/* Layout Settings */}
+              <div className="space-y-4">
+                <Label>تخطيط الفاتورة</Label>
+                
+                {/* Logo Position */}
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">موقع الشعار</p>
+                  <div className="flex gap-2">
+                    {[
+                      { value: 'right', label: 'يمين' },
+                      { value: 'center', label: 'وسط' },
+                      { value: 'left', label: 'يسار' },
+                    ].map((pos) => (
+                      <Button
+                        key={pos.value}
+                        type="button"
+                        variant={invoiceSettings.logo_position === pos.value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setInvoiceSettings(prev => ({ ...prev, logo_position: pos.value as any }))}
+                      >
+                        {pos.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* QR Position */}
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">موقع رمز QR</p>
+                  <div className="flex gap-2">
+                    {[
+                      { value: 'right', label: 'يمين' },
+                      { value: 'center', label: 'وسط' },
+                      { value: 'left', label: 'يسار' },
+                    ].map((pos) => (
+                      <Button
+                        key={pos.value}
+                        type="button"
+                        variant={invoiceSettings.qr_position === pos.value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setInvoiceSettings(prev => ({ ...prev, qr_position: pos.value as any }))}
+                      >
+                        {pos.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Seller/Buyer Order */}
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">ترتيب البائع والمشتري</p>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={invoiceSettings.seller_position === 'top' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setInvoiceSettings(prev => ({ ...prev, seller_position: 'top', buyer_position: 'bottom' }))}
+                    >
+                      البائع أولاً
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={invoiceSettings.seller_position === 'bottom' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setInvoiceSettings(prev => ({ ...prev, seller_position: 'bottom', buyer_position: 'top' }))}
+                    >
+                      المشتري أولاً
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Section Titles */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">عنوان قسم البائع</p>
+                    <Input
+                      value={invoiceSettings.seller_title}
+                      onChange={(e) => setInvoiceSettings(prev => ({ ...prev, seller_title: e.target.value }))}
+                      placeholder="معلومات البائع"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">عنوان قسم المشتري</p>
+                    <Input
+                      value={invoiceSettings.buyer_title}
+                      onChange={(e) => setInvoiceSettings(prev => ({ ...prev, buyer_title: e.target.value }))}
+                      placeholder="معلومات المشتري"
+                    />
+                  </div>
                 </div>
               </div>
 
