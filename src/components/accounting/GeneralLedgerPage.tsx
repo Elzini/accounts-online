@@ -8,13 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useAccounts, useGeneralLedger } from '@/hooks/useAccounting';
-import { Loader2, BookOpen, CalendarIcon, FileText, Search, FileDown, Printer, Filter } from 'lucide-react';
+import { Loader2, BookOpen, CalendarIcon, FileText, Search, FileDown, Printer, Filter, Eye, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompany } from '@/contexts/CompanyContext';
+import { LedgerPreviewDialog } from './LedgerPreviewDialog';
 
 export function GeneralLedgerPage() {
   const { data: accounts = [], isLoading: isLoadingAccounts } = useAccounts();
@@ -24,6 +26,9 @@ export function GeneralLedgerPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [accountSearch, setAccountSearch] = useState('');
   const [transactionFilter, setTransactionFilter] = useState<string>('all');
+  const [showAccountDropdown, setShowAccountDropdown] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [exportType, setExportType] = useState<'print' | 'pdf' | 'excel'>('print');
   const printRef = useRef<HTMLDivElement>(null);
   
   const [dateRange, setDateRange] = useState<{
@@ -39,6 +44,8 @@ export function GeneralLedgerPage() {
     dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
     dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
   );
+
+  const companyName = companySettings?.app_name || 'الشركة';
 
   // Filter accounts based on search
   const filteredAccounts = useMemo(() => {
@@ -268,36 +275,92 @@ export function GeneralLedgerPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4">
-            {/* Account Search & Select */}
+            {/* Account Search with Autocomplete */}
             <div className="flex-1 min-w-[300px]">
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="ابحث عن حساب بالاسم أو الرمز..."
-                  value={accountSearch}
-                  onChange={(e) => setAccountSearch(e.target.value)}
-                  className="pr-10 mb-2"
-                />
+              <Popover open={showAccountDropdown && filteredAccounts.length > 0} onOpenChange={setShowAccountDropdown}>
+                <PopoverTrigger asChild>
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
+                    <Input
+                      placeholder="ابحث عن حساب بالاسم أو الرمز..."
+                      value={accountSearch}
+                      onChange={(e) => {
+                        setAccountSearch(e.target.value);
+                        setShowAccountDropdown(true);
+                      }}
+                      onFocus={() => setShowAccountDropdown(true)}
+                      className="pr-10"
+                    />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-[400px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+                  <Command>
+                    <CommandList>
+                      <CommandEmpty>لا توجد نتائج</CommandEmpty>
+                      <CommandGroup heading="الحسابات المطابقة">
+                        <ScrollArea className="h-[250px]">
+                          {filteredAccounts.slice(0, 20).map((account) => (
+                            <CommandItem
+                              key={account.id}
+                              value={account.id}
+                              onSelect={() => {
+                                setSelectedAccountId(account.id);
+                                setAccountSearch(`${account.code} - ${account.name}`);
+                                setShowAccountDropdown(false);
+                              }}
+                              className="flex items-center justify-between cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-muted-foreground">{account.code}</span>
+                                <span>{account.name}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {getAccountTypeLabel(account.type)}
+                                </Badge>
+                                {selectedAccountId === account.id && (
+                                  <Check className="w-4 h-4 text-primary" />
+                                )}
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </ScrollArea>
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              
+              {/* Quick Account Type Filters */}
+              <div className="flex gap-2 mt-2 flex-wrap">
+                {['assets', 'liabilities', 'equity', 'revenue', 'expenses'].map((type) => (
+                  <Button
+                    key={type}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => {
+                      setAccountSearch(getAccountTypeLabel(type));
+                      setShowAccountDropdown(true);
+                    }}
+                  >
+                    {getAccountTypeLabel(type)}
+                  </Button>
+                ))}
+                {accountSearch && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs text-destructive"
+                    onClick={() => {
+                      setAccountSearch('');
+                      setSelectedAccountId(null);
+                    }}
+                  >
+                    مسح
+                  </Button>
+                )}
               </div>
-              <Select
-                value={selectedAccountId || ''}
-                onValueChange={(value) => setSelectedAccountId(value || null)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر الحساب" />
-                </SelectTrigger>
-                <SelectContent>
-                  <ScrollArea className="h-[300px]">
-                    {filteredAccounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        <span className="font-mono ml-2 text-muted-foreground">{account.code}</span>
-                        {account.name}
-                        <span className="text-xs text-muted-foreground mr-2">({getAccountTypeLabel(account.type)})</span>
-                      </SelectItem>
-                    ))}
-                  </ScrollArea>
-                </SelectContent>
-              </Select>
             </div>
             
             {/* Date Range */}
@@ -369,17 +432,35 @@ export function GeneralLedgerPage() {
                 </CardDescription>
               </div>
               
-              {/* Export Buttons */}
+              {/* Export Buttons with Preview */}
               <div className="flex gap-2 flex-wrap">
-                <Button variant="outline" size="sm" onClick={handleExportExcel} className="gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => { setExportType('excel'); setPreviewOpen(true); }} 
+                  className="gap-2"
+                >
+                  <Eye className="w-4 h-4" />
                   <FileDown className="w-4 h-4" />
                   Excel
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleExportPDF} className="gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => { setExportType('pdf'); setPreviewOpen(true); }} 
+                  className="gap-2"
+                >
+                  <Eye className="w-4 h-4" />
                   <FileDown className="w-4 h-4" />
                   PDF
                 </Button>
-                <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => { setExportType('print'); setPreviewOpen(true); }} 
+                  className="gap-2"
+                >
+                  <Eye className="w-4 h-4" />
                   <Printer className="w-4 h-4" />
                   طباعة
                 </Button>
@@ -595,6 +676,23 @@ export function GeneralLedgerPage() {
           </CardContent>
         </Card>
       ) : null}
+
+      {/* Preview Dialog */}
+      <LedgerPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        ledger={ledger || null}
+        entries={filteredEntries}
+        dateRange={dateRange}
+        exportType={exportType}
+        onConfirm={() => {
+          setPreviewOpen(false);
+          if (exportType === 'print') handlePrint();
+          else if (exportType === 'pdf') handleExportPDF();
+          else handleExportExcel();
+        }}
+        companyName={companyName}
+      />
     </div>
   );
 }
