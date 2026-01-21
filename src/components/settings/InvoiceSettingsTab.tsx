@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { FileText, Upload, X, Check, Palette, Eye, QrCode, FileSignature } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,11 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import logoImage from '@/assets/logo.png';
+import { ZatcaInvoice } from '@/components/invoices/ZatcaInvoice';
 
 interface InvoiceSettings {
   template: 'modern' | 'classic' | 'minimal';
@@ -178,10 +180,59 @@ export function InvoiceSettingsTab() {
     }
   };
 
+  // Sample invoice data for preview
+  const sampleInvoiceData = useMemo(() => ({
+    invoiceNumber: '2024-001234',
+    invoiceDate: new Date().toISOString(),
+    invoiceType: 'sale' as const,
+    sellerName: company?.name || 'اسم الشركة',
+    sellerTaxNumber: '300123456789003',
+    sellerAddress: company?.address || 'الرياض، المملكة العربية السعودية',
+    buyerName: 'عميل تجريبي',
+    buyerPhone: '0501234567',
+    buyerAddress: 'جدة، المملكة العربية السعودية',
+    buyerIdNumber: '1234567890',
+    items: [
+      {
+        description: 'سيارة تويوتا كامري 2024',
+        quantity: 1,
+        unitPrice: 85000,
+        taxRate: 15,
+        taxAmount: 12750,
+        total: 97750,
+      },
+    ],
+    subtotal: 85000,
+    taxAmount: 12750,
+    total: 97750,
+    taxSettings: {
+      id: 'preview',
+      company_id: 'preview',
+      tax_name: 'ضريبة القيمة المضافة',
+      tax_rate: 15,
+      is_active: true,
+      apply_to_sales: true,
+      apply_to_purchases: true,
+      tax_number: '300123456789003',
+      company_name_ar: company?.name || 'اسم الشركة',
+      national_address: company?.address || 'الرياض، المملكة العربية السعودية',
+      commercial_register: '1010123456',
+      building_number: null,
+      city: 'الرياض',
+      postal_code: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    companyLogoUrl: logoPreview,
+    invoiceSettings: settings,
+  }), [company, logoPreview, settings]);
+
   return (
-    <div className="space-y-6">
-      {/* Invoice Logo */}
-      <Card>
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      {/* Settings Section */}
+      <div className="space-y-6">
+        {/* Invoice Logo */}
+        <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
@@ -438,5 +489,30 @@ export function InvoiceSettingsTab() {
         </Button>
       </div>
     </div>
+
+    {/* Live Invoice Preview */}
+    <div className="xl:sticky xl:top-4 h-fit">
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-muted/50">
+          <CardTitle className="flex items-center gap-2">
+            <Eye className="w-5 h-5" />
+            معاينة الفاتورة
+          </CardTitle>
+          <CardDescription>
+            معاينة مباشرة للتغييرات التي تقوم بها
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <ScrollArea className="h-[600px]">
+            <div className="p-4 bg-muted/30">
+              <div className="transform scale-[0.55] origin-top">
+                <ZatcaInvoice data={sampleInvoiceData} />
+              </div>
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
+  </div>
   );
 }
