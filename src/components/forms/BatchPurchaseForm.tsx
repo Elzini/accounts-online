@@ -90,21 +90,22 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
   };
 
   // Calculate tax details for total
+  // المبلغ المدخل هو المبلغ الأساسي والضريبة تُحسب عليه
   const taxDetails = useMemo(() => {
     const total = calculateTotal();
     const isActive = taxSettings?.is_active && taxSettings?.apply_to_purchases;
     const taxRate = isActive ? (taxSettings?.tax_rate || 0) : 0;
     
-    // السعر المدخل يعتبر شامل الضريبة
-    const baseAmount = isActive ? total / (1 + taxRate / 100) : total;
-    const taxAmount = isActive ? total - baseAmount : 0;
+    const baseAmount = total;
+    const taxAmount = isActive ? total * (taxRate / 100) : 0;
+    const totalWithTax = total + taxAmount;
     
     return {
       isActive,
       taxRate,
       baseAmount,
       taxAmount,
-      totalWithTax: total,
+      totalWithTax,
       taxName: taxSettings?.tax_name || 'ضريبة القيمة المضافة'
     };
   }, [cars, taxSettings]);
@@ -185,8 +186,9 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
     const total = calculateTotal();
     const isActive = taxSettings?.is_active && taxSettings?.apply_to_purchases;
     const taxRate = isActive ? (taxSettings?.tax_rate || 0) : 0;
-    const baseAmount = isActive ? total / (1 + taxRate / 100) : total;
-    const taxAmount = isActive ? total - baseAmount : 0;
+    const baseAmount = total;
+    const taxAmount = isActive ? total * (taxRate / 100) : 0;
+    const totalWithTax = total + taxAmount;
 
     return {
       invoiceNumber: Date.now(),
@@ -200,18 +202,18 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
       buyerAddress: taxSettings?.national_address || company?.address || '',
       items: cars.map(car => {
         const price = parseFloat(car.purchase_price) || 0;
-        const carBaseAmount = isActive ? price / (1 + taxRate / 100) : price;
+        const carTaxAmount = isActive ? price * (taxRate / 100) : 0;
         return {
           description: `${car.name} ${car.model || ''} - ${car.chassis_number}`,
           quantity: 1,
-          unitPrice: carBaseAmount,
+          unitPrice: price,
           taxRate: taxRate,
-          total: price,
+          total: price + carTaxAmount,
         };
       }),
       subtotal: baseAmount,
       taxAmount: taxAmount,
-      total: total,
+      total: totalWithTax,
       taxSettings: taxSettings,
     };
   }, [savedBatchData, cars, batchData, taxSettings, selectedSupplier, company]);

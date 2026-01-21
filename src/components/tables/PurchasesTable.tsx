@@ -30,13 +30,15 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   };
 
   // Calculate tax details for each purchase
+  // المبلغ المدخل هو المبلغ الأساسي والضريبة تُحسب عليه
   const calculateTaxDetails = (purchasePrice: number) => {
-    const baseAmount = purchasePrice / (1 + taxRate / 100);
-    const taxAmount = purchasePrice - baseAmount;
+    const baseAmount = purchasePrice;
+    const taxAmount = purchasePrice * (taxRate / 100);
+    const totalWithTax = purchasePrice + taxAmount;
     return {
       baseAmount: Math.round(baseAmount * 100) / 100,
       taxAmount: Math.round(taxAmount * 100) / 100,
-      totalWithTax: purchasePrice,
+      totalWithTax: Math.round(totalWithTax * 100) / 100,
     };
   };
 
