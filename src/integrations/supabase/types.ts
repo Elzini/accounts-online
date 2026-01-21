@@ -2117,6 +2117,16 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: string
       }
+      sync_accounting_settings_to_all_companies: {
+        Args: never
+        Returns: undefined
+      }
+      sync_all_settings_to_all_companies: { Args: never; Returns: Json }
+      sync_app_settings_to_all_companies: { Args: never; Returns: undefined }
+      sync_invoice_settings_to_all_companies: {
+        Args: never
+        Returns: undefined
+      }
       user_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
