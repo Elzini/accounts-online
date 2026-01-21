@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn, Image, Lock, Eye, EyeOff, Building2, X, BookOpen } from 'lucide-react';
+import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn, Image, Lock, Eye, EyeOff, Building2, X, BookOpen, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 import { defaultSettings, uploadLoginLogo } from '@/services/settings';
 import { CompanyAccountingSettingsTab } from '@/components/settings/CompanyAccountingSettingsTab';
+import { InvoiceSettingsTab } from '@/components/settings/InvoiceSettingsTab';
 
 interface AppSettingsProps {
   setActivePage: (page: ActivePage) => void;
@@ -403,10 +404,14 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
       </div>
 
       <Tabs defaultValue="company" className="w-full">
-        <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-8 lg:w-auto lg:inline-grid">
           <TabsTrigger value="company" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             <span className="hidden sm:inline">شركتي</span>
+          </TabsTrigger>
+          <TabsTrigger value="invoice" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            <span className="hidden sm:inline">الفاتورة</span>
           </TabsTrigger>
           <TabsTrigger value="accounting" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
@@ -433,6 +438,11 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
             <span className="hidden sm:inline">الخطر</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* Invoice Settings Tab */}
+        <TabsContent value="invoice" className="mt-6">
+          <InvoiceSettingsTab />
+        </TabsContent>
 
         {/* Company Settings Tab */}
         <TabsContent value="company" className="mt-6">

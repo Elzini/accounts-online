@@ -685,6 +685,8 @@ export type Database = {
           address: string | null
           created_at: string
           id: string
+          invoice_logo_url: string | null
+          invoice_settings: Json | null
           is_active: boolean
           logo_url: string | null
           name: string
@@ -695,6 +697,8 @@ export type Database = {
           address?: string | null
           created_at?: string
           id?: string
+          invoice_logo_url?: string | null
+          invoice_settings?: Json | null
           is_active?: boolean
           logo_url?: string | null
           name: string
@@ -705,6 +709,8 @@ export type Database = {
           address?: string | null
           created_at?: string
           id?: string
+          invoice_logo_url?: string | null
+          invoice_settings?: Json | null
           is_active?: boolean
           logo_url?: string | null
           name?: string
