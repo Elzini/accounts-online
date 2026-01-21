@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { FileImage, Upload, X, FileSpreadsheet, Download, Trash2, Save, Database } from 'lucide-react';
+import { FileImage, Upload, X, FileSpreadsheet, Download, Trash2, Save, Database, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -8,8 +8,9 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
-import { parseExcelToInvoiceItems } from '@/services/importedInvoiceData';
+import { parseExcelToInvoiceItems, ImportedInvoiceItem } from '@/services/importedInvoiceData';
 import { useImportedInvoiceData, useSaveImportedInvoiceData, useDeleteImportedInvoiceData } from '@/hooks/useImportedInvoiceData';
+import { ExcelItemsEditor } from './ExcelItemsEditor';
 
 export function CustomInvoiceTemplateTab() {
   const { company, companyId, refreshCompany } = useCompany();
@@ -21,6 +22,8 @@ export function CustomInvoiceTemplateTab() {
   const [saving, setSaving] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [savingExcelData, setSavingExcelData] = useState(false);
+  const [parsedItems, setParsedItems] = useState<ImportedInvoiceItem[] | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   
   // Hooks for saved data
   const { data: savedTemplates = [], isLoading: loadingTemplates } = useImportedInvoiceData();
@@ -155,10 +158,20 @@ export function CustomInvoiceTemplateTab() {
   const handleRemoveExcel = () => {
     setExcelData(null);
     setExcelFileName(null);
+    setParsedItems(null);
+    setIsEditing(false);
     if (excelInputRef.current) {
       excelInputRef.current.value = '';
     }
   };
+
+  // Parse Excel data when loaded
+  useEffect(() => {
+    if (excelData && excelData.length > 0) {
+      const items = parseExcelToInvoiceItems(excelData);
+      setParsedItems(items);
+    }
+  }, [excelData]);
 
   const handleSaveTemplate = async () => {
     if (!companyId) return;
@@ -340,57 +353,74 @@ export function CustomInvoiceTemplateTab() {
           />
 
           {/* Excel Data Preview */}
-          {excelData && excelData.length > 0 && (
+          {parsedItems && parsedItems.length > 0 && (
             <div className="mt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <FileSpreadsheet className="w-4 h-4 text-primary" />
                   <span className="text-sm font-medium">{excelFileName}</span>
                   <span className="text-xs text-muted-foreground">
-                    ({excelData.length} سجل)
+                    ({parsedItems.length} بند)
                   </span>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleRemoveExcel}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={isEditing ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setIsEditing(!isEditing)}
+                    className="gap-1"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    {isEditing ? 'إنهاء التعديل' : 'تعديل البنود'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveExcel}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
               
-              <div className="border rounded-lg overflow-hidden">
-                <div className="max-h-60 overflow-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted sticky top-0">
-                      <tr>
-                        {Object.keys(excelData[0]).map((key) => (
-                          <th key={key} className="p-2 text-right font-medium border-b">
-                            {key}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {excelData.slice(0, 5).map((row, index) => (
-                        <tr key={index} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/50'}>
-                          {Object.values(row).map((value, i) => (
-                            <td key={i} className="p-2 border-b">
-                              {String(value)}
-                            </td>
-                          ))}
+              {/* Editable items table */}
+              {isEditing ? (
+                <ExcelItemsEditor 
+                  items={parsedItems} 
+                  onChange={setParsedItems} 
+                />
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="max-h-60 overflow-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted sticky top-0">
+                        <tr>
+                          <th className="p-2 text-right font-medium border-b">الوصف</th>
+                          <th className="p-2 text-right font-medium border-b w-20">الكمية</th>
+                          <th className="p-2 text-right font-medium border-b w-28">سعر الوحدة</th>
+                          <th className="p-2 text-right font-medium border-b w-20">الضريبة</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {excelData.length > 5 && (
-                  <div className="p-2 bg-muted text-center text-xs text-muted-foreground">
-                    + {excelData.length - 5} سجلات إضافية
+                      </thead>
+                      <tbody>
+                        {parsedItems.slice(0, 5).map((item, index) => (
+                          <tr key={index} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/50'}>
+                            <td className="p-2 border-b">{item.description}</td>
+                            <td className="p-2 border-b">{item.quantity}</td>
+                            <td className="p-2 border-b">{item.unitPrice.toLocaleString()}</td>
+                            <td className="p-2 border-b">{item.taxRate}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                )}
-              </div>
+                  {parsedItems.length > 5 && (
+                    <div className="p-2 bg-muted text-center text-xs text-muted-foreground">
+                      + {parsedItems.length - 5} بنود إضافية
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Save Excel Data */}
               <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
@@ -406,12 +436,15 @@ export function CustomInvoiceTemplateTab() {
                       toast.error('يرجى إدخال اسم للقالب');
                       return;
                     }
+                    if (!parsedItems || parsedItems.length === 0) {
+                      toast.error('لا توجد بنود للحفظ');
+                      return;
+                    }
                     setSavingExcelData(true);
                     try {
-                      const items = parseExcelToInvoiceItems(excelData);
                       await saveImportedData.mutateAsync({
                         name: templateName,
-                        items,
+                        items: parsedItems,
                         fileName: excelFileName || undefined,
                       });
                       toast.success('تم حفظ بيانات القالب بنجاح');
