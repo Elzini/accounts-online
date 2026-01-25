@@ -99,30 +99,29 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
   const canManageUsers = permissions.admin || permissions.users || permissions.super_admin;
   const isSuperAdmin = permissions.super_admin;
   return (
-    <aside className="w-64 min-h-screen max-h-[100dvh] gradient-dark text-sidebar-foreground flex flex-col shrink-0">
+    <aside className="w-[280px] sm:w-64 min-h-screen max-h-[100dvh] gradient-dark text-sidebar-foreground flex flex-col shrink-0">
       {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
+      <div className="p-4 sm:p-5 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
           <img 
             src={logoUrl} 
             alt="Logo" 
-            className="w-12 h-12 rounded-xl object-cover bg-white/10" 
+            className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl object-cover bg-white/10" 
             onError={(e) => {
-              // Fallback to default logo if company logo fails to load
               (e.target as HTMLImageElement).src = defaultLogo;
             }}
           />
-          <div>
-            <h1 className="font-bold text-lg text-white">{appName}</h1>
-            <p className="text-xs text-sidebar-foreground/70">{appSubtitle}</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="font-bold text-base sm:text-lg text-white truncate">{appName}</h1>
+            <p className="text-[11px] sm:text-xs text-sidebar-foreground/70 truncate">{appSubtitle}</p>
           </div>
         </div>
       </div>
 
       {/* Main Menu */}
-      <nav className="flex-1 min-h-0 p-4 overflow-y-auto">
-        <div className="mb-6">
-          <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">القائمة الرئيسية</p>
+      <nav className="flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto">
+        <div className="mb-4 sm:mb-5">
+          <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">القائمة الرئيسية</p>
           <ul className="space-y-1">
             {menuItems.filter(item => hasAccess(item.permission)).map((item) => {
               const Icon = item.icon;
@@ -132,14 +131,14 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
                   <button
                     onClick={() => setActivePage(item.id)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                      "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
                       isActive 
-                        ? "gradient-primary text-white shadow-lg" 
+                        ? "gradient-primary text-white shadow-md" 
                         : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
                     )}
                   >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                    <span className="font-medium text-sm sm:text-base truncate">{item.label}</span>
                   </button>
                 </li>
               );
@@ -149,8 +148,8 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
 
         {/* Transfers */}
         {(permissions.admin || permissions.sales || permissions.purchases) && (
-          <div className="mb-6">
-            <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">التحويلات</p>
+          <div className="mb-4 sm:mb-5">
+            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">التحويلات</p>
             <ul className="space-y-1">
               {transferItems.map((item) => {
                 const Icon = item.icon;
@@ -160,14 +159,14 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
                     <button
                       onClick={() => setActivePage(item.id)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                        "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
                         isActive 
-                          ? "gradient-primary text-white shadow-lg" 
+                          ? "gradient-primary text-white shadow-md" 
                           : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
                       )}
                     >
-                      <Icon className="w-5 h-5" />
-                      <span className="font-medium">{item.label}</span>
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                      <span className="font-medium text-sm sm:text-base truncate">{item.label}</span>
                     </button>
                   </li>
                 );
@@ -178,8 +177,8 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
 
         {/* Finance Section */}
         {(permissions.admin || permissions.sales || permissions.purchases) && (
-          <div className="mb-6">
-            <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">المالية</p>
+          <div className="mb-4 sm:mb-5">
+            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">المالية</p>
             <ul className="space-y-1">
               {financeItems.map((item) => {
                 const Icon = item.icon;
@@ -189,14 +188,14 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
                     <button
                       onClick={() => setActivePage(item.id)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                        "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
                         isActive 
-                          ? "gradient-primary text-white shadow-lg" 
+                          ? "gradient-primary text-white shadow-md" 
                           : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
                       )}
                     >
-                      <Icon className="w-5 h-5" />
-                      <span className="font-medium">{item.label}</span>
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                      <span className="font-medium text-sm sm:text-base truncate">{item.label}</span>
                     </button>
                   </li>
                 );
@@ -205,8 +204,8 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
           </div>
         )}
         {hasAccess('reports') && (
-          <div className="mb-6">
-            <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">{settings?.reports_title || 'التقارير'}</p>
+          <div className="mb-4 sm:mb-5">
+            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">{settings?.reports_title || 'التقارير'}</p>
             <ul className="space-y-1">
               {reportItems.filter(item => hasAccess(item.permission)).map((item) => {
                 const Icon = item.icon;
@@ -216,14 +215,14 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
                     <button
                       onClick={() => setActivePage(item.id)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                        "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
                         isActive 
-                          ? "gradient-primary text-white shadow-lg" 
+                          ? "gradient-primary text-white shadow-md" 
                           : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
                       )}
                     >
-                      <Icon className="w-5 h-5" />
-                      <span className="font-medium">{item.label}</span>
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                      <span className="font-medium text-sm sm:text-base truncate">{item.label}</span>
                     </button>
                   </li>
                 );
@@ -234,8 +233,8 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
 
         {/* Accounting */}
         {(permissions.admin || permissions.reports) && (
-          <div className="mb-6">
-            <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">المحاسبة</p>
+          <div className="mb-4 sm:mb-5">
+            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">المحاسبة</p>
             <ul className="space-y-1">
               {accountingItems.map((item) => {
                 const Icon = item.icon;
@@ -245,14 +244,14 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
                     <button
                       onClick={() => setActivePage(item.id)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                        "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
                         isActive 
-                          ? "gradient-primary text-white shadow-lg" 
+                          ? "gradient-primary text-white shadow-md" 
                           : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
                       )}
                     >
-                      <Icon className="w-5 h-5" />
-                      <span className="font-medium">{item.label}</span>
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                      <span className="font-medium text-sm sm:text-base truncate">{item.label}</span>
                     </button>
                   </li>
                 );
@@ -263,24 +262,23 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
 
         {/* Super Admin - Companies */}
         {isSuperAdmin && (
-          <div className="mb-6">
-            <p className="text-xs font-semibold text-warning/70 mb-3 px-3">مدير النظام</p>
+          <div className="mb-4 sm:mb-5">
+            <p className="text-[11px] sm:text-xs font-semibold text-warning/70 mb-2 sm:mb-3 px-2 sm:px-3">مدير النظام</p>
             <ul className="space-y-1">
               <li>
                 <button
                   type="button"
                   onClick={() => {
-                    // Close mobile sheet (because MobileSidebar closes on any setActivePage call)
                     setActivePage('dashboard');
                     navigate('/companies');
                   }}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                    "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
                     "text-warning/80 hover:bg-warning/20 hover:text-warning"
                   )}
                 >
-                  <Crown className="w-5 h-5" />
-                  <span className="font-medium">إدارة الشركات</span>
+                  <Crown className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                  <span className="font-medium text-sm sm:text-base truncate">إدارة الشركات</span>
                 </button>
               </li>
             </ul>
@@ -290,62 +288,62 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
         {/* Users Management */}
         {canManageUsers && (
           <div>
-            <p className="text-xs font-semibold text-sidebar-foreground/50 mb-3 px-3">الإدارة</p>
+            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">الإدارة</p>
             <ul className="space-y-1">
               <li>
                 <button
                   onClick={() => setActivePage('users-management')}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                    "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
                     activePage === 'users-management'
-                      ? "gradient-primary text-white shadow-lg" 
+                      ? "gradient-primary text-white shadow-md" 
                       : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
                   )}
                 >
-                  <UserCog className="w-5 h-5" />
-                  <span className="font-medium">إدارة المستخدمين</span>
+                  <UserCog className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                  <span className="font-medium text-sm sm:text-base truncate">إدارة المستخدمين</span>
                 </button>
               </li>
               <li>
                 <button
                   onClick={() => setActivePage('app-settings')}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                    "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
                     activePage === 'app-settings'
-                      ? "gradient-primary text-white shadow-lg" 
+                      ? "gradient-primary text-white shadow-md" 
                       : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
                   )}
                 >
-                  <Settings className="w-5 h-5" />
-                  <span className="font-medium">إعدادات النظام</span>
+                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                  <span className="font-medium text-sm sm:text-base truncate">إعدادات النظام</span>
                 </button>
               </li>
               <li>
                 <button
                   onClick={() => setActivePage('audit-logs')}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                    "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
                     activePage === 'audit-logs'
-                      ? "gradient-primary text-white shadow-lg" 
+                      ? "gradient-primary text-white shadow-md" 
                       : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
                   )}
                 >
-                  <ClipboardList className="w-5 h-5" />
-                  <span className="font-medium">سجل التدقيق</span>
+                  <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                  <span className="font-medium text-sm sm:text-base truncate">سجل التدقيق</span>
                 </button>
               </li>
               <li>
                 <button
                   onClick={() => setActivePage('backups')}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                    "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
                     activePage === 'backups'
-                      ? "gradient-primary text-white shadow-lg" 
+                      ? "gradient-primary text-white shadow-md" 
                       : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
                   )}
                 >
-                  <Database className="w-5 h-5" />
-                  <span className="font-medium">النسخ الاحتياطي</span>
+                  <Database className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                  <span className="font-medium text-sm sm:text-base truncate">النسخ الاحتياطي</span>
                 </button>
               </li>
             </ul>
@@ -354,8 +352,8 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-sidebar-border">
-        <p className="text-xs text-center text-sidebar-foreground/50">
+      <div className="p-3 sm:p-4 border-t border-sidebar-border">
+        <p className="text-[10px] sm:text-xs text-center text-sidebar-foreground/50">
           نظام إدارة المعرض © 2024
         </p>
       </div>
