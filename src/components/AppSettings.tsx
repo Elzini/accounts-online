@@ -27,6 +27,7 @@ import logo from '@/assets/logo.png';
 import { defaultSettings, uploadLoginLogo } from '@/services/settings';
 import { CompanyAccountingSettingsTab } from '@/components/settings/CompanyAccountingSettingsTab';
 import { InvoiceSettingsTab } from '@/components/settings/InvoiceSettingsTab';
+import { MenuLabelsSettingsTab } from '@/components/settings/MenuLabelsSettingsTab';
 import { CustomInvoiceTemplateTab } from '@/components/settings/CustomInvoiceTemplateTab';
 
 interface AppSettingsProps {
@@ -701,97 +702,7 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
 
         {/* Labels Tab */}
         <TabsContent value="labels" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Tag className="w-5 h-5" />
-                تسميات الأقسام
-              </CardTitle>
-              <CardDescription>
-                تغيير أسماء الأقسام في القائمة الجانبية ولوحة التحكم
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dashboard-title">لوحة التحكم</Label>
-                  <Input
-                    id="dashboard-title"
-                    value={dashboardTitle}
-                    onChange={(e) => setDashboardTitle(e.target.value)}
-                    placeholder="لوحة التحكم"
-                    disabled={!isAdmin}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="purchases-title">المشتريات</Label>
-                  <Input
-                    id="purchases-title"
-                    value={purchasesTitle}
-                    onChange={(e) => setPurchasesTitle(e.target.value)}
-                    placeholder="المشتريات"
-                    disabled={!isAdmin}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="sales-title">المبيعات</Label>
-                  <Input
-                    id="sales-title"
-                    value={salesTitle}
-                    onChange={(e) => setSalesTitle(e.target.value)}
-                    placeholder="المبيعات"
-                    disabled={!isAdmin}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="customers-title">العملاء</Label>
-                  <Input
-                    id="customers-title"
-                    value={customersTitle}
-                    onChange={(e) => setCustomersTitle(e.target.value)}
-                    placeholder="العملاء"
-                    disabled={!isAdmin}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="suppliers-title">الموردين</Label>
-                  <Input
-                    id="suppliers-title"
-                    value={suppliersTitle}
-                    onChange={(e) => setSuppliersTitle(e.target.value)}
-                    placeholder="الموردين"
-                    disabled={!isAdmin}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="reports-title">التقارير</Label>
-                  <Input
-                    id="reports-title"
-                    value={reportsTitle}
-                    onChange={(e) => setReportsTitle(e.target.value)}
-                    placeholder="التقارير"
-                    disabled={!isAdmin}
-                  />
-                </div>
-              </div>
-
-              {isAdmin && (
-                <Button 
-                  onClick={handleSaveLabels} 
-                  className="w-full gradient-primary"
-                  disabled={updateSetting.isPending}
-                >
-                  <Save className="w-4 h-4 ml-2" />
-                  {updateSetting.isPending ? 'جاري الحفظ...' : 'حفظ التسميات'}
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+          <MenuLabelsSettingsTab />
         </TabsContent>
 
         {/* Login Page Tab */}

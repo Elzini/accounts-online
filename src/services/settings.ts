@@ -23,13 +23,49 @@ export interface AppSettings {
   login_switch_text: string;
   signup_switch_text: string;
   login_logo_url: string;
+  // Transfers section
+  transfers_section_title: string;
+  partner_dealerships_title: string;
+  car_transfers_title: string;
+  // Finance section
+  finance_section_title: string;
+  expenses_title: string;
+  prepaid_expenses_title: string;
+  quotations_title: string;
+  installments_title: string;
+  vouchers_title: string;
+  financing_title: string;
+  banking_title: string;
+  // Reports
+  inventory_report_title: string;
+  profit_report_title: string;
+  purchases_report_title: string;
+  sales_report_title: string;
+  customers_report_title: string;
+  suppliers_report_title: string;
+  commissions_report_title: string;
+  transfers_report_title: string;
+  partner_report_title: string;
+  // Accounting section
+  accounting_section_title: string;
+  tax_settings_title: string;
+  chart_of_accounts_title: string;
+  journal_entries_title: string;
+  general_ledger_title: string;
+  financial_reports_title: string;
+  // Admin section
+  admin_section_title: string;
+  users_management_title: string;
+  app_settings_title: string;
+  audit_logs_title: string;
+  backups_title: string;
 }
 
 export const defaultSettings: AppSettings = {
   app_name: 'منصة إدارة المعارض',
   app_subtitle: 'لتجارة السيارات',
   primary_color: '#3b82f6',
-  dashboard_title: 'لوحة التحكم',
+  dashboard_title: 'الرئيسية',
   purchases_title: 'المشتريات',
   sales_title: 'المبيعات',
   customers_title: 'العملاء',
@@ -48,6 +84,42 @@ export const defaultSettings: AppSettings = {
   login_switch_text: 'ليس لديك حساب؟ إنشاء حساب جديد',
   signup_switch_text: 'لديك حساب؟ تسجيل الدخول',
   login_logo_url: '',
+  // Transfers section
+  transfers_section_title: 'التحويلات',
+  partner_dealerships_title: 'المعارض الشريكة',
+  car_transfers_title: 'تحويلات السيارات',
+  // Finance section
+  finance_section_title: 'المالية',
+  expenses_title: 'المصروفات',
+  prepaid_expenses_title: 'المصروفات المقدمة',
+  quotations_title: 'عروض الأسعار',
+  installments_title: 'الأقساط',
+  vouchers_title: 'سندات القبض والصرف',
+  financing_title: 'شركات التمويل',
+  banking_title: 'إدارة البنوك',
+  // Reports
+  inventory_report_title: 'تقرير المخزون',
+  profit_report_title: 'تقرير الأرباح',
+  purchases_report_title: 'تقرير المشتريات',
+  sales_report_title: 'تقرير المبيعات',
+  customers_report_title: 'تقرير العملاء',
+  suppliers_report_title: 'تقرير الموردين',
+  commissions_report_title: 'تقرير العمولات',
+  transfers_report_title: 'تقرير التحويلات',
+  partner_report_title: 'تقرير المعرض الشريك',
+  // Accounting section
+  accounting_section_title: 'المحاسبة',
+  tax_settings_title: 'إعدادات الضريبة',
+  chart_of_accounts_title: 'شجرة الحسابات',
+  journal_entries_title: 'دفتر اليومية',
+  general_ledger_title: 'دفتر الأستاذ',
+  financial_reports_title: 'التقارير المالية',
+  // Admin section
+  admin_section_title: 'الإدارة',
+  users_management_title: 'إدارة المستخدمين',
+  app_settings_title: 'إعدادات النظام',
+  audit_logs_title: 'سجل التدقيق',
+  backups_title: 'النسخ الاحتياطي',
 };
 
 // Helper function to get current user's company_id
