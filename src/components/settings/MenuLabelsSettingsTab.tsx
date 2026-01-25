@@ -1,66 +1,119 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Save, RotateCcw } from 'lucide-react';
+import { Save, RotateCcw, Loader2 } from 'lucide-react';
 import { useAppSettings, useUpdateAppSetting } from '@/hooks/useSettings';
 import { defaultSettings } from '@/services/settings';
 import { toast } from 'sonner';
 
 export function MenuLabelsSettingsTab() {
-  const { data: settings } = useAppSettings();
+  const { data: settings, isLoading } = useAppSettings();
   const updateSetting = useUpdateAppSetting();
 
   // Main menu
-  const [dashboardTitle, setDashboardTitle] = useState(settings?.dashboard_title || defaultSettings.dashboard_title);
-  const [customersTitle, setCustomersTitle] = useState(settings?.customers_title || defaultSettings.customers_title);
-  const [suppliersTitle, setSuppliersTitle] = useState(settings?.suppliers_title || defaultSettings.suppliers_title);
-  const [purchasesTitle, setPurchasesTitle] = useState(settings?.purchases_title || defaultSettings.purchases_title);
-  const [salesTitle, setSalesTitle] = useState(settings?.sales_title || defaultSettings.sales_title);
+  const [dashboardTitle, setDashboardTitle] = useState(defaultSettings.dashboard_title);
+  const [customersTitle, setCustomersTitle] = useState(defaultSettings.customers_title);
+  const [suppliersTitle, setSuppliersTitle] = useState(defaultSettings.suppliers_title);
+  const [purchasesTitle, setPurchasesTitle] = useState(defaultSettings.purchases_title);
+  const [salesTitle, setSalesTitle] = useState(defaultSettings.sales_title);
 
   // Transfers
-  const [transfersSectionTitle, setTransfersSectionTitle] = useState(settings?.transfers_section_title || defaultSettings.transfers_section_title);
-  const [partnerDealershipsTitle, setPartnerDealershipsTitle] = useState(settings?.partner_dealerships_title || defaultSettings.partner_dealerships_title);
-  const [carTransfersTitle, setCarTransfersTitle] = useState(settings?.car_transfers_title || defaultSettings.car_transfers_title);
+  const [transfersSectionTitle, setTransfersSectionTitle] = useState(defaultSettings.transfers_section_title);
+  const [partnerDealershipsTitle, setPartnerDealershipsTitle] = useState(defaultSettings.partner_dealerships_title);
+  const [carTransfersTitle, setCarTransfersTitle] = useState(defaultSettings.car_transfers_title);
 
   // Finance
-  const [financeSectionTitle, setFinanceSectionTitle] = useState(settings?.finance_section_title || defaultSettings.finance_section_title);
-  const [expensesTitle, setExpensesTitle] = useState(settings?.expenses_title || defaultSettings.expenses_title);
-  const [prepaidExpensesTitle, setPrepaidExpensesTitle] = useState(settings?.prepaid_expenses_title || defaultSettings.prepaid_expenses_title);
-  const [quotationsTitle, setQuotationsTitle] = useState(settings?.quotations_title || defaultSettings.quotations_title);
-  const [installmentsTitle, setInstallmentsTitle] = useState(settings?.installments_title || defaultSettings.installments_title);
-  const [vouchersTitle, setVouchersTitle] = useState(settings?.vouchers_title || defaultSettings.vouchers_title);
-  const [financingTitle, setFinancingTitle] = useState(settings?.financing_title || defaultSettings.financing_title);
-  const [bankingTitle, setBankingTitle] = useState(settings?.banking_title || defaultSettings.banking_title);
+  const [financeSectionTitle, setFinanceSectionTitle] = useState(defaultSettings.finance_section_title);
+  const [expensesTitle, setExpensesTitle] = useState(defaultSettings.expenses_title);
+  const [prepaidExpensesTitle, setPrepaidExpensesTitle] = useState(defaultSettings.prepaid_expenses_title);
+  const [quotationsTitle, setQuotationsTitle] = useState(defaultSettings.quotations_title);
+  const [installmentsTitle, setInstallmentsTitle] = useState(defaultSettings.installments_title);
+  const [vouchersTitle, setVouchersTitle] = useState(defaultSettings.vouchers_title);
+  const [financingTitle, setFinancingTitle] = useState(defaultSettings.financing_title);
+  const [bankingTitle, setBankingTitle] = useState(defaultSettings.banking_title);
 
   // Reports
-  const [reportsTitle, setReportsTitle] = useState(settings?.reports_title || defaultSettings.reports_title);
-  const [inventoryReportTitle, setInventoryReportTitle] = useState(settings?.inventory_report_title || defaultSettings.inventory_report_title);
-  const [profitReportTitle, setProfitReportTitle] = useState(settings?.profit_report_title || defaultSettings.profit_report_title);
-  const [purchasesReportTitle, setPurchasesReportTitle] = useState(settings?.purchases_report_title || defaultSettings.purchases_report_title);
-  const [salesReportTitle, setSalesReportTitle] = useState(settings?.sales_report_title || defaultSettings.sales_report_title);
-  const [customersReportTitle, setCustomersReportTitle] = useState(settings?.customers_report_title || defaultSettings.customers_report_title);
-  const [suppliersReportTitle, setSuppliersReportTitle] = useState(settings?.suppliers_report_title || defaultSettings.suppliers_report_title);
-  const [commissionsReportTitle, setCommissionsReportTitle] = useState(settings?.commissions_report_title || defaultSettings.commissions_report_title);
-  const [transfersReportTitle, setTransfersReportTitle] = useState(settings?.transfers_report_title || defaultSettings.transfers_report_title);
-  const [partnerReportTitle, setPartnerReportTitle] = useState(settings?.partner_report_title || defaultSettings.partner_report_title);
+  const [reportsTitle, setReportsTitle] = useState(defaultSettings.reports_title);
+  const [inventoryReportTitle, setInventoryReportTitle] = useState(defaultSettings.inventory_report_title);
+  const [profitReportTitle, setProfitReportTitle] = useState(defaultSettings.profit_report_title);
+  const [purchasesReportTitle, setPurchasesReportTitle] = useState(defaultSettings.purchases_report_title);
+  const [salesReportTitle, setSalesReportTitle] = useState(defaultSettings.sales_report_title);
+  const [customersReportTitle, setCustomersReportTitle] = useState(defaultSettings.customers_report_title);
+  const [suppliersReportTitle, setSuppliersReportTitle] = useState(defaultSettings.suppliers_report_title);
+  const [commissionsReportTitle, setCommissionsReportTitle] = useState(defaultSettings.commissions_report_title);
+  const [transfersReportTitle, setTransfersReportTitle] = useState(defaultSettings.transfers_report_title);
+  const [partnerReportTitle, setPartnerReportTitle] = useState(defaultSettings.partner_report_title);
 
   // Accounting
-  const [accountingSectionTitle, setAccountingSectionTitle] = useState(settings?.accounting_section_title || defaultSettings.accounting_section_title);
-  const [taxSettingsTitle, setTaxSettingsTitle] = useState(settings?.tax_settings_title || defaultSettings.tax_settings_title);
-  const [chartOfAccountsTitle, setChartOfAccountsTitle] = useState(settings?.chart_of_accounts_title || defaultSettings.chart_of_accounts_title);
-  const [journalEntriesTitle, setJournalEntriesTitle] = useState(settings?.journal_entries_title || defaultSettings.journal_entries_title);
-  const [generalLedgerTitle, setGeneralLedgerTitle] = useState(settings?.general_ledger_title || defaultSettings.general_ledger_title);
-  const [financialReportsTitle, setFinancialReportsTitle] = useState(settings?.financial_reports_title || defaultSettings.financial_reports_title);
+  const [accountingSectionTitle, setAccountingSectionTitle] = useState(defaultSettings.accounting_section_title);
+  const [taxSettingsTitle, setTaxSettingsTitle] = useState(defaultSettings.tax_settings_title);
+  const [chartOfAccountsTitle, setChartOfAccountsTitle] = useState(defaultSettings.chart_of_accounts_title);
+  const [journalEntriesTitle, setJournalEntriesTitle] = useState(defaultSettings.journal_entries_title);
+  const [generalLedgerTitle, setGeneralLedgerTitle] = useState(defaultSettings.general_ledger_title);
+  const [financialReportsTitle, setFinancialReportsTitle] = useState(defaultSettings.financial_reports_title);
 
   // Admin
-  const [adminSectionTitle, setAdminSectionTitle] = useState(settings?.admin_section_title || defaultSettings.admin_section_title);
-  const [usersManagementTitle, setUsersManagementTitle] = useState(settings?.users_management_title || defaultSettings.users_management_title);
-  const [appSettingsTitle, setAppSettingsTitle] = useState(settings?.app_settings_title || defaultSettings.app_settings_title);
-  const [auditLogsTitle, setAuditLogsTitle] = useState(settings?.audit_logs_title || defaultSettings.audit_logs_title);
-  const [backupsTitle, setBackupsTitle] = useState(settings?.backups_title || defaultSettings.backups_title);
+  const [adminSectionTitle, setAdminSectionTitle] = useState(defaultSettings.admin_section_title);
+  const [usersManagementTitle, setUsersManagementTitle] = useState(defaultSettings.users_management_title);
+  const [appSettingsTitle, setAppSettingsTitle] = useState(defaultSettings.app_settings_title);
+  const [auditLogsTitle, setAuditLogsTitle] = useState(defaultSettings.audit_logs_title);
+  const [backupsTitle, setBackupsTitle] = useState(defaultSettings.backups_title);
+
+  // Sync state with loaded settings
+  useEffect(() => {
+    if (settings) {
+      setDashboardTitle(settings.dashboard_title || defaultSettings.dashboard_title);
+      setCustomersTitle(settings.customers_title || defaultSettings.customers_title);
+      setSuppliersTitle(settings.suppliers_title || defaultSettings.suppliers_title);
+      setPurchasesTitle(settings.purchases_title || defaultSettings.purchases_title);
+      setSalesTitle(settings.sales_title || defaultSettings.sales_title);
+      setTransfersSectionTitle(settings.transfers_section_title || defaultSettings.transfers_section_title);
+      setPartnerDealershipsTitle(settings.partner_dealerships_title || defaultSettings.partner_dealerships_title);
+      setCarTransfersTitle(settings.car_transfers_title || defaultSettings.car_transfers_title);
+      setFinanceSectionTitle(settings.finance_section_title || defaultSettings.finance_section_title);
+      setExpensesTitle(settings.expenses_title || defaultSettings.expenses_title);
+      setPrepaidExpensesTitle(settings.prepaid_expenses_title || defaultSettings.prepaid_expenses_title);
+      setQuotationsTitle(settings.quotations_title || defaultSettings.quotations_title);
+      setInstallmentsTitle(settings.installments_title || defaultSettings.installments_title);
+      setVouchersTitle(settings.vouchers_title || defaultSettings.vouchers_title);
+      setFinancingTitle(settings.financing_title || defaultSettings.financing_title);
+      setBankingTitle(settings.banking_title || defaultSettings.banking_title);
+      setReportsTitle(settings.reports_title || defaultSettings.reports_title);
+      setInventoryReportTitle(settings.inventory_report_title || defaultSettings.inventory_report_title);
+      setProfitReportTitle(settings.profit_report_title || defaultSettings.profit_report_title);
+      setPurchasesReportTitle(settings.purchases_report_title || defaultSettings.purchases_report_title);
+      setSalesReportTitle(settings.sales_report_title || defaultSettings.sales_report_title);
+      setCustomersReportTitle(settings.customers_report_title || defaultSettings.customers_report_title);
+      setSuppliersReportTitle(settings.suppliers_report_title || defaultSettings.suppliers_report_title);
+      setCommissionsReportTitle(settings.commissions_report_title || defaultSettings.commissions_report_title);
+      setTransfersReportTitle(settings.transfers_report_title || defaultSettings.transfers_report_title);
+      setPartnerReportTitle(settings.partner_report_title || defaultSettings.partner_report_title);
+      setAccountingSectionTitle(settings.accounting_section_title || defaultSettings.accounting_section_title);
+      setTaxSettingsTitle(settings.tax_settings_title || defaultSettings.tax_settings_title);
+      setChartOfAccountsTitle(settings.chart_of_accounts_title || defaultSettings.chart_of_accounts_title);
+      setJournalEntriesTitle(settings.journal_entries_title || defaultSettings.journal_entries_title);
+      setGeneralLedgerTitle(settings.general_ledger_title || defaultSettings.general_ledger_title);
+      setFinancialReportsTitle(settings.financial_reports_title || defaultSettings.financial_reports_title);
+      setAdminSectionTitle(settings.admin_section_title || defaultSettings.admin_section_title);
+      setUsersManagementTitle(settings.users_management_title || defaultSettings.users_management_title);
+      setAppSettingsTitle(settings.app_settings_title || defaultSettings.app_settings_title);
+      setAuditLogsTitle(settings.audit_logs_title || defaultSettings.audit_logs_title);
+      setBackupsTitle(settings.backups_title || defaultSettings.backups_title);
+    }
+  }, [settings]);
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   const handleSaveAll = async () => {
     try {
