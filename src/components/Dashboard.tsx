@@ -123,32 +123,32 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   };
 
   return (
-    <div className="space-y-6 md:space-y-8 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground">{settings?.dashboard_title || 'لوحة التحكم'}</h1>
-        <p className="text-sm md:text-base text-muted-foreground mt-1">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{settings?.dashboard_title || 'لوحة التحكم'}</h1>
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-0.5 sm:mt-1">
           {settings?.welcome_message || 'مرحباً بك في منصة إدارة المعارض للسيارات'}
         </p>
       </div>
 
       {/* Dashboard Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="w-full max-w-md grid grid-cols-2">
-          <TabsTrigger value="overview" className="gap-2">
-            <Package className="w-4 h-4" />
+        <TabsList className="w-full max-w-md grid grid-cols-2 h-9 sm:h-10">
+          <TabsTrigger value="overview" className="gap-1.5 sm:gap-2 text-xs sm:text-sm">
+            <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             نظرة عامة
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="gap-2">
-            <BarChart3 className="w-4 h-4" />
+          <TabsTrigger value="analytics" className="gap-1.5 sm:gap-2 text-xs sm:text-sm">
+            <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             التحليلات المتقدمة
           </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="mt-6 space-y-6">
+        <TabsContent value="overview" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 md:gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
             <StatCard
               title="السيارات المتاحة"
               value={stats.availableCars}
@@ -194,54 +194,54 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           </div>
 
           {/* Partner Dealership Transfers */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
             {/* Incoming Cars */}
-            <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-              <div className="flex items-center justify-between mb-4 md:mb-6">
+            <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
+              <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
                 <div>
-                  <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
-                    <ArrowDownLeft className="w-5 h-5 text-blue-500" />
+                  <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground flex items-center gap-1.5 sm:gap-2">
+                    <ArrowDownLeft className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                     السيارات الواردة من المعارض
                   </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    <span className="font-semibold text-blue-600">{transferStats.incomingCars.length}</span> سيارة قيد الانتظار
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
+                    <span className="font-semibold text-primary">{transferStats.incomingCars.length}</span> سيارة قيد الانتظار
                   </p>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={() => setActivePage('car-transfers')}
-                  className="text-primary"
+                  className="text-primary h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
                 >
                   عرض الكل
                 </Button>
               </div>
               {transferStats.incomingCars.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>لا توجد سيارات واردة قيد الانتظار</p>
+                <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                  <Building2 className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-xs sm:text-sm">لا توجد سيارات واردة قيد الانتظار</p>
                 </div>
               ) : (
-                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
                   {transferStats.incomingCars.map((car) => (
                     <div 
                       key={car.id} 
-                      className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-950/50 cursor-pointer transition-colors"
+                      className="p-2.5 sm:p-3 bg-primary/5 dark:bg-primary/10 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 cursor-pointer transition-colors"
                       onClick={() => setActivePage('car-transfers')}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                            <Car className="w-5 h-5 text-blue-600" />
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                            <Car className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                           </div>
-                          <div>
-                            <p className="font-semibold">{car.carName} {car.model}</p>
-                            <p className="text-sm text-muted-foreground">شاسيه: {car.chassisNumber}</p>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-xs sm:text-sm truncate">{car.carName} {car.model}</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground truncate">شاسيه: {car.chassisNumber}</p>
                           </div>
                         </div>
-                        <div className="text-left">
-                          <p className="text-sm font-medium text-blue-600">{car.dealershipName}</p>
-                          <Badge variant="outline" className="text-xs">قيد الانتظار</Badge>
+                        <div className="text-left shrink-0">
+                          <p className="text-[10px] sm:text-xs font-medium text-primary truncate max-w-[80px] sm:max-w-none">{car.dealershipName}</p>
+                          <Badge variant="outline" className="text-[10px] sm:text-xs h-5">قيد الانتظار</Badge>
                         </div>
                       </div>
                     </div>
@@ -251,52 +251,52 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             </div>
 
             {/* Outgoing Cars */}
-            <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-              <div className="flex items-center justify-between mb-4 md:mb-6">
+            <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
+              <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
                 <div>
-                  <h2 className="text-lg md:text-xl font-bold text-card-foreground flex items-center gap-2">
-                    <ArrowUpRight className="w-5 h-5 text-orange-500" />
+                  <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground flex items-center gap-1.5 sm:gap-2">
+                    <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
                     السيارات الصادرة للمعارض
                   </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    <span className="font-semibold text-orange-600">{transferStats.outgoingCars.length}</span> سيارة قيد الانتظار
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
+                    <span className="font-semibold text-warning">{transferStats.outgoingCars.length}</span> سيارة قيد الانتظار
                   </p>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={() => setActivePage('car-transfers')}
-                  className="text-primary"
+                  className="text-primary h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
                 >
                   عرض الكل
                 </Button>
               </div>
               {transferStats.outgoingCars.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>لا توجد سيارات صادرة قيد الانتظار</p>
+                <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                  <Building2 className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-xs sm:text-sm">لا توجد سيارات صادرة قيد الانتظار</p>
                 </div>
               ) : (
-                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
                   {transferStats.outgoingCars.map((car) => (
                     <div 
                       key={car.id} 
-                      className="p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-950/50 cursor-pointer transition-colors"
+                      className="p-2.5 sm:p-3 bg-warning/5 dark:bg-warning/10 rounded-lg hover:bg-warning/10 dark:hover:bg-warning/20 cursor-pointer transition-colors"
                       onClick={() => setActivePage('car-transfers')}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                            <Car className="w-5 h-5 text-orange-600" />
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-warning/20 flex items-center justify-center shrink-0">
+                            <Car className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
                           </div>
-                          <div>
-                            <p className="font-semibold">{car.carName} {car.model}</p>
-                            <p className="text-sm text-muted-foreground">شاسيه: {car.chassisNumber}</p>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-xs sm:text-sm truncate">{car.carName} {car.model}</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground truncate">شاسيه: {car.chassisNumber}</p>
                           </div>
                         </div>
-                        <div className="text-left">
-                          <p className="text-sm font-medium text-orange-600">{car.dealershipName}</p>
-                          <Badge variant="outline" className="text-xs">قيد الانتظار</Badge>
+                        <div className="text-left shrink-0">
+                          <p className="text-[10px] sm:text-xs font-medium text-warning truncate max-w-[80px] sm:max-w-none">{car.dealershipName}</p>
+                          <Badge variant="outline" className="text-[10px] sm:text-xs h-5">قيد الانتظار</Badge>
                         </div>
                       </div>
                     </div>
@@ -307,27 +307,28 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           </div>
 
           {/* Charts Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
             {/* Sales Chart */}
-            <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-              <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">المبيعات الشهرية</h2>
+            <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
+              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground mb-3 sm:mb-4 md:mb-6">المبيعات الشهرية</h2>
               {chartLoading ? (
-                <div className="h-64 flex items-center justify-center">
-                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                <div className="h-48 sm:h-56 md:h-64 flex items-center justify-center">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : (
-                <ChartContainer config={chartConfig} className="h-64 w-full">
+                <ChartContainer config={chartConfig} className="h-48 sm:h-56 md:h-64 w-full">
                   <BarChart data={chartData || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis 
                       dataKey="month" 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                       axisLine={{ stroke: 'hsl(var(--border))' }}
                     />
                     <YAxis 
                       tickFormatter={formatChartValue}
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                       axisLine={{ stroke: 'hsl(var(--border))' }}
+                      width={40}
                     />
                     <ChartTooltip 
                       content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} 
@@ -344,25 +345,26 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             </div>
 
             {/* Profit Chart */}
-            <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-              <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">الأرباح الشهرية</h2>
+            <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
+              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground mb-3 sm:mb-4 md:mb-6">الأرباح الشهرية</h2>
               {chartLoading ? (
-                <div className="h-64 flex items-center justify-center">
-                  <div className="w-8 h-8 border-4 border-success border-t-transparent rounded-full animate-spin" />
+                <div className="h-48 sm:h-56 md:h-64 flex items-center justify-center">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 border-4 border-success border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : (
-                <ChartContainer config={chartConfig} className="h-64 w-full">
+                <ChartContainer config={chartConfig} className="h-48 sm:h-56 md:h-64 w-full">
                   <LineChart data={chartData || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis 
                       dataKey="month" 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                       axisLine={{ stroke: 'hsl(var(--border))' }}
                     />
                     <YAxis 
                       tickFormatter={formatChartValue}
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                       axisLine={{ stroke: 'hsl(var(--border))' }}
+                      width={40}
                     />
                     <ChartTooltip 
                       content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} 
@@ -372,9 +374,9 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                       dataKey="profit" 
                       name="الأرباح"
                       stroke="hsl(var(--success))" 
-                      strokeWidth={3}
-                      dot={{ fill: 'hsl(var(--success))', strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, fill: 'hsl(var(--success))' }}
+                      strokeWidth={2}
+                      dot={{ fill: 'hsl(var(--success))', strokeWidth: 2, r: 3 }}
+                      activeDot={{ r: 5, fill: 'hsl(var(--success))' }}
                     />
                   </LineChart>
                 </ChartContainer>
@@ -383,91 +385,91 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
             {/* Main Actions */}
-            <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-              <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">الإجراءات السريعة</h2>
-              <div className="grid grid-cols-2 gap-2 md:gap-4">
+            <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
+              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground mb-3 sm:mb-4 md:mb-6">الإجراءات السريعة</h2>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
                 <Button 
                   onClick={() => setActivePage('purchases')}
-                  className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 gradient-primary hover:opacity-90 text-xs md:text-sm"
+                  className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 gradient-primary hover:opacity-90 text-[11px] sm:text-xs md:text-sm"
                   disabled={!canPurchases}
                 >
-                  <ShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
+                  <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                   <span>المشتريات</span>
                 </Button>
                 <Button 
                   onClick={() => setActivePage('sales')}
-                  className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 gradient-success hover:opacity-90 text-xs md:text-sm"
+                  className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 gradient-success hover:opacity-90 text-[11px] sm:text-xs md:text-sm"
                   disabled={!canSales}
                 >
-                  <DollarSign className="w-5 h-5 md:w-6 md:h-6" />
+                  <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                   <span>المبيعات</span>
                 </Button>
                 <Button 
                   onClick={() => setActivePage('add-customer')}
                   variant="outline"
-                  className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-xs md:text-sm"
+                  className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-[11px] sm:text-xs md:text-sm"
                   disabled={!canSales}
                 >
-                  <UserPlus className="w-5 h-5 md:w-6 md:h-6" />
+                  <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                   <span>إضافة عميل</span>
                 </Button>
                 <Button 
                   onClick={() => setActivePage('add-supplier')}
                   variant="outline"
-                  className="h-auto py-3 md:py-4 flex flex-col items-center gap-1 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-xs md:text-sm"
+                  className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-[11px] sm:text-xs md:text-sm"
                   disabled={!canPurchases}
                 >
-                  <Truck className="w-5 h-5 md:w-6 md:h-6" />
+                  <Truck className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                   <span>إضافة مورد</span>
                 </Button>
               </div>
             </div>
 
             {/* Reports */}
-            <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-              <h2 className="text-lg md:text-xl font-bold text-card-foreground mb-4 md:mb-6">التقارير</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
+            <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
+              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground mb-3 sm:mb-4 md:mb-6">التقارير</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 md:gap-3">
                 <Button 
                   onClick={() => setActivePage('inventory-report')}
                   variant="ghost"
-                  className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-primary/10 text-sm"
+                  className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-primary/10 text-xs sm:text-sm"
                 >
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <Package className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-primary" />
                   </div>
-                  <span className="font-medium">تقرير المخزون</span>
+                  <span className="font-medium truncate">تقرير المخزون</span>
                 </Button>
                 <Button 
                   onClick={() => setActivePage('profit-report')}
                   variant="ghost"
-                  className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-success/10 text-sm"
+                  className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-success/10 text-xs sm:text-sm"
                 >
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
-                    <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-success" />
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-success" />
                   </div>
-                  <span className="font-medium">تقرير الأرباح</span>
+                  <span className="font-medium truncate">تقرير الأرباح</span>
                 </Button>
                 <Button 
                   onClick={() => setActivePage('purchases-report')}
                   variant="ghost"
-                  className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-warning/10 text-sm"
+                  className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-warning/10 text-xs sm:text-sm"
                 >
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
-                    <FileText className="w-4 h-4 md:w-5 md:h-5 text-warning" />
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
+                    <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-warning" />
                   </div>
-                  <span className="font-medium">تقرير المشتريات</span>
+                  <span className="font-medium truncate">تقرير المشتريات</span>
                 </Button>
                 <Button 
                   onClick={() => setActivePage('sales-report')}
                   variant="ghost"
-                  className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-blue-500/10 text-sm"
+                  className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-primary/10 text-xs sm:text-sm"
                 >
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                    <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-primary" />
                   </div>
-                  <span className="font-medium">تقرير المبيعات</span>
+                  <span className="font-medium truncate">تقرير المبيعات</span>
                 </Button>
                 <Button 
                   onClick={() => setActivePage('customers-report')}

@@ -100,40 +100,53 @@ const Index = () => {
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen min-h-[100dvh] bg-background">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block shrink-0">
         <Sidebar activePage={activePage} setActivePage={setActivePage} />
       </div>
       
       {/* Mobile Sidebar */}
       <MobileSidebar activePage={activePage} setActivePage={setActivePage} />
       
-      <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto w-full">
-        <div className="flex justify-between items-center mb-4 pt-14 lg:pt-0">
-          <p className="text-xs md:text-sm text-muted-foreground truncate max-w-[200px] md:max-w-none">
-            مرحباً، {user?.email}
-          </p>
-          <div className="flex items-center gap-2">
-            <PWAInstallButton />
-            {permissions.super_admin && (
-              <Button
-                variant="outline"
-                onClick={() => navigate('/companies')}
-                className="gap-2 text-sm"
+      <main className="flex-1 min-w-0 overflow-x-hidden">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border px-3 sm:px-4 md:px-6 lg:px-8 py-3 safe-area-top">
+          <div className="flex justify-between items-center gap-2">
+            <p className="text-responsive-sm text-muted-foreground truncate flex-1 min-w-0">
+              مرحباً، <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
+            </p>
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <PWAInstallButton />
+              {permissions.super_admin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/companies')}
+                  className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3"
+                >
+                  <Building2 className="w-4 h-4" />
+                  <span className="hidden sm:inline text-xs sm:text-sm">إدارة الشركات</span>
+                </Button>
+              )}
+              <CarSearch />
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={signOut} 
+                className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 text-muted-foreground hover:text-destructive"
               >
-                <Building2 className="w-4 h-4" />
-                <span className="hidden sm:inline">إدارة الشركات</span>
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline text-xs sm:text-sm">خروج</span>
               </Button>
-            )}
-            <CarSearch />
-            <Button variant="ghost" onClick={signOut} className="gap-2 text-sm">
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">تسجيل خروج</span>
-            </Button>
+            </div>
           </div>
+        </header>
+        
+        {/* Main Content */}
+        <div className="p-3 sm:p-4 md:p-6 lg:p-8 safe-area-bottom">
+          {renderContent()}
         </div>
-        {renderContent()}
       </main>
     </div>
   );
