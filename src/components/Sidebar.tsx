@@ -89,6 +89,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
     { id: 'journal-entries' as ActivePage, label: settings?.journal_entries_title || 'دفتر اليومية', icon: Calculator },
     { id: 'general-ledger' as ActivePage, label: settings?.general_ledger_title || 'دفتر الأستاذ', icon: FileText },
     { id: 'financial-reports' as ActivePage, label: settings?.financial_reports_title || 'التقارير المالية', icon: PieChart },
+    { id: 'zakat-reports' as ActivePage, label: 'القوائم الزكوية', icon: Scale },
   ];
 
   const hasAccess = (permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users') => {
