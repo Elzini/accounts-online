@@ -197,6 +197,19 @@ export function GeneralLedgerPage() {
     pdf.save(`دفتر_الأستاذ_${ledger.account.code}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
+  // HTML escape function to prevent XSS
+  const escapeHtml = (text: string | number | null | undefined): string => {
+    if (text === null || text === undefined) return '';
+    const map: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, (m) => map[m]);
+  };
+
   // Print
   const handlePrint = () => {
     const printContent = printRef.current;
@@ -205,11 +218,14 @@ export function GeneralLedgerPage() {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
     
+    // Clone and sanitize the content
+    const clonedContent = printContent.cloneNode(true) as HTMLElement;
+    
     printWindow.document.write(`
       <!DOCTYPE html>
       <html dir="rtl" lang="ar">
         <head>
-          <title>دفتر الأستاذ - ${ledger?.account.name || ''}</title>
+          <title>دفتر الأستاذ - ${escapeHtml(ledger?.account.name || '')}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { 
@@ -237,7 +253,7 @@ export function GeneralLedgerPage() {
           </style>
         </head>
         <body>
-          ${printContent.innerHTML}
+          ${clonedContent.innerHTML}
         </body>
       </html>
     `);
