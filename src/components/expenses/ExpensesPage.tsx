@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useExpenses, useExpenseCategories, useAddExpense, useDeleteExpense, useAddExpenseCategory, useCreateDefaultExpenseCategories } from '@/hooks/useExpenses';
 import { useCars } from '@/hooks/useDatabase';
+import { useAccounts } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Expense, ExpenseCategory } from '@/services/expenses';
 
@@ -20,6 +21,7 @@ export function ExpensesPage() {
   const { companyId } = useCompany();
   const { data: expenses = [], isLoading: expensesLoading } = useExpenses();
   const { data: categories = [], isLoading: categoriesLoading } = useExpenseCategories();
+  const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
   const { data: cars = [], isLoading: carsLoading } = useCars();
   const addExpense = useAddExpense();
   const deleteExpense = useDeleteExpense();
@@ -30,6 +32,7 @@ export function ExpensesPage() {
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [expenseForm, setExpenseForm] = useState({
     category_id: '',
+    account_id: '',
     car_id: '',
     amount: '',
     description: '',
@@ -38,6 +41,9 @@ export function ExpensesPage() {
     reference_number: '',
     notes: ''
   });
+  
+  // Filter expense accounts (5xxx codes)
+  const expenseAccounts = accounts.filter(acc => acc.code.startsWith('5') && acc.code.length === 4);
   const [categoryForm, setCategoryForm] = useState({
     name: '',
     description: ''
@@ -56,6 +62,7 @@ export function ExpensesPage() {
       await addExpense.mutateAsync({
         company_id: companyId!,
         category_id: expenseForm.category_id || null,
+        account_id: expenseForm.account_id || null,
         car_id: expenseForm.car_id || null,
         amount: parseFloat(expenseForm.amount),
         description: expenseForm.description,
@@ -69,6 +76,7 @@ export function ExpensesPage() {
       setIsExpenseDialogOpen(false);
       setExpenseForm({
         category_id: '',
+        account_id: '',
         car_id: '',
         amount: '',
         description: '',
@@ -137,7 +145,7 @@ export function ExpensesPage() {
     })
     .reduce((sum, exp) => sum + Number(exp.amount), 0);
 
-  if (expensesLoading || categoriesLoading || carsLoading) {
+  if (expensesLoading || categoriesLoading || carsLoading || accountsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -214,12 +222,28 @@ export function ExpensesPage() {
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label>الفئة</Label>
-                    <Select value={expenseForm.category_id} onValueChange={(v) => setExpenseForm({...expenseForm, category_id: v})}>
+                    <Label>حساب المصروفات (من شجرة الحسابات)</Label>
+                    <Select value={expenseForm.account_id} onValueChange={(v) => setExpenseForm({...expenseForm, account_id: v})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر الحساب" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {expenseAccounts.map(acc => (
+                          <SelectItem key={acc.id} value={acc.id}>
+                            {acc.code} - {acc.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>الفئة (اختياري)</Label>
+                    <Select value={expenseForm.category_id} onValueChange={(v) => setExpenseForm({...expenseForm, category_id: v === 'none' ? '' : v})}>
                       <SelectTrigger>
                         <SelectValue placeholder="اختر الفئة" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">بدون فئة</SelectItem>
                         {categories.map(cat => (
                           <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                         ))}
@@ -307,6 +331,7 @@ export function ExpensesPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>التاريخ</TableHead>
+                    <TableHead>الحساب</TableHead>
                     <TableHead>الفئة</TableHead>
                     <TableHead>السيارة</TableHead>
                     <TableHead>الوصف</TableHead>
@@ -318,7 +343,7 @@ export function ExpensesPage() {
                 <TableBody>
                   {expenses.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                         لا توجد مصروفات مسجلة
                       </TableCell>
                     </TableRow>
@@ -327,7 +352,16 @@ export function ExpensesPage() {
                       <TableRow key={expense.id}>
                         <TableCell>{new Date(expense.expense_date).toLocaleDateString('ar-SA')}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{expense.category?.name || 'بدون فئة'}</Badge>
+                          {expense.account ? (
+                            <Badge variant="outline" className="font-mono">
+                              {expense.account.code} - {expense.account.name}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{expense.category?.name || 'بدون فئة'}</Badge>
                         </TableCell>
                         <TableCell>
                           {expense.car ? (
