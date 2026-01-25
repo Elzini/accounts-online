@@ -147,6 +147,66 @@ export interface DetailedIncomeStatement {
   };
 }
 
+// Helper function to calculate actual net income from sales/purchases/expenses
+async function calculateActualNetIncome(
+  companyId: string,
+  startDate: string,
+  endDate: string
+): Promise<{ salesRevenue: number; purchaseCost: number; carExpenses: number; generalExpenses: number; netIncome: number }> {
+  // Fetch actual sales data with car purchase prices
+  const { data: salesData } = await supabase
+    .from('sales')
+    .select(`
+      id,
+      sale_price,
+      car:cars(purchase_price),
+      sale_items:sale_items(
+        sale_price,
+        car:cars(purchase_price)
+      )
+    `)
+    .eq('company_id', companyId)
+    .gte('sale_date', startDate)
+    .lte('sale_date', endDate);
+
+  let salesRevenue = 0;
+  let purchaseCost = 0;
+
+  (salesData || []).forEach((sale: any) => {
+    if (sale.sale_items && sale.sale_items.length > 0) {
+      sale.sale_items.forEach((item: any) => {
+        salesRevenue += Number(item.sale_price) || 0;
+        purchaseCost += Number(item.car?.purchase_price) || 0;
+      });
+    } else {
+      salesRevenue += Number(sale.sale_price) || 0;
+      purchaseCost += Number(sale.car?.purchase_price) || 0;
+    }
+  });
+
+  // Fetch expenses
+  const { data: expensesData } = await supabase
+    .from('expenses')
+    .select('amount, car_id')
+    .eq('company_id', companyId)
+    .gte('expense_date', startDate)
+    .lte('expense_date', endDate);
+
+  const carExpenses = (expensesData || [])
+    .filter((e: any) => e.car_id)
+    .reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
+  
+  const generalExpenses = (expensesData || [])
+    .filter((e: any) => !e.car_id)
+    .reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
+
+  const totalCost = purchaseCost + carExpenses;
+  const grossProfit = salesRevenue - totalCost;
+  const netIncome = grossProfit - generalExpenses;
+
+  return { salesRevenue, purchaseCost, carExpenses, generalExpenses, netIncome };
+}
+
 // Fetch Cash Flow Statement
 export async function getCashFlowStatement(
   companyId: string,
@@ -155,7 +215,10 @@ export async function getCashFlowStatement(
 ): Promise<CashFlowStatement> {
   const accounts = await fetchAccounts(companyId);
   
-  // Get all journal entries for the period
+  // Get actual net income from sales/purchases/expenses
+  const actualData = await calculateActualNetIncome(companyId, startDate, endDate);
+  
+  // Get all journal entries for the period (for balance sheet items)
   const { data: lines, error } = await supabase
     .from('journal_entry_lines')
     .select(`
@@ -189,8 +252,6 @@ export async function getCashFlowStatement(
   };
 
   // Categorize accounts
-  const revenueAccounts = accounts.filter(a => a.type === 'revenue');
-  const expenseAccounts = accounts.filter(a => a.type === 'expenses');
   const cashAccounts = accounts.filter(a => a.code.startsWith('11')); // النقدية والبنوك
   const receivableAccounts = accounts.filter(a => a.code.startsWith('12')); // الذمم المدينة
   const inventoryAccounts = accounts.filter(a => a.code.startsWith('13')); // المخزون
@@ -199,10 +260,8 @@ export async function getCashFlowStatement(
   const loanAccounts = accounts.filter(a => a.code.startsWith('23')); // القروض
   const capitalAccounts = accounts.filter(a => a.code.startsWith('31')); // رأس المال
 
-  // Calculate net income
-  const totalRevenue = revenueAccounts.reduce((sum, a) => sum + getBalance(a.id, a.type), 0);
-  const totalExpenses = expenseAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a.id, a.type)), 0);
-  const netIncome = totalRevenue - totalExpenses;
+  // Use actual net income
+  const netIncome = actualData.netIncome;
 
   // Operating Activities
   const receivablesChange = receivableAccounts.reduce((sum, a) => sum + getBalance(a.id, a.type), 0);
@@ -212,7 +271,7 @@ export async function getCashFlowStatement(
   const operatingActivities = {
     netIncome,
     adjustments: [
-      { description: 'استهلاك الأصول الثابتة', amount: 0 }, // Would need depreciation tracking
+      { description: 'استهلاك الأصول الثابتة', amount: 0 },
     ],
     changesInWorkingCapital: [
       { description: 'التغير في الذمم المدينة', amount: -receivablesChange },
@@ -265,7 +324,10 @@ export async function getChangesInEquityStatement(
 ): Promise<ChangesInEquityStatement> {
   const accounts = await fetchAccounts(companyId);
   
-  // Get journal entries for the period
+  // Get actual net income from sales/purchases/expenses
+  const actualData = await calculateActualNetIncome(companyId, startDate, endDate);
+  
+  // Get journal entries for the period (for equity accounts)
   const { data: periodLines, error: periodError } = await supabase
     .from('journal_entry_lines')
     .select(`
@@ -317,18 +379,14 @@ export async function getChangesInEquityStatement(
   const capitalAccounts = accounts.filter(a => a.code.startsWith('31'));
   const reserveAccounts = accounts.filter(a => a.code.startsWith('32'));
   const retainedAccounts = accounts.filter(a => a.code.startsWith('33'));
-  const revenueAccounts = accounts.filter(a => a.type === 'revenue');
-  const expenseAccounts = accounts.filter(a => a.type === 'expenses');
 
   // Opening balances
   const openingCapital = capitalAccounts.reduce((sum, a) => sum + (priorBalances.get(a.id) || 0), 0);
   const openingReserves = reserveAccounts.reduce((sum, a) => sum + (priorBalances.get(a.id) || 0), 0);
   const openingRetained = retainedAccounts.reduce((sum, a) => sum + (priorBalances.get(a.id) || 0), 0);
 
-  // Period changes
-  const periodRevenue = revenueAccounts.reduce((sum, a) => sum + (periodBalances.get(a.id) || 0), 0);
-  const periodExpenses = expenseAccounts.reduce((sum, a) => sum + Math.abs(periodBalances.get(a.id) || 0), 0);
-  const netIncome = periodRevenue - periodExpenses;
+  // Use actual net income from sales/purchases/expenses
+  const netIncome = actualData.netIncome;
 
   const capitalIncrease = capitalAccounts.reduce((sum, a) => sum + (periodBalances.get(a.id) || 0), 0);
   const reservesChange = reserveAccounts.reduce((sum, a) => sum + (periodBalances.get(a.id) || 0), 0);
@@ -347,7 +405,7 @@ export async function getChangesInEquityStatement(
     },
     changes: {
       netIncome,
-      dividends: 0, // Would need dividend tracking
+      dividends: 0,
       capitalIncrease,
       otherChanges: reservesChange,
     },
