@@ -57,38 +57,38 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
   ];
 
   const transferItems = [
-    { id: 'partner-dealerships' as ActivePage, label: 'المعارض الشريكة', icon: Building2 },
-    { id: 'car-transfers' as ActivePage, label: 'تحويلات السيارات', icon: ArrowLeftRight },
+    { id: 'partner-dealerships' as ActivePage, label: settings?.partner_dealerships_title || 'المعارض الشريكة', icon: Building2 },
+    { id: 'car-transfers' as ActivePage, label: settings?.car_transfers_title || 'تحويلات السيارات', icon: ArrowLeftRight },
   ];
 
   const financeItems = [
-    { id: 'expenses' as ActivePage, label: 'المصروفات', icon: Wallet },
-    { id: 'prepaid-expenses' as ActivePage, label: 'المصروفات المقدمة', icon: Clock },
-    { id: 'quotations' as ActivePage, label: 'عروض الأسعار', icon: FileCheck },
-    { id: 'installments' as ActivePage, label: 'الأقساط', icon: CreditCard },
-    { id: 'vouchers' as ActivePage, label: 'سندات القبض والصرف', icon: Receipt },
-    { id: 'financing' as ActivePage, label: 'شركات التمويل', icon: Landmark },
-    { id: 'banking' as ActivePage, label: 'إدارة البنوك', icon: Scale },
+    { id: 'expenses' as ActivePage, label: settings?.expenses_title || 'المصروفات', icon: Wallet },
+    { id: 'prepaid-expenses' as ActivePage, label: settings?.prepaid_expenses_title || 'المصروفات المقدمة', icon: Clock },
+    { id: 'quotations' as ActivePage, label: settings?.quotations_title || 'عروض الأسعار', icon: FileCheck },
+    { id: 'installments' as ActivePage, label: settings?.installments_title || 'الأقساط', icon: CreditCard },
+    { id: 'vouchers' as ActivePage, label: settings?.vouchers_title || 'سندات القبض والصرف', icon: Receipt },
+    { id: 'financing' as ActivePage, label: settings?.financing_title || 'شركات التمويل', icon: Landmark },
+    { id: 'banking' as ActivePage, label: settings?.banking_title || 'إدارة البنوك', icon: Scale },
   ];
 
   const reportItems = [
-    { id: 'inventory-report' as ActivePage, label: 'تقرير المخزون', icon: Package, permission: 'reports' as const },
-    { id: 'profit-report' as ActivePage, label: 'تقرير الأرباح', icon: TrendingUp, permission: 'reports' as const },
-    { id: 'purchases-report' as ActivePage, label: 'تقرير المشتريات', icon: FileText, permission: 'reports' as const },
-    { id: 'sales-report' as ActivePage, label: 'تقرير المبيعات', icon: DollarSign, permission: 'reports' as const },
-    { id: 'customers-report' as ActivePage, label: 'تقرير العملاء', icon: Users, permission: 'reports' as const },
-    { id: 'suppliers-report' as ActivePage, label: 'تقرير الموردين', icon: Truck, permission: 'reports' as const },
-    { id: 'commissions-report' as ActivePage, label: 'تقرير العمولات', icon: DollarSign, permission: 'reports' as const },
-    { id: 'transfers-report' as ActivePage, label: 'تقرير التحويلات', icon: ArrowLeftRight, permission: 'reports' as const },
-    { id: 'partner-report' as ActivePage, label: 'تقرير المعرض الشريك', icon: Building2, permission: 'reports' as const },
+    { id: 'inventory-report' as ActivePage, label: settings?.inventory_report_title || 'تقرير المخزون', icon: Package, permission: 'reports' as const },
+    { id: 'profit-report' as ActivePage, label: settings?.profit_report_title || 'تقرير الأرباح', icon: TrendingUp, permission: 'reports' as const },
+    { id: 'purchases-report' as ActivePage, label: settings?.purchases_report_title || 'تقرير المشتريات', icon: FileText, permission: 'reports' as const },
+    { id: 'sales-report' as ActivePage, label: settings?.sales_report_title || 'تقرير المبيعات', icon: DollarSign, permission: 'reports' as const },
+    { id: 'customers-report' as ActivePage, label: settings?.customers_report_title || 'تقرير العملاء', icon: Users, permission: 'reports' as const },
+    { id: 'suppliers-report' as ActivePage, label: settings?.suppliers_report_title || 'تقرير الموردين', icon: Truck, permission: 'reports' as const },
+    { id: 'commissions-report' as ActivePage, label: settings?.commissions_report_title || 'تقرير العمولات', icon: DollarSign, permission: 'reports' as const },
+    { id: 'transfers-report' as ActivePage, label: settings?.transfers_report_title || 'تقرير التحويلات', icon: ArrowLeftRight, permission: 'reports' as const },
+    { id: 'partner-report' as ActivePage, label: settings?.partner_report_title || 'تقرير المعرض الشريك', icon: Building2, permission: 'reports' as const },
   ];
 
   const accountingItems = [
-    { id: 'tax-settings' as ActivePage, label: 'إعدادات الضريبة', icon: Percent },
-    { id: 'chart-of-accounts' as ActivePage, label: 'شجرة الحسابات', icon: BookOpen },
-    { id: 'journal-entries' as ActivePage, label: 'دفتر اليومية', icon: Calculator },
-    { id: 'general-ledger' as ActivePage, label: 'دفتر الأستاذ', icon: FileText },
-    { id: 'financial-reports' as ActivePage, label: 'التقارير المالية', icon: PieChart },
+    { id: 'tax-settings' as ActivePage, label: settings?.tax_settings_title || 'إعدادات الضريبة', icon: Percent },
+    { id: 'chart-of-accounts' as ActivePage, label: settings?.chart_of_accounts_title || 'شجرة الحسابات', icon: BookOpen },
+    { id: 'journal-entries' as ActivePage, label: settings?.journal_entries_title || 'دفتر اليومية', icon: Calculator },
+    { id: 'general-ledger' as ActivePage, label: settings?.general_ledger_title || 'دفتر الأستاذ', icon: FileText },
+    { id: 'financial-reports' as ActivePage, label: settings?.financial_reports_title || 'التقارير المالية', icon: PieChart },
   ];
 
   const hasAccess = (permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users') => {
@@ -149,7 +149,9 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
         {/* Transfers */}
         {(permissions.admin || permissions.sales || permissions.purchases) && (
           <div className="mb-4 sm:mb-5">
-            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">التحويلات</p>
+            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">
+              {settings?.transfers_section_title || 'التحويلات'}
+            </p>
             <ul className="space-y-1">
               {transferItems.map((item) => {
                 const Icon = item.icon;
@@ -178,7 +180,9 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
         {/* Finance Section */}
         {(permissions.admin || permissions.sales || permissions.purchases) && (
           <div className="mb-4 sm:mb-5">
-            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">المالية</p>
+            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">
+              {settings?.finance_section_title || 'المالية'}
+            </p>
             <ul className="space-y-1">
               {financeItems.map((item) => {
                 const Icon = item.icon;
@@ -205,7 +209,9 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
         )}
         {hasAccess('reports') && (
           <div className="mb-4 sm:mb-5">
-            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">{settings?.reports_title || 'التقارير'}</p>
+            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">
+              {settings?.reports_title || 'التقارير'}
+            </p>
             <ul className="space-y-1">
               {reportItems.filter(item => hasAccess(item.permission)).map((item) => {
                 const Icon = item.icon;
@@ -234,7 +240,9 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
         {/* Accounting */}
         {(permissions.admin || permissions.reports) && (
           <div className="mb-4 sm:mb-5">
-            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">المحاسبة</p>
+            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">
+              {settings?.accounting_section_title || 'المحاسبة'}
+            </p>
             <ul className="space-y-1">
               {accountingItems.map((item) => {
                 const Icon = item.icon;
@@ -288,7 +296,9 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
         {/* Users Management */}
         {canManageUsers && (
           <div>
-            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">الإدارة</p>
+            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">
+              {settings?.admin_section_title || 'الإدارة'}
+            </p>
             <ul className="space-y-1">
               <li>
                 <button
@@ -301,7 +311,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
                   )}
                 >
                   <UserCog className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                  <span className="font-medium text-sm sm:text-base truncate">إدارة المستخدمين</span>
+                  <span className="font-medium text-sm sm:text-base truncate">{settings?.users_management_title || 'إدارة المستخدمين'}</span>
                 </button>
               </li>
               <li>
@@ -315,7 +325,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
                   )}
                 >
                   <Settings className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                  <span className="font-medium text-sm sm:text-base truncate">إعدادات النظام</span>
+                  <span className="font-medium text-sm sm:text-base truncate">{settings?.app_settings_title || 'إعدادات النظام'}</span>
                 </button>
               </li>
               <li>
@@ -329,7 +339,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
                   )}
                 >
                   <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                  <span className="font-medium text-sm sm:text-base truncate">سجل التدقيق</span>
+                  <span className="font-medium text-sm sm:text-base truncate">{settings?.audit_logs_title || 'سجل التدقيق'}</span>
                 </button>
               </li>
               <li>
@@ -343,7 +353,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
                   )}
                 >
                   <Database className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                  <span className="font-medium text-sm sm:text-base truncate">النسخ الاحتياطي</span>
+                  <span className="font-medium text-sm sm:text-base truncate">{settings?.backups_title || 'النسخ الاحتياطي'}</span>
                 </button>
               </li>
             </ul>
