@@ -308,12 +308,29 @@ export async function fetchStats() {
     .select('*', { count: 'exact', head: true })
     .gte('sale_date', today);
 
-  // Total profit
-  const { data: profitData } = await supabase
+  // Total gross profit from sales
+  const { data: salesData } = await supabase
     .from('sales')
-    .select('profit');
+    .select('profit, car_id');
   
-  const totalProfit = profitData?.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0) || 0;
+  const totalGrossProfit = salesData?.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0) || 0;
+
+  // Get all expenses
+  const { data: expensesData } = await supabase
+    .from('expenses')
+    .select('amount, car_id');
+  
+  // Calculate car-specific expenses (linked to sold cars)
+  const soldCarIds = salesData?.map(s => s.car_id) || [];
+  const carExpenses = expensesData?.filter(exp => exp.car_id && soldCarIds.includes(exp.car_id))
+    .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0) || 0;
+  
+  // Calculate general expenses (not linked to any car)
+  const generalExpenses = expensesData?.filter(exp => !exp.car_id)
+    .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0) || 0;
+  
+  // Net profit = Gross profit - Car expenses - General expenses
+  const totalProfit = totalGrossProfit - carExpenses - generalExpenses;
 
   // Month sales count
   const { count: monthSales } = await supabase
@@ -343,6 +360,10 @@ export async function fetchStats() {
     monthSales: monthSales || 0,
     totalPurchases,
     monthSalesAmount,
+    // Additional breakdown for transparency
+    totalGrossProfit,
+    totalCarExpenses: carExpenses,
+    totalGeneralExpenses: generalExpenses,
   };
 }
 
