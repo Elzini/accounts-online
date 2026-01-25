@@ -101,12 +101,14 @@ export interface ZakatBaseStatement {
 export interface DetailedIncomeStatement {
   // الإيرادات
   revenue: {
+    items: Array<{ code: string; name: string; amount: number }>;
     salesRevenue: number;
     otherRevenue: number;
     total: number;
   };
   // تكلفة المبيعات
   costOfSales: {
+    items: Array<{ code: string; name: string; amount: number }>;
     openingInventory: number;
     purchases: number;
     closingInventory: number;
@@ -114,31 +116,35 @@ export interface DetailedIncomeStatement {
   };
   // مجمل الربح
   grossProfit: number;
-  // المصروفات التشغيلية
+  // المصروفات التشغيلية والإدارية
   operatingExpenses: {
-    items: Array<{ name: string; amount: number }>;
+    items: Array<{ code: string; name: string; amount: number }>;
     total: number;
   };
   // الربح التشغيلي
   operatingIncome: number;
   // المصروفات الأخرى
   otherExpenses: {
-    items: Array<{ name: string; amount: number }>;
+    items: Array<{ code: string; name: string; amount: number }>;
     total: number;
   };
   // الإيرادات الأخرى
   otherIncome: {
-    items: Array<{ name: string; amount: number }>;
+    items: Array<{ code: string; name: string; amount: number }>;
     total: number;
   };
   // صافي الربح قبل الزكاة
   netIncomeBeforeZakat: number;
-  // الزكاة المستحقة
-  zakatExpense: number;
-  // صافي الربح بعد الزكاة
-  netIncomeAfterZakat: number;
+  // ملاحظة: الزكاة تحسب على الوعاء الزكوي وليس صافي الربح
+  zakatNote: string;
   // الفترة
   period: { startDate: string; endDate: string };
+  // إحصائيات إضافية
+  stats: {
+    totalSalesCount: number;
+    grossProfitMargin: number;
+    netProfitMargin: number;
+  };
 }
 
 // Fetch Cash Flow Statement
@@ -506,13 +512,14 @@ export async function getDetailedIncomeStatement(
 ): Promise<DetailedIncomeStatement> {
   const accounts = await fetchAccounts(companyId);
   
+  // Get journal entry lines for the period
   const { data: lines, error } = await supabase
     .from('journal_entry_lines')
     .select(`
       account_id,
       debit,
       credit,
-      journal_entry:journal_entries!inner(company_id, entry_date, is_posted)
+      journal_entry:journal_entries!inner(company_id, entry_date, is_posted, reference_type)
     `)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true)
@@ -520,6 +527,13 @@ export async function getDetailedIncomeStatement(
     .lte('journal_entry.entry_date', endDate);
 
   if (error) throw error;
+
+  // Count sales transactions
+  const salesCount = new Set(
+    (lines || [])
+      .filter((l: any) => l.journal_entry.reference_type === 'sale')
+      .map((l: any) => l.journal_entry.id)
+  ).size;
 
   const balances = new Map<string, number>();
   (lines || []).forEach((line: any) => {
@@ -532,29 +546,39 @@ export async function getDetailedIncomeStatement(
     }
   });
 
-  // Revenue accounts (4xxx)
+  // Revenue accounts (4xxx) - الإيرادات
   const salesAccounts = accounts.filter(a => a.code.startsWith('41'));
   const otherRevenueAccounts = accounts.filter(a => a.type === 'revenue' && !a.code.startsWith('41'));
   
-  const salesRevenue = salesAccounts.reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);
-  const otherRevenue = otherRevenueAccounts.reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);
+  const revenueItems = salesAccounts
+    .map(a => ({ code: a.code, name: a.name, amount: balances.get(a.id) || 0 }))
+    .filter(i => i.amount !== 0);
+  
+  const otherRevenueItems = otherRevenueAccounts
+    .map(a => ({ code: a.code, name: a.name, amount: balances.get(a.id) || 0 }))
+    .filter(i => i.amount !== 0);
 
-  // Cost of Sales (51xx)
+  const salesRevenue = revenueItems.reduce((sum, i) => sum + i.amount, 0);
+  const otherRevenue = otherRevenueItems.reduce((sum, i) => sum + i.amount, 0);
+
+  // Cost of Sales (51xx) - تكلفة المبيعات
   const cogsAccounts = accounts.filter(a => a.code.startsWith('51'));
-  const cogsTotal = cogsAccounts.reduce((sum, a) => sum + Math.abs(balances.get(a.id) || 0), 0);
+  const cogsItems = cogsAccounts
+    .map(a => ({ code: a.code, name: a.name, amount: Math.abs(balances.get(a.id) || 0) }))
+    .filter(i => i.amount !== 0);
+  const cogsTotal = cogsItems.reduce((sum, i) => sum + i.amount, 0);
 
-  // Operating Expenses (52xx - 54xx)
+  // Operating Expenses (52xx - 54xx) - المصروفات التشغيلية والإدارية
   const opExpenseAccounts = accounts.filter(a => 
     a.type === 'expenses' && 
     (a.code.startsWith('52') || a.code.startsWith('53') || a.code.startsWith('54'))
   );
-  const operatingExpenses = opExpenseAccounts.map(a => ({
-    name: a.name,
-    amount: Math.abs(balances.get(a.id) || 0),
-  })).filter(e => e.amount > 0);
-  const totalOpExpenses = operatingExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const operatingExpenseItems = opExpenseAccounts
+    .map(a => ({ code: a.code, name: a.name, amount: Math.abs(balances.get(a.id) || 0) }))
+    .filter(i => i.amount !== 0);
+  const totalOpExpenses = operatingExpenseItems.reduce((sum, e) => sum + e.amount, 0);
 
-  // Other Expenses (55xx+)
+  // Other Expenses (55xx+) - مصروفات أخرى
   const otherExpenseAccounts = accounts.filter(a => 
     a.type === 'expenses' && 
     !a.code.startsWith('51') && 
@@ -562,26 +586,30 @@ export async function getDetailedIncomeStatement(
     !a.code.startsWith('53') && 
     !a.code.startsWith('54')
   );
-  const otherExpenses = otherExpenseAccounts.map(a => ({
-    name: a.name,
-    amount: Math.abs(balances.get(a.id) || 0),
-  })).filter(e => e.amount > 0);
-  const totalOtherExpenses = otherExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const otherExpenseItems = otherExpenseAccounts
+    .map(a => ({ code: a.code, name: a.name, amount: Math.abs(balances.get(a.id) || 0) }))
+    .filter(i => i.amount !== 0);
+  const totalOtherExpenses = otherExpenseItems.reduce((sum, e) => sum + e.amount, 0);
 
-  // Calculations
-  const grossProfit = salesRevenue + otherRevenue - cogsTotal;
-  const operatingIncome = grossProfit - totalOpExpenses;
-  const netIncomeBeforeZakat = operatingIncome + otherRevenue - totalOtherExpenses;
-  const zakatExpense = netIncomeBeforeZakat * 0.025; // 2.5%
-  const netIncomeAfterZakat = netIncomeBeforeZakat - zakatExpense;
+  // Calculations - الحسابات
+  const totalRevenue = salesRevenue + otherRevenue;
+  const grossProfit = salesRevenue - cogsTotal; // مجمل الربح = إيرادات المبيعات - تكلفة المبيعات
+  const operatingIncome = grossProfit - totalOpExpenses; // الربح التشغيلي
+  const netIncomeBeforeZakat = operatingIncome + otherRevenue - totalOtherExpenses; // صافي الربح
+
+  // Calculate margins
+  const grossProfitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+  const netProfitMargin = totalRevenue > 0 ? (netIncomeBeforeZakat / totalRevenue) * 100 : 0;
 
   return {
     revenue: {
+      items: [...revenueItems, ...otherRevenueItems],
       salesRevenue,
       otherRevenue,
-      total: salesRevenue + otherRevenue,
+      total: totalRevenue,
     },
     costOfSales: {
+      items: cogsItems,
       openingInventory: 0,
       purchases: cogsTotal,
       closingInventory: 0,
@@ -589,21 +617,25 @@ export async function getDetailedIncomeStatement(
     },
     grossProfit,
     operatingExpenses: {
-      items: operatingExpenses,
+      items: operatingExpenseItems,
       total: totalOpExpenses,
     },
     operatingIncome,
     otherExpenses: {
-      items: otherExpenses,
+      items: otherExpenseItems,
       total: totalOtherExpenses,
     },
     otherIncome: {
-      items: [],
+      items: otherRevenueItems,
       total: otherRevenue,
     },
     netIncomeBeforeZakat,
-    zakatExpense,
-    netIncomeAfterZakat,
+    zakatNote: 'ملاحظة: الزكاة تُحسب على الوعاء الزكوي وليس على صافي الربح. راجع قائمة الوعاء الزكوي للحساب الصحيح.',
     period: { startDate, endDate },
+    stats: {
+      totalSalesCount: salesCount,
+      grossProfitMargin: Math.round(grossProfitMargin * 100) / 100,
+      netProfitMargin: Math.round(netProfitMargin * 100) / 100,
+    },
   };
 }
