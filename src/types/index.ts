@@ -87,4 +87,5 @@ export type ActivePage =
   | 'audit-logs'
   | 'backups'
   | 'financing'
-  | 'banking';
+  | 'banking'
+  | 'prepaid-expenses';

@@ -33,6 +33,7 @@ import { JournalEntriesPage } from '@/components/accounting/JournalEntriesPage';
 import { FinancialReportsPage } from '@/components/accounting/FinancialReportsPage';
 import { GeneralLedgerPage } from '@/components/accounting/GeneralLedgerPage';
 import { ExpensesPage } from '@/components/expenses/ExpensesPage';
+import PrepaidExpensesPage from '@/components/expenses/PrepaidExpensesPage';
 import { QuotationsPage } from '@/components/quotations/QuotationsPage';
 import { InstallmentsPage } from '@/components/installments/InstallmentsPage';
 import { VouchersPage } from '@/components/vouchers/VouchersPage';
@@ -84,6 +85,7 @@ const Index = () => {
       case 'financial-reports': return <FinancialReportsPage />;
       case 'general-ledger': return <GeneralLedgerPage />;
       case 'expenses': return <ExpensesPage />;
+      case 'prepaid-expenses': return <PrepaidExpensesPage />;
       case 'quotations': return <QuotationsPage />;
       case 'installments': return <InstallmentsPage />;
       case 'vouchers': return <VouchersPage />;
