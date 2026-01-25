@@ -90,4 +90,5 @@ export type ActivePage =
   | 'banking'
   | 'prepaid-expenses'
   | 'zakat-reports'
-  | 'fiscal-years';
+  | 'fiscal-years'
+  | 'trial-balance-analysis';
