@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { LogOut, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
-import { MobileSidebar } from '@/components/MobileSidebar';
+import { MobileSidebar, MobileSidebarRef } from '@/components/MobileSidebar';
+import { BottomNavigation } from '@/components/BottomNavigation';
 import { Dashboard } from '@/components/Dashboard';
 import { PWAInstallButton } from '@/components/PWAInstallButton';
 import { CustomerForm } from '@/components/forms/CustomerForm';
@@ -52,6 +53,7 @@ const Index = () => {
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
   const { data: stats } = useStats();
   const { signOut, user, permissions } = useAuth();
+  const mobileSidebarRef = useRef<MobileSidebarRef>(null);
 
   const defaultStats = { availableCars: 0, todaySales: 0, totalProfit: 0, monthSales: 0, totalPurchases: 0, monthSalesAmount: 0 };
 
@@ -99,6 +101,10 @@ const Index = () => {
 
   const isMobile = useIsMobile();
 
+  const handleMenuClick = () => {
+    mobileSidebarRef.current?.open();
+  };
+
   return (
     <div className="flex min-h-screen min-h-[100dvh] bg-background">
       {/* Desktop Sidebar */}
@@ -107,11 +113,11 @@ const Index = () => {
       </div>
       
       {/* Mobile Sidebar */}
-      <MobileSidebar activePage={activePage} setActivePage={setActivePage} />
+      <MobileSidebar ref={mobileSidebarRef} activePage={activePage} setActivePage={setActivePage} />
       
-      <main className="flex-1 min-w-0 overflow-x-hidden">
+      <main className="flex-1 min-w-0 overflow-x-hidden pb-16 lg:pb-0">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border px-3 sm:px-4 md:px-6 lg:px-8 py-3 safe-area-top">
+        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 safe-area-top">
           <div className="flex justify-between items-center gap-2">
             <p className="text-responsive-sm text-muted-foreground truncate flex-1 min-w-0">
               مرحباً، <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
@@ -144,10 +150,17 @@ const Index = () => {
         </header>
         
         {/* Main Content */}
-        <div className="p-3 sm:p-4 md:p-6 lg:p-8 safe-area-bottom">
+        <div className="p-3 sm:p-4 md:p-6 lg:p-8">
           {renderContent()}
         </div>
       </main>
+
+      {/* Bottom Navigation for Mobile */}
+      <BottomNavigation 
+        activePage={activePage} 
+        setActivePage={setActivePage} 
+        onMenuClick={handleMenuClick}
+      />
     </div>
   );
 };
