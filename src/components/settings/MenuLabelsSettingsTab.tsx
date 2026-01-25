@@ -163,12 +163,12 @@ export function MenuLabelsSettingsTab() {
         { key: 'backups_title', value: backupsTitle },
       ];
       
-      for (const update of updates) {
-        await updateSetting.mutateAsync(update);
-      }
+     // Save all settings in parallel for much faster performance
+     await Promise.all(updates.map(update => updateSetting.mutateAsync(update)));
       
       toast.success('تم حفظ تسميات القائمة بنجاح');
     } catch (error) {
+     console.error('Error saving settings:', error);
       toast.error('حدث خطأ أثناء حفظ الإعدادات');
     }
   };
