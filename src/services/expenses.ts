@@ -14,6 +14,7 @@ export interface Expense {
   id: string;
   company_id: string;
   category_id: string | null;
+  account_id: string | null;
   car_id: string | null;
   amount: number;
   description: string;
@@ -25,6 +26,11 @@ export interface Expense {
   created_at: string;
   updated_at: string;
   category?: ExpenseCategory;
+  account?: {
+    id: string;
+    code: string;
+    name: string;
+  };
   car?: {
     id: string;
     name: string;
@@ -82,7 +88,7 @@ export async function deleteExpenseCategory(id: string): Promise<void> {
 export async function fetchExpenses(): Promise<Expense[]> {
   const { data, error } = await supabase
     .from('expenses')
-    .select('*, category:expense_categories(*), car:cars(id, name, chassis_number)')
+    .select('*, category:expense_categories(*), account:account_categories(id, code, name), car:cars(id, name, chassis_number)')
     .order('expense_date', { ascending: false });
   
   if (error) throw error;
@@ -129,7 +135,7 @@ export async function addExpense(expense: ExpenseInsert): Promise<Expense> {
   const { data, error } = await supabase
     .from('expenses')
     .insert(expense)
-    .select('*, category:expense_categories(*)')
+    .select('*, category:expense_categories(*), account:account_categories(id, code, name)')
     .single();
   
   if (error) throw error;
