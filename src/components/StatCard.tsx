@@ -24,7 +24,7 @@ export function StatCard({ title, value, icon: Icon, gradient, subtitle }: StatC
           <p className="text-[11px] sm:text-xs md:text-sm font-medium text-muted-foreground mb-0.5 sm:mb-1 truncate">
             {title}
           </p>
-          <p className="text-base sm:text-xl md:text-2xl lg:text-3xl font-bold text-card-foreground truncate">
+          <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-card-foreground truncate">
             {value}
           </p>
           {subtitle && (
