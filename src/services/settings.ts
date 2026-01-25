@@ -175,17 +175,30 @@ export async function fetchAppSettings(): Promise<AppSettings> {
 export async function updateAppSetting(key: string, value: string) {
   const companyId = await getCurrentCompanyId();
   
-  const { error } = await supabase
+  // Check if setting already exists for this company
+  const { data: existing } = await supabase
     .from('app_settings')
-    .upsert({ 
-      key, 
-      value, 
-      company_id: companyId 
-    }, { 
-      onConflict: 'key' 
-    });
-  
-  if (error) throw error;
+    .select('id')
+    .eq('key', key)
+    .eq('company_id', companyId)
+    .maybeSingle();
+
+  if (existing) {
+    // Update existing setting
+    const { error } = await supabase
+      .from('app_settings')
+      .update({ value })
+      .eq('id', existing.id);
+    
+    if (error) throw error;
+  } else {
+    // Insert new setting
+    const { error } = await supabase
+      .from('app_settings')
+      .insert({ key, value, company_id: companyId });
+    
+    if (error) throw error;
+  }
 }
 
 export async function resetDatabase() {
