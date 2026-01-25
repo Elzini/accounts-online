@@ -2278,6 +2278,56 @@ export type Database = {
           },
         ]
       }
+      trial_balance_imports: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          data: Json
+          file_name: string | null
+          id: string
+          name: string
+          period_from: string | null
+          period_to: string | null
+          updated_at: string
+          vat_number: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          data: Json
+          file_name?: string | null
+          id?: string
+          name: string
+          period_from?: string | null
+          period_to?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          file_name?: string | null
+          id?: string
+          name?: string
+          period_from?: string | null
+          period_to?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trial_balance_imports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
