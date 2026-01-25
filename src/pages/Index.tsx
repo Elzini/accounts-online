@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { LogOut, Building2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { LogOut, Building2, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileSidebar, MobileSidebarRef } from '@/components/MobileSidebar';
@@ -44,9 +44,12 @@ import { AuditLogsPage } from '@/components/audit/AuditLogsPage';
 import { BackupsPage } from '@/components/backups/BackupsPage';
 import { FinancingPage } from '@/components/financing/FinancingPage';
 import { BankingPage } from '@/components/banking/BankingPage';
+import { FiscalYearSelectionDialog } from '@/components/FiscalYearSelectionDialog';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ActivePage } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -55,7 +58,23 @@ const Index = () => {
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
   const { data: stats } = useStats();
   const { signOut, user, permissions } = useAuth();
+  const { fiscalYears, selectedFiscalYear, setSelectedFiscalYear, isLoading: isFiscalYearLoading } = useFiscalYear();
   const mobileSidebarRef = useRef<MobileSidebarRef>(null);
+  
+  // Show fiscal year selection dialog if multiple years exist and none selected
+  const [showFiscalYearDialog, setShowFiscalYearDialog] = useState(false);
+  
+  useEffect(() => {
+    // Check if we need to show fiscal year selection
+    if (!isFiscalYearLoading && fiscalYears.length > 1 && !selectedFiscalYear) {
+      setShowFiscalYearDialog(true);
+    }
+  }, [fiscalYears, selectedFiscalYear, isFiscalYearLoading]);
+
+  const handleFiscalYearSelect = (fy: typeof fiscalYears[0]) => {
+    setSelectedFiscalYear(fy);
+    setShowFiscalYearDialog(false);
+  };
 
   const defaultStats = { availableCars: 0, todaySales: 0, totalProfit: 0, monthSales: 0, totalPurchases: 0, monthSalesAmount: 0 };
 
@@ -110,63 +129,84 @@ const Index = () => {
   };
 
   return (
-    <div className="flex min-h-screen min-h-[100dvh] bg-background">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block shrink-0">
-        <Sidebar activePage={activePage} setActivePage={setActivePage} />
-      </div>
-      
-      {/* Mobile Sidebar */}
-      <MobileSidebar ref={mobileSidebarRef} activePage={activePage} setActivePage={setActivePage} />
-      
-      <main className="flex-1 min-w-0 overflow-x-hidden pb-16 md:pb-0">
-        {/* Top Header Bar */}
-        <header className="sticky top-0 z-40 bg-background/98 backdrop-blur-lg border-b-2 border-border/80 shadow-md px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 safe-area-top">
-          <div className="flex justify-between items-center gap-2">
-            <p className="text-responsive-sm text-muted-foreground truncate flex-1 min-w-0">
-              مرحباً، <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
-            </p>
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              <PWAInstallButton />
-              {permissions.super_admin && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/companies')}
-                  className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3"
-                >
-                  <Building2 className="w-4 h-4" />
-                  <span className="hidden sm:inline text-xs sm:text-sm">إدارة الشركات</span>
-                </Button>
-              )}
-              <CarSearch />
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={signOut} 
-                className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 text-muted-foreground hover:text-destructive"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline text-xs sm:text-sm">خروج</span>
-              </Button>
-            </div>
-          </div>
-        </header>
-        
-        {/* Main Content */}
-        <div className="p-3 sm:p-4 md:p-6 lg:p-8">
-          {renderContent()}
-        </div>
-      </main>
-
-      {/* Bottom Navigation for Mobile */}
-      {/* Always render but CSS will hide on desktop */}
-      <BottomNavigation 
-        activePage={activePage} 
-        setActivePage={setActivePage} 
-        onMenuClick={handleMenuClick}
+    <>
+      {/* Fiscal Year Selection Dialog */}
+      <FiscalYearSelectionDialog
+        open={showFiscalYearDialog}
+        fiscalYears={fiscalYears}
+        onSelect={handleFiscalYearSelect}
       />
-    </div>
+      
+      <div className="flex min-h-screen min-h-[100dvh] bg-background">
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:block shrink-0">
+          <Sidebar activePage={activePage} setActivePage={setActivePage} />
+        </div>
+        
+        {/* Mobile Sidebar */}
+        <MobileSidebar ref={mobileSidebarRef} activePage={activePage} setActivePage={setActivePage} />
+        
+        <main className="flex-1 min-w-0 overflow-x-hidden pb-16 md:pb-0">
+          {/* Top Header Bar */}
+          <header className="sticky top-0 z-40 bg-background/98 backdrop-blur-lg border-b-2 border-border/80 shadow-md px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 safe-area-top">
+            <div className="flex justify-between items-center gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <p className="text-responsive-sm text-muted-foreground truncate">
+                  مرحباً، <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
+                </p>
+                {selectedFiscalYear && fiscalYears.length > 1 && (
+                  <Badge 
+                    variant="outline" 
+                    className="cursor-pointer hover:bg-accent gap-1 shrink-0"
+                    onClick={() => setShowFiscalYearDialog(true)}
+                  >
+                    <Calendar className="w-3 h-3" />
+                    <span className="hidden sm:inline">{selectedFiscalYear.name}</span>
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <PWAInstallButton />
+                {permissions.super_admin && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/companies')}
+                    className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3"
+                  >
+                    <Building2 className="w-4 h-4" />
+                    <span className="hidden sm:inline text-xs sm:text-sm">إدارة الشركات</span>
+                  </Button>
+                )}
+                <CarSearch />
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={signOut} 
+                  className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 text-muted-foreground hover:text-destructive"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline text-xs sm:text-sm">خروج</span>
+                </Button>
+              </div>
+            </div>
+          </header>
+          
+          {/* Main Content */}
+          <div className="p-3 sm:p-4 md:p-6 lg:p-8">
+            {renderContent()}
+          </div>
+        </main>
+
+        {/* Bottom Navigation for Mobile */}
+        {/* Always render but CSS will hide on desktop */}
+        <BottomNavigation 
+          activePage={activePage} 
+          setActivePage={setActivePage} 
+          onMenuClick={handleMenuClick}
+        />
+      </div>
+    </>
   );
 };
 
