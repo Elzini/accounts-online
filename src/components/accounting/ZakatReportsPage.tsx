@@ -212,34 +212,34 @@ export function ZakatReportsPage() {
     
     const data = [
       { item: '=== الإيرادات ===', amount: '' },
-      { item: 'إيرادات المبيعات', amount: detailedIncome.revenue.salesRevenue.toLocaleString() },
-      { item: 'إيرادات أخرى', amount: detailedIncome.revenue.otherRevenue.toLocaleString() },
+      ...detailedIncome.revenue.items.map(i => ({ item: `${i.code} - ${i.name}`, amount: i.amount.toLocaleString() })),
       { item: 'إجمالي الإيرادات', amount: detailedIncome.revenue.total.toLocaleString() },
       { item: '', amount: '' },
       { item: '=== تكلفة المبيعات ===', amount: '' },
-      { item: 'تكلفة البضاعة المباعة', amount: detailedIncome.costOfSales.total.toLocaleString() },
+      ...detailedIncome.costOfSales.items.map(i => ({ item: `${i.code} - ${i.name}`, amount: `(${i.amount.toLocaleString()})` })),
+      { item: 'إجمالي تكلفة المبيعات', amount: `(${detailedIncome.costOfSales.total.toLocaleString()})` },
       { item: '', amount: '' },
       { item: 'مجمل الربح', amount: detailedIncome.grossProfit.toLocaleString() },
+      { item: `هامش الربح الإجمالي`, amount: `${detailedIncome.stats.grossProfitMargin}%` },
       { item: '', amount: '' },
       { item: '=== المصروفات التشغيلية ===', amount: '' },
-      ...detailedIncome.operatingExpenses.items.map(e => ({
-        item: e.name,
-        amount: e.amount.toLocaleString(),
-      })),
-      { item: 'إجمالي المصروفات التشغيلية', amount: detailedIncome.operatingExpenses.total.toLocaleString() },
+      ...detailedIncome.operatingExpenses.items.map(e => ({ item: `${e.code} - ${e.name}`, amount: `(${e.amount.toLocaleString()})` })),
+      { item: 'إجمالي المصروفات التشغيلية', amount: `(${detailedIncome.operatingExpenses.total.toLocaleString()})` },
       { item: '', amount: '' },
       { item: 'الربح التشغيلي', amount: detailedIncome.operatingIncome.toLocaleString() },
       { item: '', amount: '' },
-      { item: 'صافي الربح قبل الزكاة', amount: detailedIncome.netIncomeBeforeZakat.toLocaleString() },
-      { item: 'الزكاة المستحقة (2.5%)', amount: detailedIncome.zakatExpense.toLocaleString() },
-      { item: 'صافي الربح بعد الزكاة', amount: detailedIncome.netIncomeAfterZakat.toLocaleString() },
+      { item: '=== صافي الربح ===', amount: '' },
+      { item: 'صافي الربح', amount: detailedIncome.netIncomeBeforeZakat.toLocaleString() },
+      { item: 'هامش صافي الربح', amount: `${detailedIncome.stats.netProfitMargin}%` },
+      { item: '', amount: '' },
+      { item: detailedIncome.zakatNote, amount: '' },
     ];
 
     const summaryCards = [
       { label: 'إجمالي الإيرادات', value: detailedIncome.revenue.total.toLocaleString() + ' ر.س' },
       { label: 'مجمل الربح', value: detailedIncome.grossProfit.toLocaleString() + ' ر.س' },
-      { label: 'صافي الربح قبل الزكاة', value: detailedIncome.netIncomeBeforeZakat.toLocaleString() + ' ر.س' },
-      { label: 'صافي الربح بعد الزكاة', value: detailedIncome.netIncomeAfterZakat.toLocaleString() + ' ر.س' },
+      { label: 'صافي الربح', value: detailedIncome.netIncomeBeforeZakat.toLocaleString() + ' ر.س' },
+      { label: 'عدد المبيعات', value: detailedIncome.stats.totalSalesCount.toString() },
     ];
 
     const dateSubtitle = dateRange.from && dateRange.to 
@@ -768,6 +768,7 @@ export function ZakatReportsPage() {
                           <span className="text-sm text-muted-foreground">إجمالي الإيرادات</span>
                         </div>
                         <p className="text-2xl font-bold text-primary">{detailedIncome.revenue.total.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{detailedIncome.stats.totalSalesCount} عملية بيع</p>
                       </CardContent>
                     </Card>
                     <Card className="border-primary/20">
@@ -779,31 +780,46 @@ export function ZakatReportsPage() {
                         <p className={cn("text-2xl font-bold", detailedIncome.grossProfit >= 0 ? "text-primary" : "text-destructive")}>
                           {detailedIncome.grossProfit.toLocaleString()}
                         </p>
+                        <p className="text-xs text-muted-foreground mt-1">هامش {detailedIncome.stats.grossProfitMargin}%</p>
                       </CardContent>
                     </Card>
                     <Card className="border-primary/20">
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                           <Scale className="w-5 h-5" />
-                          <span className="text-sm text-muted-foreground">صافي الربح قبل الزكاة</span>
+                          <span className="text-sm text-muted-foreground">الربح التشغيلي</span>
+                        </div>
+                        <p className={cn("text-2xl font-bold", detailedIncome.operatingIncome >= 0 ? "text-primary" : "text-destructive")}>
+                          {detailedIncome.operatingIncome.toLocaleString()}
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className={cn("border-2", detailedIncome.netIncomeBeforeZakat >= 0 ? "border-primary/50 bg-primary/5" : "border-destructive/50 bg-destructive/5")}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calculator className="w-5 h-5" />
+                          <span className="text-sm text-muted-foreground">صافي الربح</span>
                         </div>
                         <p className={cn("text-2xl font-bold", detailedIncome.netIncomeBeforeZakat >= 0 ? "text-primary" : "text-destructive")}>
                           {detailedIncome.netIncomeBeforeZakat.toLocaleString()}
                         </p>
-                      </CardContent>
-                    </Card>
-                    <Card className={cn("border-2", detailedIncome.netIncomeAfterZakat >= 0 ? "border-primary/50 bg-primary/5" : "border-destructive/50 bg-destructive/5")}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Calculator className="w-5 h-5" />
-                          <span className="text-sm text-muted-foreground">صافي الربح بعد الزكاة</span>
-                        </div>
-                        <p className={cn("text-2xl font-bold", detailedIncome.netIncomeAfterZakat >= 0 ? "text-primary" : "text-destructive")}>
-                          {detailedIncome.netIncomeAfterZakat.toLocaleString()}
-                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">هامش {detailedIncome.stats.netProfitMargin}%</p>
                       </CardContent>
                     </Card>
                   </div>
+
+                  {/* Zakat Note */}
+                  <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <Calculator className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-amber-800 dark:text-amber-200">ملاحظة هامة عن الزكاة</p>
+                          <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">{detailedIncome.zakatNote}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
                   {/* Income Statement Table */}
                   <Table>
@@ -812,17 +828,24 @@ export function ZakatReportsPage() {
                       <TableRow className="bg-primary/10 font-bold">
                         <TableCell colSpan={2}>الإيرادات</TableCell>
                       </TableRow>
-                      <TableRow>
-                        <TableCell className="pr-8">إيرادات المبيعات</TableCell>
-                        <TableCell className="text-left">{detailedIncome.revenue.salesRevenue.toLocaleString()}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="pr-8">إيرادات أخرى</TableCell>
-                        <TableCell className="text-left">{detailedIncome.revenue.otherRevenue.toLocaleString()}</TableCell>
-                      </TableRow>
-                      <TableRow className="font-medium">
+                      {detailedIncome.revenue.items.map((item, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="pr-8">
+                            <span className="text-xs text-muted-foreground ml-2">{item.code}</span>
+                            {item.name}
+                          </TableCell>
+                          <TableCell className="text-left text-primary">{item.amount.toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+                      {detailedIncome.revenue.items.length === 0 && (
+                        <TableRow>
+                          <TableCell className="pr-8 text-muted-foreground">لا توجد إيرادات</TableCell>
+                          <TableCell className="text-left">-</TableCell>
+                        </TableRow>
+                      )}
+                      <TableRow className="font-medium bg-primary/5">
                         <TableCell>إجمالي الإيرادات</TableCell>
-                        <TableCell className="text-left text-primary">{detailedIncome.revenue.total.toLocaleString()}</TableCell>
+                        <TableCell className="text-left text-primary font-bold">{detailedIncome.revenue.total.toLocaleString()}</TableCell>
                       </TableRow>
 
                       {/* Cost of Sales */}
@@ -830,17 +853,39 @@ export function ZakatReportsPage() {
                         <TableCell colSpan={2}></TableCell>
                       </TableRow>
                       <TableRow className="bg-destructive/10 font-bold">
-                        <TableCell colSpan={2}>تكلفة المبيعات</TableCell>
+                        <TableCell colSpan={2}>تكلفة المبيعات (سعر الشراء)</TableCell>
                       </TableRow>
-                      <TableRow>
-                        <TableCell className="pr-8">تكلفة البضاعة المباعة</TableCell>
-                        <TableCell className="text-left text-destructive">({detailedIncome.costOfSales.total.toLocaleString()})</TableCell>
+                      {detailedIncome.costOfSales.items.map((item, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="pr-8">
+                            <span className="text-xs text-muted-foreground ml-2">{item.code}</span>
+                            {item.name}
+                          </TableCell>
+                          <TableCell className="text-left text-destructive">({item.amount.toLocaleString()})</TableCell>
+                        </TableRow>
+                      ))}
+                      {detailedIncome.costOfSales.items.length === 0 && (
+                        <TableRow>
+                          <TableCell className="pr-8 text-muted-foreground">لا توجد تكاليف مبيعات</TableCell>
+                          <TableCell className="text-left">-</TableCell>
+                        </TableRow>
+                      )}
+                      <TableRow className="font-medium bg-destructive/5">
+                        <TableCell>إجمالي تكلفة المبيعات</TableCell>
+                        <TableCell className="text-left text-destructive font-bold">({detailedIncome.costOfSales.total.toLocaleString()})</TableCell>
                       </TableRow>
 
                       {/* Gross Profit */}
                       <TableRow className="bg-primary/20 font-bold text-lg">
-                        <TableCell>مجمل الربح</TableCell>
-                        <TableCell className="text-left">{detailedIncome.grossProfit.toLocaleString()}</TableCell>
+                        <TableCell>
+                          مجمل الربح
+                          <span className="text-sm font-normal text-muted-foreground mr-2">
+                            (هامش {detailedIncome.stats.grossProfitMargin}%)
+                          </span>
+                        </TableCell>
+                        <TableCell className={cn("text-left", detailedIncome.grossProfit >= 0 ? "text-primary" : "text-destructive")}>
+                          {detailedIncome.grossProfit.toLocaleString()}
+                        </TableCell>
                       </TableRow>
 
                       {/* Operating Expenses */}
@@ -848,11 +893,14 @@ export function ZakatReportsPage() {
                         <TableCell colSpan={2}></TableCell>
                       </TableRow>
                       <TableRow className="bg-orange-100 dark:bg-orange-900/30 font-bold">
-                        <TableCell colSpan={2}>المصروفات التشغيلية</TableCell>
+                        <TableCell colSpan={2}>المصروفات التشغيلية والإدارية</TableCell>
                       </TableRow>
                       {detailedIncome.operatingExpenses.items.map((exp, idx) => (
                         <TableRow key={idx}>
-                          <TableCell className="pr-8">{exp.name}</TableCell>
+                          <TableCell className="pr-8">
+                            <span className="text-xs text-muted-foreground ml-2">{exp.code}</span>
+                            {exp.name}
+                          </TableCell>
                           <TableCell className="text-left text-destructive">({exp.amount.toLocaleString()})</TableCell>
                         </TableRow>
                       ))}
@@ -862,32 +910,52 @@ export function ZakatReportsPage() {
                           <TableCell className="text-left">-</TableCell>
                         </TableRow>
                       )}
-                      <TableRow className="font-medium">
+                      <TableRow className="font-medium bg-orange-50 dark:bg-orange-900/20">
                         <TableCell>إجمالي المصروفات التشغيلية</TableCell>
-                        <TableCell className="text-left text-destructive">({detailedIncome.operatingExpenses.total.toLocaleString()})</TableCell>
+                        <TableCell className="text-left text-destructive font-bold">({detailedIncome.operatingExpenses.total.toLocaleString()})</TableCell>
                       </TableRow>
 
                       {/* Operating Income */}
                       <TableRow className="bg-primary/10 font-bold">
                         <TableCell>الربح التشغيلي</TableCell>
-                        <TableCell className="text-left">{detailedIncome.operatingIncome.toLocaleString()}</TableCell>
+                        <TableCell className={cn("text-left", detailedIncome.operatingIncome >= 0 ? "text-primary" : "text-destructive")}>
+                          {detailedIncome.operatingIncome.toLocaleString()}
+                        </TableCell>
                       </TableRow>
+
+                      {/* Other Expenses */}
+                      {detailedIncome.otherExpenses.items.length > 0 && (
+                        <>
+                          <TableRow className="bg-muted/50">
+                            <TableCell colSpan={2}></TableCell>
+                          </TableRow>
+                          <TableRow className="bg-muted font-bold">
+                            <TableCell colSpan={2}>مصروفات أخرى</TableCell>
+                          </TableRow>
+                          {detailedIncome.otherExpenses.items.map((exp, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell className="pr-8">
+                                <span className="text-xs text-muted-foreground ml-2">{exp.code}</span>
+                                {exp.name}
+                              </TableCell>
+                              <TableCell className="text-left text-destructive">({exp.amount.toLocaleString()})</TableCell>
+                            </TableRow>
+                          ))}
+                        </>
+                      )}
 
                       {/* Net Income */}
                       <TableRow className="bg-muted/50">
                         <TableCell colSpan={2}></TableCell>
                       </TableRow>
-                      <TableRow className="bg-primary/20 font-bold text-lg">
-                        <TableCell>صافي الربح قبل الزكاة</TableCell>
+                      <TableRow className="bg-primary font-bold text-lg text-primary-foreground">
+                        <TableCell>
+                          صافي الربح
+                          <span className="text-sm font-normal opacity-80 mr-2">
+                            (هامش {detailedIncome.stats.netProfitMargin}%)
+                          </span>
+                        </TableCell>
                         <TableCell className="text-left">{detailedIncome.netIncomeBeforeZakat.toLocaleString()}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="pr-8">الزكاة المستحقة (2.5%)</TableCell>
-                        <TableCell className="text-left text-destructive">({detailedIncome.zakatExpense.toLocaleString()})</TableCell>
-                      </TableRow>
-                      <TableRow className="bg-primary/90 font-bold text-lg">
-                        <TableCell>صافي الربح بعد الزكاة</TableCell>
-                        <TableCell className="text-left">{detailedIncome.netIncomeAfterZakat.toLocaleString()}</TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
