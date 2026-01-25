@@ -604,6 +604,7 @@ export type Database = {
           color: string | null
           company_id: string | null
           created_at: string
+          fiscal_year_id: string | null
           id: string
           inventory_number: number
           model: string | null
@@ -621,6 +622,7 @@ export type Database = {
           color?: string | null
           company_id?: string | null
           created_at?: string
+          fiscal_year_id?: string | null
           id?: string
           inventory_number?: number
           model?: string | null
@@ -638,6 +640,7 @@ export type Database = {
           color?: string | null
           company_id?: string | null
           created_at?: string
+          fiscal_year_id?: string | null
           id?: string
           inventory_number?: number
           model?: string | null
@@ -662,6 +665,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cars_fiscal_year_id_fkey"
+            columns: ["fiscal_year_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_years"
             referencedColumns: ["id"]
           },
           {
@@ -1000,6 +1010,7 @@ export type Database = {
           created_by: string | null
           description: string
           expense_date: string
+          fiscal_year_id: string | null
           id: string
           notes: string | null
           payment_method: string | null
@@ -1016,6 +1027,7 @@ export type Database = {
           created_by?: string | null
           description: string
           expense_date?: string
+          fiscal_year_id?: string | null
           id?: string
           notes?: string | null
           payment_method?: string | null
@@ -1032,6 +1044,7 @@ export type Database = {
           created_by?: string | null
           description?: string
           expense_date?: string
+          fiscal_year_id?: string | null
           id?: string
           notes?: string | null
           payment_method?: string | null
@@ -1065,6 +1078,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_fiscal_year_id_fkey"
+            columns: ["fiscal_year_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_years"
             referencedColumns: ["id"]
           },
         ]
@@ -1283,6 +1303,79 @@ export type Database = {
           },
         ]
       }
+      fiscal_years: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          closing_balance_entry_id: string | null
+          company_id: string
+          created_at: string
+          end_date: string
+          id: string
+          is_current: boolean
+          name: string
+          notes: string | null
+          opening_balance_entry_id: string | null
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_balance_entry_id?: string | null
+          company_id: string
+          created_at?: string
+          end_date: string
+          id?: string
+          is_current?: boolean
+          name: string
+          notes?: string | null
+          opening_balance_entry_id?: string | null
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_balance_entry_id?: string | null
+          company_id?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_current?: boolean
+          name?: string
+          notes?: string | null
+          opening_balance_entry_id?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_years_closing_balance_entry_id_fkey"
+            columns: ["closing_balance_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_years_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_years_opening_balance_entry_id_fkey"
+            columns: ["opening_balance_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       imported_invoice_data: {
         Row: {
           company_id: string
@@ -1445,6 +1538,7 @@ export type Database = {
           description: string
           entry_date: string
           entry_number: number
+          fiscal_year_id: string | null
           id: string
           is_posted: boolean
           reference_id: string | null
@@ -1460,6 +1554,7 @@ export type Database = {
           description: string
           entry_date?: string
           entry_number?: number
+          fiscal_year_id?: string | null
           id?: string
           is_posted?: boolean
           reference_id?: string | null
@@ -1475,6 +1570,7 @@ export type Database = {
           description?: string
           entry_date?: string
           entry_number?: number
+          fiscal_year_id?: string | null
           id?: string
           is_posted?: boolean
           reference_id?: string | null
@@ -1489,6 +1585,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_fiscal_year_id_fkey"
+            columns: ["fiscal_year_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_years"
             referencedColumns: ["id"]
           },
         ]
@@ -1725,6 +1828,7 @@ export type Database = {
         Row: {
           company_id: string | null
           created_at: string
+          current_fiscal_year_id: string | null
           id: string
           updated_at: string
           user_id: string
@@ -1733,6 +1837,7 @@ export type Database = {
         Insert: {
           company_id?: string | null
           created_at?: string
+          current_fiscal_year_id?: string | null
           id?: string
           updated_at?: string
           user_id: string
@@ -1741,6 +1846,7 @@ export type Database = {
         Update: {
           company_id?: string | null
           created_at?: string
+          current_fiscal_year_id?: string | null
           id?: string
           updated_at?: string
           user_id?: string
@@ -1752,6 +1858,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_current_fiscal_year_id_fkey"
+            columns: ["current_fiscal_year_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_years"
             referencedColumns: ["id"]
           },
         ]
@@ -1970,6 +2083,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           customer_id: string
+          fiscal_year_id: string | null
           id: string
           other_expenses: number | null
           payment_account_id: string | null
@@ -1986,6 +2100,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           customer_id: string
+          fiscal_year_id?: string | null
           id?: string
           other_expenses?: number | null
           payment_account_id?: string | null
@@ -2002,6 +2117,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           customer_id?: string
+          fiscal_year_id?: string | null
           id?: string
           other_expenses?: number | null
           payment_account_id?: string | null
@@ -2032,6 +2148,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_fiscal_year_id_fkey"
+            columns: ["fiscal_year_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_years"
             referencedColumns: ["id"]
           },
           {
