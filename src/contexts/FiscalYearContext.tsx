@@ -23,12 +23,14 @@ export function FiscalYearProvider({ children }: { children: ReactNode }) {
   const { data: currentFiscalYear, isLoading: isLoadingCurrent } = useCurrentFiscalYear();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState<FiscalYear | null>(null);
 
-  // Set selected year to current year on initial load
+  // Set selected year to current year on initial load, or first available year
   useEffect(() => {
-    if (currentFiscalYear && !selectedFiscalYear) {
-      setSelectedFiscalYear(currentFiscalYear);
+    if (!selectedFiscalYear && fiscalYears.length > 0) {
+      // If there's a current year, use it; otherwise use the first one
+      const yearToSelect = currentFiscalYear || fiscalYears[0];
+      setSelectedFiscalYear(yearToSelect);
     }
-  }, [currentFiscalYear, selectedFiscalYear]);
+  }, [currentFiscalYear, fiscalYears, selectedFiscalYear]);
 
   const isLoading = isLoadingYears || isLoadingCurrent;
 
