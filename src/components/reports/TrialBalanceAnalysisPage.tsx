@@ -1,93 +1,221 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator, Upload, X, FileUp } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
-// البيانات المستخرجة من ميزان المراجعة
-const trialBalanceData = {
+interface TrialBalanceData {
+  companyName: string;
+  vatNumber: string;
+  period: { from: string; to: string };
+  fixedAssets: { [key: string]: number };
+  currentAssets: { [key: string]: number };
+  liabilities: { [key: string]: number };
+  equity: { [key: string]: number };
+  revenue: { [key: string]: number };
+  expenses: { [key: string]: number };
+  purchases: number;
+}
+
+// البيانات الافتراضية
+const defaultData: TrialBalanceData = {
   companyName: 'شركة اشبال النمار للسيارات',
   vatNumber: '312876888500003',
-  period: {
-    from: '2025-01-01',
-    to: '2025-12-31',
+  period: { from: '2025-01-01', to: '2025-12-31' },
+  fixedAssets: { 'الأثاث': 13782.61, 'أجهزة وآلات': 500.00 },
+  currentAssets: { 'البنوك': 50.00, 'عهدة الموظفين': 901.00, 'إيجار مدفوع مقدماً': 229166.67 },
+  liabilities: { 'رواتب مستحقة': 6050.00, 'أطراف ذات علاقة': 250050.00 },
+  equity: { 'جاري المالك': 428410.66 },
+  revenue: { 'المبيعات': 1522826.08 },
+  expenses: { 
+    'الرواتب': 6050.00, 
+    'لوازم مكتبية': 2391.30, 
+    'الإيجار': 20833.33, 
+    'متنوعة': 4461.69, 
+    'ضيافة': 189.22, 
+    'نظافة': 1793.65 
   },
-  // الأصول الثابتة
-  fixedAssets: {
-    furniture: 13782.61,
-    equipment: 500.00,
-  },
-  // الأصول المتداولة
-  currentAssets: {
-    banks: 50.00,
-    employeeCustody: 901.00,
-    prepaidRent: 229166.67,
-    inputVat: 282324.23,
-    outputVat: 214473.92,
-    relatedParties: 250050.00, // دائن - سيظهر في الخصوم
-  },
-  // الخصوم
-  liabilities: {
-    accruedSalaries: 6050.00,
-    relatedPartiesPayable: 250050.00,
-  },
-  // حقوق الملكية
-  equity: {
-    ownerDrawings: 428410.66,
-  },
-  // الإيرادات
-  revenue: {
-    sales: 1522826.08,
-  },
-  // المصروفات
-  expenses: {
-    salaries: 6050.00,
-    officeSupplies: 2391.30,
-    rent: 20833.33,
-    miscellaneous: 4461.69,
-    hospitality: 189.22,
-    cleaning: 1793.65,
-    purchases: 1859366.96,
-  },
+  purchases: 1859366.96,
 };
 
 export function TrialBalanceAnalysisPage() {
+  const [data, setData] = useState<TrialBalanceData>(defaultData);
   const [isExporting, setIsExporting] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // حسابات قائمة الدخل
-  const totalSales = trialBalanceData.revenue.sales;
-  const costOfSales = trialBalanceData.expenses.purchases;
-  const grossProfit = totalSales - costOfSales;
-  
-  const operatingExpenses = 
-    trialBalanceData.expenses.salaries +
-    trialBalanceData.expenses.officeSupplies +
-    trialBalanceData.expenses.rent +
-    trialBalanceData.expenses.miscellaneous +
-    trialBalanceData.expenses.hospitality +
-    trialBalanceData.expenses.cleaning;
-  
-  const netIncome = grossProfit - operatingExpenses;
+  // تحليل ملف Excel
+  const parseExcelFile = (file: File) => {
+    setIsUploading(true);
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        const arrayBuffer = e.target?.result as ArrayBuffer;
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
-  // حسابات الميزانية
-  const totalFixedAssets = trialBalanceData.fixedAssets.furniture + trialBalanceData.fixedAssets.equipment;
-  const vatReceivable = trialBalanceData.currentAssets.inputVat - trialBalanceData.currentAssets.outputVat;
-  const totalCurrentAssets = 
-    trialBalanceData.currentAssets.banks +
-    trialBalanceData.currentAssets.employeeCustody +
-    trialBalanceData.currentAssets.prepaidRent +
-    Math.max(0, vatReceivable);
+        // استخراج البيانات من ميزان المراجعة
+        const parsedData = parseTrialBalance(jsonData);
+        setData(parsedData);
+        setFileName(file.name);
+      } catch (error) {
+        console.error('Error parsing Excel file:', error);
+        alert('حدث خطأ في قراءة الملف. تأكد من أنه ملف Excel صالح.');
+      } finally {
+        setIsUploading(false);
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  };
+
+  // تحليل بيانات ميزان المراجعة
+  const parseTrialBalance = (rows: any[][]): TrialBalanceData => {
+    const result: TrialBalanceData = {
+      companyName: '',
+      vatNumber: '',
+      period: { from: '', to: '' },
+      fixedAssets: {},
+      currentAssets: {},
+      liabilities: {},
+      equity: {},
+      revenue: {},
+      expenses: {},
+      purchases: 0,
+    };
+
+    let currentSection = '';
+    
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0) continue;
+
+      // استخراج اسم الشركة
+      const firstCell = String(row[0] || '').trim();
+      if (i < 5 && firstCell && !result.companyName && firstCell.length > 5) {
+        result.companyName = firstCell;
+      }
+
+      // البحث عن الرقم الضريبي
+      const rowStr = row.join(' ');
+      const vatMatch = rowStr.match(/3\d{14}/);
+      if (vatMatch) {
+        result.vatNumber = vatMatch[0];
+      }
+
+      // البحث عن التاريخ
+      const dateMatch = rowStr.match(/(\d{4}-\d{2}-\d{2})/g);
+      if (dateMatch && dateMatch.length >= 2) {
+        result.period.from = dateMatch[0];
+        result.period.to = dateMatch[1];
+      }
+
+      // تحديد القسم الحالي
+      const accountName = String(row.find(cell => typeof cell === 'string' && cell.length > 2) || '').trim();
+      const accountCode = String(row.find(cell => typeof cell === 'number' || /^\d+$/.test(String(cell))) || '');
+      
+      // البحث عن المبالغ (مدين/دائن)
+      const numbers = row.filter(cell => typeof cell === 'number' && cell !== 0);
+      const debitAmount = numbers.length > 0 ? Math.abs(numbers[0]) : 0;
+      const creditAmount = numbers.length > 1 ? Math.abs(numbers[1]) : 0;
+      const netAmount = debitAmount - creditAmount;
+
+      // تصنيف الحسابات
+      if (accountCode.startsWith('11') || accountName.includes('ثابت') || accountName.includes('أثاث') || accountName.includes('أجهز')) {
+        if (accountName && netAmount !== 0 && !accountName.includes('صافي') && !accountName.includes('إجمالي')) {
+          result.fixedAssets[accountName] = Math.abs(netAmount);
+        }
+      } else if (accountCode.startsWith('12') || accountCode.startsWith('13') || 
+                 accountName.includes('بنك') || accountName.includes('عهد') || accountName.includes('مقدم')) {
+        if (accountName && netAmount !== 0 && !accountName.includes('إجمالي') && !accountName.includes('متداول')) {
+          result.currentAssets[accountName] = Math.abs(netAmount);
+        }
+      } else if (accountCode.startsWith('2') && !accountCode.startsWith('25')) {
+        if (accountName && (debitAmount > 0 || creditAmount > 0) && !accountName.includes('إجمالي')) {
+          const amount = creditAmount > debitAmount ? creditAmount : debitAmount;
+          if (amount > 0 && !accountName.includes('ضريب')) {
+            result.liabilities[accountName] = amount;
+          }
+        }
+      } else if (accountCode.startsWith('25') || accountName.includes('جاري') || accountName.includes('رأس المال')) {
+        if (accountName && creditAmount > 0) {
+          result.equity[accountName] = creditAmount;
+        }
+      } else if (accountCode.startsWith('3') || accountName.includes('مبيعات') || accountName.includes('إيراد')) {
+        if (accountName && creditAmount > 0 && !accountName.includes('إجمالي')) {
+          result.revenue[accountName] = creditAmount;
+        }
+      } else if (accountCode.startsWith('45') || accountName.includes('مشتريات')) {
+        if (debitAmount > 0) {
+          result.purchases = debitAmount;
+        }
+      } else if (accountCode.startsWith('4') || accountName.includes('مصروف') || accountName.includes('مصاريف')) {
+        if (accountName && debitAmount > 0 && !accountName.includes('إجمالي') && !accountName.includes('مشتريات')) {
+          result.expenses[accountName] = debitAmount;
+        }
+      }
+    }
+
+    // إذا لم يتم العثور على بيانات كافية، استخدم البيانات الافتراضية
+    if (Object.keys(result.fixedAssets).length === 0 && Object.keys(result.revenue).length === 0) {
+      return defaultData;
+    }
+
+    return result;
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      parseExcelFile(file);
+    }
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files?.[0];
+    if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+      parseExcelFile(file);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  const clearFile = () => {
+    setData(defaultData);
+    setFileName(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // حسابات القوائم المالية
+  const totalFixedAssets = Object.values(data.fixedAssets).reduce((sum, val) => sum + val, 0);
+  const totalCurrentAssets = Object.values(data.currentAssets).reduce((sum, val) => sum + val, 0);
   const totalAssets = totalFixedAssets + totalCurrentAssets;
 
-  const totalCurrentLiabilities = 
-    trialBalanceData.liabilities.accruedSalaries +
-    trialBalanceData.liabilities.relatedPartiesPayable;
-  
-  const totalEquity = trialBalanceData.equity.ownerDrawings + netIncome;
-  const totalLiabilitiesAndEquity = totalCurrentLiabilities + totalEquity;
+  const totalLiabilities = Object.values(data.liabilities).reduce((sum, val) => sum + val, 0);
+  const totalEquity = Object.values(data.equity).reduce((sum, val) => sum + val, 0);
+
+  const totalRevenue = Object.values(data.revenue).reduce((sum, val) => sum + val, 0);
+  const totalExpenses = Object.values(data.expenses).reduce((sum, val) => sum + val, 0);
+  const costOfSales = data.purchases;
+  const grossProfit = totalRevenue - costOfSales;
+  const netIncome = grossProfit - totalExpenses;
+
+  const adjustedEquity = totalEquity + netIncome;
+  const totalLiabilitiesAndEquity = totalLiabilities + adjustedEquity;
 
   // حساب الزكاة
-  const zakatBase = trialBalanceData.equity.ownerDrawings + netIncome - totalFixedAssets - (trialBalanceData.currentAssets.prepaidRent * 11/12);
+  const prepaidRent = data.currentAssets['إيجار مدفوع مقدماً'] || data.currentAssets['ايجار مدفوع مقدما'] || 0;
+  const zakatBase = totalEquity + netIncome - totalFixedAssets - (prepaidRent * 11/12);
   const zakatDue = zakatBase > 0 ? zakatBase * 0.025 : 0;
 
   const formatCurrency = (amount: number) => {
@@ -106,23 +234,18 @@ export function TrialBalanceAnalysisPage() {
 
       // Sheet 1: قائمة الدخل
       const incomeStatementData = [
-        ['شركة اشبال النمار للسيارات'],
+        [data.companyName],
         ['قائمة الدخل'],
-        [`للسنة المنتهية في 31/12/2025`],
+        [`للسنة المنتهية في ${data.period.to}`],
         [''],
         ['البند', 'المبلغ (ر.س)'],
-        ['إيرادات المبيعات', totalSales],
+        ['إيرادات المبيعات', totalRevenue],
         ['(-) تكلفة المبيعات (المشتريات)', -costOfSales],
         ['مجمل الربح / (الخسارة)', grossProfit],
         [''],
         ['المصاريف التشغيلية:'],
-        ['الرواتب', trialBalanceData.expenses.salaries],
-        ['الإيجار', trialBalanceData.expenses.rent],
-        ['لوازم مكتبية', trialBalanceData.expenses.officeSupplies],
-        ['متنوعة', trialBalanceData.expenses.miscellaneous],
-        ['ضيافة', trialBalanceData.expenses.hospitality],
-        ['نظافة', trialBalanceData.expenses.cleaning],
-        ['إجمالي المصاريف التشغيلية', -operatingExpenses],
+        ...Object.entries(data.expenses).map(([name, amount]) => [name, amount]),
+        ['إجمالي المصاريف التشغيلية', -totalExpenses],
         [''],
         ['صافي الربح / (الخسارة)', netIncome],
       ];
@@ -132,35 +255,30 @@ export function TrialBalanceAnalysisPage() {
 
       // Sheet 2: قائمة المركز المالي
       const balanceSheetData = [
-        ['شركة اشبال النمار للسيارات'],
+        [data.companyName],
         ['قائمة المركز المالي (الميزانية العمومية)'],
-        ['في 31/12/2025'],
+        [`في ${data.period.to}`],
         [''],
         ['الأصول', 'المبلغ (ر.س)'],
         ['الأصول الثابتة:'],
-        ['الأثاث', trialBalanceData.fixedAssets.furniture],
-        ['أجهزة وآلات', trialBalanceData.fixedAssets.equipment],
+        ...Object.entries(data.fixedAssets).map(([name, amount]) => [name, amount]),
         ['إجمالي الأصول الثابتة', totalFixedAssets],
         [''],
         ['الأصول المتداولة:'],
-        ['البنوك (مصرف الراجحي)', trialBalanceData.currentAssets.banks],
-        ['عهدة الموظفين', trialBalanceData.currentAssets.employeeCustody],
-        ['إيجار مدفوع مقدماً', trialBalanceData.currentAssets.prepaidRent],
-        ['ضريبة القيمة المضافة المستردة', Math.max(0, vatReceivable)],
+        ...Object.entries(data.currentAssets).map(([name, amount]) => [name, amount]),
         ['إجمالي الأصول المتداولة', totalCurrentAssets],
         [''],
         ['إجمالي الأصول', totalAssets],
         [''],
         ['الخصوم وحقوق الملكية', 'المبلغ (ر.س)'],
         ['الخصوم المتداولة:'],
-        ['رواتب مستحقة', trialBalanceData.liabilities.accruedSalaries],
-        ['أطراف ذات علاقة (دائن)', trialBalanceData.liabilities.relatedPartiesPayable],
-        ['إجمالي الخصوم المتداولة', totalCurrentLiabilities],
+        ...Object.entries(data.liabilities).map(([name, amount]) => [name, amount]),
+        ['إجمالي الخصوم المتداولة', totalLiabilities],
         [''],
         ['حقوق الملكية:'],
-        ['جاري المالك', trialBalanceData.equity.ownerDrawings],
+        ...Object.entries(data.equity).map(([name, amount]) => [name, amount]),
         ['صافي الربح / (الخسارة) للفترة', netIncome],
-        ['إجمالي حقوق الملكية', totalEquity],
+        ['إجمالي حقوق الملكية', adjustedEquity],
         [''],
         ['إجمالي الخصوم وحقوق الملكية', totalLiabilitiesAndEquity],
       ];
@@ -170,61 +288,31 @@ export function TrialBalanceAnalysisPage() {
 
       // Sheet 3: حساب الزكاة
       const zakatData = [
-        ['شركة اشبال النمار للسيارات'],
+        [data.companyName],
         ['حساب الزكاة الشرعية'],
-        ['للسنة المنتهية في 31/12/2025'],
+        [`للسنة المنتهية في ${data.period.to}`],
         [''],
         ['البند', 'المبلغ (ر.س)'],
         ['الوعاء الزكوي:'],
-        ['(+) رأس المال المستثمر (جاري المالك)', trialBalanceData.equity.ownerDrawings],
+        ['(+) رأس المال المستثمر', totalEquity],
         ['(+/-) صافي الربح / الخسارة', netIncome],
-        ['إجمالي مصادر التمويل', trialBalanceData.equity.ownerDrawings + netIncome],
+        ['إجمالي مصادر التمويل', totalEquity + netIncome],
         [''],
         ['الحسميات:'],
         ['(-) الأصول الثابتة', -totalFixedAssets],
-        ['(-) الإيجار المدفوع مقدماً (طويل الأجل)', -(trialBalanceData.currentAssets.prepaidRent * 11/12)],
+        ['(-) الإيجار المدفوع مقدماً (طويل الأجل)', -(prepaidRent * 11/12)],
         [''],
         ['الوعاء الزكوي المعدل', zakatBase],
         [''],
         ['نسبة الزكاة', '2.5%'],
         ['الزكاة المستحقة', zakatDue],
-        [''],
-        ['ملاحظة:', zakatBase <= 0 ? 'الوعاء الزكوي سالب - لا تستحق زكاة' : ''],
       ];
       const wsZakat = XLSX.utils.aoa_to_sheet(zakatData);
       wsZakat['!cols'] = [{ wch: 45 }, { wch: 20 }];
       XLSX.utils.book_append_sheet(wb, wsZakat, 'حساب الزكاة');
 
-      // Sheet 4: ملخص تحليلي
-      const summaryData = [
-        ['شركة اشبال النمار للسيارات'],
-        ['ملخص تحليلي'],
-        ['للسنة المنتهية في 31/12/2025'],
-        [''],
-        ['المؤشر', 'القيمة', 'الملاحظة'],
-        ['إجمالي المبيعات', totalSales, ''],
-        ['تكلفة المبيعات', costOfSales, ''],
-        ['هامش الربح الإجمالي', grossProfit, grossProfit < 0 ? 'خسارة إجمالية' : 'ربح إجمالي'],
-        ['نسبة هامش الربح الإجمالي', `${((grossProfit / totalSales) * 100).toFixed(2)}%`, ''],
-        [''],
-        ['المصاريف التشغيلية', operatingExpenses, ''],
-        ['صافي الربح / الخسارة', netIncome, netIncome < 0 ? '⚠️ خسارة صافية' : '✅ ربح صافي'],
-        ['نسبة صافي الربح', `${((netIncome / totalSales) * 100).toFixed(2)}%`, ''],
-        [''],
-        ['إجمالي الأصول', totalAssets, ''],
-        ['إجمالي الخصوم', totalCurrentLiabilities, ''],
-        ['حقوق الملكية', totalEquity, ''],
-        [''],
-        ['ضريبة القيمة المضافة المستردة', vatReceivable, vatReceivable > 0 ? 'مستحقة للشركة' : 'مستحقة على الشركة'],
-        ['الوعاء الزكوي', zakatBase, zakatBase <= 0 ? 'لا تستحق زكاة' : ''],
-        ['الزكاة المستحقة', zakatDue, ''],
-      ];
-      const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-      wsSummary['!cols'] = [{ wch: 35 }, { wch: 20 }, { wch: 25 }];
-      XLSX.utils.book_append_sheet(wb, wsSummary, 'ملخص تحليلي');
-
       // تحميل الملف
-      XLSX.writeFile(wb, 'القوائم_المالية_2025.xlsx');
+      XLSX.writeFile(wb, `القوائم_المالية_${data.period.to}.xlsx`);
     } finally {
       setIsExporting(false);
     }
@@ -232,12 +320,60 @@ export function TrialBalanceAnalysisPage() {
 
   return (
     <div className="space-y-6" dir="rtl">
+      {/* Upload Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="w-5 h-5" />
+            رفع ميزان المراجعة
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div
+            className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            {isUploading ? (
+              <div className="flex flex-col items-center gap-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p className="text-muted-foreground">جاري تحليل الملف...</p>
+              </div>
+            ) : fileName ? (
+              <div className="flex items-center justify-center gap-3">
+                <FileSpreadsheet className="w-8 h-8 text-primary" />
+                <span className="font-medium">{fileName}</span>
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); clearFile(); }}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                <FileUp className="w-12 h-12 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">اسحب ملف Excel هنا أو اضغط للاختيار</p>
+                  <p className="text-sm text-muted-foreground mt-1">يدعم ملفات xlsx و xls</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{trialBalanceData.companyName}</h1>
-          <p className="text-muted-foreground">القوائم المالية للسنة المنتهية في 31/12/2025</p>
-          <p className="text-sm text-muted-foreground">الرقم الضريبي: {trialBalanceData.vatNumber}</p>
+          <h1 className="text-2xl font-bold">{data.companyName}</h1>
+          <p className="text-muted-foreground">القوائم المالية للسنة المنتهية في {data.period.to}</p>
+          {data.vatNumber && <p className="text-sm text-muted-foreground">الرقم الضريبي: {data.vatNumber}</p>}
         </div>
         <Button onClick={exportToExcel} disabled={isExporting} className="gap-2">
           <Download className="w-4 h-4" />
@@ -252,7 +388,7 @@ export function TrialBalanceAnalysisPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">إجمالي المبيعات</p>
-                <p className="text-2xl font-bold text-primary">{formatCurrency(totalSales)}</p>
+                <p className="text-2xl font-bold text-primary">{formatCurrency(totalRevenue)}</p>
               </div>
               <FileSpreadsheet className="w-8 h-8 text-primary/20" />
             </div>
@@ -291,9 +427,9 @@ export function TrialBalanceAnalysisPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">الزكاة المستحقة</p>
-                <p className="text-2xl font-bold text-orange-600">{formatCurrency(zakatDue)}</p>
+                <p className="text-2xl font-bold text-primary">{formatCurrency(zakatDue)}</p>
               </div>
-              <Calculator className="w-8 h-8 text-orange-600/20" />
+              <Calculator className="w-8 h-8 text-primary/20" />
             </div>
           </CardContent>
         </Card>
@@ -319,7 +455,7 @@ export function TrialBalanceAnalysisPage() {
               <tbody>
                 <tr>
                   <td className="py-2">إيرادات المبيعات</td>
-                  <td className="py-2 text-left font-medium">{formatCurrency(totalSales)}</td>
+                  <td className="py-2 text-left font-medium">{formatCurrency(totalRevenue)}</td>
                 </tr>
                 <tr>
                   <td className="py-2">(-) تكلفة المبيعات (المشتريات)</td>
@@ -334,33 +470,15 @@ export function TrialBalanceAnalysisPage() {
                 <tr>
                   <td className="py-2 pt-4 font-semibold" colSpan={2}>المصاريف التشغيلية:</td>
                 </tr>
-                <tr>
-                  <td className="py-1 pr-4">- الرواتب</td>
-                  <td className="py-1 text-left">{formatCurrency(trialBalanceData.expenses.salaries)}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 pr-4">- الإيجار</td>
-                  <td className="py-1 text-left">{formatCurrency(trialBalanceData.expenses.rent)}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 pr-4">- لوازم مكتبية</td>
-                  <td className="py-1 text-left">{formatCurrency(trialBalanceData.expenses.officeSupplies)}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 pr-4">- متنوعة</td>
-                  <td className="py-1 text-left">{formatCurrency(trialBalanceData.expenses.miscellaneous)}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 pr-4">- ضيافة</td>
-                  <td className="py-1 text-left">{formatCurrency(trialBalanceData.expenses.hospitality)}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 pr-4">- نظافة</td>
-                  <td className="py-1 text-left">{formatCurrency(trialBalanceData.expenses.cleaning)}</td>
-                </tr>
+                {Object.entries(data.expenses).map(([name, amount]) => (
+                  <tr key={name}>
+                    <td className="py-1 pr-4">- {name}</td>
+                    <td className="py-1 text-left">{formatCurrency(amount)}</td>
+                  </tr>
+                ))}
                 <tr className="border-t">
                   <td className="py-2">إجمالي المصاريف التشغيلية</td>
-                  <td className="py-2 text-left text-destructive">({formatCurrency(operatingExpenses)})</td>
+                  <td className="py-2 text-left text-destructive">({formatCurrency(totalExpenses)})</td>
                 </tr>
                 <tr className="border-t-2 bg-primary/5">
                   <td className="py-3 font-bold text-lg">صافي الربح / (الخسارة)</td>
@@ -392,14 +510,12 @@ export function TrialBalanceAnalysisPage() {
                   <tr>
                     <td className="py-2 font-semibold" colSpan={2}>الأصول الثابتة:</td>
                   </tr>
-                  <tr>
-                    <td className="py-1 pr-4">- الأثاث</td>
-                    <td className="py-1 text-left">{formatCurrency(trialBalanceData.fixedAssets.furniture)}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 pr-4">- أجهزة وآلات</td>
-                    <td className="py-1 text-left">{formatCurrency(trialBalanceData.fixedAssets.equipment)}</td>
-                  </tr>
+                  {Object.entries(data.fixedAssets).map(([name, amount]) => (
+                    <tr key={name}>
+                      <td className="py-1 pr-4">- {name}</td>
+                      <td className="py-1 text-left">{formatCurrency(amount)}</td>
+                    </tr>
+                  ))}
                   <tr className="border-t bg-muted/30">
                     <td className="py-2">إجمالي الأصول الثابتة</td>
                     <td className="py-2 text-left font-medium">{formatCurrency(totalFixedAssets)}</td>
@@ -407,22 +523,12 @@ export function TrialBalanceAnalysisPage() {
                   <tr>
                     <td className="py-2 pt-4 font-semibold" colSpan={2}>الأصول المتداولة:</td>
                   </tr>
-                  <tr>
-                    <td className="py-1 pr-4">- البنوك</td>
-                    <td className="py-1 text-left">{formatCurrency(trialBalanceData.currentAssets.banks)}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 pr-4">- عهدة الموظفين</td>
-                    <td className="py-1 text-left">{formatCurrency(trialBalanceData.currentAssets.employeeCustody)}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 pr-4">- إيجار مدفوع مقدماً</td>
-                    <td className="py-1 text-left">{formatCurrency(trialBalanceData.currentAssets.prepaidRent)}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 pr-4">- ضريبة القيمة المضافة المستردة</td>
-                    <td className="py-1 text-left">{formatCurrency(Math.max(0, vatReceivable))}</td>
-                  </tr>
+                  {Object.entries(data.currentAssets).map(([name, amount]) => (
+                    <tr key={name}>
+                      <td className="py-1 pr-4">- {name}</td>
+                      <td className="py-1 text-left">{formatCurrency(amount)}</td>
+                    </tr>
+                  ))}
                   <tr className="border-t bg-muted/30">
                     <td className="py-2">إجمالي الأصول المتداولة</td>
                     <td className="py-2 text-left font-medium">{formatCurrency(totalCurrentAssets)}</td>
@@ -443,25 +549,25 @@ export function TrialBalanceAnalysisPage() {
                   <tr>
                     <td className="py-2 font-semibold" colSpan={2}>الخصوم المتداولة:</td>
                   </tr>
-                  <tr>
-                    <td className="py-1 pr-4">- رواتب مستحقة</td>
-                    <td className="py-1 text-left">{formatCurrency(trialBalanceData.liabilities.accruedSalaries)}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 pr-4">- أطراف ذات علاقة (دائن)</td>
-                    <td className="py-1 text-left">{formatCurrency(trialBalanceData.liabilities.relatedPartiesPayable)}</td>
-                  </tr>
+                  {Object.entries(data.liabilities).map(([name, amount]) => (
+                    <tr key={name}>
+                      <td className="py-1 pr-4">- {name}</td>
+                      <td className="py-1 text-left">{formatCurrency(amount)}</td>
+                    </tr>
+                  ))}
                   <tr className="border-t bg-muted/30">
                     <td className="py-2">إجمالي الخصوم المتداولة</td>
-                    <td className="py-2 text-left font-medium">{formatCurrency(totalCurrentLiabilities)}</td>
+                    <td className="py-2 text-left font-medium">{formatCurrency(totalLiabilities)}</td>
                   </tr>
                   <tr>
                     <td className="py-2 pt-4 font-semibold" colSpan={2}>حقوق الملكية:</td>
                   </tr>
-                  <tr>
-                    <td className="py-1 pr-4">- جاري المالك</td>
-                    <td className="py-1 text-left">{formatCurrency(trialBalanceData.equity.ownerDrawings)}</td>
-                  </tr>
+                  {Object.entries(data.equity).map(([name, amount]) => (
+                    <tr key={name}>
+                      <td className="py-1 pr-4">- {name}</td>
+                      <td className="py-1 text-left">{formatCurrency(amount)}</td>
+                    </tr>
+                  ))}
                   <tr>
                     <td className="py-1 pr-4">- صافي الربح / (الخسارة)</td>
                     <td className={`py-1 text-left ${netIncome >= 0 ? 'text-green-600' : 'text-destructive'}`}>
@@ -470,7 +576,7 @@ export function TrialBalanceAnalysisPage() {
                   </tr>
                   <tr className="border-t bg-muted/30">
                     <td className="py-2">إجمالي حقوق الملكية</td>
-                    <td className="py-2 text-left font-medium">{formatCurrency(totalEquity)}</td>
+                    <td className="py-2 text-left font-medium">{formatCurrency(adjustedEquity)}</td>
                   </tr>
                   <tr className="border-t-2 bg-primary/10">
                     <td className="py-3 font-bold">إجمالي الخصوم وحقوق الملكية</td>
@@ -499,8 +605,8 @@ export function TrialBalanceAnalysisPage() {
                   <td className="py-2 font-semibold" colSpan={2}>الوعاء الزكوي:</td>
                 </tr>
                 <tr>
-                  <td className="py-1 pr-4">(+) رأس المال المستثمر (جاري المالك)</td>
-                  <td className="py-1 text-left">{formatCurrency(trialBalanceData.equity.ownerDrawings)}</td>
+                  <td className="py-1 pr-4">(+) رأس المال المستثمر</td>
+                  <td className="py-1 text-left">{formatCurrency(totalEquity)}</td>
                 </tr>
                 <tr>
                   <td className="py-1 pr-4">(+/-) صافي الربح / الخسارة</td>
@@ -511,7 +617,7 @@ export function TrialBalanceAnalysisPage() {
                 <tr className="border-t">
                   <td className="py-2">إجمالي مصادر التمويل</td>
                   <td className="py-2 text-left font-medium">
-                    {formatCurrency(trialBalanceData.equity.ownerDrawings + netIncome)}
+                    {formatCurrency(totalEquity + netIncome)}
                   </td>
                 </tr>
                 <tr>
@@ -521,12 +627,14 @@ export function TrialBalanceAnalysisPage() {
                   <td className="py-1 pr-4">(-) الأصول الثابتة</td>
                   <td className="py-1 text-left text-destructive">({formatCurrency(totalFixedAssets)})</td>
                 </tr>
-                <tr>
-                  <td className="py-1 pr-4">(-) الإيجار المدفوع مقدماً (طويل الأجل)</td>
-                  <td className="py-1 text-left text-destructive">
-                    ({formatCurrency(trialBalanceData.currentAssets.prepaidRent * 11/12)})
-                  </td>
-                </tr>
+                {prepaidRent > 0 && (
+                  <tr>
+                    <td className="py-1 pr-4">(-) الإيجار المدفوع مقدماً (طويل الأجل)</td>
+                    <td className="py-1 text-left text-destructive">
+                      ({formatCurrency(prepaidRent * 11/12)})
+                    </td>
+                  </tr>
+                )}
                 <tr className="border-t bg-muted/50">
                   <td className="py-2 font-semibold">الوعاء الزكوي المعدل</td>
                   <td className={`py-2 text-left font-bold ${zakatBase >= 0 ? '' : 'text-destructive'}`}>
@@ -548,7 +656,7 @@ export function TrialBalanceAnalysisPage() {
             {zakatBase <= 0 && (
               <div className="mt-4 p-4 bg-accent rounded-lg border border-border">
                 <p className="text-foreground font-medium">
-                  ⚠️ ملاحظة: الوعاء الزكوي سالب بسبب الخسارة الكبيرة، وبالتالي لا تستحق زكاة على هذه الفترة.
+                  ⚠️ ملاحظة: الوعاء الزكوي سالب بسبب الخسارة، وبالتالي لا تستحق زكاة على هذه الفترة.
                 </p>
               </div>
             )}
