@@ -24,7 +24,8 @@ import {
   Database,
   Landmark,
   Scale,
-  Clock
+  Clock,
+  Calendar
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
@@ -84,6 +85,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
   ];
 
   const accountingItems = [
+    { id: 'fiscal-years' as ActivePage, label: 'السنوات المالية', icon: Calendar },
     { id: 'tax-settings' as ActivePage, label: settings?.tax_settings_title || 'إعدادات الضريبة', icon: Percent },
     { id: 'chart-of-accounts' as ActivePage, label: settings?.chart_of_accounts_title || 'شجرة الحسابات', icon: BookOpen },
     { id: 'journal-entries' as ActivePage, label: settings?.journal_entries_title || 'دفتر اليومية', icon: Calculator },

@@ -34,6 +34,7 @@ import { JournalEntriesPage } from '@/components/accounting/JournalEntriesPage';
 import { FinancialReportsPage } from '@/components/accounting/FinancialReportsPage';
 import { GeneralLedgerPage } from '@/components/accounting/GeneralLedgerPage';
 import { ZakatReportsPage } from '@/components/accounting/ZakatReportsPage';
+import { FiscalYearsPage } from '@/components/accounting/FiscalYearsPage';
 import { ExpensesPage } from '@/components/expenses/ExpensesPage';
 import PrepaidExpensesPage from '@/components/expenses/PrepaidExpensesPage';
 import { QuotationsPage } from '@/components/quotations/QuotationsPage';
@@ -97,6 +98,7 @@ const Index = () => {
       case 'financing': return <FinancingPage />;
       case 'banking': return <BankingPage />;
       case 'zakat-reports': return <ZakatReportsPage />;
+      case 'fiscal-years': return <FiscalYearsPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };
