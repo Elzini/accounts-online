@@ -88,4 +88,5 @@ export type ActivePage =
   | 'backups'
   | 'financing'
   | 'banking'
-  | 'prepaid-expenses';
+  | 'prepaid-expenses'
+  | 'zakat-reports';
