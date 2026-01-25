@@ -1572,6 +1572,145 @@ export type Database = {
           },
         ]
       }
+      prepaid_expense_amortizations: {
+        Row: {
+          amortization_date: string
+          amount: number
+          created_at: string
+          expense_id: string | null
+          id: string
+          journal_entry_id: string | null
+          month_number: number
+          prepaid_expense_id: string
+          processed_at: string | null
+          status: string
+        }
+        Insert: {
+          amortization_date: string
+          amount: number
+          created_at?: string
+          expense_id?: string | null
+          id?: string
+          journal_entry_id?: string | null
+          month_number: number
+          prepaid_expense_id: string
+          processed_at?: string | null
+          status?: string
+        }
+        Update: {
+          amortization_date?: string
+          amount?: number
+          created_at?: string
+          expense_id?: string | null
+          id?: string
+          journal_entry_id?: string | null
+          month_number?: number
+          prepaid_expense_id?: string
+          processed_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prepaid_expense_amortizations_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaid_expense_amortizations_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaid_expense_amortizations_prepaid_expense_id_fkey"
+            columns: ["prepaid_expense_id"]
+            isOneToOne: false
+            referencedRelation: "prepaid_expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prepaid_expenses: {
+        Row: {
+          amortized_amount: number
+          category_id: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string
+          end_date: string
+          id: string
+          monthly_amount: number
+          notes: string | null
+          number_of_months: number
+          payment_date: string
+          payment_method: string | null
+          remaining_amount: number
+          start_date: string
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          amortized_amount?: number
+          category_id?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          end_date: string
+          id?: string
+          monthly_amount: number
+          notes?: string | null
+          number_of_months?: number
+          payment_date?: string
+          payment_method?: string | null
+          remaining_amount: number
+          start_date: string
+          status?: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          amortized_amount?: number
+          category_id?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          end_date?: string
+          id?: string
+          monthly_amount?: number
+          notes?: string | null
+          number_of_months?: number
+          payment_date?: string
+          payment_method?: string | null
+          remaining_amount?: number
+          start_date?: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prepaid_expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaid_expenses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           company_id: string | null
@@ -2132,6 +2271,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      process_prepaid_expense_amortizations: { Args: never; Returns: number }
       regenerate_journal_entries: {
         Args: { p_company_id: string }
         Returns: string

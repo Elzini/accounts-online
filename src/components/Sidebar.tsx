@@ -23,7 +23,8 @@ import {
   ClipboardList,
   Database,
   Landmark,
-  Scale
+  Scale,
+  Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
@@ -62,6 +63,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
 
   const financeItems = [
     { id: 'expenses' as ActivePage, label: 'المصروفات', icon: Wallet },
+    { id: 'prepaid-expenses' as ActivePage, label: 'المصروفات المقدمة', icon: Clock },
     { id: 'quotations' as ActivePage, label: 'عروض الأسعار', icon: FileCheck },
     { id: 'installments' as ActivePage, label: 'الأقساط', icon: CreditCard },
     { id: 'vouchers' as ActivePage, label: 'سندات القبض والصرف', icon: Receipt },
