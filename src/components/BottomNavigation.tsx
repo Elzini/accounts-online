@@ -17,8 +17,8 @@ const navItems = [
 
 export function BottomNavigation({ activePage, setActivePage, onMenuClick }: BottomNavigationProps) {
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border safe-area-bottom">
-      <div className="flex items-center justify-around px-1 py-1.5">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-card/98 backdrop-blur-lg border-t-2 border-border/80 shadow-2xl safe-area-bottom">
+      <div className="flex items-center justify-around px-2 py-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activePage === item.id;

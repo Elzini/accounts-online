@@ -115,9 +115,9 @@ const Index = () => {
       {/* Mobile Sidebar */}
       <MobileSidebar ref={mobileSidebarRef} activePage={activePage} setActivePage={setActivePage} />
       
-      <main className="flex-1 min-w-0 overflow-x-hidden pb-16 lg:pb-0">
+      <main className="flex-1 min-w-0 overflow-x-hidden pb-16 md:pb-0">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 safe-area-top">
+        <header className="sticky top-0 z-40 bg-background/98 backdrop-blur-lg border-b-2 border-border/80 shadow-md px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 safe-area-top">
           <div className="flex justify-between items-center gap-2">
             <p className="text-responsive-sm text-muted-foreground truncate flex-1 min-w-0">
               مرحباً، <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
@@ -156,6 +156,7 @@ const Index = () => {
       </main>
 
       {/* Bottom Navigation for Mobile */}
+      {/* Always render but CSS will hide on desktop */}
       <BottomNavigation 
         activePage={activePage} 
         setActivePage={setActivePage} 
