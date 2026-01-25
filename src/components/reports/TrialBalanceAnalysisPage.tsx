@@ -23,25 +23,18 @@ interface TrialBalanceData {
   purchases: number;
 }
 
-// البيانات الافتراضية
-const defaultData: TrialBalanceData = {
-  companyName: 'شركة اشبال النمار للسيارات',
-  vatNumber: '312876888500003',
-  period: { from: '2025-01-01', to: '2025-12-31' },
-  fixedAssets: { 'الأثاث': 13782.61, 'أجهزة وآلات': 500.00 },
-  currentAssets: { 'البنوك': 50.00, 'عهدة الموظفين': 901.00, 'إيجار مدفوع مقدماً': 229166.67 },
-  liabilities: { 'رواتب مستحقة': 6050.00, 'أطراف ذات علاقة': 250050.00 },
-  equity: { 'جاري المالك': 428410.66 },
-  revenue: { 'المبيعات': 1522826.08 },
-  expenses: { 
-    'الرواتب': 6050.00, 
-    'لوازم مكتبية': 2391.30, 
-    'الإيجار': 20833.33, 
-    'متنوعة': 4461.69, 
-    'ضيافة': 189.22, 
-    'نظافة': 1793.65 
-  },
-  purchases: 1859366.96,
+// البيانات الفارغة (الافتراضية)
+const emptyData: TrialBalanceData = {
+  companyName: '',
+  vatNumber: '',
+  period: { from: '', to: '' },
+  fixedAssets: {},
+  currentAssets: {},
+  liabilities: {},
+  equity: {},
+  revenue: {},
+  expenses: {},
+  purchases: 0,
 };
 
 interface SavedImport {
@@ -57,7 +50,7 @@ export function TrialBalanceAnalysisPage() {
   const { companyId } = useCompany();
   const { user } = useAuth();
   
-  const [data, setData] = useState<TrialBalanceData>(defaultData);
+  const [data, setData] = useState<TrialBalanceData>(emptyData);
   const [isExporting, setIsExporting] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -162,7 +155,7 @@ export function TrialBalanceAnalysisPage() {
     toast.success('تم الحذف');
     if (selectedImportId === importId) {
       setSelectedImportId(null);
-      setData(defaultData);
+      setData(emptyData);
       setFileName(null);
     }
     fetchSavedImports();
@@ -285,7 +278,7 @@ export function TrialBalanceAnalysisPage() {
 
     // إذا لم يتم العثور على بيانات كافية، استخدم البيانات الافتراضية
     if (Object.keys(result.fixedAssets).length === 0 && Object.keys(result.revenue).length === 0) {
-      return defaultData;
+      return emptyData;
     }
 
     return result;
@@ -311,7 +304,7 @@ export function TrialBalanceAnalysisPage() {
   };
 
   const clearFile = () => {
-    setData(defaultData);
+    setData(emptyData);
     setFileName(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
