@@ -335,9 +335,10 @@ export function TrialBalanceAnalysisPage() {
   const adjustedEquity = totalEquity + netIncome;
   const totalLiabilitiesAndEquity = totalLiabilities + adjustedEquity;
 
-  // حساب الزكاة
-  const prepaidRent = data.currentAssets['إيجار مدفوع مقدماً'] || data.currentAssets['ايجار مدفوع مقدما'] || 0;
-  const zakatBase = totalEquity + netIncome - totalFixedAssets - (prepaidRent * 11/12);
+  // حساب الزكاة - طريقة صافي الأصول
+  // الوعاء الزكوي = الإيجار المدفوع مقدماً - الأصول الثابتة
+  const prepaidRent = data.currentAssets['إيجار مدفوع مقدماً'] || data.currentAssets['ايجار مدفوع مقدما'] || data.currentAssets['ايجار مدفوع مقدماً'] || 0;
+  const zakatBase = prepaidRent - totalFixedAssets;
   const zakatDue = zakatBase > 0 ? zakatBase * 0.025 : 0;
 
   const formatCurrency = (amount: number) => {
