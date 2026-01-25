@@ -398,6 +398,9 @@ export async function getZakatBaseStatement(
 ): Promise<ZakatBaseStatement> {
   const accounts = await fetchAccounts(companyId);
   
+  const yearStart = `${fiscalYear}-01-01`;
+  const yearEnd = `${fiscalYear}-12-31`;
+  
   // Get all posted journal entries
   const { data: lines, error } = await supabase
     .from('journal_entry_lines')
@@ -425,7 +428,7 @@ export async function getZakatBaseStatement(
     .eq('id', companyId)
     .single();
 
-  // Calculate balances
+  // Calculate balances from journal entries (for equity accounts)
   const balances = new Map<string, number>();
   (lines || []).forEach((line: any) => {
     const current = balances.get(line.account_id) || 0;
@@ -443,17 +446,63 @@ export async function getZakatBaseStatement(
       .reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);
   };
 
+  // ===== Calculate ACTUAL net income from sales data =====
+  // Fetch actual sales data with car purchase prices
+  const { data: salesData } = await supabase
+    .from('sales')
+    .select(`
+      id,
+      sale_price,
+      car:cars(purchase_price),
+      sale_items:sale_items(
+        sale_price,
+        car:cars(purchase_price)
+      )
+    `)
+    .eq('company_id', companyId)
+    .gte('sale_date', yearStart)
+    .lte('sale_date', yearEnd);
+
+  let actualSalesRevenue = 0;
+  let actualPurchaseCost = 0;
+
+  (salesData || []).forEach((sale: any) => {
+    if (sale.sale_items && sale.sale_items.length > 0) {
+      sale.sale_items.forEach((item: any) => {
+        actualSalesRevenue += Number(item.sale_price) || 0;
+        actualPurchaseCost += Number(item.car?.purchase_price) || 0;
+      });
+    } else {
+      actualSalesRevenue += Number(sale.sale_price) || 0;
+      actualPurchaseCost += Number(sale.car?.purchase_price) || 0;
+    }
+  });
+
+  // Fetch expenses
+  const { data: expensesData } = await supabase
+    .from('expenses')
+    .select('amount, car_id')
+    .eq('company_id', companyId)
+    .gte('expense_date', yearStart)
+    .lte('expense_date', yearEnd);
+
+  const carExpenses = (expensesData || [])
+    .filter((e: any) => e.car_id)
+    .reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
+  
+  const generalExpenses = (expensesData || [])
+    .filter((e: any) => !e.car_id)
+    .reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
+
+  // Calculate actual net income
+  const totalPurchaseCost = actualPurchaseCost + carExpenses;
+  const grossProfit = actualSalesRevenue - totalPurchaseCost;
+  const netIncomeForYear = grossProfit - generalExpenses;
+
   // Zakatable Sources (مصادر الوعاء الزكوي)
   const paidUpCapital = getAccountBalance('31'); // رأس المال المدفوع
   const reserves = getAccountBalance('32'); // الاحتياطيات
   const retainedEarnings = getAccountBalance('33'); // الأرباح المحتجزة
-  
-  // Calculate net income for year
-  const revenueAccounts = accounts.filter(a => a.type === 'revenue');
-  const expenseAccounts = accounts.filter(a => a.type === 'expenses');
-  const totalRevenue = revenueAccounts.reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);
-  const totalExpenses = expenseAccounts.reduce((sum, a) => sum + Math.abs(balances.get(a.id) || 0), 0);
-  const netIncomeForYear = totalRevenue - totalExpenses;
   
   const provisions = getAccountBalance('24'); // المخصصات
   const longTermLoans = getAccountBalance('23'); // القروض طويلة الأجل
