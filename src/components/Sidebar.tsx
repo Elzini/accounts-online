@@ -25,7 +25,8 @@ import {
   Landmark,
   Scale,
   Clock,
-  Calendar
+  Calendar,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
@@ -92,6 +93,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
     { id: 'general-ledger' as ActivePage, label: settings?.general_ledger_title || 'دفتر الأستاذ', icon: FileText },
     { id: 'financial-reports' as ActivePage, label: settings?.financial_reports_title || 'التقارير المالية', icon: PieChart },
     { id: 'zakat-reports' as ActivePage, label: 'القوائم الزكوية', icon: Scale },
+    { id: 'trial-balance-analysis' as ActivePage, label: 'تحليل ميزان المراجعة', icon: FileSpreadsheet },
   ];
 
   const hasAccess = (permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users') => {
