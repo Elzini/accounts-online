@@ -992,6 +992,7 @@ export type Database = {
       expenses: {
         Row: {
           amount: number
+          car_id: string | null
           category_id: string | null
           company_id: string
           created_at: string
@@ -1006,6 +1007,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          car_id?: string | null
           category_id?: string | null
           company_id: string
           created_at?: string
@@ -1020,6 +1022,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          car_id?: string | null
           category_id?: string | null
           company_id?: string
           created_at?: string
@@ -1033,6 +1036,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "expenses_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "expenses_category_id_fkey"
             columns: ["category_id"]
@@ -2083,6 +2093,14 @@ export type Database = {
         Returns: undefined
       }
       apply_defaults_to_existing_companies: { Args: never; Returns: Json }
+      calculate_car_net_profit: {
+        Args: {
+          p_car_id: string
+          p_purchase_price: number
+          p_sale_price: number
+        }
+        Returns: number
+      }
       create_default_accounts: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -2091,6 +2109,7 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      get_car_expenses: { Args: { p_car_id: string }; Returns: number }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_permission: {
         Args: {

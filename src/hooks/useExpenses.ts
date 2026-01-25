@@ -5,6 +5,9 @@ import {
   updateExpenseCategory,
   deleteExpenseCategory,
   fetchExpenses,
+  fetchCarExpenses,
+  fetchGeneralExpenses,
+  getCarExpensesTotal,
   addExpense,
   updateExpense,
   deleteExpense,
@@ -67,6 +70,33 @@ export function useExpenses() {
   return useQuery({
     queryKey: ['expenses'],
     queryFn: fetchExpenses,
+  });
+}
+
+// Car-specific expenses
+export function useCarExpenses(carId: string | null) {
+  return useQuery({
+    queryKey: ['car-expenses', carId],
+    queryFn: () => carId ? fetchCarExpenses(carId) : [],
+    enabled: !!carId,
+  });
+}
+
+// General expenses (not linked to any car)
+export function useGeneralExpenses(companyId: string | null) {
+  return useQuery({
+    queryKey: ['general-expenses', companyId],
+    queryFn: () => companyId ? fetchGeneralExpenses(companyId) : [],
+    enabled: !!companyId,
+  });
+}
+
+// Get total expenses for a specific car
+export function useCarExpensesTotal(carId: string | null) {
+  return useQuery({
+    queryKey: ['car-expenses-total', carId],
+    queryFn: () => carId ? getCarExpensesTotal(carId) : 0,
+    enabled: !!carId,
   });
 }
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Receipt, FolderOpen, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Receipt, FolderOpen, Loader2, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useExpenses, useExpenseCategories, useAddExpense, useDeleteExpense, useAddExpenseCategory, useCreateDefaultExpenseCategories } from '@/hooks/useExpenses';
+import { useCars } from '@/hooks/useDatabase';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Expense, ExpenseCategory } from '@/services/expenses';
 
@@ -19,6 +20,7 @@ export function ExpensesPage() {
   const { companyId } = useCompany();
   const { data: expenses = [], isLoading: expensesLoading } = useExpenses();
   const { data: categories = [], isLoading: categoriesLoading } = useExpenseCategories();
+  const { data: cars = [], isLoading: carsLoading } = useCars();
   const addExpense = useAddExpense();
   const deleteExpense = useDeleteExpense();
   const addCategory = useAddExpenseCategory();
@@ -28,6 +30,7 @@ export function ExpensesPage() {
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [expenseForm, setExpenseForm] = useState({
     category_id: '',
+    car_id: '',
     amount: '',
     description: '',
     expense_date: new Date().toISOString().split('T')[0],
@@ -40,6 +43,9 @@ export function ExpensesPage() {
     description: ''
   });
 
+  // Filter available cars (only available ones for expense linking)
+  const availableCars = cars.filter(car => car.status === 'available');
+
   const handleAddExpense = async () => {
     if (!expenseForm.amount || !expenseForm.description) {
       toast.error('يرجى ملء الحقول المطلوبة');
@@ -50,6 +56,7 @@ export function ExpensesPage() {
       await addExpense.mutateAsync({
         company_id: companyId!,
         category_id: expenseForm.category_id || null,
+        car_id: expenseForm.car_id || null,
         amount: parseFloat(expenseForm.amount),
         description: expenseForm.description,
         expense_date: expenseForm.expense_date,
@@ -62,6 +69,7 @@ export function ExpensesPage() {
       setIsExpenseDialogOpen(false);
       setExpenseForm({
         category_id: '',
+        car_id: '',
         amount: '',
         description: '',
         expense_date: new Date().toISOString().split('T')[0],
@@ -119,6 +127,8 @@ export function ExpensesPage() {
   };
 
   const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+  const carExpensesTotal = expenses.filter(exp => exp.car_id).reduce((sum, exp) => sum + Number(exp.amount), 0);
+  const generalExpensesTotal = expenses.filter(exp => !exp.car_id).reduce((sum, exp) => sum + Number(exp.amount), 0);
   const thisMonthExpenses = expenses
     .filter(exp => {
       const expDate = new Date(exp.expense_date);
@@ -127,7 +137,7 @@ export function ExpensesPage() {
     })
     .reduce((sum, exp) => sum + Number(exp.amount), 0);
 
-  if (expensesLoading || categoriesLoading) {
+  if (expensesLoading || categoriesLoading || carsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -138,7 +148,7 @@ export function ExpensesPage() {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -154,10 +164,10 @@ export function ExpensesPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">مصروفات هذا الشهر</p>
-                <p className="text-2xl font-bold">{formatCurrency(thisMonthExpenses)}</p>
+                <p className="text-sm text-muted-foreground">مصروفات السيارات</p>
+                <p className="text-2xl font-bold text-orange-500">{formatCurrency(carExpensesTotal)}</p>
               </div>
-              <Receipt className="w-8 h-8 text-warning" />
+              <Car className="w-8 h-8 text-orange-500" />
             </div>
           </CardContent>
         </Card>
@@ -165,10 +175,21 @@ export function ExpensesPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">عدد الفئات</p>
-                <p className="text-2xl font-bold">{categories.length}</p>
+                <p className="text-sm text-muted-foreground">مصروفات عامة</p>
+                <p className="text-2xl font-bold text-blue-500">{formatCurrency(generalExpensesTotal)}</p>
               </div>
-              <FolderOpen className="w-8 h-8 text-primary" />
+              <Receipt className="w-8 h-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">مصروفات هذا الشهر</p>
+                <p className="text-2xl font-bold">{formatCurrency(thisMonthExpenses)}</p>
+              </div>
+              <Receipt className="w-8 h-8 text-warning" />
             </div>
           </CardContent>
         </Card>
@@ -204,6 +225,25 @@ export function ExpensesPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div>
+                    <Label>ربط بسيارة (اختياري)</Label>
+                    <Select value={expenseForm.car_id} onValueChange={(v) => setExpenseForm({...expenseForm, car_id: v === 'none' ? '' : v})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر السيارة (للمصروفات المرتبطة)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">مصروف عام (بدون سيارة)</SelectItem>
+                        {availableCars.map(car => (
+                          <SelectItem key={car.id} value={car.id}>
+                            {car.name} - {car.chassis_number}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      * المصروفات المرتبطة بسيارة تُخصم من ربحها عند البيع
+                    </p>
                   </div>
                   <div>
                     <Label>المبلغ *</Label>
@@ -268,6 +308,7 @@ export function ExpensesPage() {
                   <TableRow>
                     <TableHead>التاريخ</TableHead>
                     <TableHead>الفئة</TableHead>
+                    <TableHead>السيارة</TableHead>
                     <TableHead>الوصف</TableHead>
                     <TableHead>طريقة الدفع</TableHead>
                     <TableHead>المبلغ</TableHead>
@@ -277,7 +318,7 @@ export function ExpensesPage() {
                 <TableBody>
                   {expenses.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         لا توجد مصروفات مسجلة
                       </TableCell>
                     </TableRow>
@@ -287,6 +328,16 @@ export function ExpensesPage() {
                         <TableCell>{new Date(expense.expense_date).toLocaleDateString('ar-SA')}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{expense.category?.name || 'بدون فئة'}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {expense.car ? (
+                            <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                              <Car className="w-3 h-3 ml-1" />
+                              {expense.car.name}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">عام</span>
+                          )}
                         </TableCell>
                         <TableCell>{expense.description}</TableCell>
                         <TableCell>
