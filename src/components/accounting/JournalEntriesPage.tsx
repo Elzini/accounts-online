@@ -13,11 +13,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { useJournalEntries, useAccounts, useCreateJournalEntry, useDeleteJournalEntry, useJournalEntry } from '@/hooks/useAccounting';
 import { toast } from 'sonner';
-import { Loader2, Plus, Eye, Trash2, BookOpen, CalendarIcon, X, Printer, FileDown, Search } from 'lucide-react';
+import { Loader2, Plus, Eye, Trash2, BookOpen, CalendarIcon, X, Printer, FileDown } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { AccountSearchSelect } from './AccountSearchSelect';
 
 interface JournalLine {
   account_id: string;
@@ -50,22 +51,10 @@ export function JournalEntriesPage() {
   const [vatType, setVatType] = useState<'sales' | 'purchases'>('purchases');
   const [taxNumber, setTaxNumber] = useState('');
   const [supplierCustomer, setSupplierCustomer] = useState('');
-  const [searchAccount, setSearchAccount] = useState('');
-  
   const [lines, setLines] = useState<JournalLine[]>([
     { account_id: '', description: '', debit: 0, credit: 0, reference: '', line_date: format(new Date(), 'yyyy-MM-dd'), cost_center: '' },
     { account_id: '', description: '', debit: 0, credit: 0, reference: '', line_date: format(new Date(), 'yyyy-MM-dd'), cost_center: '' },
   ]);
-
-  // Filter accounts based on search
-  const filteredAccounts = useMemo(() => {
-    if (!searchAccount) return accounts;
-    const search = searchAccount.toLowerCase();
-    return accounts.filter(acc => 
-      acc.code.toLowerCase().includes(search) || 
-      acc.name.toLowerCase().includes(search)
-    );
-  }, [accounts, searchAccount]);
 
   const resetForm = () => {
     setEntryDate(new Date());
@@ -76,7 +65,6 @@ export function JournalEntriesPage() {
     setVatType('purchases');
     setTaxNumber('');
     setSupplierCustomer('');
-    setSearchAccount('');
     setLines([
       { account_id: '', description: '', debit: 0, credit: 0, reference: '', line_date: format(new Date(), 'yyyy-MM-dd'), cost_center: '' },
       { account_id: '', description: '', debit: 0, credit: 0, reference: '', line_date: format(new Date(), 'yyyy-MM-dd'), cost_center: '' },
@@ -311,24 +299,13 @@ export function JournalEntriesPage() {
                     <Plus className="w-4 h-4 ml-1" />
                     سطر جديد
                   </Button>
-                  <div className="flex-1" />
-                  <div className="relative">
-                    <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      value={searchAccount}
-                      onChange={(e) => setSearchAccount(e.target.value)}
-                      placeholder="بحث في الحسابات..."
-                      className="pr-8 w-48"
-                    />
-                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/30">
                         <TableHead className="w-10 text-center">#</TableHead>
-                        <TableHead className="w-24">الحساب</TableHead>
-                        <TableHead className="min-w-[180px]">اسم الحساب</TableHead>
+                        <TableHead className="min-w-[250px]">الحساب</TableHead>
                         <TableHead className="w-28">مدين</TableHead>
                         <TableHead className="w-28">دائن</TableHead>
                         <TableHead className="min-w-[140px]">البيان</TableHead>
@@ -345,21 +322,11 @@ export function JournalEntriesPage() {
                             {index + 1}
                           </TableCell>
                           <TableCell>
-                            <Select
+                            <AccountSearchSelect
+                              accounts={accounts}
                               value={line.account_id}
-                              onValueChange={(value) => updateLine(index, 'account_id', value)}
-                            >
-                              <SelectTrigger className="w-full font-mono text-sm">
-                                <SelectValue placeholder="الكود" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {filteredAccounts.map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.code}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              onChange={(value) => updateLine(index, 'account_id', value)}
+                            />
                           </TableCell>
                           <TableCell>
                             <Input
