@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { AccountSearchSelect } from './AccountSearchSelect';
+import { JournalEntryPrintDialog } from './JournalEntryPrintDialog';
 
 interface JournalLine {
   account_id: string;
@@ -40,7 +41,9 @@ export function JournalEntriesPage() {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [viewingEntryId, setViewingEntryId] = useState<string | null>(null);
+  const [printingEntryId, setPrintingEntryId] = useState<string | null>(null);
   const { data: viewingEntry } = useJournalEntry(viewingEntryId);
+  const { data: printingEntry } = useJournalEntry(printingEntryId);
   
   // Form state
   const [entryDate, setEntryDate] = useState<Date>(new Date());
@@ -615,7 +618,8 @@ export function JournalEntriesPage() {
                         {entry.reference_type === 'manual' ? 'يدوي' : 
                          entry.reference_type === 'sale' ? 'مبيعات' :
                          entry.reference_type === 'purchase' ? 'مشتريات' :
-                         entry.reference_type === 'expense' ? 'مصروفات' : 'تلقائي'}
+                         entry.reference_type === 'expense' ? 'مصروفات' :
+                         entry.reference_type === 'voucher' ? 'سند' : 'تلقائي'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center font-medium">{entry.total_debit.toLocaleString()}</TableCell>
@@ -631,12 +635,21 @@ export function JournalEntriesPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => setViewingEntryId(entry.id)}
+                          title="عرض"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setPrintingEntryId(entry.id)}
+                          title="طباعة"
+                        >
+                          <Printer className="w-4 h-4" />
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" title="حذف">
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </AlertDialogTrigger>
@@ -664,6 +677,14 @@ export function JournalEntriesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Print Dialog */}
+      <JournalEntryPrintDialog
+        entry={printingEntry || null}
+        accounts={accounts}
+        open={!!printingEntryId}
+        onClose={() => setPrintingEntryId(null)}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Receipt, CreditCard, Trash2, Loader2, Printer } from 'lucide-react';
+import { Plus, Receipt, CreditCard, Trash2, Loader2, Printer, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,16 +10,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { useVouchers, useReceiptVouchers, usePaymentVouchers, useAddVoucher, useDeleteVoucher } from '@/hooks/useVouchers';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useJournalEntries } from '@/hooks/useAccounting';
 import { Voucher } from '@/services/vouchers';
 
 export function VouchersPage() {
   const { companyId } = useCompany();
   const { data: allVouchers = [], isLoading } = useVouchers();
+  const { data: journalEntries = [] } = useJournalEntries();
   const addVoucher = useAddVoucher();
   const deleteVoucher = useDeleteVoucher();
+  
+  // Get journal entry number by ID
+  const getJournalEntryNumber = (journalEntryId: string | null) => {
+    if (!journalEntryId) return null;
+    const entry = journalEntries.find(e => e.id === journalEntryId);
+    return entry?.entry_number || null;
+  };
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [form, setForm] = useState({
@@ -93,45 +103,68 @@ export function VouchersPage() {
           <TableHead>الوصف</TableHead>
           <TableHead>طريقة الدفع</TableHead>
           <TableHead>المبلغ</TableHead>
+          <TableHead>رقم القيد</TableHead>
           <TableHead>إجراءات</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {vouchers.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+            <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
               لا توجد سندات
             </TableCell>
           </TableRow>
         ) : (
-          vouchers.map((voucher) => (
-            <TableRow key={voucher.id}>
-              <TableCell className="font-mono">
-                {type === 'receipt' ? 'ق' : 'ص'}-{voucher.voucher_number}
-              </TableCell>
-              <TableCell>{new Date(voucher.voucher_date).toLocaleDateString('ar-SA')}</TableCell>
-              <TableCell>{voucher.description}</TableCell>
-              <TableCell>
-                {voucher.payment_method === 'cash' && 'نقداً'}
-                {voucher.payment_method === 'bank' && 'تحويل بنكي'}
-                {voucher.payment_method === 'card' && 'بطاقة'}
-                {voucher.payment_method === 'check' && 'شيك'}
-              </TableCell>
-              <TableCell className={`font-semibold ${type === 'receipt' ? 'text-green-600' : 'text-destructive'}`}>
-                {formatCurrency(Number(voucher.amount))}
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => window.print()}>
-                    <Printer className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(voucher.id)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))
+          vouchers.map((voucher) => {
+            const journalEntryNum = getJournalEntryNumber(voucher.journal_entry_id);
+            return (
+              <TableRow key={voucher.id}>
+                <TableCell className="font-mono">
+                  {type === 'receipt' ? 'ق' : 'ص'}-{voucher.voucher_number}
+                </TableCell>
+                <TableCell>{new Date(voucher.voucher_date).toLocaleDateString('ar-SA')}</TableCell>
+                <TableCell>{voucher.description}</TableCell>
+                <TableCell>
+                  {voucher.payment_method === 'cash' && 'نقداً'}
+                  {voucher.payment_method === 'bank' && 'تحويل بنكي'}
+                  {voucher.payment_method === 'card' && 'بطاقة'}
+                  {voucher.payment_method === 'check' && 'شيك'}
+                </TableCell>
+                <TableCell className={`font-semibold ${type === 'receipt' ? 'text-green-600' : 'text-destructive'}`}>
+                  {formatCurrency(Number(voucher.amount))}
+                </TableCell>
+                <TableCell>
+                  {journalEntryNum ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="outline" className="gap-1 cursor-pointer">
+                            <BookOpen className="w-3 h-3" />
+                            {journalEntryNum}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>قيد محاسبي مرتبط</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">-</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => window.print()}>
+                      <Printer className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(voucher.id)}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })
         )}
       </TableBody>
     </Table>

@@ -2184,6 +2184,7 @@ export type Database = {
           created_by: string | null
           description: string
           id: string
+          journal_entry_id: string | null
           payment_method: string | null
           related_id: string | null
           related_to: string | null
@@ -2199,6 +2200,7 @@ export type Database = {
           created_by?: string | null
           description: string
           id?: string
+          journal_entry_id?: string | null
           payment_method?: string | null
           related_id?: string | null
           related_to?: string | null
@@ -2214,6 +2216,7 @@ export type Database = {
           created_by?: string | null
           description?: string
           id?: string
+          journal_entry_id?: string | null
           payment_method?: string | null
           related_id?: string | null
           related_to?: string | null
@@ -2228,6 +2231,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vouchers_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
         ]
