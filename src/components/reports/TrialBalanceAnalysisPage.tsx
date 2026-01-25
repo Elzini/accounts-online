@@ -1,9 +1,14 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator, Upload, X, FileUp } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator, Upload, X, FileUp, Save, Trash2, FolderOpen } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { supabase } from '@/integrations/supabase/client';
+import { useCompany } from '@/contexts/CompanyContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface TrialBalanceData {
   companyName: string;
@@ -39,12 +44,129 @@ const defaultData: TrialBalanceData = {
   purchases: 1859366.96,
 };
 
+interface SavedImport {
+  id: string;
+  name: string;
+  file_name: string | null;
+  period_from: string | null;
+  period_to: string | null;
+  created_at: string;
+}
+
 export function TrialBalanceAnalysisPage() {
+  const { companyId } = useCompany();
+  const { user } = useAuth();
+  
   const [data, setData] = useState<TrialBalanceData>(defaultData);
   const [isExporting, setIsExporting] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedImports, setSavedImports] = useState<SavedImport[]>([]);
+  const [selectedImportId, setSelectedImportId] = useState<string | null>(null);
+  const [importName, setImportName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // جلب الملفات المحفوظة
+  useEffect(() => {
+    if (companyId) {
+      fetchSavedImports();
+    }
+  }, [companyId]);
+
+  const fetchSavedImports = async () => {
+    if (!companyId) return;
+    
+    const { data: imports, error } = await supabase
+      .from('trial_balance_imports')
+      .select('id, name, file_name, period_from, period_to, created_at')
+      .eq('company_id', companyId)
+      .order('created_at', { ascending: false });
+    
+    if (!error && imports) {
+      setSavedImports(imports);
+    }
+  };
+
+  // حفظ البيانات
+  const handleSave = async () => {
+    if (!companyId || !user?.id) {
+      toast.error('يجب تسجيل الدخول أولاً');
+      return;
+    }
+
+    if (!importName.trim()) {
+      toast.error('يرجى إدخال اسم للحفظ');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('trial_balance_imports')
+        .insert({
+          company_id: companyId,
+          name: importName.trim(),
+          file_name: fileName,
+          period_from: data.period.from || null,
+          period_to: data.period.to || null,
+          vat_number: data.vatNumber || null,
+          data: data as any,
+          created_by: user.id,
+        });
+
+      if (error) throw error;
+
+      toast.success('تم حفظ البيانات بنجاح');
+      setImportName('');
+      fetchSavedImports();
+    } catch (error) {
+      console.error('Error saving:', error);
+      toast.error('فشل حفظ البيانات');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // تحميل بيانات محفوظة
+  const loadSavedImport = async (importId: string) => {
+    const { data: importData, error } = await supabase
+      .from('trial_balance_imports')
+      .select('*')
+      .eq('id', importId)
+      .single();
+
+    if (error || !importData) {
+      toast.error('فشل تحميل البيانات');
+      return;
+    }
+
+    setData(importData.data as unknown as TrialBalanceData);
+    setFileName(importData.file_name);
+    setSelectedImportId(importId);
+    toast.success('تم تحميل البيانات');
+  };
+
+  // حذف بيانات محفوظة
+  const deleteSavedImport = async (importId: string) => {
+    const { error } = await supabase
+      .from('trial_balance_imports')
+      .delete()
+      .eq('id', importId);
+
+    if (error) {
+      toast.error('فشل الحذف');
+      return;
+    }
+
+    toast.success('تم الحذف');
+    if (selectedImportId === importId) {
+      setSelectedImportId(null);
+      setData(defaultData);
+      setFileName(null);
+    }
+    fetchSavedImports();
+  };
 
   // تحليل ملف Excel
   const parseExcelFile = (file: File) => {
@@ -365,6 +487,57 @@ export function TrialBalanceAnalysisPage() {
               </div>
             )}
           </div>
+
+          {/* Save Section */}
+          {fileName && (
+            <div className="mt-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+              <Input
+                placeholder="اسم الحفظ (مثال: ميزان 2025)"
+                value={importName}
+                onChange={(e) => setImportName(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={handleSave} disabled={isSaving || !importName.trim()} className="gap-2">
+                <Save className="w-4 h-4" />
+                {isSaving ? 'جاري الحفظ...' : 'حفظ'}
+              </Button>
+            </div>
+          )}
+
+          {/* Saved Imports */}
+          {savedImports.length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                <FolderOpen className="w-4 h-4" />
+                الملفات المحفوظة:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {savedImports.map((imp) => (
+                  <div
+                    key={imp.id}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                      selectedImportId === imp.id ? 'bg-primary/10 border-primary' : 'bg-muted/50 hover:bg-muted'
+                    }`}
+                  >
+                    <span
+                      onClick={() => loadSavedImport(imp.id)}
+                      className="text-sm font-medium"
+                    >
+                      {imp.name}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                      onClick={(e) => { e.stopPropagation(); deleteSavedImport(imp.id); }}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
