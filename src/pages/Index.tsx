@@ -65,9 +65,11 @@ const Index = () => {
   const [showFiscalYearDialog, setShowFiscalYearDialog] = useState(false);
   
   useEffect(() => {
-    // Check if we need to show fiscal year selection
+    // Show fiscal year selection ONLY if there are multiple years AND none is selected yet
     if (!isFiscalYearLoading && fiscalYears.length > 1 && !selectedFiscalYear) {
       setShowFiscalYearDialog(true);
+    } else {
+      setShowFiscalYearDialog(false);
     }
   }, [fiscalYears, selectedFiscalYear, isFiscalYearLoading]);
 
