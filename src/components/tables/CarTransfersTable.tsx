@@ -40,7 +40,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCarTransfers, useAddCarTransfer, useUpdateCarTransfer, useDeleteCarTransfer, usePartnerDealerships } from '@/hooks/useTransfers';
-import { useCars, useUpdateCar, useAddCar } from '@/hooks/useDatabase';
+import { useCars, useUpdateCar, useAddCar, useDeleteCar } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ActivePage } from '@/types';
@@ -61,6 +61,7 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
   const deleteMutation = useDeleteCarTransfer();
   const updateCarMutation = useUpdateCar();
   const addCarMutation = useAddCar();
+  const deleteCarMutation = useDeleteCar();
   const queryClient = useQueryClient();
   const { permissions } = useAuth();
 
@@ -216,6 +217,23 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
       const previousStatus = editingTransfer.status;
       const newStatus = formData.status;
 
+      // If incoming car is being returned, delete the car completely
+      if (previousStatus !== 'returned' && newStatus === 'returned' && formData.transfer_type === 'incoming') {
+        // First delete the transfer record
+        await deleteMutation.mutateAsync(editingTransfer.id);
+        
+        // Then delete the car completely
+        await deleteCarMutation.mutateAsync(formData.car_id);
+        
+        queryClient.invalidateQueries({ queryKey: ['cars'] });
+        queryClient.invalidateQueries({ queryKey: ['stats'] });
+        
+        toast.success('تم إرجاع وحذف السيارة الواردة بنجاح');
+        setEditingTransfer(null);
+        resetForm();
+        return;
+      }
+
       await updateMutation.mutateAsync({
         id: editingTransfer.id,
         data: {
@@ -231,7 +249,7 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
         },
       });
 
-      // If status changed to 'returned', update car status to 'available'
+      // If outgoing car status changed to 'returned', update car status to 'available'
       if (previousStatus !== 'returned' && newStatus === 'returned') {
         await updateCarMutation.mutateAsync({
           id: formData.car_id,
@@ -311,22 +329,37 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
 
   const handleQuickReturn = async (transfer: CarTransfer) => {
     try {
-      await updateMutation.mutateAsync({
-        id: transfer.id,
-        data: {
-          status: 'returned',
-          return_date: format(new Date(), 'yyyy-MM-dd'),
-        },
-      });
+      // For incoming cars (from partner dealership), delete the car completely
+      if (transfer.transfer_type === 'incoming') {
+        // First delete the transfer record
+        await deleteMutation.mutateAsync(transfer.id);
+        
+        // Then delete the car completely
+        await deleteCarMutation.mutateAsync(transfer.car_id);
+        
+        queryClient.invalidateQueries({ queryKey: ['cars'] });
+        queryClient.invalidateQueries({ queryKey: ['stats'] });
+        
+        toast.success('تم إرجاع وحذف السيارة الواردة بنجاح');
+      } else {
+        // For outgoing cars, just update status to returned and make car available
+        await updateMutation.mutateAsync({
+          id: transfer.id,
+          data: {
+            status: 'returned',
+            return_date: format(new Date(), 'yyyy-MM-dd'),
+          },
+        });
 
-      // Update car status to 'available'
-      await updateCarMutation.mutateAsync({
-        id: transfer.car_id,
-        car: { status: 'available' },
-      });
-      queryClient.invalidateQueries({ queryKey: ['cars'] });
+        // Update car status to 'available'
+        await updateCarMutation.mutateAsync({
+          id: transfer.car_id,
+          car: { status: 'available' },
+        });
+        queryClient.invalidateQueries({ queryKey: ['cars'] });
 
-      toast.success('تم إرجاع السيارة بنجاح');
+        toast.success('تم إرجاع السيارة بنجاح');
+      }
     } catch (error) {
       toast.error('حدث خطأ أثناء إرجاع السيارة');
     }
