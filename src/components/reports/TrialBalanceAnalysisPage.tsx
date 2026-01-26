@@ -473,8 +473,29 @@ export function TrialBalanceAnalysisPage() {
       const row = rows[i];
       if (!row || row.length === 0) continue;
 
-      const accountName = String(row.find(cell => typeof cell === 'string' && cell.length > 2) || '').trim();
-      const accountCode = String(row.find(cell => typeof cell === 'number' || /^\d+$/.test(String(cell))) || '');
+      // في ملف Excel: الأعمدة الرقمية أولاً، ثم اسم الحساب، ثم رقم الحساب في آخر عمود
+      // نبحث عن اسم الحساب (نص طويل) ورقم الحساب (آخر عمود)
+      let accountName = '';
+      let accountCode = '';
+      
+      // آخر عمود هو رقم الحساب
+      const lastCell = row[row.length - 1];
+      if (lastCell !== undefined && lastCell !== null && lastCell !== '') {
+        const lastCellStr = String(lastCell).trim();
+        // إذا كان رقماً، فهو كود الحساب
+        if (/^\d+$/.test(lastCellStr)) {
+          accountCode = lastCellStr;
+        }
+      }
+      
+      // نبحث عن اسم الحساب (أول نص طويل وليس رقماً)
+      for (let j = 0; j < row.length - 1; j++) {
+        const cell = row[j];
+        if (typeof cell === 'string' && cell.trim().length > 2 && !/^\d+(\.\d+)?$/.test(cell.trim())) {
+          accountName = cell.trim();
+          break;
+        }
+      }
       
       // البحث عن المبالغ - الملف يحتوي على: الرصيد السابق، الحركة، الصافي
       // نستخدم عمود "الصافي" (العمود الأخير) للحساب
