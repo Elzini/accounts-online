@@ -883,7 +883,10 @@ export function FinancialStatementsPage() {
   );
 
   // ===== Format Number =====
-  const formatNumber = (num: number) => num.toLocaleString('en-US');
+  const formatNumber = (num: number | undefined | null) => {
+    if (num === undefined || num === null || isNaN(num)) return '0';
+    return num.toLocaleString('en-US');
+  };
 
   return (
     <div className="space-y-6">
