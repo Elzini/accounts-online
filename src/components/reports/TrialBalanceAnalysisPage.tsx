@@ -495,16 +495,16 @@ export function TrialBalanceAnalysisPage() {
         }
       }
       
-      // ملف ميزان المراجعة: 6 أعمدة
-      // [0] رصيد سابق مدين، [1] رصيد سابق دائن
-      // [2] حركة مدين، [3] حركة دائن
-      // [4] صافي مدين، [5] صافي دائن
-      const openingDebit = numbers[0] || 0;
-      const openingCredit = numbers[1] || 0;
-      const movementDebit = numbers[2] || 0;
-      const movementCredit = numbers[3] || 0;
-      const closingDebit = numbers[4] || 0;
-      const closingCredit = numbers[5] || 0;
+      // ملف ميزان المراجعة: 6 أعمدة (الترتيب من اليسار لليمين في Excel)
+      // [0] دائن الصافي، [1] مدين الصافي
+      // [2] دائن الحركة، [3] مدين الحركة
+      // [4] دائن الرصيد السابق، [5] مدين الرصيد السابق
+      const closingCredit = numbers[0] || 0;
+      const closingDebit = numbers[1] || 0;
+      const movementCredit = numbers[2] || 0;
+      const movementDebit = numbers[3] || 0;
+      const openingCredit = numbers[4] || 0;
+      const openingDebit = numbers[5] || 0;
       
       // استخدام الصافي إذا كان موجوداً، وإلا نحسبه من الحركة
       let finalDebit = closingDebit;
