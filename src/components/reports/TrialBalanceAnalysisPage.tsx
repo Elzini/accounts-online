@@ -24,6 +24,17 @@ interface TrialBalanceData {
   purchases: number;
 }
 
+// بيانات التحقق من المطابقة
+interface ReconciliationData {
+  // الإجماليات الأصلية من الملف
+  originalTotalDebit: number;
+  originalTotalCredit: number;
+  // الحسابات المستبعدة/المكررة
+  excludedAccounts: { name: string; amount: number; reason: string }[];
+  // جميع الحسابات الخام قبل التصفية
+  rawAccounts: { code: string; name: string; debit: number; credit: number; category: string }[];
+}
+
 // البيانات الفارغة (الافتراضية)
 const emptyData: TrialBalanceData = {
   companyName: '',
@@ -66,6 +77,21 @@ export function TrialBalanceAnalysisPage() {
   // حقول إدخال يدوية لحساب الزكاة بدقة
   const [manualCapital, setManualCapital] = useState<number | null>(null);
   const [useManualCapital, setUseManualCapital] = useState(false);
+
+  // بيانات التحقق من المطابقة
+  const emptyReconciliation: ReconciliationData = {
+    originalTotalDebit: 0,
+    originalTotalCredit: 0,
+    excludedAccounts: [],
+    rawAccounts: [],
+  };
+  const [reconciliationData, setReconciliationData] = useState<ReconciliationData>(emptyReconciliation);
+  const [showReconciliation, setShowReconciliation] = useState(false);
+  
+  // إجماليات يدوية للمقارنة
+  const [manualTotalDebit, setManualTotalDebit] = useState<number | null>(null);
+  const [manualTotalCredit, setManualTotalCredit] = useState<number | null>(null);
+  const [useManualTotals, setUseManualTotals] = useState(false);
 
   // جلب الملفات المحفوظة
   useEffect(() => {
@@ -182,8 +208,9 @@ export function TrialBalanceAnalysisPage() {
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
         // استخراج البيانات من ميزان المراجعة
-        const parsedData = parseTrialBalance(jsonData);
+        const { data: parsedData, reconciliation } = parseTrialBalance(jsonData);
         setData(parsedData);
+        setReconciliationData(reconciliation);
         setFileName(file.name);
       } catch (error) {
         console.error('Error parsing Excel file:', error);
@@ -196,8 +223,8 @@ export function TrialBalanceAnalysisPage() {
     reader.readAsArrayBuffer(file);
   };
 
-  // تحليل بيانات ميزان المراجعة
-  const parseTrialBalance = (rows: any[][]): TrialBalanceData => {
+  // تحليل بيانات ميزان المراجعة مع بيانات التحقق
+  const parseTrialBalance = (rows: any[][]): { data: TrialBalanceData; reconciliation: ReconciliationData } => {
     const result: TrialBalanceData = {
       companyName: '',
       vatNumber: '',
@@ -209,6 +236,13 @@ export function TrialBalanceAnalysisPage() {
       revenue: {},
       expenses: {},
       purchases: 0,
+    };
+
+    const reconciliation: ReconciliationData = {
+      originalTotalDebit: 0,
+      originalTotalCredit: 0,
+      excludedAccounts: [],
+      rawAccounts: [],
     };
 
     // قائمة شاملة للكلمات التي تشير إلى حسابات إجمالية أو رئيسية
@@ -244,23 +278,46 @@ export function TrialBalanceAnalysisPage() {
       categoryName: string,
       name: string, 
       amount: number
-    ): boolean => {
+    ): { added: boolean; reason?: string } => {
       // تحقق أساسي
-      if (!name || amount === 0 || shouldExclude(name)) {
-        return false;
+      if (!name || amount === 0) {
+        return { added: false, reason: 'مبلغ صفر' };
+      }
+      
+      if (shouldExclude(name)) {
+        return { added: false, reason: 'حساب إجمالي/رئيسي' };
       }
       
       // تحقق من تكرار المبلغ في نفس الفئة
-      const roundedAmount = Math.round(Math.abs(amount) * 100) / 100; // تقريب لـ 2 أرقام عشرية
+      const roundedAmount = Math.round(Math.abs(amount) * 100) / 100;
       if (usedAmounts[categoryName]?.has(roundedAmount)) {
-        console.log(`تجاهل حساب مكرر: ${name} - مبلغ: ${roundedAmount}`);
-        return false;
+        return { added: false, reason: 'مبلغ مكرر في نفس الفئة' };
       }
       
       // إضافة الحساب
       category[name] = Math.abs(amount);
       usedAmounts[categoryName]?.add(roundedAmount);
-      return true;
+      return { added: true };
+    };
+
+    // دالة لتصنيف الحساب
+    const categorizeAccount = (code: string, name: string): string => {
+      if (code.startsWith('11') || name.includes('أثاث') || name.includes('أجهز') || name.includes('معدات')) {
+        return 'أصول ثابتة';
+      } else if (code.startsWith('12') || code.startsWith('13') || name.includes('بنك') || name.includes('عهد') || name.includes('مقدم')) {
+        return 'أصول متداولة';
+      } else if (code.startsWith('2') && !code.startsWith('25') && !code.startsWith('3')) {
+        return 'خصوم';
+      } else if (code.startsWith('25') || code.startsWith('3') || name.includes('جاري') || name.includes('رأس المال')) {
+        return 'حقوق ملكية';
+      } else if ((code.startsWith('4') && !code.startsWith('45')) || name.includes('مبيعات') || name.includes('إيراد')) {
+        return 'إيرادات';
+      } else if (code.startsWith('45') || name.includes('مشتريات')) {
+        return 'مشتريات';
+      } else if (code.startsWith('5') || name.includes('مصروف') || name.includes('مصاريف')) {
+        return 'مصروفات';
+      }
+      return 'غير مصنف';
     };
     
     for (let i = 0; i < rows.length; i++) {
@@ -297,56 +354,81 @@ export function TrialBalanceAnalysisPage() {
       const creditAmount = numbers.length > 1 ? Math.abs(numbers[1]) : 0;
       const netAmount = debitAmount - creditAmount;
 
+      // تجميع الإجماليات الأصلية (من الحسابات الفرعية فقط)
+      if (accountName && !shouldExclude(accountName) && (debitAmount > 0 || creditAmount > 0)) {
+        reconciliation.originalTotalDebit += debitAmount;
+        reconciliation.originalTotalCredit += creditAmount;
+        
+        // حفظ الحساب الخام
+        reconciliation.rawAccounts.push({
+          code: accountCode,
+          name: accountName,
+          debit: debitAmount,
+          credit: creditAmount,
+          category: categorizeAccount(accountCode, accountName),
+        });
+      }
+
       // تجاهل الحسابات الإجمالية
       if (shouldExclude(accountName)) continue;
 
       // تصنيف الحسابات بناءً على رمز الحساب (الأولوية) أو اسم الحساب
+      let addResult: { added: boolean; reason?: string } = { added: false };
+      
       if (accountCode.startsWith('11') || 
           (accountName.includes('أثاث') || accountName.includes('أجهز') || accountName.includes('معدات') || accountName.includes('سيارات') || accountName.includes('مباني'))) {
         if (netAmount !== 0) {
-          addAccount(result.fixedAssets, 'fixedAssets', accountName, netAmount);
+          addResult = addAccount(result.fixedAssets, 'fixedAssets', accountName, netAmount);
         }
       } else if (accountCode.startsWith('12') || accountCode.startsWith('13') || 
                  accountName.includes('بنك') || accountName.includes('عهد') || accountName.includes('مقدم') || accountName.includes('نقد') || accountName.includes('صندوق')) {
         if (netAmount !== 0) {
-          addAccount(result.currentAssets, 'currentAssets', accountName, netAmount);
+          addResult = addAccount(result.currentAssets, 'currentAssets', accountName, netAmount);
         }
       } else if (accountCode.startsWith('2') && !accountCode.startsWith('25') && !accountCode.startsWith('3')) {
         if ((debitAmount > 0 || creditAmount > 0) && !accountName.includes('ضريب')) {
           const amount = creditAmount > debitAmount ? creditAmount : debitAmount;
           if (amount > 0) {
-            addAccount(result.liabilities, 'liabilities', accountName, amount);
+            addResult = addAccount(result.liabilities, 'liabilities', accountName, amount);
           }
         }
       } else if (accountCode.startsWith('25') || accountCode.startsWith('3') || 
                  (accountName.includes('جاري') && !accountName.includes('حقوق')) || 
                  accountName.includes('رأس المال') || accountName.includes('راس المال')) {
-        // حقوق الملكية - نأخذ فقط الحسابات التفصيلية (الفرعية)
         if (creditAmount > 0 && accountCode.length >= 4) {
-          // نتحقق أن هذا حساب فرعي وليس رئيسي
-          addAccount(result.equity, 'equity', accountName, creditAmount);
+          addResult = addAccount(result.equity, 'equity', accountName, creditAmount);
         }
       } else if (accountCode.startsWith('4') && !accountCode.startsWith('45') || accountName.includes('مبيعات') || accountName.includes('إيراد') || accountName.includes('ايراد')) {
         if (creditAmount > 0) {
-          addAccount(result.revenue, 'revenue', accountName, creditAmount);
+          addResult = addAccount(result.revenue, 'revenue', accountName, creditAmount);
         }
       } else if (accountCode.startsWith('45') || accountName.includes('مشتريات')) {
         if (debitAmount > 0 && result.purchases === 0) {
           result.purchases = debitAmount;
+          addResult = { added: true };
         }
       } else if (accountCode.startsWith('5') || accountName.includes('مصروف') || accountName.includes('مصاريف')) {
         if (debitAmount > 0 && !accountName.includes('مشتريات')) {
-          addAccount(result.expenses, 'expenses', accountName, debitAmount);
+          addResult = addAccount(result.expenses, 'expenses', accountName, debitAmount);
         }
+      }
+
+      // تسجيل الحسابات المستبعدة
+      if (!addResult.added && addResult.reason && (debitAmount > 0 || creditAmount > 0)) {
+        reconciliation.excludedAccounts.push({
+          name: accountName,
+          amount: Math.max(debitAmount, creditAmount),
+          reason: addResult.reason,
+        });
       }
     }
 
     // إذا لم يتم العثور على بيانات كافية، استخدم البيانات الافتراضية
     if (Object.keys(result.fixedAssets).length === 0 && Object.keys(result.revenue).length === 0) {
-      return emptyData;
+      return { data: emptyData, reconciliation: emptyReconciliation };
     }
 
-    return result;
+    return { data: result, reconciliation };
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -653,6 +735,220 @@ export function TrialBalanceAnalysisPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* قسم التحقق من المطابقة */}
+      {fileName && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calculator className="w-5 h-5" />
+                التحقق من مطابقة ميزان المراجعة
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowReconciliation(!showReconciliation)}
+              >
+                {showReconciliation ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* إجماليات الملف المستخرجة */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 bg-muted/50 rounded-lg border">
+                <p className="text-sm text-muted-foreground">إجمالي المدين (من الملف)</p>
+                <p className="text-xl font-bold">{formatCurrency(reconciliationData.originalTotalDebit)}</p>
+              </div>
+              <div className="p-4 bg-muted/50 rounded-lg border">
+                <p className="text-sm text-muted-foreground">إجمالي الدائن (من الملف)</p>
+                <p className="text-xl font-bold">{formatCurrency(reconciliationData.originalTotalCredit)}</p>
+              </div>
+              <div className="p-4 bg-muted/50 rounded-lg border">
+                <p className="text-sm text-muted-foreground">عدد الحسابات المستخرجة</p>
+                <p className="text-xl font-bold">{reconciliationData.rawAccounts.length}</p>
+              </div>
+              <div className="p-4 bg-muted/50 rounded-lg border">
+                <p className="text-sm text-muted-foreground">الحسابات المستبعدة (مكررة)</p>
+                <p className="text-xl font-bold text-orange-600">{reconciliationData.excludedAccounts.length}</p>
+              </div>
+            </div>
+
+            {/* إدخال الإجماليات يدوياً للمقارنة */}
+            <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center gap-2 mb-3">
+                <input
+                  type="checkbox"
+                  id="useManualTotals"
+                  checked={useManualTotals}
+                  onChange={(e) => setUseManualTotals(e.target.checked)}
+                  className="w-4 h-4 rounded"
+                />
+                <label htmlFor="useManualTotals" className="font-medium">
+                  إدخال إجماليات ميزان المراجعة يدوياً للمقارنة
+                </label>
+              </div>
+              {useManualTotals && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm whitespace-nowrap">إجمالي المدين:</label>
+                    <Input
+                      type="number"
+                      placeholder="من ملف الميزان"
+                      value={manualTotalDebit ?? ''}
+                      onChange={(e) => setManualTotalDebit(e.target.value ? parseFloat(e.target.value) : null)}
+                      className="max-w-[180px]"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm whitespace-nowrap">إجمالي الدائن:</label>
+                    <Input
+                      type="number"
+                      placeholder="من ملف الميزان"
+                      value={manualTotalCredit ?? ''}
+                      onChange={(e) => setManualTotalCredit(e.target.value ? parseFloat(e.target.value) : null)}
+                      className="max-w-[180px]"
+                    />
+                  </div>
+                </div>
+              )}
+              {useManualTotals && manualTotalDebit !== null && manualTotalCredit !== null && (
+                <div className="mt-4 p-3 rounded-lg border">
+                  <p className="font-medium mb-2">نتيجة المقارنة:</p>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">فرق المدين:</p>
+                      <p className={`font-bold ${Math.abs(manualTotalDebit - reconciliationData.originalTotalDebit) < 1 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(manualTotalDebit - reconciliationData.originalTotalDebit)}
+                        {Math.abs(manualTotalDebit - reconciliationData.originalTotalDebit) < 1 && ' ✓ متطابق'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">فرق الدائن:</p>
+                      <p className={`font-bold ${Math.abs(manualTotalCredit - reconciliationData.originalTotalCredit) < 1 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(manualTotalCredit - reconciliationData.originalTotalCredit)}
+                        {Math.abs(manualTotalCredit - reconciliationData.originalTotalCredit) < 1 && ' ✓ متطابق'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* جدول المقارنة التفصيلي */}
+            {showReconciliation && (
+              <>
+                {/* جميع الحسابات المستخرجة */}
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="bg-muted/50 p-3 border-b">
+                    <h4 className="font-semibold">جميع الحسابات المستخرجة من الملف ({reconciliationData.rawAccounts.length})</h4>
+                  </div>
+                  <div className="max-h-[400px] overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/30 sticky top-0">
+                        <tr>
+                          <th className="p-2 text-right">الرمز</th>
+                          <th className="p-2 text-right">اسم الحساب</th>
+                          <th className="p-2 text-right">التصنيف</th>
+                          <th className="p-2 text-left">مدين</th>
+                          <th className="p-2 text-left">دائن</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reconciliationData.rawAccounts.map((acc, idx) => (
+                          <tr key={idx} className="border-b hover:bg-muted/20">
+                            <td className="p-2 font-mono text-xs">{acc.code || '-'}</td>
+                            <td className="p-2">{acc.name}</td>
+                            <td className="p-2">
+                              <span className="px-2 py-1 bg-muted rounded text-xs">{acc.category}</span>
+                            </td>
+                            <td className="p-2 text-left">{acc.debit > 0 ? formatCurrency(acc.debit) : '-'}</td>
+                            <td className="p-2 text-left">{acc.credit > 0 ? formatCurrency(acc.credit) : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-muted/50 font-bold">
+                        <tr>
+                          <td className="p-2" colSpan={3}>الإجمالي</td>
+                          <td className="p-2 text-left">{formatCurrency(reconciliationData.originalTotalDebit)}</td>
+                          <td className="p-2 text-left">{formatCurrency(reconciliationData.originalTotalCredit)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+
+                {/* الحسابات المستبعدة */}
+                {reconciliationData.excludedAccounts.length > 0 && (
+                  <div className="border rounded-lg overflow-hidden border-orange-200 dark:border-orange-800">
+                    <div className="bg-orange-50 dark:bg-orange-950/20 p-3 border-b border-orange-200 dark:border-orange-800">
+                      <h4 className="font-semibold text-orange-700 dark:text-orange-400">
+                        الحسابات المستبعدة/المكررة ({reconciliationData.excludedAccounts.length})
+                      </h4>
+                      <p className="text-xs text-orange-600 dark:text-orange-500 mt-1">
+                        هذه الحسابات لم تُضاف للقوائم المالية لتجنب التكرار
+                      </p>
+                    </div>
+                    <div className="max-h-[200px] overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-orange-50/50 dark:bg-orange-950/10 sticky top-0">
+                          <tr>
+                            <th className="p-2 text-right">اسم الحساب</th>
+                            <th className="p-2 text-left">المبلغ</th>
+                            <th className="p-2 text-right">سبب الاستبعاد</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reconciliationData.excludedAccounts.map((acc, idx) => (
+                            <tr key={idx} className="border-b hover:bg-orange-50/30 dark:hover:bg-orange-950/10">
+                              <td className="p-2">{acc.name}</td>
+                              <td className="p-2 text-left">{formatCurrency(acc.amount)}</td>
+                              <td className="p-2">
+                                <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded text-xs">
+                                  {acc.reason}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* ملخص التحقق */}
+                <div className="p-4 bg-muted/30 rounded-lg border">
+                  <h4 className="font-semibold mb-3">ملخص التحقق من القوائم المالية:</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">إجمالي الأصول</p>
+                      <p className="font-bold">{formatCurrency(totalAssets)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">إجمالي الخصوم + حقوق الملكية</p>
+                      <p className="font-bold">{formatCurrency(totalLiabilitiesAndEquity)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">الفرق</p>
+                      <p className={`font-bold ${Math.abs(totalAssets - totalLiabilitiesAndEquity) < 1 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(totalAssets - totalLiabilitiesAndEquity)}
+                        {Math.abs(totalAssets - totalLiabilitiesAndEquity) < 1 && ' ✓'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">حالة التوازن</p>
+                      <p className={`font-bold ${Math.abs(totalAssets - totalLiabilitiesAndEquity) < 1 ? 'text-green-600' : 'text-red-600'}`}>
+                        {Math.abs(totalAssets - totalLiabilitiesAndEquity) < 1 ? '✓ متوازن' : '✗ غير متوازن'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
