@@ -77,6 +77,22 @@ interface CashFlowData {
   closingCash: number;
 }
 
+// حساب الوعاء الزكوي
+interface ZakatCalculationData {
+  capital: number;
+  reserves: number;
+  retainedEarnings: number;
+  netProfit: number;
+  totalEquity: number;
+  fixedAssets: number;
+  prepaidExpenses: number;
+  prepaidRent: number;
+  zakatBase: number;
+  zakatRate: number;
+  zakatAmount: number;
+  adjustments: { name: string; amount: number; type: 'add' | 'deduct' }[];
+}
+
 interface FinancialData {
   companyName: string;
   period: { from: string; to: string };
@@ -84,6 +100,7 @@ interface FinancialData {
   incomeStatement: IncomeStatementData;
   equityChanges: EquityChangesData;
   cashFlow: CashFlowData;
+  zakatCalculation: ZakatCalculationData;
 }
 
 const emptyFinancialData: FinancialData = {
@@ -127,6 +144,20 @@ const emptyFinancialData: FinancialData = {
     netChange: 0,
     openingCash: 0,
     closingCash: 0,
+  },
+  zakatCalculation: {
+    capital: 0,
+    reserves: 0,
+    retainedEarnings: 0,
+    netProfit: 0,
+    totalEquity: 0,
+    fixedAssets: 0,
+    prepaidExpenses: 0,
+    prepaidRent: 0,
+    zakatBase: 0,
+    zakatRate: 2.5,
+    zakatAmount: 0,
+    adjustments: [],
   },
 };
 
@@ -341,7 +372,41 @@ export function FinancialStatementsPage() {
     result.incomeStatement.totalOperatingExpenses = result.incomeStatement.operatingExpenses.reduce((sum, e) => sum + e.amount, 0);
     result.incomeStatement.operatingProfit = result.incomeStatement.grossProfit - result.incomeStatement.totalOperatingExpenses;
     result.incomeStatement.profitBeforeZakat = result.incomeStatement.operatingProfit + result.incomeStatement.otherIncome - result.incomeStatement.otherExpenses;
+    
+    // Calculate Zakat from equity and fixed assets
+    const capital = result.balanceSheet.equity.find(e => e.name.includes('رأس المال'))?.amount || 0;
+    const reserves = result.balanceSheet.equity.find(e => e.name.includes('احتياطي'))?.amount || 0;
+    const retainedEarnings = result.balanceSheet.equity.find(e => e.name.includes('أرباح مبقاة') || e.name.includes('ارباح مبقاه'))?.amount || 0;
+    const fixedAssetsTotal = result.balanceSheet.fixedAssets.reduce((sum, a) => sum + a.amount, 0);
+    const prepaidRent = result.balanceSheet.currentAssets.find(a => 
+      a.name.includes('ايجار مدفوع') || a.name.includes('إيجار مدفوع') || a.name.includes('ايجار مقدم')
+    )?.amount || 0;
+    const prepaidExpenses = result.balanceSheet.currentAssets.find(a => 
+      a.name.includes('مصروفات مدفوعة مقدما') || a.name.includes('مصاريف مقدمة')
+    )?.amount || 0;
+    
+    const totalEquity = capital + reserves + retainedEarnings + result.incomeStatement.profitBeforeZakat;
+    const zakatBase = totalEquity - fixedAssetsTotal - (prepaidRent * 11 / 12);
+    const zakatAmount = Math.max(0, zakatBase * 0.025);
+    
+    result.incomeStatement.zakat = zakatAmount;
     result.incomeStatement.netProfit = result.incomeStatement.profitBeforeZakat - result.incomeStatement.zakat;
+    
+    // Set Zakat Calculation data
+    result.zakatCalculation = {
+      capital,
+      reserves,
+      retainedEarnings,
+      netProfit: result.incomeStatement.profitBeforeZakat,
+      totalEquity,
+      fixedAssets: fixedAssetsTotal,
+      prepaidExpenses,
+      prepaidRent,
+      zakatBase,
+      zakatRate: 2.5,
+      zakatAmount,
+      adjustments: [],
+    };
     
     result.cashFlow.totalOperating = result.cashFlow.operating.reduce((sum, item) => sum + item.amount, 0);
     result.cashFlow.totalInvesting = result.cashFlow.investing.reduce((sum, item) => sum + item.amount, 0);
@@ -508,6 +573,20 @@ export function FinancialStatementsPage() {
           openingCash: 0,
           closingCash: totalCash,
         },
+        zakatCalculation: {
+          capital: 0,
+          reserves: 0,
+          retainedEarnings: 0,
+          netProfit: netProfit,
+          totalEquity: netProfit,
+          fixedAssets: 0,
+          prepaidExpenses: 0,
+          prepaidRent: 0,
+          zakatBase: netProfit,
+          zakatRate: 2.5,
+          zakatAmount: zakat,
+          adjustments: [],
+        },
       });
 
       setDataSource('system');
@@ -667,6 +746,55 @@ export function FinancialStatementsPage() {
       exportToExcel({ title: 'قائمة التدفق النقدي', columns, data: tableData, fileName: 'cash-flow' });
     } else {
       exportToPdf({ title: 'قائمة التدفق النقدي', subtitle: period, columns, data: tableData, fileName: 'cash-flow' });
+    }
+  };
+
+  // ===== Export Zakat Calculation =====
+  const exportZakatCalculation = (type: 'print' | 'excel' | 'pdf') => {
+    const columns = [
+      { header: 'البند', key: 'item' },
+      { header: 'المبلغ (ر.س)', key: 'amount' },
+    ];
+    
+    const zk = data.zakatCalculation;
+    const tableData = [
+      { item: '=== مصادر الوعاء الزكوي ===', amount: '' },
+      { item: 'رأس المال', amount: formatNumber(zk.capital) },
+      { item: 'الاحتياطيات', amount: formatNumber(zk.reserves) },
+      { item: 'الأرباح المحتجزة', amount: formatNumber(zk.retainedEarnings) },
+      { item: 'صافي الربح للعام', amount: formatNumber(zk.netProfit) },
+      { item: 'إجمالي حقوق الملكية', amount: formatNumber(zk.totalEquity) },
+      { item: '', amount: '' },
+      { item: '=== الحسميات من الوعاء ===', amount: '' },
+      { item: 'الأصول الثابتة', amount: `(${formatNumber(zk.fixedAssets)})` },
+      { item: 'مصروفات مدفوعة مقدماً', amount: `(${formatNumber(zk.prepaidExpenses)})` },
+      { item: 'إيجار مدفوع مقدماً (11/12)', amount: `(${formatNumber(zk.prepaidRent * 11 / 12)})` },
+      ...zk.adjustments.map(adj => ({ 
+        item: adj.name, 
+        amount: adj.type === 'deduct' ? `(${formatNumber(adj.amount)})` : formatNumber(adj.amount)
+      })),
+      { item: '', amount: '' },
+      { item: 'الوعاء الزكوي', amount: formatNumber(zk.zakatBase) },
+      { item: `نسبة الزكاة (${zk.zakatRate}%)`, amount: `${zk.zakatRate}%` },
+      { item: 'مبلغ الزكاة المستحق', amount: formatNumber(zk.zakatAmount) },
+    ];
+
+    const summaryCards = [
+      { label: 'الوعاء الزكوي', value: formatNumber(zk.zakatBase) + ' ر.س' },
+      { label: 'نسبة الزكاة', value: zk.zakatRate + '%' },
+      { label: 'الزكاة المستحقة', value: formatNumber(zk.zakatAmount) + ' ر.س' },
+    ];
+
+    const period = data.period.from && data.period.to 
+      ? `للسنة المنتهية في ${data.period.to}`
+      : undefined;
+
+    if (type === 'print') {
+      printReport({ title: 'حساب الوعاء الزكوي', subtitle: period, columns, data: tableData, summaryCards });
+    } else if (type === 'excel') {
+      exportToExcel({ title: 'حساب الوعاء الزكوي', columns, data: tableData, fileName: 'zakat-calculation', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
+    } else {
+      exportToPdf({ title: 'حساب الوعاء الزكوي', subtitle: period, columns, data: tableData, fileName: 'zakat-calculation', summaryCards });
     }
   };
 
@@ -841,6 +969,10 @@ export function FinancialStatementsPage() {
               <TabsTrigger value="cash-flow" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
                 <Wallet className="w-4 h-4" />
                 التدفق النقدي
+              </TabsTrigger>
+              <TabsTrigger value="zakat" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+                <Calculator className="w-4 h-4" />
+                حساب الزكاة
               </TabsTrigger>
             </TabsList>
           </ScrollArea>
@@ -1205,6 +1337,242 @@ export function FinancialStatementsPage() {
                     </TableRow>
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Zakat Calculation */}
+          <TabsContent value="zakat">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Calculator className="w-5 h-5" />
+                    حساب الوعاء الزكوي
+                    {data.period.to && <span className="text-sm font-normal text-muted-foreground">للسنة المنتهية في {data.period.to}</span>}
+                  </CardTitle>
+                  <ExportActions onExport={exportZakatCalculation} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Zakat Sources */}
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-lg flex items-center gap-2 text-primary">
+                      <TrendingUp className="w-5 h-5" />
+                      مصادر الوعاء الزكوي
+                    </h3>
+                    <Table>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell>رأس المال</TableCell>
+                          <TableCell className="text-left font-mono">
+                            {editMode ? (
+                              <Input
+                                type="number"
+                                value={data.zakatCalculation.capital}
+                                onChange={(e) => setData({
+                                  ...data,
+                                  zakatCalculation: { ...data.zakatCalculation, capital: Number(e.target.value) }
+                                })}
+                                className="w-32 text-left"
+                              />
+                            ) : (
+                              formatNumber(data.zakatCalculation.capital)
+                            )}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell>الاحتياطيات</TableCell>
+                          <TableCell className="text-left font-mono">
+                            {editMode ? (
+                              <Input
+                                type="number"
+                                value={data.zakatCalculation.reserves}
+                                onChange={(e) => setData({
+                                  ...data,
+                                  zakatCalculation: { ...data.zakatCalculation, reserves: Number(e.target.value) }
+                                })}
+                                className="w-32 text-left"
+                              />
+                            ) : (
+                              formatNumber(data.zakatCalculation.reserves)
+                            )}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell>الأرباح المحتجزة</TableCell>
+                          <TableCell className="text-left font-mono">
+                            {editMode ? (
+                              <Input
+                                type="number"
+                                value={data.zakatCalculation.retainedEarnings}
+                                onChange={(e) => setData({
+                                  ...data,
+                                  zakatCalculation: { ...data.zakatCalculation, retainedEarnings: Number(e.target.value) }
+                                })}
+                                className="w-32 text-left"
+                              />
+                            ) : (
+                              formatNumber(data.zakatCalculation.retainedEarnings)
+                            )}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell>صافي الربح للعام</TableCell>
+                          <TableCell className="text-left font-mono">{formatNumber(data.zakatCalculation.netProfit)}</TableCell>
+                        </TableRow>
+                        <TableRow className="bg-muted/50">
+                          <TableCell className="font-bold">إجمالي حقوق الملكية</TableCell>
+                          <TableCell className="text-left font-mono font-bold">{formatNumber(data.zakatCalculation.totalEquity)}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Deductions */}
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-lg flex items-center gap-2 text-destructive">
+                      <Scale className="w-5 h-5" />
+                      الحسميات من الوعاء
+                    </h3>
+                    <Table>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell>الأصول الثابتة</TableCell>
+                          <TableCell className="text-left font-mono text-destructive">
+                            {editMode ? (
+                              <Input
+                                type="number"
+                                value={data.zakatCalculation.fixedAssets}
+                                onChange={(e) => setData({
+                                  ...data,
+                                  zakatCalculation: { ...data.zakatCalculation, fixedAssets: Number(e.target.value) }
+                                })}
+                                className="w-32 text-left"
+                              />
+                            ) : (
+                              `(${formatNumber(data.zakatCalculation.fixedAssets)})`
+                            )}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell>مصروفات مدفوعة مقدماً</TableCell>
+                          <TableCell className="text-left font-mono text-destructive">
+                            {editMode ? (
+                              <Input
+                                type="number"
+                                value={data.zakatCalculation.prepaidExpenses}
+                                onChange={(e) => setData({
+                                  ...data,
+                                  zakatCalculation: { ...data.zakatCalculation, prepaidExpenses: Number(e.target.value) }
+                                })}
+                                className="w-32 text-left"
+                              />
+                            ) : (
+                              `(${formatNumber(data.zakatCalculation.prepaidExpenses)})`
+                            )}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell>إيجار مدفوع مقدماً (11/12)</TableCell>
+                          <TableCell className="text-left font-mono text-destructive">
+                            {editMode ? (
+                              <Input
+                                type="number"
+                                value={data.zakatCalculation.prepaidRent}
+                                onChange={(e) => setData({
+                                  ...data,
+                                  zakatCalculation: { ...data.zakatCalculation, prepaidRent: Number(e.target.value) }
+                                })}
+                                className="w-32 text-left"
+                              />
+                            ) : (
+                              `(${formatNumber(Math.round(data.zakatCalculation.prepaidRent * 11 / 12))})`
+                            )}
+                          </TableCell>
+                        </TableRow>
+                        {data.zakatCalculation.adjustments.map((adj, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell>{adj.name}</TableCell>
+                            <TableCell className={cn("text-left font-mono", adj.type === 'deduct' && 'text-destructive')}>
+                              {adj.type === 'deduct' ? `(${formatNumber(adj.amount)})` : formatNumber(adj.amount)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+
+                {/* Zakat Result */}
+                <div className="mt-6 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <Table>
+                    <TableBody>
+                      <TableRow className="bg-primary/10">
+                        <TableCell className="font-bold text-lg">الوعاء الزكوي</TableCell>
+                        <TableCell className="text-left font-mono font-bold text-lg">
+                          {editMode ? (
+                            <Input
+                              type="number"
+                              value={data.zakatCalculation.zakatBase}
+                              onChange={(e) => setData({
+                                ...data,
+                                zakatCalculation: { ...data.zakatCalculation, zakatBase: Number(e.target.value) }
+                              })}
+                              className="w-40 text-left"
+                            />
+                          ) : (
+                            formatNumber(data.zakatCalculation.zakatBase)
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>نسبة الزكاة</TableCell>
+                        <TableCell className="text-left font-mono">
+                          {editMode ? (
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={data.zakatCalculation.zakatRate}
+                              onChange={(e) => setData({
+                                ...data,
+                                zakatCalculation: { ...data.zakatCalculation, zakatRate: Number(e.target.value) }
+                              })}
+                              className="w-24 text-left"
+                            />
+                          ) : (
+                            `${data.zakatCalculation.zakatRate}%`
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow className="bg-emerald-100/50 dark:bg-emerald-950/30">
+                        <TableCell className="font-bold text-xl text-emerald-600 dark:text-emerald-400">الزكاة المستحقة</TableCell>
+                        <TableCell className="text-left font-mono font-bold text-xl text-emerald-600 dark:text-emerald-400">
+                          {editMode ? (
+                            <Input
+                              type="number"
+                              value={data.zakatCalculation.zakatAmount}
+                              onChange={(e) => setData({
+                                ...data,
+                                zakatCalculation: { ...data.zakatCalculation, zakatAmount: Number(e.target.value) }
+                              })}
+                              className="w-40 text-left"
+                            />
+                          ) : (
+                            `${formatNumber(data.zakatCalculation.zakatAmount)} ر.س`
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Formula */}
+                <div className="mt-4 p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground">
+                  <p className="font-medium mb-1">معادلة حساب الوعاء الزكوي:</p>
+                  <p className="font-mono text-xs">الوعاء الزكوي = (رأس المال + صافي الربح) - الأصول الثابتة - (11/12 من الإيجار المدفوع مقدماً)</p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
