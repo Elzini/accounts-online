@@ -571,18 +571,34 @@ export function TrialBalanceAnalysisPage() {
           console.log(`📊 حساب رئيسي: ${accountCode} - ${accountName} | مدين: ${finalDebit} | دائن: ${finalCredit}`);
         }
       }
+    }
+    
+    // البحث عن سطر الإجماليات: آخر 5 سطور في الملف
+    console.log('🔍 البحث عن سطر الإجماليات في آخر الملف...');
+    for (let i = Math.max(0, rows.length - 5); i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0) continue;
       
-      // البحث عن سطر الإجماليات (صف بدون اسم حساب وبه أرقام متساوية للمدين والدائن)
-      if (!accountName && numbers.length >= 2) {
-        const totalDebit = closingDebit;
-        const totalCredit = closingCredit;
-        // إذا كانت القيم متساوية وأكبر من أي إجمالي سابق، فهذا سطر الإجماليات
-        if (totalDebit > 0 && totalCredit > 0 && Math.abs(totalDebit - totalCredit) < 0.01) {
-          if (totalDebit > reconciliation.originalTotalDebit) {
-            reconciliation.originalTotalDebit = totalDebit;
-            reconciliation.originalTotalCredit = totalCredit;
-            console.log(`📊 سطر الإجماليات: مدين: ${totalDebit} | دائن: ${totalCredit}`);
-          }
+      // استخراج الأرقام من السطر
+      const numbers: number[] = [];
+      for (let j = 0; j < row.length; j++) {
+        const cell = row[j];
+        if (typeof cell === 'number' && !isNaN(cell)) {
+          numbers.push(cell);
+        }
+      }
+      
+      // سطر الإجماليات يحتوي على أرقام متساوية (صافي متساوي في المدين والدائن)
+      if (numbers.length >= 2) {
+        const totalCredit = numbers[0] || 0;
+        const totalDebit = numbers[1] || 0;
+        
+        // إذا كانت القيم متساوية وأكبر من مليون (إجمالي كبير)
+        if (totalDebit > 1000000 && totalCredit > 1000000 && Math.abs(totalDebit - totalCredit) < 1) {
+          reconciliation.originalTotalDebit = totalDebit;
+          reconciliation.originalTotalCredit = totalCredit;
+          console.log(`✅ تم العثور على سطر الإجماليات في السطر ${i}: مدين: ${totalDebit.toFixed(2)} | دائن: ${totalCredit.toFixed(2)}`);
+          break;
         }
       }
     }
