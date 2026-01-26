@@ -309,21 +309,35 @@ export function TrialBalanceAnalysisPage() {
       return { added: true };
     };
 
-    // دالة لتصنيف الحساب
+    // دالة لتصنيف الحساب بناءً على الكود والاسم
     const categorizeAccount = (code: string, name: string): string => {
-      if (code.startsWith('11') || name.includes('أثاث') || name.includes('أجهز') || name.includes('معدات')) {
+      const lowerName = name.toLowerCase();
+      // الأصول الثابتة (11xx)
+      if (code.startsWith('11') || lowerName.includes('أثاث') || lowerName.includes('أجهز') || lowerName.includes('معدات') || lowerName.includes('سيارات') || lowerName.includes('مباني') || lowerName.includes('عقار')) {
         return 'أصول ثابتة';
-      } else if (code.startsWith('12') || code.startsWith('13') || name.includes('بنك') || name.includes('عهد') || name.includes('مقدم')) {
+      }
+      // الأصول المتداولة (12xx, 13xx, 14xx)
+      if (code.startsWith('12') || code.startsWith('13') || code.startsWith('14') || lowerName.includes('بنك') || lowerName.includes('عهد') || lowerName.includes('مقدم') || lowerName.includes('نقد') || lowerName.includes('صندوق') || lowerName.includes('ذمم') || lowerName.includes('مدين')) {
         return 'أصول متداولة';
-      } else if (code.startsWith('2') && !code.startsWith('25') && !code.startsWith('3')) {
+      }
+      // الخصوم (2xxx ما عدا 25xx)
+      if ((code.startsWith('2') && !code.startsWith('25')) || lowerName.includes('دائن') || lowerName.includes('مستحق') || lowerName.includes('موردين')) {
         return 'خصوم';
-      } else if (code.startsWith('25') || code.startsWith('3') || name.includes('جاري') || name.includes('رأس المال')) {
+      }
+      // حقوق الملكية (25xx, 3xxx)
+      if (code.startsWith('25') || code.startsWith('3') || lowerName.includes('رأس المال') || lowerName.includes('راس المال') || lowerName.includes('جاري الشريك') || lowerName.includes('جاري المالك') || lowerName.includes('احتياطي') || lowerName.includes('أرباح مبقاة')) {
         return 'حقوق ملكية';
-      } else if ((code.startsWith('4') && !code.startsWith('45')) || name.includes('مبيعات') || name.includes('إيراد')) {
+      }
+      // الإيرادات (4xxx ما عدا 45xx)
+      if ((code.startsWith('4') && !code.startsWith('45')) || lowerName.includes('مبيعات') || lowerName.includes('إيراد') || lowerName.includes('ايراد')) {
         return 'إيرادات';
-      } else if (code.startsWith('45') || name.includes('مشتريات')) {
+      }
+      // المشتريات (45xx)
+      if (code.startsWith('45') || lowerName.includes('مشتريات')) {
         return 'مشتريات';
-      } else if (code.startsWith('5') || name.includes('مصروف') || name.includes('مصاريف')) {
+      }
+      // المصروفات (5xxx)
+      if (code.startsWith('5') || lowerName.includes('مصروف') || lowerName.includes('مصاريف') || lowerName.includes('رواتب') || lowerName.includes('إيجار') || lowerName.includes('استهلاك')) {
         return 'مصروفات';
       }
       return 'غير مصنف';
@@ -435,41 +449,54 @@ export function TrialBalanceAnalysisPage() {
       // تصنيف الحسابات بناءً على رمز الحساب (الأولوية) أو اسم الحساب
       let addResult: { added: boolean; reason?: string } = { added: false };
       
-      if (accountCode.startsWith('11') || 
-          (accountName.includes('أثاث') || accountName.includes('أجهز') || accountName.includes('معدات') || accountName.includes('سيارات') || accountName.includes('مباني'))) {
-        if (netAmount !== 0) {
-          addResult = addAccount(result.fixedAssets, 'fixedAssets', accountName, netAmount);
-        }
-      } else if (accountCode.startsWith('12') || accountCode.startsWith('13') || 
-                 accountName.includes('بنك') || accountName.includes('عهد') || accountName.includes('مقدم') || accountName.includes('نقد') || accountName.includes('صندوق')) {
-        if (netAmount !== 0) {
-          addResult = addAccount(result.currentAssets, 'currentAssets', accountName, netAmount);
-        }
-      } else if (accountCode.startsWith('2') && !accountCode.startsWith('25') && !accountCode.startsWith('3')) {
-        if ((debitAmount > 0 || creditAmount > 0) && !accountName.includes('ضريب')) {
-          const amount = creditAmount > debitAmount ? creditAmount : debitAmount;
-          if (amount > 0) {
-            addResult = addAccount(result.liabilities, 'liabilities', accountName, amount);
+      // استخدام دالة التصنيف الموحدة
+      const category = categorizeAccount(accountCode, accountName);
+      
+      // تحديد المبلغ الصحيح بناءً على نوع الحساب
+      // الأصول والمصروفات: طبيعتها مدينة (debit)
+      // الخصوم والإيرادات وحقوق الملكية: طبيعتها دائنة (credit)
+      let amount = 0;
+      
+      if (category === 'أصول ثابتة' || category === 'أصول متداولة') {
+        // الأصول تظهر كمدين - نستخدم صافي (مدين - دائن) أو المدين إذا كان أكبر
+        amount = debitAmount > creditAmount ? debitAmount - creditAmount : (debitAmount > 0 ? debitAmount : 0);
+        if (amount > 0) {
+          if (category === 'أصول ثابتة') {
+            addResult = addAccount(result.fixedAssets, 'fixedAssets', accountName, amount);
+          } else {
+            addResult = addAccount(result.currentAssets, 'currentAssets', accountName, amount);
           }
         }
-      } else if (accountCode.startsWith('25') || accountCode.startsWith('3') || 
-                 (accountName.includes('جاري') && !accountName.includes('حقوق')) || 
-                 accountName.includes('رأس المال') || accountName.includes('راس المال')) {
-        if (creditAmount > 0 && accountCode.length >= 4) {
-          addResult = addAccount(result.equity, 'equity', accountName, creditAmount);
+      } else if (category === 'خصوم') {
+        // الخصوم تظهر كدائن
+        amount = creditAmount > debitAmount ? creditAmount - debitAmount : (creditAmount > 0 ? creditAmount : 0);
+        if (amount > 0) {
+          addResult = addAccount(result.liabilities, 'liabilities', accountName, amount);
         }
-      } else if (accountCode.startsWith('4') && !accountCode.startsWith('45') || accountName.includes('مبيعات') || accountName.includes('إيراد') || accountName.includes('ايراد')) {
-        if (creditAmount > 0) {
-          addResult = addAccount(result.revenue, 'revenue', accountName, creditAmount);
+      } else if (category === 'حقوق ملكية') {
+        // حقوق الملكية تظهر كدائن
+        amount = creditAmount > debitAmount ? creditAmount - debitAmount : (creditAmount > 0 ? creditAmount : 0);
+        if (amount > 0) {
+          addResult = addAccount(result.equity, 'equity', accountName, amount);
         }
-      } else if (accountCode.startsWith('45') || accountName.includes('مشتريات')) {
-        if (debitAmount > 0 && result.purchases === 0) {
-          result.purchases = debitAmount;
+      } else if (category === 'إيرادات') {
+        // الإيرادات تظهر كدائن
+        amount = creditAmount > 0 ? creditAmount : 0;
+        if (amount > 0) {
+          addResult = addAccount(result.revenue, 'revenue', accountName, amount);
+        }
+      } else if (category === 'مشتريات') {
+        // المشتريات تظهر كمدين
+        amount = debitAmount > 0 ? debitAmount : 0;
+        if (amount > 0 && result.purchases === 0) {
+          result.purchases = amount;
           addResult = { added: true };
         }
-      } else if (accountCode.startsWith('5') || accountName.includes('مصروف') || accountName.includes('مصاريف')) {
-        if (debitAmount > 0 && !accountName.includes('مشتريات')) {
-          addResult = addAccount(result.expenses, 'expenses', accountName, debitAmount);
+      } else if (category === 'مصروفات') {
+        // المصروفات تظهر كمدين
+        amount = debitAmount > 0 ? debitAmount : 0;
+        if (amount > 0) {
+          addResult = addAccount(result.expenses, 'expenses', accountName, amount);
         }
       }
 
