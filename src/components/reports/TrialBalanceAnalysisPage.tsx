@@ -295,25 +295,26 @@ export function TrialBalanceAnalysisPage() {
       }
       
       if (shouldExclude(name)) {
+        console.log(`❌ استبعاد: ${name} - ${amount.toFixed(2)} - سبب: حساب إجمالي/رئيسي`);
         return { added: false, reason: 'حساب إجمالي/رئيسي' };
       }
       
       // تحقق من وجود حساب بنفس الاسم
       if (category[name] !== undefined) {
+        console.log(`❌ استبعاد: ${name} - ${amount.toFixed(2)} - سبب: حساب مكرر بنفس الاسم`);
         return { added: false, reason: 'حساب مكرر بنفس الاسم' };
       }
       
-      // تحقق من تكرار المبلغ في نفس الفئة (مع تساهل أكثر للمبالغ الكبيرة)
-      const roundedAmount = Math.round(Math.abs(amount) * 100) / 100;
-      if (usedAmounts[categoryName]?.has(roundedAmount) && roundedAmount < 1000000) {
-        return { added: false, reason: 'مبلغ مكرر في نفس الفئة' };
-      }
+      // لا نتحقق من تكرار المبلغ - فقط الاسم
       
       // إضافة الحساب
-      category[name] = Math.abs(amount);
+      const finalAmount = Math.abs(amount);
+      category[name] = finalAmount;
+      
+      const roundedAmount = Math.round(finalAmount * 100) / 100;
       usedAmounts[categoryName]?.add(roundedAmount);
       
-      console.log(`✅ تم إضافة: ${name} -> ${formatCurrency(Math.abs(amount))} في فئة: ${categoryName}`);
+      console.log(`✅ تم إضافة: ${name} -> ${finalAmount.toFixed(2)} في فئة: ${categoryName}`);
       return { added: true };
     };
 
@@ -490,7 +491,8 @@ export function TrialBalanceAnalysisPage() {
       
       if (category === 'أصول ثابتة' || category === 'أصول متداولة') {
         // الأصول تظهر كمدين - نستخدم صافي (مدين - دائن) أو المدين إذا كان أكبر
-        amount = debitAmount > creditAmount ? debitAmount - creditAmount : (debitAmount > 0 ? debitAmount : 0);
+        amount = debitAmount - creditAmount;
+        console.log(`🔵 أصول: ${accountName} | مدين: ${debitAmount} | دائن: ${creditAmount} | الصافي: ${amount}`);
         if (amount > 0) {
           if (category === 'أصول ثابتة') {
             addResult = addAccount(result.fixedAssets, 'fixedAssets', accountName, amount);
@@ -500,35 +502,42 @@ export function TrialBalanceAnalysisPage() {
         }
       } else if (category === 'خصوم') {
         // الخصوم تظهر كدائن
-        amount = creditAmount > debitAmount ? creditAmount - debitAmount : (creditAmount > 0 ? creditAmount : 0);
+        amount = creditAmount - debitAmount;
+        console.log(`🔴 خصوم: ${accountName} | مدين: ${debitAmount} | دائن: ${creditAmount} | الصافي: ${amount}`);
         if (amount > 0) {
           addResult = addAccount(result.liabilities, 'liabilities', accountName, amount);
         }
       } else if (category === 'حقوق ملكية') {
         // حقوق الملكية تظهر كدائن
-        amount = creditAmount > debitAmount ? creditAmount - debitAmount : (creditAmount > 0 ? creditAmount : 0);
+        amount = creditAmount - debitAmount;
+        console.log(`🟡 حقوق ملكية: ${accountName} | مدين: ${debitAmount} | دائن: ${creditAmount} | الصافي: ${amount}`);
         if (amount > 0) {
           addResult = addAccount(result.equity, 'equity', accountName, amount);
         }
       } else if (category === 'إيرادات') {
         // الإيرادات تظهر كدائن
-        amount = creditAmount > 0 ? creditAmount : 0;
+        amount = creditAmount;
+        console.log(`🟢 إيرادات: ${accountName} | دائن: ${creditAmount}`);
         if (amount > 0) {
           addResult = addAccount(result.revenue, 'revenue', accountName, amount);
         }
       } else if (category === 'مشتريات') {
         // المشتريات تظهر كمدين
-        amount = debitAmount > 0 ? debitAmount : 0;
+        amount = debitAmount;
+        console.log(`🟣 مشتريات: ${accountName} | مدين: ${debitAmount}`);
         if (amount > 0 && result.purchases === 0) {
           result.purchases = amount;
           addResult = { added: true };
         }
       } else if (category === 'مصروفات') {
         // المصروفات تظهر كمدين
-        amount = debitAmount > 0 ? debitAmount : 0;
+        amount = debitAmount;
+        console.log(`🟤 مصروفات: ${accountName} | مدين: ${debitAmount}`);
         if (amount > 0) {
           addResult = addAccount(result.expenses, 'expenses', accountName, amount);
         }
+      } else {
+        console.log(`⚪ غير مصنف: ${accountName} | Code: ${accountCode} | مدين: ${debitAmount} | دائن: ${creditAmount}`);
       }
 
       // تسجيل الحسابات المستبعدة
