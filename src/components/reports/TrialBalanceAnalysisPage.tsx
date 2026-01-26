@@ -322,8 +322,12 @@ export function TrialBalanceAnalysisPage() {
     const categorizeAccount = (code: string, name: string): string => {
       const lowerName = name.toLowerCase();
       
-      // الأصول الثابتة (11xx)
-      if (code.startsWith('11') || lowerName.includes('أثاث') || lowerName.includes('أجهز') || lowerName.includes('معدات') || lowerName.includes('سيارات') || lowerName.includes('مباني') || lowerName.includes('عقار')) {
+     // الأصول الثابتة (11xx, 15xx)
+     if (code.startsWith('11') || code.startsWith('15') || 
+         lowerName.includes('أثاث') || lowerName.includes('أجهز') || 
+         lowerName.includes('معدات') || lowerName.includes('سيارات') || 
+         lowerName.includes('مباني') || lowerName.includes('عقار') ||
+         lowerName.includes('مجمع استهلاك') || lowerName.includes('مجمع الاستهلاك')) {
         return 'أصول ثابتة';
       }
       
@@ -331,16 +335,22 @@ export function TrialBalanceAnalysisPage() {
       if (code.startsWith('12') || code.startsWith('13') || code.startsWith('14') || 
           lowerName.includes('بنك') || lowerName.includes('عهد') || lowerName.includes('مقدم') || 
           lowerName.includes('نقد') || lowerName.includes('صندوق') || lowerName.includes('ذمم') || 
-          lowerName.includes('مدين') || lowerName.includes('إيجار مدفوع') || lowerName.includes('ايجار مدفوع') ||
+         lowerName.includes('مدين') || lowerName.includes('مدينة') || 
+         lowerName.includes('إيجار مدفوع') || lowerName.includes('ايجار مدفوع') ||
+         lowerName.includes('مخزون') || lowerName.includes('بضاعة') ||
+         lowerName.includes('عملاء') || lowerName.includes('زبائن') ||
           lowerName.includes('اطراف ذات علاقه') || lowerName.includes('أطراف ذات علاقة')) {
         return 'أصول متداولة';
       }
       
       // الخصوم (2xxx ما عدا 25xx) + حسابات تفصيلية
       if ((code.startsWith('2') && !code.startsWith('25')) || 
-          lowerName.includes('دائن') || lowerName.includes('مستحق') || lowerName.includes('موردين') ||
+         lowerName.includes('دائن') || lowerName.includes('دائنة') || 
+         lowerName.includes('مستحق') || lowerName.includes('موردين') || lowerName.includes('موردون') ||
           lowerName.includes('رواتب مستحق') || lowerName.includes('ضريبة') || 
-          lowerName.includes('ضريبة المخرجات') || lowerName.includes('ضرائب')) {
+         lowerName.includes('ضريبة المخرجات') || lowerName.includes('ضرائب') ||
+         lowerName.includes('قرض') || lowerName.includes('دائنون') ||
+         lowerName.includes('مصاريف مستحقة') || lowerName.includes('التزام')) {
         return 'خصوم';
       }
       
@@ -348,8 +358,10 @@ export function TrialBalanceAnalysisPage() {
       if (code.startsWith('25') || code.startsWith('3') || 
           lowerName.includes('رأس المال') || lowerName.includes('راس المال') || 
           lowerName.includes('جاري الشريك') || lowerName.includes('جاري المالك') || 
-          lowerName.includes('جاري فلاح') || lowerName.includes('احتياطي') || 
-          lowerName.includes('أرباح مبقاة')) {
+         lowerName.includes('جاري فلاح') || lowerName.includes('جاري شريك') ||
+         lowerName.includes('احتياطي') || lowerName.includes('أرباح محتجزة') ||
+         lowerName.includes('أرباح مبقاة') || lowerName.includes('أرباح مرحلة') ||
+         lowerName.includes('خسائر مرحلة') || lowerName.includes('حقوق مساهمين')) {
         return 'حقوق ملكية';
       }
       
@@ -485,54 +497,63 @@ export function TrialBalanceAnalysisPage() {
       const category = categorizeAccount(accountCode, accountName);
       
       // تحديد المبلغ الصحيح بناءً على نوع الحساب
-      // الأصول والمصروفات: طبيعتها مدينة (debit)
-      // الخصوم والإيرادات وحقوق الملكية: طبيعتها دائنة (credit)
+     // المعادلة المحاسبية: الأصول = الخصوم + حقوق الملكية
+     // الأصول والمصروفات: طبيعتها مدينة → الرصيد = مدين - دائن
+     // الخصوم والإيرادات وحقوق الملكية: طبيعتها دائنة → الرصيد = دائن - مدين
       let amount = 0;
       
       if (category === 'أصول ثابتة' || category === 'أصول متداولة') {
-        // الأصول تظهر كمدين - نستخدم صافي (مدين - دائن) أو المدين إذا كان أكبر
+       // الأصول: طبيعتها مدينة
         amount = debitAmount - creditAmount;
         console.log(`🔵 أصول: ${accountName} | مدين: ${debitAmount} | دائن: ${creditAmount} | الصافي: ${amount}`);
-        if (amount > 0) {
+       // نضيف الحساب حتى لو كان سالباً (مثل مجمع الاستهلاك)
+       if (amount !== 0) {
           if (category === 'أصول ثابتة') {
-            addResult = addAccount(result.fixedAssets, 'fixedAssets', accountName, amount);
+           addResult = addAccount(result.fixedAssets, 'fixedAssets', accountName, Math.abs(amount));
           } else {
-            addResult = addAccount(result.currentAssets, 'currentAssets', accountName, amount);
+           addResult = addAccount(result.currentAssets, 'currentAssets', accountName, Math.abs(amount));
           }
         }
       } else if (category === 'خصوم') {
-        // الخصوم تظهر كدائن
+       // الخصوم: طبيعتها دائنة
         amount = creditAmount - debitAmount;
         console.log(`🔴 خصوم: ${accountName} | مدين: ${debitAmount} | دائن: ${creditAmount} | الصافي: ${amount}`);
         if (amount > 0) {
           addResult = addAccount(result.liabilities, 'liabilities', accountName, amount);
+       } else if (amount < 0) {
+         console.log(`⚠️ خصوم سالبة - قد تكون أصول: ${accountName}`);
+         addResult = addAccount(result.currentAssets, 'currentAssets', accountName, Math.abs(amount));
         }
       } else if (category === 'حقوق ملكية') {
-        // حقوق الملكية تظهر كدائن
+       // حقوق الملكية: طبيعتها دائنة
         amount = creditAmount - debitAmount;
         console.log(`🟡 حقوق ملكية: ${accountName} | مدين: ${debitAmount} | دائن: ${creditAmount} | الصافي: ${amount}`);
         if (amount > 0) {
           addResult = addAccount(result.equity, 'equity', accountName, amount);
+       } else if (amount < 0) {
+         console.log(`⚠️ حقوق ملكية سالبة: ${accountName}`);
+         result.equity[accountName] = amount;
+         addResult = { added: true };
         }
       } else if (category === 'إيرادات') {
-        // الإيرادات تظهر كدائن
-        amount = creditAmount;
-        console.log(`🟢 إيرادات: ${accountName} | دائن: ${creditAmount}`);
+       // الإيرادات: طبيعتها دائنة
+       amount = creditAmount - debitAmount;
+       console.log(`🟢 إيرادات: ${accountName} | مدين: ${debitAmount} | دائن: ${creditAmount} | الصافي: ${amount}`);
         if (amount > 0) {
           addResult = addAccount(result.revenue, 'revenue', accountName, amount);
         }
       } else if (category === 'مشتريات') {
-        // المشتريات تظهر كمدين
-        amount = debitAmount;
-        console.log(`🟣 مشتريات: ${accountName} | مدين: ${debitAmount}`);
+       // المشتريات: طبيعتها مدينة
+       amount = debitAmount - creditAmount;
+       console.log(`🟣 مشتريات: ${accountName} | مدين: ${debitAmount} | دائن: ${creditAmount} | الصافي: ${amount}`);
         if (amount > 0 && result.purchases === 0) {
           result.purchases = amount;
           addResult = { added: true };
         }
       } else if (category === 'مصروفات') {
-        // المصروفات تظهر كمدين
-        amount = debitAmount;
-        console.log(`🟤 مصروفات: ${accountName} | مدين: ${debitAmount}`);
+       // المصروفات: طبيعتها مدينة
+       amount = debitAmount - creditAmount;
+       console.log(`🟤 مصروفات: ${accountName} | مدين: ${debitAmount} | دائن: ${creditAmount} | الصافي: ${amount}`);
         if (amount > 0) {
           addResult = addAccount(result.expenses, 'expenses', accountName, amount);
         }
