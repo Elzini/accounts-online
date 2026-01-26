@@ -510,8 +510,8 @@ export function TrialBalanceAnalysisPage() {
          category: isHeader ? 'عنوان قسم' : (isMain ? 'حساب رئيسي' : categorizeAccount(accountCode, accountName)),
         });
 
-       // تجميع الإجماليات من الحسابات الرئيسية فقط
-       if (isMain && !isHeader) {
+       // تجميع الإجماليات من الحسابات الفرعية فقط (لتجنب الجمع المزدوج)
+       if (!isMain && !isHeader) {
           reconciliation.originalTotalDebit += debitAmount;
           reconciliation.originalTotalCredit += creditAmount;
         }
@@ -568,17 +568,13 @@ export function TrialBalanceAnalysisPage() {
       console.log('هل عنوان قسم؟', isHeader);
       console.log('هل حساب رئيسي؟', isMain);
       
-      // نتجاهل عناوين الأقسام والحسابات الفرعية التفصيلية
+      // نتجاهل عناوين الأقسام والحسابات الرئيسية (لتجنب الجمع المزدوج)
       if (isHeader) {
-        console.log('❌ تم تجاهله: عنوان قسم');
         continue;
       }
-      if (!isMain) {
-        console.log('❌ تم تجاهله: ليس حساب رئيسي');
+      if (isMain) {
         continue;
       }
-      
-      console.log('✅ سيتم معالجته كحساب رئيسي');
 
       // تصنيف الحسابات بناءً على رمز الحساب (الأولوية) أو اسم الحساب
       let addResult: { added: boolean; reason?: string } = { added: false };
@@ -1271,6 +1267,45 @@ export function TrialBalanceAnalysisPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* جدول ميزان المراجعة الكامل - مدين ودائن */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5" />
+            ميزان المراجعة (مدين ودائن)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-right py-2 font-semibold">اسم الحساب</th>
+                  <th className="text-left py-2 font-semibold">مدين (ر.س)</th>
+                  <th className="text-left py-2 font-semibold">دائن (ر.س)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reconciliationData.rawAccounts
+                  .filter(acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي')
+                  .map((acc, idx) => (
+                    <tr key={idx} className="border-b hover:bg-muted/20">
+                      <td className="py-2">{acc.name}</td>
+                      <td className="py-2 text-left">{acc.debit > 0 ? formatCurrency(acc.debit) : '-'}</td>
+                      <td className="py-2 text-left">{acc.credit > 0 ? formatCurrency(acc.credit) : '-'}</td>
+                    </tr>
+                  ))}
+                <tr className="border-t-2 bg-primary/10 font-bold">
+                  <td className="py-3">الإجمالي</td>
+                  <td className="py-3 text-left">{formatCurrency(reconciliationData.originalTotalDebit)}</td>
+                  <td className="py-3 text-left">{formatCurrency(reconciliationData.originalTotalCredit)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Income Statement */}
       <Card>
