@@ -472,6 +472,25 @@ export function TrialBalanceAnalysisPage() {
     };
 
     // === المرحلة الأولى: استخراج جميع الحسابات الخام وحساب الإجماليات الأصلية ===
+    // نبحث أولاً عن صف العناوين لمعرفة ترتيب الأعمدة
+    let columnOrder = 'rtl'; // الترتيب الافتراضي: من اليمين لليسار (عربي)
+    
+    for (let i = 0; i < Math.min(rows.length, 10); i++) {
+      const row = rows[i];
+      if (!row) continue;
+      const rowText = row.map(cell => String(cell || '')).join(' ');
+      // إذا وجدنا "مدين" قبل "دائن" في الصف، الترتيب من اليسار لليمين
+      if (rowText.includes('مدين') && rowText.includes('دائن')) {
+        const debitIdx = rowText.indexOf('مدين');
+        const creditIdx = rowText.indexOf('دائن');
+        if (debitIdx < creditIdx) {
+          columnOrder = 'ltr';
+        }
+        console.log('📊 ترتيب الأعمدة:', columnOrder === 'rtl' ? 'يمين لليسار' : 'يسار لليمين');
+        break;
+      }
+    }
+    
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       if (!row || row.length === 0) continue;
@@ -500,46 +519,85 @@ export function TrialBalanceAnalysisPage() {
         }
       }
       
-      // البحث عن المبالغ - الملف يحتوي على: الرصيد السابق، الحركة، الصافي
-      // نستخدم عمود "الصافي" (العمود الأخير) للحساب
-      
-      // نبحث عن جميع الأرقام في الصف
+      // البحث عن المبالغ - جمع كل الأرقام من الصف
       const numbers: number[] = [];
       for (let j = 0; j < row.length; j++) {
         const cell = row[j];
         if (typeof cell === 'number' && !isNaN(cell)) {
-          numbers.push(cell); // نحتفظ بالإشارة (موجب/سالب)
+          numbers.push(cell);
+        } else if (typeof cell === 'string') {
+          // محاولة تحويل النص إلى رقم (مثل "1,234.56" أو "(100)")
+          const cleaned = cell.replace(/,/g, '').replace(/\s/g, '');
+          if (/^\(?\d+\.?\d*\)?$/.test(cleaned)) {
+            let num = parseFloat(cleaned.replace(/[()]/g, ''));
+            if (cleaned.includes('(')) num = -num;
+            if (!isNaN(num)) numbers.push(num);
+          }
         }
       }
       
-      // ملف ميزان المراجعة: 6 أعمدة (الترتيب من اليسار لليمين في Excel)
-      // [0] دائن الصافي، [1] مدين الصافي
-      // [2] دائن الحركة، [3] مدين الحركة
-      // [4] دائن الرصيد السابق، [5] مدين الرصيد السابق
-      const closingCredit = numbers[0] || 0;
-      const closingDebit = numbers[1] || 0;
-      const movementCredit = numbers[2] || 0;
-      const movementDebit = numbers[3] || 0;
-      const openingCredit = numbers[4] || 0;
-      const openingDebit = numbers[5] || 0;
+      console.log(`Row ${i}: "${accountName}" (${accountCode}) - Numbers: [${numbers.join(', ')}]`);
       
-      // استخدام الصافي إذا كان موجوداً، وإلا نحسبه من الحركة
-      let finalDebit = closingDebit;
-      let finalCredit = closingCredit;
+      // ملف ميزان المراجعة: 6 أعمدة
+      // الترتيب يعتمد على اتجاه الملف
+      // RTL (عربي): [دائن صافي, مدين صافي, دائن حركة, مدين حركة, دائن سابق, مدين سابق]
+      // LTR: [مدين سابق, دائن سابق, مدين حركة, دائن حركة, مدين صافي, دائن صافي]
       
-      // إذا كان الصافي صفراً، نستخدم أكبر قيمة من الرصيد السابق أو الحركة
-      if (closingDebit === 0 && closingCredit === 0) {
-        // نحسب من الحركة أو الرصيد السابق
-        if (movementDebit > 0 || movementCredit > 0) {
-          finalDebit = movementDebit;
-          finalCredit = movementCredit;
+      let openingDebit = 0, openingCredit = 0;
+      let movementDebit = 0, movementCredit = 0;
+      let closingDebit = 0, closingCredit = 0;
+      
+      if (numbers.length >= 6) {
+        if (columnOrder === 'rtl') {
+          // من اليمين لليسار (ملف عربي نموذجي)
+          closingCredit = numbers[0] || 0;
+          closingDebit = numbers[1] || 0;
+          movementCredit = numbers[2] || 0;
+          movementDebit = numbers[3] || 0;
+          openingCredit = numbers[4] || 0;
+          openingDebit = numbers[5] || 0;
         } else {
-          finalDebit = openingDebit;
-          finalCredit = openingCredit;
+          // من اليسار لليمين
+          openingDebit = numbers[0] || 0;
+          openingCredit = numbers[1] || 0;
+          movementDebit = numbers[2] || 0;
+          movementCredit = numbers[3] || 0;
+          closingDebit = numbers[4] || 0;
+          closingCredit = numbers[5] || 0;
+        }
+      } else if (numbers.length >= 4) {
+        // 4 أعمدة: حركة + صافي فقط
+        if (columnOrder === 'rtl') {
+          closingCredit = numbers[0] || 0;
+          closingDebit = numbers[1] || 0;
+          movementCredit = numbers[2] || 0;
+          movementDebit = numbers[3] || 0;
+        } else {
+          movementDebit = numbers[0] || 0;
+          movementCredit = numbers[1] || 0;
+          closingDebit = numbers[2] || 0;
+          closingCredit = numbers[3] || 0;
+        }
+      } else if (numbers.length >= 2) {
+        // عمودين فقط: مدين ودائن
+        if (columnOrder === 'rtl') {
+          closingCredit = numbers[0] || 0;
+          closingDebit = numbers[1] || 0;
+        } else {
+          closingDebit = numbers[0] || 0;
+          closingCredit = numbers[1] || 0;
         }
       }
+      
+      // التأكد من أن القيم موجبة للعرض
+      openingDebit = Math.abs(openingDebit);
+      openingCredit = Math.abs(openingCredit);
+      movementDebit = Math.abs(movementDebit);
+      movementCredit = Math.abs(movementCredit);
+      closingDebit = Math.abs(closingDebit);
+      closingCredit = Math.abs(closingCredit);
 
-      // حفظ كل حساب يحتوي على أرقام (بما فيها الإجماليات للتوثيق)
+      // حفظ كل حساب يحتوي على أرقام
       const hasAnyValue = openingDebit > 0 || openingCredit > 0 || movementDebit > 0 || movementCredit > 0 || closingDebit > 0 || closingCredit > 0;
       
       if (accountName && hasAnyValue) {
@@ -564,17 +622,16 @@ export function TrialBalanceAnalysisPage() {
           openingCredit,
           movementDebit,
           movementCredit,
-          closingDebit: finalDebit,
-          closingCredit: finalCredit,
+          closingDebit,
+          closingCredit,
           category: accountCategory,
         });
 
         // ✅ نجمع فقط الحسابات الفرعية (3+ أرقام) للإجمالي
-        // لأنها التفاصيل الحقيقية بدون تكرار
         if (accountCode.length >= 3 && /^\d+$/.test(accountCode) && !isHeader) {
-          reconciliation.originalTotalDebit += finalDebit;
-          reconciliation.originalTotalCredit += finalCredit;
-          console.log(`📊 تم إضافة للإجمالي: ${accountCode} - ${accountName} | مدين: ${finalDebit} | دائن: ${finalCredit}`);
+          reconciliation.originalTotalDebit += closingDebit;
+          reconciliation.originalTotalCredit += closingCredit;
+          console.log(`📊 تم إضافة للإجمالي: ${accountCode} - ${accountName} | مدين: ${closingDebit} | دائن: ${closingCredit}`);
         }
       }
     }
@@ -943,13 +1000,21 @@ export function TrialBalanceAnalysisPage() {
     });
   };
 
-  // حساب إجماليات ميزان المراجعة
-  const calculatedTotalDebit = reconciliationData.rawAccounts
-    .filter(acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي')
-    .reduce((sum, acc) => sum + (acc.closingDebit || 0), 0);
-  const calculatedTotalCredit = reconciliationData.rawAccounts
-    .filter(acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي')
-    .reduce((sum, acc) => sum + (acc.closingCredit || 0), 0);
+  // حساب إجماليات ميزان المراجعة - كل الأعمدة
+  const filteredAccounts = reconciliationData.rawAccounts
+    .filter(acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي');
+  
+  const calculatedTotals = {
+    openingDebit: filteredAccounts.reduce((sum, acc) => sum + (acc.openingDebit || 0), 0),
+    openingCredit: filteredAccounts.reduce((sum, acc) => sum + (acc.openingCredit || 0), 0),
+    movementDebit: filteredAccounts.reduce((sum, acc) => sum + (acc.movementDebit || 0), 0),
+    movementCredit: filteredAccounts.reduce((sum, acc) => sum + (acc.movementCredit || 0), 0),
+    closingDebit: filteredAccounts.reduce((sum, acc) => sum + (acc.closingDebit || 0), 0),
+    closingCredit: filteredAccounts.reduce((sum, acc) => sum + (acc.closingCredit || 0), 0),
+  };
+  
+  const calculatedTotalDebit = calculatedTotals.closingDebit;
+  const calculatedTotalCredit = calculatedTotals.closingCredit;
 
   // مكون لعرض قيمة قابلة للتعديل
   const EditableValue = ({ 
@@ -1693,10 +1758,12 @@ export function TrialBalanceAnalysisPage() {
                   ))}
                 <tr className="border-t-2 bg-primary/10 font-bold">
                   <td className="py-3 px-2">الإجمالي</td>
-                  <td className="py-3 px-2 text-left border-x" colSpan={2}>-</td>
-                  <td className="py-3 px-2 text-left border-x" colSpan={2}>-</td>
-                  <td className="py-3 px-2 text-left">{formatCurrency(calculatedTotalDebit)}</td>
-                  <td className="py-3 px-2 text-left">{formatCurrency(calculatedTotalCredit)}</td>
+                  <td className="py-3 px-2 text-left border-x">{formatCurrency(calculatedTotals.openingDebit)}</td>
+                  <td className="py-3 px-2 text-left border-x">{formatCurrency(calculatedTotals.openingCredit)}</td>
+                  <td className="py-3 px-2 text-left border-x">{formatCurrency(calculatedTotals.movementDebit)}</td>
+                  <td className="py-3 px-2 text-left border-x">{formatCurrency(calculatedTotals.movementCredit)}</td>
+                  <td className="py-3 px-2 text-left">{formatCurrency(calculatedTotals.closingDebit)}</td>
+                  <td className="py-3 px-2 text-left">{formatCurrency(calculatedTotals.closingCredit)}</td>
                   {editMode && <td></td>}
                 </tr>
               </tbody>
