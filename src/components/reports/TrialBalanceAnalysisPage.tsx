@@ -207,7 +207,53 @@ export function TrialBalanceAnalysisPage() {
       purchases: 0,
     };
 
-    let currentSection = '';
+    // قائمة الكلمات التي تشير إلى حسابات إجمالية أو رئيسية يجب تجاهلها
+    const excludePatterns = [
+      'إجمالي', 'اجمالي', 'صافي', 'مجموع', 'total',
+      'حقوق الملكية ورأس المال', 'حقوق الملكيه وراس المال',
+      'الأصول الثابتة', 'الاصول الثابته', 'الأصول المتداولة', 'الاصول المتداوله',
+      'الخصوم المتداولة', 'الخصوم المتداوله', 'حقوق الملكية', 'حقوق الملكيه'
+    ];
+
+    // تتبع الحسابات المضافة لتجنب التكرار
+    const addedAccounts = new Set<string>();
+    
+    // دالة للتحقق مما إذا كان الحساب يجب استبعاده
+    const shouldExclude = (name: string): boolean => {
+      const lowerName = name.toLowerCase();
+      return excludePatterns.some(pattern => lowerName.includes(pattern.toLowerCase()));
+    };
+
+    // دالة للتحقق من التكرار (مثل جاري المالك = جاري فلاح)
+    const isDuplicate = (name: string, amount: number, category: { [key: string]: number }): boolean => {
+      // إذا كان هناك حساب بنفس المبلغ بالضبط، فهو على الأرجح تكرار
+      const existingAmounts = Object.values(category);
+      if (existingAmounts.includes(amount)) {
+        return true;
+      }
+      
+      // تحقق من تشابه الأسماء
+      const normalizedName = name.replace(/\s+/g, '').toLowerCase();
+      for (const existingName of Object.keys(category)) {
+        const normalizedExisting = existingName.replace(/\s+/g, '').toLowerCase();
+        // إذا كان أحدهما يحتوي على الآخر
+        if (normalizedName.includes(normalizedExisting) || normalizedExisting.includes(normalizedName)) {
+          return true;
+        }
+      }
+      
+      return addedAccounts.has(name);
+    };
+
+    // دالة لإضافة حساب مع التحقق من التكرار
+    const addAccount = (category: { [key: string]: number }, name: string, amount: number): boolean => {
+      if (!name || amount === 0 || shouldExclude(name) || isDuplicate(name, amount, category)) {
+        return false;
+      }
+      category[name] = Math.abs(amount);
+      addedAccounts.add(name);
+      return true;
+    };
     
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -243,38 +289,46 @@ export function TrialBalanceAnalysisPage() {
       const creditAmount = numbers.length > 1 ? Math.abs(numbers[1]) : 0;
       const netAmount = debitAmount - creditAmount;
 
-      // تصنيف الحسابات
-      if (accountCode.startsWith('11') || accountName.includes('ثابت') || accountName.includes('أثاث') || accountName.includes('أجهز')) {
-        if (accountName && netAmount !== 0 && !accountName.includes('صافي') && !accountName.includes('إجمالي')) {
-          result.fixedAssets[accountName] = Math.abs(netAmount);
+      // تجاهل الحسابات الإجمالية
+      if (shouldExclude(accountName)) continue;
+
+      // تصنيف الحسابات بناءً على رمز الحساب (الأولوية) أو اسم الحساب
+      if (accountCode.startsWith('11') || 
+          (accountName.includes('أثاث') || accountName.includes('أجهز') || accountName.includes('معدات') || accountName.includes('سيارات') || accountName.includes('مباني'))) {
+        if (netAmount !== 0) {
+          addAccount(result.fixedAssets, accountName, netAmount);
         }
       } else if (accountCode.startsWith('12') || accountCode.startsWith('13') || 
-                 accountName.includes('بنك') || accountName.includes('عهد') || accountName.includes('مقدم')) {
-        if (accountName && netAmount !== 0 && !accountName.includes('إجمالي') && !accountName.includes('متداول')) {
-          result.currentAssets[accountName] = Math.abs(netAmount);
+                 accountName.includes('بنك') || accountName.includes('عهد') || accountName.includes('مقدم') || accountName.includes('نقد') || accountName.includes('صندوق')) {
+        if (netAmount !== 0) {
+          addAccount(result.currentAssets, accountName, netAmount);
         }
-      } else if (accountCode.startsWith('2') && !accountCode.startsWith('25')) {
-        if (accountName && (debitAmount > 0 || creditAmount > 0) && !accountName.includes('إجمالي')) {
+      } else if (accountCode.startsWith('2') && !accountCode.startsWith('25') && !accountCode.startsWith('3')) {
+        if ((debitAmount > 0 || creditAmount > 0) && !accountName.includes('ضريب')) {
           const amount = creditAmount > debitAmount ? creditAmount : debitAmount;
-          if (amount > 0 && !accountName.includes('ضريب')) {
-            result.liabilities[accountName] = amount;
+          if (amount > 0) {
+            addAccount(result.liabilities, accountName, amount);
           }
         }
-      } else if (accountCode.startsWith('25') || accountName.includes('جاري') || accountName.includes('رأس المال')) {
-        if (accountName && creditAmount > 0) {
-          result.equity[accountName] = creditAmount;
+      } else if (accountCode.startsWith('25') || accountCode.startsWith('3') || 
+                 (accountName.includes('جاري') && !accountName.includes('حقوق')) || 
+                 accountName.includes('رأس المال') || accountName.includes('راس المال')) {
+        // حقوق الملكية - نأخذ فقط الحسابات التفصيلية (الفرعية)
+        if (creditAmount > 0 && accountCode.length >= 4) {
+          // نتحقق أن هذا حساب فرعي وليس رئيسي
+          addAccount(result.equity, accountName, creditAmount);
         }
-      } else if (accountCode.startsWith('3') || accountName.includes('مبيعات') || accountName.includes('إيراد')) {
-        if (accountName && creditAmount > 0 && !accountName.includes('إجمالي')) {
-          result.revenue[accountName] = creditAmount;
+      } else if (accountCode.startsWith('4') && !accountCode.startsWith('45') || accountName.includes('مبيعات') || accountName.includes('إيراد') || accountName.includes('ايراد')) {
+        if (creditAmount > 0) {
+          addAccount(result.revenue, accountName, creditAmount);
         }
       } else if (accountCode.startsWith('45') || accountName.includes('مشتريات')) {
-        if (debitAmount > 0) {
+        if (debitAmount > 0 && result.purchases === 0) {
           result.purchases = debitAmount;
         }
-      } else if (accountCode.startsWith('4') || accountName.includes('مصروف') || accountName.includes('مصاريف')) {
-        if (accountName && debitAmount > 0 && !accountName.includes('إجمالي') && !accountName.includes('مشتريات')) {
-          result.expenses[accountName] = debitAmount;
+      } else if (accountCode.startsWith('5') || accountName.includes('مصروف') || accountName.includes('مصاريف')) {
+        if (debitAmount > 0 && !accountName.includes('مشتريات')) {
+          addAccount(result.expenses, accountName, debitAmount);
         }
       }
     }
