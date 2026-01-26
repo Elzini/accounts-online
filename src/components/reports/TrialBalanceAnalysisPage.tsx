@@ -517,27 +517,50 @@ export function TrialBalanceAnalysisPage() {
       const isMovementLabel = (t: string) =>
         t.includes('الحركة') || t.includes('حركة') || t.includes('دوران') || t.includes('المتغير');
       const isClosingLabel = (t: string) =>
-        t.includes('الصافي') || t.includes('الختامي') || t.includes('الرصيد الختامي') || t.includes('نهاية');
+        t.includes('الصافي') || t.includes('الختامي') || t.includes('الرصيد الختامي') || t.includes('نهاية') || t.includes('ختامي');
 
       const map: ColumnMap = { headerRowIndex: 0 };
 
-      // 1) ابحث عن صف فيه العناوين الرئيسية (الرصيد السابق/الحركة/الصافي)
+      // سجّل أول 5 صفوف للتصحيح
+      console.log('🔍 أول 10 صفوف في الملف:');
+      for (let i = 0; i < Math.min(allRows.length, 10); i++) {
+        console.log(`  Row ${i}:`, allRows[i]);
+      }
+
+      // 1) ابحث عن صف فيه العناوين الرئيسية (الرصيد السابق/الحركة/الصافي أو مدين/دائن)
       for (let i = 0; i < maxScan; i++) {
         const row = allRows[i];
         if (!row) continue;
         const joined = row.map(normalize).join(' ');
-        if ((joined.includes('الرصيد') || joined.includes('افتتاح')) && joined.includes('الحركة') && (joined.includes('الصافي') || joined.includes('الختامي'))) {
+        
+        // طريقة 1: بحث عن الأقسام الثلاثة
+        if ((joined.includes('الرصيد') || joined.includes('افتتاح') || joined.includes('سابق')) && 
+            joined.includes('الحركة') && 
+            (joined.includes('الصافي') || joined.includes('الختامي') || joined.includes('ختامي'))) {
           map.headerRowIndex = i;
+          console.log(`📌 وُجد صف الترويسة (طريقة 1) في الصف: ${i}`);
+          break;
+        }
+        
+        // طريقة 2: بحث عن مدين/دائن متعدد (على الأقل 4 أعمدة رقمية)
+        const debitCount = row.filter((c: any) => normalize(c) === 'مدين').length;
+        const creditCount = row.filter((c: any) => normalize(c) === 'دائن').length;
+        if (debitCount >= 2 && creditCount >= 2) {
+          map.headerRowIndex = i;
+          console.log(`📌 وُجد صف الترويسة (طريقة 2: مدين/دائن) في الصف: ${i}`);
           break;
         }
       }
 
       const headerRow = allRows[map.headerRowIndex] || [];
       const subHeaderRow = allRows[map.headerRowIndex + 1] || [];
+      
+      console.log('📊 صف الترويسة الرئيسي:', headerRow);
+      console.log('📊 صف الترويسة الفرعي:', subHeaderRow);
 
       // 2) اكتشف أعمدة الاسم/الكود من الترويسة
       const nameKeywords = ['اسم الحساب', 'الحساب', 'البيان', 'account', 'description'];
-      const codeKeywords = ['رقم الحساب', 'الرمز', 'كود', 'code'];
+      const codeKeywords = ['رقم الحساب', 'الرمز', 'كود', 'code', 'رقم'];
 
       const findColByKeywords = (rowA: any[], rowB: any[], keywords: string[]) => {
         const maxCols = Math.max(rowA.length, rowB.length);
@@ -554,25 +577,59 @@ export function TrialBalanceAnalysisPage() {
       // 3) ابني خريطة أعمدة المدين/الدائن لكل قسم بالاعتماد على صفين (merged headers)
       const maxCols = Math.max(headerRow.length, subHeaderRow.length);
       let currentSection = '';
+      
       for (let c = 0; c < maxCols; c++) {
         const sectionCell = normalize(headerRow[c]);
         if (sectionCell) currentSection = sectionCell;
         const dc = normalize(subHeaderRow[c]);
-        const isDebit = dc.includes('مدين');
-        const isCredit = dc.includes('دائن');
+        const isDebit = dc === 'مدين' || dc.includes('مدين');
+        const isCredit = dc === 'دائن' || dc.includes('دائن');
 
-        if (!currentSection || (!isDebit && !isCredit)) continue;
+        if (!isDebit && !isCredit) continue;
 
+        // تحقق من القسم الحالي
         if (isOpeningLabel(currentSection)) {
-          if (isDebit) map.openingDebit = c;
-          if (isCredit) map.openingCredit = c;
+          if (isDebit && map.openingDebit === undefined) map.openingDebit = c;
+          if (isCredit && map.openingCredit === undefined) map.openingCredit = c;
         } else if (isMovementLabel(currentSection)) {
-          if (isDebit) map.movementDebit = c;
-          if (isCredit) map.movementCredit = c;
+          if (isDebit && map.movementDebit === undefined) map.movementDebit = c;
+          if (isCredit && map.movementCredit === undefined) map.movementCredit = c;
         } else if (isClosingLabel(currentSection)) {
-          if (isDebit) map.closingDebit = c;
-          if (isCredit) map.closingCredit = c;
+          if (isDebit && map.closingDebit === undefined) map.closingDebit = c;
+          if (isCredit && map.closingCredit === undefined) map.closingCredit = c;
         }
+      }
+
+      // 4) Fallback: إذا لم نجد الأعمدة، نفترض ترتيب ثابت بناءً على عدد أعمدة مدين/دائن
+      const allDebitCols: number[] = [];
+      const allCreditCols: number[] = [];
+      for (let c = 0; c < maxCols; c++) {
+        const dc = normalize(subHeaderRow[c]);
+        if (dc === 'مدين' || dc.includes('مدين')) allDebitCols.push(c);
+        if (dc === 'دائن' || dc.includes('دائن')) allCreditCols.push(c);
+      }
+      
+      console.log('📍 أعمدة المدين:', allDebitCols);
+      console.log('📍 أعمدة الدائن:', allCreditCols);
+
+      // إذا وجدنا 3 أعمدة مدين و3 دائن، نفترض: سابق، حركة، صافي
+      if (allDebitCols.length >= 3 && allCreditCols.length >= 3) {
+        if (map.openingDebit === undefined) map.openingDebit = allDebitCols[0];
+        if (map.openingCredit === undefined) map.openingCredit = allCreditCols[0];
+        if (map.movementDebit === undefined) map.movementDebit = allDebitCols[1];
+        if (map.movementCredit === undefined) map.movementCredit = allCreditCols[1];
+        if (map.closingDebit === undefined) map.closingDebit = allDebitCols[2];
+        if (map.closingCredit === undefined) map.closingCredit = allCreditCols[2];
+      } else if (allDebitCols.length >= 2 && allCreditCols.length >= 2) {
+        // عمودين فقط: حركة + صافي أو سابق + صافي
+        if (map.closingDebit === undefined) map.closingDebit = allDebitCols[allDebitCols.length - 1];
+        if (map.closingCredit === undefined) map.closingCredit = allCreditCols[allCreditCols.length - 1];
+        if (map.openingDebit === undefined) map.openingDebit = allDebitCols[0];
+        if (map.openingCredit === undefined) map.openingCredit = allCreditCols[0];
+      } else if (allDebitCols.length >= 1 && allCreditCols.length >= 1) {
+        // عمود واحد فقط
+        if (map.closingDebit === undefined) map.closingDebit = allDebitCols[0];
+        if (map.closingCredit === undefined) map.closingCredit = allCreditCols[0];
       }
 
       console.log('🧭 Trial Balance column map:', map);
@@ -580,7 +637,10 @@ export function TrialBalanceAnalysisPage() {
     };
 
     const colMap = detectColumnMap(rows);
-    const startDataRow = Math.min(rows.length, (colMap.headerRowIndex || 0) + 2);
+    const startDataRow = Math.max(0, (colMap.headerRowIndex || 0) + 2);
+    
+    console.log(`📈 بدء قراءة البيانات من الصف: ${startDataRow}`);
+    console.log(`📈 إجمالي الصفوف: ${rows.length}`);
 
     for (let i = startDataRow; i < rows.length; i++) {
       const row = rows[i];
