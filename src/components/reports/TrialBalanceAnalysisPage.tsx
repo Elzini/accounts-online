@@ -566,9 +566,9 @@ export function TrialBalanceAnalysisPage() {
           category: accountCategory,
         });
 
-        // ✅ المنطق الجديد: نجمع فقط الحسابات الرئيسية (1-2 رقم)
-        // هذا يضمن أخذ إجمالي كل قسم مرة واحدة بدون تكرار
-        if (isMain && !isHeader) {
+        // ✅ نجمع فقط الحسابات ذات رقم واحد (1، 2، 3، 4) لتجنب التكرار
+        // لأن الحساب 1 يشمل 11 + 12 + 13، والحساب 2 يشمل 21 + 22، وهكذا
+        if (accountCode.length === 1 && /^\d$/.test(accountCode) && !isHeader) {
           reconciliation.originalTotalDebit += finalDebit;
           reconciliation.originalTotalCredit += finalCredit;
           console.log(`📊 تم إضافة للإجمالي: ${accountCode} - ${accountName} | مدين: ${finalDebit} | دائن: ${finalCredit}`);
@@ -576,14 +576,14 @@ export function TrialBalanceAnalysisPage() {
       }
     }
     
-    // === المرحلة الثانية: استخراج البيانات الأساسية والتصنيف ===
-    for (let i = 0; i < rows.length; i++) {
+    // === المرحلة الثانية: استخراج البيانات الأساسية (من الصفوف الأولى) ===
+    for (let i = 0; i < Math.min(rows.length, 15); i++) {
       const row = rows[i];
       if (!row || row.length === 0) continue;
 
       // استخراج اسم الشركة
       const firstCell = String(row[0] || '').trim();
-      if (i < 5 && firstCell && !result.companyName && firstCell.length > 5) {
+      if (firstCell && !result.companyName && firstCell.length > 5) {
         result.companyName = firstCell;
       }
 
@@ -600,14 +600,12 @@ export function TrialBalanceAnalysisPage() {
         result.period.from = dateMatch[0];
         result.period.to = dateMatch[1];
       }
+    }
 
-      const accountName = String(row.find(cell => typeof cell === 'string' && cell.length > 2) || '').trim();
-      const accountCode = String(row.find(cell => typeof cell === 'number' || /^\d+$/.test(String(cell))) || '');
-      
-      // البحث في البيانات المستخرجة مسبقًا من المرحلة الأولى
-      const existingData = reconciliation.rawAccounts.find(acc => acc.name === accountName);
-      
-      if (!existingData) continue; // إذا لم يكن موجود في البيانات الخام، تجاهله
+    // === المرحلة الثالثة: تصنيف الحسابات من البيانات المستخرجة ===
+    for (const existingData of reconciliation.rawAccounts) {
+      const accountName = existingData.name;
+      const accountCode = existingData.code;
       
       const debitAmount = existingData.closingDebit;
       const creditAmount = existingData.closingCredit;
@@ -626,14 +624,23 @@ export function TrialBalanceAnalysisPage() {
       console.log('الصافي:', netAmount);
       console.log('نوع الحساب:', isMain ? 'رئيسي' : (isSub ? 'فرعي' : 'عنوان'));
       
-      // نعالج الحسابات الرئيسية فقط (1-2 رقم) للقوائم المالية
-      // لأنها تحتوي على الإجماليات الصحيحة
+      // نعالج الحسابات ذات المستوى الثاني (2 رقم) للقوائم المالية
+      // مثل: 11 (أصول ثابتة)، 12 (أصول متداولة)، 23 (خصوم)، 25 (حقوق ملكية)، 31 (مبيعات)، 41، 44، 45 (مصروفات)
       if (isHeader) {
         console.log('⏭️ تجاهل: عنوان قسم');
         continue;
       }
-      if (!isMain) {
-        console.log('⏭️ تجاهل: ليس حساب رئيسي');
+      
+      // نستخدم الحسابات ذات رقمين (المستوى الثاني) أو أكثر للتفاصيل
+      // ونتجاهل الحسابات ذات رقم واحد (1، 2، 3، 4) لأنها إجماليات
+      if (accountCode.length === 1) {
+        console.log('⏭️ تجاهل: إجمالي رئيسي');
+        continue;
+      }
+      
+      // نتجاهل الحسابات التي ليس لها كود صحيح
+      if (!accountCode || !/^\d+$/.test(accountCode)) {
+        console.log('⏭️ تجاهل: بدون كود');
         continue;
       }
 
