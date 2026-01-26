@@ -3,13 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator, Upload, X, FileUp, Save, Trash2, FolderOpen } from 'lucide-react';
+import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator, Upload, X, FileUp, Save, Trash2, FolderOpen, FileText } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 interface TrialBalanceData {
   companyName: string;
   vatNumber: string;
@@ -59,6 +60,8 @@ export function TrialBalanceAnalysisPage() {
   const [selectedImportId, setSelectedImportId] = useState<string | null>(null);
   const [importName, setImportName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   // جلب الملفات المحفوظة
   useEffect(() => {
@@ -434,6 +437,56 @@ export function TrialBalanceAnalysisPage() {
     }
   };
 
+  // تصدير PDF
+  const exportToPdf = async () => {
+    if (!reportRef.current) return;
+    
+    setIsExportingPdf(true);
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+      
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const imgWidth = pageWidth - 20;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 10;
+      
+      // إضافة الصفحة الأولى
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= (pageHeight - 20);
+      
+      // إضافة صفحات إضافية إذا لزم الأمر
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + 10;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= (pageHeight - 20);
+      }
+      
+      pdf.save(`تحليل_ميزان_المراجعة_${data.period.to || new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success('تم تصدير PDF بنجاح');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast.error('فشل تصدير PDF');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   return (
     <div className="space-y-6" dir="rtl">
       {/* Upload Section */}
@@ -542,12 +595,20 @@ export function TrialBalanceAnalysisPage() {
           <p className="text-muted-foreground">القوائم المالية للسنة المنتهية في {data.period.to}</p>
           {data.vatNumber && <p className="text-sm text-muted-foreground">الرقم الضريبي: {data.vatNumber}</p>}
         </div>
-        <Button onClick={exportToExcel} disabled={isExporting} className="gap-2">
-          <Download className="w-4 h-4" />
-          {isExporting ? 'جاري التصدير...' : 'تصدير Excel'}
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={exportToPdf} disabled={isExportingPdf} variant="outline" className="gap-2">
+            <FileText className="w-4 h-4" />
+            {isExportingPdf ? 'جاري التصدير...' : 'تصدير PDF'}
+          </Button>
+          <Button onClick={exportToExcel} disabled={isExporting} className="gap-2">
+            <Download className="w-4 h-4" />
+            {isExporting ? 'جاري التصدير...' : 'تصدير Excel'}
+          </Button>
+        </div>
       </div>
 
+      {/* Report Content - للتصدير */}
+      <div ref={reportRef} className="space-y-6 bg-background">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -830,6 +891,7 @@ export function TrialBalanceAnalysisPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
