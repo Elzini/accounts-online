@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator, Upload, X, FileUp, Save, Trash2, FolderOpen, FileText } from 'lucide-react';
+import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator, Upload, X, FileUp, Save, Trash2, FolderOpen, FileText, Eye } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -11,6 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { TrialBalancePreviewDialog } from './TrialBalancePreviewDialog';
+
 interface TrialBalanceData {
   companyName: string;
   vatNumber: string;
@@ -73,6 +75,7 @@ export function TrialBalanceAnalysisPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reportRef = useRef<HTMLDivElement>(null);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   
   // حقول إدخال يدوية لحساب الزكاة بدقة
   const [manualCapital, setManualCapital] = useState<number | null>(null);
@@ -1026,6 +1029,10 @@ export function TrialBalanceAnalysisPage() {
           {data.vatNumber && <p className="text-sm text-muted-foreground">الرقم الضريبي: {data.vatNumber}</p>}
         </div>
         <div className="flex gap-2">
+          <Button onClick={() => setShowPreview(true)} variant="outline" className="gap-2">
+            <Eye className="w-4 h-4" />
+            معاينة
+          </Button>
           <Button onClick={exportToPdf} disabled={isExportingPdf} variant="outline" className="gap-2">
             <FileText className="w-4 h-4" />
             {isExportingPdf ? 'جاري التصدير...' : 'تصدير PDF'}
@@ -1372,6 +1379,31 @@ export function TrialBalanceAnalysisPage() {
         </CardContent>
       </Card>
       </div>
+
+      {/* Preview Dialog */}
+      <TrialBalancePreviewDialog
+        open={showPreview}
+        onOpenChange={setShowPreview}
+        data={data}
+        calculations={{
+          totalRevenue,
+          costOfSales,
+          grossProfit,
+          totalExpenses,
+          netIncome,
+          totalFixedAssets,
+          totalCurrentAssets,
+          totalAssets,
+          totalLiabilities,
+          totalEquity,
+          adjustedEquity,
+          totalLiabilitiesAndEquity,
+          capitalForZakat,
+          zakatBase,
+          zakatDue,
+          prepaidRentLongTerm,
+        }}
+      />
     </div>
   );
 }
