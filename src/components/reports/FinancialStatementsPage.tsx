@@ -206,22 +206,70 @@ export function FinancialStatementsPage() {
   // ===== Parse Excel File =====
   const parseExcelFile = async (file: File) => {
     setIsLoading(true);
+    console.log('📁 Starting to parse file:', file.name);
+    
     try {
       const reader = new FileReader();
+      
+      reader.onerror = (error) => {
+        console.error('❌ FileReader error:', error);
+        toast.error('خطأ في قراءة الملف');
+        setIsLoading(false);
+      };
       
       reader.onload = (e) => {
         try {
           const arrayBuffer = e.target?.result as ArrayBuffer;
+          console.log('📦 File loaded, size:', arrayBuffer?.byteLength, 'bytes');
+          
+          if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+            toast.error('الملف فارغ');
+            setIsLoading(false);
+            return;
+          }
+          
           const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+          console.log('📊 Workbook sheets:', workbook.SheetNames);
+          
+          if (workbook.SheetNames.length === 0) {
+            toast.error('الملف لا يحتوي على أي صفحات');
+            setIsLoading(false);
+            return;
+          }
+          
+          // Log raw data from each sheet
+          workbook.SheetNames.forEach((sheetName, idx) => {
+            const ws = workbook.Sheets[sheetName];
+            const rawData = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as any[][];
+            console.log(`📄 Sheet ${idx + 1} "${sheetName}": ${rawData.length} rows`);
+            if (rawData.length > 0) {
+              console.log('  First 3 rows:', rawData.slice(0, 3));
+            }
+          });
           
           const parsedData = parseFinancialStatements(workbook);
+          console.log('✅ Parsed data:', parsedData);
+          
+          // Check if any data was parsed
+          const hasData = 
+            parsedData.balanceSheet.currentAssets.length > 0 ||
+            parsedData.balanceSheet.fixedAssets.length > 0 ||
+            parsedData.balanceSheet.totalAssets > 0 ||
+            parsedData.incomeStatement.revenue > 0 ||
+            parsedData.incomeStatement.netProfit !== 0;
+          
+          if (!hasData) {
+            console.warn('⚠️ No financial data was extracted from the file');
+            toast.warning('لم يتم العثور على بيانات مالية في الملف - تأكد من تطابق أسماء الصفحات أو العناوين');
+          }
+          
           setData(parsedData);
           setFileName(file.name);
           setDataSource('excel');
-          toast.success('تم تحليل الملف بنجاح');
+          toast.success(`تم تحليل الملف بنجاح (${workbook.SheetNames.length} صفحة)`);
         } catch (error) {
-          console.error('Error parsing Excel:', error);
-          toast.error('خطأ في تحليل الملف');
+          console.error('❌ Error parsing Excel:', error);
+          toast.error('خطأ في تحليل الملف: ' + (error as Error).message);
         } finally {
           setIsLoading(false);
         }
@@ -229,7 +277,7 @@ export function FinancialStatementsPage() {
       
       reader.readAsArrayBuffer(file);
     } catch (error) {
-      console.error('Error reading file:', error);
+      console.error('❌ Error reading file:', error);
       toast.error('خطأ في قراءة الملف');
       setIsLoading(false);
     }
