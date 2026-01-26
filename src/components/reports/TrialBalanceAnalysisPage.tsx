@@ -851,6 +851,106 @@ export function TrialBalanceAnalysisPage() {
     });
   };
 
+  // دوال تعديل ميزان المراجعة الشامل
+  const updateTrialBalanceAccount = (
+    index: number,
+    field: keyof AccountData,
+    value: string | number
+  ) => {
+    setReconciliationData(prev => {
+      const filteredAccounts = prev.rawAccounts.filter(
+        acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي'
+      );
+      const actualIndex = prev.rawAccounts.findIndex(
+        acc => acc === filteredAccounts[index]
+      );
+      
+      if (actualIndex === -1) return prev;
+      
+      const newAccounts = [...prev.rawAccounts];
+      newAccounts[actualIndex] = {
+        ...newAccounts[actualIndex],
+        [field]: value
+      };
+      
+      // إعادة حساب الإجماليات
+      const newTotalDebit = newAccounts
+        .filter(acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي')
+        .reduce((sum, acc) => sum + (acc.closingDebit || 0), 0);
+      const newTotalCredit = newAccounts
+        .filter(acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي')
+        .reduce((sum, acc) => sum + (acc.closingCredit || 0), 0);
+      
+      return {
+        ...prev,
+        rawAccounts: newAccounts,
+        originalTotalDebit: newTotalDebit,
+        originalTotalCredit: newTotalCredit
+      };
+    });
+  };
+
+  const addNewTrialBalanceAccount = () => {
+    const name = prompt('أدخل اسم الحساب الجديد:');
+    if (name && name.trim()) {
+      setReconciliationData(prev => ({
+        ...prev,
+        rawAccounts: [
+          ...prev.rawAccounts,
+          {
+            code: '',
+            name: name.trim(),
+            openingDebit: 0,
+            openingCredit: 0,
+            movementDebit: 0,
+            movementCredit: 0,
+            closingDebit: 0,
+            closingCredit: 0,
+            category: 'حساب فرعي'
+          }
+        ]
+      }));
+    }
+  };
+
+  const deleteTrialBalanceAccount = (index: number) => {
+    setReconciliationData(prev => {
+      const filteredAccounts = prev.rawAccounts.filter(
+        acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي'
+      );
+      const actualIndex = prev.rawAccounts.findIndex(
+        acc => acc === filteredAccounts[index]
+      );
+      
+      if (actualIndex === -1) return prev;
+      
+      const newAccounts = prev.rawAccounts.filter((_, i) => i !== actualIndex);
+      
+      // إعادة حساب الإجماليات
+      const newTotalDebit = newAccounts
+        .filter(acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي')
+        .reduce((sum, acc) => sum + (acc.closingDebit || 0), 0);
+      const newTotalCredit = newAccounts
+        .filter(acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي')
+        .reduce((sum, acc) => sum + (acc.closingCredit || 0), 0);
+      
+      return {
+        ...prev,
+        rawAccounts: newAccounts,
+        originalTotalDebit: newTotalDebit,
+        originalTotalCredit: newTotalCredit
+      };
+    });
+  };
+
+  // حساب إجماليات ميزان المراجعة
+  const calculatedTotalDebit = reconciliationData.rawAccounts
+    .filter(acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي')
+    .reduce((sum, acc) => sum + (acc.closingDebit || 0), 0);
+  const calculatedTotalCredit = reconciliationData.rawAccounts
+    .filter(acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي')
+    .reduce((sum, acc) => sum + (acc.closingCredit || 0), 0);
+
   // مكون لعرض قيمة قابلة للتعديل
   const EditableValue = ({ 
     value, 
@@ -1460,9 +1560,21 @@ export function TrialBalanceAnalysisPage() {
       {/* جدول ميزان المراجعة الكامل - 6 أعمدة */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5" />
-            ميزان المراجعة الشامل (رصيد سابق + حركة + صافي)
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileSpreadsheet className="w-5 h-5" />
+              ميزان المراجعة الشامل (رصيد سابق + حركة + صافي)
+            </div>
+            {editMode && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={addNewTrialBalanceAccount}
+                className="text-xs gap-1"
+              >
+                + إضافة حساب
+              </Button>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -1474,6 +1586,7 @@ export function TrialBalanceAnalysisPage() {
                   <th className="text-center py-2 px-2 font-semibold border-x" colSpan={2}>الرصيد السابق</th>
                   <th className="text-center py-2 px-2 font-semibold border-x" colSpan={2}>الحركة</th>
                   <th className="text-center py-2 px-2 font-semibold" colSpan={2}>الصافي</th>
+                  {editMode && <th className="py-2 px-2" rowSpan={2}></th>}
                 </tr>
                 <tr className="border-b bg-muted/30">
                   <th className="text-left py-1 px-2 text-xs border-x">مدين</th>
@@ -1489,21 +1602,102 @@ export function TrialBalanceAnalysisPage() {
                   .filter(acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي')
                   .map((acc, idx) => (
                     <tr key={idx} className="border-b hover:bg-muted/20">
-                      <td className="py-2 px-2">{acc.name}</td>
-                      <td className="py-2 px-2 text-left border-x">{acc.openingDebit > 0 ? formatCurrency(acc.openingDebit) : '-'}</td>
-                      <td className="py-2 px-2 text-left border-x">{acc.openingCredit > 0 ? formatCurrency(acc.openingCredit) : '-'}</td>
-                      <td className="py-2 px-2 text-left border-x">{acc.movementDebit > 0 ? formatCurrency(acc.movementDebit) : '-'}</td>
-                      <td className="py-2 px-2 text-left border-x">{acc.movementCredit > 0 ? formatCurrency(acc.movementCredit) : '-'}</td>
-                      <td className="py-2 px-2 text-left">{acc.closingDebit > 0 ? formatCurrency(acc.closingDebit) : '-'}</td>
-                      <td className="py-2 px-2 text-left">{acc.closingCredit > 0 ? formatCurrency(acc.closingCredit) : '-'}</td>
+                      <td className="py-2 px-2">
+                        {editMode ? (
+                          <Input
+                            value={acc.name}
+                            onChange={(e) => updateTrialBalanceAccount(idx, 'name', e.target.value)}
+                            className="h-7 text-sm min-w-[120px]"
+                          />
+                        ) : acc.name}
+                      </td>
+                      <td className="py-2 px-2 text-left border-x">
+                        {editMode ? (
+                          <Input
+                            type="number"
+                            value={acc.openingDebit || ''}
+                            onChange={(e) => updateTrialBalanceAccount(idx, 'openingDebit', parseFloat(e.target.value) || 0)}
+                            className="h-7 text-sm w-24 text-left"
+                            step="0.01"
+                          />
+                        ) : (acc.openingDebit > 0 ? formatCurrency(acc.openingDebit) : '-')}
+                      </td>
+                      <td className="py-2 px-2 text-left border-x">
+                        {editMode ? (
+                          <Input
+                            type="number"
+                            value={acc.openingCredit || ''}
+                            onChange={(e) => updateTrialBalanceAccount(idx, 'openingCredit', parseFloat(e.target.value) || 0)}
+                            className="h-7 text-sm w-24 text-left"
+                            step="0.01"
+                          />
+                        ) : (acc.openingCredit > 0 ? formatCurrency(acc.openingCredit) : '-')}
+                      </td>
+                      <td className="py-2 px-2 text-left border-x">
+                        {editMode ? (
+                          <Input
+                            type="number"
+                            value={acc.movementDebit || ''}
+                            onChange={(e) => updateTrialBalanceAccount(idx, 'movementDebit', parseFloat(e.target.value) || 0)}
+                            className="h-7 text-sm w-24 text-left"
+                            step="0.01"
+                          />
+                        ) : (acc.movementDebit > 0 ? formatCurrency(acc.movementDebit) : '-')}
+                      </td>
+                      <td className="py-2 px-2 text-left border-x">
+                        {editMode ? (
+                          <Input
+                            type="number"
+                            value={acc.movementCredit || ''}
+                            onChange={(e) => updateTrialBalanceAccount(idx, 'movementCredit', parseFloat(e.target.value) || 0)}
+                            className="h-7 text-sm w-24 text-left"
+                            step="0.01"
+                          />
+                        ) : (acc.movementCredit > 0 ? formatCurrency(acc.movementCredit) : '-')}
+                      </td>
+                      <td className="py-2 px-2 text-left">
+                        {editMode ? (
+                          <Input
+                            type="number"
+                            value={acc.closingDebit || ''}
+                            onChange={(e) => updateTrialBalanceAccount(idx, 'closingDebit', parseFloat(e.target.value) || 0)}
+                            className="h-7 text-sm w-24 text-left"
+                            step="0.01"
+                          />
+                        ) : (acc.closingDebit > 0 ? formatCurrency(acc.closingDebit) : '-')}
+                      </td>
+                      <td className="py-2 px-2 text-left">
+                        {editMode ? (
+                          <Input
+                            type="number"
+                            value={acc.closingCredit || ''}
+                            onChange={(e) => updateTrialBalanceAccount(idx, 'closingCredit', parseFloat(e.target.value) || 0)}
+                            className="h-7 text-sm w-24 text-left"
+                            step="0.01"
+                          />
+                        ) : (acc.closingCredit > 0 ? formatCurrency(acc.closingCredit) : '-')}
+                      </td>
+                      {editMode && (
+                        <td className="py-2 px-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                            onClick={() => deleteTrialBalanceAccount(idx)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 <tr className="border-t-2 bg-primary/10 font-bold">
                   <td className="py-3 px-2">الإجمالي</td>
                   <td className="py-3 px-2 text-left border-x" colSpan={2}>-</td>
                   <td className="py-3 px-2 text-left border-x" colSpan={2}>-</td>
-                  <td className="py-3 px-2 text-left">{formatCurrency(reconciliationData.originalTotalDebit)}</td>
-                  <td className="py-3 px-2 text-left">{formatCurrency(reconciliationData.originalTotalCredit)}</td>
+                  <td className="py-3 px-2 text-left">{formatCurrency(calculatedTotalDebit)}</td>
+                  <td className="py-3 px-2 text-left">{formatCurrency(calculatedTotalCredit)}</td>
+                  {editMode && <td></td>}
                 </tr>
               </tbody>
             </table>
