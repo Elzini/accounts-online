@@ -789,7 +789,8 @@ export function TrialBalanceAnalysisPage() {
 
   // حساب الزكاة - طريقة صافي الأصول
   // رأس المال المستخدم في الحساب (يدوي أو من الملف)
-  const capitalForZakat = useManualCapital && manualCapital !== null ? manualCapital : totalEquity;
+  // نستخدم القيمة اليدوية فقط إذا كانت موجودة ومفعّلة، وإلا نستخدم حقوق الملكية من الملف
+  const capitalForZakat = useManualCapital && manualCapital !== null && manualCapital > 0 ? manualCapital : totalEquity;
   
   // الوعاء الزكوي = رأس المال + صافي الربح - الأصول الثابتة - الإيجار المدفوع مقدماً طويل الأجل
   const prepaidRent = data.currentAssets['إيجار مدفوع مقدماً'] || data.currentAssets['ايجار مدفوع مقدما'] || data.currentAssets['ايجار مدفوع مقدماً'] || data.currentAssets['إيجار مدفوع مقدما'] || 0;
