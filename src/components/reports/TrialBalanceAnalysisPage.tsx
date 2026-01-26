@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator, Upload, X, FileUp, Save, Trash2, FolderOpen, FileText, Eye } from 'lucide-react';
+import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator, Upload, X, FileUp, Save, Trash2, FolderOpen, FileText, Eye, Sparkles, Image } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -89,9 +89,11 @@ export function TrialBalanceAnalysisPage() {
   const [selectedImportId, setSelectedImportId] = useState<string | null>(null);
   const [importName, setImportName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const reportRef = useRef<HTMLDivElement>(null);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [isAiProcessing, setIsAiProcessing] = useState(false);
   
   // حقول إدخال يدوية لحساب الزكاة بدقة
   const [manualCapital, setManualCapital] = useState<number | null>(null);
@@ -214,6 +216,181 @@ export function TrialBalanceAnalysisPage() {
       setFileName(null);
     }
     fetchSavedImports();
+  };
+
+  // معالجة الصورة/سكرين شوت بالذكاء الاصطناعي
+  const processImageWithAI = async (file: File) => {
+    setIsAiProcessing(true);
+    try {
+      // تحويل الصورة إلى Base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          // إزالة prefix (data:image/png;base64,)
+          const base64Data = result.split(',')[1];
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      toast.info('جاري تحليل الصورة بالذكاء الاصطناعي...');
+
+      // إرسال للـ Edge Function
+      const { data: response, error } = await supabase.functions.invoke('parse-trial-balance', {
+        body: { 
+          imageBase64: base64,
+          fileType: file.type.includes('pdf') ? 'pdf' : 'image'
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!response.success) {
+        throw new Error(response.error || 'فشل التحليل');
+      }
+
+      const accounts = response.accounts as Array<{
+        accountCode: string;
+        accountName: string;
+        openingDebit: number;
+        openingCredit: number;
+        movementDebit: number;
+        movementCredit: number;
+        closingDebit: number;
+        closingCredit: number;
+      }>;
+
+      console.log('AI extracted accounts:', accounts);
+
+      if (accounts.length === 0) {
+        toast.error('لم يتم العثور على حسابات في الصورة');
+        return;
+      }
+
+      // تحويل الحسابات المستخرجة إلى تنسيق النظام
+      const rawAccounts: AccountData[] = accounts.map(acc => ({
+        code: acc.accountCode,
+        name: acc.accountName,
+        openingDebit: acc.openingDebit,
+        openingCredit: acc.openingCredit,
+        movementDebit: acc.movementDebit,
+        movementCredit: acc.movementCredit,
+        closingDebit: acc.closingDebit,
+        closingCredit: acc.closingCredit,
+        category: categorizeAccountByCode(acc.accountCode, acc.accountName),
+      }));
+
+      // تصنيف الحسابات
+      const result: TrialBalanceData = {
+        companyName: '',
+        vatNumber: '',
+        period: { from: '', to: '' },
+        fixedAssets: {},
+        currentAssets: {},
+        liabilities: {},
+        equity: {},
+        revenue: {},
+        expenses: {},
+        purchases: 0,
+      };
+
+      rawAccounts.forEach(acc => {
+        const balance = (acc.closingDebit || 0) - (acc.closingCredit || 0);
+        const absBalance = Math.abs(balance);
+        if (absBalance === 0) return;
+
+        switch (acc.category) {
+          case 'أصول ثابتة':
+            result.fixedAssets[acc.name] = absBalance;
+            break;
+          case 'أصول متداولة':
+            result.currentAssets[acc.name] = absBalance;
+            break;
+          case 'خصوم':
+            result.liabilities[acc.name] = absBalance;
+            break;
+          case 'حقوق ملكية':
+            result.equity[acc.name] = absBalance;
+            break;
+          case 'إيرادات':
+            result.revenue[acc.name] = absBalance;
+            break;
+          case 'مصروفات':
+            result.expenses[acc.name] = absBalance;
+            break;
+        }
+      });
+
+      // حساب الإجماليات
+      let totalDebit = 0;
+      let totalCredit = 0;
+      rawAccounts.forEach(acc => {
+        totalDebit += acc.closingDebit || 0;
+        totalCredit += acc.closingCredit || 0;
+      });
+
+      setData(result);
+      setReconciliationData({
+        originalTotalDebit: totalDebit,
+        originalTotalCredit: totalCredit,
+        excludedAccounts: [],
+        rawAccounts,
+      });
+      setFileName(file.name + ' (AI)');
+      
+      toast.success(`تم استخراج ${accounts.length} حساب بنجاح!`);
+    } catch (error: any) {
+      console.error('AI processing error:', error);
+      toast.error('فشل التحليل بالذكاء الاصطناعي: ' + (error.message || 'خطأ غير معروف'));
+    } finally {
+      setIsAiProcessing(false);
+    }
+  };
+
+  // دالة تصنيف الحساب (مستقلة للاستخدام مع AI)
+  const categorizeAccountByCode = (code: string, name: string): string => {
+    const lowerName = name.toLowerCase();
+    
+    // تصنيف بناءً على كود الحساب
+    if (code.startsWith('11') || code.startsWith('15')) return 'أصول ثابتة';
+    if (code.startsWith('12') || code.startsWith('13') || code.startsWith('14')) return 'أصول متداولة';
+    if (code.startsWith('2') && !code.startsWith('25')) return 'خصوم';
+    if (code.startsWith('25') || code.startsWith('3')) return 'حقوق ملكية';
+    if (code.startsWith('4')) return 'إيرادات';
+    if (code.startsWith('5') || code.startsWith('6')) return 'مصروفات';
+    
+    // تصنيف بناءً على الاسم
+    if (lowerName.includes('أثاث') || lowerName.includes('معدات') || lowerName.includes('مباني')) return 'أصول ثابتة';
+    if (lowerName.includes('بنك') || lowerName.includes('نقد') || lowerName.includes('صندوق') || lowerName.includes('عملاء')) return 'أصول متداولة';
+    if (lowerName.includes('موردين') || lowerName.includes('دائن') || lowerName.includes('ضريبة')) return 'خصوم';
+    if (lowerName.includes('رأس المال') || lowerName.includes('أرباح')) return 'حقوق ملكية';
+    if (lowerName.includes('مبيعات') || lowerName.includes('إيراد')) return 'إيرادات';
+    if (lowerName.includes('مصروف') || lowerName.includes('مصاريف') || lowerName.includes('رواتب')) return 'مصروفات';
+    
+    return 'أصول متداولة'; // افتراضي
+  };
+
+  // معالجة رفع الصورة
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // التحقق من نوع الملف
+    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+      toast.error('يرجى رفع صورة أو ملف PDF');
+      return;
+    }
+    
+    processImageWithAI(file);
+    
+    // Reset input
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
+    }
   };
 
   // تحليل ملف Excel
@@ -1294,42 +1471,79 @@ export function TrialBalanceAnalysisPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div
-            className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-            {isUploading ? (
-              <div className="flex flex-col items-center gap-2">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                <p className="text-muted-foreground">جاري تحليل الملف...</p>
-              </div>
-            ) : fileName ? (
-              <div className="flex items-center justify-center gap-3">
-                <FileSpreadsheet className="w-8 h-8 text-primary" />
-                <span className="font-medium">{fileName}</span>
-                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); clearFile(); }}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-3">
-                <FileUp className="w-12 h-12 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">اسحب ملف Excel هنا أو اضغط للاختيار</p>
-                  <p className="text-sm text-muted-foreground mt-1">يدعم ملفات xlsx و xls</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* رفع ملف Excel */}
+            <div
+              className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              {isUploading ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <p className="text-muted-foreground">جاري تحليل الملف...</p>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <FileUp className="w-10 h-10 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">رفع ملف Excel</p>
+                    <p className="text-xs text-muted-foreground">xlsx, xls</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* رفع صورة/سكرين شوت للتحليل بالذكاء الاصطناعي */}
+            <div
+              className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer bg-gradient-to-br from-primary/5 to-transparent"
+              onClick={() => imageInputRef.current?.click()}
+            >
+              <Input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*,.pdf"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              {isAiProcessing ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <p className="text-muted-foreground">جاري التحليل بالذكاء الاصطناعي...</p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <Image className="w-8 h-8 text-primary" />
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-primary">رفع صورة أو سكرين شوت</p>
+                    <p className="text-xs text-muted-foreground">تحليل ذكي بالـ AI</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* الملف المرفوع */}
+          {fileName && (
+            <div className="mt-4 flex items-center justify-center gap-3 p-3 bg-muted/50 rounded-lg">
+              <FileSpreadsheet className="w-6 h-6 text-primary" />
+              <span className="font-medium">{fileName}</span>
+              <Button variant="ghost" size="sm" onClick={clearFile}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
 
           {/* Save Section */}
           {fileName && (
