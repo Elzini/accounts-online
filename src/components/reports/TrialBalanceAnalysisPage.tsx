@@ -254,15 +254,29 @@ export function TrialBalanceAnalysisPage() {
       rawAccounts: [],
     };
 
-   // قائمة الكلمات التي تشير إلى حسابات رئيسية (نريد استخدامها)
-   const mainAccountPatterns = [
-     'إجمالي', 'اجمالي', 'مجموع', 'total'
+   // قائمة الأسماء الدقيقة للحسابات الرئيسية التي نريد استخدامها
+   const mainAccountNames = [
+     'صافي الأصول الثابتة',
+     'الأصول المتداولة',
+     'الخصوم',
+     'أرصدة دائنة أخرى',
+     'حقوق الملكية ورأس المال',
+     'الإيرادات',
+     'المبيعات',
+     'المصروفات',
+     'المصاريف العمومية والإدارية'
+   ];
+   
+   // إضافة أنماط الإجماليات
+   const totalPatterns = [
+     'إجمالي', 'اجمالي', 'مجموع', 'صافي', 'total'
    ];
    
    // قائمة الكلمات التي تشير إلى عناوين أقسام فقط (نستبعدها)
    const sectionHeaderPatterns = [
-     'الأصول:', 'الاصول:', 'الخصوم:', 'حقوق الملكية:', 'الإيرادات:', 'المصروفات:',
-     'أولاً', 'ثانياً', 'ثالثاً', 'رابعاً'
+     'أولاً', 'ثانياً', 'ثالثاً', 'رابعاً',
+     'أصول ثابتة', 'البنوك', 'عهدة الموظفين',
+     'حسابات مدينة أخرى'
    ];
 
     // تتبع المبالغ المستخدمة في كل فئة لتجنب التكرار
@@ -278,17 +292,28 @@ export function TrialBalanceAnalysisPage() {
    // دالة للتحقق مما إذا كان الحساب رئيسي (نريد استخدامه)
    const isMainAccount = (name: string): boolean => {
      if (!name || name.trim().length === 0) return false;
-      const lowerName = name.toLowerCase();
-     return mainAccountPatterns.some(pattern => lowerName.includes(pattern.toLowerCase()));
+     const trimmedName = name.trim();
+     
+     // تحقق من الأسماء الدقيقة
+     if (mainAccountNames.some(mainName => trimmedName === mainName)) {
+       return true;
+     }
+     
+     // أو تحقق من الأنماط (إجمالي، صافي، مجموع)
+     const lowerName = trimmedName.toLowerCase();
+     return totalPatterns.some(pattern => lowerName.includes(pattern.toLowerCase()));
    };
    
    // دالة للتحقق مما إذا كان الحساب عنوان قسم فقط
    const isSectionHeader = (name: string): boolean => {
      if (!name || name.trim().length === 0) return false;
      const trimmedName = name.trim();
-     return sectionHeaderPatterns.some(pattern => 
-       trimmedName === pattern || trimmedName.startsWith(pattern)
-     );
+     
+     // استبعاد الأسماء التي تنتهي بـ ":"
+     if (trimmedName.endsWith(':')) return true;
+     
+     // استبعاد عناوين الأقسام المحددة
+     return sectionHeaderPatterns.some(pattern => trimmedName === pattern);
     };
 
     // دالة لإضافة حساب مع التحقق الصارم من التكرار
