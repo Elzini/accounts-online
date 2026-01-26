@@ -257,11 +257,12 @@ export function TrialBalanceAnalysisPage() {
     // قائمة شاملة للكلمات التي تشير إلى حسابات إجمالية أو رئيسية
     const excludePatterns = [
       'إجمالي', 'اجمالي', 'صافي', 'مجموع', 'total', 'sum',
-      'حقوق الملكية ورأس المال', 'حقوق الملكيه وراس المال',
+      'الأصول', 'الاصول', 'الخصوم', 'الخصوم', 'حقوق الملكية', 'حقوق الملكيه',
+      'الإيرادات', 'الايرادات', 'المصروفات', 'المصاريف العمومية',
       'الأصول الثابتة', 'الاصول الثابته', 'الأصول المتداولة', 'الاصول المتداوله',
       'الخصوم المتداولة', 'الخصوم المتداوله', 'الخصوم طويلة الأجل',
-      'حقوق الملكية', 'حقوق الملكيه', 'المصروفات التشغيلية', 'المصاريف التشغيلية',
-      'الإيرادات', 'الايرادات'
+      'حقوق الملكية ورأس المال', 'حقوق الملكيه وراس المال',
+      'أرصدة دائنة أخرى', 'حسابات مدينة أخرى'
     ];
 
     // تتبع المبالغ المستخدمة في كل فئة لتجنب التكرار
@@ -297,49 +298,79 @@ export function TrialBalanceAnalysisPage() {
         return { added: false, reason: 'حساب إجمالي/رئيسي' };
       }
       
-      // تحقق من تكرار المبلغ في نفس الفئة
+      // تحقق من وجود حساب بنفس الاسم
+      if (category[name] !== undefined) {
+        return { added: false, reason: 'حساب مكرر بنفس الاسم' };
+      }
+      
+      // تحقق من تكرار المبلغ في نفس الفئة (مع تساهل أكثر للمبالغ الكبيرة)
       const roundedAmount = Math.round(Math.abs(amount) * 100) / 100;
-      if (usedAmounts[categoryName]?.has(roundedAmount)) {
+      if (usedAmounts[categoryName]?.has(roundedAmount) && roundedAmount < 1000000) {
         return { added: false, reason: 'مبلغ مكرر في نفس الفئة' };
       }
       
       // إضافة الحساب
       category[name] = Math.abs(amount);
       usedAmounts[categoryName]?.add(roundedAmount);
+      
+      console.log(`✅ تم إضافة: ${name} -> ${formatCurrency(Math.abs(amount))} في فئة: ${categoryName}`);
       return { added: true };
     };
 
     // دالة لتصنيف الحساب بناءً على الكود والاسم
     const categorizeAccount = (code: string, name: string): string => {
       const lowerName = name.toLowerCase();
+      
       // الأصول الثابتة (11xx)
       if (code.startsWith('11') || lowerName.includes('أثاث') || lowerName.includes('أجهز') || lowerName.includes('معدات') || lowerName.includes('سيارات') || lowerName.includes('مباني') || lowerName.includes('عقار')) {
         return 'أصول ثابتة';
       }
-      // الأصول المتداولة (12xx, 13xx, 14xx)
-      if (code.startsWith('12') || code.startsWith('13') || code.startsWith('14') || lowerName.includes('بنك') || lowerName.includes('عهد') || lowerName.includes('مقدم') || lowerName.includes('نقد') || lowerName.includes('صندوق') || lowerName.includes('ذمم') || lowerName.includes('مدين')) {
+      
+      // الأصول المتداولة (12xx, 13xx, 14xx) + حسابات تفصيلية
+      if (code.startsWith('12') || code.startsWith('13') || code.startsWith('14') || 
+          lowerName.includes('بنك') || lowerName.includes('عهد') || lowerName.includes('مقدم') || 
+          lowerName.includes('نقد') || lowerName.includes('صندوق') || lowerName.includes('ذمم') || 
+          lowerName.includes('مدين') || lowerName.includes('إيجار مدفوع') || lowerName.includes('ايجار مدفوع') ||
+          lowerName.includes('اطراف ذات علاقه') || lowerName.includes('أطراف ذات علاقة')) {
         return 'أصول متداولة';
       }
-      // الخصوم (2xxx ما عدا 25xx)
-      if ((code.startsWith('2') && !code.startsWith('25')) || lowerName.includes('دائن') || lowerName.includes('مستحق') || lowerName.includes('موردين')) {
+      
+      // الخصوم (2xxx ما عدا 25xx) + حسابات تفصيلية
+      if ((code.startsWith('2') && !code.startsWith('25')) || 
+          lowerName.includes('دائن') || lowerName.includes('مستحق') || lowerName.includes('موردين') ||
+          lowerName.includes('رواتب مستحق') || lowerName.includes('ضريبة') || 
+          lowerName.includes('ضريبة المخرجات') || lowerName.includes('ضرائب')) {
         return 'خصوم';
       }
-      // حقوق الملكية (25xx, 3xxx)
-      if (code.startsWith('25') || code.startsWith('3') || lowerName.includes('رأس المال') || lowerName.includes('راس المال') || lowerName.includes('جاري الشريك') || lowerName.includes('جاري المالك') || lowerName.includes('احتياطي') || lowerName.includes('أرباح مبقاة')) {
+      
+      // حقوق الملكية (25xx, 3xxx) + حسابات تفصيلية
+      if (code.startsWith('25') || code.startsWith('3') || 
+          lowerName.includes('رأس المال') || lowerName.includes('راس المال') || 
+          lowerName.includes('جاري الشريك') || lowerName.includes('جاري المالك') || 
+          lowerName.includes('جاري فلاح') || lowerName.includes('احتياطي') || 
+          lowerName.includes('أرباح مبقاة')) {
         return 'حقوق ملكية';
       }
+      
       // الإيرادات (4xxx ما عدا 45xx)
-      if ((code.startsWith('4') && !code.startsWith('45')) || lowerName.includes('مبيعات') || lowerName.includes('إيراد') || lowerName.includes('ايراد')) {
+      if ((code.startsWith('4') && !code.startsWith('45')) || 
+          lowerName.includes('مبيعات') || lowerName.includes('إيراد') || lowerName.includes('ايراد')) {
         return 'إيرادات';
       }
+      
       // المشتريات (45xx)
       if (code.startsWith('45') || lowerName.includes('مشتريات')) {
         return 'مشتريات';
       }
+      
       // المصروفات (5xxx)
-      if (code.startsWith('5') || lowerName.includes('مصروف') || lowerName.includes('مصاريف') || lowerName.includes('رواتب') || lowerName.includes('إيجار') || lowerName.includes('استهلاك')) {
+      if (code.startsWith('5') || lowerName.includes('مصروف') || lowerName.includes('مصاريف') || 
+          lowerName.includes('رواتب') || lowerName.includes('إيجار') || lowerName.includes('استهلاك') ||
+          lowerName.includes('صيانة') || lowerName.includes('الصيانات')) {
         return 'مصروفات';
       }
+      
+      console.log('غير مصنف:', name, 'Code:', code);
       return 'غير مصنف';
     };
 
