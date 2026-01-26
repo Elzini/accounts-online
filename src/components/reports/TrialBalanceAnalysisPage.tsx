@@ -543,29 +543,39 @@ export function TrialBalanceAnalysisPage() {
       const accountName = String(row.find(cell => typeof cell === 'string' && cell.length > 2) || '').trim();
       const accountCode = String(row.find(cell => typeof cell === 'number' || /^\d+$/.test(String(cell))) || '');
       
-      // البحث عن المبالغ - نستخدم عمود الصافي (الأخير)
-      let netAmount = 0;
+      // البحث في البيانات المستخرجة مسبقًا من المرحلة الأولى
+      const existingData = reconciliation.rawAccounts.find(acc => acc.name === accountName);
       
-      const numbers: number[] = [];
-      for (let j = 0; j < row.length; j++) {
-        const cell = row[j];
-        if (typeof cell === 'number' && !isNaN(cell)) {
-          numbers.push(cell); // نحتفظ بالإشارة
-        }
-      }
+      if (!existingData) continue; // إذا لم يكن موجود في البيانات الخام، تجاهله
       
-      // استخدام العمود الأخير (الصافي)
-      if (numbers.length >= 1) {
-        netAmount = numbers[numbers.length - 1];
-      }
-      
-      const debitAmount = netAmount > 0 ? Math.abs(netAmount) : 0;
-      const creditAmount = netAmount < 0 ? Math.abs(netAmount) : 0;
+      const debitAmount = existingData.debit;
+      const creditAmount = existingData.credit;
+      const netAmount = debitAmount - creditAmount;
 
-     // نستخدم فقط الحسابات الرئيسية (التي تحتوي على إجمالي/مجموع)
-     // ونتجاهل عناوين الأقسام والحسابات الفرعية التفصيلية
-     if (isSectionHeader(accountName)) continue;
-     if (!isMainAccount(accountName)) continue;
+      // تسجيل تفصيلي لكل حساب
+      const isHeader = isSectionHeader(accountName);
+      const isMain = isMainAccount(accountName);
+      
+      console.log('=== معالجة الحساب ===');
+      console.log('اسم الحساب:', accountName);
+      console.log('كود الحساب:', accountCode);
+      console.log('مدين:', debitAmount);
+      console.log('دائن:', creditAmount);
+      console.log('الصافي:', netAmount);
+      console.log('هل عنوان قسم؟', isHeader);
+      console.log('هل حساب رئيسي؟', isMain);
+      
+      // نتجاهل عناوين الأقسام والحسابات الفرعية التفصيلية
+      if (isHeader) {
+        console.log('❌ تم تجاهله: عنوان قسم');
+        continue;
+      }
+      if (!isMain) {
+        console.log('❌ تم تجاهله: ليس حساب رئيسي');
+        continue;
+      }
+      
+      console.log('✅ سيتم معالجته كحساب رئيسي');
 
       // تصنيف الحسابات بناءً على رمز الحساب (الأولوية) أو اسم الحساب
       let addResult: { added: boolean; reason?: string } = { added: false };
