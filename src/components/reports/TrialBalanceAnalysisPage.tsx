@@ -541,8 +541,8 @@ export function TrialBalanceAnalysisPage() {
           category: isHeader ? 'عنوان قسم' : (isMain ? 'حساب رئيسي' : categorizeAccount(accountCode, accountName)),
         });
 
-        // تجميع الإجماليات من الحسابات الفرعية فقط (لتجنب الجمع المزدوج)
-        if (!isMain && !isHeader) {
+        // تجميع الإجماليات من الحسابات الرئيسية فقط
+        if (isMain && !isHeader) {
           reconciliation.originalTotalDebit += finalDebit;
           reconciliation.originalTotalCredit += finalCredit;
         }
@@ -599,11 +599,11 @@ export function TrialBalanceAnalysisPage() {
       console.log('هل عنوان قسم؟', isHeader);
       console.log('هل حساب رئيسي؟', isMain);
       
-      // نتجاهل عناوين الأقسام والحسابات الرئيسية (لتجنب الجمع المزدوج)
+      // نعالج الحسابات الرئيسية فقط، نتجاهل الفرعية
       if (isHeader) {
         continue;
       }
-      if (isMain) {
+      if (!isMain) {
         continue;
       }
 
