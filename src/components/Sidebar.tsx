@@ -94,6 +94,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
     { id: 'financial-reports' as ActivePage, label: settings?.financial_reports_title || 'التقارير المالية', icon: PieChart },
     { id: 'zakat-reports' as ActivePage, label: 'القوائم الزكوية', icon: Scale },
     { id: 'trial-balance-analysis' as ActivePage, label: 'تحليل ميزان المراجعة', icon: FileSpreadsheet },
+    { id: 'financial-statements' as ActivePage, label: 'القوائم المالية الشاملة', icon: FileText },
   ];
 
   const hasAccess = (permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users') => {
