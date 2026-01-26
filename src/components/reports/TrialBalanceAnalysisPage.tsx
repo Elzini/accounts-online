@@ -26,6 +26,22 @@ interface TrialBalanceData {
   purchases: number;
 }
 
+// بيانات الحساب الكاملة (6 أعمدة)
+interface AccountData {
+  code: string;
+  name: string;
+  // الرصيد السابق
+  openingDebit: number;
+  openingCredit: number;
+  // الحركة
+  movementDebit: number;
+  movementCredit: number;
+  // الصافي
+  closingDebit: number;
+  closingCredit: number;
+  category: string;
+}
+
 // بيانات التحقق من المطابقة
 interface ReconciliationData {
   // الإجماليات الأصلية من الملف
@@ -33,8 +49,8 @@ interface ReconciliationData {
   originalTotalCredit: number;
   // الحسابات المستبعدة/المكررة
   excludedAccounts: { name: string; amount: number; reason: string }[];
-  // جميع الحسابات الخام قبل التصفية
-  rawAccounts: { code: string; name: string; debit: number; credit: number; category: string }[];
+  // جميع الحسابات الخام قبل التصفية (مع كل الأعمدة)
+  rawAccounts: AccountData[];
 }
 
 // البيانات الفارغة (الافتراضية)
@@ -479,41 +495,56 @@ export function TrialBalanceAnalysisPage() {
         }
       }
       
-      // ملف ميزان المراجعة: 6 أعمدة (رصيد سابق مدين/دائن، حركة مدين/دائن، صافي مدين/دائن)
-      // العمود الأخير غالباً 0، لذلك نبحث عن آخر رقم غير صفري
-      let netAmount = 0;
+      // ملف ميزان المراجعة: 6 أعمدة
+      // [0] رصيد سابق مدين، [1] رصيد سابق دائن
+      // [2] حركة مدين، [3] حركة دائن
+      // [4] صافي مدين، [5] صافي دائن
+      const openingDebit = numbers[0] || 0;
+      const openingCredit = numbers[1] || 0;
+      const movementDebit = numbers[2] || 0;
+      const movementCredit = numbers[3] || 0;
+      const closingDebit = numbers[4] || 0;
+      const closingCredit = numbers[5] || 0;
       
-      // نبحث عن آخر رقم غير صفري من نهاية المصفوفة
-      for (let i = numbers.length - 1; i >= 0; i--) {
-        if (numbers[i] !== 0) {
-          netAmount = numbers[i];
-          break;
+      // استخدام الصافي إذا كان موجوداً، وإلا نحسبه من الحركة
+      let finalDebit = closingDebit;
+      let finalCredit = closingCredit;
+      
+      // إذا كان الصافي صفراً، نستخدم أكبر قيمة من الرصيد السابق أو الحركة
+      if (closingDebit === 0 && closingCredit === 0) {
+        // نحسب من الحركة أو الرصيد السابق
+        if (movementDebit > 0 || movementCredit > 0) {
+          finalDebit = movementDebit;
+          finalCredit = movementCredit;
+        } else {
+          finalDebit = openingDebit;
+          finalCredit = openingCredit;
         }
       }
-      
-      // تحديد المدين والدائن بناءً على إشارة الصافي
-      const debitAmount = netAmount > 0 ? Math.abs(netAmount) : 0;
-      const creditAmount = netAmount < 0 ? Math.abs(netAmount) : 0;
-      
-      console.log('Row:', accountName, 'Numbers:', numbers, 'Net:', netAmount, 'Debit:', debitAmount, 'Credit:', creditAmount);
 
       // حفظ كل حساب يحتوي على أرقام (بما فيها الإجماليات للتوثيق)
-      if (accountName && (debitAmount > 0 || creditAmount > 0)) {
-       const isHeader = isSectionHeader(accountName);
-       const isMain = isMainAccount(accountName);
+      const hasAnyValue = openingDebit > 0 || openingCredit > 0 || movementDebit > 0 || movementCredit > 0 || closingDebit > 0 || closingCredit > 0;
+      
+      if (accountName && hasAnyValue) {
+        const isHeader = isSectionHeader(accountName);
+        const isMain = isMainAccount(accountName);
         
         reconciliation.rawAccounts.push({
           code: accountCode,
           name: accountName,
-          debit: debitAmount,
-          credit: creditAmount,
-         category: isHeader ? 'عنوان قسم' : (isMain ? 'حساب رئيسي' : categorizeAccount(accountCode, accountName)),
+          openingDebit,
+          openingCredit,
+          movementDebit,
+          movementCredit,
+          closingDebit: finalDebit,
+          closingCredit: finalCredit,
+          category: isHeader ? 'عنوان قسم' : (isMain ? 'حساب رئيسي' : categorizeAccount(accountCode, accountName)),
         });
 
-       // تجميع الإجماليات من الحسابات الفرعية فقط (لتجنب الجمع المزدوج)
-       if (!isMain && !isHeader) {
-          reconciliation.originalTotalDebit += debitAmount;
-          reconciliation.originalTotalCredit += creditAmount;
+        // تجميع الإجماليات من الحسابات الفرعية فقط (لتجنب الجمع المزدوج)
+        if (!isMain && !isHeader) {
+          reconciliation.originalTotalDebit += finalDebit;
+          reconciliation.originalTotalCredit += finalCredit;
         }
       }
     }
@@ -551,8 +582,8 @@ export function TrialBalanceAnalysisPage() {
       
       if (!existingData) continue; // إذا لم يكن موجود في البيانات الخام، تجاهله
       
-      const debitAmount = existingData.debit;
-      const creditAmount = existingData.credit;
+      const debitAmount = existingData.closingDebit;
+      const creditAmount = existingData.closingCredit;
       const netAmount = debitAmount - creditAmount;
 
       // تسجيل تفصيلي لكل حساب
@@ -1087,11 +1118,20 @@ export function TrialBalanceAnalysisPage() {
                     <table className="w-full text-sm">
                       <thead className="bg-muted/30 sticky top-0">
                         <tr>
-                          <th className="p-2 text-right">الرمز</th>
-                          <th className="p-2 text-right">اسم الحساب</th>
-                          <th className="p-2 text-right">التصنيف</th>
-                          <th className="p-2 text-left">مدين</th>
-                          <th className="p-2 text-left">دائن</th>
+                          <th className="p-2 text-right" rowSpan={2}>الرمز</th>
+                          <th className="p-2 text-right" rowSpan={2}>اسم الحساب</th>
+                          <th className="p-2 text-right" rowSpan={2}>التصنيف</th>
+                          <th className="p-2 text-center border-x" colSpan={2}>الرصيد السابق</th>
+                          <th className="p-2 text-center border-x" colSpan={2}>الحركة</th>
+                          <th className="p-2 text-center" colSpan={2}>الصافي</th>
+                        </tr>
+                        <tr>
+                          <th className="p-1 text-left text-xs border-x">مدين</th>
+                          <th className="p-1 text-left text-xs border-x">دائن</th>
+                          <th className="p-1 text-left text-xs border-x">مدين</th>
+                          <th className="p-1 text-left text-xs border-x">دائن</th>
+                          <th className="p-1 text-left text-xs">مدين</th>
+                          <th className="p-1 text-left text-xs">دائن</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1102,14 +1142,20 @@ export function TrialBalanceAnalysisPage() {
                             <td className="p-2">
                               <span className="px-2 py-1 bg-muted rounded text-xs">{acc.category}</span>
                             </td>
-                            <td className="p-2 text-left">{acc.debit > 0 ? formatCurrency(acc.debit) : '-'}</td>
-                            <td className="p-2 text-left">{acc.credit > 0 ? formatCurrency(acc.credit) : '-'}</td>
+                            <td className="p-2 text-left border-x">{acc.openingDebit > 0 ? formatCurrency(acc.openingDebit) : '-'}</td>
+                            <td className="p-2 text-left border-x">{acc.openingCredit > 0 ? formatCurrency(acc.openingCredit) : '-'}</td>
+                            <td className="p-2 text-left border-x">{acc.movementDebit > 0 ? formatCurrency(acc.movementDebit) : '-'}</td>
+                            <td className="p-2 text-left border-x">{acc.movementCredit > 0 ? formatCurrency(acc.movementCredit) : '-'}</td>
+                            <td className="p-2 text-left">{acc.closingDebit > 0 ? formatCurrency(acc.closingDebit) : '-'}</td>
+                            <td className="p-2 text-left">{acc.closingCredit > 0 ? formatCurrency(acc.closingCredit) : '-'}</td>
                           </tr>
                         ))}
                       </tbody>
                       <tfoot className="bg-muted/50 font-bold">
                         <tr>
                           <td className="p-2" colSpan={3}>الإجمالي</td>
+                          <td className="p-2 text-left border-x" colSpan={2}>-</td>
+                          <td className="p-2 text-left border-x" colSpan={2}>-</td>
                           <td className="p-2 text-left">{formatCurrency(reconciliationData.originalTotalDebit)}</td>
                           <td className="p-2 text-left">{formatCurrency(reconciliationData.originalTotalCredit)}</td>
                         </tr>
@@ -1268,22 +1314,31 @@ export function TrialBalanceAnalysisPage() {
         </Card>
       </div>
 
-      {/* جدول ميزان المراجعة الكامل - مدين ودائن */}
+      {/* جدول ميزان المراجعة الكامل - 6 أعمدة */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileSpreadsheet className="w-5 h-5" />
-            ميزان المراجعة (مدين ودائن)
+            ميزان المراجعة الشامل (رصيد سابق + حركة + صافي)
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b">
-                  <th className="text-right py-2 font-semibold">اسم الحساب</th>
-                  <th className="text-left py-2 font-semibold">مدين (ر.س)</th>
-                  <th className="text-left py-2 font-semibold">دائن (ر.س)</th>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-right py-2 px-2 font-semibold" rowSpan={2}>اسم الحساب</th>
+                  <th className="text-center py-2 px-2 font-semibold border-x" colSpan={2}>الرصيد السابق</th>
+                  <th className="text-center py-2 px-2 font-semibold border-x" colSpan={2}>الحركة</th>
+                  <th className="text-center py-2 px-2 font-semibold" colSpan={2}>الصافي</th>
+                </tr>
+                <tr className="border-b bg-muted/30">
+                  <th className="text-left py-1 px-2 text-xs border-x">مدين</th>
+                  <th className="text-left py-1 px-2 text-xs border-x">دائن</th>
+                  <th className="text-left py-1 px-2 text-xs border-x">مدين</th>
+                  <th className="text-left py-1 px-2 text-xs border-x">دائن</th>
+                  <th className="text-left py-1 px-2 text-xs">مدين</th>
+                  <th className="text-left py-1 px-2 text-xs">دائن</th>
                 </tr>
               </thead>
               <tbody>
@@ -1291,15 +1346,21 @@ export function TrialBalanceAnalysisPage() {
                   .filter(acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي')
                   .map((acc, idx) => (
                     <tr key={idx} className="border-b hover:bg-muted/20">
-                      <td className="py-2">{acc.name}</td>
-                      <td className="py-2 text-left">{acc.debit > 0 ? formatCurrency(acc.debit) : '-'}</td>
-                      <td className="py-2 text-left">{acc.credit > 0 ? formatCurrency(acc.credit) : '-'}</td>
+                      <td className="py-2 px-2">{acc.name}</td>
+                      <td className="py-2 px-2 text-left border-x">{acc.openingDebit > 0 ? formatCurrency(acc.openingDebit) : '-'}</td>
+                      <td className="py-2 px-2 text-left border-x">{acc.openingCredit > 0 ? formatCurrency(acc.openingCredit) : '-'}</td>
+                      <td className="py-2 px-2 text-left border-x">{acc.movementDebit > 0 ? formatCurrency(acc.movementDebit) : '-'}</td>
+                      <td className="py-2 px-2 text-left border-x">{acc.movementCredit > 0 ? formatCurrency(acc.movementCredit) : '-'}</td>
+                      <td className="py-2 px-2 text-left">{acc.closingDebit > 0 ? formatCurrency(acc.closingDebit) : '-'}</td>
+                      <td className="py-2 px-2 text-left">{acc.closingCredit > 0 ? formatCurrency(acc.closingCredit) : '-'}</td>
                     </tr>
                   ))}
                 <tr className="border-t-2 bg-primary/10 font-bold">
-                  <td className="py-3">الإجمالي</td>
-                  <td className="py-3 text-left">{formatCurrency(reconciliationData.originalTotalDebit)}</td>
-                  <td className="py-3 text-left">{formatCurrency(reconciliationData.originalTotalCredit)}</td>
+                  <td className="py-3 px-2">الإجمالي</td>
+                  <td className="py-3 px-2 text-left border-x" colSpan={2}>-</td>
+                  <td className="py-3 px-2 text-left border-x" colSpan={2}>-</td>
+                  <td className="py-3 px-2 text-left">{formatCurrency(reconciliationData.originalTotalDebit)}</td>
+                  <td className="py-3 px-2 text-left">{formatCurrency(reconciliationData.originalTotalCredit)}</td>
                 </tr>
               </tbody>
             </table>
