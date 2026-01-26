@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>القوائم المالية - شركة أشبال النمار للسيارات</title>
+  <style>
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+    }
+    body { font-family: 'Arial', 'Tahoma', sans-serif; padding: 40px; direction: rtl; background: #fff; max-width: 800px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1a365d; padding-bottom: 20px; }
+    .header h1 { color: #1a365d; margin: 0; font-size: 28px; }
+    .header p { color: #666; margin: 5px 0; font-size: 14px; }
+    .section { margin: 25px 0; page-break-inside: avoid; }
+    .section h2 { background: #1a365d; color: white; padding: 12px 20px; margin: 0; font-size: 18px; border-radius: 5px 5px 0 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 0; }
+    th, td { padding: 12px 15px; text-align: right; border: 1px solid #ddd; font-size: 14px; }
+    th { background: #f5f5f5; font-weight: bold; }
+    .total { font-weight: bold; background: #e8f4f8 !important; }
+    .negative { color: #c53030; }
+    .positive { color: #2f855a; }
+    .zakat-result { background: #48bb78 !important; color: white; font-size: 16px; font-weight: bold; }
+    .footer { margin-top: 40px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #ddd; padding-top: 20px; }
+    .print-btn { background: #1a365d; color: white; padding: 15px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 10px; }
+    .print-btn:hover { background: #2d4a7c; }
+    .btn-container { text-align: center; margin: 30px 0; }
+  </style>
+</head>
+<body>
+  <div class="btn-container no-print">
+    <button class="print-btn" onclick="window.print()">🖨️ طباعة / حفظ PDF</button>
+  </div>
+
+  <div class="header">
+    <h1>🚗 شركة أشبال النمار للسيارات</h1>
+    <p>الرياض - حي القادسية - شارع جبل الذبياني</p>
+    <p>الرقم الضريبي: 312876888500003</p>
+    <p><strong>القوائم المالية</strong></p>
+    <p>الفترة: من 01/01/2025 إلى 31/12/2025</p>
+  </div>
+
+  <div class="section">
+    <h2>📋 قائمة الدخل</h2>
+    <table>
+      <tr><td>الإيرادات (المبيعات)</td><td>1,522,826.08</td></tr>
+      <tr><td>(-) تكلفة المبيعات (المشتريات)</td><td class="negative">(1,859,366.96)</td></tr>
+      <tr class="total"><td>إجمالي الربح/(الخسارة)</td><td class="negative">(336,540.88)</td></tr>
+      <tr><td>(-) المصاريف العمومية والإدارية</td><td class="negative">(33,925.54)</td></tr>
+      <tr><td>(-) مصاريف التشغيل</td><td class="negative">(1,793.65)</td></tr>
+      <tr class="total"><td><strong>صافي الربح/(الخسارة)</strong></td><td class="negative"><strong>(372,260.07)</strong></td></tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>📋 قائمة المركز المالي (الميزانية العمومية)</h2>
+    <table>
+      <tr><th colspan="2">الأصول</th></tr>
+      <tr><td>الأصول الثابتة (أثاث + أجهزة)</td><td>14,282.61</td></tr>
+      <tr><td>الأصول المتداولة</td><td>230,117.67</td></tr>
+      <tr class="total"><td>إجمالي الأصول</td><td>244,400.28</td></tr>
+      <tr><th colspan="2">حقوق الملكية</th></tr>
+      <tr><td>رأس المال</td><td>5,000.00</td></tr>
+      <tr><td>جاري المالك (فلاح)</td><td>428,410.66</td></tr>
+      <tr><td>صافي الخسارة</td><td class="negative">(372,260.07)</td></tr>
+      <tr class="total"><td>إجمالي حقوق الملكية</td><td>61,150.59</td></tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>🕌 حساب الزكاة</h2>
+    <table>
+      <tr><th colspan="2">مصادر الوعاء الزكوي</th></tr>
+      <tr><td>رأس المال</td><td>5,000.00</td></tr>
+      <tr><td>جاري المالك</td><td>428,410.66</td></tr>
+      <tr class="total"><td>إجمالي المصادر</td><td>433,410.66</td></tr>
+      <tr><th colspan="2">الحسميات</th></tr>
+      <tr><td>(-) الأصول الثابتة</td><td class="negative">(14,282.61)</td></tr>
+      <tr><td>(-) 11/12 من الإيجار المدفوع مقدماً</td><td class="negative">(210,069.45)</td></tr>
+      <tr class="total"><td>إجمالي الحسميات</td><td class="negative">(224,352.06)</td></tr>
+      <tr class="total"><td><strong>الوعاء الزكوي</strong></td><td><strong>209,058.60</strong></td></tr>
+      <tr><td>نسبة الزكاة</td><td>2.5%</td></tr>
+      <tr class="zakat-result"><td>💰 مبلغ الزكاة المستحقة</td><td>5,226.47 ريال</td></tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>📊 ملخص ضريبة القيمة المضافة</h2>
+    <table>
+      <tr><td>ضريبة المخرجات (مبيعات)</td><td>214,473.92</td></tr>
+      <tr><td>(-) ضريبة المدخلات (مشتريات)</td><td class="negative">(282,324.23)</td></tr>
+      <tr class="total"><td>صافي الضريبة (مستحق للمنشأة)</td><td class="negative">(67,850.31)</td></tr>
+    </table>
+  </div>
+
+  <div class="footer">
+    <p>تم إنشاء هذا التقرير بواسطة نظام أشبال النمار المحاسبي</p>
+    <p>تاريخ الإنشاء: 26/01/2026</p>
+  </div>
+
+  <div class="btn-container no-print">
+    <p style="color: #666; font-size: 14px;">💡 لحفظ كـ PDF: اضغط طباعة ← اختر "Save as PDF" كطابعة</p>
+  </div>
+</body>
+</html>
