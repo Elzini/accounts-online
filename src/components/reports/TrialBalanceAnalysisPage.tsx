@@ -566,12 +566,23 @@ export function TrialBalanceAnalysisPage() {
           category: accountCategory,
         });
 
-        // ✅ نجمع فقط الحسابات ذات رقم واحد (1، 2، 3، 4) لتجنب التكرار
-        // لأن الحساب 1 يشمل 11 + 12 + 13، والحساب 2 يشمل 21 + 22، وهكذا
+        // نحفظ الحسابات الرئيسية للإحصائيات (ليس للإجمالي)
         if (accountCode.length === 1 && /^\d$/.test(accountCode) && !isHeader) {
-          reconciliation.originalTotalDebit += finalDebit;
-          reconciliation.originalTotalCredit += finalCredit;
-          console.log(`📊 تم إضافة للإجمالي: ${accountCode} - ${accountName} | مدين: ${finalDebit} | دائن: ${finalCredit}`);
+          console.log(`📊 حساب رئيسي: ${accountCode} - ${accountName} | مدين: ${finalDebit} | دائن: ${finalCredit}`);
+        }
+      }
+      
+      // البحث عن سطر الإجماليات (صف بدون اسم حساب وبه أرقام متساوية للمدين والدائن)
+      if (!accountName && numbers.length >= 2) {
+        const totalDebit = closingDebit;
+        const totalCredit = closingCredit;
+        // إذا كانت القيم متساوية وأكبر من أي إجمالي سابق، فهذا سطر الإجماليات
+        if (totalDebit > 0 && totalCredit > 0 && Math.abs(totalDebit - totalCredit) < 0.01) {
+          if (totalDebit > reconciliation.originalTotalDebit) {
+            reconciliation.originalTotalDebit = totalDebit;
+            reconciliation.originalTotalCredit = totalCredit;
+            console.log(`📊 سطر الإجماليات: مدين: ${totalDebit} | دائن: ${totalCredit}`);
+          }
         }
       }
     }
