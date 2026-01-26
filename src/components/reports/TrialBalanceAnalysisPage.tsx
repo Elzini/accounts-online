@@ -319,7 +319,41 @@ export function TrialBalanceAnalysisPage() {
       }
       return 'غير مصنف';
     };
+
+    // === المرحلة الأولى: استخراج جميع الحسابات الخام وحساب الإجماليات الأصلية ===
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0) continue;
+
+      const accountName = String(row.find(cell => typeof cell === 'string' && cell.length > 2) || '').trim();
+      const accountCode = String(row.find(cell => typeof cell === 'number' || /^\d+$/.test(String(cell))) || '');
+      
+      // البحث عن المبالغ (مدين/دائن)
+      const numbers = row.filter(cell => typeof cell === 'number' && cell !== 0);
+      const debitAmount = numbers.length > 0 ? Math.abs(numbers[0]) : 0;
+      const creditAmount = numbers.length > 1 ? Math.abs(numbers[1]) : 0;
+
+      // حفظ كل حساب يحتوي على أرقام (بما فيها الإجماليات للتوثيق)
+      if (accountName && (debitAmount > 0 || creditAmount > 0)) {
+        const isExcluded = shouldExclude(accountName);
+        
+        reconciliation.rawAccounts.push({
+          code: accountCode,
+          name: accountName,
+          debit: debitAmount,
+          credit: creditAmount,
+          category: isExcluded ? 'مستبعد (حساب رئيسي)' : categorizeAccount(accountCode, accountName),
+        });
+
+        // تجميع الإجماليات من الحسابات الفرعية فقط (غير المستبعدة)
+        if (!isExcluded) {
+          reconciliation.originalTotalDebit += debitAmount;
+          reconciliation.originalTotalCredit += creditAmount;
+        }
+      }
+    }
     
+    // === المرحلة الثانية: استخراج البيانات الأساسية والتصنيف ===
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       if (!row || row.length === 0) continue;
@@ -344,30 +378,13 @@ export function TrialBalanceAnalysisPage() {
         result.period.to = dateMatch[1];
       }
 
-      // تحديد القسم الحالي
       const accountName = String(row.find(cell => typeof cell === 'string' && cell.length > 2) || '').trim();
       const accountCode = String(row.find(cell => typeof cell === 'number' || /^\d+$/.test(String(cell))) || '');
       
-      // البحث عن المبالغ (مدين/دائن)
       const numbers = row.filter(cell => typeof cell === 'number' && cell !== 0);
       const debitAmount = numbers.length > 0 ? Math.abs(numbers[0]) : 0;
       const creditAmount = numbers.length > 1 ? Math.abs(numbers[1]) : 0;
       const netAmount = debitAmount - creditAmount;
-
-      // تجميع الإجماليات الأصلية (من الحسابات الفرعية فقط)
-      if (accountName && !shouldExclude(accountName) && (debitAmount > 0 || creditAmount > 0)) {
-        reconciliation.originalTotalDebit += debitAmount;
-        reconciliation.originalTotalCredit += creditAmount;
-        
-        // حفظ الحساب الخام
-        reconciliation.rawAccounts.push({
-          code: accountCode,
-          name: accountName,
-          debit: debitAmount,
-          credit: creditAmount,
-          category: categorizeAccount(accountCode, accountName),
-        });
-      }
 
       // تجاهل الحسابات الإجمالية
       if (shouldExclude(accountName)) continue;
