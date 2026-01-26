@@ -467,29 +467,32 @@ export function TrialBalanceAnalysisPage() {
       const accountName = String(row.find(cell => typeof cell === 'string' && cell.length > 2) || '').trim();
       const accountCode = String(row.find(cell => typeof cell === 'number' || /^\d+$/.test(String(cell))) || '');
       
-      // البحث عن المبالغ - نبحث في جميع الخلايا بالترتيب
-      // في ميزان المراجعة الشامل: العمودان الأولان بعد اسم الحساب هما الصافي (الدائن ثم المدين)
-      let debitAmount = 0;
-      let creditAmount = 0;
+      // البحث عن المبالغ - الملف يحتوي على: الرصيد السابق، الحركة، الصافي
+      // نستخدم عمود "الصافي" (العمود الأخير) للحساب
+      let netAmount = 0;
       
-      // نبحث عن أول رقمين بعد اسم الحساب
+      // نبحث عن جميع الأرقام في الصف
       const numbers: number[] = [];
       for (let j = 0; j < row.length; j++) {
         const cell = row[j];
         if (typeof cell === 'number' && !isNaN(cell)) {
-          numbers.push(Math.abs(cell));
+          numbers.push(cell); // نحتفظ بالإشارة (موجب/سالب)
         }
       }
       
-      // في ملف ميزان المراجعة: أول عمودين هما الصافي (دائن، مدين)
-      if (numbers.length >= 2) {
-        creditAmount = numbers[0]; // العمود الأول = الدائن
-        debitAmount = numbers[1];  // العمود الثاني = المدين
-      } else if (numbers.length === 1) {
-        debitAmount = numbers[0];
+      // في ملف ميزان المراجعة: الأعمدة هي [الرصيد السابق، الحركة، الصافي]
+      // نستخدم العمود الأخير (الصافي) للحساب
+      if (numbers.length >= 3) {
+        netAmount = numbers[numbers.length - 1]; // العمود الأخير = الصافي
+      } else if (numbers.length >= 1) {
+        netAmount = numbers[numbers.length - 1]; // أو آخر رقم متاح
       }
       
-      console.log('Row:', accountName, 'Numbers:', numbers, 'Debit:', debitAmount, 'Credit:', creditAmount);
+      // تحديد المدين والدائن بناءً على إشارة الصافي
+      const debitAmount = netAmount > 0 ? Math.abs(netAmount) : 0;
+      const creditAmount = netAmount < 0 ? Math.abs(netAmount) : 0;
+      
+      console.log('Row:', accountName, 'Numbers:', numbers, 'Net:', netAmount, 'Debit:', debitAmount, 'Credit:', creditAmount);
 
       // حفظ كل حساب يحتوي على أرقام (بما فيها الإجماليات للتوثيق)
       if (accountName && (debitAmount > 0 || creditAmount > 0)) {
@@ -540,25 +543,24 @@ export function TrialBalanceAnalysisPage() {
       const accountName = String(row.find(cell => typeof cell === 'string' && cell.length > 2) || '').trim();
       const accountCode = String(row.find(cell => typeof cell === 'number' || /^\d+$/.test(String(cell))) || '');
       
-      // البحث عن المبالغ - استخراج أول رقمين بعد اسم الحساب
-      let debitAmount = 0;
-      let creditAmount = 0;
+      // البحث عن المبالغ - نستخدم عمود الصافي (الأخير)
+      let netAmount = 0;
       
       const numbers: number[] = [];
       for (let j = 0; j < row.length; j++) {
         const cell = row[j];
         if (typeof cell === 'number' && !isNaN(cell)) {
-          numbers.push(Math.abs(cell));
+          numbers.push(cell); // نحتفظ بالإشارة
         }
       }
       
-      if (numbers.length >= 2) {
-        creditAmount = numbers[0]; // العمود الأول = الدائن
-        debitAmount = numbers[1];  // العمود الثاني = المدين
-      } else if (numbers.length === 1) {
-        debitAmount = numbers[0];
+      // استخدام العمود الأخير (الصافي)
+      if (numbers.length >= 1) {
+        netAmount = numbers[numbers.length - 1];
       }
-      const netAmount = debitAmount - creditAmount;
+      
+      const debitAmount = netAmount > 0 ? Math.abs(netAmount) : 0;
+      const creditAmount = netAmount < 0 ? Math.abs(netAmount) : 0;
 
      // نستخدم فقط الحسابات الرئيسية (التي تحتوي على إجمالي/مجموع)
      // ونتجاهل عناوين الأقسام والحسابات الفرعية التفصيلية
