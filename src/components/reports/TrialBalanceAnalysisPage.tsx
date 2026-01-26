@@ -111,6 +111,9 @@ export function TrialBalanceAnalysisPage() {
   const [manualTotalDebit, setManualTotalDebit] = useState<number | null>(null);
   const [manualTotalCredit, setManualTotalCredit] = useState<number | null>(null);
   const [useManualTotals, setUseManualTotals] = useState(false);
+  
+  // وضع التعديل اليدوي للقوائم المالية
+  const [editMode, setEditMode] = useState(false);
 
   // جلب الملفات المحفوظة
   useEffect(() => {
@@ -802,6 +805,89 @@ export function TrialBalanceAnalysisPage() {
     }).format(amount);
   };
 
+  // دوال تعديل القيم يدوياً
+  const updateValue = (
+    category: 'fixedAssets' | 'currentAssets' | 'liabilities' | 'equity' | 'revenue' | 'expenses',
+    name: string,
+    newValue: number
+  ) => {
+    setData(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [name]: newValue
+      }
+    }));
+  };
+
+  const updatePurchases = (newValue: number) => {
+    setData(prev => ({ ...prev, purchases: newValue }));
+  };
+
+  const addNewAccount = (
+    category: 'fixedAssets' | 'currentAssets' | 'liabilities' | 'equity' | 'revenue' | 'expenses'
+  ) => {
+    const name = prompt('أدخل اسم الحساب الجديد:');
+    if (name && name.trim()) {
+      setData(prev => ({
+        ...prev,
+        [category]: {
+          ...prev[category],
+          [name.trim()]: 0
+        }
+      }));
+    }
+  };
+
+  const deleteAccount = (
+    category: 'fixedAssets' | 'currentAssets' | 'liabilities' | 'equity' | 'revenue' | 'expenses',
+    name: string
+  ) => {
+    setData(prev => {
+      const newCategory = { ...prev[category] };
+      delete newCategory[name];
+      return { ...prev, [category]: newCategory };
+    });
+  };
+
+  // مكون لعرض قيمة قابلة للتعديل
+  const EditableValue = ({ 
+    value, 
+    onChange, 
+    category, 
+    name 
+  }: { 
+    value: number; 
+    onChange: (val: number) => void;
+    category?: string;
+    name?: string;
+  }) => {
+    if (!editMode) {
+      return <span>{formatCurrency(value)}</span>;
+    }
+    return (
+      <div className="flex items-center gap-1">
+        <Input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+          className="w-28 h-7 text-left text-sm"
+          step="0.01"
+        />
+        {category && name && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 w-6 p-0 text-destructive"
+            onClick={() => deleteAccount(category as any, name)}
+          >
+            <X className="w-3 h-3" />
+          </Button>
+        )}
+      </div>
+    );
+  };
+
   const exportToExcel = () => {
     setIsExporting(true);
 
@@ -1281,7 +1367,24 @@ export function TrialBalanceAnalysisPage() {
           <p className="text-muted-foreground">القوائم المالية للسنة المنتهية في {data.period.to}</p>
           {data.vatNumber && <p className="text-sm text-muted-foreground">الرقم الضريبي: {data.vatNumber}</p>}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button 
+            onClick={() => setEditMode(!editMode)} 
+            variant={editMode ? "default" : "outline"} 
+            className="gap-2"
+          >
+            {editMode ? (
+              <>
+                <Save className="w-4 h-4" />
+                إنهاء التعديل
+              </>
+            ) : (
+              <>
+                <FileSpreadsheet className="w-4 h-4" />
+                تعديل القيم
+              </>
+            )}
+          </Button>
           <Button onClick={() => setShowPreview(true)} variant="outline" className="gap-2">
             <Eye className="w-4 h-4" />
             معاينة
@@ -1425,13 +1528,47 @@ export function TrialBalanceAnalysisPage() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td className="py-2">إيرادات المبيعات</td>
+                {Object.entries(data.revenue).map(([name, amount]) => (
+                  <tr key={name}>
+                    <td className="py-2">- {name}</td>
+                    <td className="py-2 text-left font-medium">
+                      <EditableValue 
+                        value={amount} 
+                        onChange={(val) => updateValue('revenue', name, val)}
+                        category="revenue"
+                        name={name}
+                      />
+                    </td>
+                  </tr>
+                ))}
+                {editMode && (
+                  <tr>
+                    <td colSpan={2} className="py-1">
+                      <Button variant="ghost" size="sm" onClick={() => addNewAccount('revenue')} className="text-xs">
+                        + إضافة إيراد
+                      </Button>
+                    </td>
+                  </tr>
+                )}
+                <tr className="border-t bg-muted/30">
+                  <td className="py-2 font-semibold">إجمالي الإيرادات</td>
                   <td className="py-2 text-left font-medium">{formatCurrency(totalRevenue)}</td>
                 </tr>
                 <tr>
                   <td className="py-2">(-) تكلفة المبيعات (المشتريات)</td>
-                  <td className="py-2 text-left text-destructive">({formatCurrency(costOfSales)})</td>
+                  <td className="py-2 text-left text-destructive">
+                    {editMode ? (
+                      <Input
+                        type="number"
+                        value={costOfSales}
+                        onChange={(e) => updatePurchases(parseFloat(e.target.value) || 0)}
+                        className="w-28 h-7 text-left text-sm"
+                        step="0.01"
+                      />
+                    ) : (
+                      <>({formatCurrency(costOfSales)})</>
+                    )}
+                  </td>
                 </tr>
                 <tr className="border-t bg-muted/50">
                   <td className="py-2 font-semibold">مجمل الربح / (الخسارة)</td>
@@ -1445,9 +1582,25 @@ export function TrialBalanceAnalysisPage() {
                 {Object.entries(data.expenses).map(([name, amount]) => (
                   <tr key={name}>
                     <td className="py-1 pr-4">- {name}</td>
-                    <td className="py-1 text-left">{formatCurrency(amount)}</td>
+                    <td className="py-1 text-left">
+                      <EditableValue 
+                        value={amount} 
+                        onChange={(val) => updateValue('expenses', name, val)}
+                        category="expenses"
+                        name={name}
+                      />
+                    </td>
                   </tr>
                 ))}
+                {editMode && (
+                  <tr>
+                    <td colSpan={2} className="py-1">
+                      <Button variant="ghost" size="sm" onClick={() => addNewAccount('expenses')} className="text-xs">
+                        + إضافة مصروف
+                      </Button>
+                    </td>
+                  </tr>
+                )}
                 <tr className="border-t">
                   <td className="py-2">إجمالي المصاريف التشغيلية</td>
                   <td className="py-2 text-left text-destructive">({formatCurrency(totalExpenses)})</td>
@@ -1485,9 +1638,25 @@ export function TrialBalanceAnalysisPage() {
                   {Object.entries(data.fixedAssets).map(([name, amount]) => (
                     <tr key={name}>
                       <td className="py-1 pr-4">- {name}</td>
-                      <td className="py-1 text-left">{formatCurrency(amount)}</td>
+                      <td className="py-1 text-left">
+                        <EditableValue 
+                          value={amount} 
+                          onChange={(val) => updateValue('fixedAssets', name, val)}
+                          category="fixedAssets"
+                          name={name}
+                        />
+                      </td>
                     </tr>
                   ))}
+                  {editMode && (
+                    <tr>
+                      <td colSpan={2} className="py-1">
+                        <Button variant="ghost" size="sm" onClick={() => addNewAccount('fixedAssets')} className="text-xs">
+                          + إضافة أصل ثابت
+                        </Button>
+                      </td>
+                    </tr>
+                  )}
                   <tr className="border-t bg-muted/30">
                     <td className="py-2">إجمالي الأصول الثابتة</td>
                     <td className="py-2 text-left font-medium">{formatCurrency(totalFixedAssets)}</td>
@@ -1498,9 +1667,25 @@ export function TrialBalanceAnalysisPage() {
                   {Object.entries(data.currentAssets).map(([name, amount]) => (
                     <tr key={name}>
                       <td className="py-1 pr-4">- {name}</td>
-                      <td className="py-1 text-left">{formatCurrency(amount)}</td>
+                      <td className="py-1 text-left">
+                        <EditableValue 
+                          value={amount} 
+                          onChange={(val) => updateValue('currentAssets', name, val)}
+                          category="currentAssets"
+                          name={name}
+                        />
+                      </td>
                     </tr>
                   ))}
+                  {editMode && (
+                    <tr>
+                      <td colSpan={2} className="py-1">
+                        <Button variant="ghost" size="sm" onClick={() => addNewAccount('currentAssets')} className="text-xs">
+                          + إضافة أصل متداول
+                        </Button>
+                      </td>
+                    </tr>
+                  )}
                   <tr className="border-t bg-muted/30">
                     <td className="py-2">إجمالي الأصول المتداولة</td>
                     <td className="py-2 text-left font-medium">{formatCurrency(totalCurrentAssets)}</td>
@@ -1524,9 +1709,25 @@ export function TrialBalanceAnalysisPage() {
                   {Object.entries(data.liabilities).map(([name, amount]) => (
                     <tr key={name}>
                       <td className="py-1 pr-4">- {name}</td>
-                      <td className="py-1 text-left">{formatCurrency(amount)}</td>
+                      <td className="py-1 text-left">
+                        <EditableValue 
+                          value={amount} 
+                          onChange={(val) => updateValue('liabilities', name, val)}
+                          category="liabilities"
+                          name={name}
+                        />
+                      </td>
                     </tr>
                   ))}
+                  {editMode && (
+                    <tr>
+                      <td colSpan={2} className="py-1">
+                        <Button variant="ghost" size="sm" onClick={() => addNewAccount('liabilities')} className="text-xs">
+                          + إضافة خصم
+                        </Button>
+                      </td>
+                    </tr>
+                  )}
                   <tr className="border-t bg-muted/30">
                     <td className="py-2">إجمالي الخصوم المتداولة</td>
                     <td className="py-2 text-left font-medium">{formatCurrency(totalLiabilities)}</td>
@@ -1537,9 +1738,25 @@ export function TrialBalanceAnalysisPage() {
                   {Object.entries(data.equity).map(([name, amount]) => (
                     <tr key={name}>
                       <td className="py-1 pr-4">- {name}</td>
-                      <td className="py-1 text-left">{formatCurrency(amount)}</td>
+                      <td className="py-1 text-left">
+                        <EditableValue 
+                          value={amount} 
+                          onChange={(val) => updateValue('equity', name, val)}
+                          category="equity"
+                          name={name}
+                        />
+                      </td>
                     </tr>
                   ))}
+                  {editMode && (
+                    <tr>
+                      <td colSpan={2} className="py-1">
+                        <Button variant="ghost" size="sm" onClick={() => addNewAccount('equity')} className="text-xs">
+                          + إضافة حقوق ملكية
+                        </Button>
+                      </td>
+                    </tr>
+                  )}
                   <tr>
                     <td className="py-1 pr-4">- صافي الربح / (الخسارة)</td>
                     <td className={`py-1 text-left ${netIncome >= 0 ? 'text-green-600' : 'text-destructive'}`}>
