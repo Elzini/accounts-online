@@ -254,16 +254,16 @@ export function TrialBalanceAnalysisPage() {
       rawAccounts: [],
     };
 
-    // قائمة شاملة للكلمات التي تشير إلى حسابات إجمالية أو رئيسية
-    const excludePatterns = [
-      'إجمالي', 'اجمالي', 'صافي', 'مجموع', 'total', 'sum',
-      'الأصول', 'الاصول', 'الخصوم', 'الخصوم', 'حقوق الملكية', 'حقوق الملكيه',
-      'الإيرادات', 'الايرادات', 'المصروفات', 'المصاريف العمومية',
-      'الأصول الثابتة', 'الاصول الثابته', 'الأصول المتداولة', 'الاصول المتداوله',
-      'الخصوم المتداولة', 'الخصوم المتداوله', 'الخصوم طويلة الأجل',
-      'حقوق الملكية ورأس المال', 'حقوق الملكيه وراس المال',
-      'أرصدة دائنة أخرى', 'حسابات مدينة أخرى'
-    ];
+   // قائمة الكلمات التي تشير إلى حسابات رئيسية (نريد استخدامها)
+   const mainAccountPatterns = [
+     'إجمالي', 'اجمالي', 'مجموع', 'total'
+   ];
+   
+   // قائمة الكلمات التي تشير إلى عناوين أقسام فقط (نستبعدها)
+   const sectionHeaderPatterns = [
+     'الأصول:', 'الاصول:', 'الخصوم:', 'حقوق الملكية:', 'الإيرادات:', 'المصروفات:',
+     'أولاً', 'ثانياً', 'ثالثاً', 'رابعاً'
+   ];
 
     // تتبع المبالغ المستخدمة في كل فئة لتجنب التكرار
     const usedAmounts: { [category: string]: Set<number> } = {
@@ -275,11 +275,20 @@ export function TrialBalanceAnalysisPage() {
       expenses: new Set(),
     };
     
-    // دالة للتحقق مما إذا كان الحساب يجب استبعاده
-    const shouldExclude = (name: string): boolean => {
-      if (!name || name.trim().length === 0) return true;
+   // دالة للتحقق مما إذا كان الحساب رئيسي (نريد استخدامه)
+   const isMainAccount = (name: string): boolean => {
+     if (!name || name.trim().length === 0) return false;
       const lowerName = name.toLowerCase();
-      return excludePatterns.some(pattern => lowerName.includes(pattern.toLowerCase()));
+     return mainAccountPatterns.some(pattern => lowerName.includes(pattern.toLowerCase()));
+   };
+   
+   // دالة للتحقق مما إذا كان الحساب عنوان قسم فقط
+   const isSectionHeader = (name: string): boolean => {
+     if (!name || name.trim().length === 0) return false;
+     const trimmedName = name.trim();
+     return sectionHeaderPatterns.some(pattern => 
+       trimmedName === pattern || trimmedName.startsWith(pattern)
+     );
     };
 
     // دالة لإضافة حساب مع التحقق الصارم من التكرار
@@ -294,9 +303,9 @@ export function TrialBalanceAnalysisPage() {
         return { added: false, reason: 'مبلغ صفر' };
       }
       
-      if (shouldExclude(name)) {
-        console.log(`❌ استبعاد: ${name} - ${amount.toFixed(2)} - سبب: حساب إجمالي/رئيسي`);
-        return { added: false, reason: 'حساب إجمالي/رئيسي' };
+     if (isSectionHeader(name)) {
+       console.log(`❌ استبعاد: ${name} - ${amount.toFixed(2)} - سبب: عنوان قسم`);
+       return { added: false, reason: 'عنوان قسم' };
       }
       
       // تحقق من وجود حساب بنفس الاسم
@@ -421,18 +430,19 @@ export function TrialBalanceAnalysisPage() {
 
       // حفظ كل حساب يحتوي على أرقام (بما فيها الإجماليات للتوثيق)
       if (accountName && (debitAmount > 0 || creditAmount > 0)) {
-        const isExcluded = shouldExclude(accountName);
+       const isHeader = isSectionHeader(accountName);
+       const isMain = isMainAccount(accountName);
         
         reconciliation.rawAccounts.push({
           code: accountCode,
           name: accountName,
           debit: debitAmount,
           credit: creditAmount,
-          category: isExcluded ? 'مستبعد (حساب رئيسي)' : categorizeAccount(accountCode, accountName),
+         category: isHeader ? 'عنوان قسم' : (isMain ? 'حساب رئيسي' : categorizeAccount(accountCode, accountName)),
         });
 
-        // تجميع الإجماليات من الحسابات الفرعية فقط (غير المستبعدة)
-        if (!isExcluded) {
+       // تجميع الإجماليات من الحسابات الرئيسية فقط
+       if (isMain && !isHeader) {
           reconciliation.originalTotalDebit += debitAmount;
           reconciliation.originalTotalCredit += creditAmount;
         }
@@ -487,8 +497,10 @@ export function TrialBalanceAnalysisPage() {
       }
       const netAmount = debitAmount - creditAmount;
 
-      // تجاهل الحسابات الإجمالية
-      if (shouldExclude(accountName)) continue;
+     // نستخدم فقط الحسابات الرئيسية (التي تحتوي على إجمالي/مجموع)
+     // ونتجاهل عناوين الأقسام والحسابات الفرعية التفصيلية
+     if (isSectionHeader(accountName)) continue;
+     if (!isMainAccount(accountName)) continue;
 
       // تصنيف الحسابات بناءً على رمز الحساب (الأولوية) أو اسم الحساب
       let addResult: { added: boolean; reason?: string } = { added: false };
