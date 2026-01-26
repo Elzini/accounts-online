@@ -237,30 +237,377 @@ export function FinancialStatementsPage() {
 
   // ===== Parse Financial Statements from Excel =====
   const parseFinancialStatements = (workbook: XLSX.WorkBook): FinancialData => {
-    const result: FinancialData = { ...emptyFinancialData };
+    const result: FinancialData = JSON.parse(JSON.stringify(emptyFinancialData));
+    
+    console.log('🔍 Parsing Excel - Sheets:', workbook.SheetNames);
     
     // Try to find financial data across all sheets
-    workbook.SheetNames.forEach(sheetName => {
+    workbook.SheetNames.forEach((sheetName, sheetIndex) => {
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
       
-      // Parse each sheet
-      parseSheetData(jsonData, result);
+      console.log(`📄 Sheet ${sheetIndex + 1}: "${sheetName}" - Rows: ${jsonData.length}`);
+      
+      // Log first 5 rows for debugging
+      jsonData.slice(0, 10).forEach((row, i) => {
+        console.log(`  Row ${i}:`, row);
+      });
+      
+      // Parse each sheet based on its name or content
+      parseSheetByName(sheetName, jsonData, result);
     });
     
-    // Calculate totals
-    result.balanceSheet.totalAssets = 
-      result.balanceSheet.currentAssets.reduce((sum, item) => sum + item.amount, 0) +
-      result.balanceSheet.fixedAssets.reduce((sum, item) => sum + item.amount, 0);
+    // Calculate totals if not already set
+    if (result.balanceSheet.totalAssets === 0) {
+      result.balanceSheet.totalAssets = 
+        result.balanceSheet.currentAssets.reduce((sum, item) => sum + (item.amount || 0), 0) +
+        result.balanceSheet.fixedAssets.reduce((sum, item) => sum + (item.amount || 0), 0);
+    }
     
-    result.balanceSheet.totalLiabilities = 
-      result.balanceSheet.currentLiabilities.reduce((sum, item) => sum + item.amount, 0) +
-      result.balanceSheet.longTermLiabilities.reduce((sum, item) => sum + item.amount, 0);
+    if (result.balanceSheet.totalLiabilities === 0) {
+      result.balanceSheet.totalLiabilities = 
+        result.balanceSheet.currentLiabilities.reduce((sum, item) => sum + (item.amount || 0), 0) +
+        result.balanceSheet.longTermLiabilities.reduce((sum, item) => sum + (item.amount || 0), 0);
+    }
     
-    result.balanceSheet.totalEquity = 
-      result.balanceSheet.equity.reduce((sum, item) => sum + item.amount, 0);
+    if (result.balanceSheet.totalEquity === 0) {
+      result.balanceSheet.totalEquity = 
+        result.balanceSheet.equity.reduce((sum, item) => sum + (item.amount || 0), 0);
+    }
+    
+    console.log('✅ Parsed Result:', result);
     
     return result;
+  };
+
+  // ===== Parse Sheet By Name =====
+  const parseSheetByName = (sheetName: string, rows: any[][], result: FinancialData) => {
+    const lowerName = sheetName.toLowerCase();
+    const arabicName = sheetName;
+    
+    // Detect sheet type by name
+    if (arabicName.includes('المركز المالي') || arabicName.includes('الميزانية') || 
+        lowerName.includes('balance') || arabicName.includes('قائمة المركز')) {
+      parseBalanceSheet(rows, result);
+    } else if (arabicName.includes('الدخل') || arabicName.includes('الأرباح والخسائر') ||
+               lowerName.includes('income') || arabicName.includes('قائمة الدخل')) {
+      parseIncomeStatement(rows, result);
+    } else if (arabicName.includes('التدفقات النقدية') || lowerName.includes('cash flow')) {
+      parseCashFlowStatement(rows, result);
+    } else if (arabicName.includes('حقوق الملكية') || arabicName.includes('التغيرات') ||
+               lowerName.includes('equity')) {
+      parseEquityChanges(rows, result);
+    } else if (arabicName.includes('الزكاة') || arabicName.includes('زكاة') ||
+               lowerName.includes('zakat')) {
+      parseZakatCalculation(rows, result);
+    } else {
+      // Generic parsing - try to detect content
+      parseSheetData(rows, result);
+    }
+  };
+
+  // ===== Parse Balance Sheet =====
+  const parseBalanceSheet = (rows: any[][], result: FinancialData) => {
+    let currentSection = '';
+    
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0) continue;
+      
+      const rowText = row.map(cell => String(cell || '')).join(' ').trim();
+      
+      // Detect sections
+      if (rowText.includes('الموجودات المتداولة') || rowText.includes('الأصول المتداولة') ||
+          rowText.includes('أصول متداولة')) {
+        currentSection = 'currentAssets';
+        continue;
+      }
+      if (rowText.includes('الموجودات الغير متداولة') || rowText.includes('الأصول الثابتة') ||
+          rowText.includes('موجودات غير متداولة') || rowText.includes('أصول ثابتة')) {
+        currentSection = 'fixedAssets';
+        continue;
+      }
+      if (rowText.includes('المطلوبات المتداولة') || rowText.includes('الخصوم المتداولة') ||
+          rowText.includes('خصوم متداولة') || rowText.includes('التزامات متداولة')) {
+        currentSection = 'currentLiabilities';
+        continue;
+      }
+      if (rowText.includes('المطلوبات الغير متداولة') || rowText.includes('الخصوم طويلة الأجل') ||
+          rowText.includes('خصوم غير متداولة') || rowText.includes('التزامات طويلة')) {
+        currentSection = 'longTermLiabilities';
+        continue;
+      }
+      if (rowText.includes('حقوق الملكية') || rowText.includes('حقوق المساهمين') ||
+          rowText.includes('رأس المال والاحتياطيات')) {
+        currentSection = 'equity';
+        continue;
+      }
+      
+      // Extract totals
+      if (rowText.includes('إجمالي') || rowText.includes('اجمالي') || rowText.includes('مجموع')) {
+        const amount = extractAmount(row);
+        if (amount !== 0) {
+          if (rowText.includes('الموجودات') || rowText.includes('الأصول')) {
+            result.balanceSheet.totalAssets = Math.abs(amount);
+          } else if (rowText.includes('المطلوبات') || rowText.includes('الخصوم') || rowText.includes('الالتزامات')) {
+            result.balanceSheet.totalLiabilities = Math.abs(amount);
+          } else if (rowText.includes('حقوق الملكية') || rowText.includes('حقوق المساهمين')) {
+            result.balanceSheet.totalEquity = Math.abs(amount);
+          }
+        }
+        continue;
+      }
+      
+      // Extract account
+      const accountName = extractAccountName(row);
+      const amount = extractAmount(row);
+      
+      if (!accountName || accountName.length < 2) continue;
+      
+      switch (currentSection) {
+        case 'currentAssets':
+          result.balanceSheet.currentAssets.push({ name: accountName, amount: Math.abs(amount) });
+          break;
+        case 'fixedAssets':
+          result.balanceSheet.fixedAssets.push({ name: accountName, amount: Math.abs(amount) });
+          break;
+        case 'currentLiabilities':
+          result.balanceSheet.currentLiabilities.push({ name: accountName, amount: Math.abs(amount) });
+          break;
+        case 'longTermLiabilities':
+          result.balanceSheet.longTermLiabilities.push({ name: accountName, amount: Math.abs(amount) });
+          break;
+        case 'equity':
+          result.balanceSheet.equity.push({ name: accountName, amount: Math.abs(amount) });
+          break;
+      }
+    }
+  };
+
+  // ===== Parse Income Statement =====
+  const parseIncomeStatement = (rows: any[][], result: FinancialData) => {
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0) continue;
+      
+      const rowText = row.map(cell => String(cell || '')).join(' ').trim();
+      const amount = extractAmount(row);
+      
+      // Revenue / Sales
+      if ((rowText.includes('الإيرادات') || rowText.includes('المبيعات') || rowText.includes('إيرادات المبيعات')) &&
+          !rowText.includes('تكلفة') && !rowText.includes('إجمالي')) {
+        result.incomeStatement.revenue = Math.abs(amount);
+      }
+      // Cost of Revenue
+      else if (rowText.includes('تكلفة الإيرادات') || rowText.includes('تكلفة المبيعات') ||
+               rowText.includes('كلفة المبيعات')) {
+        result.incomeStatement.costOfRevenue = Math.abs(amount);
+      }
+      // Gross Profit
+      else if (rowText.includes('إجمالي الربح') || rowText.includes('مجمل الربح')) {
+        result.incomeStatement.grossProfit = amount;
+      }
+      // Operating Expenses
+      else if (rowText.includes('مصاريف') || rowText.includes('مصروفات')) {
+        if (rowText.includes('إجمالي') || rowText.includes('مجموع')) {
+          result.incomeStatement.totalOperatingExpenses = Math.abs(amount);
+        } else {
+          const name = extractAccountName(row);
+          if (name) {
+            result.incomeStatement.operatingExpenses.push({ name, amount: Math.abs(amount) });
+          }
+        }
+      }
+      // Operating Profit
+      else if (rowText.includes('ربح العمليات') || rowText.includes('الربح التشغيلي')) {
+        result.incomeStatement.operatingProfit = amount;
+      }
+      // Profit Before Zakat
+      else if (rowText.includes('الربح قبل الزكاة') || rowText.includes('صافي الربح قبل')) {
+        result.incomeStatement.profitBeforeZakat = amount;
+      }
+      // Zakat
+      else if ((rowText.includes('مخصص الزكاة') || rowText.includes('زكاة')) && 
+               !rowText.includes('قبل') && !rowText.includes('بعد')) {
+        result.incomeStatement.zakat = Math.abs(amount);
+      }
+      // Net Profit
+      else if (rowText.includes('صافي الربح') || rowText.includes('صافي الدخل')) {
+        result.incomeStatement.netProfit = amount;
+      }
+    }
+    
+    // Calculate derived values if not found
+    if (result.incomeStatement.grossProfit === 0) {
+      result.incomeStatement.grossProfit = result.incomeStatement.revenue - result.incomeStatement.costOfRevenue;
+    }
+    if (result.incomeStatement.totalOperatingExpenses === 0) {
+      result.incomeStatement.totalOperatingExpenses = result.incomeStatement.operatingExpenses.reduce((sum, e) => sum + e.amount, 0);
+    }
+    if (result.incomeStatement.operatingProfit === 0) {
+      result.incomeStatement.operatingProfit = result.incomeStatement.grossProfit - result.incomeStatement.totalOperatingExpenses;
+    }
+    if (result.incomeStatement.profitBeforeZakat === 0) {
+      result.incomeStatement.profitBeforeZakat = result.incomeStatement.operatingProfit;
+    }
+    if (result.incomeStatement.netProfit === 0) {
+      result.incomeStatement.netProfit = result.incomeStatement.profitBeforeZakat - result.incomeStatement.zakat;
+    }
+  };
+
+  // ===== Parse Cash Flow Statement =====
+  const parseCashFlowStatement = (rows: any[][], result: FinancialData) => {
+    let currentSection = '';
+    
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0) continue;
+      
+      const rowText = row.map(cell => String(cell || '')).join(' ').trim();
+      const amount = extractAmount(row);
+      
+      // Detect sections
+      if (rowText.includes('التشغيلية') || rowText.includes('الأنشطة التشغيلية')) {
+        currentSection = 'operating';
+        continue;
+      }
+      if (rowText.includes('الاستثمارية') || rowText.includes('الأنشطة الاستثمارية')) {
+        currentSection = 'investing';
+        continue;
+      }
+      if (rowText.includes('التمويلية') || rowText.includes('الأنشطة التمويلية')) {
+        currentSection = 'financing';
+        continue;
+      }
+      
+      // Totals
+      if (rowText.includes('صافي') && rowText.includes('النقدية')) {
+        if (currentSection === 'operating') {
+          result.cashFlow.totalOperating = amount;
+        } else if (currentSection === 'investing') {
+          result.cashFlow.totalInvesting = amount;
+        } else if (currentSection === 'financing') {
+          result.cashFlow.totalFinancing = amount;
+        }
+        continue;
+      }
+      
+      if (rowText.includes('رصيد النقدية') && rowText.includes('بداية')) {
+        result.cashFlow.openingCash = Math.abs(amount);
+        continue;
+      }
+      if (rowText.includes('رصيد النقدية') && rowText.includes('نهاية')) {
+        result.cashFlow.closingCash = Math.abs(amount);
+        continue;
+      }
+      
+      const name = extractAccountName(row);
+      if (!name) continue;
+      
+      switch (currentSection) {
+        case 'operating':
+          result.cashFlow.operating.push({ name, amount });
+          break;
+        case 'investing':
+          result.cashFlow.investing.push({ name, amount });
+          break;
+        case 'financing':
+          result.cashFlow.financing.push({ name, amount });
+          break;
+      }
+    }
+    
+    // Calculate net change
+    if (result.cashFlow.netChange === 0) {
+      result.cashFlow.netChange = result.cashFlow.totalOperating + result.cashFlow.totalInvesting + result.cashFlow.totalFinancing;
+    }
+  };
+
+  // ===== Parse Equity Changes =====
+  const parseEquityChanges = (rows: any[][], result: FinancialData) => {
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0) continue;
+      
+      const rowText = row.map(cell => String(cell || '')).join(' ').trim();
+      
+      if (rowText.includes('رصيد') && rowText.includes('بداية')) {
+        result.equityChanges.openingBalance = {
+          capital: extractNumberFromCell(row[1]),
+          reserves: extractNumberFromCell(row[2]),
+          retainedEarnings: extractNumberFromCell(row[3]),
+          total: extractNumberFromCell(row[4]) || extractAmount(row),
+        };
+      } else if (rowText.includes('رصيد') && rowText.includes('نهاية')) {
+        result.equityChanges.closingBalance = {
+          capital: extractNumberFromCell(row[1]),
+          reserves: extractNumberFromCell(row[2]),
+          retainedEarnings: extractNumberFromCell(row[3]),
+          total: extractNumberFromCell(row[4]) || extractAmount(row),
+        };
+      }
+    }
+  };
+
+  // ===== Parse Zakat Calculation =====
+  const parseZakatCalculation = (rows: any[][], result: FinancialData) => {
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0) continue;
+      
+      const rowText = row.map(cell => String(cell || '')).join(' ').trim();
+      const amount = extractAmount(row);
+      
+      if (rowText.includes('الربح قبل الزكاة') || rowText.includes('صافي الربح قبل')) {
+        result.zakatCalculation.profitBeforeZakat = amount;
+      } else if (rowText.includes('رأس المال') && !rowText.includes('إجمالي')) {
+        result.zakatCalculation.capital = Math.abs(amount);
+      } else if (rowText.includes('احتياطي نظامي') || rowText.includes('الاحتياطي النظامي')) {
+        result.zakatCalculation.statutoryReserve = Math.abs(amount);
+      } else if (rowText.includes('جاري الشركاء') || rowText.includes('حساب جاري')) {
+        result.zakatCalculation.partnersCurrentAccount = Math.abs(amount);
+      } else if (rowText.includes('منافع الموظفين') || rowText.includes('نهاية الخدمة')) {
+        result.zakatCalculation.employeeBenefitsLiabilities = Math.abs(amount);
+      } else if (rowText.includes('أصول ثابتة') || rowText.includes('الموجودات الثابتة')) {
+        result.zakatCalculation.fixedAssets = Math.abs(amount);
+      } else if (rowText.includes('أصول غير ملموسة') || rowText.includes('موجودات غير ملموسة')) {
+        result.zakatCalculation.intangibleAssets = Math.abs(amount);
+      } else if (rowText.includes('الوعاء الزكوي') && !rowText.includes('إجمالي')) {
+        result.zakatCalculation.zakatBase = Math.abs(amount);
+      } else if (rowText.includes('إجمالي الزكاة') || rowText.includes('مخصص الزكاة')) {
+        result.zakatCalculation.totalZakat = Math.abs(amount);
+      }
+    }
+    
+    // Calculate if not found
+    if (result.zakatCalculation.zakatBaseTotal === 0) {
+      result.zakatCalculation.zakatBaseTotal = 
+        result.zakatCalculation.capital + 
+        result.zakatCalculation.statutoryReserve + 
+        result.zakatCalculation.employeeBenefitsLiabilities;
+    }
+    if (result.zakatCalculation.totalDeductions === 0) {
+      result.zakatCalculation.totalDeductions = 
+        result.zakatCalculation.fixedAssets + 
+        result.zakatCalculation.intangibleAssets;
+    }
+    if (result.zakatCalculation.zakatBase === 0) {
+      result.zakatCalculation.zakatBase = Math.max(0, 
+        result.zakatCalculation.zakatBaseTotal - result.zakatCalculation.totalDeductions);
+    }
+    if (result.zakatCalculation.zakatOnBase === 0) {
+      result.zakatCalculation.zakatOnBase = result.zakatCalculation.zakatBase * 0.025;
+    }
+  };
+
+  // ===== Extract Number from Cell =====
+  const extractNumberFromCell = (cell: any): number => {
+    if (typeof cell === 'number' && !isNaN(cell)) return cell;
+    if (typeof cell === 'string') {
+      const num = parseFloat(cell.replace(/[^\d.-]/g, ''));
+      if (!isNaN(num)) return num;
+    }
+    return 0;
   };
 
   // ===== Parse Sheet Data =====
@@ -460,22 +807,53 @@ export function FinancialStatementsPage() {
 
   // ===== Helper Functions =====
   const extractAccountName = (row: any[]): string => {
+    // Search for text cells (prioritize longer text that looks like account names)
+    let bestName = '';
     for (const cell of row) {
-      if (typeof cell === 'string' && cell.trim().length > 2 && !/^\d+(\.\d+)?$/.test(cell.trim())) {
-        return cell.trim();
+      const str = String(cell || '').trim();
+      // Skip numbers, short strings, and common headers
+      if (str.length < 2) continue;
+      if (/^[\d,.()-]+$/.test(str)) continue;
+      if (['البيان', 'إيضاح', 'ملاحظات', 'note', 'notes'].some(h => str.toLowerCase().includes(h.toLowerCase()))) continue;
+      
+      // Prefer longer Arabic text
+      if (str.length > bestName.length && /[\u0600-\u06FF]/.test(str)) {
+        bestName = str;
+      } else if (!bestName && str.length > 2) {
+        bestName = str;
       }
     }
-    return '';
+    return bestName;
   };
 
   const extractAmount = (row: any[]): number => {
-    // Search for numeric values (prioritize larger absolute values in case of multiple)
+    // Search for numeric values
+    // Prefer values from later columns (usually the amounts)
     let amount = 0;
-    for (const cell of row) {
-      if (typeof cell === 'number' && !isNaN(cell) && Math.abs(cell) > Math.abs(amount)) {
-        amount = cell;
+    let lastIndex = -1;
+    
+    for (let i = 0; i < row.length; i++) {
+      const cell = row[i];
+      let num = 0;
+      
+      if (typeof cell === 'number' && !isNaN(cell)) {
+        num = cell;
+      } else if (typeof cell === 'string') {
+        // Try to parse formatted numbers like "1,234,567" or "(1,234)"
+        const cleaned = cell.replace(/[,\s]/g, '').replace(/[()]/g, '-');
+        const parsed = parseFloat(cleaned);
+        if (!isNaN(parsed)) {
+          num = parsed;
+        }
+      }
+      
+      // Take the last non-zero number (usually the amount column)
+      if (num !== 0) {
+        amount = num;
+        lastIndex = i;
       }
     }
+    
     return amount;
   };
 
