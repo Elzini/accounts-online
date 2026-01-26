@@ -227,7 +227,13 @@ export function TrialBalanceAnalysisPage() {
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+        // IMPORTANT: defval keeps empty cells so column positions don't shift
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+          header: 1,
+          defval: '',
+          blankrows: false,
+          raw: true,
+        }) as any[][];
 
         console.log('Excel rows count:', jsonData.length);
         
@@ -472,167 +478,188 @@ export function TrialBalanceAnalysisPage() {
     };
 
     // === المرحلة الأولى: استخراج جميع الحسابات الخام وحساب الإجماليات الأصلية ===
-    // نبحث أولاً عن صف العناوين لمعرفة ترتيب الأعمدة
-    let columnOrder = 'rtl'; // الترتيب الافتراضي: من اليمين لليسار (عربي)
-    
-    for (let i = 0; i < Math.min(rows.length, 10); i++) {
-      const row = rows[i];
-      if (!row) continue;
-      const rowText = row.map(cell => String(cell || '')).join(' ');
-      // إذا وجدنا "مدين" قبل "دائن" في الصف، الترتيب من اليسار لليمين
-      if (rowText.includes('مدين') && rowText.includes('دائن')) {
-        const debitIdx = rowText.indexOf('مدين');
-        const creditIdx = rowText.indexOf('دائن');
-        if (debitIdx < creditIdx) {
-          columnOrder = 'ltr';
-        }
-        console.log('📊 ترتيب الأعمدة:', columnOrder === 'rtl' ? 'يمين لليسار' : 'يسار لليمين');
-        break;
-      }
-    }
-    
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row || row.length === 0) continue;
+    // نحدد الأعمدة من ترويسة الجدول حتى لا نعتمد على ترتيب ثابت.
+    type ColumnMap = {
+      headerRowIndex: number;
+      nameCol?: number;
+      codeCol?: number;
+      openingDebit?: number;
+      openingCredit?: number;
+      movementDebit?: number;
+      movementCredit?: number;
+      closingDebit?: number;
+      closingCredit?: number;
+    };
 
-      // في ملف Excel: الأعمدة الرقمية أولاً، ثم اسم الحساب، ثم رقم الحساب في آخر عمود
-      // نبحث عن اسم الحساب (نص طويل) ورقم الحساب (آخر عمود)
-      let accountName = '';
-      let accountCode = '';
-      
-      // آخر عمود هو رقم الحساب
-      const lastCell = row[row.length - 1];
-      if (lastCell !== undefined && lastCell !== null && lastCell !== '') {
-        const lastCellStr = String(lastCell).trim();
-        // إذا كان رقماً، فهو كود الحساب
-        if (/^\d+$/.test(lastCellStr)) {
-          accountCode = lastCellStr;
-        }
-      }
-      
-      // نبحث عن اسم الحساب (أول نص طويل وليس رقماً)
-      for (let j = 0; j < row.length - 1; j++) {
-        const cell = row[j];
-        if (typeof cell === 'string' && cell.trim().length > 2 && !/^\d+(\.\d+)?$/.test(cell.trim())) {
-          accountName = cell.trim();
+    const normalize = (v: any) => String(v ?? '').trim();
+
+    const parseCellNumber = (v: any): number => {
+      if (typeof v === 'number' && !isNaN(v)) return v;
+      if (typeof v !== 'string') return 0;
+      const s = v.trim();
+      if (!s) return 0;
+      const negative = s.includes('(') && s.includes(')');
+      const cleaned = s
+        .replace(/[()]/g, '')
+        .replace(/,/g, '')
+        .replace(/\s/g, '')
+        .replace(/[^ -\u007F\d.-]/g, '');
+      const num = parseFloat(cleaned);
+      if (isNaN(num)) return 0;
+      return negative ? -num : num;
+    };
+
+    const detectColumnMap = (allRows: any[][]): ColumnMap => {
+      const maxScan = Math.min(allRows.length, 40);
+
+      const isOpeningLabel = (t: string) =>
+        t.includes('الرصيد السابق') || t.includes('رصيد سابق') || t.includes('افتتاح') || t.includes('بداية');
+      const isMovementLabel = (t: string) =>
+        t.includes('الحركة') || t.includes('حركة') || t.includes('دوران') || t.includes('المتغير');
+      const isClosingLabel = (t: string) =>
+        t.includes('الصافي') || t.includes('الختامي') || t.includes('الرصيد الختامي') || t.includes('نهاية');
+
+      const map: ColumnMap = { headerRowIndex: 0 };
+
+      // 1) ابحث عن صف فيه العناوين الرئيسية (الرصيد السابق/الحركة/الصافي)
+      for (let i = 0; i < maxScan; i++) {
+        const row = allRows[i];
+        if (!row) continue;
+        const joined = row.map(normalize).join(' ');
+        if ((joined.includes('الرصيد') || joined.includes('افتتاح')) && joined.includes('الحركة') && (joined.includes('الصافي') || joined.includes('الختامي'))) {
+          map.headerRowIndex = i;
           break;
         }
       }
-      
-      // البحث عن المبالغ - جمع كل الأرقام من الصف
-      const numbers: number[] = [];
-      for (let j = 0; j < row.length; j++) {
-        const cell = row[j];
-        if (typeof cell === 'number' && !isNaN(cell)) {
-          numbers.push(cell);
-        } else if (typeof cell === 'string') {
-          // محاولة تحويل النص إلى رقم (مثل "1,234.56" أو "(100)")
-          const cleaned = cell.replace(/,/g, '').replace(/\s/g, '');
-          if (/^\(?\d+\.?\d*\)?$/.test(cleaned)) {
-            let num = parseFloat(cleaned.replace(/[()]/g, ''));
-            if (cleaned.includes('(')) num = -num;
-            if (!isNaN(num)) numbers.push(num);
+
+      const headerRow = allRows[map.headerRowIndex] || [];
+      const subHeaderRow = allRows[map.headerRowIndex + 1] || [];
+
+      // 2) اكتشف أعمدة الاسم/الكود من الترويسة
+      const nameKeywords = ['اسم الحساب', 'الحساب', 'البيان', 'account', 'description'];
+      const codeKeywords = ['رقم الحساب', 'الرمز', 'كود', 'code'];
+
+      const findColByKeywords = (rowA: any[], rowB: any[], keywords: string[]) => {
+        const maxCols = Math.max(rowA.length, rowB.length);
+        for (let c = 0; c < maxCols; c++) {
+          const t = (normalize(rowA[c]) + ' ' + normalize(rowB[c])).toLowerCase();
+          if (keywords.some(k => t.includes(k.toLowerCase()))) return c;
+        }
+        return undefined;
+      };
+
+      map.nameCol = findColByKeywords(headerRow, subHeaderRow, nameKeywords);
+      map.codeCol = findColByKeywords(headerRow, subHeaderRow, codeKeywords);
+
+      // 3) ابني خريطة أعمدة المدين/الدائن لكل قسم بالاعتماد على صفين (merged headers)
+      const maxCols = Math.max(headerRow.length, subHeaderRow.length);
+      let currentSection = '';
+      for (let c = 0; c < maxCols; c++) {
+        const sectionCell = normalize(headerRow[c]);
+        if (sectionCell) currentSection = sectionCell;
+        const dc = normalize(subHeaderRow[c]);
+        const isDebit = dc.includes('مدين');
+        const isCredit = dc.includes('دائن');
+
+        if (!currentSection || (!isDebit && !isCredit)) continue;
+
+        if (isOpeningLabel(currentSection)) {
+          if (isDebit) map.openingDebit = c;
+          if (isCredit) map.openingCredit = c;
+        } else if (isMovementLabel(currentSection)) {
+          if (isDebit) map.movementDebit = c;
+          if (isCredit) map.movementCredit = c;
+        } else if (isClosingLabel(currentSection)) {
+          if (isDebit) map.closingDebit = c;
+          if (isCredit) map.closingCredit = c;
+        }
+      }
+
+      console.log('🧭 Trial Balance column map:', map);
+      return map;
+    };
+
+    const colMap = detectColumnMap(rows);
+    const startDataRow = Math.min(rows.length, (colMap.headerRowIndex || 0) + 2);
+
+    for (let i = startDataRow; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0) continue;
+
+      // اسم الحساب وكوده (حسب الترويسة إن أمكن)
+      let accountName = '';
+      let accountCode = '';
+
+      if (colMap.nameCol !== undefined) {
+        accountName = normalize(row[colMap.nameCol]);
+      }
+      if (colMap.codeCol !== undefined) {
+        const codeCandidate = normalize(row[colMap.codeCol]);
+        if (/^\d+$/.test(codeCandidate)) accountCode = codeCandidate;
+      }
+
+      // fallback: ابحث عن اسم نصي وعن كود رقمي في الصف
+      if (!accountName) {
+        for (let j = 0; j < row.length; j++) {
+          const cell = row[j];
+          const s = normalize(cell);
+          if (s.length > 2 && !/^\d+(\.\d+)?$/.test(s) && !s.includes('مدين') && !s.includes('دائن')) {
+            accountName = s;
+            break;
           }
         }
       }
-      
-      console.log(`Row ${i}: "${accountName}" (${accountCode}) - Numbers: [${numbers.join(', ')}]`);
-      
-      // ملف ميزان المراجعة: 6 أعمدة
-      // الترتيب يعتمد على اتجاه الملف
-      // RTL (عربي): [دائن صافي, مدين صافي, دائن حركة, مدين حركة, دائن سابق, مدين سابق]
-      // LTR: [مدين سابق, دائن سابق, مدين حركة, دائن حركة, مدين صافي, دائن صافي]
-      
-      let openingDebit = 0, openingCredit = 0;
-      let movementDebit = 0, movementCredit = 0;
-      let closingDebit = 0, closingCredit = 0;
-      
-      if (numbers.length >= 6) {
-        if (columnOrder === 'rtl') {
-          // من اليمين لليسار (ملف عربي نموذجي)
-          closingCredit = numbers[0] || 0;
-          closingDebit = numbers[1] || 0;
-          movementCredit = numbers[2] || 0;
-          movementDebit = numbers[3] || 0;
-          openingCredit = numbers[4] || 0;
-          openingDebit = numbers[5] || 0;
-        } else {
-          // من اليسار لليمين
-          openingDebit = numbers[0] || 0;
-          openingCredit = numbers[1] || 0;
-          movementDebit = numbers[2] || 0;
-          movementCredit = numbers[3] || 0;
-          closingDebit = numbers[4] || 0;
-          closingCredit = numbers[5] || 0;
-        }
-      } else if (numbers.length >= 4) {
-        // 4 أعمدة: حركة + صافي فقط
-        if (columnOrder === 'rtl') {
-          closingCredit = numbers[0] || 0;
-          closingDebit = numbers[1] || 0;
-          movementCredit = numbers[2] || 0;
-          movementDebit = numbers[3] || 0;
-        } else {
-          movementDebit = numbers[0] || 0;
-          movementCredit = numbers[1] || 0;
-          closingDebit = numbers[2] || 0;
-          closingCredit = numbers[3] || 0;
-        }
-      } else if (numbers.length >= 2) {
-        // عمودين فقط: مدين ودائن
-        if (columnOrder === 'rtl') {
-          closingCredit = numbers[0] || 0;
-          closingDebit = numbers[1] || 0;
-        } else {
-          closingDebit = numbers[0] || 0;
-          closingCredit = numbers[1] || 0;
+      if (!accountCode) {
+        for (let j = row.length - 1; j >= 0; j--) {
+          const s = normalize(row[j]);
+          if (/^\d+$/.test(s)) {
+            accountCode = s;
+            break;
+          }
         }
       }
-      
-      // التأكد من أن القيم موجبة للعرض
-      openingDebit = Math.abs(openingDebit);
-      openingCredit = Math.abs(openingCredit);
-      movementDebit = Math.abs(movementDebit);
-      movementCredit = Math.abs(movementCredit);
-      closingDebit = Math.abs(closingDebit);
-      closingCredit = Math.abs(closingCredit);
 
-      // حفظ كل حساب يحتوي على أرقام
-      const hasAnyValue = openingDebit > 0 || openingCredit > 0 || movementDebit > 0 || movementCredit > 0 || closingDebit > 0 || closingCredit > 0;
-      
-      if (accountName && hasAnyValue) {
-        const isHeader = isSectionHeader(accountName, accountCode);
-        const isMain = isMainAccount(accountCode);
-        const isSub = isSubAccount(accountCode);
-        
-        // تحديد التصنيف بناءً على رقم الحساب
-        let accountCategory = 'غير مصنف';
-        if (isHeader) {
-          accountCategory = 'عنوان قسم';
-        } else if (isMain) {
-          accountCategory = 'حساب رئيسي';
-        } else if (isSub) {
-          accountCategory = categorizeAccount(accountCode, accountName);
-        }
-        
-        reconciliation.rawAccounts.push({
-          code: accountCode,
-          name: accountName,
-          openingDebit,
-          openingCredit,
-          movementDebit,
-          movementCredit,
-          closingDebit,
-          closingCredit,
-          category: accountCategory,
-        });
+      const openingDebit = Math.abs(parseCellNumber(colMap.openingDebit !== undefined ? row[colMap.openingDebit] : 0));
+      const openingCredit = Math.abs(parseCellNumber(colMap.openingCredit !== undefined ? row[colMap.openingCredit] : 0));
+      const movementDebit = Math.abs(parseCellNumber(colMap.movementDebit !== undefined ? row[colMap.movementDebit] : 0));
+      const movementCredit = Math.abs(parseCellNumber(colMap.movementCredit !== undefined ? row[colMap.movementCredit] : 0));
+      const closingDebit = Math.abs(parseCellNumber(colMap.closingDebit !== undefined ? row[colMap.closingDebit] : 0));
+      const closingCredit = Math.abs(parseCellNumber(colMap.closingCredit !== undefined ? row[colMap.closingCredit] : 0));
 
-        // ✅ نجمع فقط الحسابات الفرعية (3+ أرقام) للإجمالي
-        if (accountCode.length >= 3 && /^\d+$/.test(accountCode) && !isHeader) {
-          reconciliation.originalTotalDebit += closingDebit;
-          reconciliation.originalTotalCredit += closingCredit;
-          console.log(`📊 تم إضافة للإجمالي: ${accountCode} - ${accountName} | مدين: ${closingDebit} | دائن: ${closingCredit}`);
-        }
+      const hasAnyValue =
+        openingDebit > 0 || openingCredit > 0 || movementDebit > 0 || movementCredit > 0 || closingDebit > 0 || closingCredit > 0;
+
+      if (!accountName || !hasAnyValue) continue;
+
+      const isHeader = isSectionHeader(accountName, accountCode);
+      const isMain = isMainAccount(accountCode);
+      const isSub = isSubAccount(accountCode);
+
+      let accountCategory = 'غير مصنف';
+      if (isHeader) {
+        accountCategory = 'عنوان قسم';
+      } else if (isMain) {
+        accountCategory = 'حساب رئيسي';
+      } else if (isSub) {
+        accountCategory = categorizeAccount(accountCode, accountName);
+      }
+
+      reconciliation.rawAccounts.push({
+        code: accountCode,
+        name: accountName,
+        openingDebit,
+        openingCredit,
+        movementDebit,
+        movementCredit,
+        closingDebit,
+        closingCredit,
+        category: accountCategory,
+      });
+
+      // إجماليات الملف (من الصافي فقط)
+      if (accountCode.length >= 3 && /^\d+$/.test(accountCode) && !isHeader) {
+        reconciliation.originalTotalDebit += closingDebit;
+        reconciliation.originalTotalCredit += closingCredit;
       }
     }
     
