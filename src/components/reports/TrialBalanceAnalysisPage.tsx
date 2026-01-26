@@ -469,7 +469,6 @@ export function TrialBalanceAnalysisPage() {
       
       // البحث عن المبالغ - الملف يحتوي على: الرصيد السابق، الحركة، الصافي
       // نستخدم عمود "الصافي" (العمود الأخير) للحساب
-      let netAmount = 0;
       
       // نبحث عن جميع الأرقام في الصف
       const numbers: number[] = [];
@@ -480,12 +479,16 @@ export function TrialBalanceAnalysisPage() {
         }
       }
       
-      // في ملف ميزان المراجعة: الأعمدة هي [الرصيد السابق، الحركة، الصافي]
-      // نستخدم العمود الأخير (الصافي) للحساب
-      if (numbers.length >= 3) {
-        netAmount = numbers[numbers.length - 1]; // العمود الأخير = الصافي
-      } else if (numbers.length >= 1) {
-        netAmount = numbers[numbers.length - 1]; // أو آخر رقم متاح
+      // ملف ميزان المراجعة: 6 أعمدة (رصيد سابق مدين/دائن، حركة مدين/دائن، صافي مدين/دائن)
+      // العمود الأخير غالباً 0، لذلك نبحث عن آخر رقم غير صفري
+      let netAmount = 0;
+      
+      // نبحث عن آخر رقم غير صفري من نهاية المصفوفة
+      for (let i = numbers.length - 1; i >= 0; i--) {
+        if (numbers[i] !== 0) {
+          netAmount = numbers[i];
+          break;
+        }
       }
       
       // تحديد المدين والدائن بناءً على إشارة الصافي
