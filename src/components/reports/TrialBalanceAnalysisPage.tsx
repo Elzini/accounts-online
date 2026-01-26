@@ -328,10 +328,21 @@ export function TrialBalanceAnalysisPage() {
       const accountName = String(row.find(cell => typeof cell === 'string' && cell.length > 2) || '').trim();
       const accountCode = String(row.find(cell => typeof cell === 'number' || /^\d+$/.test(String(cell))) || '');
       
-      // البحث عن المبالغ (مدين/دائن)
-      const numbers = row.filter(cell => typeof cell === 'number' && cell !== 0);
-      const debitAmount = numbers.length > 0 ? Math.abs(numbers[0]) : 0;
-      const creditAmount = numbers.length > 1 ? Math.abs(numbers[1]) : 0;
+      // البحث عن المبالغ - استخراج آخر عمودين (الصافي المدين والصافي الدائن)
+      const allNumbers = row.filter(cell => typeof cell === 'number');
+      // في ميزان المراجعة الشامل: الأعمدة الأخيرة هي الصافي (المدين ثم الدائن)
+      // ترتيب الأعمدة: الرقم | اسم الحساب | مدين سابق | دائن سابق | مدين حركة | دائن حركة | مدين صافي | دائن صافي
+      let debitAmount = 0;
+      let creditAmount = 0;
+      
+      if (allNumbers.length >= 2) {
+        // آخر رقمين هما الصافي المدين والصافي الدائن
+        debitAmount = Math.abs(allNumbers[allNumbers.length - 2] || 0);
+        creditAmount = Math.abs(allNumbers[allNumbers.length - 1] || 0);
+      } else if (allNumbers.length === 1) {
+        // رقم واحد فقط - نعتبره مدين
+        debitAmount = Math.abs(allNumbers[0] || 0);
+      }
 
       // حفظ كل حساب يحتوي على أرقام (بما فيها الإجماليات للتوثيق)
       if (accountName && (debitAmount > 0 || creditAmount > 0)) {
@@ -381,9 +392,17 @@ export function TrialBalanceAnalysisPage() {
       const accountName = String(row.find(cell => typeof cell === 'string' && cell.length > 2) || '').trim();
       const accountCode = String(row.find(cell => typeof cell === 'number' || /^\d+$/.test(String(cell))) || '');
       
-      const numbers = row.filter(cell => typeof cell === 'number' && cell !== 0);
-      const debitAmount = numbers.length > 0 ? Math.abs(numbers[0]) : 0;
-      const creditAmount = numbers.length > 1 ? Math.abs(numbers[1]) : 0;
+      // البحث عن المبالغ - استخراج آخر عمودين (الصافي المدين والصافي الدائن)
+      const allNumbers = row.filter(cell => typeof cell === 'number');
+      let debitAmount = 0;
+      let creditAmount = 0;
+      
+      if (allNumbers.length >= 2) {
+        debitAmount = Math.abs(allNumbers[allNumbers.length - 2] || 0);
+        creditAmount = Math.abs(allNumbers[allNumbers.length - 1] || 0);
+      } else if (allNumbers.length === 1) {
+        debitAmount = Math.abs(allNumbers[0] || 0);
+      }
       const netAmount = debitAmount - creditAmount;
 
       // تجاهل الحسابات الإجمالية
