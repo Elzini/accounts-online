@@ -334,21 +334,29 @@ export function TrialBalanceAnalysisPage() {
       const accountName = String(row.find(cell => typeof cell === 'string' && cell.length > 2) || '').trim();
       const accountCode = String(row.find(cell => typeof cell === 'number' || /^\d+$/.test(String(cell))) || '');
       
-      // البحث عن المبالغ - استخراج آخر عمودين (الصافي المدين والصافي الدائن)
-      const allNumbers = row.filter(cell => typeof cell === 'number');
-      // في ميزان المراجعة الشامل: الأعمدة الأخيرة هي الصافي (المدين ثم الدائن)
-      // ترتيب الأعمدة: الرقم | اسم الحساب | مدين سابق | دائن سابق | مدين حركة | دائن حركة | مدين صافي | دائن صافي
+      // البحث عن المبالغ - نبحث في جميع الخلايا بالترتيب
+      // في ميزان المراجعة الشامل: العمودان الأولان بعد اسم الحساب هما الصافي (الدائن ثم المدين)
       let debitAmount = 0;
       let creditAmount = 0;
       
-      if (allNumbers.length >= 2) {
-        // آخر رقمين هما الصافي المدين والصافي الدائن
-        debitAmount = Math.abs(allNumbers[allNumbers.length - 2] || 0);
-        creditAmount = Math.abs(allNumbers[allNumbers.length - 1] || 0);
-      } else if (allNumbers.length === 1) {
-        // رقم واحد فقط - نعتبره مدين
-        debitAmount = Math.abs(allNumbers[0] || 0);
+      // نبحث عن أول رقمين بعد اسم الحساب
+      const numbers: number[] = [];
+      for (let j = 0; j < row.length; j++) {
+        const cell = row[j];
+        if (typeof cell === 'number' && !isNaN(cell)) {
+          numbers.push(Math.abs(cell));
+        }
       }
+      
+      // في ملف ميزان المراجعة: أول عمودين هما الصافي (دائن، مدين)
+      if (numbers.length >= 2) {
+        creditAmount = numbers[0]; // العمود الأول = الدائن
+        debitAmount = numbers[1];  // العمود الثاني = المدين
+      } else if (numbers.length === 1) {
+        debitAmount = numbers[0];
+      }
+      
+      console.log('Row:', accountName, 'Numbers:', numbers, 'Debit:', debitAmount, 'Credit:', creditAmount);
 
       // حفظ كل حساب يحتوي على أرقام (بما فيها الإجماليات للتوثيق)
       if (accountName && (debitAmount > 0 || creditAmount > 0)) {
@@ -398,16 +406,23 @@ export function TrialBalanceAnalysisPage() {
       const accountName = String(row.find(cell => typeof cell === 'string' && cell.length > 2) || '').trim();
       const accountCode = String(row.find(cell => typeof cell === 'number' || /^\d+$/.test(String(cell))) || '');
       
-      // البحث عن المبالغ - استخراج آخر عمودين (الصافي المدين والصافي الدائن)
-      const allNumbers = row.filter(cell => typeof cell === 'number');
+      // البحث عن المبالغ - استخراج أول رقمين بعد اسم الحساب
       let debitAmount = 0;
       let creditAmount = 0;
       
-      if (allNumbers.length >= 2) {
-        debitAmount = Math.abs(allNumbers[allNumbers.length - 2] || 0);
-        creditAmount = Math.abs(allNumbers[allNumbers.length - 1] || 0);
-      } else if (allNumbers.length === 1) {
-        debitAmount = Math.abs(allNumbers[0] || 0);
+      const numbers: number[] = [];
+      for (let j = 0; j < row.length; j++) {
+        const cell = row[j];
+        if (typeof cell === 'number' && !isNaN(cell)) {
+          numbers.push(Math.abs(cell));
+        }
+      }
+      
+      if (numbers.length >= 2) {
+        creditAmount = numbers[0]; // العمود الأول = الدائن
+        debitAmount = numbers[1];  // العمود الثاني = المدين
+      } else if (numbers.length === 1) {
+        debitAmount = numbers[0];
       }
       const netAmount = debitAmount - creditAmount;
 
