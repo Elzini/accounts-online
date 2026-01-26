@@ -62,6 +62,10 @@ export function TrialBalanceAnalysisPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reportRef = useRef<HTMLDivElement>(null);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  
+  // حقول إدخال يدوية لحساب الزكاة بدقة
+  const [manualCapital, setManualCapital] = useState<number | null>(null);
+  const [useManualCapital, setUseManualCapital] = useState(false);
 
   // جلب الملفات المحفوظة
   useEffect(() => {
@@ -390,9 +394,13 @@ export function TrialBalanceAnalysisPage() {
   const totalLiabilitiesAndEquity = totalLiabilities + adjustedEquity;
 
   // حساب الزكاة - طريقة صافي الأصول
-  // الوعاء الزكوي = الإيجار المدفوع مقدماً - الأصول الثابتة
-  const prepaidRent = data.currentAssets['إيجار مدفوع مقدماً'] || data.currentAssets['ايجار مدفوع مقدما'] || data.currentAssets['ايجار مدفوع مقدماً'] || 0;
-  const zakatBase = prepaidRent - totalFixedAssets;
+  // رأس المال المستخدم في الحساب (يدوي أو من الملف)
+  const capitalForZakat = useManualCapital && manualCapital !== null ? manualCapital : totalEquity;
+  
+  // الوعاء الزكوي = رأس المال + صافي الربح - الأصول الثابتة - الإيجار المدفوع مقدماً طويل الأجل
+  const prepaidRent = data.currentAssets['إيجار مدفوع مقدماً'] || data.currentAssets['ايجار مدفوع مقدما'] || data.currentAssets['ايجار مدفوع مقدماً'] || data.currentAssets['إيجار مدفوع مقدما'] || 0;
+  const prepaidRentLongTerm = prepaidRent * (11/12); // الجزء طويل الأجل
+  const zakatBase = capitalForZakat + netIncome - totalFixedAssets - prepaidRentLongTerm;
   const zakatDue = zakatBase > 0 ? zakatBase * 0.025 : 0;
 
   const formatCurrency = (amount: number) => {
@@ -878,12 +886,50 @@ export function TrialBalanceAnalysisPage() {
       {/* Zakat Calculation */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="w-5 h-5" />
-            حساب الزكاة الشرعية
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calculator className="w-5 h-5" />
+              حساب الزكاة الشرعية
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* إدخال رأس المال يدوياً */}
+          <div className="mb-6 p-4 bg-muted/50 rounded-lg border">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="useManualCapital"
+                  checked={useManualCapital}
+                  onChange={(e) => setUseManualCapital(e.target.checked)}
+                  className="w-4 h-4 rounded border-border"
+                />
+                <label htmlFor="useManualCapital" className="text-sm font-medium">
+                  إدخال رأس المال يدوياً
+                </label>
+              </div>
+              {useManualCapital && (
+                <div className="flex items-center gap-2 flex-1">
+                  <label className="text-sm text-muted-foreground whitespace-nowrap">رأس المال:</label>
+                  <Input
+                    type="number"
+                    placeholder="أدخل رأس المال"
+                    value={manualCapital ?? ''}
+                    onChange={(e) => setManualCapital(e.target.value ? parseFloat(e.target.value) : null)}
+                    className="max-w-[200px]"
+                  />
+                  <span className="text-sm text-muted-foreground">ر.س</span>
+                </div>
+              )}
+            </div>
+            {useManualCapital && (
+              <p className="text-xs text-muted-foreground mt-2">
+                💡 استخدم هذا الخيار إذا كان رأس المال في ملف الميزان غير دقيق أو ناقص
+              </p>
+            )}
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm max-w-2xl">
               <tbody>
@@ -891,8 +937,11 @@ export function TrialBalanceAnalysisPage() {
                   <td className="py-2 font-semibold" colSpan={2}>الوعاء الزكوي:</td>
                 </tr>
                 <tr>
-                  <td className="py-1 pr-4">(+) رأس المال المستثمر</td>
-                  <td className="py-1 text-left">{formatCurrency(totalEquity)}</td>
+                  <td className="py-1 pr-4">
+                    (+) رأس المال المستثمر
+                    {useManualCapital && <span className="text-xs text-primary mr-2">(يدوي)</span>}
+                  </td>
+                  <td className="py-1 text-left">{formatCurrency(capitalForZakat)}</td>
                 </tr>
                 <tr>
                   <td className="py-1 pr-4">(+/-) صافي الربح / الخسارة</td>
@@ -903,7 +952,7 @@ export function TrialBalanceAnalysisPage() {
                 <tr className="border-t">
                   <td className="py-2">إجمالي مصادر التمويل</td>
                   <td className="py-2 text-left font-medium">
-                    {formatCurrency(totalEquity + netIncome)}
+                    {formatCurrency(capitalForZakat + netIncome)}
                   </td>
                 </tr>
                 <tr>
@@ -915,9 +964,9 @@ export function TrialBalanceAnalysisPage() {
                 </tr>
                 {prepaidRent > 0 && (
                   <tr>
-                    <td className="py-1 pr-4">(-) الإيجار المدفوع مقدماً (طويل الأجل)</td>
+                    <td className="py-1 pr-4">(-) الإيجار المدفوع مقدماً (طويل الأجل - 11/12)</td>
                     <td className="py-1 text-left text-destructive">
-                      ({formatCurrency(prepaidRent * 11/12)})
+                      ({formatCurrency(prepaidRentLongTerm)})
                     </td>
                   </tr>
                 )}
@@ -939,10 +988,19 @@ export function TrialBalanceAnalysisPage() {
                 </tr>
               </tbody>
             </table>
+            
+            {/* ملخص الحساب */}
+            <div className="mt-4 p-4 bg-muted/30 rounded-lg border text-sm">
+              <p className="font-medium mb-2">📊 ملخص حساب الزكاة:</p>
+              <p className="text-muted-foreground">
+                الوعاء = {formatCurrency(capitalForZakat)} (رأس المال) + {formatCurrency(netIncome)} (صافي الربح) - {formatCurrency(totalFixedAssets)} (أصول ثابتة) - {formatCurrency(prepaidRentLongTerm)} (إيجار مقدم) = {formatCurrency(zakatBase)}
+              </p>
+            </div>
+            
             {zakatBase <= 0 && (
               <div className="mt-4 p-4 bg-accent rounded-lg border border-border">
                 <p className="text-foreground font-medium">
-                  ⚠️ ملاحظة: الوعاء الزكوي سالب بسبب الخسارة، وبالتالي لا تستحق زكاة على هذه الفترة.
+                  ⚠️ ملاحظة: الوعاء الزكوي سالب، وبالتالي لا تستحق زكاة على هذه الفترة.
                 </p>
               </div>
             )}
