@@ -207,8 +207,14 @@ export function TrialBalanceAnalysisPage() {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
+        console.log('Excel rows count:', jsonData.length);
+        
         // استخراج البيانات من ميزان المراجعة
         const { data: parsedData, reconciliation } = parseTrialBalance(jsonData);
+        
+        console.log('Parsed data:', parsedData);
+        console.log('Reconciliation:', reconciliation);
+        
         setData(parsedData);
         setReconciliationData(reconciliation);
         setFileName(file.name);
@@ -459,8 +465,19 @@ export function TrialBalanceAnalysisPage() {
       }
     }
 
-    // إذا لم يتم العثور على بيانات كافية، استخدم البيانات الافتراضية
-    if (Object.keys(result.fixedAssets).length === 0 && Object.keys(result.revenue).length === 0) {
+    // إذا لم يتم العثور على أي بيانات، استخدم البيانات الافتراضية
+    const hasAnyData = 
+      Object.keys(result.fixedAssets).length > 0 ||
+      Object.keys(result.currentAssets).length > 0 ||
+      Object.keys(result.liabilities).length > 0 ||
+      Object.keys(result.equity).length > 0 ||
+      Object.keys(result.revenue).length > 0 ||
+      Object.keys(result.expenses).length > 0 ||
+      result.purchases > 0 ||
+      reconciliation.rawAccounts.length > 0;
+      
+    if (!hasAnyData) {
+      console.log('No data found, returning empty');
       return { data: emptyData, reconciliation: emptyReconciliation };
     }
 
