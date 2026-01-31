@@ -3,6 +3,7 @@ import { Search, Car, CheckCircle, XCircle, ArrowRightLeft } from 'lucide-react'
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useCars } from '@/hooks/useDatabase';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import {
   Dialog,
   DialogContent,
@@ -14,18 +15,35 @@ import { Button } from '@/components/ui/button';
 
 export function CarSearch() {
   const { data: cars = [] } = useCars();
+  const { selectedFiscalYear } = useFiscalYear();
   const [searchQuery, setSearchQuery] = useState('');
   const [open, setOpen] = useState(false);
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
-    return cars.filter(car => 
-      car.name.toLowerCase().includes(query) ||
-      car.chassis_number.toLowerCase().includes(query) ||
-      car.model?.toLowerCase().includes(query)
-    ).slice(0, 10);
-  }, [cars, searchQuery]);
+
+    const carsInYear = !selectedFiscalYear
+      ? cars
+      : cars.filter((car) => {
+          if (car.fiscal_year_id) return car.fiscal_year_id === selectedFiscalYear.id;
+          const fyStart = new Date(selectedFiscalYear.start_date);
+          fyStart.setHours(0, 0, 0, 0);
+          const fyEnd = new Date(selectedFiscalYear.end_date);
+          fyEnd.setHours(23, 59, 59, 999);
+          const purchaseDate = new Date(car.purchase_date);
+          return purchaseDate >= fyStart && purchaseDate <= fyEnd;
+        });
+
+    return carsInYear
+      .filter(
+        (car) =>
+          car.name.toLowerCase().includes(query) ||
+          car.chassis_number.toLowerCase().includes(query) ||
+          car.model?.toLowerCase().includes(query)
+      )
+      .slice(0, 10);
+  }, [cars, searchQuery, selectedFiscalYear]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA').format(value);

@@ -14,6 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { PaymentAccountSelector } from './PaymentAccountSelector';
 
 interface SaleFormProps {
@@ -23,14 +24,32 @@ interface SaleFormProps {
 export function SaleForm({ setActivePage }: SaleFormProps) {
   const { data: customers = [] } = useCustomers();
   const { data: allCars = [] } = useCars();
+  const { selectedFiscalYear } = useFiscalYear();
   const { data: taxSettings } = useTaxSettings();
   const { data: accounts = [] } = useAccounts();
   const { company } = useCompany();
   const addSale = useAddSale();
   const queryClient = useQueryClient();
 
+  const carsInSelectedYear = useMemo(() => {
+    if (!selectedFiscalYear) return allCars;
+
+    const fyStart = new Date(selectedFiscalYear.start_date);
+    fyStart.setHours(0, 0, 0, 0);
+    const fyEnd = new Date(selectedFiscalYear.end_date);
+    fyEnd.setHours(23, 59, 59, 999);
+
+    return allCars.filter((car) => {
+      if (car.fiscal_year_id) return car.fiscal_year_id === selectedFiscalYear.id;
+      const purchaseDate = new Date(car.purchase_date);
+      return purchaseDate >= fyStart && purchaseDate <= fyEnd;
+    });
+  }, [allCars, selectedFiscalYear]);
+
   // Include both available and transferred cars for sale
-  const availableCars = allCars.filter(car => car.status === 'available' || car.status === 'transferred');
+  const availableCars = carsInSelectedYear.filter(
+    (car) => car.status === 'available' || car.status === 'transferred'
+  );
 
   const [formData, setFormData] = useState({
     customer_id: '',

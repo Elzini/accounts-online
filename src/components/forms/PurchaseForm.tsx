@@ -10,6 +10,7 @@ import { useSuppliers, useAddCar } from '@/hooks/useDatabase';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { PaymentAccountSelector } from './PaymentAccountSelector';
 
 interface PurchaseFormProps {
@@ -21,6 +22,7 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
   const { data: taxSettings } = useTaxSettings();
   const { data: accounts = [] } = useAccounts();
   const { company } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
   const addCar = useAddCar();
 
   const [formData, setFormData] = useState({
@@ -92,6 +94,7 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
         purchase_price: parseFloat(formData.purchase_price),
         purchase_date: formData.purchase_date,
         payment_account_id: formData.payment_account_id || null,
+        fiscal_year_id: selectedFiscalYear?.id ?? null,
       });
       
       // Store saved data for invoice

@@ -11,6 +11,7 @@ import { useSuppliers, useAddPurchaseBatch } from '@/hooks/useDatabase';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { PaymentAccountSelector } from './PaymentAccountSelector';
 
 interface BatchPurchaseFormProps {
@@ -40,6 +41,7 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
   const { data: taxSettings } = useTaxSettings();
   const { data: accounts = [] } = useAccounts();
   const { company } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
   const addPurchaseBatch = useAddPurchaseBatch();
 
   const [batchData, setBatchData] = useState({
@@ -150,6 +152,7 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
           model: car.model || null,
           color: car.color || null,
           purchase_price: parseFloat(car.purchase_price),
+          fiscal_year_id: selectedFiscalYear?.id ?? null,
         })),
       });
       
