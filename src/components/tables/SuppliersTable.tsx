@@ -75,8 +75,8 @@ export function SuppliersTable({ setActivePage }: SuppliersTableProps) {
               />
               <div className="space-y-1">
                 <MobileCardRow 
-                  label="رقم السجل" 
-                  value={supplier.registration_number || '-'}
+                  label="الرقم الضريبي" 
+                  value={<span dir="ltr">{supplier.registration_number || '-'}</span>}
                   icon={<IdCard className="w-3.5 h-3.5" />}
                 />
                 <MobileCardRow 
@@ -126,7 +126,7 @@ export function SuppliersTable({ setActivePage }: SuppliersTableProps) {
               <TableRow className="bg-muted/50">
                 <TableHead className="text-right font-bold">#</TableHead>
                 <TableHead className="text-right font-bold">اسم المورد</TableHead>
-                <TableHead className="text-right font-bold">رقم السجل</TableHead>
+                <TableHead className="text-right font-bold">الرقم الضريبي</TableHead>
                 <TableHead className="text-right font-bold">رقم الهاتف</TableHead>
                 <TableHead className="text-right font-bold">العنوان</TableHead>
                 <TableHead className="text-right font-bold">ملاحظات</TableHead>
