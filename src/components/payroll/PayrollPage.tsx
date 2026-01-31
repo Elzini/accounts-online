@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useReactToPrint } from 'react-to-print';
+import { useUnifiedPrintReport, UnifiedReportColumn } from '@/hooks/useUnifiedPrintReport';
 import { useAppSettings } from '@/hooks/useSettings';
 
 const MONTHS = [
@@ -69,11 +69,7 @@ export function PayrollPage() {
   const [newYear, setNewYear] = useState(new Date().getFullYear());
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const printRef = useRef<HTMLDivElement>(null);
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `مسير رواتب ${selectedPayroll?.month}/${selectedPayroll?.year}`,
-  });
+  const { printReport } = useUnifiedPrintReport();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ar-SA', {
@@ -319,9 +315,7 @@ export function PayrollPage() {
               payroll={selectedPayroll}
               onApprove={handleApprovePayroll}
               isApproving={approvePayroll.isPending}
-              printRef={printRef}
-              onPrint={handlePrint}
-              companyName={settings?.app_name || 'شركة اشبال النمار كار'}
+              onPrint={printReport}
             />
           )}
         </TabsContent>
@@ -352,18 +346,14 @@ interface PayrollDetailsSectionProps {
   payroll: any;
   onApprove: () => void;
   isApproving: boolean;
-  printRef: React.RefObject<HTMLDivElement>;
-  onPrint: () => void;
-  companyName: string;
+  onPrint: (options: any) => void;
 }
 
 function PayrollDetailsSection({ 
   payroll, 
   onApprove, 
   isApproving, 
-  printRef,
   onPrint,
-  companyName 
 }: PayrollDetailsSectionProps) {
   const updatePayrollItem = useUpdatePayrollItem();
   const updatePayrollTotals = useUpdatePayrollTotals();
@@ -410,6 +400,78 @@ function PayrollDetailsSection({
 
   const items: PayrollItem[] = payroll.items || [];
 
+  const handlePrintPayroll = () => {
+    // Prepare data for unified print
+    const columns: UnifiedReportColumn[] = [
+      { header: 'م', key: 'index', align: 'center', width: '40px' },
+      { header: 'الاسم', key: 'name', align: 'right' },
+      { header: 'المسمى الوظيفي', key: 'job_title', align: 'right' },
+      { header: 'الراتب', key: 'base_salary', align: 'right', type: 'currency' },
+      { header: 'الحوافز', key: 'bonus', align: 'right', type: 'currency' },
+      { header: 'أوفرتايم', key: 'overtime', align: 'right', type: 'currency' },
+      { header: 'إجمالي الراتب', key: 'gross_salary', align: 'right', type: 'currency' },
+      { header: 'سلفيات', key: 'advances', align: 'right', type: 'currency' },
+      { header: 'خصم', key: 'deductions', align: 'right', type: 'currency' },
+      { header: 'ملاحظات', key: 'notes', align: 'right' },
+      { header: 'قيمة الغياب', key: 'absence', align: 'right', type: 'currency' },
+      { header: 'إجمالي المستقطع', key: 'total_deductions', align: 'right', type: 'currency', className: 'text-danger' },
+      { header: 'صافي الراتب', key: 'net_salary', align: 'right', type: 'currency', className: 'text-success' },
+    ];
+
+    const data = items.map((item, index) => {
+      const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + 
+        Number(item.transport_allowance) + Number(item.bonus) + Number(item.overtime_amount);
+      const totalDeductions = Number(item.advances_deducted) + Number(item.absence_amount) + 
+        Number(item.other_deductions);
+      
+      return {
+        index: index + 1,
+        name: item.employee?.name || '-',
+        job_title: item.employee?.job_title || '-',
+        base_salary: item.base_salary,
+        bonus: item.bonus,
+        overtime: item.overtime_amount,
+        gross_salary: grossSalary,
+        advances: item.advances_deducted,
+        deductions: item.other_deductions,
+        notes: item.deduction_notes || '-',
+        absence: item.absence_amount,
+        total_deductions: totalDeductions,
+        net_salary: item.net_salary,
+      };
+    });
+
+    const grossTotal = payroll.total_base_salaries + payroll.total_allowances + 
+      payroll.total_bonuses + payroll.total_overtime;
+    const totalDeductionsSum = payroll.total_advances + payroll.total_deductions + payroll.total_absences;
+
+    const summaryRow = {
+      index: '',
+      name: 'الإجمالي',
+      job_title: '',
+      base_salary: payroll.total_base_salaries,
+      bonus: payroll.total_bonuses,
+      overtime: payroll.total_overtime,
+      gross_salary: grossTotal,
+      advances: payroll.total_advances,
+      deductions: payroll.total_deductions,
+      notes: '',
+      absence: payroll.total_absences,
+      total_deductions: totalDeductionsSum,
+      net_salary: payroll.total_net_salaries,
+    };
+
+    onPrint({
+      title: 'مسير الرواتب',
+      subtitle: `${MONTHS[payroll.month - 1]} ${payroll.year}`,
+      columns,
+      data,
+      summaryRow,
+      showSignatures: true,
+      signatureLabels: ['توقيع المحاسب', 'توقيع المدير العام', 'توقيع المدير المالي'],
+    });
+  };
+
   return (
     <div className="space-y-4">
       {/* Actions */}
@@ -425,7 +487,7 @@ function PayrollDetailsSection({
           )}
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onPrint}>
+          <Button variant="outline" onClick={handlePrintPayroll}>
             <Printer className="w-4 h-4 ml-2" />
             طباعة
           </Button>
@@ -439,176 +501,159 @@ function PayrollDetailsSection({
         </div>
       </div>
 
-      {/* Print View */}
-      <div ref={printRef} className="print:p-8">
-        <div className="hidden print:block text-center mb-6">
-          <h1 className="text-xl font-bold">{companyName}</h1>
-          <h2 className="text-lg">مسير رواتب شهر {payroll.month}/{payroll.year}</h2>
-        </div>
+      {/* Table View */}
+      <Card>
+        <CardContent className="pt-6 overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="text-right">الاسم</TableHead>
+                <TableHead className="text-right">المسمى الوظيفي</TableHead>
+                <TableHead className="text-right">الراتب</TableHead>
+                <TableHead className="text-right">الحوافز</TableHead>
+                <TableHead className="text-right">أوفرتايم</TableHead>
+                <TableHead className="text-right">إجمالي الراتب</TableHead>
+                <TableHead className="text-right">سلفيات</TableHead>
+                <TableHead className="text-right">خصم</TableHead>
+                <TableHead className="text-right">ملاحظات</TableHead>
+                <TableHead className="text-right">قيمة الغياب</TableHead>
+                <TableHead className="text-right">إجمالي المستقطع</TableHead>
+                <TableHead className="text-right">صافي الراتب</TableHead>
+                <TableHead className="text-right">تعديل</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((item) => {
+                const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + 
+                  Number(item.transport_allowance) + Number(item.bonus) + Number(item.overtime_amount);
+                const totalDeductions = Number(item.advances_deducted) + Number(item.absence_amount) + 
+                  Number(item.other_deductions);
 
-        <Card className="print:shadow-none print:border">
-          <CardContent className="pt-6 overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="text-right">الاسم</TableHead>
-                  <TableHead className="text-right">المسمى الوظيفي</TableHead>
-                  <TableHead className="text-right">الراتب</TableHead>
-                  <TableHead className="text-right">الحوافز</TableHead>
-                  <TableHead className="text-right">أوفرتايم</TableHead>
-                  <TableHead className="text-right">إجمالي الراتب</TableHead>
-                  <TableHead className="text-right">سلفيات</TableHead>
-                  <TableHead className="text-right">خصم</TableHead>
-                  <TableHead className="text-right">ملاحظات</TableHead>
-                  <TableHead className="text-right">قيمة الغياب</TableHead>
-                  <TableHead className="text-right">إجمالي المستقطع</TableHead>
-                  <TableHead className="text-right">صافي الراتب</TableHead>
-                  <TableHead className="text-right print:hidden">التوقيع</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((item) => {
-                  const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + 
-                    Number(item.transport_allowance) + Number(item.bonus) + Number(item.overtime_amount);
-                  const totalDeductions = Number(item.advances_deducted) + Number(item.absence_amount) + 
-                    Number(item.other_deductions);
-
-                  if (editingItemId === item.id && payroll.status === 'draft') {
-                    return (
-                      <TableRow key={item.id} className="bg-blue-50 dark:bg-blue-950/30">
-                        <TableCell>{item.employee?.name}</TableCell>
-                        <TableCell>{item.employee?.job_title}</TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={editForm.base_salary}
-                            onChange={(e) => setEditForm({ ...editForm, base_salary: parseFloat(e.target.value) || 0 })}
-                            className="w-20"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={editForm.bonus}
-                            onChange={(e) => setEditForm({ ...editForm, bonus: parseFloat(e.target.value) || 0 })}
-                            className="w-20"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={editForm.overtime_amount}
-                            onChange={(e) => setEditForm({ ...editForm, overtime_amount: parseFloat(e.target.value) || 0 })}
-                            className="w-20"
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium">-</TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={editForm.advances_deducted}
-                            onChange={(e) => setEditForm({ ...editForm, advances_deducted: parseFloat(e.target.value) || 0 })}
-                            className="w-20"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={editForm.other_deductions}
-                            onChange={(e) => setEditForm({ ...editForm, other_deductions: parseFloat(e.target.value) || 0 })}
-                            className="w-20"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={editForm.deduction_notes || ''}
-                            onChange={(e) => setEditForm({ ...editForm, deduction_notes: e.target.value })}
-                            className="w-24"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={editForm.absence_amount}
-                            onChange={(e) => setEditForm({ ...editForm, absence_amount: parseFloat(e.target.value) || 0 })}
-                            className="w-20"
-                          />
-                        </TableCell>
-                        <TableCell>-</TableCell>
-                        <TableCell>-</TableCell>
-                        <TableCell className="print:hidden">
-                          <div className="flex gap-1">
-                            <Button size="sm" onClick={saveEditing}>
-                              حفظ
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => setEditingItemId(null)}>
-                              إلغاء
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  }
-
+                if (editingItemId === item.id && payroll.status === 'draft') {
                   return (
-                    <TableRow 
-                      key={item.id} 
-                      className={payroll.status === 'draft' ? 'cursor-pointer hover:bg-muted/50' : ''}
-                      onClick={() => payroll.status === 'draft' && startEditing(item)}
-                    >
-                      <TableCell className="font-medium">{item.employee?.name}</TableCell>
+                    <TableRow key={item.id} className="bg-blue-50 dark:bg-blue-950/30">
+                      <TableCell>{item.employee?.name}</TableCell>
                       <TableCell>{item.employee?.job_title}</TableCell>
-                      <TableCell>{formatCurrency(item.base_salary)}</TableCell>
-                      <TableCell>{formatCurrency(item.bonus)}</TableCell>
-                      <TableCell>{formatCurrency(item.overtime_amount)}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(grossSalary)}</TableCell>
-                      <TableCell>{formatCurrency(item.advances_deducted)}</TableCell>
-                      <TableCell>{formatCurrency(item.other_deductions)}</TableCell>
-                      <TableCell className="text-sm">{item.deduction_notes || '-'}</TableCell>
-                      <TableCell>{formatCurrency(item.absence_amount)}</TableCell>
-                      <TableCell className="text-rose-600">{formatCurrency(totalDeductions)}</TableCell>
-                      <TableCell className="font-bold text-emerald-600">{formatCurrency(item.net_salary)}</TableCell>
-                      <TableCell className="print:hidden"></TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={editForm.base_salary}
+                          onChange={(e) => setEditForm({ ...editForm, base_salary: parseFloat(e.target.value) || 0 })}
+                          className="w-20"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={editForm.bonus}
+                          onChange={(e) => setEditForm({ ...editForm, bonus: parseFloat(e.target.value) || 0 })}
+                          className="w-20"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={editForm.overtime_amount}
+                          onChange={(e) => setEditForm({ ...editForm, overtime_amount: parseFloat(e.target.value) || 0 })}
+                          className="w-20"
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">-</TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={editForm.advances_deducted}
+                          onChange={(e) => setEditForm({ ...editForm, advances_deducted: parseFloat(e.target.value) || 0 })}
+                          className="w-20"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={editForm.other_deductions}
+                          onChange={(e) => setEditForm({ ...editForm, other_deductions: parseFloat(e.target.value) || 0 })}
+                          className="w-20"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={editForm.deduction_notes || ''}
+                          onChange={(e) => setEditForm({ ...editForm, deduction_notes: e.target.value })}
+                          className="w-24"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={editForm.absence_amount}
+                          onChange={(e) => setEditForm({ ...editForm, absence_amount: parseFloat(e.target.value) || 0 })}
+                          className="w-20"
+                        />
+                      </TableCell>
+                      <TableCell>-</TableCell>
+                      <TableCell>-</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button size="sm" onClick={saveEditing}>
+                            حفظ
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingItemId(null)}>
+                            إلغاء
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   );
-                })}
-                {/* Totals Row */}
-                <TableRow className="font-bold bg-muted">
-                  <TableCell colSpan={2}>إجمالي الرواتب</TableCell>
-                  <TableCell>{formatCurrency(payroll.total_base_salaries)}</TableCell>
-                  <TableCell>{formatCurrency(payroll.total_bonuses)}</TableCell>
-                  <TableCell>{formatCurrency(payroll.total_overtime)}</TableCell>
-                  <TableCell>
-                    {formatCurrency(
-                      payroll.total_base_salaries + payroll.total_allowances + 
-                      payroll.total_bonuses + payroll.total_overtime
-                    )}
-                  </TableCell>
-                  <TableCell>{formatCurrency(payroll.total_advances)}</TableCell>
-                  <TableCell>{formatCurrency(payroll.total_deductions)}</TableCell>
-                  <TableCell></TableCell>
-                  <TableCell>{formatCurrency(payroll.total_absences)}</TableCell>
-                  <TableCell className="text-rose-600">
-                    {formatCurrency(payroll.total_advances + payroll.total_deductions + payroll.total_absences)}
-                  </TableCell>
-                  <TableCell className="text-emerald-600">{formatCurrency(payroll.total_net_salaries)}</TableCell>
-                  <TableCell className="print:hidden"></TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                }
 
-        {/* Signatures */}
-        <div className="hidden print:flex justify-between mt-12 pt-8">
-          <div className="text-center">
-            <p className="border-t border-black pt-2 px-16">توقيع المحاسب</p>
-          </div>
-          <div className="text-center">
-            <p className="border-t border-black pt-2 px-16">توقيع المدير العام</p>
-          </div>
-        </div>
-      </div>
+                return (
+                  <TableRow 
+                    key={item.id} 
+                    className={payroll.status === 'draft' ? 'cursor-pointer hover:bg-muted/50' : ''}
+                    onClick={() => payroll.status === 'draft' && startEditing(item)}
+                  >
+                    <TableCell className="font-medium">{item.employee?.name}</TableCell>
+                    <TableCell>{item.employee?.job_title}</TableCell>
+                    <TableCell>{formatCurrency(item.base_salary)}</TableCell>
+                    <TableCell>{formatCurrency(item.bonus)}</TableCell>
+                    <TableCell>{formatCurrency(item.overtime_amount)}</TableCell>
+                    <TableCell className="font-medium">{formatCurrency(grossSalary)}</TableCell>
+                    <TableCell>{formatCurrency(item.advances_deducted)}</TableCell>
+                    <TableCell>{formatCurrency(item.other_deductions)}</TableCell>
+                    <TableCell className="text-sm">{item.deduction_notes || '-'}</TableCell>
+                    <TableCell>{formatCurrency(item.absence_amount)}</TableCell>
+                    <TableCell className="text-rose-600">{formatCurrency(totalDeductions)}</TableCell>
+                    <TableCell className="font-bold text-emerald-600">{formatCurrency(item.net_salary)}</TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                );
+              })}
+              {/* Totals Row */}
+              <TableRow className="font-bold bg-muted">
+                <TableCell colSpan={2}>إجمالي الرواتب</TableCell>
+                <TableCell>{formatCurrency(payroll.total_base_salaries)}</TableCell>
+                <TableCell>{formatCurrency(payroll.total_bonuses)}</TableCell>
+                <TableCell>{formatCurrency(payroll.total_overtime)}</TableCell>
+                <TableCell>
+                  {formatCurrency(
+                    payroll.total_base_salaries + payroll.total_allowances + 
+                    payroll.total_bonuses + payroll.total_overtime
+                  )}
+                </TableCell>
+                <TableCell>{formatCurrency(payroll.total_advances)}</TableCell>
+                <TableCell>{formatCurrency(payroll.total_deductions)}</TableCell>
+                <TableCell></TableCell>
+                <TableCell>{formatCurrency(payroll.total_absences)}</TableCell>
+                <TableCell className="text-rose-600">
+                  {formatCurrency(payroll.total_advances + payroll.total_deductions + payroll.total_absences)}
+                </TableCell>
+                <TableCell className="text-emerald-600">{formatCurrency(payroll.total_net_salaries)}</TableCell>
+                <TableCell></TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
