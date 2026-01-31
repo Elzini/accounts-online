@@ -407,7 +407,7 @@ function PayrollDetailsSection({
   const items: PayrollItem[] = payroll.items || [];
 
   const handlePrintPayroll = () => {
-    // Prepare data for unified print
+    // Prepare data for unified print with employee signature column
     const columns: UnifiedReportColumn[] = [
       { header: 'م', key: 'index', align: 'center', width: '40px' },
       { header: 'الاسم', key: 'name', align: 'right' },
@@ -422,6 +422,7 @@ function PayrollDetailsSection({
       { header: 'قيمة الغياب', key: 'absence', align: 'right', type: 'currency' },
       { header: 'إجمالي المستقطع', key: 'total_deductions', align: 'right', type: 'currency', className: 'text-danger' },
       { header: 'صافي الراتب', key: 'net_salary', align: 'right', type: 'currency', className: 'text-success' },
+      { header: 'توقيع الموظف', key: 'employee_signature', align: 'center', width: '100px' },
     ];
 
     const data = items.map((item, index) => {
@@ -444,6 +445,7 @@ function PayrollDetailsSection({
         absence: item.absence_amount,
         total_deductions: totalDeductions,
         net_salary: item.net_salary,
+        employee_signature: '_______________',
       };
     });
 
@@ -465,6 +467,7 @@ function PayrollDetailsSection({
       absence: payroll.total_absences,
       total_deductions: totalDeductionsSum,
       net_salary: payroll.total_net_salaries,
+      employee_signature: '',
     };
 
     onPrint({

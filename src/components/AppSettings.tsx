@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn, Image, Lock, Eye, EyeOff, Building2, X, BookOpen, FileText, FileImage, Printer } from 'lucide-react';
+import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn, Image, Lock, Eye, EyeOff, Building2, X, BookOpen, FileText, FileImage, Printer, SlidersHorizontal } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,7 @@ import { InvoiceSettingsTab } from '@/components/settings/InvoiceSettingsTab';
 import { MenuLabelsSettingsTab } from '@/components/settings/MenuLabelsSettingsTab';
 import { CustomInvoiceTemplateTab } from '@/components/settings/CustomInvoiceTemplateTab';
 import { ReportSettingsTab } from '@/components/settings/ReportSettingsTab';
+import { AdvancedReportSettingsTab } from '@/components/settings/AdvancedReportSettingsTab';
 
 interface AppSettingsProps {
   setActivePage: (page: ActivePage) => void;
@@ -407,7 +408,7 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
       </div>
 
       <Tabs defaultValue="company" className="w-full">
-        <TabsList className="grid w-full grid-cols-10 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-11 lg:w-auto lg:inline-grid overflow-x-auto">
           <TabsTrigger value="company" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             <span className="hidden sm:inline">شركتي</span>
@@ -423,6 +424,10 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
           <TabsTrigger value="reports" className="flex items-center gap-2">
             <Printer className="w-4 h-4" />
             <span className="hidden sm:inline">التقارير</span>
+          </TabsTrigger>
+          <TabsTrigger value="advanced-reports" className="flex items-center gap-2">
+            <SlidersHorizontal className="w-4 h-4" />
+            <span className="hidden sm:inline">تخصيص متقدم</span>
           </TabsTrigger>
           <TabsTrigger value="accounting" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
@@ -453,6 +458,11 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
         {/* Report Settings Tab */}
         <TabsContent value="reports" className="mt-6">
           <ReportSettingsTab />
+        </TabsContent>
+
+        {/* Advanced Report Settings Tab */}
+        <TabsContent value="advanced-reports" className="mt-6">
+          <AdvancedReportSettingsTab />
         </TabsContent>
 
         {/* Invoice Settings Tab */}
