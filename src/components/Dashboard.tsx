@@ -354,7 +354,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 </div>
               ) : (
                 <ChartContainer config={chartConfig} className="h-48 sm:h-56 md:h-64 w-full">
-                  <BarChart data={chartData || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                  <BarChart data={(chartData as any[] | undefined) || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis 
                       dataKey="month" 
@@ -390,7 +390,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 </div>
               ) : (
                 <ChartContainer config={chartConfig} className="h-48 sm:h-56 md:h-64 w-full">
-                  <LineChart data={chartData || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                  <LineChart data={(chartData as any[] | undefined) || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis 
                       dataKey="month" 

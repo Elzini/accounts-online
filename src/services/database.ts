@@ -442,16 +442,44 @@ export async function fetchStats(fiscalYearId?: string | null) {
 }
 
 // Monthly chart data
-export async function fetchMonthlyChartData() {
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-  sixMonthsAgo.setDate(1);
-  const startDate = sixMonthsAgo.toISOString().split('T')[0];
+export async function fetchMonthlyChartData(fiscalYearId?: string) {
+  // Get fiscal year dates if provided
+  let fiscalYearStart: string | null = null;
+  let fiscalYearEnd: string | null = null;
+  
+  if (fiscalYearId) {
+    const { data: fiscalYear } = await supabase
+      .from('fiscal_years')
+      .select('start_date, end_date')
+      .eq('id', fiscalYearId)
+      .single();
+    
+    if (fiscalYear) {
+      fiscalYearStart = fiscalYear.start_date;
+      fiscalYearEnd = fiscalYear.end_date;
+    }
+  }
+
+  // Determine date range based on fiscal year or default to last 6 months
+  let startDate: string;
+  let endDate: string;
+  
+  if (fiscalYearStart && fiscalYearEnd) {
+    startDate = fiscalYearStart;
+    endDate = fiscalYearEnd;
+  } else {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    startDate = sixMonthsAgo.toISOString().split('T')[0];
+    endDate = new Date().toISOString().split('T')[0];
+  }
 
   const { data, error } = await supabase
     .from('sales')
     .select('sale_date, sale_price, profit')
     .gte('sale_date', startDate)
+    .lte('sale_date', endDate)
     .order('sale_date', { ascending: true });
 
   if (error) throw error;
@@ -474,18 +502,41 @@ export async function fetchMonthlyChartData() {
   // Convert to array with Arabic month names
   const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
   
+  // Generate months for display based on fiscal year or last 6 months
   const result = [];
-  for (let i = 0; i < 6; i++) {
-    const date = new Date();
-    date.setMonth(date.getMonth() - (5 - i));
-    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    const monthName = arabicMonths[date.getMonth()];
+  
+  if (fiscalYearStart && fiscalYearEnd) {
+    // Show months within the fiscal year
+    const start = new Date(fiscalYearStart);
+    const end = new Date(fiscalYearEnd);
+    let current = new Date(start.getFullYear(), start.getMonth(), 1);
     
-    result.push({
-      month: monthName,
-      sales: monthlyData[monthKey]?.sales || 0,
-      profit: monthlyData[monthKey]?.profit || 0,
-    });
+    while (current <= end) {
+      const monthKey = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
+      const monthName = arabicMonths[current.getMonth()];
+      
+      result.push({
+        month: monthName,
+        sales: monthlyData[monthKey]?.sales || 0,
+        profit: monthlyData[monthKey]?.profit || 0,
+      });
+      
+      current.setMonth(current.getMonth() + 1);
+    }
+  } else {
+    // Default: last 6 months
+    for (let i = 0; i < 6; i++) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - (5 - i));
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthName = arabicMonths[date.getMonth()];
+      
+      result.push({
+        month: monthName,
+        sales: monthlyData[monthKey]?.sales || 0,
+        profit: monthlyData[monthKey]?.profit || 0,
+      });
+    }
   }
 
   return result;

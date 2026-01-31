@@ -231,10 +231,11 @@ export function useStats() {
 // Monthly chart data hook
 export function useMonthlyChartData() {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
   
   return useQuery({
-    queryKey: ['monthly-chart-data', companyId],
-    queryFn: db.fetchMonthlyChartData,
+    queryKey: ['monthly-chart-data', companyId, selectedFiscalYear?.id],
+    queryFn: () => db.fetchMonthlyChartData(selectedFiscalYear?.id),
     enabled: !!companyId,
   });
 }
