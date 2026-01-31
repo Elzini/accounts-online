@@ -961,6 +961,128 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_advances: {
+        Row: {
+          advance_date: string
+          amount: number
+          company_id: string
+          created_at: string
+          deducted_in_payroll_id: string | null
+          employee_id: string
+          id: string
+          is_deducted: boolean
+          notes: string | null
+          reason: string | null
+        }
+        Insert: {
+          advance_date?: string
+          amount: number
+          company_id: string
+          created_at?: string
+          deducted_in_payroll_id?: string | null
+          employee_id: string
+          id?: string
+          is_deducted?: boolean
+          notes?: string | null
+          reason?: string | null
+        }
+        Update: {
+          advance_date?: string
+          amount?: number
+          company_id?: string
+          created_at?: string
+          deducted_in_payroll_id?: string | null
+          employee_id?: string
+          id?: string
+          is_deducted?: boolean
+          notes?: string | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_advances_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_advances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          bank_name: string | null
+          base_salary: number
+          company_id: string
+          created_at: string
+          employee_number: number
+          hire_date: string | null
+          housing_allowance: number
+          iban: string | null
+          id: string
+          id_number: string | null
+          is_active: boolean
+          job_title: string
+          name: string
+          notes: string | null
+          phone: string | null
+          transport_allowance: number
+          updated_at: string
+        }
+        Insert: {
+          bank_name?: string | null
+          base_salary?: number
+          company_id: string
+          created_at?: string
+          employee_number?: number
+          hire_date?: string | null
+          housing_allowance?: number
+          iban?: string | null
+          id?: string
+          id_number?: string | null
+          is_active?: boolean
+          job_title: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          transport_allowance?: number
+          updated_at?: string
+        }
+        Update: {
+          bank_name?: string | null
+          base_salary?: number
+          company_id?: string
+          created_at?: string
+          employee_number?: number
+          hire_date?: string | null
+          housing_allowance?: number
+          iban?: string | null
+          id?: string
+          id_number?: string | null
+          is_active?: boolean
+          job_title?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          transport_allowance?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_categories: {
         Row: {
           company_id: string
@@ -1681,6 +1803,168 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_items: {
+        Row: {
+          absence_amount: number
+          absence_days: number
+          advances_deducted: number
+          base_salary: number
+          bonus: number
+          created_at: string
+          deduction_notes: string | null
+          employee_id: string
+          gross_salary: number
+          housing_allowance: number
+          id: string
+          net_salary: number
+          other_deductions: number
+          overtime_amount: number
+          overtime_hours: number
+          overtime_rate: number
+          payroll_id: string
+          total_deductions: number
+          transport_allowance: number
+        }
+        Insert: {
+          absence_amount?: number
+          absence_days?: number
+          advances_deducted?: number
+          base_salary?: number
+          bonus?: number
+          created_at?: string
+          deduction_notes?: string | null
+          employee_id: string
+          gross_salary?: number
+          housing_allowance?: number
+          id?: string
+          net_salary?: number
+          other_deductions?: number
+          overtime_amount?: number
+          overtime_hours?: number
+          overtime_rate?: number
+          payroll_id: string
+          total_deductions?: number
+          transport_allowance?: number
+        }
+        Update: {
+          absence_amount?: number
+          absence_days?: number
+          advances_deducted?: number
+          base_salary?: number
+          bonus?: number
+          created_at?: string
+          deduction_notes?: string | null
+          employee_id?: string
+          gross_salary?: number
+          housing_allowance?: number
+          id?: string
+          net_salary?: number
+          other_deductions?: number
+          overtime_amount?: number
+          overtime_hours?: number
+          overtime_rate?: number
+          payroll_id?: string
+          total_deductions?: number
+          transport_allowance?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_items_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_items_payroll_id_fkey"
+            columns: ["payroll_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_records: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          company_id: string
+          created_at: string
+          id: string
+          journal_entry_id: string | null
+          month: number
+          notes: string | null
+          status: string
+          total_absences: number
+          total_advances: number
+          total_allowances: number
+          total_base_salaries: number
+          total_bonuses: number
+          total_deductions: number
+          total_net_salaries: number
+          total_overtime: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          journal_entry_id?: string | null
+          month: number
+          notes?: string | null
+          status?: string
+          total_absences?: number
+          total_advances?: number
+          total_allowances?: number
+          total_base_salaries?: number
+          total_bonuses?: number
+          total_deductions?: number
+          total_net_salaries?: number
+          total_overtime?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          journal_entry_id?: string | null
+          month?: number
+          notes?: string | null
+          status?: string
+          total_absences?: number
+          total_advances?: number
+          total_allowances?: number
+          total_base_salaries?: number
+          total_bonuses?: number
+          total_deductions?: number
+          total_net_salaries?: number
+          total_overtime?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_records_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_records_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
         ]

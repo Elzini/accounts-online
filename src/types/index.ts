@@ -93,4 +93,6 @@ export type ActivePage =
   | 'fiscal-years'
   | 'trial-balance-analysis'
   | 'financial-statements'
-  | 'vat-return-report';
+  | 'vat-return-report'
+  | 'employees'
+  | 'payroll';

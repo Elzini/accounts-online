@@ -64,6 +64,8 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
   ];
 
   const financeItems = [
+    { id: 'employees' as ActivePage, label: 'الموظفين', icon: Users },
+    { id: 'payroll' as ActivePage, label: 'مسير الرواتب', icon: CreditCard },
     { id: 'expenses' as ActivePage, label: settings?.expenses_title || 'المصروفات', icon: Wallet },
     { id: 'prepaid-expenses' as ActivePage, label: settings?.prepaid_expenses_title || 'المصروفات المقدمة', icon: Clock },
     { id: 'quotations' as ActivePage, label: settings?.quotations_title || 'عروض الأسعار', icon: FileCheck },
