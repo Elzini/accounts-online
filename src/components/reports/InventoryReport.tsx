@@ -8,9 +8,11 @@ import { useCars } from '@/hooks/useDatabase';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 
 export function InventoryReport() {
   const { data: cars = [], isLoading } = useCars();
+  const { selectedFiscalYear } = useFiscalYear();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -18,12 +20,24 @@ export function InventoryReport() {
   const { printReport } = usePrintReport();
 
   const filteredCars = useMemo(() => {
-    // NOTE: We do NOT filter by fiscal year for inventory report because:
-    // 1. Available cars should always be visible regardless of purchase date
-    // 2. A car purchased in 2025 but still not sold should appear in 2026 inventory
-    // 3. Fiscal year filtering is for financial reports, not inventory management
-    
-    return cars.filter(car => {
+    let base = cars;
+
+    // فلترة المخزون حسب السنة المالية عن طريق fiscal_year_id (يدعم السيارات المُرحّلة)
+    // احتياط: لو fiscal_year_id فارغ (بيانات قديمة)، نرجع لفلترة تاريخ الشراء.
+    if (selectedFiscalYear) {
+      const fyStart = new Date(selectedFiscalYear.start_date);
+      fyStart.setHours(0, 0, 0, 0);
+      const fyEnd = new Date(selectedFiscalYear.end_date);
+      fyEnd.setHours(23, 59, 59, 999);
+
+      base = base.filter((car) => {
+        if (car.fiscal_year_id) return car.fiscal_year_id === selectedFiscalYear.id;
+        const purchaseDate = new Date(car.purchase_date);
+        return purchaseDate >= fyStart && purchaseDate <= fyEnd;
+      });
+    }
+
+    return base.filter(car => {
       const purchaseDate = new Date(car.purchase_date);
       if (startDate && purchaseDate < new Date(startDate)) return false;
       if (endDate && purchaseDate > new Date(endDate + 'T23:59:59')) return false;
@@ -39,7 +53,7 @@ export function InventoryReport() {
       
       return true;
     });
-  }, [cars, startDate, endDate, statusFilter, searchQuery]);
+  }, [cars, selectedFiscalYear, startDate, endDate, statusFilter, searchQuery]);
   
   const availableCars = filteredCars.filter(c => c.status === 'available');
   const soldCars = filteredCars.filter(c => c.status === 'sold');

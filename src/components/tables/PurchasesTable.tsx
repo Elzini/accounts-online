@@ -10,6 +10,7 @@ import { ActivePage } from '@/types';
 import { useCars } from '@/hooks/useDatabase';
 import { useTaxSettings } from '@/hooks/useAccounting';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 
 interface PurchasesTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -18,6 +19,7 @@ interface PurchasesTableProps {
 export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const { data: cars = [], isLoading } = useCars();
   const { data: taxSettings } = useTaxSettings();
+  const { selectedFiscalYear } = useFiscalYear();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const isMobile = useIsMobile();
@@ -67,6 +69,22 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
 
   const filteredCars = useMemo(() => {
     let result = cars;
+
+    // فلترة المخزون حسب السنة المالية (بـ fiscal_year_id)
+    // حتى تظهر السيارات المُرحّلة في سنة جديدة مهما كان تاريخ الشراء.
+    // احتياط: لو fiscal_year_id فارغ (بيانات قديمة)، نرجع لفلترة التاريخ.
+    if (selectedFiscalYear) {
+      const fyStart = new Date(selectedFiscalYear.start_date);
+      fyStart.setHours(0, 0, 0, 0);
+      const fyEnd = new Date(selectedFiscalYear.end_date);
+      fyEnd.setHours(23, 59, 59, 999);
+
+      result = result.filter((car) => {
+        if (car.fiscal_year_id) return car.fiscal_year_id === selectedFiscalYear.id;
+        const purchaseDate = new Date(car.purchase_date);
+        return purchaseDate >= fyStart && purchaseDate <= fyEnd;
+      });
+    }
     
     // NOTE: We do NOT filter by fiscal year here because:
     // 1. Available cars should always be visible regardless of purchase date
@@ -91,7 +109,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
     }
     
     return result;
-  }, [cars, searchQuery, statusFilter]);
+  }, [cars, searchQuery, statusFilter, selectedFiscalYear]);
 
   const totals = useMemo(() => {
     return filteredCars.reduce(
