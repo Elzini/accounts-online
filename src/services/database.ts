@@ -296,50 +296,75 @@ export async function fetchStats(fiscalYearId?: string | null) {
   const today = new Date().toISOString().split('T')[0];
   const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
 
-  // Available cars count (filter by fiscal year if provided)
+  // Get fiscal year date range if provided
+  let fiscalYearStart: string | null = null;
+  let fiscalYearEnd: string | null = null;
+  
+  if (fiscalYearId) {
+    const { data: fiscalYear } = await supabase
+      .from('fiscal_years')
+      .select('start_date, end_date')
+      .eq('id', fiscalYearId)
+      .single();
+    
+    if (fiscalYear) {
+      fiscalYearStart = fiscalYear.start_date;
+      fiscalYearEnd = fiscalYear.end_date;
+    }
+  }
+
+  // Available cars count (filter by fiscal year based on purchase_date)
   let availableCarsQuery = supabase
     .from('cars')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'available');
   
-  if (fiscalYearId) {
-    availableCarsQuery = availableCarsQuery.eq('fiscal_year_id', fiscalYearId);
+  if (fiscalYearStart && fiscalYearEnd) {
+    availableCarsQuery = availableCarsQuery
+      .gte('purchase_date', fiscalYearStart)
+      .lte('purchase_date', fiscalYearEnd);
   }
   
   const { count: availableCars } = await availableCarsQuery;
 
-  // Today's sales (within fiscal year if provided)
+  // Today's sales (within fiscal year based on sale_date)
   let todaySalesQuery = supabase
     .from('sales')
-    .select('*, car:cars!inner(fiscal_year_id)', { count: 'exact', head: true })
+    .select('*', { count: 'exact', head: true })
     .gte('sale_date', today);
   
-  if (fiscalYearId) {
-    todaySalesQuery = todaySalesQuery.eq('car.fiscal_year_id', fiscalYearId);
+  if (fiscalYearStart && fiscalYearEnd) {
+    todaySalesQuery = todaySalesQuery
+      .gte('sale_date', fiscalYearStart)
+      .lte('sale_date', fiscalYearEnd);
   }
   
   const { count: todaySales } = await todaySalesQuery;
 
-  // Sales data with fiscal year filter
+  // Sales data with fiscal year filter based on sale_date
   let salesQuery = supabase
     .from('sales')
-    .select('profit, car_id, sale_date, sale_price, car:cars!inner(fiscal_year_id)');
+    .select('profit, car_id, sale_date, sale_price');
   
-  if (fiscalYearId) {
-    salesQuery = salesQuery.eq('car.fiscal_year_id', fiscalYearId);
+  if (fiscalYearStart && fiscalYearEnd) {
+    salesQuery = salesQuery
+      .gte('sale_date', fiscalYearStart)
+      .lte('sale_date', fiscalYearEnd);
   }
   
   const { data: salesData } = await salesQuery;
   
   const totalGrossProfit = salesData?.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0) || 0;
 
-  // Get expenses with fiscal year filter
+  // Get expenses with fiscal year filter based on expense_date
   let expensesQuery = supabase
     .from('expenses')
-    .select('amount, car_id');
+    .select('amount, car_id, expense_date');
   
-  if (fiscalYearId) {
-    expensesQuery = expensesQuery.eq('fiscal_year_id', fiscalYearId);
+  if (fiscalYearStart && fiscalYearEnd) {
+    expensesQuery = expensesQuery
+      .gte('expense_date', fiscalYearStart)
+      .lte('expense_date', fiscalYearEnd);
   }
   
   const { data: expensesData } = await expensesQuery;
@@ -357,15 +382,26 @@ export async function fetchStats(fiscalYearId?: string | null) {
   const totalProfit = totalGrossProfit - carExpenses - generalExpenses;
 
   // Month sales count (within current month and fiscal year)
-  const monthSalesCount = salesData?.filter(sale => sale.sale_date >= startOfMonth).length || 0;
+  let monthSalesCount = 0;
+  if (fiscalYearStart && fiscalYearEnd) {
+    // Ensure we only count sales within the fiscal year AND current month
+    monthSalesCount = salesData?.filter(sale => {
+      const saleDate = sale.sale_date;
+      return saleDate >= startOfMonth && saleDate >= fiscalYearStart && saleDate <= fiscalYearEnd;
+    }).length || 0;
+  } else {
+    monthSalesCount = salesData?.filter(sale => sale.sale_date >= startOfMonth).length || 0;
+  }
 
-  // Total purchases (sum of all car purchase prices within fiscal year)
+  // Total purchases (sum of all car purchase prices within fiscal year based on purchase_date)
   let purchasesQuery = supabase
     .from('cars')
     .select('purchase_price');
   
-  if (fiscalYearId) {
-    purchasesQuery = purchasesQuery.eq('fiscal_year_id', fiscalYearId);
+  if (fiscalYearStart && fiscalYearEnd) {
+    purchasesQuery = purchasesQuery
+      .gte('purchase_date', fiscalYearStart)
+      .lte('purchase_date', fiscalYearEnd);
   }
   
   const { data: purchasesData } = await purchasesQuery;
@@ -373,8 +409,16 @@ export async function fetchStats(fiscalYearId?: string | null) {
   const totalPurchases = purchasesData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
 
   // Month sales amount (sum of sale prices this month within fiscal year)
-  const monthSalesAmount = salesData?.filter(sale => sale.sale_date >= startOfMonth)
-    .reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
+  let monthSalesAmount = 0;
+  if (fiscalYearStart && fiscalYearEnd) {
+    monthSalesAmount = salesData?.filter(sale => {
+      const saleDate = sale.sale_date;
+      return saleDate >= startOfMonth && saleDate >= fiscalYearStart && saleDate <= fiscalYearEnd;
+    }).reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
+  } else {
+    monthSalesAmount = salesData?.filter(sale => sale.sale_date >= startOfMonth)
+      .reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
+  }
 
   return {
     availableCars: availableCars || 0,
