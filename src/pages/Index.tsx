@@ -11,6 +11,7 @@ import { SupplierForm } from '@/components/forms/SupplierForm';
 import { BatchPurchaseForm } from '@/components/forms/BatchPurchaseForm';
 import { PurchaseInvoiceForm } from '@/components/forms/PurchaseInvoiceForm';
 import { MultiCarSaleForm } from '@/components/forms/MultiCarSaleForm';
+import { SalesInvoiceForm } from '@/components/forms/SalesInvoiceForm';
 import { CustomersTable } from '@/components/tables/CustomersTable';
 import { SuppliersTable } from '@/components/tables/SuppliersTable';
 import { PurchasesTable } from '@/components/tables/PurchasesTable';
@@ -97,7 +98,8 @@ const Index = () => {
       case 'add-supplier': return <SupplierForm setActivePage={setActivePage} />;
       case 'add-purchase': return <PurchaseInvoiceForm setActivePage={setActivePage} />;
       case 'add-purchase-invoice': return <PurchaseInvoiceForm setActivePage={setActivePage} />;
-      case 'add-sale': return <MultiCarSaleForm setActivePage={setActivePage} />;
+      case 'add-sale': return <SalesInvoiceForm setActivePage={setActivePage} />;
+      case 'add-sale-invoice': return <SalesInvoiceForm setActivePage={setActivePage} />;
       case 'partner-dealerships': return <PartnerDealershipsTable setActivePage={setActivePage} />;
       case 'car-transfers': return <CarTransfersTable setActivePage={setActivePage} />;
       case 'inventory-report': return <InventoryReport />;

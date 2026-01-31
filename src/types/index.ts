@@ -62,6 +62,7 @@ export type ActivePage =
   | 'add-purchase'
   | 'add-purchase-invoice'
   | 'add-sale'
+  | 'add-sale-invoice'
   | 'inventory-report'
   | 'profit-report'
   | 'purchases-report'
