@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pencil, Trash2, FileText } from 'lucide-react';
+import { Pencil, Trash2, FileText, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,13 +19,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUpdateSale, useDeleteSale } from '@/hooks/useDatabase';
-import { useTaxSettings } from '@/hooks/useAccounting';
+import { useTaxSettings, useJournalEntries } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import { PaymentAccountSelector } from '@/components/forms/PaymentAccountSelector';
+import { JournalEntryEditDialog } from '@/components/accounting/JournalEntryEditDialog';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -244,8 +246,15 @@ export function SaleActions({ sale }: SaleActionsProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [journalEntryOpen, setJournalEntryOpen] = useState(false);
   const { data: taxSettings } = useTaxSettings();
+  const { data: journalEntries = [] } = useJournalEntries();
   const { company } = useCompany();
+
+  // Find journal entry for this sale
+  const saleJournalEntry = journalEntries.find(
+    e => e.reference_type === 'sale' && e.reference_id === sale.id
+  );
 
   // Calculate tax
   const taxRate = taxSettings?.is_active ? (taxSettings?.tax_rate || 0) : 0;
@@ -318,6 +327,26 @@ export function SaleActions({ sale }: SaleActionsProps) {
   return (
     <>
       <div className="flex items-center gap-1">
+        {saleJournalEntry && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setJournalEntryOpen(true)}
+                  className="h-8 w-8 text-blue-600 hover:text-blue-700"
+                  title="القيد المحاسبي"
+                >
+                  <BookOpen className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>عرض / تعديل القيد المحاسبي</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
         <Button
           variant="ghost"
           size="icon"
@@ -352,6 +381,13 @@ export function SaleActions({ sale }: SaleActionsProps) {
         open={invoiceOpen} 
         onOpenChange={setInvoiceOpen} 
         data={invoiceData}
+      />
+      <JournalEntryEditDialog
+        entryId={saleJournalEntry?.id || null}
+        open={journalEntryOpen}
+        onOpenChange={setJournalEntryOpen}
+        title="القيد المحاسبي للمبيعة"
+        referenceType="sale"
       />
     </>
   );

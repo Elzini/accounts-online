@@ -227,6 +227,53 @@ export async function deleteJournalEntry(id: string): Promise<void> {
   if (error) throw error;
 }
 
+// Update Journal Entry
+export async function updateJournalEntry(
+  entryId: string,
+  entry: Partial<Omit<JournalEntry, 'id' | 'entry_number' | 'created_at' | 'updated_at' | 'lines'>>,
+  lines: Array<{ id?: string; account_id: string; description?: string; debit: number; credit: number }>
+): Promise<JournalEntry> {
+  // Update the entry
+  const { data: updatedEntry, error: entryError } = await supabase
+    .from('journal_entries')
+    .update({
+      entry_date: entry.entry_date,
+      description: entry.description,
+      total_debit: entry.total_debit,
+      total_credit: entry.total_credit,
+    })
+    .eq('id', entryId)
+    .select()
+    .single();
+  
+  if (entryError) throw entryError;
+
+  // Delete existing lines
+  const { error: deleteError } = await supabase
+    .from('journal_entry_lines')
+    .delete()
+    .eq('journal_entry_id', entryId);
+  
+  if (deleteError) throw deleteError;
+
+  // Insert new lines
+  const linesWithEntryId = lines.map(line => ({
+    journal_entry_id: entryId,
+    account_id: line.account_id,
+    description: line.description || null,
+    debit: line.debit || 0,
+    credit: line.credit || 0,
+  }));
+
+  const { error: linesError } = await supabase
+    .from('journal_entry_lines')
+    .insert(linesWithEntryId);
+  
+  if (linesError) throw linesError;
+
+  return updatedEntry as JournalEntry;
+}
+
 // Reports
 export async function getAccountBalances(companyId: string): Promise<Array<{
   account: AccountCategory;
