@@ -408,16 +408,16 @@ export async function approvePayroll(
   // Create journal entry for salaries
   const entryDescription = `مسير رواتب شهر ${updatedPayroll.month}/${updatedPayroll.year}`;
   
-  // Get salary expense account (5201) and cash account (1101)
+  // Get salary expense account (5201), cash account (1101), and employee advances account (1204)
   const { data: accounts } = await supabase
     .from('account_categories')
     .select('id, code')
     .eq('company_id', companyId)
-    .in('code', ['5201', '1101', '2101']);
+    .in('code', ['5201', '1101', '1204']);
 
   const salaryAccount = accounts?.find(a => a.code === '5201');
   const cashAccount = accounts?.find(a => a.code === '1101');
-  const advancesAccount = accounts?.find(a => a.code === '2101'); // Advances receivable
+  const advancesAccount = accounts?.find(a => a.code === '1204'); // سلف الموظفين - Employee Advances (Asset)
 
   if (!salaryAccount || !cashAccount) {
     throw new Error('Salary or cash account not found');
