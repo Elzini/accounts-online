@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, Receipt, FolderOpen, Loader2, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,9 +16,11 @@ import { useCars } from '@/hooks/useDatabase';
 import { useAccounts } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Expense, ExpenseCategory } from '@/services/expenses';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 export function ExpensesPage() {
   const { companyId } = useCompany();
+  const { filterByFiscalYear } = useFiscalYearFilter();
   const { data: expenses = [], isLoading: expensesLoading } = useExpenses();
   const { data: categories = [], isLoading: categoriesLoading } = useExpenseCategories();
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
@@ -134,10 +136,15 @@ export function ExpensesPage() {
     return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(amount);
   };
 
-  const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
-  const carExpensesTotal = expenses.filter(exp => exp.car_id).reduce((sum, exp) => sum + Number(exp.amount), 0);
-  const generalExpensesTotal = expenses.filter(exp => !exp.car_id).reduce((sum, exp) => sum + Number(exp.amount), 0);
-  const thisMonthExpenses = expenses
+  // Filter expenses by fiscal year
+  const filteredExpenses = useMemo(() => {
+    return filterByFiscalYear(expenses, 'expense_date');
+  }, [expenses, filterByFiscalYear]);
+
+  const totalExpenses = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+  const carExpensesTotal = filteredExpenses.filter(exp => exp.car_id).reduce((sum, exp) => sum + Number(exp.amount), 0);
+  const generalExpensesTotal = filteredExpenses.filter(exp => !exp.car_id).reduce((sum, exp) => sum + Number(exp.amount), 0);
+  const thisMonthExpenses = filteredExpenses
     .filter(exp => {
       const expDate = new Date(exp.expense_date);
       const now = new Date();
@@ -341,14 +348,14 @@ export function ExpensesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {expenses.length === 0 ? (
+                  {filteredExpenses.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        لا توجد مصروفات مسجلة
+                        لا توجد مصروفات مسجلة في هذه السنة المالية
                       </TableCell>
                     </TableRow>
                   ) : (
-                    expenses.map((expense) => (
+                    filteredExpenses.map((expense) => (
                       <TableRow key={expense.id}>
                         <TableCell>{new Date(expense.expense_date).toLocaleDateString('ar-SA')}</TableCell>
                         <TableCell>

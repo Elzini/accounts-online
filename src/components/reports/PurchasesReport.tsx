@@ -7,22 +7,28 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 export function PurchasesReport() {
   const { data: cars = [], isLoading } = useCars();
+  const { filterByFiscalYear } = useFiscalYearFilter();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const { printReport } = usePrintReport();
   const { exportToExcel } = useExcelExport();
 
   const filteredCars = useMemo(() => {
-    return cars.filter(car => {
+    // First filter by fiscal year
+    let result = filterByFiscalYear(cars, 'purchase_date');
+    
+    // Then apply date range filter within fiscal year
+    return result.filter(car => {
       const purchaseDate = new Date(car.purchase_date);
       if (startDate && purchaseDate < new Date(startDate)) return false;
       if (endDate && purchaseDate > new Date(endDate + 'T23:59:59')) return false;
       return true;
     });
-  }, [cars, startDate, endDate]);
+  }, [cars, startDate, endDate, filterByFiscalYear]);
 
   const totalPurchases = filteredCars.reduce((sum, car) => sum + Number(car.purchase_price), 0);
   const formatCurrency = (value: number) => new Intl.NumberFormat('ar-SA').format(value);

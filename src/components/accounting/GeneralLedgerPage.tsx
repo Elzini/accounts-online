@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,11 +17,13 @@ import { cn } from '@/lib/utils';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompany } from '@/contexts/CompanyContext';
 import { LedgerPreviewDialog } from './LedgerPreviewDialog';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 export function GeneralLedgerPage() {
   const { data: accounts = [], isLoading: isLoadingAccounts } = useAccounts();
   const { companyId } = useCompany();
   const { data: companySettings } = useCompanySettings(companyId || '');
+  const { selectedFiscalYear, fiscalYearDateRange } = useFiscalYearFilter();
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [accountSearch, setAccountSearch] = useState('');
@@ -31,13 +33,24 @@ export function GeneralLedgerPage() {
   const [exportType, setExportType] = useState<'print' | 'pdf' | 'excel'>('print');
   const printRef = useRef<HTMLDivElement>(null);
   
+  // Initialize date range from fiscal year
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
     to: Date | undefined;
   }>({
-    from: new Date(new Date().getFullYear(), 0, 1),
-    to: new Date(),
+    from: fiscalYearDateRange.startDate,
+    to: fiscalYearDateRange.endDate || new Date(),
   });
+
+  // Update date range when fiscal year changes
+  useEffect(() => {
+    if (fiscalYearDateRange.startDate && fiscalYearDateRange.endDate) {
+      setDateRange({
+        from: fiscalYearDateRange.startDate,
+        to: fiscalYearDateRange.endDate,
+      });
+    }
+  }, [fiscalYearDateRange.startDate, fiscalYearDateRange.endDate]);
 
   const { data: ledger, isLoading: isLoadingLedger } = useGeneralLedger(
     selectedAccountId,

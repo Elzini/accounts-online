@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Receipt, CreditCard, Trash2, Loader2, Printer, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,11 +16,13 @@ import { useVouchers, useReceiptVouchers, usePaymentVouchers, useAddVoucher, use
 import { useCompany } from '@/contexts/CompanyContext';
 import { useJournalEntries } from '@/hooks/useAccounting';
 import { Voucher } from '@/services/vouchers';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 export function VouchersPage() {
   const { companyId } = useCompany();
   const { data: allVouchers = [], isLoading } = useVouchers();
   const { data: journalEntries = [] } = useJournalEntries();
+  const { filterByFiscalYear } = useFiscalYearFilter();
   const addVoucher = useAddVoucher();
   const deleteVoucher = useDeleteVoucher();
   
@@ -41,8 +43,13 @@ export function VouchersPage() {
     related_to: ''
   });
 
-  const receiptVouchers = allVouchers.filter(v => v.voucher_type === 'receipt');
-  const paymentVouchers = allVouchers.filter(v => v.voucher_type === 'payment');
+  // Filter vouchers by fiscal year
+  const filteredVouchers = useMemo(() => {
+    return filterByFiscalYear(allVouchers, 'voucher_date');
+  }, [allVouchers, filterByFiscalYear]);
+
+  const receiptVouchers = filteredVouchers.filter(v => v.voucher_type === 'receipt');
+  const paymentVouchers = filteredVouchers.filter(v => v.voucher_type === 'payment');
 
   const handleSubmit = async () => {
     if (!form.amount || !form.description) {

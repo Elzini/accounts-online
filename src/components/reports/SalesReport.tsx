@@ -7,9 +7,11 @@ import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { Button } from '@/components/ui/button';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 export function SalesReport() {
   const { data: sales, isLoading } = useSales();
+  const { filterByFiscalYear } = useFiscalYearFilter();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const { printReport } = usePrintReport();
@@ -18,13 +20,17 @@ export function SalesReport() {
   const filteredSales = useMemo(() => {
     if (!sales) return [];
     
-    return sales.filter(sale => {
+    // First filter by fiscal year
+    let result = filterByFiscalYear(sales, 'sale_date');
+    
+    // Then apply date range filter within fiscal year
+    return result.filter(sale => {
       const saleDate = new Date(sale.sale_date);
       if (startDate && saleDate < new Date(startDate)) return false;
       if (endDate && saleDate > new Date(endDate + 'T23:59:59')) return false;
       return true;
     });
-  }, [sales, startDate, endDate]);
+  }, [sales, startDate, endDate, filterByFiscalYear]);
 
   if (isLoading) {
     return (

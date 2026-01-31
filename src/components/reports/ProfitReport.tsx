@@ -7,22 +7,28 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 export function ProfitReport() {
   const { data: sales = [], isLoading: salesLoading } = useSales();
   const { data: expenses = [], isLoading: expensesLoading } = useExpenses();
+  const { filterByFiscalYear } = useFiscalYearFilter();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const { printReport } = usePrintReport();
 
   const filteredSales = useMemo(() => {
-    return sales.filter(sale => {
+    // First filter by fiscal year
+    let result = filterByFiscalYear(sales, 'sale_date');
+    
+    // Then apply date range filter within fiscal year
+    return result.filter(sale => {
       const saleDate = new Date(sale.sale_date);
       if (startDate && saleDate < new Date(startDate)) return false;
       if (endDate && saleDate > new Date(endDate + 'T23:59:59')) return false;
       return true;
     });
-  }, [sales, startDate, endDate]);
+  }, [sales, startDate, endDate, filterByFiscalYear]);
 
   // Calculate car expenses for each sale
   const salesWithCarExpenses = useMemo(() => {
@@ -41,16 +47,19 @@ export function ProfitReport() {
     });
   }, [filteredSales, expenses]);
 
-  // Filter general expenses within date range
+  // Filter general expenses within fiscal year and date range
   const filteredGeneralExpenses = useMemo(() => {
-    return expenses.filter(exp => {
+    // First filter expenses by fiscal year
+    const fiscalYearExpenses = filterByFiscalYear(expenses, 'expense_date');
+    
+    return fiscalYearExpenses.filter(exp => {
       if (exp.car_id) return false; // Exclude car-linked expenses
       const expDate = new Date(exp.expense_date);
       if (startDate && expDate < new Date(startDate)) return false;
       if (endDate && expDate > new Date(endDate + 'T23:59:59')) return false;
       return true;
     });
-  }, [expenses, startDate, endDate]);
+  }, [expenses, startDate, endDate, filterByFiscalYear]);
 
   const totalGrossProfit = salesWithCarExpenses.reduce((sum, sale) => sum + Number(sale.profit), 0);
   const totalCarExpenses = salesWithCarExpenses.reduce((sum, sale) => sum + sale.carExpenses, 0);

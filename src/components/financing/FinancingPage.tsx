@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Building2, FileText, AlertTriangle, Plus, Wallet, TrendingUp, Calendar, Phone, Loader2, Eye, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { useFinancingCompanies, useFinancingContracts, useAddFinancingCompany, useAddFinancingContract, useRecordFinancingPayment, useOverdueFinancingPayments } from '@/hooks/useFinancing';
 import { useCustomers, useCars, useSales } from '@/hooks/useDatabase';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 export function FinancingPage() {
   const { company } = useCompany();
@@ -23,10 +24,16 @@ export function FinancingPage() {
   const { data: customers = [] } = useCustomers();
   const { data: cars = [] } = useCars();
   const { data: sales = [] } = useSales();
+  const { filterByFiscalYear } = useFiscalYearFilter();
   
   const addCompany = useAddFinancingCompany();
   const addContract = useAddFinancingContract();
   const recordPayment = useRecordFinancingPayment();
+  
+  // Filter contracts by fiscal year
+  const filteredContracts = useMemo(() => {
+    return filterByFiscalYear(contracts, 'contract_date');
+  }, [contracts, filterByFiscalYear]);
   
   const [showCompanyDialog, setShowCompanyDialog] = useState(false);
   const [showContractDialog, setShowContractDialog] = useState(false);
@@ -283,7 +290,7 @@ export function FinancingPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {contracts.map(contract => (
+                  {filteredContracts.map(contract => (
                     <TableRow key={contract.id}>
                       <TableCell className="font-medium">{contract.contract_number}</TableCell>
                       <TableCell>{contract.financing_company?.name || '-'}</TableCell>
