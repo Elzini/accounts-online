@@ -101,48 +101,46 @@ export async function getVATReturnReport(
 
   // Calculate sales totals
   // All car sales are standard rated (15% VAT)
+  // ملاحظة: الأسعار المخزنة هي المبلغ الأساسي (قبل الضريبة)
+  // الضريبة تُحسب كـ: المبلغ الأساسي × نسبة الضريبة
   const totalSalesAmount = (salesData || []).reduce((sum, sale) => {
-    // Sale price includes VAT, so we need to extract the base amount
     const salePrice = Number(sale.sale_price) || 0;
-    // Base amount = Total / (1 + tax rate)
-    const baseAmount = salePrice / (1 + taxRate / 100);
-    return sum + baseAmount;
+    // سعر البيع المخزن هو المبلغ الأساسي
+    return sum + salePrice;
   }, 0);
 
   const totalSalesVAT = (salesData || []).reduce((sum, sale) => {
     const salePrice = Number(sale.sale_price) || 0;
-    const baseAmount = salePrice / (1 + taxRate / 100);
-    const vat = salePrice - baseAmount;
+    // الضريبة = المبلغ الأساسي × نسبة الضريبة
+    const vat = salePrice * (taxRate / 100);
     return sum + vat;
   }, 0);
 
   // Calculate purchases totals (car inventory purchases)
   const totalCarPurchasesAmount = (purchasesData || []).reduce((sum, car) => {
     const purchasePrice = Number(car.purchase_price) || 0;
-    // Purchase price includes VAT
-    const baseAmount = purchasePrice / (1 + taxRate / 100);
-    return sum + baseAmount;
+    // سعر الشراء المخزن هو المبلغ الأساسي
+    return sum + purchasePrice;
   }, 0);
 
   const totalCarPurchasesVAT = (purchasesData || []).reduce((sum, car) => {
     const purchasePrice = Number(car.purchase_price) || 0;
-    const baseAmount = purchasePrice / (1 + taxRate / 100);
-    const vat = purchasePrice - baseAmount;
+    // الضريبة = المبلغ الأساسي × نسبة الضريبة
+    const vat = purchasePrice * (taxRate / 100);
     return sum + vat;
   }, 0);
 
   // Calculate expenses totals (operational expenses with VAT)
   const totalExpensesAmount = (expensesData || []).reduce((sum, exp) => {
     const amount = Number(exp.amount) || 0;
-    // Assuming expenses include VAT
-    const baseAmount = amount / (1 + taxRate / 100);
-    return sum + baseAmount;
+    // المصاريف المخزنة هي المبلغ الأساسي
+    return sum + amount;
   }, 0);
 
   const totalExpensesVAT = (expensesData || []).reduce((sum, exp) => {
     const amount = Number(exp.amount) || 0;
-    const baseAmount = amount / (1 + taxRate / 100);
-    const vat = amount - baseAmount;
+    // الضريبة = المبلغ الأساسي × نسبة الضريبة
+    const vat = amount * (taxRate / 100);
     return sum + vat;
   }, 0);
 
