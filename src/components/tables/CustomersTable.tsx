@@ -83,10 +83,14 @@ export function CustomersTable({ setActivePage }: CustomersTableProps) {
                   value={<span dir="ltr">{customer.phone}</span>}
                   icon={<Phone className="w-3.5 h-3.5" />}
                 />
-                <MobileCardRow 
+              <MobileCardRow 
                   label="العنوان" 
                   value={customer.address || '-'}
                   icon={<MapPin className="w-3.5 h-3.5" />}
+                />
+                <MobileCardRow 
+                  label="الرقم الضريبي" 
+                  value={<span dir="ltr">{customer.registration_number || '-'}</span>}
                 />
               </div>
             </MobileCard>
@@ -121,6 +125,7 @@ export function CustomersTable({ setActivePage }: CustomersTableProps) {
                 <TableHead className="text-right font-bold">رقم الهوية</TableHead>
                 <TableHead className="text-right font-bold">رقم الهاتف</TableHead>
                 <TableHead className="text-right font-bold">العنوان</TableHead>
+                <TableHead className="text-right font-bold">الرقم الضريبي</TableHead>
                 <TableHead className="text-right font-bold">الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
@@ -141,6 +146,9 @@ export function CustomersTable({ setActivePage }: CustomersTableProps) {
                       <MapPin className="w-4 h-4 text-muted-foreground" />
                       <span>{customer.address || '-'}</span>
                     </div>
+                  </TableCell>
+                  <TableCell dir="ltr" className="text-right">
+                    {customer.registration_number || '-'}
                   </TableCell>
                   <TableCell>
                     <CustomerActions customer={customer} />
