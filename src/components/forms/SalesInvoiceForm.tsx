@@ -106,6 +106,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('amount');
   const [paidAmount, setPaidAmount] = useState(0);
+  const [currentInvoiceIndex, setCurrentInvoiceIndex] = useState(0);
 
   const selectedCustomer = customers.find(c => c.id === invoiceData.customer_id);
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_sales ? (taxSettings?.tax_rate || 15) : 0;
@@ -314,6 +315,69 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     setInvoiceOpen(open);
     if (!open) {
       setActivePage('sales');
+    }
+  };
+
+  // Navigation functions
+  const handleFirstSale = () => {
+    if (existingSales.length > 0) {
+      setCurrentInvoiceIndex(0);
+      loadSaleData(existingSales[0]);
+    }
+  };
+
+  const handlePreviousSale = () => {
+    if (currentInvoiceIndex > 0) {
+      const newIndex = currentInvoiceIndex - 1;
+      setCurrentInvoiceIndex(newIndex);
+      loadSaleData(existingSales[newIndex]);
+    }
+  };
+
+  const handleNextSale = () => {
+    if (currentInvoiceIndex < existingSales.length - 1) {
+      const newIndex = currentInvoiceIndex + 1;
+      setCurrentInvoiceIndex(newIndex);
+      loadSaleData(existingSales[newIndex]);
+    }
+  };
+
+  const handleLastSale = () => {
+    if (existingSales.length > 0) {
+      const lastIndex = existingSales.length - 1;
+      setCurrentInvoiceIndex(lastIndex);
+      loadSaleData(existingSales[lastIndex]);
+    }
+  };
+
+  const loadSaleData = async (sale: any) => {
+    setInvoiceData({
+      invoice_number: sale.sale_number || '',
+      customer_id: sale.customer_id || '',
+      sale_date: sale.sale_date,
+      payment_account_id: sale.payment_account_id || '',
+      warehouse: 'الرئيسي',
+      seller_name: sale.seller_name || '',
+      notes: '',
+      price_includes_tax: true,
+      commission: String(sale.commission || ''),
+      other_expenses: String(sale.other_expenses || ''),
+    });
+
+    // Load the car from this sale
+    const car = allCars.find(c => c.id === sale.car_id);
+    if (car) {
+      setSelectedCars([{
+        id: crypto.randomUUID(),
+        car_id: car.id,
+        sale_price: String(sale.sale_price),
+        purchase_price: Number(car.purchase_price),
+        car_name: car.name,
+        model: car.model || '',
+        chassis_number: car.chassis_number,
+        quantity: 1,
+        pendingTransfer: null,
+      }]);
     }
   };
 
@@ -551,57 +615,60 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {calculations.items.map((car, index) => (
-                  <TableRow key={car.id} className="hover:bg-muted/30">
-                    <TableCell className="text-center text-sm">{index + 1}</TableCell>
-                    <TableCell className="text-sm font-medium">
-                      {car.car_name} {car.model}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Car className="w-4 h-4" />
-                        سيارة
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm font-mono" dir="ltr">
-                      {car.chassis_number}
-                    </TableCell>
-                    <TableCell className="text-center text-sm">1</TableCell>
-                    <TableCell className="text-center text-sm">سيارة</TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        value={selectedCars[index]?.sale_price || ''}
-                        onChange={(e) => handleCarChange(car.id, 'sale_price', e.target.value)}
-                        placeholder="0"
-                        className="h-8 text-sm text-center border-0 bg-transparent focus-visible:ring-1"
-                        dir="ltr"
-                      />
-                    </TableCell>
-                    <TableCell className="text-center text-sm font-medium">
-                      {formatCurrency(car.baseAmount)}
-                    </TableCell>
-                    <TableCell className="text-center text-sm text-warning">
-                      {taxRate}%
-                    </TableCell>
-                    <TableCell className="text-center text-sm font-bold text-primary">
-                      {formatCurrency(car.total)}
-                    </TableCell>
-                    <TableCell>
-                      {selectedCars.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveCar(car.id)}
-                          className="h-7 w-7 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {selectedCars.map((car, index) => {
+                  const calcItem = calculations.items[index];
+                  return (
+                    <TableRow key={car.id} className="hover:bg-muted/30">
+                      <TableCell className="text-center text-sm">{index + 1}</TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {car.car_name} {car.model}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Car className="w-4 h-4" />
+                          سيارة
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm font-mono" dir="ltr">
+                        {car.chassis_number}
+                      </TableCell>
+                      <TableCell className="text-center text-sm">1</TableCell>
+                      <TableCell className="text-center text-sm">سيارة</TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={car.sale_price}
+                          onChange={(e) => handleCarChange(car.id, 'sale_price', e.target.value)}
+                          placeholder="0"
+                          className="h-8 text-sm text-center w-24"
+                          dir="ltr"
+                        />
+                      </TableCell>
+                      <TableCell className="text-center text-sm font-medium">
+                        {formatCurrency(calcItem?.baseAmount || 0)}
+                      </TableCell>
+                      <TableCell className="text-center text-sm text-warning">
+                        {taxRate}%
+                      </TableCell>
+                      <TableCell className="text-center text-sm font-bold text-primary">
+                        {formatCurrency(calcItem?.total || 0)}
+                      </TableCell>
+                      <TableCell>
+                        {selectedCars.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveCar(car.id)}
+                            className="h-7 w-7 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
                 {selectedCars.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
@@ -774,18 +841,48 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 خروج
               </Button>
               <div className="flex items-center gap-1 border rounded-md overflow-hidden">
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-none"
+                  onClick={handleNextSale}
+                  disabled={currentInvoiceIndex >= existingSales.length - 1}
+                  title="الفاتورة التالية"
+                >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-none"
+                  onClick={handleLastSale}
+                  disabled={existingSales.length === 0}
+                  title="آخر فاتورة"
+                >
                   <ChevronRight className="w-4 h-4" />
                   <ChevronRight className="w-4 h-4 -mr-2" />
                 </Button>
-                <span className="px-3 text-sm bg-muted">1</span>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none">
+                <span className="px-3 text-sm bg-muted min-w-[50px] text-center">
+                  {existingSales.length > 0 ? currentInvoiceIndex + 1 : 0} / {existingSales.length}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-none"
+                  onClick={handlePreviousSale}
+                  disabled={currentInvoiceIndex <= 0}
+                  title="الفاتورة السابقة"
+                >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-none"
+                  onClick={handleFirstSale}
+                  disabled={existingSales.length === 0}
+                  title="أول فاتورة"
+                >
                   <ChevronLeft className="w-4 h-4" />
                   <ChevronLeft className="w-4 h-4 -ml-2" />
                 </Button>

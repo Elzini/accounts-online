@@ -96,6 +96,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const [savedBatchData, setSavedBatchData] = useState<any>(null);
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('amount');
+  const [currentInvoiceIndex, setCurrentInvoiceIndex] = useState(0);
 
   const selectedSupplier = suppliers.find(s => s.id === invoiceData.supplier_id);
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_purchases ? (taxSettings?.tax_rate || 15) : 0;
@@ -266,6 +267,62 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     if (!open) {
       setActivePage('purchases');
     }
+  };
+
+  // Navigation functions
+  const handleFirstPurchase = () => {
+    if (existingCars.length > 0) {
+      setCurrentInvoiceIndex(0);
+      loadCarData(existingCars[0]);
+    }
+  };
+
+  const handlePreviousPurchase = () => {
+    if (currentInvoiceIndex > 0) {
+      const newIndex = currentInvoiceIndex - 1;
+      setCurrentInvoiceIndex(newIndex);
+      loadCarData(existingCars[newIndex]);
+    }
+  };
+
+  const handleNextPurchase = () => {
+    if (currentInvoiceIndex < existingCars.length - 1) {
+      const newIndex = currentInvoiceIndex + 1;
+      setCurrentInvoiceIndex(newIndex);
+      loadCarData(existingCars[newIndex]);
+    }
+  };
+
+  const handleLastPurchase = () => {
+    if (existingCars.length > 0) {
+      const lastIndex = existingCars.length - 1;
+      setCurrentInvoiceIndex(lastIndex);
+      loadCarData(existingCars[lastIndex]);
+    }
+  };
+
+  const loadCarData = (car: any) => {
+    setInvoiceData({
+      invoice_number: String(car.inventory_number || ''),
+      supplier_id: car.supplier_id || '',
+      purchase_date: car.purchase_date,
+      due_date: car.purchase_date,
+      payment_account_id: car.payment_account_id || '',
+      warehouse: 'الرئيسي',
+      notes: '',
+      price_includes_tax: true,
+    });
+
+    setCars([{
+      id: crypto.randomUUID(),
+      chassis_number: car.chassis_number,
+      name: car.name,
+      model: car.model || '',
+      color: car.color || '',
+      purchase_price: String(car.purchase_price),
+      quantity: 1,
+      unit: 'سيارة',
+    }]);
   };
 
   // Prepare invoice preview data
@@ -508,7 +565,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                         value={cars[index].purchase_price}
                         onChange={(e) => handleCarChange(car.id, 'purchase_price', e.target.value)}
                         placeholder="0"
-                        className="h-8 text-sm text-center border-0 bg-transparent focus-visible:ring-1"
+                        className="h-8 text-sm text-center w-24"
                         dir="ltr"
                       />
                     </TableCell>
@@ -632,18 +689,48 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 خروج
               </Button>
               <div className="flex items-center gap-1 border rounded-md overflow-hidden">
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-none"
+                  onClick={handleNextPurchase}
+                  disabled={currentInvoiceIndex >= existingCars.length - 1}
+                  title="الفاتورة التالية"
+                >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-none"
+                  onClick={handleLastPurchase}
+                  disabled={existingCars.length === 0}
+                  title="آخر فاتورة"
+                >
                   <ChevronRight className="w-4 h-4" />
                   <ChevronRight className="w-4 h-4 -mr-2" />
                 </Button>
-                <span className="px-3 text-sm bg-muted">1</span>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none">
+                <span className="px-3 text-sm bg-muted min-w-[50px] text-center">
+                  {existingCars.length > 0 ? currentInvoiceIndex + 1 : 0} / {existingCars.length}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-none"
+                  onClick={handlePreviousPurchase}
+                  disabled={currentInvoiceIndex <= 0}
+                  title="الفاتورة السابقة"
+                >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-none"
+                  onClick={handleFirstPurchase}
+                  disabled={existingCars.length === 0}
+                  title="أول فاتورة"
+                >
                   <ChevronLeft className="w-4 h-4" />
                   <ChevronLeft className="w-4 h-4 -ml-2" />
                 </Button>
