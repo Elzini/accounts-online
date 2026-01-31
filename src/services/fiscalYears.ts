@@ -429,3 +429,39 @@ export async function deleteFiscalYear(id: string): Promise<void> {
   
   if (error) throw error;
 }
+
+// ترحيل المخزون (السيارات المتاحة) من سنة مالية إلى أخرى
+export async function carryForwardInventory(
+  fromFiscalYearId: string,
+  toFiscalYearId: string,
+  companyId: string
+): Promise<{ success: boolean; count?: number; error?: string }> {
+  try {
+    // جلب السيارات المتاحة من السنة المالية المصدر
+    const { data: cars, error: fetchError } = await supabase
+      .from('cars')
+      .select('id')
+      .eq('company_id', companyId)
+      .eq('fiscal_year_id', fromFiscalYearId)
+      .eq('status', 'available');
+
+    if (fetchError) throw fetchError;
+
+    if (!cars || cars.length === 0) {
+      return { success: true, count: 0 };
+    }
+
+    // تحديث fiscal_year_id للسيارات المتاحة
+    const carIds = cars.map(car => car.id);
+    const { error: updateError } = await supabase
+      .from('cars')
+      .update({ fiscal_year_id: toFiscalYearId })
+      .in('id', carIds);
+
+    if (updateError) throw updateError;
+
+    return { success: true, count: cars.length };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

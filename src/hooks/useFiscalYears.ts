@@ -12,6 +12,7 @@ import {
   closeFiscalYear,
   openNewFiscalYear,
   deleteFiscalYear,
+  carryForwardInventory,
   FiscalYear,
 } from '@/services/fiscalYears';
 import { toast } from 'sonner';
@@ -210,6 +211,30 @@ export function useDeleteFiscalYear() {
     },
     onError: (error: any) => {
       toast.error(error.message || 'فشل حذف السنة المالية');
+    },
+  });
+}
+
+export function useCarryForwardInventory() {
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+  
+  return useMutation({
+    mutationFn: (data: { fromFiscalYearId: string; toFiscalYearId: string }) => {
+      if (!companyId) throw new Error('No company');
+      return carryForwardInventory(data.fromFiscalYearId, data.toFiscalYearId, companyId);
+    },
+    onSuccess: (result) => {
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ['cars'] });
+        queryClient.invalidateQueries({ queryKey: ['stats'] });
+        toast.success(`تم ترحيل ${result.count} سيارة بنجاح`);
+      } else {
+        toast.error(result.error || 'فشل ترحيل المخزون');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل ترحيل المخزون');
     },
   });
 }
