@@ -19,18 +19,56 @@ const FiscalYearContext = createContext<FiscalYearContextType>({
   isLoading: true,
 });
 
+// Storage key for persisting fiscal year selection
+const FISCAL_YEAR_STORAGE_KEY = 'selected_fiscal_year';
+
 export function FiscalYearProvider({ children }: { children: ReactNode }) {
   const { companyId } = useCompany();
   const { data: fiscalYears = [], isLoading: isLoadingYears } = useFiscalYears();
   const { data: currentFiscalYear, isLoading: isLoadingCurrent } = useCurrentFiscalYear();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState<FiscalYear | null>(null);
+  const [selectedFiscalYear, setSelectedFiscalYearState] = useState<FiscalYear | null>(null);
+  const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
 
-  // IMPORTANT:
-  // Reset selection when user logs out (companyId becomes null) or company changes,
-  // otherwise the previous selection can persist and prevent the selection dialog from showing.
+  // Custom setter that also persists to localStorage
+  const setSelectedFiscalYear = (year: FiscalYear | null) => {
+    setSelectedFiscalYearState(year);
+    if (year && companyId) {
+      localStorage.setItem(`${FISCAL_YEAR_STORAGE_KEY}_${companyId}`, JSON.stringify({
+        id: year.id,
+        name: year.name,
+      }));
+    } else if (companyId) {
+      localStorage.removeItem(`${FISCAL_YEAR_STORAGE_KEY}_${companyId}`);
+    }
+  };
+
+  // Load from localStorage on mount when fiscalYears are available
+  useEffect(() => {
+    if (!companyId || fiscalYears.length === 0 || hasLoadedFromStorage) return;
+
+    const stored = localStorage.getItem(`${FISCAL_YEAR_STORAGE_KEY}_${companyId}`);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        const matchingYear = fiscalYears.find(fy => fy.id === parsed.id);
+        if (matchingYear) {
+          setSelectedFiscalYearState(matchingYear);
+          setHasLoadedFromStorage(true);
+          return;
+        }
+      } catch (e) {
+        // Invalid JSON, remove it
+        localStorage.removeItem(`${FISCAL_YEAR_STORAGE_KEY}_${companyId}`);
+      }
+    }
+    setHasLoadedFromStorage(true);
+  }, [companyId, fiscalYears, hasLoadedFromStorage]);
+
+  // Reset selection when user logs out (companyId becomes null) or company changes
   useEffect(() => {
     if (!companyId) {
-      setSelectedFiscalYear(null);
+      setSelectedFiscalYearState(null);
+      setHasLoadedFromStorage(false);
     }
   }, [companyId]);
 
@@ -44,14 +82,12 @@ export function FiscalYearProvider({ children }: { children: ReactNode }) {
     }
   }, [fiscalYears, selectedFiscalYear]);
 
-  // Only auto-select if there's exactly ONE fiscal year
-  // If multiple years exist, let the user choose via the dialog
+  // Only auto-select if there's exactly ONE fiscal year and nothing is selected
   useEffect(() => {
-    if (!selectedFiscalYear && fiscalYears.length === 1) {
-      // Only one year exists, auto-select it
+    if (!selectedFiscalYear && fiscalYears.length === 1 && hasLoadedFromStorage) {
       setSelectedFiscalYear(fiscalYears[0]);
     }
-  }, [fiscalYears, selectedFiscalYear]);
+  }, [fiscalYears, selectedFiscalYear, hasLoadedFromStorage]);
 
   const isLoading = isLoadingYears || isLoadingCurrent;
 
