@@ -10,6 +10,7 @@ import { ActivePage } from '@/types';
 import { useCars } from '@/hooks/useDatabase';
 import { useTaxSettings } from '@/hooks/useAccounting';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 
 interface PurchasesTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -18,6 +19,7 @@ interface PurchasesTableProps {
 export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const { data: cars = [], isLoading } = useCars();
   const { data: taxSettings } = useTaxSettings();
+  const { selectedFiscalYear } = useFiscalYear();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const isMobile = useIsMobile();
@@ -68,6 +70,17 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const filteredCars = useMemo(() => {
     let result = cars;
     
+    // Filter by fiscal year
+    if (selectedFiscalYear) {
+      result = result.filter(car => {
+        const purchaseDate = new Date(car.purchase_date);
+        const startDate = new Date(selectedFiscalYear.start_date);
+        const endDate = new Date(selectedFiscalYear.end_date);
+        return purchaseDate >= startDate && purchaseDate <= endDate;
+      });
+    }
+    
+    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(car =>
@@ -79,12 +92,13 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       );
     }
     
+    // Filter by status
     if (statusFilter !== 'all') {
       result = result.filter(car => car.status === statusFilter);
     }
     
     return result;
-  }, [cars, searchQuery, statusFilter]);
+  }, [cars, searchQuery, statusFilter, selectedFiscalYear]);
 
   const totals = useMemo(() => {
     return filteredCars.reduce(

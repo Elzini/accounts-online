@@ -9,6 +9,7 @@ import { useSales } from '@/hooks/useDatabase';
 import { useTaxSettings } from '@/hooks/useAccounting';
 import { SaleActions } from '@/components/actions/SaleActions';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 
 interface SalesTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -17,6 +18,7 @@ interface SalesTableProps {
 export function SalesTable({ setActivePage }: SalesTableProps) {
   const { data: sales = [], isLoading } = useSales();
   const { data: taxSettings } = useTaxSettings();
+  const { selectedFiscalYear } = useFiscalYear();
   const [searchQuery, setSearchQuery] = useState('');
   const isMobile = useIsMobile();
 
@@ -51,16 +53,31 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
   };
 
   const filteredSales = useMemo(() => {
-    if (!searchQuery.trim()) return sales;
+    let result = sales;
     
-    const query = searchQuery.toLowerCase();
-    return sales.filter(sale =>
-      sale.customer?.name?.toLowerCase().includes(query) ||
-      sale.car?.name?.toLowerCase().includes(query) ||
-      sale.car?.model?.toLowerCase().includes(query) ||
-      sale.sale_number.toString().includes(query)
-    );
-  }, [sales, searchQuery]);
+    // Filter by fiscal year
+    if (selectedFiscalYear) {
+      result = result.filter(sale => {
+        const saleDate = new Date(sale.sale_date);
+        const startDate = new Date(selectedFiscalYear.start_date);
+        const endDate = new Date(selectedFiscalYear.end_date);
+        return saleDate >= startDate && saleDate <= endDate;
+      });
+    }
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(sale =>
+        sale.customer?.name?.toLowerCase().includes(query) ||
+        sale.car?.name?.toLowerCase().includes(query) ||
+        sale.car?.model?.toLowerCase().includes(query) ||
+        sale.sale_number.toString().includes(query)
+      );
+    }
+    
+    return result;
+  }, [sales, searchQuery, selectedFiscalYear]);
 
   const totals = useMemo(() => {
     return filteredSales.reduce(
