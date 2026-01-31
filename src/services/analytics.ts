@@ -66,69 +66,101 @@ export interface AdvancedStats {
   }>;
 }
 
-export async function fetchAdvancedAnalytics(): Promise<AdvancedStats> {
+export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<AdvancedStats> {
+  // Get fiscal year dates if provided
+  let fiscalYearStart: string | null = null;
+  let fiscalYearEnd: string | null = null;
+  
+  if (fiscalYearId) {
+    const { data: fiscalYear } = await supabase
+      .from('fiscal_years')
+      .select('start_date, end_date')
+      .eq('id', fiscalYearId)
+      .single();
+    
+    if (fiscalYear) {
+      fiscalYearStart = fiscalYear.start_date;
+      fiscalYearEnd = fiscalYear.end_date;
+    }
+  }
+
   const now = new Date();
-  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-  const thisMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
-  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString();
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
+  const thisMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+
+  // Build queries with fiscal year filter
+  let allCarsQuery = supabase
+    .from('cars')
+    .select('id, name, model, status, purchase_price, purchase_date, created_at, supplier_id');
+  
+  let allSalesQuery = supabase
+    .from('sales')
+    .select(`
+      id,
+      sale_price,
+      profit,
+      sale_date,
+      created_at,
+      customer:customers(id, name, phone),
+      car:cars(id, name, model, purchase_price, purchase_date)
+    `)
+    .order('sale_date', { ascending: false });
+
+  // Apply fiscal year filter if provided
+  if (fiscalYearStart && fiscalYearEnd) {
+    allCarsQuery = allCarsQuery
+      .gte('purchase_date', fiscalYearStart)
+      .lte('purchase_date', fiscalYearEnd);
+    
+    allSalesQuery = allSalesQuery
+      .gte('sale_date', fiscalYearStart)
+      .lte('sale_date', fiscalYearEnd);
+  }
 
   // Parallel fetches for better performance
   const [
-    salesThisMonth,
-    salesLastMonth,
     allCars,
     allSales,
     customers,
     suppliers,
     transfers
   ] = await Promise.all([
-    // This month's sales
-    supabase
-      .from('sales')
-      .select('sale_price, profit')
-      .gte('created_at', thisMonthStart),
-    // Last month's sales
-    supabase
-      .from('sales')
-      .select('sale_price, profit')
-      .gte('created_at', lastMonthStart)
-      .lt('created_at', thisMonthEnd),
-    // All cars
-    supabase
-      .from('cars')
-      .select('id, name, model, status, purchase_price, purchase_date, created_at, supplier_id'),
-    // All sales with details
-    supabase
-      .from('sales')
-      .select(`
-        id,
-        sale_price,
-        profit,
-        created_at,
-        customer:customers(id, name, phone),
-        car:cars(id, name, model, purchase_price, purchase_date)
-      `)
-      .order('created_at', { ascending: false }),
-    // Customers
+    allCarsQuery,
+    allSalesQuery,
     supabase
       .from('customers')
       .select('id, name, phone'),
-    // Suppliers
     supabase
       .from('suppliers')
       .select('id, name'),
-    // Transfers
     supabase
       .from('car_transfers')
       .select('id, car_id, status')
   ]);
 
+  // Calculate sales for this month and last month (within fiscal year if specified)
+  const isWithinFiscalYear = (dateStr: string) => {
+    if (!fiscalYearStart || !fiscalYearEnd) return true;
+    return dateStr >= fiscalYearStart && dateStr <= fiscalYearEnd;
+  };
+
+  const salesThisMonthData = (allSales.data || []).filter(s => {
+    const saleDate = s.sale_date || s.created_at.split('T')[0];
+    return saleDate >= thisMonthStart && saleDate <= thisMonthEnd && isWithinFiscalYear(saleDate);
+  });
+
+  const salesLastMonthData = (allSales.data || []).filter(s => {
+    const saleDate = s.sale_date || s.created_at.split('T')[0];
+    return saleDate >= lastMonthStart && saleDate <= lastMonthEnd && isWithinFiscalYear(saleDate);
+  });
+
   // Calculate trends
-  const thisMonthSalesTotal = (salesThisMonth.data || []).reduce((sum, s) => sum + (s.sale_price || 0), 0);
-  const lastMonthSalesTotal = (salesLastMonth.data || []).reduce((sum, s) => sum + (s.sale_price || 0), 0);
-  const thisMonthProfit = (salesThisMonth.data || []).reduce((sum, s) => sum + (s.profit || 0), 0);
-  const lastMonthProfit = (salesLastMonth.data || []).reduce((sum, s) => sum + (s.profit || 0), 0);
+  const thisMonthSalesTotal = salesThisMonthData.reduce((sum, s) => sum + (s.sale_price || 0), 0);
+  const lastMonthSalesTotal = salesLastMonthData.reduce((sum, s) => sum + (s.sale_price || 0), 0);
+  const thisMonthProfit = salesThisMonthData.reduce((sum, s) => sum + (s.profit || 0), 0);
+  const lastMonthProfit = salesLastMonthData.reduce((sum, s) => sum + (s.profit || 0), 0);
 
   const salesPercentChange = lastMonthSalesTotal > 0 
     ? ((thisMonthSalesTotal - lastMonthSalesTotal) / lastMonthSalesTotal) * 100 
@@ -137,21 +169,27 @@ export async function fetchAdvancedAnalytics(): Promise<AdvancedStats> {
     ? ((thisMonthProfit - lastMonthProfit) / lastMonthProfit) * 100 
     : 0;
 
-  // Purchases trends
-  const carsThisMonth = (allCars.data || []).filter(c => c.created_at >= thisMonthStart);
-  const carsLastMonth = (allCars.data || []).filter(c => c.created_at >= lastMonthStart && c.created_at < thisMonthEnd);
+  // Purchases trends (within fiscal year)
+  const carsThisMonth = (allCars.data || []).filter(c => {
+    const purchaseDate = c.purchase_date;
+    return purchaseDate >= thisMonthStart && purchaseDate <= thisMonthEnd;
+  });
+  const carsLastMonth = (allCars.data || []).filter(c => {
+    const purchaseDate = c.purchase_date;
+    return purchaseDate >= lastMonthStart && purchaseDate <= lastMonthEnd;
+  });
   const purchasesThisMonth = carsThisMonth.reduce((sum, c) => sum + (c.purchase_price || 0), 0);
   const purchasesLastMonth = carsLastMonth.reduce((sum, c) => sum + (c.purchase_price || 0), 0);
   const purchasesPercentChange = purchasesLastMonth > 0 
     ? ((purchasesThisMonth - purchasesLastMonth) / purchasesLastMonth) * 100 
     : 0;
 
-  // Inventory by status
+  // Inventory by status (within fiscal year)
   const availableCars = (allCars.data || []).filter(c => c.status === 'available').length;
   const soldCars = (allCars.data || []).filter(c => c.status === 'sold').length;
   const transferredCars = (transfers.data || []).filter(t => t.status === 'pending').length;
 
-  // Top customers
+  // Top customers (within fiscal year)
   const customerSales: Record<string, { total: number; count: number }> = {};
   (allSales.data || []).forEach(sale => {
     if (sale.customer?.id) {
@@ -177,7 +215,7 @@ export async function fetchAdvancedAnalytics(): Promise<AdvancedStats> {
     .sort((a, b) => b.totalAmount - a.totalAmount)
     .slice(0, 5);
 
-  // Top suppliers
+  // Top suppliers (within fiscal year)
   const supplierCars: Record<string, { count: number; total: number }> = {};
   (allCars.data || []).forEach(car => {
     if (car.supplier_id) {
@@ -202,7 +240,7 @@ export async function fetchAdvancedAnalytics(): Promise<AdvancedStats> {
     .sort((a, b) => b.totalCars - a.totalCars)
     .slice(0, 5);
 
-  // Top selling cars (by model)
+  // Top selling cars (by model, within fiscal year)
   const carModelSales: Record<string, { count: number; revenue: number }> = {};
   (allSales.data || []).forEach(sale => {
     if (sale.car) {
@@ -225,18 +263,33 @@ export async function fetchAdvancedAnalytics(): Promise<AdvancedStats> {
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-  // Revenue by month (last 6 months)
+  // Revenue by month (within fiscal year range or last 6 months)
   const monthlyData: Record<string, { revenue: number; cost: number; profit: number }> = {};
   const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    monthlyData[monthKey] = { revenue: 0, cost: 0, profit: 0 };
+  // Determine the range for monthly breakdown
+  if (fiscalYearStart && fiscalYearEnd) {
+    // Use fiscal year range
+    const startDate = new Date(fiscalYearStart);
+    const endDate = new Date(fiscalYearEnd);
+    let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    
+    while (currentDate <= endDate) {
+      const monthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+      monthlyData[monthKey] = { revenue: 0, cost: 0, profit: 0 };
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+  } else {
+    // Default to last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthlyData[monthKey] = { revenue: 0, cost: 0, profit: 0 };
+    }
   }
 
   (allSales.data || []).forEach(sale => {
-    const saleDate = new Date(sale.created_at);
+    const saleDate = new Date(sale.sale_date || sale.created_at);
     const monthKey = `${saleDate.getFullYear()}-${String(saleDate.getMonth() + 1).padStart(2, '0')}`;
     if (monthlyData[monthKey]) {
       monthlyData[monthKey].revenue += sale.sale_price || 0;
@@ -253,7 +306,7 @@ export async function fetchAdvancedAnalytics(): Promise<AdvancedStats> {
     };
   });
 
-  // Performance metrics
+  // Performance metrics (within fiscal year)
   const totalSales = allSales.data?.length || 0;
   const totalRevenue = (allSales.data || []).reduce((sum, s) => sum + (s.sale_price || 0), 0);
   const totalProfit = (allSales.data || []).reduce((sum, s) => sum + (s.profit || 0), 0);
@@ -271,7 +324,7 @@ export async function fetchAdvancedAnalytics(): Promise<AdvancedStats> {
   (allSales.data || []).forEach(sale => {
     if (sale.car?.purchase_date) {
       const purchaseDate = new Date(sale.car.purchase_date);
-      const saleDate = new Date(sale.created_at);
+      const saleDate = new Date(sale.sale_date || sale.created_at);
       const days = Math.floor((saleDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24));
       if (days >= 0) {
         totalDaysToSell += days;
@@ -281,10 +334,10 @@ export async function fetchAdvancedAnalytics(): Promise<AdvancedStats> {
   });
   const averageDaysToSell = soldCount > 0 ? Math.round(totalDaysToSell / soldCount) : 0;
 
-  // Recent sales
+  // Recent sales (within fiscal year)
   const recentSales = (allSales.data || []).slice(0, 5).map(sale => ({
     id: sale.id,
-    date: sale.created_at,
+    date: sale.sale_date || sale.created_at,
     customerName: sale.customer?.name || 'غير محدد',
     carName: sale.car ? `${sale.car.name} ${sale.car.model || ''}`.trim() : 'غير محدد',
     amount: sale.sale_price || 0,
