@@ -17,7 +17,8 @@ import {
   useOpenNewFiscalYear,
   useSetCurrentFiscalYear,
   useDeleteFiscalYear,
-  useCarryForwardInventory
+  useCarryForwardInventory,
+  useRefreshAllCarryForward
 } from '@/hooks/useFiscalYears';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -31,7 +32,8 @@ import {
   Loader2,
   FileText,
   AlertTriangle,
-  Package
+  Package,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -46,10 +48,12 @@ export function FiscalYearsPage() {
   const setCurrentFiscalYear = useSetCurrentFiscalYear();
   const deleteFiscalYear = useDeleteFiscalYear();
   const carryForwardInventory = useCarryForwardInventory();
+  const refreshAllCarryForward = useRefreshAllCarryForward();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isNewYearDialogOpen, setIsNewYearDialogOpen] = useState(false);
   const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
+  const [isRefreshDialogOpen, setIsRefreshDialogOpen] = useState(false);
   const [newYearName, setNewYearName] = useState('');
   const [newYearStart, setNewYearStart] = useState('');
   const [newYearEnd, setNewYearEnd] = useState('');
@@ -58,6 +62,8 @@ export function FiscalYearsPage() {
   const [previousYearId, setPreviousYearId] = useState('');
   const [fromYearId, setFromYearId] = useState('');
   const [toYearId, setToYearId] = useState('');
+  const [refreshFromYearId, setRefreshFromYearId] = useState('');
+  const [refreshToYearId, setRefreshToYearId] = useState('');
 
 
   const currentYear = new Date().getFullYear();
@@ -118,6 +124,21 @@ export function FiscalYearsPage() {
         setIsInventoryDialogOpen(false);
         setFromYearId('');
         setToYearId('');
+      }
+    });
+  };
+
+  const handleRefreshAllBalances = () => {
+    if (!refreshFromYearId || !refreshToYearId) return;
+    
+    refreshAllCarryForward.mutate({
+      previousYearId: refreshFromYearId,
+      fiscalYearId: refreshToYearId,
+    }, {
+      onSuccess: () => {
+        setIsRefreshDialogOpen(false);
+        setRefreshFromYearId('');
+        setRefreshToYearId('');
       }
     });
   };
@@ -381,6 +402,84 @@ export function FiscalYearsPage() {
                   >
                     {carryForwardInventory.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
                     ترحيل المخزون
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {/* تحديث الأرصدة المرحلة */}
+          {fiscalYears.length >= 2 && (
+            <Dialog open={isRefreshDialogOpen} onOpenChange={setIsRefreshDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="secondary">
+                  <RefreshCw className="h-4 w-4 ml-2" />
+                  تحديث الأرصدة المرحلة
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>تحديث الأرصدة المرحلة</DialogTitle>
+                  <DialogDescription>
+                    تحديث الأرصدة الافتتاحية والمخزون والعملاء والموردين بناءً على التغييرات في السنة السابقة
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>السنة المصدر (السابقة)</Label>
+                    <Select value={refreshFromYearId} onValueChange={setRefreshFromYearId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر السنة المصدر" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fiscalYears.map(year => (
+                          <SelectItem key={year.id} value={year.id} disabled={year.id === refreshToYearId}>
+                            {year.name} ({year.status === 'open' ? 'مفتوحة' : 'مغلقة'})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-center">
+                    <ArrowRight className="h-6 w-6 text-muted-foreground rotate-90" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>السنة الهدف (المُرحّل إليها)</Label>
+                    <Select value={refreshToYearId} onValueChange={setRefreshToYearId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر السنة الهدف" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fiscalYears.filter(y => y.status === 'open').map(year => (
+                          <SelectItem key={year.id} value={year.id} disabled={year.id === refreshFromYearId}>
+                            {year.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="p-4 bg-muted rounded-lg space-y-2">
+                    <p className="text-sm font-medium">سيتم تحديث:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>الأرصدة الافتتاحية للحسابات (الأصول، الخصوم، حقوق الملكية)</li>
+                      <li>ترحيل المخزون (السيارات المتاحة)</li>
+                      <li>أرصدة العملاء والموردين</li>
+                    </ul>
+                    <p className="text-sm text-destructive mt-2">
+                      تحذير: سيتم حذف القيد الافتتاحي القديم وإنشاء قيد جديد
+                    </p>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsRefreshDialogOpen(false)}>
+                    إلغاء
+                  </Button>
+                  <Button 
+                    onClick={handleRefreshAllBalances} 
+                    disabled={refreshAllCarryForward.isPending || !refreshFromYearId || !refreshToYearId}
+                  >
+                    {refreshAllCarryForward.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
+                    تحديث الأرصدة
                   </Button>
                 </DialogFooter>
               </DialogContent>

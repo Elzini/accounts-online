@@ -465,3 +465,331 @@ export async function carryForwardInventory(
     return { success: false, error: error.message };
   }
 }
+
+// تحديث الأرصدة الافتتاحية للسنة المالية بناءً على أرصدة السنة السابقة
+export async function refreshOpeningBalances(
+  fiscalYearId: string,
+  previousYearId: string,
+  companyId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // جلب السنة المالية الحالية
+    const { data: currentYear } = await supabase
+      .from('fiscal_years')
+      .select('*')
+      .eq('id', fiscalYearId)
+      .single();
+
+    if (!currentYear) throw new Error('السنة المالية غير موجودة');
+
+    // جلب السنة السابقة
+    const { data: previousYear } = await supabase
+      .from('fiscal_years')
+      .select('*')
+      .eq('id', previousYearId)
+      .single();
+
+    if (!previousYear) throw new Error('السنة السابقة غير موجودة');
+
+    // حذف قيد الافتتاح القديم إن وجد
+    if (currentYear.opening_balance_entry_id) {
+      // حذف بنود القيد أولاً
+      await supabase
+        .from('journal_entry_lines')
+        .delete()
+        .eq('journal_entry_id', currentYear.opening_balance_entry_id);
+      
+      // حذف القيد
+      await supabase
+        .from('journal_entries')
+        .delete()
+        .eq('id', currentYear.opening_balance_entry_id);
+    }
+
+    // جلب جميع القيود المحاسبية للسنة السابقة
+    const { data: journalLines } = await supabase
+      .from('journal_entry_lines')
+      .select(`
+        account_id,
+        debit,
+        credit,
+        journal_entry:journal_entries!inner(company_id, entry_date, is_posted)
+      `)
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .lte('journal_entry.entry_date', previousYear.end_date);
+
+    const { data: accounts } = await supabase
+      .from('account_categories')
+      .select('*')
+      .eq('company_id', companyId);
+
+    if (!accounts) throw new Error('لا توجد حسابات');
+
+    // حساب الأرصدة
+    const balances = new Map<string, number>();
+    (journalLines || []).forEach((line: any) => {
+      const current = balances.get(line.account_id) || 0;
+      const account = accounts.find(a => a.id === line.account_id);
+      if (account && ['liabilities', 'equity', 'revenue'].includes(account.type)) {
+        balances.set(line.account_id, current + (Number(line.credit) - Number(line.debit)));
+      } else {
+        balances.set(line.account_id, current + (Number(line.debit) - Number(line.credit)));
+      }
+    });
+
+    // حساب صافي الربح للسنة السابقة
+    const revenueAccounts = accounts.filter(a => a.type === 'revenue');
+    const expenseAccounts = accounts.filter(a => a.type === 'expenses');
+    const retainedEarningsAccount = accounts.find(a => a.code.startsWith('33'));
+
+    const totalRevenue = revenueAccounts.reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);
+    const totalExpenses = expenseAccounts.reduce((sum, a) => sum + Math.abs(balances.get(a.id) || 0), 0);
+    const netIncome = totalRevenue - totalExpenses;
+
+    // الحسابات التي تُرحّل (الأصول، الخصوم، حقوق الملكية)
+    const balanceSheetAccounts = accounts.filter(a => 
+      a.type === 'assets' || a.type === 'liabilities' || a.type === 'equity'
+    );
+
+    const openingLines: Array<{ account_id: string; debit: number; credit: number; description: string }> = [];
+
+    balanceSheetAccounts.forEach(acc => {
+      let balance = balances.get(acc.id) || 0;
+      
+      // إضافة صافي الربح للأرباح المحتجزة
+      if (retainedEarningsAccount && acc.id === retainedEarningsAccount.id) {
+        balance += netIncome;
+      }
+      
+      if (balance !== 0) {
+        if (acc.type === 'assets') {
+          openingLines.push({
+            account_id: acc.id,
+            debit: balance > 0 ? balance : 0,
+            credit: balance < 0 ? Math.abs(balance) : 0,
+            description: `رصيد افتتاحي مُحدّث - ${acc.name}`
+          });
+        } else {
+          openingLines.push({
+            account_id: acc.id,
+            debit: balance < 0 ? Math.abs(balance) : 0,
+            credit: balance > 0 ? balance : 0,
+            description: `رصيد افتتاحي مُحدّث - ${acc.name}`
+          });
+        }
+      }
+    });
+
+    if (openingLines.length > 0) {
+      const totalDebit = openingLines.reduce((sum, l) => sum + l.debit, 0);
+      const totalCredit = openingLines.reduce((sum, l) => sum + l.credit, 0);
+
+      // إنشاء قيد الافتتاح الجديد
+      const { data: openingEntry, error: entryError } = await supabase
+        .from('journal_entries')
+        .insert({
+          company_id: companyId,
+          description: `قيد افتتاحي مُحدّث للسنة المالية ${currentYear.name}`,
+          entry_date: currentYear.start_date,
+          total_debit: totalDebit,
+          total_credit: totalCredit,
+          is_posted: true,
+          reference_type: 'opening',
+          fiscal_year_id: fiscalYearId
+        })
+        .select()
+        .single();
+
+      if (entryError) throw entryError;
+
+      // إضافة بنود القيد
+      const { error: linesError } = await supabase
+        .from('journal_entry_lines')
+        .insert(openingLines.map(line => ({
+          ...line,
+          journal_entry_id: openingEntry.id
+        })));
+
+      if (linesError) throw linesError;
+
+      // تحديث السنة بقيد الافتتاح الجديد
+      await supabase
+        .from('fiscal_years')
+        .update({ opening_balance_entry_id: openingEntry.id })
+        .eq('id', fiscalYearId);
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+// تحديث أرصدة العملاء المرحلة
+export async function refreshCustomerBalances(
+  fiscalYearId: string,
+  previousYearId: string,
+  companyId: string
+): Promise<{ success: boolean; count?: number; error?: string }> {
+  try {
+    // جلب السنة السابقة
+    const { data: previousYear } = await supabase
+      .from('fiscal_years')
+      .select('*')
+      .eq('id', previousYearId)
+      .single();
+
+    if (!previousYear) throw new Error('السنة السابقة غير موجودة');
+
+    // جلب السنة الحالية
+    const { data: currentYear } = await supabase
+      .from('fiscal_years')
+      .select('*')
+      .eq('id', fiscalYearId)
+      .single();
+
+    if (!currentYear) throw new Error('السنة المالية غير موجودة');
+
+    // جلب جميع المبيعات من السنة السابقة
+    const { data: unpaidSales, error: salesError } = await supabase
+      .from('sales')
+      .select('id, customer_id, sale_price')
+      .eq('company_id', companyId)
+      .gte('sale_date', previousYear.start_date)
+      .lte('sale_date', previousYear.end_date);
+
+    if (salesError) throw salesError;
+
+    // جلب حساب العملاء (المدينون)
+    const { data: receivablesAccount } = await supabase
+      .from('account_categories')
+      .select('id')
+      .eq('company_id', companyId)
+      .eq('code', '1201')
+      .single();
+
+    if (!receivablesAccount) {
+      return { success: true, count: 0 };
+    }
+
+    // حساب إجمالي المديونية
+    const totalReceivables = (unpaidSales || []).reduce((sum, sale) => sum + Number(sale.sale_price), 0);
+
+    if (totalReceivables > 0) {
+      // التحقق من وجود قيد مرحل للعملاء
+      const { data: existingEntry } = await supabase
+        .from('journal_entries')
+        .select('id')
+        .eq('company_id', companyId)
+        .eq('fiscal_year_id', fiscalYearId)
+        .eq('reference_type', 'customer_balance_forward')
+        .single();
+
+      if (existingEntry) {
+        // حذف القيد القديم
+        await supabase
+          .from('journal_entry_lines')
+          .delete()
+          .eq('journal_entry_id', existingEntry.id);
+        
+        await supabase
+          .from('journal_entries')
+          .delete()
+          .eq('id', existingEntry.id);
+      }
+    }
+
+    return { success: true, count: unpaidSales?.length || 0 };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+// تحديث أرصدة الموردين المرحلة
+export async function refreshSupplierBalances(
+  fiscalYearId: string,
+  previousYearId: string,
+  companyId: string
+): Promise<{ success: boolean; count?: number; error?: string }> {
+  try {
+    // جلب السنة السابقة
+    const { data: previousYear } = await supabase
+      .from('fiscal_years')
+      .select('*')
+      .eq('id', previousYearId)
+      .single();
+
+    if (!previousYear) throw new Error('السنة السابقة غير موجودة');
+
+    // جلب السنة الحالية
+    const { data: currentYear } = await supabase
+      .from('fiscal_years')
+      .select('*')
+      .eq('id', fiscalYearId)
+      .single();
+
+    if (!currentYear) throw new Error('السنة المالية غير موجودة');
+
+    // جلب جميع المشتريات غير المسددة بالكامل من السنة السابقة
+    const { data: unpaidPurchases, error: purchasesError } = await supabase
+      .from('cars')
+      .select('id, supplier_id, purchase_price')
+      .eq('company_id', companyId)
+      .gte('purchase_date', previousYear.start_date)
+      .lte('purchase_date', previousYear.end_date);
+
+    if (purchasesError) throw purchasesError;
+
+    // جلب حساب الموردين (الدائنون)
+    const { data: payablesAccount } = await supabase
+      .from('account_categories')
+      .select('id')
+      .eq('company_id', companyId)
+      .eq('code', '2101')
+      .single();
+
+    if (!payablesAccount) {
+      return { success: true, count: 0 };
+    }
+
+    return { success: true, count: unpaidPurchases?.length || 0 };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+// تحديث شامل لجميع الأرصدة المرحلة
+export async function refreshAllCarryForwardBalances(
+  fiscalYearId: string,
+  previousYearId: string,
+  companyId: string
+): Promise<{ 
+  success: boolean; 
+  openingBalancesUpdated?: boolean;
+  inventoryCount?: number;
+  error?: string 
+}> {
+  try {
+    // 1. تحديث الأرصدة الافتتاحية
+    const openingResult = await refreshOpeningBalances(fiscalYearId, previousYearId, companyId);
+    if (!openingResult.success) throw new Error(openingResult.error);
+
+    // 2. ترحيل المخزون
+    const inventoryResult = await carryForwardInventory(previousYearId, fiscalYearId, companyId);
+
+    // 3. تحديث أرصدة العملاء
+    await refreshCustomerBalances(fiscalYearId, previousYearId, companyId);
+
+    // 4. تحديث أرصدة الموردين
+    await refreshSupplierBalances(fiscalYearId, previousYearId, companyId);
+
+    return { 
+      success: true, 
+      openingBalancesUpdated: true,
+      inventoryCount: inventoryResult.count || 0
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

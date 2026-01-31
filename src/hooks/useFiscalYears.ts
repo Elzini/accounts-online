@@ -13,6 +13,8 @@ import {
   openNewFiscalYear,
   deleteFiscalYear,
   carryForwardInventory,
+  refreshOpeningBalances,
+  refreshAllCarryForwardBalances,
   FiscalYear,
 } from '@/services/fiscalYears';
 import { toast } from 'sonner';
@@ -235,6 +237,56 @@ export function useCarryForwardInventory() {
     },
     onError: (error: any) => {
       toast.error(error.message || 'فشل ترحيل المخزون');
+    },
+  });
+}
+
+export function useRefreshOpeningBalances() {
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+  
+  return useMutation({
+    mutationFn: (data: { fiscalYearId: string; previousYearId: string }) => {
+      if (!companyId) throw new Error('No company');
+      return refreshOpeningBalances(data.fiscalYearId, data.previousYearId, companyId);
+    },
+    onSuccess: (result) => {
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ['fiscal-years'] });
+        queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+        toast.success('تم تحديث الأرصدة الافتتاحية بنجاح');
+      } else {
+        toast.error(result.error || 'فشل تحديث الأرصدة الافتتاحية');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل تحديث الأرصدة الافتتاحية');
+    },
+  });
+}
+
+export function useRefreshAllCarryForward() {
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+  
+  return useMutation({
+    mutationFn: (data: { fiscalYearId: string; previousYearId: string }) => {
+      if (!companyId) throw new Error('No company');
+      return refreshAllCarryForwardBalances(data.fiscalYearId, data.previousYearId, companyId);
+    },
+    onSuccess: (result) => {
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ['fiscal-years'] });
+        queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+        queryClient.invalidateQueries({ queryKey: ['cars'] });
+        queryClient.invalidateQueries({ queryKey: ['stats'] });
+        toast.success(`تم تحديث جميع الأرصدة المرحلة بنجاح (${result.inventoryCount} سيارة)`);
+      } else {
+        toast.error(result.error || 'فشل تحديث الأرصدة');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل تحديث الأرصدة');
     },
   });
 }
