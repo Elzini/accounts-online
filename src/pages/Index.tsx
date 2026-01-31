@@ -47,6 +47,7 @@ import { BankingPage } from '@/components/banking/BankingPage';
 import { FiscalYearSelectionDialog } from '@/components/FiscalYearSelectionDialog';
 import { TrialBalanceAnalysisPage } from '@/components/reports/TrialBalanceAnalysisPage';
 import { FinancialStatementsPage } from '@/components/reports/FinancialStatementsPage';
+import { VATReturnReportPage } from '@/components/accounting/VATReturnReportPage';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
@@ -124,6 +125,7 @@ const Index = () => {
       case 'fiscal-years': return <FiscalYearsPage />;
       case 'trial-balance-analysis': return <TrialBalanceAnalysisPage />;
       case 'financial-statements': return <FinancialStatementsPage />;
+      case 'vat-return-report': return <VATReturnReportPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };
