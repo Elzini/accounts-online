@@ -198,8 +198,9 @@ export function useUnifiedPrintReport() {
       <div class="signatures">
         ${(options.signatureLabels || ['توقيع المحاسب', 'توقيع المدير العام']).map(label => `
           <div class="signature-box">
+            <div class="signature-label">${escapeHtml(label)}</div>
             <div class="signature-line"></div>
-            <p>${escapeHtml(label)}</p>
+            <div class="signature-date">التاريخ: ___/___/_____</div>
           </div>
         `).join('')}
       </div>
@@ -389,22 +390,32 @@ export function useUnifiedPrintReport() {
             justify-content: space-around;
             margin-top: 60px;
             padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
           }
           
           .signature-box {
             text-align: center;
-            min-width: 150px;
+            min-width: 180px;
+            padding: 15px;
+          }
+          
+          .signature-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 40px;
           }
           
           .signature-line {
             border-top: 1px solid #1f2937;
-            margin-bottom: 8px;
-            width: 150px;
+            margin-top: 40px;
+            width: 100%;
           }
           
-          .signature-box p {
-            font-size: 12px;
-            color: #374151;
+          .signature-date {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 8px;
           }
           
           /* Footer */
