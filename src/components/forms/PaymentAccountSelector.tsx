@@ -8,13 +8,17 @@ interface PaymentAccountSelectorProps {
   onChange: (value: string) => void;
   label?: string;
   type?: 'payment' | 'receipt'; // payment = دفع (مشتريات), receipt = استلام (مبيعات)
+  className?: string;
+  hideLabel?: boolean;
 }
 
 export function PaymentAccountSelector({ 
   value, 
   onChange, 
   label = 'طريقة الدفع',
-  type = 'payment'
+  type = 'payment',
+  className,
+  hideLabel = false,
 }: PaymentAccountSelectorProps) {
   const { data: accounts = [] } = useAccounts();
   
@@ -57,10 +61,10 @@ export function PaymentAccountSelector({
   };
 
   return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
+    <div className={hideLabel ? '' : 'space-y-2'}>
+      {!hideLabel && <Label>{label}</Label>}
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="h-12">
+        <SelectTrigger className={className || 'h-12'}>
           <SelectValue placeholder="اختر طريقة الدفع" />
         </SelectTrigger>
         <SelectContent>

@@ -9,6 +9,7 @@ import { PWAInstallButton } from '@/components/PWAInstallButton';
 import { CustomerForm } from '@/components/forms/CustomerForm';
 import { SupplierForm } from '@/components/forms/SupplierForm';
 import { BatchPurchaseForm } from '@/components/forms/BatchPurchaseForm';
+import { PurchaseInvoiceForm } from '@/components/forms/PurchaseInvoiceForm';
 import { MultiCarSaleForm } from '@/components/forms/MultiCarSaleForm';
 import { CustomersTable } from '@/components/tables/CustomersTable';
 import { SuppliersTable } from '@/components/tables/SuppliersTable';
@@ -94,7 +95,8 @@ const Index = () => {
       case 'sales': return <SalesTable setActivePage={setActivePage} />;
       case 'add-customer': return <CustomerForm setActivePage={setActivePage} />;
       case 'add-supplier': return <SupplierForm setActivePage={setActivePage} />;
-      case 'add-purchase': return <BatchPurchaseForm setActivePage={setActivePage} />;
+      case 'add-purchase': return <PurchaseInvoiceForm setActivePage={setActivePage} />;
+      case 'add-purchase-invoice': return <PurchaseInvoiceForm setActivePage={setActivePage} />;
       case 'add-sale': return <MultiCarSaleForm setActivePage={setActivePage} />;
       case 'partner-dealerships': return <PartnerDealershipsTable setActivePage={setActivePage} />;
       case 'car-transfers': return <CarTransfersTable setActivePage={setActivePage} />;
