@@ -1,17 +1,19 @@
-import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, FileText, Users, ArrowDownLeft, ArrowUpRight, Building2, BarChart3 } from 'lucide-react';
+import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, FileText, Users, ArrowDownLeft, ArrowUpRight, Building2, BarChart3, RefreshCw } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivePage } from '@/types';
-import { useMonthlyChartData } from '@/hooks/useDatabase';
+import { useMonthlyChartData, useStats } from '@/hooks/useDatabase';
 import { useAdvancedAnalytics } from '@/hooks/useAnalytics';
 import { useAppSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCarTransfers, usePartnerDealerships } from '@/hooks/useTransfers';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid } from 'recharts';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 // Advanced Dashboard Components
 import { TrendCard } from './dashboard/TrendCard';
@@ -45,16 +47,39 @@ const chartConfig = {
 };
 
 export function Dashboard({ stats, setActivePage }: DashboardProps) {
+  const queryClient = useQueryClient();
   const { data: chartData, isLoading: chartLoading } = useMonthlyChartData();
   const { data: analytics, isLoading: analyticsLoading } = useAdvancedAnalytics();
   const { data: settings } = useAppSettings();
   const { permissions } = useAuth();
   const { data: transfers } = useCarTransfers();
   const { data: dealerships } = usePartnerDealerships();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const canSales = permissions.admin || permissions.sales;
   const canPurchases = permissions.admin || permissions.purchases;
   const canReports = permissions.admin || permissions.reports;
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['monthly-chart-data'] }),
+        queryClient.invalidateQueries({ queryKey: ['advanced-analytics'] }),
+        queryClient.invalidateQueries({ queryKey: ['car-transfers'] }),
+        queryClient.invalidateQueries({ queryKey: ['cars'] }),
+        queryClient.invalidateQueries({ queryKey: ['sales'] }),
+        queryClient.invalidateQueries({ queryKey: ['customers'] }),
+        queryClient.invalidateQueries({ queryKey: ['suppliers'] }),
+      ]);
+      toast.success('تم تحديث البيانات بنجاح');
+    } catch (error) {
+      toast.error('فشل تحديث البيانات');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Calculate transfer stats by dealership - with car details
   const transferStats = useMemo(() => {
@@ -125,11 +150,23 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8 animate-fade-in">
       {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{settings?.dashboard_title || 'لوحة التحكم'}</h1>
-        <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-0.5 sm:mt-1">
-          {settings?.welcome_message || 'مرحباً بك في منصة إدارة المعارض للسيارات'}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{settings?.dashboard_title || 'لوحة التحكم'}</h1>
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-0.5 sm:mt-1">
+            {settings?.welcome_message || 'مرحباً بك في منصة إدارة المعارض للسيارات'}
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">تحديث</span>
+        </Button>
       </div>
 
       {/* Dashboard Tabs */}
