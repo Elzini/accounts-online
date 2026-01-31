@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CompanyProvider, useCompany } from "@/contexts/CompanyContext";
+import { FiscalYearProvider } from "@/contexts/FiscalYearContext";
 import Index from "./pages/Index";
 import AuthChoice from "./pages/AuthChoice";
 import Auth from "./pages/Auth";
@@ -162,13 +163,15 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CompanyProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
-          </TooltipProvider>
+          <FiscalYearProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </TooltipProvider>
+          </FiscalYearProvider>
         </CompanyProvider>
       </AuthProvider>
     </QueryClientProvider>
