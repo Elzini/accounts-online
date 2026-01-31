@@ -92,4 +92,5 @@ export type ActivePage =
   | 'zakat-reports'
   | 'fiscal-years'
   | 'trial-balance-analysis'
-  | 'financial-statements';
+  | 'financial-statements'
+  | 'vat-return-report';
