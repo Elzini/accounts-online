@@ -52,6 +52,7 @@ import { FinancialStatementsPage } from '@/components/reports/FinancialStatement
 import { VATReturnReportPage } from '@/components/accounting/VATReturnReportPage';
 import { EmployeesPage } from '@/components/payroll/EmployeesPage';
 import { PayrollPage } from '@/components/payroll/PayrollPage';
+import { AccountStatementReport } from '@/components/reports/AccountStatementReport';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
@@ -134,6 +135,7 @@ const Index = () => {
       case 'vat-return-report': return <VATReturnReportPage />;
       case 'employees': return <EmployeesPage />;
       case 'payroll': return <PayrollPage />;
+      case 'account-statement': return <AccountStatementReport />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };
