@@ -8,9 +8,11 @@ import { useCars } from '@/hooks/useDatabase';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 export function InventoryReport() {
   const { data: cars = [], isLoading } = useCars();
+  const { filterByFiscalYear } = useFiscalYearFilter();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -18,7 +20,11 @@ export function InventoryReport() {
   const { printReport } = usePrintReport();
 
   const filteredCars = useMemo(() => {
-    return cars.filter(car => {
+    // First filter by fiscal year
+    let result = filterByFiscalYear(cars, 'purchase_date');
+    
+    // Then apply additional filters within fiscal year
+    return result.filter(car => {
       const purchaseDate = new Date(car.purchase_date);
       if (startDate && purchaseDate < new Date(startDate)) return false;
       if (endDate && purchaseDate > new Date(endDate + 'T23:59:59')) return false;
@@ -34,7 +40,7 @@ export function InventoryReport() {
       
       return true;
     });
-  }, [cars, startDate, endDate, statusFilter, searchQuery]);
+  }, [cars, startDate, endDate, statusFilter, searchQuery, filterByFiscalYear]);
   
   const availableCars = filteredCars.filter(c => c.status === 'available');
   const soldCars = filteredCars.filter(c => c.status === 'sold');

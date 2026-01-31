@@ -20,6 +20,7 @@ import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { AccountSearchSelect } from './AccountSearchSelect';
 import { JournalEntryPrintDialog } from './JournalEntryPrintDialog';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 interface JournalLine {
   account_id: string;
@@ -36,6 +37,7 @@ interface JournalLine {
 export function JournalEntriesPage() {
   const { data: entries = [], isLoading } = useJournalEntries();
   const { data: accounts = [] } = useAccounts();
+  const { filterByFiscalYear } = useFiscalYearFilter();
   const createJournalEntry = useCreateJournalEntry();
   const deleteJournalEntry = useDeleteJournalEntry();
   
@@ -170,8 +172,13 @@ export function JournalEntriesPage() {
     return account ? `${account.code} - ${account.name}` : accountId;
   };
 
+  // Filter entries by fiscal year
+  const filteredEntries = useMemo(() => {
+    return filterByFiscalYear(entries, 'entry_date');
+  }, [entries, filterByFiscalYear]);
+
   // Get next entry number
-  const nextEntryNumber = entries.length > 0 ? Math.max(...entries.map(e => e.entry_number)) + 1 : 1;
+  const nextEntryNumber = filteredEntries.length > 0 ? Math.max(...filteredEntries.map(e => e.entry_number)) + 1 : 1;
 
   if (isLoading) {
     return (
@@ -587,10 +594,10 @@ export function JournalEntriesPage() {
           <CardDescription>جميع القيود المسجلة في دفتر اليومية - يدوية وتلقائية</CardDescription>
         </CardHeader>
         <CardContent>
-          {entries.length === 0 ? (
+          {filteredEntries.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-30" />
-              <p>لا توجد قيود مسجلة</p>
+              <p>لا توجد قيود مسجلة في هذه السنة المالية</p>
               <p className="text-sm">اضغط على "قيد يومية جديد" لإنشاء قيد</p>
             </div>
           ) : (
@@ -608,7 +615,7 @@ export function JournalEntriesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {entries.map((entry) => (
+                {filteredEntries.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className="font-mono font-bold">{entry.entry_number}</TableCell>
                     <TableCell>{format(new Date(entry.entry_date), "yyyy/MM/dd")}</TableCell>

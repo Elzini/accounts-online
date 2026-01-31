@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { CreditCard, AlertTriangle, CheckCircle, Clock, Loader2, Eye, Banknote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,11 +12,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useInstallmentSales, useOverduePayments, useRecordPayment } from '@/hooks/useInstallments';
 import { InstallmentSale, InstallmentPayment } from '@/services/installments';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 export function InstallmentsPage() {
   const { data: installmentSales = [], isLoading } = useInstallmentSales();
   const { data: overduePayments = [] } = useOverduePayments();
+  const { filterByFiscalYear } = useFiscalYearFilter();
   const recordPayment = useRecordPayment();
+  
+  // Filter installment sales by fiscal year
+  const filteredInstallmentSales = useMemo(() => {
+    return filterByFiscalYear(installmentSales, 'start_date');
+  }, [installmentSales, filterByFiscalYear]);
   
   const [selectedSale, setSelectedSale] = useState<InstallmentSale | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
@@ -180,7 +187,7 @@ export function InstallmentsPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    installmentSales.map((sale) => (
+                    filteredInstallmentSales.map((sale) => (
                       <TableRow key={sale.id}>
                         <TableCell>{sale.sale?.customer?.name || '-'}</TableCell>
                         <TableCell>{sale.sale?.car?.name || '-'}</TableCell>
