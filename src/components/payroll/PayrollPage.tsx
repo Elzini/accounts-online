@@ -31,7 +31,8 @@ import {
   Calendar,
   DollarSign,
   Users,
-  AlertCircle
+  AlertCircle,
+  FileSpreadsheet
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -47,6 +48,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useUnifiedPrintReport, UnifiedReportColumn } from '@/hooks/useUnifiedPrintReport';
 import { useAppSettings } from '@/hooks/useSettings';
+import { useExcelExport } from '@/hooks/useExcelExport';
 
 const MONTHS = [
   'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
@@ -70,6 +72,7 @@ export function PayrollPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { printReport } = useUnifiedPrintReport();
+  const { exportToExcel } = useExcelExport();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ar-SA', {
@@ -316,6 +319,7 @@ export function PayrollPage() {
               onApprove={handleApprovePayroll}
               isApproving={approvePayroll.isPending}
               onPrint={printReport}
+              onExportExcel={exportToExcel}
             />
           )}
         </TabsContent>
@@ -347,6 +351,7 @@ interface PayrollDetailsSectionProps {
   onApprove: () => void;
   isApproving: boolean;
   onPrint: (options: any) => void;
+  onExportExcel: (options: any) => void;
 }
 
 function PayrollDetailsSection({ 
@@ -354,6 +359,7 @@ function PayrollDetailsSection({
   onApprove, 
   isApproving, 
   onPrint,
+  onExportExcel,
 }: PayrollDetailsSectionProps) {
   const updatePayrollItem = useUpdatePayrollItem();
   const updatePayrollTotals = useUpdatePayrollTotals();
@@ -472,6 +478,61 @@ function PayrollDetailsSection({
     });
   };
 
+  const handleExportExcel = () => {
+    const excelColumns = [
+      { header: 'م', key: 'index' },
+      { header: 'الاسم', key: 'name' },
+      { header: 'المسمى الوظيفي', key: 'job_title' },
+      { header: 'الراتب', key: 'base_salary' },
+      { header: 'الحوافز', key: 'bonus' },
+      { header: 'أوفرتايم', key: 'overtime' },
+      { header: 'إجمالي الراتب', key: 'gross_salary' },
+      { header: 'سلفيات', key: 'advances' },
+      { header: 'خصم', key: 'deductions' },
+      { header: 'ملاحظات', key: 'notes' },
+      { header: 'قيمة الغياب', key: 'absence' },
+      { header: 'إجمالي المستقطع', key: 'total_deductions' },
+      { header: 'صافي الراتب', key: 'net_salary' },
+    ];
+
+    const excelData = items.map((item, index) => {
+      const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + 
+        Number(item.transport_allowance) + Number(item.bonus) + Number(item.overtime_amount);
+      const totalDeductions = Number(item.advances_deducted) + Number(item.absence_amount) + 
+        Number(item.other_deductions);
+      
+      return {
+        index: index + 1,
+        name: item.employee?.name || '-',
+        job_title: item.employee?.job_title || '-',
+        base_salary: Number(item.base_salary),
+        bonus: Number(item.bonus),
+        overtime: Number(item.overtime_amount),
+        gross_salary: grossSalary,
+        advances: Number(item.advances_deducted),
+        deductions: Number(item.other_deductions),
+        notes: item.deduction_notes || '-',
+        absence: Number(item.absence_amount),
+        total_deductions: totalDeductions,
+        net_salary: Number(item.net_salary),
+      };
+    });
+
+    onExportExcel({
+      title: `مسير الرواتب - ${MONTHS[payroll.month - 1]} ${payroll.year}`,
+      columns: excelColumns,
+      data: excelData,
+      fileName: `مسير_الرواتب_${MONTHS[payroll.month - 1]}_${payroll.year}`,
+      summaryData: [
+        { label: 'إجمالي الرواتب الأساسية', value: payroll.total_base_salaries },
+        { label: 'إجمالي البدلات', value: payroll.total_allowances },
+        { label: 'إجمالي الخصومات', value: payroll.total_advances + payroll.total_deductions + payroll.total_absences },
+        { label: 'صافي الرواتب', value: payroll.total_net_salaries },
+      ],
+    });
+    toast.success('تم تصدير مسير الرواتب بنجاح');
+  };
+
   return (
     <div className="space-y-4">
       {/* Actions */}
@@ -487,6 +548,10 @@ function PayrollDetailsSection({
           )}
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportExcel}>
+            <FileSpreadsheet className="w-4 h-4 ml-2" />
+            تصدير Excel
+          </Button>
           <Button variant="outline" onClick={handlePrintPayroll}>
             <Printer className="w-4 h-4 ml-2" />
             طباعة
