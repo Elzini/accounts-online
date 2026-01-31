@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import {
   fetchEmployees,
   addEmployee,
@@ -114,10 +115,14 @@ export function useAddEmployeeAdvance() {
 // Payroll Records
 export function usePayrollRecords() {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
 
   return useQuery({
-    queryKey: ['payroll-records', companyId],
-    queryFn: () => (companyId ? fetchPayrollRecords(companyId) : []),
+    queryKey: ['payroll-records', companyId, selectedFiscalYear?.id],
+    queryFn: () => {
+      if (!companyId) return [];
+      return fetchPayrollRecords(companyId, selectedFiscalYear);
+    },
     enabled: !!companyId,
   });
 }
@@ -176,11 +181,12 @@ export function useApprovePayroll() {
   const queryClient = useQueryClient();
   const { companyId } = useCompany();
   const { user } = useAuth();
+  const { selectedFiscalYear } = useFiscalYear();
 
   return useMutation({
     mutationFn: (payrollId: string) => {
       if (!companyId || !user) throw new Error('Company ID and User required');
-      return approvePayroll(payrollId, user.id, companyId);
+      return approvePayroll(payrollId, user.id, companyId, selectedFiscalYear?.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payroll-records', companyId] });

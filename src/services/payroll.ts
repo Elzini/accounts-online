@@ -174,13 +174,43 @@ export async function updateAdvanceDeducted(advanceId: string, payrollId: string
 }
 
 // Payroll Records
-export async function fetchPayrollRecords(companyId: string): Promise<PayrollRecord[]> {
-  const { data, error } = await supabase
+export async function fetchPayrollRecords(
+  companyId: string,
+  fiscalYear?: { start_date: string; end_date: string } | null
+): Promise<PayrollRecord[]> {
+  let query = supabase
     .from('payroll_records')
     .select('*')
     .eq('company_id', companyId)
     .order('year', { ascending: false })
     .order('month', { ascending: false });
+
+  // Filter by fiscal year if provided
+  if (fiscalYear) {
+    const startDate = new Date(fiscalYear.start_date);
+    const endDate = new Date(fiscalYear.end_date);
+    const startYear = startDate.getFullYear();
+    const endYear = endDate.getFullYear();
+    const startMonth = startDate.getMonth() + 1;
+    const endMonth = endDate.getMonth() + 1;
+
+    // Filter records that fall within the fiscal year range
+    // We need to check if the payroll month/year falls within the fiscal year
+    if (startYear === endYear) {
+      // Same year fiscal year (e.g., Jan-Dec 2026)
+      query = query
+        .eq('year', startYear)
+        .gte('month', startMonth)
+        .lte('month', endMonth);
+    } else {
+      // Cross-year fiscal year (e.g., Jul 2025 - Jun 2026)
+      query = query.or(
+        `and(year.eq.${startYear},month.gte.${startMonth}),and(year.eq.${endYear},month.lte.${endMonth})`
+      );
+    }
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return (data || []) as PayrollRecord[];
@@ -361,7 +391,8 @@ export async function updatePayrollTotals(payrollId: string): Promise<PayrollRec
 export async function approvePayroll(
   payrollId: string,
   userId: string,
-  companyId: string
+  companyId: string,
+  fiscalYearId?: string | null
 ): Promise<{ payroll: PayrollRecord; journalEntryId: string }> {
   // Get payroll with items
   const payroll = await fetchPayrollWithItems(payrollId);
@@ -392,7 +423,7 @@ export async function approvePayroll(
     throw new Error('Salary or cash account not found');
   }
 
-  // Create journal entry
+  // Create journal entry with fiscal year
   const { data: journalEntry, error: journalError } = await supabase
     .from('journal_entries')
     .insert({
@@ -404,6 +435,7 @@ export async function approvePayroll(
       total_debit: updatedPayroll.total_net_salaries + updatedPayroll.total_advances,
       total_credit: updatedPayroll.total_net_salaries + updatedPayroll.total_advances,
       is_posted: true,
+      fiscal_year_id: fiscalYearId || null,
     })
     .select()
     .single();
