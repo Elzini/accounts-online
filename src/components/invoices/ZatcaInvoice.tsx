@@ -114,17 +114,15 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
     const isVatValid = qrVatNumber && qrVatNumber.replace(/\D/g, '').length === 15;
 
     const qrData = useMemo(() => {
-      if (!isVatValid) {
-        console.warn('ZATCA QR: Invalid or missing VAT number');
-      }
+      // إنشاء بيانات QR حتى لو لم يكن الرقم الضريبي صحيحاً
       return generateZatcaQRData({
         sellerName: qrSellerName,
-        vatNumber: qrVatNumber || '',
+        vatNumber: qrVatNumber || '300000000000003', // رقم افتراضي للعرض
         invoiceDateTime: formatDateTimeForZatca(invoiceDate),
         invoiceTotal: total,
         vatAmount: taxAmount,
       });
-    }, [qrSellerName, qrVatNumber, invoiceDate, total, taxAmount, isVatValid]);
+    }, [qrSellerName, qrVatNumber, invoiceDate, total, taxAmount]);
 
     const itemsWithTax = items.map(item => ({
       ...item,
@@ -182,6 +180,11 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                     fgColor={settings.primary_color}
                   />
                 </div>
+                {!isVatValid && (
+                  <div className="mt-1 text-xs text-yellow-200 bg-yellow-600/50 px-2 py-0.5 rounded">
+                    ⚠️ رقم ضريبي غير مكتمل
+                  </div>
+                )}
                 <div className="flex gap-4 mt-2 text-sm">
                   <div className="text-center">
                     <span className="opacity-75">التاريخ</span>
