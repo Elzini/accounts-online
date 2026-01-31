@@ -313,19 +313,14 @@ export async function fetchStats(fiscalYearId?: string | null) {
     }
   }
 
-  // Available cars count (filter by fiscal year based on purchase_date)
-  let availableCarsQuery = supabase
+  // Available cars count - NOT filtered by fiscal year because:
+  // 1. Available cars represent current inventory regardless of purchase date
+  // 2. A car purchased in 2025 but not yet sold should appear in 2026 stats
+  // 3. Fiscal year filtering is for financial transactions, not inventory status
+  const { count: availableCars } = await supabase
     .from('cars')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'available');
-  
-  if (fiscalYearStart && fiscalYearEnd) {
-    availableCarsQuery = availableCarsQuery
-      .gte('purchase_date', fiscalYearStart)
-      .lte('purchase_date', fiscalYearEnd);
-  }
-  
-  const { count: availableCars } = await availableCarsQuery;
 
   // Today's sales (within fiscal year based on sale_date)
   let todaySalesQuery = supabase
