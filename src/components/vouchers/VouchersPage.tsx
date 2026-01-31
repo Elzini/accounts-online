@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Receipt, CreditCard, Trash2, Loader2, Printer, BookOpen } from 'lucide-react';
+import { Plus, Receipt, CreditCard, Trash2, Loader2, Printer, BookOpen, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,12 +17,14 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useJournalEntries } from '@/hooks/useAccounting';
 import { Voucher } from '@/services/vouchers';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
+import { JournalEntryEditDialog } from '@/components/accounting/JournalEntryEditDialog';
 
 export function VouchersPage() {
   const { companyId } = useCompany();
   const { data: allVouchers = [], isLoading } = useVouchers();
   const { data: journalEntries = [] } = useJournalEntries();
   const { filterByFiscalYear } = useFiscalYearFilter();
+  const [editingJournalEntryId, setEditingJournalEntryId] = useState<string | null>(null);
   const addVoucher = useAddVoucher();
   const deleteVoucher = useDeleteVoucher();
   
@@ -141,17 +143,26 @@ export function VouchersPage() {
                   {formatCurrency(Number(voucher.amount))}
                 </TableCell>
                 <TableCell>
-                  {journalEntryNum ? (
+                  {voucher.journal_entry_id ? (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Badge variant="outline" className="gap-1 cursor-pointer">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="gap-1 h-7"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingJournalEntryId(voucher.journal_entry_id);
+                            }}
+                          >
                             <BookOpen className="w-3 h-3" />
                             {journalEntryNum}
-                          </Badge>
+                            <Pencil className="w-3 h-3" />
+                          </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>قيد محاسبي مرتبط</p>
+                          <p>عرض / تعديل القيد</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -358,6 +369,15 @@ export function VouchersPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Journal Entry Edit Dialog */}
+      <JournalEntryEditDialog
+        entryId={editingJournalEntryId}
+        open={!!editingJournalEntryId}
+        onOpenChange={(open) => !open && setEditingJournalEntryId(null)}
+        title="القيد المحاسبي للسند"
+        referenceType="voucher"
+      />
     </div>
   );
 }

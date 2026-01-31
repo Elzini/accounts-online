@@ -11,6 +11,7 @@ import {
   fetchJournalEntries,
   fetchJournalEntryWithLines,
   createJournalEntry,
+  updateJournalEntry,
   deleteJournalEntry,
   getAccountBalances,
   getTrialBalance,
@@ -170,6 +171,33 @@ export function useDeleteJournalEntry() {
     mutationFn: deleteJournalEntry,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entry'] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['trial-balance', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['income-statement', companyId] });
+    },
+  });
+}
+
+export function useUpdateJournalEntry() {
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+  
+  return useMutation({
+    mutationFn: ({ 
+      entryId,
+      entry, 
+      lines 
+    }: { 
+      entryId: string;
+      entry: Partial<Omit<JournalEntry, 'id' | 'entry_number' | 'created_at' | 'updated_at' | 'lines'>>;
+      lines: Array<{ id?: string; account_id: string; description?: string; debit: number; credit: number }>;
+    }) => {
+      return updateJournalEntry(entryId, entry, lines);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entry'] });
       queryClient.invalidateQueries({ queryKey: ['account-balances', companyId] });
       queryClient.invalidateQueries({ queryKey: ['trial-balance', companyId] });
       queryClient.invalidateQueries({ queryKey: ['income-statement', companyId] });

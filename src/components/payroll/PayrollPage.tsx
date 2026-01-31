@@ -32,7 +32,9 @@ import {
   DollarSign,
   Users,
   AlertCircle,
-  FileSpreadsheet
+  FileSpreadsheet,
+  BookOpen,
+  Pencil
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -49,6 +51,7 @@ import {
 import { useUnifiedPrintReport, UnifiedReportColumn } from '@/hooks/useUnifiedPrintReport';
 import { useAppSettings } from '@/hooks/useSettings';
 import { useExcelExport } from '@/hooks/useExcelExport';
+import { JournalEntryEditDialog } from '@/components/accounting/JournalEntryEditDialog';
 
 const MONTHS = [
   'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
@@ -366,6 +369,7 @@ function PayrollDetailsSection({
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<PayrollItem>>({});
+  const [editingJournalEntryId, setEditingJournalEntryId] = useState<string | null>(null);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ar-SA', {
@@ -551,6 +555,17 @@ function PayrollDetailsSection({
           )}
         </div>
         <div className="flex gap-2">
+          {payroll.journal_entry_id && (
+            <Button 
+              variant="outline" 
+              onClick={() => setEditingJournalEntryId(payroll.journal_entry_id)}
+              className="gap-2"
+            >
+              <BookOpen className="w-4 h-4" />
+              القيد المحاسبي
+              <Pencil className="w-3 h-3" />
+            </Button>
+          )}
           <Button variant="outline" onClick={handleExportExcel}>
             <FileSpreadsheet className="w-4 h-4 ml-2" />
             تصدير Excel
@@ -568,6 +583,15 @@ function PayrollDetailsSection({
           )}
         </div>
       </div>
+
+      {/* Journal Entry Edit Dialog */}
+      <JournalEntryEditDialog
+        entryId={editingJournalEntryId}
+        open={!!editingJournalEntryId}
+        onOpenChange={(open) => !open && setEditingJournalEntryId(null)}
+        title="القيد المحاسبي لمسير الرواتب"
+        referenceType="payroll"
+      />
 
       {/* Table View */}
       <Card>
