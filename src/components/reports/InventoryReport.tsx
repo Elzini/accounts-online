@@ -8,11 +8,9 @@ import { useCars } from '@/hooks/useDatabase';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 export function InventoryReport() {
   const { data: cars = [], isLoading } = useCars();
-  const { filterByFiscalYear } = useFiscalYearFilter();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -20,11 +18,12 @@ export function InventoryReport() {
   const { printReport } = usePrintReport();
 
   const filteredCars = useMemo(() => {
-    // First filter by fiscal year
-    let result = filterByFiscalYear(cars, 'purchase_date');
+    // NOTE: We do NOT filter by fiscal year for inventory report because:
+    // 1. Available cars should always be visible regardless of purchase date
+    // 2. A car purchased in 2025 but still not sold should appear in 2026 inventory
+    // 3. Fiscal year filtering is for financial reports, not inventory management
     
-    // Then apply additional filters within fiscal year
-    return result.filter(car => {
+    return cars.filter(car => {
       const purchaseDate = new Date(car.purchase_date);
       if (startDate && purchaseDate < new Date(startDate)) return false;
       if (endDate && purchaseDate > new Date(endDate + 'T23:59:59')) return false;
@@ -40,7 +39,7 @@ export function InventoryReport() {
       
       return true;
     });
-  }, [cars, startDate, endDate, statusFilter, searchQuery, filterByFiscalYear]);
+  }, [cars, startDate, endDate, statusFilter, searchQuery]);
   
   const availableCars = filteredCars.filter(c => c.status === 'available');
   const soldCars = filteredCars.filter(c => c.status === 'sold');

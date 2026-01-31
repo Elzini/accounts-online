@@ -10,7 +10,6 @@ import { ActivePage } from '@/types';
 import { useCars } from '@/hooks/useDatabase';
 import { useTaxSettings } from '@/hooks/useAccounting';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useFiscalYear } from '@/contexts/FiscalYearContext';
 
 interface PurchasesTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -19,7 +18,6 @@ interface PurchasesTableProps {
 export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const { data: cars = [], isLoading } = useCars();
   const { data: taxSettings } = useTaxSettings();
-  const { selectedFiscalYear } = useFiscalYear();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const isMobile = useIsMobile();
@@ -70,15 +68,10 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const filteredCars = useMemo(() => {
     let result = cars;
     
-    // Filter by fiscal year
-    if (selectedFiscalYear) {
-      result = result.filter(car => {
-        const purchaseDate = new Date(car.purchase_date);
-        const startDate = new Date(selectedFiscalYear.start_date);
-        const endDate = new Date(selectedFiscalYear.end_date);
-        return purchaseDate >= startDate && purchaseDate <= endDate;
-      });
-    }
+    // NOTE: We do NOT filter by fiscal year here because:
+    // 1. Available cars should always be visible regardless of purchase date
+    // 2. A car purchased in 2025 but still not sold should appear in 2026 inventory
+    // 3. Fiscal year filtering is for financial reports, not inventory management
     
     // Filter by search query
     if (searchQuery.trim()) {
@@ -98,7 +91,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
     }
     
     return result;
-  }, [cars, searchQuery, statusFilter, selectedFiscalYear]);
+  }, [cars, searchQuery, statusFilter]);
 
   const totals = useMemo(() => {
     return filteredCars.reduce(
