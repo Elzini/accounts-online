@@ -3,6 +3,7 @@ import * as db from '@/services/database';
 import type { Database } from '@/integrations/supabase/types';
 import type { MultiCarSaleData } from '@/services/database';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 
 type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
 type CustomerUpdate = Database['public']['Tables']['customers']['Update'];
@@ -218,10 +219,11 @@ export function useDeleteSale() {
 // Stats hook
 export function useStats() {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
   
   return useQuery({
-    queryKey: ['stats', companyId],
-    queryFn: db.fetchStats,
+    queryKey: ['stats', companyId, selectedFiscalYear?.id],
+    queryFn: () => db.fetchStats(selectedFiscalYear?.id),
     enabled: !!companyId,
   });
 }

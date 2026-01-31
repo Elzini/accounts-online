@@ -292,33 +292,57 @@ export async function deleteSale(id: string, carId: string) {
 }
 
 // Stats
-export async function fetchStats() {
+export async function fetchStats(fiscalYearId?: string | null) {
   const today = new Date().toISOString().split('T')[0];
   const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
 
-  // Available cars count
-  const { count: availableCars } = await supabase
+  // Available cars count (filter by fiscal year if provided)
+  let availableCarsQuery = supabase
     .from('cars')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'available');
+  
+  if (fiscalYearId) {
+    availableCarsQuery = availableCarsQuery.eq('fiscal_year_id', fiscalYearId);
+  }
+  
+  const { count: availableCars } = await availableCarsQuery;
 
-  // Today's sales
-  const { count: todaySales } = await supabase
+  // Today's sales (within fiscal year if provided)
+  let todaySalesQuery = supabase
     .from('sales')
-    .select('*', { count: 'exact', head: true })
+    .select('*, car:cars!inner(fiscal_year_id)', { count: 'exact', head: true })
     .gte('sale_date', today);
+  
+  if (fiscalYearId) {
+    todaySalesQuery = todaySalesQuery.eq('car.fiscal_year_id', fiscalYearId);
+  }
+  
+  const { count: todaySales } = await todaySalesQuery;
 
-  // Total gross profit from sales
-  const { data: salesData } = await supabase
+  // Sales data with fiscal year filter
+  let salesQuery = supabase
     .from('sales')
-    .select('profit, car_id');
+    .select('profit, car_id, sale_date, sale_price, car:cars!inner(fiscal_year_id)');
+  
+  if (fiscalYearId) {
+    salesQuery = salesQuery.eq('car.fiscal_year_id', fiscalYearId);
+  }
+  
+  const { data: salesData } = await salesQuery;
   
   const totalGrossProfit = salesData?.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0) || 0;
 
-  // Get all expenses
-  const { data: expensesData } = await supabase
+  // Get expenses with fiscal year filter
+  let expensesQuery = supabase
     .from('expenses')
     .select('amount, car_id');
+  
+  if (fiscalYearId) {
+    expensesQuery = expensesQuery.eq('fiscal_year_id', fiscalYearId);
+  }
+  
+  const { data: expensesData } = await expensesQuery;
   
   // Calculate car-specific expenses (linked to sold cars)
   const soldCarIds = salesData?.map(s => s.car_id) || [];
@@ -332,32 +356,31 @@ export async function fetchStats() {
   // Net profit = Gross profit - Car expenses - General expenses
   const totalProfit = totalGrossProfit - carExpenses - generalExpenses;
 
-  // Month sales count
-  const { count: monthSales } = await supabase
-    .from('sales')
-    .select('*', { count: 'exact', head: true })
-    .gte('sale_date', startOfMonth);
+  // Month sales count (within current month and fiscal year)
+  const monthSalesCount = salesData?.filter(sale => sale.sale_date >= startOfMonth).length || 0;
 
-  // Total purchases (sum of all car purchase prices)
-  const { data: purchasesData } = await supabase
+  // Total purchases (sum of all car purchase prices within fiscal year)
+  let purchasesQuery = supabase
     .from('cars')
     .select('purchase_price');
   
+  if (fiscalYearId) {
+    purchasesQuery = purchasesQuery.eq('fiscal_year_id', fiscalYearId);
+  }
+  
+  const { data: purchasesData } = await purchasesQuery;
+  
   const totalPurchases = purchasesData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
 
-  // Month sales amount (sum of sale prices this month)
-  const { data: monthSalesData } = await supabase
-    .from('sales')
-    .select('sale_price')
-    .gte('sale_date', startOfMonth);
-  
-  const monthSalesAmount = monthSalesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
+  // Month sales amount (sum of sale prices this month within fiscal year)
+  const monthSalesAmount = salesData?.filter(sale => sale.sale_date >= startOfMonth)
+    .reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
 
   return {
     availableCars: availableCars || 0,
     todaySales: todaySales || 0,
     totalProfit,
-    monthSales: monthSales || 0,
+    monthSales: monthSalesCount,
     totalPurchases,
     monthSalesAmount,
     // Additional breakdown for transparency
