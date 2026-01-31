@@ -16,7 +16,8 @@ import {
   useCloseFiscalYear, 
   useOpenNewFiscalYear,
   useSetCurrentFiscalYear,
-  useDeleteFiscalYear
+  useDeleteFiscalYear,
+  useCarryForwardInventory
 } from '@/hooks/useFiscalYears';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -29,7 +30,8 @@ import {
   Trash2, 
   Loader2,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  Package
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -43,15 +45,20 @@ export function FiscalYearsPage() {
   const openNewFiscalYear = useOpenNewFiscalYear();
   const setCurrentFiscalYear = useSetCurrentFiscalYear();
   const deleteFiscalYear = useDeleteFiscalYear();
+  const carryForwardInventory = useCarryForwardInventory();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isNewYearDialogOpen, setIsNewYearDialogOpen] = useState(false);
+  const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
   const [newYearName, setNewYearName] = useState('');
   const [newYearStart, setNewYearStart] = useState('');
   const [newYearEnd, setNewYearEnd] = useState('');
   const [newYearNotes, setNewYearNotes] = useState('');
   const [autoCarryForward, setAutoCarryForward] = useState(true);
   const [previousYearId, setPreviousYearId] = useState('');
+  const [fromYearId, setFromYearId] = useState('');
+  const [toYearId, setToYearId] = useState('');
+
 
   const currentYear = new Date().getFullYear();
 
@@ -96,6 +103,23 @@ export function FiscalYearsPage() {
     setNewYearNotes('');
     setAutoCarryForward(true);
     setPreviousYearId('');
+    setFromYearId('');
+    setToYearId('');
+  };
+
+  const handleCarryForwardInventory = () => {
+    if (!fromYearId || !toYearId) return;
+    
+    carryForwardInventory.mutate({
+      fromFiscalYearId: fromYearId,
+      toFiscalYearId: toYearId,
+    }, {
+      onSuccess: () => {
+        setIsInventoryDialogOpen(false);
+        setFromYearId('');
+        setToYearId('');
+      }
+    });
   };
 
   const handleSetYearDefaults = (year: number) => {
@@ -284,6 +308,79 @@ export function FiscalYearsPage() {
                   <Button onClick={handleOpenNewYear} disabled={openNewFiscalYear.isPending}>
                     {openNewFiscalYear.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
                     فتح وترحيل
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {/* ترحيل المخزون */}
+          {fiscalYears.length >= 2 && (
+            <Dialog open={isInventoryDialogOpen} onOpenChange={setIsInventoryDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Package className="h-4 w-4 ml-2" />
+                  ترحيل المخزون
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>ترحيل المخزون</DialogTitle>
+                  <DialogDescription>
+                    نقل السيارات المتاحة (غير المباعة) من سنة مالية إلى أخرى
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>من السنة المالية</Label>
+                    <Select value={fromYearId} onValueChange={setFromYearId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر السنة المصدر" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fiscalYears.map(year => (
+                          <SelectItem key={year.id} value={year.id} disabled={year.id === toYearId}>
+                            {year.name} ({year.status === 'open' ? 'مفتوحة' : 'مغلقة'})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-center">
+                    <ArrowRight className="h-6 w-6 text-muted-foreground rotate-90" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>إلى السنة المالية</Label>
+                    <Select value={toYearId} onValueChange={setToYearId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر السنة الهدف" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fiscalYears.filter(y => y.status === 'open').map(year => (
+                          <SelectItem key={year.id} value={year.id} disabled={year.id === fromYearId}>
+                            {year.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      سيتم نقل جميع السيارات ذات الحالة "متاحة" من السنة المصدر إلى السنة الهدف.
+                      هذا الإجراء لا يمكن التراجع عنه.
+                    </p>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsInventoryDialogOpen(false)}>
+                    إلغاء
+                  </Button>
+                  <Button 
+                    onClick={handleCarryForwardInventory} 
+                    disabled={carryForwardInventory.isPending || !fromYearId || !toYearId}
+                  >
+                    {carryForwardInventory.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
+                    ترحيل المخزون
                   </Button>
                 </DialogFooter>
               </DialogContent>
