@@ -97,4 +97,5 @@ export type ActivePage =
   | 'financial-statements'
   | 'vat-return-report'
   | 'employees'
-  | 'payroll';
+  | 'payroll'
+  | 'account-statement';

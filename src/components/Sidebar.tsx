@@ -93,6 +93,7 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
     { id: 'chart-of-accounts' as ActivePage, label: settings?.chart_of_accounts_title || 'شجرة الحسابات', icon: BookOpen },
     { id: 'journal-entries' as ActivePage, label: settings?.journal_entries_title || 'دفتر اليومية', icon: Calculator },
     { id: 'general-ledger' as ActivePage, label: settings?.general_ledger_title || 'دفتر الأستاذ', icon: FileText },
+    { id: 'account-statement' as ActivePage, label: 'كشف حساب مفصل', icon: ClipboardList },
     { id: 'vat-return-report' as ActivePage, label: 'إقرار ضريبة القيمة المضافة', icon: Receipt },
     { id: 'financial-reports' as ActivePage, label: settings?.financial_reports_title || 'التقارير المالية', icon: PieChart },
     { id: 'zakat-reports' as ActivePage, label: 'القوائم الزكوية', icon: Scale },
