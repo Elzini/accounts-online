@@ -76,6 +76,21 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const updateCar = useUpdateCar();
   const deleteCar = useDeleteCar();
 
+  // Filter purchases by fiscal year
+  const fiscalYearFilteredCars = useMemo(() => {
+    if (!selectedFiscalYear) return existingCars;
+    
+    const fyStart = new Date(selectedFiscalYear.start_date);
+    fyStart.setHours(0, 0, 0, 0);
+    const fyEnd = new Date(selectedFiscalYear.end_date);
+    fyEnd.setHours(23, 59, 59, 999);
+    
+    return existingCars.filter(car => {
+      const purchaseDate = new Date(car.purchase_date);
+      return purchaseDate >= fyStart && purchaseDate <= fyEnd;
+    });
+  }, [existingCars, selectedFiscalYear]);
+
   // Generate next invoice number
   const nextInvoiceNumber = useMemo(() => {
     const maxInventory = existingCars.reduce((max, car) => 
@@ -289,11 +304,11 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     }
   };
 
-  // Navigation functions
+  // Navigation functions - use fiscal year filtered data
   const handleFirstPurchase = () => {
-    if (existingCars.length > 0) {
+    if (fiscalYearFilteredCars.length > 0) {
       setCurrentInvoiceIndex(0);
-      loadCarData(existingCars[0]);
+      loadCarData(fiscalYearFilteredCars[0]);
     }
   };
 
@@ -301,23 +316,23 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     if (currentInvoiceIndex > 0) {
       const newIndex = currentInvoiceIndex - 1;
       setCurrentInvoiceIndex(newIndex);
-      loadCarData(existingCars[newIndex]);
+      loadCarData(fiscalYearFilteredCars[newIndex]);
     }
   };
 
   const handleNextPurchase = () => {
-    if (currentInvoiceIndex < existingCars.length - 1) {
+    if (currentInvoiceIndex < fiscalYearFilteredCars.length - 1) {
       const newIndex = currentInvoiceIndex + 1;
       setCurrentInvoiceIndex(newIndex);
-      loadCarData(existingCars[newIndex]);
+      loadCarData(fiscalYearFilteredCars[newIndex]);
     }
   };
 
   const handleLastPurchase = () => {
-    if (existingCars.length > 0) {
-      const lastIndex = existingCars.length - 1;
+    if (fiscalYearFilteredCars.length > 0) {
+      const lastIndex = fiscalYearFilteredCars.length - 1;
       setCurrentInvoiceIndex(lastIndex);
-      loadCarData(existingCars[lastIndex]);
+      loadCarData(fiscalYearFilteredCars[lastIndex]);
     }
   };
 
@@ -493,25 +508,25 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           <div className="p-3 border-b bg-muted/20">
             <InvoiceSearchBar
               mode="purchases"
-              purchases={existingCars}
+              purchases={fiscalYearFilteredCars}
               suppliers={suppliers}
               onSelectResult={(result) => {
                 if (result.type === 'invoice' || result.type === 'car') {
                   // Load the car/purchase
                   const car = result.data;
-                  const carIndex = existingCars.findIndex(c => c.id === car.id);
+                  const carIndex = fiscalYearFilteredCars.findIndex(c => c.id === car.id);
                   if (carIndex >= 0) {
                     setCurrentInvoiceIndex(carIndex);
-                    loadCarData(existingCars[carIndex]);
+                    loadCarData(fiscalYearFilteredCars[carIndex]);
                   }
                 } else if (result.type === 'supplier') {
                   // Load first purchase of this supplier or set supplier for new invoice
                   const supplierPurchases = result.data.purchases;
                   if (supplierPurchases && supplierPurchases.length > 0) {
-                    const carIndex = existingCars.findIndex(c => c.id === supplierPurchases[0].id);
+                    const carIndex = fiscalYearFilteredCars.findIndex(c => c.id === supplierPurchases[0].id);
                     if (carIndex >= 0) {
                       setCurrentInvoiceIndex(carIndex);
-                      loadCarData(existingCars[carIndex]);
+                      loadCarData(fiscalYearFilteredCars[carIndex]);
                     }
                   } else {
                     setInvoiceData(prev => ({ ...prev, supplier_id: result.id }));
@@ -866,7 +881,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   size="icon" 
                   className="h-8 w-8 rounded-none"
                   onClick={handleNextPurchase}
-                  disabled={currentInvoiceIndex >= existingCars.length - 1}
+                  disabled={currentInvoiceIndex >= fiscalYearFilteredCars.length - 1}
                   title="الفاتورة التالية"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -876,14 +891,14 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   size="icon" 
                   className="h-8 w-8 rounded-none"
                   onClick={handleLastPurchase}
-                  disabled={existingCars.length === 0}
+                  disabled={fiscalYearFilteredCars.length === 0}
                   title="آخر فاتورة"
                 >
                   <ChevronRight className="w-4 h-4" />
                   <ChevronRight className="w-4 h-4 -mr-2" />
                 </Button>
                 <span className="px-3 text-sm bg-muted min-w-[50px] text-center">
-                  {existingCars.length > 0 ? currentInvoiceIndex + 1 : 0} / {existingCars.length}
+                  {fiscalYearFilteredCars.length > 0 ? currentInvoiceIndex + 1 : 0} / {fiscalYearFilteredCars.length}
                 </span>
                 <Button 
                   variant="ghost" 
@@ -900,7 +915,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   size="icon" 
                   className="h-8 w-8 rounded-none"
                   onClick={handleFirstPurchase}
-                  disabled={existingCars.length === 0}
+                  disabled={fiscalYearFilteredCars.length === 0}
                   title="أول فاتورة"
                 >
                   <ChevronLeft className="w-4 h-4" />

@@ -93,6 +93,21 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     [allCars]
   );
 
+  // Filter sales by fiscal year
+  const fiscalYearFilteredSales = useMemo(() => {
+    if (!selectedFiscalYear) return existingSales;
+    
+    const fyStart = new Date(selectedFiscalYear.start_date);
+    fyStart.setHours(0, 0, 0, 0);
+    const fyEnd = new Date(selectedFiscalYear.end_date);
+    fyEnd.setHours(23, 59, 59, 999);
+    
+    return existingSales.filter(sale => {
+      const saleDate = new Date(sale.sale_date);
+      return saleDate >= fyStart && saleDate <= fyEnd;
+    });
+  }, [existingSales, selectedFiscalYear]);
+
   // Generate next invoice number
   const nextInvoiceNumber = useMemo(() => {
     return existingSales.length + 1;
@@ -382,11 +397,11 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     }
   };
 
-  // Navigation functions
+  // Navigation functions - use fiscal year filtered data
   const handleFirstSale = () => {
-    if (existingSales.length > 0) {
+    if (fiscalYearFilteredSales.length > 0) {
       setCurrentInvoiceIndex(0);
-      loadSaleData(existingSales[0]);
+      loadSaleData(fiscalYearFilteredSales[0]);
     }
   };
 
@@ -394,23 +409,23 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     if (currentInvoiceIndex > 0) {
       const newIndex = currentInvoiceIndex - 1;
       setCurrentInvoiceIndex(newIndex);
-      loadSaleData(existingSales[newIndex]);
+      loadSaleData(fiscalYearFilteredSales[newIndex]);
     }
   };
 
   const handleNextSale = () => {
-    if (currentInvoiceIndex < existingSales.length - 1) {
+    if (currentInvoiceIndex < fiscalYearFilteredSales.length - 1) {
       const newIndex = currentInvoiceIndex + 1;
       setCurrentInvoiceIndex(newIndex);
-      loadSaleData(existingSales[newIndex]);
+      loadSaleData(fiscalYearFilteredSales[newIndex]);
     }
   };
 
   const handleLastSale = () => {
-    if (existingSales.length > 0) {
-      const lastIndex = existingSales.length - 1;
+    if (fiscalYearFilteredSales.length > 0) {
+      const lastIndex = fiscalYearFilteredSales.length - 1;
       setCurrentInvoiceIndex(lastIndex);
-      loadSaleData(existingSales[lastIndex]);
+      loadSaleData(fiscalYearFilteredSales[lastIndex]);
     }
   };
 
@@ -628,25 +643,25 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           <div className="p-3 border-b bg-muted/20">
             <InvoiceSearchBar
               mode="sales"
-              sales={salesWithItems}
+              sales={fiscalYearFilteredSales}
               customers={customers}
               onSelectResult={(result) => {
                 if (result.type === 'invoice' || result.type === 'car') {
                   // Load the sale
                   const sale = result.data;
-                  const saleIndex = existingSales.findIndex(s => s.id === sale.id);
+                  const saleIndex = fiscalYearFilteredSales.findIndex(s => s.id === sale.id);
                   if (saleIndex >= 0) {
                     setCurrentInvoiceIndex(saleIndex);
-                    loadSaleData(existingSales[saleIndex]);
+                    loadSaleData(fiscalYearFilteredSales[saleIndex]);
                   }
                 } else if (result.type === 'customer') {
                   // Load first sale of this customer or set customer for new invoice
                   const customerSales = result.data.sales;
                   if (customerSales && customerSales.length > 0) {
-                    const saleIndex = existingSales.findIndex(s => s.id === customerSales[0].id);
+                    const saleIndex = fiscalYearFilteredSales.findIndex(s => s.id === customerSales[0].id);
                     if (saleIndex >= 0) {
                       setCurrentInvoiceIndex(saleIndex);
-                      loadSaleData(existingSales[saleIndex]);
+                      loadSaleData(fiscalYearFilteredSales[saleIndex]);
                     }
                   } else {
                     setInvoiceData(prev => ({ ...prev, customer_id: result.id }));
@@ -1202,7 +1217,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   size="icon" 
                   className="h-8 w-8 rounded-none"
                   onClick={handleNextSale}
-                  disabled={currentInvoiceIndex >= existingSales.length - 1}
+                  disabled={currentInvoiceIndex >= fiscalYearFilteredSales.length - 1}
                   title="الفاتورة التالية"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -1212,14 +1227,14 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   size="icon" 
                   className="h-8 w-8 rounded-none"
                   onClick={handleLastSale}
-                  disabled={existingSales.length === 0}
+                  disabled={fiscalYearFilteredSales.length === 0}
                   title="آخر فاتورة"
                 >
                   <ChevronRight className="w-4 h-4" />
                   <ChevronRight className="w-4 h-4 -mr-2" />
                 </Button>
                 <span className="px-3 text-sm bg-muted min-w-[50px] text-center">
-                  {existingSales.length > 0 ? currentInvoiceIndex + 1 : 0} / {existingSales.length}
+                  {fiscalYearFilteredSales.length > 0 ? currentInvoiceIndex + 1 : 0} / {fiscalYearFilteredSales.length}
                 </span>
                 <Button 
                   variant="ghost" 
@@ -1236,7 +1251,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   size="icon" 
                   className="h-8 w-8 rounded-none"
                   onClick={handleFirstSale}
-                  disabled={existingSales.length === 0}
+                  disabled={fiscalYearFilteredSales.length === 0}
                   title="أول فاتورة"
                 >
                   <ChevronLeft className="w-4 h-4" />
