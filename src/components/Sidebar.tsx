@@ -26,7 +26,8 @@ import {
   Scale,
   Clock,
   Calendar,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Settings2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
@@ -364,6 +365,20 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
                 >
                   <Database className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
                   <span className="font-medium text-sm sm:text-base truncate">{settings?.backups_title || 'النسخ الاحتياطي'}</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => setActivePage('control-center')}
+                  className={cn(
+                    "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
+                    activePage === 'control-center'
+                      ? "gradient-primary text-white shadow-md" 
+                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
+                  )}
+                >
+                  <Settings2 className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                  <span className="font-medium text-sm sm:text-base truncate">مركز التحكم</span>
                 </button>
               </li>
             </ul>
