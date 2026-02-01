@@ -85,24 +85,9 @@ export async function getVATReturnReport(
   const { data: purchasesData, error: purchasesError } = await purchasesQuery;
   if (purchasesError) throw purchasesError;
 
-  // Fetch expenses - general expenses (NOT car-related)
-  // Only include general expenses (car_id IS NULL) to avoid double counting
-  // Car expenses are already included in car purchase price or tracked separately
-  let expensesQuery = supabase
-    .from('expenses')
-    .select('id, amount, expense_date, car_id')
-    .eq('company_id', companyId)
-    .is('car_id', null); // Only general expenses, not car-specific
-
-  if (startDate) {
-    expensesQuery = expensesQuery.gte('expense_date', startDate);
-  }
-  if (endDate) {
-    expensesQuery = expensesQuery.lte('expense_date', endDate);
-  }
-
-  const { data: expensesData, error: expensesError } = await expensesQuery;
-  if (expensesError) throw expensesError;
+  // ملاحظة مهمة: المصاريف العامة (مثل الإيجار) لا تُضاف للإقرار الضريبي
+  // لأن ضريبة المدخلات تُحتسب فقط على المشتريات التي لها فواتير ضريبية صحيحة
+  // المصاريف التشغيلية عادةً لا تحتوي على فواتير ضريبية قابلة للاسترداد
 
   // Calculate sales totals
   // All car sales are standard rated (15% VAT)
@@ -121,7 +106,8 @@ export async function getVATReturnReport(
     return sum + vat;
   }, 0);
 
-  // Calculate purchases totals (car inventory purchases)
+  // Calculate purchases totals (car inventory purchases ONLY)
+  // فقط مشتريات السيارات التي لها فواتير ضريبية
   const totalCarPurchasesAmount = (purchasesData || []).reduce((sum, car) => {
     const purchasePrice = Number(car.purchase_price) || 0;
     // سعر الشراء المخزن هو المبلغ الأساسي
@@ -135,23 +121,10 @@ export async function getVATReturnReport(
     return sum + vat;
   }, 0);
 
-  // Calculate expenses totals (operational expenses with VAT)
-  const totalExpensesAmount = (expensesData || []).reduce((sum, exp) => {
-    const amount = Number(exp.amount) || 0;
-    // المصاريف المخزنة هي المبلغ الأساسي
-    return sum + amount;
-  }, 0);
-
-  const totalExpensesVAT = (expensesData || []).reduce((sum, exp) => {
-    const amount = Number(exp.amount) || 0;
-    // الضريبة = المبلغ الأساسي × نسبة الضريبة
-    const vat = amount * (taxRate / 100);
-    return sum + vat;
-  }, 0);
-
-  // Combine all purchases
-  const totalPurchasesAmount = totalCarPurchasesAmount + totalExpensesAmount;
-  const totalPurchasesVAT = totalCarPurchasesVAT + totalExpensesVAT;
+  // Total purchases = car purchases only (no general expenses)
+  // المشتريات = مشتريات السيارات فقط (بدون المصاريف التشغيلية)
+  const totalPurchasesAmount = totalCarPurchasesAmount;
+  const totalPurchasesVAT = totalCarPurchasesVAT;
 
   // Build the report structure
   const sales: VATReturnSales = {
