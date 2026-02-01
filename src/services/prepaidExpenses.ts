@@ -46,6 +46,7 @@ export interface CreatePrepaidExpenseInput {
   end_date: string;
   number_of_months: number;
   category_id?: string | null;
+  expense_account_id?: string | null;
   payment_date: string;
   payment_method?: string;
   notes?: string;
@@ -95,6 +96,7 @@ export async function createPrepaidExpense(
       monthly_amount: monthly_amount,
       remaining_amount: input.total_amount,
       category_id: input.category_id || null,
+      expense_account_id: input.expense_account_id || null,
       payment_date: input.payment_date,
       payment_method: input.payment_method || 'cash',
       notes: input.notes || null,
