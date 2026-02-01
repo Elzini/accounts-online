@@ -32,6 +32,13 @@ async function getCurrentCompanyId(): Promise<string | null> {
   return profile?.company_id || null;
 }
 
+function toDateOnly(date: Date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 // Types for multi-car operations
 export interface CarWithSaleInfo extends Omit<CarInsert, 'batch_id'> {
   sale_price?: number;
@@ -293,8 +300,10 @@ export async function deleteSale(id: string, carId: string) {
 
 // Stats
 export async function fetchStats(fiscalYearId?: string | null) {
-  const today = new Date().toISOString().split('T')[0];
-  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+  const now = new Date();
+  const today = toDateOnly(now);
+  const startOfMonth = toDateOnly(new Date(now.getFullYear(), now.getMonth(), 1));
+  const endOfMonth = toDateOnly(new Date(now.getFullYear(), now.getMonth() + 1, 0));
 
   // Get fiscal year date range if provided
   let fiscalYearStart: string | null = null;
@@ -338,7 +347,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
   let todaySalesQuery = supabase
     .from('sales')
     .select('*', { count: 'exact', head: true })
-    .gte('sale_date', today);
+    .eq('sale_date', today);
   
   if (fiscalYearStart && fiscalYearEnd) {
     todaySalesQuery = todaySalesQuery
@@ -394,10 +403,12 @@ export async function fetchStats(fiscalYearId?: string | null) {
     // Ensure we only count sales within the fiscal year AND current month
     monthSalesCount = salesData?.filter(sale => {
       const saleDate = sale.sale_date;
-      return saleDate >= startOfMonth && saleDate >= fiscalYearStart && saleDate <= fiscalYearEnd;
+      const rangeStart = startOfMonth > fiscalYearStart ? startOfMonth : fiscalYearStart;
+      const rangeEnd = endOfMonth < fiscalYearEnd ? endOfMonth : fiscalYearEnd;
+      return saleDate >= rangeStart && saleDate <= rangeEnd;
     }).length || 0;
   } else {
-    monthSalesCount = salesData?.filter(sale => sale.sale_date >= startOfMonth).length || 0;
+    monthSalesCount = salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth).length || 0;
   }
 
   // Total purchases (sum of all car purchase prices within fiscal year based on purchase_date)
@@ -405,10 +416,15 @@ export async function fetchStats(fiscalYearId?: string | null) {
     .from('cars')
     .select('purchase_price');
   
-  if (fiscalYearStart && fiscalYearEnd) {
-    purchasesQuery = purchasesQuery
-      .gte('purchase_date', fiscalYearStart)
-      .lte('purchase_date', fiscalYearEnd);
+  if (fiscalYearId) {
+    if (fiscalYearStart && fiscalYearEnd) {
+      // (fiscal_year_id = fiscalYearId) OR (fiscal_year_id is null AND purchase_date within FY)
+      purchasesQuery = purchasesQuery.or(
+        `fiscal_year_id.eq.${fiscalYearId},and(fiscal_year_id.is.null,purchase_date.gte.${fiscalYearStart},purchase_date.lte.${fiscalYearEnd})`
+      );
+    } else {
+      purchasesQuery = purchasesQuery.eq('fiscal_year_id', fiscalYearId);
+    }
   }
   
   const { data: purchasesData } = await purchasesQuery;
@@ -420,10 +436,12 @@ export async function fetchStats(fiscalYearId?: string | null) {
   if (fiscalYearStart && fiscalYearEnd) {
     monthSalesAmount = salesData?.filter(sale => {
       const saleDate = sale.sale_date;
-      return saleDate >= startOfMonth && saleDate >= fiscalYearStart && saleDate <= fiscalYearEnd;
+      const rangeStart = startOfMonth > fiscalYearStart ? startOfMonth : fiscalYearStart;
+      const rangeEnd = endOfMonth < fiscalYearEnd ? endOfMonth : fiscalYearEnd;
+      return saleDate >= rangeStart && saleDate <= rangeEnd;
     }).reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
   } else {
-    monthSalesAmount = salesData?.filter(sale => sale.sale_date >= startOfMonth)
+    monthSalesAmount = salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth)
       .reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
   }
 
@@ -471,8 +489,8 @@ export async function fetchMonthlyChartData(fiscalYearId?: string) {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
     sixMonthsAgo.setDate(1);
-    startDate = sixMonthsAgo.toISOString().split('T')[0];
-    endDate = new Date().toISOString().split('T')[0];
+    startDate = toDateOnly(sixMonthsAgo);
+    endDate = toDateOnly(new Date());
   }
 
   const { data, error } = await supabase
