@@ -67,6 +67,13 @@ export interface AdvancedStats {
 }
 
 export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<AdvancedStats> {
+  const toDateOnly = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
   // Get fiscal year dates if provided
   let fiscalYearStart: string | null = null;
   let fiscalYearEnd: string | null = null;
@@ -85,10 +92,10 @@ export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<Adv
   }
 
   const now = new Date();
-  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
-  const thisMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+  const thisMonthStart = toDateOnly(new Date(now.getFullYear(), now.getMonth(), 1));
+  const lastMonthStart = toDateOnly(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+  const thisMonthEnd = toDateOnly(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+  const lastMonthEnd = toDateOnly(new Date(now.getFullYear(), now.getMonth(), 0));
 
   // Build queries with fiscal year filter
   let allCarsQuery = supabase
@@ -110,9 +117,16 @@ export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<Adv
 
   // Apply fiscal year filter if provided
   if (fiscalYearStart && fiscalYearEnd) {
-    allCarsQuery = allCarsQuery
-      .gte('purchase_date', fiscalYearStart)
-      .lte('purchase_date', fiscalYearEnd);
+    // Include cars migrated into this fiscal year (fiscal_year_id), while keeping backward-compat for old data
+    if (fiscalYearId) {
+      allCarsQuery = allCarsQuery.or(
+        `fiscal_year_id.eq.${fiscalYearId},and(fiscal_year_id.is.null,purchase_date.gte.${fiscalYearStart},purchase_date.lte.${fiscalYearEnd})`
+      );
+    } else {
+      allCarsQuery = allCarsQuery
+        .gte('purchase_date', fiscalYearStart)
+        .lte('purchase_date', fiscalYearEnd);
+    }
     
     allSalesQuery = allSalesQuery
       .gte('sale_date', fiscalYearStart)
