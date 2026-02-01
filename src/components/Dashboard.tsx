@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivePage } from '@/types';
-import { useMonthlyChartData, useStats } from '@/hooks/useDatabase';
+import { useMonthlyChartData, useStats, useSales, useCars } from '@/hooks/useDatabase';
 import { useAdvancedAnalytics } from '@/hooks/useAnalytics';
 import { useAppSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +14,7 @@ import { BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid } from 'rec
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 
 // Advanced Dashboard Components
 import { TrendCard } from './dashboard/TrendCard';
@@ -22,7 +23,7 @@ import { RevenueAreaChart } from './dashboard/RevenueAreaChart';
 import { TopPerformersCard } from './dashboard/TopPerformersCard';
 import { PerformanceMetrics } from './dashboard/PerformanceMetrics';
 import { RecentActivityCard } from './dashboard/RecentActivityCard';
-import { StatCardDetailDialog, StatDetailData } from './dashboard/StatCardDetailDialog';
+import { StatCardDetailDialog, StatDetailData, CarDetailItem } from './dashboard/StatCardDetailDialog';
 
 interface DashboardProps {
   stats: {
@@ -63,6 +64,9 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const { permissions } = useAuth();
   const { data: transfers } = useCarTransfers();
   const { data: dealerships } = usePartnerDealerships();
+  const { data: allSales = [] } = useSales();
+  const { data: allCars = [] } = useCars();
+  const { selectedFiscalYear } = useFiscalYear();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailData, setDetailData] = useState<StatDetailData | null>(null);
@@ -158,12 +162,87 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     return value.toString();
   };
 
+  // Helper: filter sales by fiscal year
+  const fiscalYearSales = useMemo(() => {
+    if (!selectedFiscalYear) return allSales;
+    const startDate = new Date(selectedFiscalYear.start_date);
+    const endDate = new Date(selectedFiscalYear.end_date);
+    return allSales.filter(sale => {
+      const saleDate = new Date(sale.sale_date);
+      return saleDate >= startDate && saleDate <= endDate;
+    });
+  }, [allSales, selectedFiscalYear]);
+
+  // Helper: filter cars by fiscal year
+  const fiscalYearCars = useMemo(() => {
+    if (!selectedFiscalYear) return allCars;
+    return allCars.filter(car => {
+      if (car.fiscal_year_id) return car.fiscal_year_id === selectedFiscalYear.id;
+      const purchaseDate = new Date(car.purchase_date);
+      const startDate = new Date(selectedFiscalYear.start_date);
+      const endDate = new Date(selectedFiscalYear.end_date);
+      return purchaseDate >= startDate && purchaseDate <= endDate;
+    });
+  }, [allCars, selectedFiscalYear]);
+
+  // Helper: build car detail items from sales
+  const buildSalesCarDetails = (sales: typeof fiscalYearSales): CarDetailItem[] => {
+    const items: CarDetailItem[] = [];
+    for (const sale of sales) {
+      const saleItems = (sale as any).sale_items || [];
+      if (saleItems.length > 0) {
+        for (const item of saleItems) {
+          items.push({
+            id: item.id,
+            name: item.car?.name || 'سيارة',
+            model: item.car?.model || '',
+            chassisNumber: item.car?.chassis_number || '',
+            purchasePrice: Number(item.car?.purchase_price) || 0,
+            salePrice: Number(item.sale_price) || 0,
+            profit: Number(item.profit) || 0,
+            saleDate: sale.sale_date,
+          });
+        }
+      } else {
+        items.push({
+          id: sale.id,
+          name: sale.car?.name || 'سيارة',
+          model: sale.car?.model || '',
+          chassisNumber: sale.car?.chassis_number || '',
+          purchasePrice: Number(sale.car?.purchase_price) || 0,
+          salePrice: Number(sale.sale_price) || 0,
+          profit: Number(sale.profit) || 0,
+          saleDate: sale.sale_date,
+        });
+      }
+    }
+    return items;
+  };
+
+  // Helper: build car detail items from cars (for purchases)
+  const buildPurchaseCarDetails = (cars: typeof fiscalYearCars): CarDetailItem[] => {
+    return cars.map(car => ({
+      id: car.id,
+      name: car.name,
+      model: car.model || '',
+      chassisNumber: car.chassis_number,
+      purchasePrice: Number(car.purchase_price),
+      status: car.status,
+    }));
+  };
+
   // Handler to show stat detail dialog
   const showStatDetail = (type: 'availableCars' | 'totalPurchases' | 'monthSales' | 'totalProfit' | 'todaySales' | 'monthSalesCount') => {
     let data: StatDetailData;
     
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    
     switch (type) {
-      case 'availableCars':
+      case 'availableCars': {
+        const availableCars = fiscalYearCars.filter(c => c.status === 'available');
         data = {
           title: 'السيارات المتاحة',
           value: stats.availableCars,
@@ -176,10 +255,13 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             'يشمل السيارات المرحّلة من السنة السابقة',
             'لا يشمل السيارات المباعة أو المحوّلة',
           ],
+          showCarsTable: true,
+          cars: buildPurchaseCarDetails(availableCars),
         };
         break;
+      }
       
-      case 'totalPurchases':
+      case 'totalPurchases': {
         data = {
           title: 'إجمالي المشتريات',
           value: formatCurrency(stats.totalPurchases),
@@ -193,10 +275,14 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             'يشمل السيارات المرحّلة من السنة السابقة',
             'القيمة تمثل رأس المال المستثمر في المخزون',
           ],
+          showCarsTable: true,
+          cars: buildPurchaseCarDetails(fiscalYearCars),
         };
         break;
+      }
       
-      case 'monthSales':
+      case 'monthSales': {
+        const monthSales = fiscalYearSales.filter(s => s.sale_date >= startOfMonth && s.sale_date <= endOfMonth);
         data = {
           title: 'مبيعات الشهر',
           value: formatCurrency(stats.monthSalesAmount),
@@ -211,10 +297,13 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             'يحتسب من أول يوم في الشهر حتى آخره',
             'محدد بنطاق السنة المالية المختارة',
           ],
+          showCarsTable: true,
+          cars: buildSalesCarDetails(monthSales),
         };
         break;
+      }
       
-      case 'totalProfit':
+      case 'totalProfit': {
         data = {
           title: 'إجمالي الأرباح',
           value: formatCurrency(stats.totalProfit),
@@ -230,10 +319,14 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             'الربح الإجمالي = سعر البيع - سعر الشراء - العمولة - مصاريف أخرى',
             'المصاريف المرتبطة بالسيارات تُخصم فقط عند بيع السيارة',
           ],
+          showCarsTable: true,
+          cars: buildSalesCarDetails(fiscalYearSales),
         };
         break;
+      }
       
-      case 'todaySales':
+      case 'todaySales': {
+        const todaySales = fiscalYearSales.filter(s => s.sale_date === today);
         data = {
           title: 'مبيعات اليوم',
           value: stats.todaySales,
@@ -245,10 +338,14 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           notes: [
             'يتم احتسابها بناءً على تاريخ البيع المسجل',
           ],
+          showCarsTable: todaySales.length > 0,
+          cars: buildSalesCarDetails(todaySales),
         };
         break;
+      }
       
-      case 'monthSalesCount':
+      case 'monthSalesCount': {
+        const monthSales = fiscalYearSales.filter(s => s.sale_date >= startOfMonth && s.sale_date <= endOfMonth);
         data = {
           title: 'عدد مبيعات الشهر',
           value: stats.monthSales,
@@ -261,8 +358,11 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           notes: [
             'يحتسب من أول يوم في الشهر حتى آخره',
           ],
+          showCarsTable: monthSales.length > 0,
+          cars: buildSalesCarDetails(monthSales),
         };
         break;
+      }
       
       default:
         return;
@@ -271,6 +371,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     setDetailData(data);
     setDetailDialogOpen(true);
   };
+
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8 animate-fade-in">
