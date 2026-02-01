@@ -7,6 +7,7 @@ interface StatCardProps {
   icon: LucideIcon;
   gradient: 'primary' | 'success' | 'warning' | 'danger';
   subtitle?: string;
+  onClick?: () => void;
 }
 
 const gradientClasses = {
@@ -16,9 +17,18 @@ const gradientClasses = {
   danger: 'gradient-danger',
 };
 
-export function StatCard({ title, value, icon: Icon, gradient, subtitle }: StatCardProps) {
+export function StatCard({ title, value, icon: Icon, gradient, subtitle, onClick }: StatCardProps) {
   return (
-    <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 shadow-sm border border-border hover-lift animate-fade-in">
+    <div 
+      className={cn(
+        "bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 shadow-sm border border-border hover-lift animate-fade-in",
+        onClick && "cursor-pointer hover:border-primary/50 transition-colors"
+      )}
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
+    >
       <div className="flex items-start justify-between gap-2 sm:gap-2.5">
         <div className="flex-1 min-w-0">
           <p className="text-[10px] sm:text-[11px] md:text-xs font-medium text-muted-foreground mb-0.5 truncate">

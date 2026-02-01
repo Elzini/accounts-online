@@ -22,6 +22,7 @@ import { RevenueAreaChart } from './dashboard/RevenueAreaChart';
 import { TopPerformersCard } from './dashboard/TopPerformersCard';
 import { PerformanceMetrics } from './dashboard/PerformanceMetrics';
 import { RecentActivityCard } from './dashboard/RecentActivityCard';
+import { StatCardDetailDialog, StatDetailData } from './dashboard/StatCardDetailDialog';
 
 interface DashboardProps {
   stats: {
@@ -31,6 +32,14 @@ interface DashboardProps {
     monthSales: number;
     totalPurchases: number;
     monthSalesAmount: number;
+    // Extended breakdown
+    totalGrossProfit?: number;
+    totalCarExpenses?: number;
+    totalGeneralExpenses?: number;
+    purchasesCount?: number;
+    monthSalesProfit?: number;
+    totalSalesCount?: number;
+    totalSalesAmount?: number;
   };
   setActivePage: (page: ActivePage) => void;
 }
@@ -55,6 +64,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const { data: transfers } = useCarTransfers();
   const { data: dealerships } = usePartnerDealerships();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [detailData, setDetailData] = useState<StatDetailData | null>(null);
 
   const canSales = permissions.admin || permissions.sales;
   const canPurchases = permissions.admin || permissions.purchases;
@@ -147,6 +158,120 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     return value.toString();
   };
 
+  // Handler to show stat detail dialog
+  const showStatDetail = (type: 'availableCars' | 'totalPurchases' | 'monthSales' | 'totalProfit' | 'todaySales' | 'monthSalesCount') => {
+    let data: StatDetailData;
+    
+    switch (type) {
+      case 'availableCars':
+        data = {
+          title: 'السيارات المتاحة',
+          value: stats.availableCars,
+          subtitle: 'سيارة في المخزون',
+          breakdown: [
+            { label: 'عدد السيارات المتاحة للبيع', value: stats.availableCars, type: 'total' },
+          ],
+          formula: 'عدد السيارات بحالة "متاحة" ضمن السنة المالية المحددة',
+          notes: [
+            'يشمل السيارات المرحّلة من السنة السابقة',
+            'لا يشمل السيارات المباعة أو المحوّلة',
+          ],
+        };
+        break;
+      
+      case 'totalPurchases':
+        data = {
+          title: 'إجمالي المشتريات',
+          value: formatCurrency(stats.totalPurchases),
+          subtitle: 'ريال سعودي',
+          breakdown: [
+            { label: 'عدد السيارات المشتراة', value: stats.purchasesCount || 0 },
+            { label: 'إجمالي قيمة المشتريات', value: stats.totalPurchases, type: 'total' },
+          ],
+          formula: 'مجموع أسعار شراء جميع السيارات ضمن السنة المالية',
+          notes: [
+            'يشمل السيارات المرحّلة من السنة السابقة',
+            'القيمة تمثل رأس المال المستثمر في المخزون',
+          ],
+        };
+        break;
+      
+      case 'monthSales':
+        data = {
+          title: 'مبيعات الشهر',
+          value: formatCurrency(stats.monthSalesAmount),
+          subtitle: 'ريال سعودي',
+          breakdown: [
+            { label: 'عدد عمليات البيع هذا الشهر', value: stats.monthSales },
+            { label: 'إجمالي قيمة المبيعات', value: stats.monthSalesAmount, type: 'add' },
+            { label: 'أرباح مبيعات الشهر', value: stats.monthSalesProfit || 0, type: 'total' },
+          ],
+          formula: 'مجموع أسعار البيع للمبيعات خلال الشهر الحالي',
+          notes: [
+            'يحتسب من أول يوم في الشهر حتى آخره',
+            'محدد بنطاق السنة المالية المختارة',
+          ],
+        };
+        break;
+      
+      case 'totalProfit':
+        data = {
+          title: 'إجمالي الأرباح',
+          value: formatCurrency(stats.totalProfit),
+          subtitle: 'ريال سعودي',
+          breakdown: [
+            { label: 'إجمالي الربح من المبيعات', value: stats.totalGrossProfit || 0, type: 'add' },
+            { label: 'مصاريف مرتبطة بالسيارات المباعة', value: stats.totalCarExpenses || 0, type: 'subtract' },
+            { label: 'مصاريف عامة', value: stats.totalGeneralExpenses || 0, type: 'subtract' },
+            { label: 'صافي الربح', value: stats.totalProfit, type: 'total' },
+          ],
+          formula: 'صافي الربح = إجمالي الربح - مصاريف السيارات - المصاريف العامة',
+          notes: [
+            'الربح الإجمالي = سعر البيع - سعر الشراء - العمولة - مصاريف أخرى',
+            'المصاريف المرتبطة بالسيارات تُخصم فقط عند بيع السيارة',
+          ],
+        };
+        break;
+      
+      case 'todaySales':
+        data = {
+          title: 'مبيعات اليوم',
+          value: stats.todaySales,
+          subtitle: 'عملية بيع',
+          breakdown: [
+            { label: 'عدد عمليات البيع اليوم', value: stats.todaySales, type: 'total' },
+          ],
+          formula: 'عدد المبيعات بتاريخ اليوم',
+          notes: [
+            'يتم احتسابها بناءً على تاريخ البيع المسجل',
+          ],
+        };
+        break;
+      
+      case 'monthSalesCount':
+        data = {
+          title: 'عدد مبيعات الشهر',
+          value: stats.monthSales,
+          subtitle: 'عملية بيع',
+          breakdown: [
+            { label: 'عدد عمليات البيع هذا الشهر', value: stats.monthSales, type: 'total' },
+            { label: 'إجمالي قيمة المبيعات', value: stats.monthSalesAmount },
+          ],
+          formula: 'عدد عمليات البيع خلال الشهر الحالي',
+          notes: [
+            'يحتسب من أول يوم في الشهر حتى آخره',
+          ],
+        };
+        break;
+      
+      default:
+        return;
+    }
+    
+    setDetailData(data);
+    setDetailDialogOpen(true);
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8 animate-fade-in">
       {/* Header */}
@@ -192,6 +317,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               icon={Car}
               gradient="primary"
               subtitle="سيارة في المخزون"
+              onClick={() => showStatDetail('availableCars')}
             />
             <StatCard
               title="إجمالي المشتريات"
@@ -199,6 +325,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               icon={ShoppingCart}
               gradient="danger"
               subtitle="ريال سعودي"
+              onClick={() => showStatDetail('totalPurchases')}
             />
             <StatCard
               title="مبيعات الشهر"
@@ -206,6 +333,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               icon={TrendingUp}
               gradient="success"
               subtitle="ريال سعودي"
+              onClick={() => showStatDetail('monthSales')}
             />
             <StatCard
               title="إجمالي الأرباح"
@@ -213,6 +341,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               icon={DollarSign}
               gradient="warning"
               subtitle="ريال سعودي"
+              onClick={() => showStatDetail('totalProfit')}
             />
             <StatCard
               title="مبيعات اليوم"
@@ -220,6 +349,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               icon={ShoppingCart}
               gradient="primary"
               subtitle="عملية بيع"
+              onClick={() => showStatDetail('todaySales')}
             />
             <StatCard
               title="عدد مبيعات الشهر"
@@ -227,6 +357,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               icon={TrendingUp}
               gradient="success"
               subtitle="عملية بيع"
+              onClick={() => showStatDetail('monthSalesCount')}
             />
           </div>
 
@@ -642,6 +773,13 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Stat Detail Dialog */}
+      <StatCardDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        data={detailData}
+      />
     </div>
   );
 }

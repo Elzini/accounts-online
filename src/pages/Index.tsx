@@ -86,7 +86,21 @@ const Index = () => {
     setShowFiscalYearDialog(false);
   };
 
-  const defaultStats = { availableCars: 0, todaySales: 0, totalProfit: 0, monthSales: 0, totalPurchases: 0, monthSalesAmount: 0 };
+  const defaultStats = { 
+    availableCars: 0, 
+    todaySales: 0, 
+    totalProfit: 0, 
+    monthSales: 0, 
+    totalPurchases: 0, 
+    monthSalesAmount: 0,
+    totalGrossProfit: 0,
+    totalCarExpenses: 0,
+    totalGeneralExpenses: 0,
+    purchasesCount: 0,
+    monthSalesProfit: 0,
+    totalSalesCount: 0,
+    totalSalesAmount: 0,
+  };
 
   const renderContent = () => {
     switch (activePage) {

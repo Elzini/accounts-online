@@ -445,6 +445,21 @@ export async function fetchStats(fiscalYearId?: string | null) {
       .reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
   }
 
+  // Count cars for purchases breakdown
+  const purchasesCount = purchasesData?.length || 0;
+
+  // Month sales breakdown
+  const monthSalesData = fiscalYearStart && fiscalYearEnd
+    ? salesData?.filter(sale => {
+        const saleDate = sale.sale_date;
+        const rangeStart = startOfMonth > fiscalYearStart ? startOfMonth : fiscalYearStart;
+        const rangeEnd = endOfMonth < fiscalYearEnd ? endOfMonth : fiscalYearEnd;
+        return saleDate >= rangeStart && saleDate <= rangeEnd;
+      }) || []
+    : salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth) || [];
+
+  const monthSalesProfit = monthSalesData.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0);
+
   return {
     availableCars: availableCars || 0,
     todaySales: todaySales || 0,
@@ -456,6 +471,11 @@ export async function fetchStats(fiscalYearId?: string | null) {
     totalGrossProfit,
     totalCarExpenses: carExpenses,
     totalGeneralExpenses: generalExpenses,
+    // Extended breakdown data
+    purchasesCount,
+    monthSalesProfit,
+    totalSalesCount: salesData?.length || 0,
+    totalSalesAmount: salesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0,
   };
 }
 
