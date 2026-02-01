@@ -217,6 +217,43 @@ export function useUpdateSale() {
   });
 }
 
+export function useUpdateSaleWithItems() {
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+  
+  return useMutation({
+    mutationFn: ({ 
+      saleId, 
+      saleData, 
+      items 
+    }: { 
+      saleId: string; 
+      saleData: {
+        sale_price: number;
+        seller_name?: string | null;
+        commission?: number;
+        other_expenses?: number;
+        sale_date: string;
+        profit: number;
+        payment_account_id?: string | null;
+      };
+      items: Array<{
+        car_id: string;
+        sale_price: number;
+        purchase_price: number;
+      }>;
+    }) => db.updateSaleWithItems(saleId, saleData, items),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['sales-with-items', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['stats', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
+    },
+  });
+}
+
 export function useDeleteSale() {
   const queryClient = useQueryClient();
   const { companyId } = useCompany();
