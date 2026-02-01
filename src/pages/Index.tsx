@@ -54,6 +54,7 @@ import { EmployeesPage } from '@/components/payroll/EmployeesPage';
 import { PayrollPage } from '@/components/payroll/PayrollPage';
 import { AccountStatementReport } from '@/components/reports/AccountStatementReport';
 import { ControlCenterPage } from '@/components/control-center/ControlCenterPage';
+import { FixedAssetsPage } from '@/components/assets/FixedAssetsPage';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
@@ -152,6 +153,7 @@ const Index = () => {
       case 'payroll': return <PayrollPage />;
       case 'account-statement': return <AccountStatementReport />;
       case 'control-center': return <ControlCenterPage />;
+      case 'fixed-assets': return <FixedAssetsPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };
