@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { DollarSign, Calendar, TrendingUp, Wallet, Building2, CreditCard, Banknote, User, Car, Hash } from 'lucide-react';
+import { DollarSign, Calendar, TrendingUp, Wallet, Building2, CreditCard, Banknote, User, Car, Hash, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SearchFilter } from '@/components/ui/search-filter';
@@ -10,17 +10,33 @@ import { useTaxSettings } from '@/hooks/useAccounting';
 import { SaleActions } from '@/components/actions/SaleActions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCompany } from '@/contexts/CompanyContext';
 
 interface SalesTableProps {
   setActivePage: (page: ActivePage) => void;
 }
 
 export function SalesTable({ setActivePage }: SalesTableProps) {
-  const { data: sales = [], isLoading } = useSales();
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+  const { data: sales = [], isLoading, refetch } = useSales();
   const { data: taxSettings } = useTaxSettings();
   const { selectedFiscalYear } = useFiscalYear();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const isMobile = useIsMobile();
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    // Invalidate all related queries to ensure fresh data
+    await queryClient.invalidateQueries({ queryKey: ['sales', companyId] });
+    await queryClient.invalidateQueries({ queryKey: ['stats', companyId] });
+    await queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
+    await queryClient.invalidateQueries({ queryKey: ['cars', companyId] });
+    await refetch();
+    setIsRefreshing(false);
+  };
 
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_sales ? (taxSettings.tax_rate || 15) : 0;
 
@@ -110,13 +126,24 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">المبيعات</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">سجل عمليات البيع</p>
         </div>
-        <Button 
-          onClick={() => setActivePage('add-sale')}
-          className="gradient-success hover:opacity-90 w-full sm:w-auto h-10 sm:h-11"
-        >
-          <DollarSign className="w-5 h-5 ml-2" />
-          تسجيل بيع
-        </Button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button 
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="h-10 sm:h-11"
+          >
+            <RefreshCw className={`w-4 h-4 ml-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            تحديث
+          </Button>
+          <Button 
+            onClick={() => setActivePage('add-sale')}
+            className="gradient-success hover:opacity-90 flex-1 sm:flex-initial h-10 sm:h-11"
+          >
+            <DollarSign className="w-5 h-5 ml-2" />
+            تسجيل بيع
+          </Button>
+        </div>
       </div>
 
       {/* Search */}

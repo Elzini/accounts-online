@@ -172,6 +172,8 @@ export function useSales() {
     queryKey: ['sales', companyId],
     queryFn: db.fetchSales,
     enabled: !!companyId,
+    staleTime: 0, // Always refetch to get latest data
+    refetchOnMount: 'always',
   });
 }
 
@@ -183,8 +185,11 @@ export function useAddSale() {
     mutationFn: (sale: SaleInsert) => db.addSale(sale),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['sales-with-items', companyId] });
       queryClient.invalidateQueries({ queryKey: ['cars', companyId] });
       queryClient.invalidateQueries({ queryKey: ['stats', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
     },
   });
 }
@@ -198,7 +203,11 @@ export function useUpdateSale() {
       db.updateSale(id, sale),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['sales-with-items', companyId] });
       queryClient.invalidateQueries({ queryKey: ['stats', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
     },
   });
 }
@@ -214,6 +223,28 @@ export function useDeleteSale() {
       queryClient.invalidateQueries({ queryKey: ['sales', companyId] });
       queryClient.invalidateQueries({ queryKey: ['cars', companyId] });
       queryClient.invalidateQueries({ queryKey: ['stats', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
+    },
+  });
+}
+
+// Reverse Sale (Return Invoice - إرجاع الفاتورة)
+export function useReverseSale() {
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+  
+  return useMutation({
+    mutationFn: (saleId: string) => db.reverseSale(saleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['sales-with-items', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['cars', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['stats', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
     },
   });
 }
@@ -293,6 +324,8 @@ export function useAddMultiCarSale() {
       queryClient.invalidateQueries({ queryKey: ['sales-with-items', companyId] });
       queryClient.invalidateQueries({ queryKey: ['cars', companyId] });
       queryClient.invalidateQueries({ queryKey: ['stats', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
     },
   });
 }
@@ -308,6 +341,9 @@ export function useDeleteMultiCarSale() {
       queryClient.invalidateQueries({ queryKey: ['sales-with-items', companyId] });
       queryClient.invalidateQueries({ queryKey: ['cars', companyId] });
       queryClient.invalidateQueries({ queryKey: ['stats', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
     },
   });
 }

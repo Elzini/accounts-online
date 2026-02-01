@@ -298,6 +298,65 @@ export async function deleteSale(id: string, carId: string) {
   }
 }
 
+// Reverse sale (return invoice - إرجاع الفاتورة)
+export async function reverseSale(saleId: string) {
+  // Get sale with items
+  const { data: sale, error: saleError } = await supabase
+    .from('sales')
+    .select(`
+      *,
+      sale_items (
+        id,
+        car_id,
+        sale_price,
+        profit
+      )
+    `)
+    .eq('id', saleId)
+    .single();
+  
+  if (saleError) throw saleError;
+  if (!sale) throw new Error('Sale not found');
+  
+  // Check if there are sale_items (multi-car sale)
+  const saleItems = (sale as any).sale_items || [];
+  
+  // Delete sale items first if exist
+  if (saleItems.length > 0) {
+    const { error: itemsError } = await supabase
+      .from('sale_items')
+      .delete()
+      .eq('sale_id', saleId);
+    
+    if (itemsError) throw itemsError;
+    
+    // Restore all cars to available status
+    for (const item of saleItems) {
+      await updateCarStatus(item.car_id, 'available');
+    }
+  } else {
+    // Single car sale
+    await updateCarStatus(sale.car_id, 'available');
+  }
+  
+  // Delete related journal entry if exists
+  await supabase
+    .from('journal_entries')
+    .delete()
+    .eq('reference_type', 'sale')
+    .eq('reference_id', saleId);
+  
+  // Delete the sale
+  const { error: deleteError } = await supabase
+    .from('sales')
+    .delete()
+    .eq('id', saleId);
+  
+  if (deleteError) throw deleteError;
+  
+  return sale;
+}
+
 // Stats
 export async function fetchStats(fiscalYearId?: string | null) {
   const now = new Date();
