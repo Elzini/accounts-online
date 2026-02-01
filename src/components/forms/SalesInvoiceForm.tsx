@@ -110,6 +110,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     is_installment: false,
     down_payment: '',
     number_of_installments: '12',
+    last_payment_date: '',
+    first_installment_date: new Date().toISOString().split('T')[0],
   });
 
   // Set default payment account
@@ -360,6 +362,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       is_installment: false,
       down_payment: '',
       number_of_installments: '12',
+      last_payment_date: '',
+      first_installment_date: new Date().toISOString().split('T')[0],
     });
     setSelectedCars([]);
     setDiscount(0);
@@ -426,6 +430,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       is_installment: false,
       down_payment: '',
       number_of_installments: '12',
+      last_payment_date: '',
+      first_installment_date: new Date().toISOString().split('T')[0],
     });
 
     // Check if this is a multi-car sale (has sale_items)
@@ -770,7 +776,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             </div>
 
             {/* Row 4 - Installment options */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 pt-2 border-t">
+            <div className="space-y-3 pt-2 border-t">
               <div className="flex items-center gap-2">
                 <Checkbox 
                   id="is_installment"
@@ -781,8 +787,18 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   بيع بالتقسيط
                 </Label>
               </div>
+              
               {invoiceData.is_installment && (
-                <>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 p-3 bg-muted/30 rounded-lg border border-primary/20">
+                  {/* سعر السيارة */}
+                  <div className="space-y-1">
+                    <Label className="text-xs">سعر السيارة</Label>
+                    <div className="h-9 flex items-center text-sm font-medium bg-background px-3 rounded-md border">
+                      {formatCurrency(calculations.finalTotal)} ر.س
+                    </div>
+                  </div>
+                  
+                  {/* الدفعة المقدمة */}
                   <div className="space-y-1">
                     <Label className="text-xs">الدفعة المقدمة</Label>
                     <Input
@@ -794,6 +810,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                       dir="ltr"
                     />
                   </div>
+                  
+                  {/* عدد الأقساط */}
                   <div className="space-y-1">
                     <Label className="text-xs">عدد الأقساط</Label>
                     <Select 
@@ -804,25 +822,60 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {[3, 6, 9, 12, 18, 24, 36, 48, 60].map(num => (
-                          <SelectItem key={num} value={String(num)}>{num} شهر</SelectItem>
+                        {[2, 3, 6, 9, 12, 18, 24, 36, 48, 60].map(num => (
+                          <SelectItem key={num} value={String(num)}>{num} {num === 2 ? 'دفعة' : 'شهر'}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  {/* تاريخ أول قسط */}
+                  <div className="space-y-1">
+                    <Label className="text-xs">تاريخ أول قسط</Label>
+                    <Input
+                      type="date"
+                      value={invoiceData.first_installment_date}
+                      onChange={(e) => {
+                        const firstDate = e.target.value;
+                        setInvoiceData({ ...invoiceData, first_installment_date: firstDate });
+                      }}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  
+                  {/* تاريخ آخر قسط */}
+                  <div className="space-y-1">
+                    <Label className="text-xs">تاريخ آخر قسط</Label>
+                    <Input
+                      type="date"
+                      value={invoiceData.last_payment_date || (() => {
+                        const months = parseInt(invoiceData.number_of_installments) || 12;
+                        const firstDate = invoiceData.first_installment_date ? new Date(invoiceData.first_installment_date) : new Date();
+                        const lastDate = new Date(firstDate);
+                        lastDate.setMonth(lastDate.getMonth() + months - 1);
+                        return lastDate.toISOString().split('T')[0];
+                      })()}
+                      onChange={(e) => setInvoiceData({ ...invoiceData, last_payment_date: e.target.value })}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  
+                  {/* المتبقي */}
                   <div className="space-y-1">
                     <Label className="text-xs">المتبقي</Label>
                     <div className="h-9 flex items-center text-sm font-medium text-destructive bg-background px-3 rounded-md border">
                       {formatCurrency(calculations.finalTotal - (parseFloat(invoiceData.down_payment) || 0))} ر.س
                     </div>
                   </div>
+                  
+                  {/* قيمة القسط */}
                   <div className="space-y-1">
                     <Label className="text-xs">قيمة القسط</Label>
                     <div className="h-9 flex items-center text-sm font-medium text-primary bg-background px-3 rounded-md border">
                       {formatCurrency((calculations.finalTotal - (parseFloat(invoiceData.down_payment) || 0)) / (parseInt(invoiceData.number_of_installments) || 12))} ر.س
                     </div>
                   </div>
-                </>
+                </div>
               )}
             </div>
           </div>
