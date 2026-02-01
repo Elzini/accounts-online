@@ -22,6 +22,7 @@ export interface Expense {
   payment_method: string;
   reference_number: string | null;
   notes: string | null;
+  has_vat_invoice: boolean;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -92,7 +93,10 @@ export async function fetchExpenses(): Promise<Expense[]> {
     .order('expense_date', { ascending: false });
   
   if (error) throw error;
-  return data as Expense[];
+  return (data || []).map(exp => ({
+    ...exp,
+    has_vat_invoice: exp.has_vat_invoice ?? false
+  })) as Expense[];
 }
 
 // Fetch expenses for a specific car

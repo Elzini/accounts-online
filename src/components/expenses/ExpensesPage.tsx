@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Receipt, FolderOpen, Loader2, Car } from 'lucide-react';
+import { Plus, Pencil, Trash2, Receipt, FolderOpen, Loader2, Car, FileCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -41,7 +41,8 @@ export function ExpensesPage() {
     expense_date: new Date().toISOString().split('T')[0],
     payment_method: 'cash',
     reference_number: '',
-    notes: ''
+    notes: '',
+    has_vat_invoice: false
   });
   
   // Filter expense accounts (5xxx codes)
@@ -72,7 +73,8 @@ export function ExpensesPage() {
         payment_method: expenseForm.payment_method,
         reference_number: expenseForm.reference_number || null,
         notes: expenseForm.notes || null,
-        created_by: null
+        created_by: null,
+        has_vat_invoice: expenseForm.has_vat_invoice
       });
       toast.success('تم إضافة المصروف بنجاح');
       setIsExpenseDialogOpen(false);
@@ -85,7 +87,8 @@ export function ExpensesPage() {
         expense_date: new Date().toISOString().split('T')[0],
         payment_method: 'cash',
         reference_number: '',
-        notes: ''
+        notes: '',
+        has_vat_invoice: false
       });
     } catch (error) {
       toast.error('حدث خطأ أثناء إضافة المصروف');
@@ -315,6 +318,23 @@ export function ExpensesPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <input
+                      type="checkbox"
+                      id="has_vat_invoice"
+                      checked={expenseForm.has_vat_invoice}
+                      onChange={(e) => setExpenseForm({...expenseForm, has_vat_invoice: e.target.checked})}
+                      className="w-5 h-5 rounded border-blue-300"
+                    />
+                    <div>
+                      <Label htmlFor="has_vat_invoice" className="text-blue-700 dark:text-blue-300 font-medium cursor-pointer">
+                        يوجد فاتورة ضريبية
+                      </Label>
+                      <p className="text-xs text-blue-600 dark:text-blue-400">
+                        فعّل هذا الخيار إذا كان المصروف له فاتورة ضريبية لاسترداد الضريبة
+                      </p>
+                    </div>
+                  </div>
                   <div>
                     <Label>ملاحظات</Label>
                     <Textarea
@@ -343,6 +363,7 @@ export function ExpensesPage() {
                     <TableHead>السيارة</TableHead>
                     <TableHead>الوصف</TableHead>
                     <TableHead>طريقة الدفع</TableHead>
+                    <TableHead>فاتورة ضريبية</TableHead>
                     <TableHead>المبلغ</TableHead>
                     <TableHead>إجراءات</TableHead>
                   </TableRow>
@@ -350,7 +371,7 @@ export function ExpensesPage() {
                 <TableBody>
                   {filteredExpenses.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         لا توجد مصروفات مسجلة في هذه السنة المالية
                       </TableCell>
                     </TableRow>
@@ -386,6 +407,16 @@ export function ExpensesPage() {
                           {expense.payment_method === 'bank' && 'تحويل بنكي'}
                           {expense.payment_method === 'card' && 'بطاقة'}
                           {expense.payment_method === 'check' && 'شيك'}
+                        </TableCell>
+                        <TableCell>
+                          {expense.has_vat_invoice ? (
+                            <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                              <FileCheck className="w-3 h-3 ml-1" />
+                              نعم
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">لا</span>
+                          )}
                         </TableCell>
                         <TableCell className="font-semibold text-destructive">
                           {formatCurrency(Number(expense.amount))}
