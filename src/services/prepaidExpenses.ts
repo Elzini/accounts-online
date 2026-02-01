@@ -47,7 +47,7 @@ export interface CreatePrepaidExpenseInput {
   number_of_months: number;
   category_id?: string | null;
   expense_account_id?: string | null;
-  debit_account_id: string; // حساب المدين (المصروفات المقدمة)
+  prepaid_asset_account_id: string; // حساب الأصل المقدم (13xx)
   payment_account_id: string; // حساب الدائن (نقدي/بنك)
   payment_date: string;
   payment_method?: string;
@@ -100,6 +100,7 @@ export async function createPrepaidExpense(
       remaining_amount: input.total_amount,
       category_id: input.category_id || null,
       expense_account_id: input.expense_account_id || null,
+      prepaid_asset_account_id: input.prepaid_asset_account_id,
       payment_date: input.payment_date,
       payment_method: input.payment_method || 'cash',
       notes: input.notes || null,

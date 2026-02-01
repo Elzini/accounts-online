@@ -135,7 +135,7 @@ export default function PrepaidExpensesPage() {
         number_of_months: months,
         category_id: categoryId || null,
         expense_account_id: expenseAccountId || null,
-        debit_account_id: debitAccountId,
+        prepaid_asset_account_id: debitAccountId,
         payment_account_id: paymentAccountId,
         payment_date: paymentDate,
         payment_method: paymentMethod,
