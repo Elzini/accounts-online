@@ -77,6 +77,8 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
       case '1101': return { label: 'نقداً', icon: Banknote, color: 'text-green-600' };
       case '1102': return { label: 'تحويل بنكي', icon: Building2, color: 'text-blue-600' };
       case '1103': return { label: 'نقاط البيع', icon: CreditCard, color: 'text-purple-600' };
+      case '1201': return { label: 'آجل', icon: User, color: 'text-orange-600' };
+      case '1202': return { label: 'شيك', icon: Wallet, color: 'text-amber-600' };
       default: return { label: '-', icon: Wallet, color: 'text-muted-foreground' };
     }
   };
