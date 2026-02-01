@@ -672,7 +672,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
   // Get expenses with fiscal year filter based on expense_date
   let expensesQuery = supabase
     .from('expenses')
-    .select('amount, car_id, expense_date');
+    .select('amount, car_id, expense_date, payment_method');
   
   if (fiscalYearStart && fiscalYearEnd) {
     expensesQuery = expensesQuery
@@ -687,8 +687,12 @@ export async function fetchStats(fiscalYearId?: string | null) {
   const carExpenses = expensesData?.filter(exp => exp.car_id && soldCarIds.includes(exp.car_id))
     .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0) || 0;
   
-  // Calculate general expenses (not linked to any car)
-  const generalExpensesFromExpenses = expensesData?.filter(exp => !exp.car_id)
+  // Separate prepaid amortization expenses (payment_method = 'prepaid') from other general expenses
+  const processedPrepaidExpenses = expensesData?.filter(exp => !exp.car_id && exp.payment_method === 'prepaid')
+    .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0) || 0;
+  
+  // Calculate other general expenses (not linked to any car and NOT prepaid amortization)
+  const otherOperatingExpenses = expensesData?.filter(exp => !exp.car_id && exp.payment_method !== 'prepaid')
     .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0) || 0;
   
   // Get approved payroll expenses (salaries are administrative expenses)
@@ -729,16 +733,19 @@ export async function fetchStats(fiscalYearId?: string | null) {
   
   const { data: prepaidAmortData } = await prepaidAmortQuery;
   
-  // Calculate pending (unprocessed) prepaid amortizations that are due - these should be included in expenses
+  // Calculate pending (unprocessed) prepaid amortizations that are due
   const pendingPrepaidExpenses = prepaidAmortData?.filter(a => {
     const prepaid = a.prepaid_expense as any;
     return a.status === 'pending' && prepaid?.status === 'active';
   }).reduce((sum, a) => sum + (Number(a.amount) || 0), 0) || 0;
   
-  // Total general expenses = regular expenses + payroll expenses + pending prepaid expenses
-  const generalExpenses = generalExpensesFromExpenses + payrollExpenses + pendingPrepaidExpenses;
+  // Total prepaid/rent expenses = processed (in expenses table) + pending (not yet processed)
+  const totalPrepaidExpenses = processedPrepaidExpenses + pendingPrepaidExpenses;
   
-  // Net profit = Gross profit - Car expenses - General expenses (including payroll and prepaid)
+  // Total general expenses = other operating + payroll + prepaid/rent
+  const generalExpenses = otherOperatingExpenses + payrollExpenses + totalPrepaidExpenses;
+  
+  // Net profit = Gross profit - Car expenses - General expenses
   const totalProfit = totalGrossProfit - carExpenses - generalExpenses;
 
   // Month sales count (within current month and fiscal year)
@@ -817,8 +824,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
     totalGeneralExpenses: generalExpenses,
     // Detailed expense breakdown
     payrollExpenses,
-    prepaidExpensesDue: pendingPrepaidExpenses,
-    otherGeneralExpenses: generalExpensesFromExpenses,
+    prepaidExpensesDue: totalPrepaidExpenses,
+    otherGeneralExpenses: otherOperatingExpenses,
     // Extended breakdown data
     purchasesCount,
     monthSalesProfit,
