@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pencil, Trash2, FileText, BookOpen } from 'lucide-react';
+import { Pencil, Trash2, FileText, BookOpen, RotateCcw, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -22,7 +22,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useUpdateSale, useDeleteSale } from '@/hooks/useDatabase';
+import { useUpdateSale, useDeleteSale, useReverseSale } from '@/hooks/useDatabase';
 import { useTaxSettings, useJournalEntries } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
@@ -238,6 +238,60 @@ export function DeleteSaleDialog({ sale, open, onOpenChange }: DeleteSaleDialogP
   );
 }
 
+interface ReverseSaleDialogProps {
+  sale: Sale;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function ReverseSaleDialog({ sale, open, onOpenChange }: ReverseSaleDialogProps) {
+  const reverseSale = useReverseSale();
+
+  const handleReverse = async () => {
+    try {
+      await reverseSale.mutateAsync(sale.id);
+      toast.success('تم إرجاع الفاتورة بنجاح وإعادة السيارات للمخزون');
+      onOpenChange(false);
+    } catch (error) {
+      toast.error('حدث خطأ أثناء إرجاع الفاتورة');
+    }
+  };
+
+  const saleItems = sale.sale_items || [];
+  const carCount = saleItems.length > 0 ? saleItems.length : 1;
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent dir="rtl">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <RotateCcw className="h-5 w-5 text-orange-500" />
+            إرجاع الفاتورة رقم {sale.sale_number}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="space-y-2">
+            <p>هل أنت متأكد من إرجاع هذه الفاتورة؟</p>
+            <ul className="list-disc list-inside text-muted-foreground">
+              <li>سيتم إعادة {carCount > 1 ? `${carCount} سيارات` : 'السيارة'} للمخزون</li>
+              <li>سيتم حذف القيد المحاسبي المرتبط بالمبيعة</li>
+              <li>سيتم تحديث الإحصائيات والتقارير</li>
+            </ul>
+            <p className="text-destructive font-medium">لا يمكن التراجع عن هذا الإجراء.</p>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-row-reverse gap-2">
+          <AlertDialogCancel>إلغاء</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleReverse}
+            className="bg-orange-600 text-white hover:bg-orange-700"
+          >
+            {reverseSale.isPending ? 'جاري الإرجاع...' : 'إرجاع الفاتورة'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 interface SaleActionsProps {
   sale: Sale;
 }
@@ -247,6 +301,7 @@ export function SaleActions({ sale }: SaleActionsProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [journalEntryOpen, setJournalEntryOpen] = useState(false);
+  const [reverseOpen, setReverseOpen] = useState(false);
   const { data: taxSettings } = useTaxSettings();
   const { data: journalEntries = [] } = useJournalEntries();
   const { company } = useCompany();
@@ -351,7 +406,7 @@ export function SaleActions({ sale }: SaleActionsProps) {
                   variant="ghost"
                   size="icon"
                   onClick={() => setJournalEntryOpen(true)}
-                  className="h-8 w-8 text-blue-600 hover:text-blue-700"
+                  className="h-8 w-8 text-primary"
                   title="القيد المحاسبي"
                 >
                   <BookOpen className="h-4 w-4" />
@@ -363,36 +418,82 @@ export function SaleActions({ sale }: SaleActionsProps) {
             </Tooltip>
           </TooltipProvider>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setInvoiceOpen(true)}
-          className="h-8 w-8 text-primary hover:text-primary"
-          title="عرض الفاتورة"
-        >
-          <FileText className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setEditOpen(true)}
-          className="h-8 w-8"
-          title="تعديل"
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setDeleteOpen(true)}
-          className="h-8 w-8 text-destructive hover:text-destructive"
-          title="حذف"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setInvoiceOpen(true)}
+                className="h-8 w-8 text-success"
+                title="عرض الفاتورة"
+              >
+                <FileText className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>طباعة الفاتورة</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setEditOpen(true)}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                title="تعديل"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>تعديل الفاتورة</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setReverseOpen(true)}
+                className="h-8 w-8 text-orange-500 hover:text-orange-600"
+                title="إرجاع"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>إرجاع الفاتورة</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setDeleteOpen(true)}
+                className="h-8 w-8 text-destructive hover:text-destructive"
+                title="حذف"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>حذف الفاتورة</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       <EditSaleDialog sale={sale} open={editOpen} onOpenChange={setEditOpen} />
       <DeleteSaleDialog sale={sale} open={deleteOpen} onOpenChange={setDeleteOpen} />
+      <ReverseSaleDialog sale={sale} open={reverseOpen} onOpenChange={setReverseOpen} />
       <InvoicePreviewDialog 
         open={invoiceOpen} 
         onOpenChange={setInvoiceOpen} 
