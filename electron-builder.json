@@ -4,38 +4,26 @@
   "productName": "Car Showroom Management",
   "copyright": "Copyright © 2024 Ashbal Al-Nimar",
   "directories": {
-    "output": "release",
-    "buildResources": "electron/resources"
+    "output": "release"
   },
   "files": [
     "dist/**/*",
-    "electron/**/*",
-    "!electron/resources"
+    "electron/**/*"
   ],
   "extraMetadata": {
     "main": "electron/main.js"
   },
+  "asar": true,
+  "asarUnpack": [
+    "node_modules/better-sqlite3/**/*"
+  ],
   "win": {
     "target": [
-      {
-        "target": "nsis",
-        "arch": ["x64"]
-      },
       {
         "target": "portable",
         "arch": ["x64"]
       }
     ],
-    "artifactName": "${productName}-${version}-${arch}.${ext}"
-  },
-  "nsis": {
-    "oneClick": false,
-    "allowToChangeInstallationDirectory": true,
-    "createDesktopShortcut": true,
-    "createStartMenuShortcut": true,
-    "shortcutName": "Car Showroom"
-  },
-  "portable": {
     "artifactName": "${productName}-Portable-${version}.${ext}"
   },
   "mac": {

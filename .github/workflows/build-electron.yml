@@ -18,23 +18,25 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
+
+      - name: Setup Python (for native modules)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
       - name: Install dependencies
-        # package-lock.json is currently not in sync with package.json,
-        # so npm ci fails. Use npm install for now.
         run: npm install --legacy-peer-deps
-
-      - name: Install Electron app deps (rebuild native modules)
-        run: npx electron-builder install-app-deps
+        env:
+          npm_config_build_from_source: true
 
       - name: Build Vite app
         run: npm run build
 
       - name: Build Electron Windows
-        run: npx electron-builder --config electron-builder.json --win --x64 --publish never --debug
+        run: npx electron-builder --win portable --x64 --publish never
         env:
-          DEBUG: electron-builder,electron-builder:*
+          DEBUG: electron-builder
 
       - name: Upload Windows EXE
         uses: actions/upload-artifact@v4
