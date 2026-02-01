@@ -1,11 +1,6 @@
 const { app, BrowserWindow, Menu, shell } = require('electron');
 const path = require('path');
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling
-if (require('electron-squirrel-startup')) {
-  app.quit();
-}
-
 // Import IPC handlers and database
 const { registerIpcHandlers } = require('./ipc-handlers.cjs');
 const { initDatabase, closeDatabase } = require('./database/database.cjs');
