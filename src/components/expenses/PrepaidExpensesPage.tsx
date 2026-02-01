@@ -52,6 +52,10 @@ export default function PrepaidExpensesPage() {
   // Filter expense accounts (5xxx codes)
   const expenseAccounts = accounts.filter(acc => acc.code.startsWith('5') && acc.code.length === 4);
   
+  // Filter payment accounts (cash and bank accounts: 1101, 1102, 11xx)
+  const paymentAccounts = accounts.filter(acc => 
+    (acc.code.startsWith('110') || acc.code.startsWith('111')) && acc.code.length === 4
+  );
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<PrepaidExpense | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
@@ -63,6 +67,7 @@ export default function PrepaidExpensesPage() {
   const [numberOfMonths, setNumberOfMonths] = useState('12');
   const [categoryId, setCategoryId] = useState('');
   const [expenseAccountId, setExpenseAccountId] = useState('');
+  const [paymentAccountId, setPaymentAccountId] = useState('');
   const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [notes, setNotes] = useState('');
@@ -74,6 +79,7 @@ export default function PrepaidExpensesPage() {
     setNumberOfMonths('12');
     setCategoryId('');
     setExpenseAccountId('');
+    setPaymentAccountId('');
     setPaymentDate(format(new Date(), 'yyyy-MM-dd'));
     setPaymentMethod('cash');
     setNotes('');
@@ -82,7 +88,7 @@ export default function PrepaidExpensesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!description || !totalAmount || !startDate || !numberOfMonths || !expenseAccountId) {
+    if (!description || !totalAmount || !startDate || !numberOfMonths || !expenseAccountId || !paymentAccountId) {
       toast.error('يرجى ملء جميع الحقول المطلوبة');
       return;
     }
@@ -99,6 +105,7 @@ export default function PrepaidExpensesPage() {
         number_of_months: months,
         category_id: categoryId || null,
         expense_account_id: expenseAccountId || null,
+        payment_account_id: paymentAccountId,
         payment_date: paymentDate,
         payment_method: paymentMethod,
         notes: notes || undefined,
@@ -259,6 +266,25 @@ export default function PrepaidExpensesPage() {
                   </Select>
                   <p className="text-xs text-muted-foreground">
                     الحساب الذي سيتم ترحيل المصروف إليه عند الإطفاء
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="paymentAccount">حساب الدفع *</Label>
+                  <Select value={paymentAccountId} onValueChange={setPaymentAccountId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر حساب الدفع" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentAccounts.map((acc) => (
+                        <SelectItem key={acc.id} value={acc.id}>
+                          {acc.code} - {acc.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    الحساب الذي سيُخصم منه المبلغ (مدين: مصروفات مقدمة، دائن: هذا الحساب)
                   </p>
                 </div>
 
