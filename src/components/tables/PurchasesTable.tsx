@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ShoppingCart, Car, Calendar, Wallet, Building2, CreditCard, Banknote, Hash } from 'lucide-react';
+import { ShoppingCart, Car, Calendar, Wallet, Building2, CreditCard, Banknote, Hash, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -11,18 +11,31 @@ import { useCars } from '@/hooks/useDatabase';
 import { useTaxSettings } from '@/hooks/useAccounting';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCompany } from '@/contexts/CompanyContext';
 
 interface PurchasesTableProps {
   setActivePage: (page: ActivePage) => void;
 }
 
 export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
-  const { data: cars = [], isLoading } = useCars();
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+  const { data: cars = [], isLoading, refetch } = useCars();
   const { data: taxSettings } = useTaxSettings();
   const { selectedFiscalYear } = useFiscalYear();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const isMobile = useIsMobile();
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    // Invalidate and refetch
+    await queryClient.invalidateQueries({ queryKey: ['cars', companyId] });
+    await refetch();
+    setIsRefreshing(false);
+  };
 
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_purchases ? (taxSettings.tax_rate || 15) : 0;
 
@@ -146,13 +159,24 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">المشتريات</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">إدارة مخزون السيارات</p>
         </div>
-        <Button 
-          onClick={() => setActivePage('add-purchase')}
-          className="gradient-primary hover:opacity-90 w-full sm:w-auto h-10 sm:h-11"
-        >
-          <ShoppingCart className="w-5 h-5 ml-2" />
-          إضافة سيارة
-        </Button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button 
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="h-10 sm:h-11"
+          >
+            <RefreshCw className={`w-4 h-4 ml-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            تحديث
+          </Button>
+          <Button 
+            onClick={() => setActivePage('add-purchase')}
+            className="gradient-primary hover:opacity-90 flex-1 sm:flex-initial h-10 sm:h-11"
+          >
+            <ShoppingCart className="w-5 h-5 ml-2" />
+            إضافة سيارة
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filter */}
