@@ -696,9 +696,10 @@ export async function fetchStats(fiscalYearId?: string | null) {
     .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0) || 0;
   
   // Get approved payroll expenses (salaries are administrative expenses)
+  // Use GROSS salary (base + allowances + bonuses + overtime) as the actual expense
   let payrollQuery = supabase
     .from('payroll_records')
-    .select('total_net_salaries')
+    .select('total_base_salaries, total_allowances, total_bonuses, total_overtime')
     .eq('status', 'approved');
   
   if (fiscalYearStart && fiscalYearEnd) {
@@ -711,8 +712,14 @@ export async function fetchStats(fiscalYearId?: string | null) {
   
   const { data: payrollData } = await payrollQuery;
   
-  // Sum all approved payroll net salaries
-  const payrollExpenses = payrollData?.reduce((sum, p) => sum + (Number(p.total_net_salaries) || 0), 0) || 0;
+  // Sum all approved payroll GROSS salaries (base + allowances + bonuses + overtime)
+  const payrollExpenses = payrollData?.reduce((sum, p) => {
+    const base = Number(p.total_base_salaries) || 0;
+    const allowances = Number(p.total_allowances) || 0;
+    const bonuses = Number(p.total_bonuses) || 0;
+    const overtime = Number(p.total_overtime) || 0;
+    return sum + base + allowances + bonuses + overtime;
+  }, 0) || 0;
   
   // Get due prepaid expense amortizations (rent, etc.) - include pending ones that are due
   let prepaidAmortQuery = supabase
