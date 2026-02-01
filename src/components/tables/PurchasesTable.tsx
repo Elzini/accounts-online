@@ -85,29 +85,17 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const filteredCars = useMemo(() => {
     let result = cars;
 
+    // الفلترة بالتاريخ فقط - كل المشتريات تظهر حسب تاريخ الشراء ضمن نطاق السنة المالية
     if (selectedFiscalYear) {
       const fyStart = new Date(selectedFiscalYear.start_date);
       fyStart.setHours(0, 0, 0, 0);
       const fyEnd = new Date(selectedFiscalYear.end_date);
       fyEnd.setHours(23, 59, 59, 999);
 
-      // إذا كان الفلتر "متاحة" - نعرض المخزون المرحّل بناءً على fiscal_year_id
-      // إذا كان الفلتر "الكل" أو "مباعة" - نفلتر بتاريخ الشراء فقط
-      if (statusFilter === 'available') {
-        // المخزون المتاح: يشمل السيارات المُرحّلة من سنوات سابقة
-        result = result.filter((car) => {
-          if (car.fiscal_year_id) return car.fiscal_year_id === selectedFiscalYear.id;
-          // بيانات قديمة بدون fiscal_year_id - نرجع لتاريخ الشراء
-          const purchaseDate = new Date(car.purchase_date);
-          return purchaseDate >= fyStart && purchaseDate <= fyEnd;
-        });
-      } else {
-        // المشتريات (الكل أو مباعة): نفلتر بتاريخ الشراء فقط
-        result = result.filter((car) => {
-          const purchaseDate = new Date(car.purchase_date);
-          return purchaseDate >= fyStart && purchaseDate <= fyEnd;
-        });
-      }
+      result = result.filter((car) => {
+        const purchaseDate = new Date(car.purchase_date);
+        return purchaseDate >= fyStart && purchaseDate <= fyEnd;
+      });
     }
     
     // Filter by search query
