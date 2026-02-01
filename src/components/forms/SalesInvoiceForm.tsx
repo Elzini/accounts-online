@@ -243,11 +243,11 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     }
 
     try {
-      // Calculate actual sale prices (base amounts without tax if price includes tax)
-      const carsWithPrices = calculations.items.map((car, index) => ({
-        car_id: selectedCars[index].car_id,
-        sale_price: invoiceData.price_includes_tax ? car.baseAmount / car.quantity : parseFloat(selectedCars[index].sale_price),
-        purchase_price: selectedCars[index].purchase_price,
+      // Calculate actual sale prices - use the total price (with tax) that the customer pays
+      const carsWithPrices = selectedCars.map((car, index) => ({
+        car_id: car.car_id,
+        sale_price: calculations.items[index].total, // Total price including tax
+        purchase_price: car.purchase_price,
       }));
 
       const sale = await addMultiCarSale.mutateAsync({
