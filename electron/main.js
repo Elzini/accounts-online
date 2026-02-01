@@ -6,6 +6,10 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
+// Import IPC handlers and database
+const { registerIpcHandlers } = require('./ipc-handlers');
+const { initDatabase, closeDatabase } = require('./database/database');
+
 let mainWindow;
 
 function createWindow() {
@@ -132,6 +136,18 @@ function createWindow() {
 
 // App ready
 app.whenReady().then(() => {
+  // Initialize database
+  try {
+    initDatabase();
+    console.log('Database initialized');
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+  }
+
+  // Register IPC handlers
+  registerIpcHandlers();
+
+  // Create main window
   createWindow();
 
   app.on('activate', () => {
@@ -143,6 +159,9 @@ app.whenReady().then(() => {
 
 // Quit when all windows are closed
 app.on('window-all-closed', () => {
+  // Close database connection
+  closeDatabase();
+  
   if (process.platform !== 'darwin') {
     app.quit();
   }
