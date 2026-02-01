@@ -12,6 +12,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useRecalculateCompanyProfits } from '@/hooks/useProfitRecalculation';
+import { toast } from 'sonner';
 
 interface SalesTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -25,6 +27,7 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
   const { selectedFiscalYear } = useFiscalYear();
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const recalcProfits = useRecalculateCompanyProfits();
   const isMobile = useIsMobile();
 
   const handleRefresh = async () => {
@@ -36,6 +39,16 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
     await queryClient.invalidateQueries({ queryKey: ['cars', companyId] });
     await refetch();
     setIsRefreshing(false);
+  };
+
+  const handleRecalculateProfits = async () => {
+    try {
+      const res = await recalcProfits.mutateAsync();
+      toast.success(`تم إعادة احتساب الأرباح (${res.salesUpdated} فاتورة / ${res.itemsUpdated} بند)`);
+    } catch (e: any) {
+      console.error(e);
+      toast.error('حدث خطأ أثناء إعادة احتساب الأرباح');
+    }
   };
 
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_sales ? (taxSettings.tax_rate || 15) : 0;
@@ -135,6 +148,15 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
           >
             <RefreshCw className={`w-4 h-4 ml-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             تحديث
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleRecalculateProfits}
+            disabled={recalcProfits.isPending}
+            className="h-10 sm:h-11"
+          >
+            <RefreshCw className={`w-4 h-4 ml-2 ${recalcProfits.isPending ? 'animate-spin' : ''}`} />
+            إعادة احتساب الأرباح
           </Button>
           <Button 
             onClick={() => setActivePage('add-sale')}
