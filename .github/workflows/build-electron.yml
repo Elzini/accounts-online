@@ -46,10 +46,15 @@ jobs:
             npm pkg set devDependencies.electron-builder="$EB_VER"
           fi
 
+      - name: Clean npm cache
+        run: npm cache clean --force
+
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
-        env:
-          npm_config_build_from_source: true
+        run: npm install --legacy-peer-deps --force
+
+      - name: Rebuild native modules for Electron
+        run: npx electron-rebuild -f -w better-sqlite3
+        continue-on-error: true
 
       - name: Build Vite app
         run: npm run build
@@ -58,6 +63,7 @@ jobs:
         run: npx electron-builder --win portable --x64 --publish never
         env:
           DEBUG: electron-builder
+          npm_config_ignore_scripts: true
 
       - name: Upload Windows EXE
         uses: actions/upload-artifact@v4
