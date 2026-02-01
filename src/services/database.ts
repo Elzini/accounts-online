@@ -188,7 +188,87 @@ export async function updateCar(id: string, car: CarUpdate) {
     .single();
   
   if (error) throw error;
+  
+  // If purchase price was updated, recalculate profit in related sales
+  if (car.purchase_price !== undefined) {
+    await recalculateSalesProfitForCar(id, car.purchase_price);
+  }
+  
   return data;
+}
+
+// Recalculate profit for all sales related to a car when purchase price changes
+async function recalculateSalesProfitForCar(carId: string, newPurchasePrice: number) {
+  // Update sale_items profit where this car was sold
+  const { data: saleItems, error: fetchItemsError } = await supabase
+    .from('sale_items')
+    .select('id, sale_id, sale_price')
+    .eq('car_id', carId);
+  
+  if (fetchItemsError) {
+    console.error('Error fetching sale items:', fetchItemsError);
+    return;
+  }
+  
+  // Update each sale_item's profit
+  for (const item of saleItems || []) {
+    const newProfit = Number(item.sale_price) - newPurchasePrice;
+    await supabase
+      .from('sale_items')
+      .update({ profit: newProfit })
+      .eq('id', item.id);
+  }
+  
+  // Update main sales table profit for single-car sales (where car_id matches directly)
+  const { data: directSales, error: fetchSalesError } = await supabase
+    .from('sales')
+    .select('id, sale_price, commission, other_expenses')
+    .eq('car_id', carId);
+  
+  if (fetchSalesError) {
+    console.error('Error fetching sales:', fetchSalesError);
+    return;
+  }
+  
+  for (const sale of directSales || []) {
+    const commission = Number(sale.commission) || 0;
+    const otherExpenses = Number(sale.other_expenses) || 0;
+    const newProfit = Number(sale.sale_price) - newPurchasePrice - commission - otherExpenses;
+    await supabase
+      .from('sales')
+      .update({ profit: newProfit })
+      .eq('id', sale.id);
+  }
+  
+  // For multi-car sales, update the total profit by summing all sale_items
+  const uniqueSaleIds = [...new Set((saleItems || []).map(item => item.sale_id))];
+  for (const saleId of uniqueSaleIds) {
+    // Get all items for this sale and sum their profits
+    const { data: allItems } = await supabase
+      .from('sale_items')
+      .select('profit')
+      .eq('sale_id', saleId);
+    
+    if (allItems && allItems.length > 0) {
+      const totalItemsProfit = allItems.reduce((sum, item) => sum + (Number(item.profit) || 0), 0);
+      
+      // Get sale's commission and other_expenses
+      const { data: saleData } = await supabase
+        .from('sales')
+        .select('commission, other_expenses')
+        .eq('id', saleId)
+        .single();
+      
+      const commission = Number(saleData?.commission) || 0;
+      const otherExpenses = Number(saleData?.other_expenses) || 0;
+      const finalProfit = totalItemsProfit - commission - otherExpenses;
+      
+      await supabase
+        .from('sales')
+        .update({ profit: finalProfit })
+        .eq('id', saleId);
+    }
+  }
 }
 
 export async function deleteCar(id: string) {
