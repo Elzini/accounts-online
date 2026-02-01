@@ -822,8 +822,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {[2, 3, 6, 9, 12, 18, 24, 36, 48, 60].map(num => (
-                          <SelectItem key={num} value={String(num)}>{num} {num === 2 ? 'دفعة' : 'شهر'}</SelectItem>
+                        {[1, 2, 3, 6, 9, 12, 18, 24, 36, 48, 60].map(num => (
+                          <SelectItem key={num} value={String(num)}>
+                            {num === 1 ? 'دفعة واحدة' : num === 2 ? 'دفعتين' : `${num} شهر`}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
