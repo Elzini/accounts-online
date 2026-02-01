@@ -2042,6 +2042,7 @@ export type Database = {
           created_by: string | null
           description: string
           end_date: string
+          expense_account_id: string | null
           id: string
           monthly_amount: number
           notes: string | null
@@ -2062,6 +2063,7 @@ export type Database = {
           created_by?: string | null
           description: string
           end_date: string
+          expense_account_id?: string | null
           id?: string
           monthly_amount: number
           notes?: string | null
@@ -2082,6 +2084,7 @@ export type Database = {
           created_by?: string | null
           description?: string
           end_date?: string
+          expense_account_id?: string | null
           id?: string
           monthly_amount?: number
           notes?: string | null
@@ -2107,6 +2110,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaid_expenses_expense_account_id_fkey"
+            columns: ["expense_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
             referencedColumns: ["id"]
           },
         ]
