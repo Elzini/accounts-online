@@ -119,6 +119,8 @@ export function useCars() {
     queryKey: ['cars', companyId],
     queryFn: db.fetchCars,
     enabled: !!companyId,
+    staleTime: 0, // Always refetch on mount to get latest data
+    refetchOnMount: 'always',
   });
 }
 
