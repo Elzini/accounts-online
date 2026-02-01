@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useVATReturnReport } from '@/hooks/useVATReturnReport';
 import { useTaxSettings } from '@/hooks/useAccounting';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { toast } from 'sonner';
 import { 
   Loader2, 
@@ -21,18 +22,56 @@ import {
   CheckCircle2,
   FileSpreadsheet
 } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths, startOfQuarter, endOfQuarter, subQuarters } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
 export function VATReturnReportPage() {
   const { data: taxSettings } = useTaxSettings();
+  const { selectedFiscalYear } = useFiscalYear();
   
-  // Default to current month
-  const defaultStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-  const defaultEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
-  
-  const [startDate, setStartDate] = useState(defaultStart);
-  const [endDate, setEndDate] = useState(defaultEnd);
+  // Calculate fiscal year bounds
+  const fiscalYearBounds = useMemo(() => {
+    if (!selectedFiscalYear) {
+      return { start: new Date(), end: new Date() };
+    }
+    return {
+      start: new Date(selectedFiscalYear.start_date),
+      end: new Date(selectedFiscalYear.end_date),
+    };
+  }, [selectedFiscalYear]);
+
+  // Default to the last quarter within the selected fiscal year
+  const getDefaultDates = () => {
+    const fyEnd = fiscalYearBounds.end;
+    const fyStart = fiscalYearBounds.start;
+    
+    // Get the last quarter end date within fiscal year
+    let quarterEnd = endOfQuarter(fyEnd);
+    if (quarterEnd > fyEnd) {
+      quarterEnd = fyEnd;
+    }
+    
+    let quarterStart = startOfQuarter(quarterEnd);
+    if (quarterStart < fyStart) {
+      quarterStart = fyStart;
+    }
+    
+    return {
+      start: format(quarterStart, 'yyyy-MM-dd'),
+      end: format(quarterEnd, 'yyyy-MM-dd'),
+    };
+  };
+
+  const defaultDates = getDefaultDates();
+  const [startDate, setStartDate] = useState(defaultDates.start);
+  const [endDate, setEndDate] = useState(defaultDates.end);
+
+  // Reset dates when fiscal year changes
+  useEffect(() => {
+    const newDates = getDefaultDates();
+    setStartDate(newDates.start);
+    setEndDate(newDates.end);
+  }, [selectedFiscalYear?.id]);
 
   const { data: report, isLoading } = useVATReturnReport(startDate, endDate);
 
@@ -99,11 +138,70 @@ export function VATReturnReportPage() {
     toast.success('تم تصدير التقرير بنجاح');
   };
 
-  const setQuickDateRange = (months: number) => {
-    const end = endOfMonth(new Date());
-    const start = startOfMonth(subMonths(new Date(), months - 1));
+  // Quick date range within fiscal year bounds
+  const setQuickDateRange = (type: 'month' | 'quarter' | 'year') => {
+    const fyStart = fiscalYearBounds.start;
+    const fyEnd = fiscalYearBounds.end;
+    
+    let start: Date;
+    let end: Date;
+    
+    if (type === 'year') {
+      start = fyStart;
+      end = fyEnd;
+    } else if (type === 'quarter') {
+      // Get the last complete quarter within the fiscal year
+      end = endOfQuarter(fyEnd);
+      if (end > fyEnd) {
+        end = fyEnd;
+      }
+      start = startOfQuarter(end);
+      if (start < fyStart) {
+        start = fyStart;
+      }
+    } else {
+      // Get the last month within the fiscal year
+      end = endOfMonth(fyEnd);
+      if (end > fyEnd) {
+        end = fyEnd;
+      }
+      start = startOfMonth(end);
+      if (start < fyStart) {
+        start = fyStart;
+      }
+    }
+    
     setStartDate(format(start, 'yyyy-MM-dd'));
     setEndDate(format(end, 'yyyy-MM-dd'));
+  };
+
+  // Validate and constrain date inputs to fiscal year
+  const handleStartDateChange = (value: string) => {
+    const date = new Date(value);
+    const fyStart = fiscalYearBounds.start;
+    const fyEnd = fiscalYearBounds.end;
+    
+    if (date < fyStart) {
+      setStartDate(format(fyStart, 'yyyy-MM-dd'));
+    } else if (date > fyEnd) {
+      setStartDate(format(fyEnd, 'yyyy-MM-dd'));
+    } else {
+      setStartDate(value);
+    }
+  };
+
+  const handleEndDateChange = (value: string) => {
+    const date = new Date(value);
+    const fyStart = fiscalYearBounds.start;
+    const fyEnd = fiscalYearBounds.end;
+    
+    if (date < fyStart) {
+      setEndDate(format(fyStart, 'yyyy-MM-dd'));
+    } else if (date > fyEnd) {
+      setEndDate(format(fyEnd, 'yyyy-MM-dd'));
+    } else {
+      setEndDate(value);
+    }
   };
 
   if (isLoading) {
@@ -149,7 +247,9 @@ export function VATReturnReportPage() {
                 id="start-date"
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => handleStartDateChange(e.target.value)}
+                min={format(fiscalYearBounds.start, 'yyyy-MM-dd')}
+                max={format(fiscalYearBounds.end, 'yyyy-MM-dd')}
                 className="w-40"
               />
             </div>
@@ -159,18 +259,20 @@ export function VATReturnReportPage() {
                 id="end-date"
                 type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => handleEndDateChange(e.target.value)}
+                min={format(fiscalYearBounds.start, 'yyyy-MM-dd')}
+                max={format(fiscalYearBounds.end, 'yyyy-MM-dd')}
                 className="w-40"
               />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setQuickDateRange(1)}>
+              <Button variant="outline" size="sm" onClick={() => setQuickDateRange('month')}>
                 شهر واحد
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setQuickDateRange(3)}>
+              <Button variant="outline" size="sm" onClick={() => setQuickDateRange('quarter')}>
                 ربع سنوي
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setQuickDateRange(12)}>
+              <Button variant="outline" size="sm" onClick={() => setQuickDateRange('year')}>
                 سنة كاملة
               </Button>
             </div>
