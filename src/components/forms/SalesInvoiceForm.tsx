@@ -40,7 +40,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
-import { useCustomers, useCars, useAddMultiCarSale, useSales, useDeleteSale, useReverseSale, useUpdateSale, useSalesWithItems } from '@/hooks/useDatabase';
+import { useCustomers, useCars, useAddMultiCarSale, useSales, useDeleteSale, useReverseSale, useUpdateSale, useSalesWithItems, useUpdateSaleWithItems } from '@/hooks/useDatabase';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -83,6 +83,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const deleteSale = useDeleteSale();
   const reverseSale = useReverseSale();
   const updateSale = useUpdateSale();
+  const updateSaleWithItems = useUpdateSaleWithItems();
   const addInstallmentSale = useAddInstallmentSale();
   const companyId = useCompanyId();
 
@@ -529,9 +530,17 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     }
 
     try {
-      await updateSale.mutateAsync({
-        id: currentSaleId,
-        sale: {
+      // Prepare items with updated prices
+      const items = selectedCars.map((car, index) => ({
+        car_id: car.car_id,
+        sale_price: calculations.items[index].total,
+        purchase_price: car.purchase_price,
+      }));
+
+      // Use the new updateSaleWithItems to also update sale_items
+      await updateSaleWithItems.mutateAsync({
+        saleId: currentSaleId,
+        saleData: {
           sale_price: calculations.finalTotal,
           seller_name: invoiceData.seller_name || null,
           commission: parseFloat(invoiceData.commission) || 0,
@@ -539,10 +548,12 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           sale_date: invoiceData.sale_date,
           profit: calculations.profit,
           payment_account_id: invoiceData.payment_account_id || null,
-        }
+        },
+        items,
       });
       toast.success('تم تحديث الفاتورة بنجاح');
     } catch (error) {
+      console.error('Update sale error:', error);
       toast.error('حدث خطأ أثناء تحديث الفاتورة');
     }
   };

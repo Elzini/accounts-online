@@ -434,6 +434,69 @@ export async function updateSale(id: string, sale: SaleUpdate) {
   return data;
 }
 
+// Update sale with items for multi-car sales
+export async function updateSaleWithItems(
+  saleId: string, 
+  saleData: {
+    sale_price: number;
+    seller_name?: string | null;
+    commission?: number;
+    other_expenses?: number;
+    sale_date: string;
+    profit: number;
+    payment_account_id?: string | null;
+  },
+  items: Array<{
+    car_id: string;
+    sale_price: number;
+    purchase_price: number;
+  }>
+) {
+  // Update the main sale record
+  const { data: sale, error: saleError } = await supabase
+    .from('sales')
+    .update({
+      sale_price: saleData.sale_price,
+      seller_name: saleData.seller_name,
+      commission: saleData.commission || 0,
+      other_expenses: saleData.other_expenses || 0,
+      sale_date: saleData.sale_date,
+      profit: saleData.profit,
+      payment_account_id: saleData.payment_account_id,
+    })
+    .eq('id', saleId)
+    .select()
+    .single();
+  
+  if (saleError) throw saleError;
+
+  // Delete existing sale items
+  const { error: deleteError } = await supabase
+    .from('sale_items')
+    .delete()
+    .eq('sale_id', saleId);
+  
+  if (deleteError) throw deleteError;
+
+  // Insert updated sale items
+  if (items.length > 0) {
+    const saleItems = items.map(item => ({
+      sale_id: saleId,
+      car_id: item.car_id,
+      sale_price: item.sale_price,
+      profit: item.sale_price - item.purchase_price,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('sale_items')
+      .insert(saleItems);
+    
+    if (itemsError) throw itemsError;
+  }
+
+  return sale;
+}
+
 export async function deleteSale(id: string, carId: string) {
   // First check if there are sale_items for this sale (multi-car sale)
   const { data: saleItems, error: fetchError } = await supabase
