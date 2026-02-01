@@ -8,11 +8,21 @@ import {
   getOverduePayments,
   InstallmentSaleInsert,
 } from '@/services/installments';
+import { useCompany } from '@/contexts/CompanyContext';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 
 export function useInstallmentSales() {
+  const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  
   return useQuery({
-    queryKey: ['installmentSales'],
-    queryFn: fetchInstallmentSales,
+    queryKey: ['installmentSales', companyId, selectedFiscalYear?.id],
+    queryFn: () => fetchInstallmentSales(
+      companyId || undefined,
+      selectedFiscalYear?.start_date,
+      selectedFiscalYear?.end_date
+    ),
+    enabled: !!companyId,
   });
 }
 
