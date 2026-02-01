@@ -1,25 +1,45 @@
 import { useState, useMemo } from 'react';
-import { FileText, ShoppingCart, Truck, Printer, FileSpreadsheet } from 'lucide-react';
-import { useCars } from '@/hooks/useDatabase';
+import { FileText, ShoppingCart, Truck, Printer, RefreshCw } from 'lucide-react';
+import { useCars, useSuppliers } from '@/hooks/useDatabase';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { usePrintReport } from '@/hooks/usePrintReport';
-import { useExcelExport } from '@/hooks/useExcelExport';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
+import { PurchaseActions } from '@/components/actions/PurchaseActions';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCompany } from '@/contexts/CompanyContext';
 
 export function PurchasesReport() {
-  const { data: cars = [], isLoading } = useCars();
+  const { data: cars = [], isLoading, refetch } = useCars();
+  const { data: suppliers = [] } = useSuppliers();
   const { filterByFiscalYear } = useFiscalYearFilter();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const { printReport } = usePrintReport();
-  const { exportToExcel } = useExcelExport();
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+
+  // Map suppliers by ID for quick lookup
+  const suppliersMap = useMemo(() => {
+    return suppliers.reduce((acc, supplier) => {
+      acc[supplier.id] = supplier;
+      return acc;
+    }, {} as Record<string, typeof suppliers[0]>);
+  }, [suppliers]);
+
+  // Enrich cars with supplier data
+  const carsWithSuppliers = useMemo(() => {
+    return cars.map(car => ({
+      ...car,
+      supplier: car.supplier_id ? suppliersMap[car.supplier_id] : null,
+    }));
+  }, [cars, suppliersMap]);
 
   const filteredCars = useMemo(() => {
     // First filter by fiscal year
-    let result = filterByFiscalYear(cars, 'purchase_date');
+    let result = filterByFiscalYear(carsWithSuppliers, 'purchase_date');
     
     // Then apply date range filter within fiscal year
     return result.filter(car => {
@@ -28,11 +48,19 @@ export function PurchasesReport() {
       if (endDate && purchaseDate > new Date(endDate + 'T23:59:59')) return false;
       return true;
     });
-  }, [cars, startDate, endDate, filterByFiscalYear]);
+  }, [carsWithSuppliers, startDate, endDate, filterByFiscalYear]);
 
   const totalPurchases = filteredCars.reduce((sum, car) => sum + Number(car.purchase_price), 0);
   const formatCurrency = (value: number) => new Intl.NumberFormat('ar-SA').format(value);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ar-SA');
+
+  const handleRefresh = () => {
+    refetch();
+    queryClient.invalidateQueries({ queryKey: ['cars', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['stats', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
+  };
 
   const handlePrint = () => {
     printReport({
@@ -80,6 +108,10 @@ export function PurchasesReport() {
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
           />
+          <Button variant="outline" onClick={handleRefresh} className="gap-2">
+            <RefreshCw className="w-4 h-4" />
+            تحديث
+          </Button>
           <Button onClick={handlePrint} className="gap-2">
             <Printer className="w-4 h-4" />
             طباعة التقرير
@@ -143,6 +175,7 @@ export function PurchasesReport() {
                 <TableHead className="text-right font-bold">سعر الشراء</TableHead>
                 <TableHead className="text-right font-bold">تاريخ الشراء</TableHead>
                 <TableHead className="text-right font-bold">الحالة</TableHead>
+                <TableHead className="text-right font-bold">الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -158,6 +191,9 @@ export function PurchasesReport() {
                     <Badge className={car.status === 'available' ? 'bg-success' : car.status === 'transferred' ? 'bg-orange-500' : ''}>
                       {car.status === 'available' ? 'متاحة' : car.status === 'transferred' ? 'محولة' : 'مباعة'}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <PurchaseActions car={car} />
                   </TableCell>
                 </TableRow>
               ))}
