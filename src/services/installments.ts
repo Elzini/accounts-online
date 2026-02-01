@@ -51,8 +51,12 @@ export interface InstallmentPayment {
 export type InstallmentSaleInsert = Omit<InstallmentSale, 'id' | 'created_at' | 'updated_at' | 'sale' | 'payments'>;
 export type InstallmentPaymentInsert = Omit<InstallmentPayment, 'id' | 'created_at' | 'updated_at'>;
 
-export async function fetchInstallmentSales(): Promise<InstallmentSale[]> {
-  const { data, error } = await supabase
+export async function fetchInstallmentSales(
+  companyId?: string,
+  fiscalYearStartDate?: string,
+  fiscalYearEndDate?: string
+): Promise<InstallmentSale[]> {
+  let query = supabase
     .from('installment_sales')
     .select(`
       *,
@@ -65,8 +69,25 @@ export async function fetchInstallmentSales(): Promise<InstallmentSale[]> {
     `)
     .order('created_at', { ascending: false });
   
+  if (companyId) {
+    query = query.eq('company_id', companyId);
+  }
+  
+  const { data, error } = await query;
+  
   if (error) throw error;
-  return data as InstallmentSale[];
+  
+  // Filter by fiscal year based on sale date if provided
+  let filteredData = data as InstallmentSale[];
+  if (fiscalYearStartDate && fiscalYearEndDate) {
+    filteredData = filteredData.filter(item => {
+      const saleDate = item.sale?.sale_date;
+      if (!saleDate) return false;
+      return saleDate >= fiscalYearStartDate && saleDate <= fiscalYearEndDate;
+    });
+  }
+  
+  return filteredData;
 }
 
 export async function fetchInstallmentSale(id: string): Promise<InstallmentSale | null> {
