@@ -256,12 +256,9 @@ export function SaleActions({ sale }: SaleActionsProps) {
     e => e.reference_type === 'sale' && e.reference_id === sale.id
   );
 
-  // Calculate tax
+  // Calculate tax - use sale_items for multi-car sales
   const taxRate = taxSettings?.is_active ? (taxSettings?.tax_rate || 0) : 0;
-  const salePrice = Number(sale.sale_price);
-  const taxAmount = salePrice * (taxRate / (100 + taxRate));
-  const subtotal = salePrice - taxAmount;
-
+  
   // Build address string
   const buildAddress = () => {
     const parts = [];
@@ -272,10 +269,11 @@ export function SaleActions({ sale }: SaleActionsProps) {
     return parts.length > 0 ? parts.join('، ') : 'المملكة العربية السعودية';
   };
 
-  // Build invoice items from sale_items if available (multi-car sale), otherwise from main car
-  const buildInvoiceItems = () => {
+  // Build invoice items and calculate totals from sale_items if available (multi-car sale)
+  const buildInvoiceData = () => {
     if (sale.sale_items && sale.sale_items.length > 0) {
-      return sale.sale_items.map(item => {
+      // Multi-car sale: build from sale_items
+      const items = sale.sale_items.map(item => {
         const itemPrice = Number(item.sale_price);
         const itemTaxAmount = itemPrice * (taxRate / (100 + taxRate));
         const itemSubtotal = itemPrice - itemTaxAmount;
@@ -284,20 +282,38 @@ export function SaleActions({ sale }: SaleActionsProps) {
           quantity: 1,
           unitPrice: itemSubtotal,
           taxRate: taxRate,
+          taxAmount: itemTaxAmount,
           total: itemPrice,
         };
       });
-    }
-    return [
-      {
-        description: `${sale.car?.name || 'سيارة'} ${sale.car?.model || ''} - ${sale.car?.color || ''} - شاسيه: ${sale.car?.chassis_number || ''}`,
-        quantity: 1,
-        unitPrice: subtotal,
-        taxRate: taxRate,
+      
+      const totalPrice = items.reduce((sum, item) => sum + item.total, 0);
+      const totalTax = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
+      const totalSubtotal = totalPrice - totalTax;
+      
+      return { items, subtotal: totalSubtotal, taxAmount: totalTax, total: totalPrice };
+    } else {
+      // Single car sale
+      const salePrice = Number(sale.sale_price);
+      const taxAmount = salePrice * (taxRate / (100 + taxRate));
+      const subtotal = salePrice - taxAmount;
+      
+      return {
+        items: [{
+          description: `${sale.car?.name || 'سيارة'} ${sale.car?.model || ''} - ${sale.car?.color || ''} - شاسيه: ${sale.car?.chassis_number || ''}`,
+          quantity: 1,
+          unitPrice: subtotal,
+          taxRate: taxRate,
+          total: salePrice,
+        }],
+        subtotal,
+        taxAmount,
         total: salePrice,
-      }
-    ];
+      };
+    }
   };
+
+  const invoiceCalcs = buildInvoiceData();
 
   // Get invoice settings from company
   const invoiceSettings = (company as any)?.invoice_settings || null;
@@ -315,10 +331,10 @@ export function SaleActions({ sale }: SaleActionsProps) {
     buyerAddress: sale.customer?.address,
     buyerIdNumber: sale.customer?.id_number,
     buyerTaxNumber: sale.customer?.registration_number,
-    items: buildInvoiceItems(),
-    subtotal,
-    taxAmount,
-    total: salePrice,
+    items: invoiceCalcs.items,
+    subtotal: invoiceCalcs.subtotal,
+    taxAmount: invoiceCalcs.taxAmount,
+    total: invoiceCalcs.total,
     taxSettings,
     companyLogoUrl: invoiceLogoUrl,
     invoiceSettings,
