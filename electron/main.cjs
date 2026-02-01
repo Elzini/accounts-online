@@ -7,8 +7,8 @@ if (require('electron-squirrel-startup')) {
 }
 
 // Import IPC handlers and database
-const { registerIpcHandlers } = require('./ipc-handlers');
-const { initDatabase, closeDatabase } = require('./database/database');
+const { registerIpcHandlers } = require('./ipc-handlers.cjs');
+const { initDatabase, closeDatabase } = require('./database/database.cjs');
 
 let mainWindow;
 

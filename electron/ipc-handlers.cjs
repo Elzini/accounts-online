@@ -4,8 +4,8 @@
  */
 
 const { ipcMain } = require('electron');
-const { tables, queries, sync, getDatabase, initDatabase } = require('./database/database');
-const syncService = require('./database/sync-service');
+const { tables, queries, sync, getDatabase, initDatabase } = require('./database/database.cjs');
+const syncService = require('./database/sync-service.cjs');
 
 /**
  * Register all IPC handlers
