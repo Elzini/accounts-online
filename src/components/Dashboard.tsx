@@ -40,6 +40,7 @@ interface DashboardProps {
     totalGeneralExpenses?: number;
     // Detailed expense breakdown
     payrollExpenses?: number;
+    prepaidExpensesDue?: number;
     otherGeneralExpenses?: number;
     purchasesCount?: number;
     monthSalesProfit?: number;
@@ -317,14 +318,16 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             { label: 'إجمالي الربح من المبيعات', value: stats.totalGrossProfit || 0, type: 'add' },
             { label: 'مصاريف مرتبطة بالسيارات المباعة', value: stats.totalCarExpenses || 0, type: 'subtract' },
             { label: 'مصاريف الرواتب والأجور', value: stats.payrollExpenses || 0, type: 'subtract' },
-            { label: 'مصاريف عامة أخرى', value: stats.otherGeneralExpenses || 0, type: 'subtract' },
+            { label: 'الإيجار والمصاريف المقدمة المستحقة', value: stats.prepaidExpensesDue || 0, type: 'subtract' },
+            { label: 'مصاريف تشغيلية أخرى', value: stats.otherGeneralExpenses || 0, type: 'subtract' },
             { label: 'صافي الربح', value: stats.totalProfit, type: 'total' },
           ],
-          formula: 'صافي الربح = إجمالي الربح - مصاريف السيارات - الرواتب - المصاريف العامة',
+          formula: 'صافي الربح = إجمالي الربح - مصاريف السيارات - الرواتب - الإيجار - المصاريف الأخرى',
           notes: [
             'الربح الإجمالي = سعر البيع - سعر الشراء - العمولة - مصاريف أخرى',
             'المصاريف المرتبطة بالسيارات تُخصم فقط عند بيع السيارة',
             'مصاريف الرواتب تشمل جميع مسيرات الرواتب المعتمدة',
+            'الإيجار يشمل أقساط المصاريف المقدمة المستحقة حتى اليوم',
           ],
           showCarsTable: true,
           cars: buildSalesCarDetails(fiscalYearSales),
