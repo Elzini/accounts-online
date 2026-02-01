@@ -279,14 +279,32 @@ export function ExpensesPage() {
                       * المصروفات المرتبطة بسيارة تُخصم من ربحها عند البيع
                     </p>
                   </div>
-                  <div>
-                    <Label>المبلغ *</Label>
-                    <Input
-                      type="number"
-                      value={expenseForm.amount}
-                      onChange={(e) => setExpenseForm({...expenseForm, amount: e.target.value})}
-                      placeholder="0.00"
-                    />
+                  <div className="space-y-3">
+                    <div>
+                      <Label>{expenseForm.has_vat_invoice ? 'المبلغ الأساسي (قبل الضريبة) *' : 'المبلغ *'}</Label>
+                      <Input
+                        type="number"
+                        value={expenseForm.amount}
+                        onChange={(e) => setExpenseForm({...expenseForm, amount: e.target.value})}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    {expenseForm.has_vat_invoice && expenseForm.amount && (
+                      <div className="grid grid-cols-2 gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                        <div>
+                          <Label className="text-green-700 dark:text-green-300 text-xs">ضريبة القيمة المضافة (15%)</Label>
+                          <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                            {new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(parseFloat(expenseForm.amount) * 0.15)}
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-green-700 dark:text-green-300 text-xs">الإجمالي شامل الضريبة</Label>
+                          <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                            {new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(parseFloat(expenseForm.amount) * 1.15)}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Label>الوصف *</Label>
