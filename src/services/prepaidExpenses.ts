@@ -109,53 +109,8 @@ export async function createPrepaidExpense(
 
   if (error) throw error;
 
-  // 2. إنشاء القيد المحاسبي الأولي
-  // مدين: حساب المصروفات المقدمة المختار
-  // دائن: حساب الدفع (نقدي/بنك)
-  try {
-    if (input.debit_account_id && input.payment_account_id) {
-      // إنشاء قيد اليومية
-      const { data: journalEntry, error: journalError } = await supabase
-        .from('journal_entries')
-        .insert({
-          company_id: input.company_id,
-          entry_date: input.payment_date,
-          description: `مصروف مقدم: ${input.description}`,
-          total_debit: input.total_amount,
-          total_credit: input.total_amount,
-          reference_type: 'prepaid_expense',
-          reference_id: data.id,
-          is_posted: true,
-        })
-        .select()
-        .single();
-
-      if (!journalError && journalEntry) {
-        // إضافة سطور القيد
-        await supabase
-          .from('journal_entry_lines')
-          .insert([
-            {
-              journal_entry_id: journalEntry.id,
-              account_id: input.debit_account_id, // مدين: حساب المصروفات المقدمة المختار
-              debit: input.total_amount,
-              credit: 0,
-              description: `مصروف مقدم: ${input.description}`,
-            },
-            {
-              journal_entry_id: journalEntry.id,
-              account_id: input.payment_account_id, // دائن: حساب الدفع
-              debit: 0,
-              credit: input.total_amount,
-              description: `دفع مصروف مقدم: ${input.description}`,
-            },
-          ]);
-      }
-    }
-  } catch (journalError) {
-    console.error('Error creating journal entry for prepaid expense:', journalError);
-    // لا نرمي الخطأ لأن المصروف المقدم تم إنشاؤه بنجاح
-  }
+  // القيد المحاسبي يُنشأ تلقائياً عبر database trigger
+  // لتجنب التكرار، لا نُنشئ القيد هنا
 
   return data as PrepaidExpense;
 }
