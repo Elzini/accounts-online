@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { format, addMonths, differenceInMonths } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Plus, Eye, Clock, CheckCircle, XCircle, Play, Calendar, Banknote } from 'lucide-react';
@@ -41,6 +41,7 @@ import {
 import { useExpenseCategories } from '@/hooks/useExpenses';
 import { useAccounts } from '@/hooks/useAccounting';
 import { PrepaidExpense, PrepaidExpenseAmortization } from '@/services/prepaidExpenses';
+import { AccountSearchSelect } from '@/components/accounting/AccountSearchSelect';
 
 export default function PrepaidExpensesPage() {
   const { data: prepaidExpenses = [], isLoading } = usePrepaidExpenses();
@@ -49,13 +50,24 @@ export default function PrepaidExpensesPage() {
   const createMutation = useCreatePrepaidExpense();
   const processAllMutation = useProcessAllDueAmortizations();
   
-  // Filter expense accounts (5xxx codes)
-  const expenseAccounts = accounts.filter(acc => acc.code.startsWith('5') && acc.code.length === 4);
-  
-  // Filter payment accounts (cash and bank accounts: 1101, 1102, 11xx)
-  const paymentAccounts = accounts.filter(acc => 
-    (acc.code.startsWith('110') || acc.code.startsWith('111')) && acc.code.length === 4
+  // تصفية حسابات المصروفات (5xxx) للإطفاء
+  const expenseAccounts = useMemo(() => 
+    accounts.filter(acc => acc.code.startsWith('5') && acc.code.length === 4),
+    [accounts]
   );
+  
+  // حسابات الأصول المتداولة (13xx) للمصروفات المقدمة
+  const prepaidAssetAccounts = useMemo(() => 
+    accounts.filter(acc => acc.code.startsWith('13') && acc.code.length === 4),
+    [accounts]
+  );
+  
+  // حسابات النقد والبنوك (11xx) للدفع
+  const cashBankAccounts = useMemo(() => 
+    accounts.filter(acc => acc.code.startsWith('11') && acc.code.length === 4),
+    [accounts]
+  );
+  
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<PrepaidExpense | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
@@ -67,7 +79,8 @@ export default function PrepaidExpensesPage() {
   const [numberOfMonths, setNumberOfMonths] = useState('12');
   const [categoryId, setCategoryId] = useState('');
   const [expenseAccountId, setExpenseAccountId] = useState('');
-  const [paymentAccountId, setPaymentAccountId] = useState('');
+  const [debitAccountId, setDebitAccountId] = useState(''); // حساب المدين (المصروفات المقدمة)
+  const [paymentAccountId, setPaymentAccountId] = useState(''); // حساب الدائن (النقد/البنك)
   const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [notes, setNotes] = useState('');
@@ -79,6 +92,7 @@ export default function PrepaidExpensesPage() {
     setNumberOfMonths('12');
     setCategoryId('');
     setExpenseAccountId('');
+    setDebitAccountId('');
     setPaymentAccountId('');
     setPaymentDate(format(new Date(), 'yyyy-MM-dd'));
     setPaymentMethod('cash');
@@ -88,7 +102,7 @@ export default function PrepaidExpensesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!description || !totalAmount || !startDate || !numberOfMonths || !expenseAccountId || !paymentAccountId) {
+    if (!description || !totalAmount || !startDate || !numberOfMonths || !expenseAccountId || !debitAccountId || !paymentAccountId) {
       toast.error('يرجى ملء جميع الحقول المطلوبة');
       return;
     }
@@ -105,6 +119,7 @@ export default function PrepaidExpensesPage() {
         number_of_months: months,
         category_id: categoryId || null,
         expense_account_id: expenseAccountId || null,
+        debit_account_id: debitAccountId,
         payment_account_id: paymentAccountId,
         payment_date: paymentDate,
         payment_method: paymentMethod,
@@ -251,40 +266,41 @@ export default function PrepaidExpensesPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expenseAccount">حساب المصروف (من شجرة الحسابات) *</Label>
-                  <Select value={expenseAccountId} onValueChange={setExpenseAccountId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر حساب المصروف" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {expenseAccounts.map((acc) => (
-                        <SelectItem key={acc.id} value={acc.id}>
-                          {acc.code} - {acc.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>حساب المصروف للإطفاء *</Label>
+                  <AccountSearchSelect
+                    accounts={expenseAccounts}
+                    value={expenseAccountId}
+                    onChange={setExpenseAccountId}
+                    placeholder="ابحث عن حساب المصروف (5xxx)..."
+                  />
                   <p className="text-xs text-muted-foreground">
-                    الحساب الذي سيتم ترحيل المصروف إليه عند الإطفاء
+                    الحساب الذي سيُرحّل إليه المصروف عند الإطفاء الشهري
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="paymentAccount">حساب الدفع *</Label>
-                  <Select value={paymentAccountId} onValueChange={setPaymentAccountId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر حساب الدفع" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {paymentAccounts.map((acc) => (
-                        <SelectItem key={acc.id} value={acc.id}>
-                          {acc.code} - {acc.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>حساب المصروف المقدم (مدين) *</Label>
+                  <AccountSearchSelect
+                    accounts={prepaidAssetAccounts}
+                    value={debitAccountId}
+                    onChange={setDebitAccountId}
+                    placeholder="ابحث عن حساب المصروفات المقدمة (13xx)..."
+                  />
                   <p className="text-xs text-muted-foreground">
-                    الحساب الذي سيُخصم منه المبلغ (مدين: مصروفات مقدمة، دائن: هذا الحساب)
+                    مثال: إيجار مدفوع مقدماً، تأمين مدفوع مقدماً
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>حساب الدفع (دائن) *</Label>
+                  <AccountSearchSelect
+                    accounts={cashBankAccounts}
+                    value={paymentAccountId}
+                    onChange={setPaymentAccountId}
+                    placeholder="ابحث عن حساب النقد أو البنك (11xx)..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    الحساب الذي سيُخصم منه المبلغ (الصندوق، البنك، الحساب الجاري)
                   </p>
                 </div>
 

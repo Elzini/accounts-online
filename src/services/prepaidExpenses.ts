@@ -47,7 +47,8 @@ export interface CreatePrepaidExpenseInput {
   number_of_months: number;
   category_id?: string | null;
   expense_account_id?: string | null;
-  payment_account_id: string; // حساب الدفع (نقدي/بنك)
+  debit_account_id: string; // حساب المدين (المصروفات المقدمة)
+  payment_account_id: string; // حساب الدائن (نقدي/بنك)
   payment_date: string;
   payment_method?: string;
   notes?: string;
@@ -109,18 +110,10 @@ export async function createPrepaidExpense(
   if (error) throw error;
 
   // 2. إنشاء القيد المحاسبي الأولي
-  // مدين: المصروفات المقدمة (1304)
+  // مدين: حساب المصروفات المقدمة المختار
   // دائن: حساب الدفع (نقدي/بنك)
   try {
-    // الحصول على حساب المصروفات المقدمة (1304)
-    const { data: prepaidAccount } = await supabase
-      .from('account_categories')
-      .select('id')
-      .eq('company_id', input.company_id)
-      .eq('code', '1304')
-      .single();
-
-    if (prepaidAccount && input.payment_account_id) {
+    if (input.debit_account_id && input.payment_account_id) {
       // إنشاء قيد اليومية
       const { data: journalEntry, error: journalError } = await supabase
         .from('journal_entries')
@@ -144,7 +137,7 @@ export async function createPrepaidExpense(
           .insert([
             {
               journal_entry_id: journalEntry.id,
-              account_id: prepaidAccount.id, // مدين: المصروفات المقدمة
+              account_id: input.debit_account_id, // مدين: حساب المصروفات المقدمة المختار
               debit: input.total_amount,
               credit: 0,
               description: `مصروف مقدم: ${input.description}`,
