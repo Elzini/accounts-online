@@ -18,10 +18,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install dependencies
-        run: npm ci
+        # package-lock.json is currently not in sync with package.json,
+        # so npm ci fails. Use npm install for now.
+        run: npm install --legacy-peer-deps
 
       - name: Install Electron app deps (rebuild native modules)
         run: npx electron-builder install-app-deps
