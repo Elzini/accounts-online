@@ -85,9 +85,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const filteredCars = useMemo(() => {
     let result = cars;
 
-    // فلترة المخزون حسب السنة المالية (بـ fiscal_year_id)
-    // حتى تظهر السيارات المُرحّلة في سنة جديدة مهما كان تاريخ الشراء.
-    // احتياط: لو fiscal_year_id فارغ (بيانات قديمة)، نرجع لفلترة التاريخ.
+    // فلترة المشتريات حسب تاريخ الشراء ضمن نطاق السنة المالية
     if (selectedFiscalYear) {
       const fyStart = new Date(selectedFiscalYear.start_date);
       fyStart.setHours(0, 0, 0, 0);
@@ -95,16 +93,10 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       fyEnd.setHours(23, 59, 59, 999);
 
       result = result.filter((car) => {
-        if (car.fiscal_year_id) return car.fiscal_year_id === selectedFiscalYear.id;
         const purchaseDate = new Date(car.purchase_date);
         return purchaseDate >= fyStart && purchaseDate <= fyEnd;
       });
     }
-    
-    // NOTE: We do NOT filter by fiscal year here because:
-    // 1. Available cars should always be visible regardless of purchase date
-    // 2. A car purchased in 2025 but still not sold should appear in 2026 inventory
-    // 3. Fiscal year filtering is for financial reports, not inventory management
     
     // Filter by search query
     if (searchQuery.trim()) {
