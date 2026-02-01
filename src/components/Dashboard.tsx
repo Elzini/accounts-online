@@ -1,4 +1,4 @@
-import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, FileText, Users, ArrowDownLeft, ArrowUpRight, Building2, BarChart3, RefreshCw } from 'lucide-react';
+import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, FileText, Users, ArrowDownLeft, ArrowUpRight, Building2, BarChart3, RefreshCw, CreditCard, Calendar, AlertTriangle } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { useAdvancedAnalytics } from '@/hooks/useAnalytics';
 import { useAppSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCarTransfers, usePartnerDealerships } from '@/hooks/useTransfers';
+import { useInstallmentSales } from '@/hooks/useInstallments';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid } from 'recharts';
 import { useMemo, useState } from 'react';
@@ -64,6 +65,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const { permissions } = useAuth();
   const { data: transfers } = useCarTransfers();
   const { data: dealerships } = usePartnerDealerships();
+  const { data: installmentSales = [] } = useInstallmentSales();
   const { data: allSales = [] } = useSales();
   const { data: allCars = [] } = useCars();
   const { selectedFiscalYear } = useFiscalYear();
@@ -574,6 +576,108 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               )}
             </div>
           </div>
+
+          {/* Installments Section */}
+          {installmentSales.length > 0 && (
+            <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
+              <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
+                <div>
+                  <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground flex items-center gap-1.5 sm:gap-2">
+                    <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                    الأقساط المستحقة
+                  </h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
+                    <span className="font-semibold text-primary">{installmentSales.filter(s => s.status === 'active').length}</span> عقد تقسيط نشط
+                  </p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setActivePage('installments')}
+                  className="text-primary h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
+                >
+                  عرض الكل
+                </Button>
+              </div>
+              
+              <div className="space-y-2 max-h-[350px] overflow-y-auto">
+                {installmentSales
+                  .filter(sale => sale.status === 'active')
+                  .slice(0, 5)
+                  .map((installment) => {
+                    // Find next unpaid payment
+                    const nextPayment = installment.payments
+                      ?.filter(p => p.status !== 'paid')
+                      .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())[0];
+                    
+                    const isOverdue = nextPayment && new Date(nextPayment.due_date) < new Date();
+                    const paidCount = installment.payments?.filter(p => p.status === 'paid').length || 0;
+                    const totalCount = installment.number_of_installments;
+                    
+                    return (
+                      <div 
+                        key={installment.id} 
+                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                          isOverdue 
+                            ? 'bg-destructive/5 border-destructive/30 hover:bg-destructive/10' 
+                            : 'bg-muted/30 border-border hover:bg-muted/50'
+                        }`}
+                        onClick={() => setActivePage('installments')}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                              isOverdue ? 'bg-destructive/20' : 'bg-primary/10'
+                            }`}>
+                              {isOverdue ? (
+                                <AlertTriangle className="w-5 h-5 text-destructive" />
+                              ) : (
+                                <CreditCard className="w-5 h-5 text-primary" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-sm truncate">
+                                {installment.sale?.customer?.name || 'عميل غير محدد'}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {installment.sale?.car?.name} {installment.sale?.car?.model}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="text-left shrink-0 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                              <span className={`text-xs font-medium ${isOverdue ? 'text-destructive' : ''}`}>
+                                {nextPayment ? new Date(nextPayment.due_date).toLocaleDateString('ar-SA') : '-'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                القسط: {new Intl.NumberFormat('ar-SA').format(installment.installment_amount)} ر.س
+                              </span>
+                            </div>
+                            <Badge 
+                              variant={isOverdue ? 'destructive' : 'outline'} 
+                              className="text-[10px] h-5"
+                            >
+                              {isOverdue ? 'متأخر' : `${paidCount}/${totalCount}`}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                
+                {installmentSales.filter(s => s.status === 'active').length === 0 && (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <CreditCard className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                    <p className="text-xs sm:text-sm">لا توجد أقساط نشطة</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
