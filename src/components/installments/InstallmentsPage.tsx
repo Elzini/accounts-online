@@ -1,39 +1,63 @@
 import { useState, useMemo } from 'react';
-import { CreditCard, AlertTriangle, CheckCircle, Clock, Loader2, Eye, Banknote } from 'lucide-react';
+import { CreditCard, AlertTriangle, CheckCircle, Clock, Loader2, Eye, Banknote, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { useInstallmentSales, useOverduePayments, useRecordPayment } from '@/hooks/useInstallments';
+import { useInstallmentSales, useOverduePayments, useRecordPayment, useAddInstallmentSale } from '@/hooks/useInstallments';
 import { InstallmentSale, InstallmentPayment } from '@/services/installments';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
+import { useSales } from '@/hooks/useDatabase';
+import { useCompanyId } from '@/hooks/useCompanyId';
 
 export function InstallmentsPage() {
   const { data: installmentSales = [], isLoading } = useInstallmentSales();
   const { data: overduePayments = [] } = useOverduePayments();
+  const { data: allSales = [] } = useSales();
   const { filterByFiscalYear } = useFiscalYearFilter();
   const recordPayment = useRecordPayment();
+  const addInstallmentSale = useAddInstallmentSale();
+  const companyId = useCompanyId();
   
   // Filter installment sales by fiscal year
   const filteredInstallmentSales = useMemo(() => {
     return filterByFiscalYear(installmentSales, 'start_date');
   }, [installmentSales, filterByFiscalYear]);
+
+  // Get sales that don't have installment contracts yet
+  const availableSalesForInstallment = useMemo(() => {
+    const existingInstallmentSaleIds = installmentSales.map(is => is.sale_id);
+    return allSales.filter(sale => !existingInstallmentSaleIds.includes(sale.id));
+  }, [allSales, installmentSales]);
   
   const [selectedSale, setSelectedSale] = useState<InstallmentSale | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<InstallmentPayment | null>(null);
   const [paymentForm, setPaymentForm] = useState({
     amount: '',
     method: 'cash',
     date: new Date().toISOString().split('T')[0]
   });
+  const [newContractForm, setNewContractForm] = useState({
+    sale_id: '',
+    down_payment: '',
+    number_of_installments: '12',
+    notes: '',
+  });
+
+  const selectedSaleForContract = allSales.find(s => s.id === newContractForm.sale_id);
+  const contractTotalAmount = selectedSaleForContract ? Number(selectedSaleForContract.sale_price) : 0;
+  const contractDownPayment = parseFloat(newContractForm.down_payment) || 0;
+  const contractRemaining = contractTotalAmount - contractDownPayment;
+  const contractInstallmentAmount = contractRemaining / (parseInt(newContractForm.number_of_installments) || 12);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(amount);
@@ -58,6 +82,38 @@ export function InstallmentsPage() {
       setPaymentForm({ amount: '', method: 'cash', date: new Date().toISOString().split('T')[0] });
     } catch (error) {
       toast.error('حدث خطأ أثناء تسجيل الدفعة');
+    }
+  };
+
+  const handleAddContract = async () => {
+    if (!newContractForm.sale_id || !companyId) {
+      toast.error('يرجى اختيار عملية البيع');
+      return;
+    }
+
+    if (contractDownPayment >= contractTotalAmount) {
+      toast.error('الدفعة المقدمة يجب أن تكون أقل من المبلغ الإجمالي');
+      return;
+    }
+
+    try {
+      await addInstallmentSale.mutateAsync({
+        company_id: companyId,
+        sale_id: newContractForm.sale_id,
+        total_amount: contractTotalAmount,
+        down_payment: contractDownPayment,
+        remaining_amount: contractRemaining,
+        number_of_installments: parseInt(newContractForm.number_of_installments) || 12,
+        installment_amount: contractInstallmentAmount,
+        start_date: new Date().toISOString().split('T')[0],
+        status: 'active',
+        notes: newContractForm.notes || null,
+      });
+      toast.success('تم إنشاء عقد التقسيط بنجاح');
+      setIsAddDialogOpen(false);
+      setNewContractForm({ sale_id: '', down_payment: '', number_of_installments: '12', notes: '' });
+    } catch (error) {
+      toast.error('حدث خطأ أثناء إنشاء العقد');
     }
   };
 
@@ -162,8 +218,12 @@ export function InstallmentsPage() {
 
         <TabsContent value="all" className="space-y-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>عقود التقسيط</CardTitle>
+              <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2">
+                <Plus className="w-4 h-4" />
+                عقد جديد
+              </Button>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
@@ -396,6 +456,95 @@ export function InstallmentsPage() {
             <Button onClick={handleRecordPayment} className="w-full" disabled={recordPayment.isPending}>
               {recordPayment.isPending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}
               تأكيد الدفعة
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Contract Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>إنشاء عقد تقسيط جديد</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>عملية البيع *</Label>
+              <Select value={newContractForm.sale_id} onValueChange={(v) => setNewContractForm({...newContractForm, sale_id: v})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر عملية البيع" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSalesForInstallment.length === 0 ? (
+                    <SelectItem value="" disabled>لا توجد مبيعات متاحة</SelectItem>
+                  ) : (
+                    availableSalesForInstallment.map((sale) => (
+                      <SelectItem key={sale.id} value={sale.id}>
+                        {sale.customer?.name || 'عميل'} - {sale.car?.name || 'سيارة'} ({formatCurrency(Number(sale.sale_price))})
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedSaleForContract && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">المبلغ الإجمالي</p>
+                <p className="text-lg font-bold">{formatCurrency(contractTotalAmount)}</p>
+              </div>
+            )}
+
+            <div>
+              <Label>الدفعة المقدمة</Label>
+              <Input
+                type="number"
+                value={newContractForm.down_payment}
+                onChange={(e) => setNewContractForm({...newContractForm, down_payment: e.target.value})}
+                placeholder="0"
+                dir="ltr"
+              />
+            </div>
+
+            <div>
+              <Label>عدد الأقساط</Label>
+              <Select value={newContractForm.number_of_installments} onValueChange={(v) => setNewContractForm({...newContractForm, number_of_installments: v})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[3, 6, 9, 12, 18, 24, 36, 48, 60].map(num => (
+                    <SelectItem key={num} value={String(num)}>{num} شهر</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedSaleForContract && (
+              <div className="grid grid-cols-2 gap-4 p-3 bg-muted rounded-lg">
+                <div>
+                  <p className="text-sm text-muted-foreground">المتبقي</p>
+                  <p className="font-semibold text-destructive">{formatCurrency(contractRemaining)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">قيمة القسط</p>
+                  <p className="font-semibold text-primary">{formatCurrency(contractInstallmentAmount)}</p>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <Label>ملاحظات</Label>
+              <Input
+                value={newContractForm.notes}
+                onChange={(e) => setNewContractForm({...newContractForm, notes: e.target.value})}
+                placeholder="ملاحظات..."
+              />
+            </div>
+
+            <Button onClick={handleAddContract} className="w-full" disabled={addInstallmentSale.isPending || !newContractForm.sale_id}>
+              {addInstallmentSale.isPending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}
+              إنشاء العقد
             </Button>
           </div>
         </DialogContent>
