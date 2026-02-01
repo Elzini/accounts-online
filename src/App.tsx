@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CompanyProvider, useCompany } from "@/contexts/CompanyContext";
 import { FiscalYearProvider } from "@/contexts/FiscalYearContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
 import AuthChoice from "./pages/AuthChoice";
 import Auth from "./pages/Auth";
@@ -164,13 +165,15 @@ function App() {
       <AuthProvider>
         <CompanyProvider>
           <FiscalYearProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <AppRoutes />
-              </BrowserRouter>
-            </TooltipProvider>
+            <ThemeProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <AppRoutes />
+                </BrowserRouter>
+              </TooltipProvider>
+            </ThemeProvider>
           </FiscalYearProvider>
         </CompanyProvider>
       </AuthProvider>
