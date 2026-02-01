@@ -1044,6 +1044,44 @@ export type Database = {
           },
         ]
       }
+      dashboard_config: {
+        Row: {
+          analytics_settings: Json
+          company_id: string
+          created_at: string
+          id: string
+          layout_settings: Json
+          stat_cards: Json
+          updated_at: string
+        }
+        Insert: {
+          analytics_settings?: Json
+          company_id: string
+          created_at?: string
+          id?: string
+          layout_settings?: Json
+          stat_cards?: Json
+          updated_at?: string
+        }
+        Update: {
+          analytics_settings?: Json
+          company_id?: string
+          created_at?: string
+          id?: string
+          layout_settings?: Json
+          stat_cards?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_config_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       default_company_settings: {
         Row: {
           created_at: string
