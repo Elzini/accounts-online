@@ -3,7 +3,10 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Car, ShoppingCart, DollarSign, TrendingUp, Calculator, Minus, Plus, Equal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Car, ShoppingCart, DollarSign, TrendingUp, Calculator, Minus, Plus, Equal, Printer, FileSpreadsheet } from 'lucide-react';
+import { useExcelExport } from '@/hooks/useExcelExport';
+import { usePdfExport } from '@/hooks/usePdfExport';
 
 interface BreakdownItem {
   label: string;
@@ -43,6 +46,9 @@ interface StatCardDetailDialogProps {
 }
 
 export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetailDialogProps) {
+  const { exportToExcel } = useExcelExport();
+  const { exportToPdf } = usePdfExport();
+
   if (!data) return null;
 
   const formatCurrency = (value: number) => {
@@ -62,13 +68,106 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
     return new Intl.DateTimeFormat('ar-SA').format(new Date(date));
   };
 
+  const formatCurrencyForExport = (value: number) => {
+    return `${new Intl.NumberFormat('ar-SA').format(value)} ريال`;
+  };
+
+  const handleExportExcel = () => {
+    if (!data.cars || data.cars.length === 0) return;
+    
+    const totalPurchase = data.cars.reduce((sum, c) => sum + c.purchasePrice, 0);
+    const totalSale = data.cars.reduce((sum, c) => sum + (c.salePrice || 0), 0);
+    const totalProfit = data.cars.reduce((sum, c) => sum + (c.profit || 0), 0);
+
+    exportToExcel({
+      title: `تقرير ${data.title}`,
+      fileName: `تقرير_${data.title.replace(/\s/g, '_')}_${new Date().toLocaleDateString('ar-SA')}`,
+      columns: [
+        { header: 'السيارة', key: 'name' },
+        { header: 'الموديل', key: 'model' },
+        { header: 'رقم الهيكل', key: 'chassisNumber' },
+        { header: 'سعر الشراء', key: 'purchasePrice' },
+        { header: 'سعر البيع', key: 'salePrice' },
+        { header: 'الربح', key: 'profit' },
+        { header: 'تاريخ البيع', key: 'saleDate' },
+      ],
+      data: data.cars.map(car => ({
+        name: car.name,
+        model: car.model || '-',
+        chassisNumber: car.chassisNumber || '-',
+        purchasePrice: formatCurrencyForExport(car.purchasePrice),
+        salePrice: car.salePrice !== undefined ? formatCurrencyForExport(car.salePrice) : '-',
+        profit: car.profit !== undefined ? formatCurrencyForExport(car.profit) : '-',
+        saleDate: car.saleDate ? formatDate(car.saleDate) : '-',
+      })),
+      summaryData: [
+        { label: 'عدد السيارات', value: data.cars.length },
+        { label: 'إجمالي الشراء', value: formatCurrencyForExport(totalPurchase) },
+        { label: 'إجمالي البيع', value: formatCurrencyForExport(totalSale) },
+        { label: 'إجمالي الربح', value: formatCurrencyForExport(totalProfit) },
+      ],
+    });
+  };
+
+  const handleExportPdf = () => {
+    if (!data.cars || data.cars.length === 0) return;
+    
+    const totalPurchase = data.cars.reduce((sum, c) => sum + c.purchasePrice, 0);
+    const totalSale = data.cars.reduce((sum, c) => sum + (c.salePrice || 0), 0);
+    const totalProfit = data.cars.reduce((sum, c) => sum + (c.profit || 0), 0);
+
+    exportToPdf({
+      title: `تقرير ${data.title}`,
+      subtitle: `تاريخ التصدير: ${new Date().toLocaleDateString('ar-SA')}`,
+      fileName: `تقرير_${data.title.replace(/\s/g, '_')}_${new Date().toLocaleDateString('ar-SA')}`,
+      columns: [
+        { header: 'السيارة', key: 'name' },
+        { header: 'الموديل', key: 'model' },
+        { header: 'سعر الشراء', key: 'purchasePrice' },
+        { header: 'سعر البيع', key: 'salePrice' },
+        { header: 'الربح', key: 'profit' },
+        { header: 'التاريخ', key: 'saleDate' },
+      ],
+      data: data.cars.map(car => ({
+        name: car.name,
+        model: car.model || '-',
+        purchasePrice: formatCurrencyForExport(car.purchasePrice),
+        salePrice: car.salePrice !== undefined ? formatCurrencyForExport(car.salePrice) : '-',
+        profit: car.profit !== undefined ? formatCurrencyForExport(car.profit) : '-',
+        saleDate: car.saleDate ? formatDate(car.saleDate) : '-',
+      })),
+      summaryCards: [
+        { label: 'عدد السيارات', value: String(data.cars.length) },
+        { label: 'إجمالي الشراء', value: formatCurrencyForExport(totalPurchase) },
+        { label: 'إجمالي البيع', value: formatCurrencyForExport(totalSale) },
+        { label: 'إجمالي الربح', value: formatCurrencyForExport(totalProfit) },
+      ],
+    });
+  };
+
+  const hasExportableData = data.showCarsTable && data.cars && data.cars.length > 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh]" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <Calculator className="w-5 h-5 text-primary" />
-            تفاصيل: {data.title}
+          <DialogTitle className="flex items-center justify-between gap-2 text-lg">
+            <div className="flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-primary" />
+              تفاصيل: {data.title}
+            </div>
+            {hasExportableData && (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={handleExportPdf}>
+                  <Printer className="w-4 h-4 ml-1" />
+                  PDF
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExportExcel}>
+                  <FileSpreadsheet className="w-4 h-4 ml-1" />
+                  Excel
+                </Button>
+              </div>
+            )}
           </DialogTitle>
         </DialogHeader>
 
