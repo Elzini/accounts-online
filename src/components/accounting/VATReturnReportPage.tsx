@@ -40,25 +40,11 @@ export function VATReturnReportPage() {
     };
   }, [selectedFiscalYear]);
 
-  // Default to the last quarter within the selected fiscal year
+  // Default to the FULL fiscal year to match sales/purchases tables
   const getDefaultDates = () => {
-    const fyEnd = fiscalYearBounds.end;
-    const fyStart = fiscalYearBounds.start;
-    
-    // Get the last quarter end date within fiscal year
-    let quarterEnd = endOfQuarter(fyEnd);
-    if (quarterEnd > fyEnd) {
-      quarterEnd = fyEnd;
-    }
-    
-    let quarterStart = startOfQuarter(quarterEnd);
-    if (quarterStart < fyStart) {
-      quarterStart = fyStart;
-    }
-    
     return {
-      start: format(quarterStart, 'yyyy-MM-dd'),
-      end: format(quarterEnd, 'yyyy-MM-dd'),
+      start: format(fiscalYearBounds.start, 'yyyy-MM-dd'),
+      end: format(fiscalYearBounds.end, 'yyyy-MM-dd'),
     };
   };
 
