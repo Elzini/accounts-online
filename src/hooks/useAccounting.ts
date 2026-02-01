@@ -216,12 +216,22 @@ export function useAccountBalances() {
   });
 }
 
-export function useTrialBalance() {
+export function useAccountBalancesByDate(startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
   
   return useQuery({
-    queryKey: ['trial-balance', companyId],
-    queryFn: () => companyId ? getTrialBalance(companyId) : null,
+    queryKey: ['account-balances', companyId, startDate, endDate],
+    queryFn: () => companyId ? getAccountBalances(companyId, startDate, endDate) : [],
+    enabled: !!companyId,
+  });
+}
+
+export function useTrialBalance(startDate?: string, endDate?: string) {
+  const { companyId } = useCompany();
+  
+  return useQuery({
+    queryKey: ['trial-balance', companyId, startDate, endDate],
+    queryFn: () => companyId ? getTrialBalance(companyId, startDate, endDate) : null,
     enabled: !!companyId,
   });
 }
@@ -248,12 +258,12 @@ export function useGeneralLedger(accountId: string | null, startDate?: string, e
 }
 
 // Balance Sheet - الميزانية العمومية
-export function useBalanceSheet() {
+export function useBalanceSheet(startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
   
   return useQuery({
-    queryKey: ['balance-sheet', companyId],
-    queryFn: () => companyId ? getBalanceSheet(companyId) : null,
+    queryKey: ['balance-sheet', companyId, startDate, endDate],
+    queryFn: () => companyId ? getBalanceSheet(companyId, startDate, endDate) : null,
     enabled: !!companyId,
   });
 }
@@ -281,12 +291,12 @@ export function useJournalEntriesReport(startDate?: string, endDate?: string, re
 }
 
 // Comprehensive Trial Balance - ميزان المراجعة الشامل
-export function useComprehensiveTrialBalance() {
+export function useComprehensiveTrialBalance(startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
   
   return useQuery({
-    queryKey: ['comprehensive-trial-balance', companyId],
-    queryFn: () => companyId ? getComprehensiveTrialBalance(companyId) : null,
+    queryKey: ['comprehensive-trial-balance', companyId, startDate, endDate],
+    queryFn: () => companyId ? getComprehensiveTrialBalance(companyId, startDate, endDate) : null,
     enabled: !!companyId,
   });
 }
