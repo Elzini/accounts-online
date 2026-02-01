@@ -275,7 +275,11 @@ export async function updateJournalEntry(
 }
 
 // Reports
-export async function getAccountBalances(companyId: string): Promise<Array<{
+export async function getAccountBalances(
+  companyId: string,
+  startDate?: string,
+  endDate?: string
+): Promise<Array<{
   account: AccountCategory;
   debit_total: number;
   credit_total: number;
@@ -283,16 +287,25 @@ export async function getAccountBalances(companyId: string): Promise<Array<{
 }>> {
   const accounts = await fetchAccounts(companyId);
   
-  const { data: lines, error } = await supabase
+  let query = supabase
     .from('journal_entry_lines')
     .select(`
       account_id,
       debit,
       credit,
-      journal_entry:journal_entries!inner(company_id, is_posted)
+      journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
     `)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true);
+
+  if (startDate) {
+    query = query.gte('journal_entry.entry_date', startDate);
+  }
+  if (endDate) {
+    query = query.lte('journal_entry.entry_date', endDate);
+  }
+
+  const { data: lines, error } = await query;
   
   if (error) throw error;
 
@@ -323,23 +336,36 @@ export async function getAccountBalances(companyId: string): Promise<Array<{
   }).filter(item => item.debit_total > 0 || item.credit_total > 0);
 }
 
-export async function getTrialBalance(companyId: string): Promise<{
+export async function getTrialBalance(
+  companyId: string,
+  startDate?: string,
+  endDate?: string
+): Promise<{
   accounts: Array<{ account: AccountCategory; debit: number; credit: number }>;
   totalDebit: number;
   totalCredit: number;
 }> {
   const accounts = await fetchAccounts(companyId);
   
-  const { data: lines, error } = await supabase
+  let query = supabase
     .from('journal_entry_lines')
     .select(`
       account_id,
       debit,
       credit,
-      journal_entry:journal_entries!inner(company_id, is_posted)
+      journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
     `)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true);
+
+  if (startDate) {
+    query = query.gte('journal_entry.entry_date', startDate);
+  }
+  if (endDate) {
+    query = query.lte('journal_entry.entry_date', endDate);
+  }
+
+  const { data: lines, error } = await query;
   
   if (error) throw error;
 
@@ -539,7 +565,11 @@ export async function getGeneralLedger(
 }
 
 // Balance Sheet - الميزانية العمومية
-export async function getBalanceSheet(companyId: string): Promise<{
+export async function getBalanceSheet(
+  companyId: string,
+  startDate?: string,
+  endDate?: string
+): Promise<{
   currentAssets: Array<{ account: AccountCategory; balance: number }>;
   fixedAssets: Array<{ account: AccountCategory; balance: number }>;
   currentLiabilities: Array<{ account: AccountCategory; balance: number }>;
@@ -556,16 +586,25 @@ export async function getBalanceSheet(companyId: string): Promise<{
 }> {
   const accounts = await fetchAccounts(companyId);
   
-  const { data: lines, error } = await supabase
+  let query = supabase
     .from('journal_entry_lines')
     .select(`
       account_id,
       debit,
       credit,
-      journal_entry:journal_entries!inner(company_id, is_posted)
+      journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
     `)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true);
+
+  if (startDate) {
+    query = query.gte('journal_entry.entry_date', startDate);
+  }
+  if (endDate) {
+    query = query.lte('journal_entry.entry_date', endDate);
+  }
+
+  const { data: lines, error } = await query;
   
   if (error) throw error;
 
@@ -744,7 +783,11 @@ export async function getJournalEntriesReport(
 }
 
 // Comprehensive Trial Balance - ميزان المراجعة الشامل
-export async function getComprehensiveTrialBalance(companyId: string): Promise<{
+export async function getComprehensiveTrialBalance(
+  companyId: string,
+  startDate?: string,
+  endDate?: string
+): Promise<{
   accounts: Array<{ 
     account: AccountCategory; 
     openingDebit: number;
@@ -765,16 +808,25 @@ export async function getComprehensiveTrialBalance(companyId: string): Promise<{
 }> {
   const accounts = await fetchAccounts(companyId);
   
-  const { data: lines, error } = await supabase
+  let query = supabase
     .from('journal_entry_lines')
     .select(`
       account_id,
       debit,
       credit,
-      journal_entry:journal_entries!inner(company_id, is_posted)
+      journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
     `)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true);
+
+  if (startDate) {
+    query = query.gte('journal_entry.entry_date', startDate);
+  }
+  if (endDate) {
+    query = query.lte('journal_entry.entry_date', endDate);
+  }
+
+  const { data: lines, error } = await query;
   
   if (error) throw error;
 
