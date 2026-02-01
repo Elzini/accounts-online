@@ -12,7 +12,8 @@ import {
   ArrowRight,
   FileSpreadsheet,
   ChevronDown,
-  MessageSquare
+  MessageSquare,
+  RotateCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,9 +28,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
-import { useCustomers, useCars, useAddMultiCarSale, useSales } from '@/hooks/useDatabase';
+import { useCustomers, useCars, useAddMultiCarSale, useSales, useDeleteSale, useReverseSale, useUpdateSale, useSalesWithItems } from '@/hooks/useDatabase';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -61,10 +72,14 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const { data: taxSettings } = useTaxSettings();
   const { data: accounts = [] } = useAccounts();
   const { data: existingSales = [] } = useSales();
+  const { data: salesWithItems = [] } = useSalesWithItems();
   const { data: savedTemplates = [] } = useImportedInvoiceData();
   const { company } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
   const addMultiCarSale = useAddMultiCarSale();
+  const deleteSale = useDeleteSale();
+  const reverseSale = useReverseSale();
+  const updateSale = useUpdateSale();
 
   // Available cars for sale
   const availableCars = useMemo(() => 
@@ -107,6 +122,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('amount');
   const [paidAmount, setPaidAmount] = useState(0);
   const [currentInvoiceIndex, setCurrentInvoiceIndex] = useState(0);
+  const [isViewingExisting, setIsViewingExisting] = useState(false);
+  const [currentSaleId, setCurrentSaleId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
 
   const selectedCustomer = customers.find(c => c.id === invoiceData.customer_id);
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_sales ? (taxSettings?.tax_rate || 15) : 0;
@@ -309,6 +328,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     setDiscount(0);
     setPaidAmount(0);
     setSavedSaleData(null);
+    setIsViewingExisting(false);
+    setCurrentSaleId(null);
   };
 
   const handleCloseInvoice = (open: boolean) => {
@@ -351,6 +372,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   };
 
   const loadSaleData = async (sale: any) => {
+    setIsViewingExisting(true);
+    setCurrentSaleId(sale.id);
+    
     setInvoiceData({
       invoice_number: sale.sale_number || '',
       customer_id: sale.customer_id || '',
@@ -406,6 +430,89 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
         }]);
       }
     }
+  };
+
+  // Handle delete sale
+  const handleDeleteSale = async () => {
+    if (!currentSaleId) return;
+    
+    const sale = existingSales.find(s => s.id === currentSaleId);
+    if (!sale) return;
+    
+    try {
+      await deleteSale.mutateAsync({ saleId: currentSaleId, carId: sale.car_id });
+      toast.success('تم حذف الفاتورة بنجاح');
+      setDeleteDialogOpen(false);
+      handleNewInvoice();
+    } catch (error) {
+      toast.error('حدث خطأ أثناء حذف الفاتورة');
+    }
+  };
+
+  // Handle reverse sale
+  const handleReverseSale = async () => {
+    if (!currentSaleId) return;
+    
+    try {
+      await reverseSale.mutateAsync(currentSaleId);
+      toast.success('تم إرجاع الفاتورة بنجاح وإعادة السيارات للمخزون');
+      setReverseDialogOpen(false);
+      handleNewInvoice();
+    } catch (error) {
+      toast.error('حدث خطأ أثناء إرجاع الفاتورة');
+    }
+  };
+
+  // Handle update sale
+  const handleUpdateSale = async () => {
+    if (!currentSaleId || !invoiceData.customer_id) {
+      toast.error('الرجاء اختيار العميل');
+      return;
+    }
+
+    if (selectedCars.length === 0) {
+      toast.error('الرجاء إضافة سيارة واحدة على الأقل');
+      return;
+    }
+
+    const invalidCar = selectedCars.find(car => !car.sale_price || parseFloat(car.sale_price) <= 0);
+    if (invalidCar) {
+      toast.error('الرجاء إدخال سعر البيع لجميع السيارات');
+      return;
+    }
+
+    try {
+      await updateSale.mutateAsync({
+        id: currentSaleId,
+        sale: {
+          sale_price: calculations.finalTotal,
+          seller_name: invoiceData.seller_name || null,
+          commission: parseFloat(invoiceData.commission) || 0,
+          other_expenses: parseFloat(invoiceData.other_expenses) || 0,
+          sale_date: invoiceData.sale_date,
+          profit: calculations.profit,
+          payment_account_id: invoiceData.payment_account_id || null,
+        }
+      });
+      toast.success('تم تحديث الفاتورة بنجاح');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء تحديث الفاتورة');
+    }
+  };
+
+  // Handle print existing invoice
+  const handlePrintExisting = () => {
+    if (!currentSaleId) return;
+    
+    const sale = salesWithItems.find(s => s.id === currentSaleId) || existingSales.find(s => s.id === currentSaleId);
+    if (!sale) return;
+
+    setSavedSaleData({
+      ...sale,
+      customer: selectedCustomer,
+      cars: selectedCars,
+    });
+    setInvoiceOpen(true);
   };
 
   // Prepare invoice preview data
@@ -832,15 +939,27 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           {/* Action Buttons */}
           <div className="p-4 bg-muted/50 border-t flex flex-wrap gap-2 justify-between">
             <div className="flex flex-wrap gap-2">
-              <Button onClick={handleSubmit} className="gap-2 gradient-success" disabled={addMultiCarSale.isPending}>
-                <Save className="w-4 h-4" />
-                {addMultiCarSale.isPending ? 'جاري الحفظ...' : 'اعتماد'}
-              </Button>
+              {isViewingExisting ? (
+                <Button onClick={handleUpdateSale} className="gap-2 gradient-success" disabled={updateSale.isPending}>
+                  <Save className="w-4 h-4" />
+                  {updateSale.isPending ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+                </Button>
+              ) : (
+                <Button onClick={handleSubmit} className="gap-2 gradient-success" disabled={addMultiCarSale.isPending}>
+                  <Save className="w-4 h-4" />
+                  {addMultiCarSale.isPending ? 'جاري الحفظ...' : 'اعتماد'}
+                </Button>
+              )}
               <Button variant="outline" onClick={handleNewInvoice} className="gap-2">
                 <Plus className="w-4 h-4" />
                 جديد
               </Button>
-              <Button variant="outline" className="gap-2" disabled>
+              <Button 
+                variant="outline" 
+                className="gap-2" 
+                disabled={!isViewingExisting}
+                onClick={handlePrintExisting}
+              >
                 <Printer className="w-4 h-4" />
                 طباعة
               </Button>
@@ -852,7 +971,21 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 <MessageSquare className="w-4 h-4" />
                 SMS
               </Button>
-              <Button variant="outline" className="gap-2 text-destructive hover:text-destructive" disabled>
+              <Button 
+                variant="outline" 
+                className="gap-2 text-orange-500 hover:text-orange-600" 
+                disabled={!isViewingExisting}
+                onClick={() => setReverseDialogOpen(true)}
+              >
+                <RotateCcw className="w-4 h-4" />
+                إرجاع
+              </Button>
+              <Button 
+                variant="outline" 
+                className="gap-2 text-destructive hover:text-destructive" 
+                disabled={!isViewingExisting}
+                onClick={() => setDeleteDialogOpen(true)}
+              >
                 <Trash2 className="w-4 h-4" />
                 حذف
               </Button>
@@ -927,6 +1060,57 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           data={invoicePreviewData}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>هل أنت متأكد من حذف هذه الفاتورة؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم حذف الفاتورة وإعادة السيارات للمخزون. لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSale}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteSale.isPending ? 'جاري الحذف...' : 'حذف'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reverse Confirmation Dialog */}
+      <AlertDialog open={reverseDialogOpen} onOpenChange={setReverseDialogOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-orange-500" />
+              إرجاع الفاتورة
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>هل أنت متأكد من إرجاع هذه الفاتورة؟</p>
+              <ul className="list-disc list-inside text-muted-foreground">
+                <li>سيتم إعادة السيارات للمخزون</li>
+                <li>سيتم حذف القيد المحاسبي المرتبط</li>
+                <li>سيتم تحديث الإحصائيات والتقارير</li>
+              </ul>
+              <p className="text-destructive font-medium">لا يمكن التراجع عن هذا الإجراء.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleReverseSale}
+              className="bg-orange-600 text-white hover:bg-orange-700"
+            >
+              {reverseSale.isPending ? 'جاري الإرجاع...' : 'إرجاع الفاتورة'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
