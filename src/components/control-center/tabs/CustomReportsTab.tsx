@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, FileText, Eye, Copy } from 'lucide-react';
+import { Plus, Pencil, Trash2, FileText, Eye } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,8 +18,9 @@ import {
   useUpdateCustomReport, 
   useDeleteCustomReport 
 } from '@/hooks/useSystemControl';
-import { SOURCE_TABLES, TABLE_FIELDS, CustomReport, ReportColumn } from '@/services/systemControl';
+import { SOURCE_TABLES, TABLE_FIELDS, CustomReport, ReportColumn, ReportFilter, ReportSorting } from '@/services/systemControl';
 import { toast } from 'sonner';
+import { CustomReportPreviewDialog } from '@/components/reports/CustomReportPreviewDialog';
 
 export function CustomReportsTab() {
   const { data: reports = [], isLoading } = useCustomReports();
@@ -28,6 +29,8 @@ export function CustomReportsTab() {
   const deleteReport = useDeleteCustomReport();
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [previewReport, setPreviewReport] = useState<CustomReport | null>(null);
   const [editingReport, setEditingReport] = useState<CustomReport | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -35,6 +38,8 @@ export function CustomReportsTab() {
     report_type: 'table' as const,
     source_table: '',
     columns: [] as ReportColumn[],
+    filters: [] as ReportFilter[],
+    sorting: [] as ReportSorting[],
     is_active: true,
   });
 
@@ -46,6 +51,8 @@ export function CustomReportsTab() {
       report_type: 'table',
       source_table: '',
       columns: [],
+      filters: [],
+      sorting: [],
       is_active: true,
     });
     setDialogOpen(true);
@@ -59,9 +66,16 @@ export function CustomReportsTab() {
       report_type: report.report_type as 'table',
       source_table: report.source_table,
       columns: report.columns,
+      filters: report.filters || [],
+      sorting: report.sorting || [],
       is_active: report.is_active,
     });
     setDialogOpen(true);
+  };
+
+  const openPreviewDialog = (report: CustomReport) => {
+    setPreviewReport(report);
+    setPreviewDialogOpen(true);
   };
 
   const handleSourceTableChange = (table: string) => {
@@ -72,7 +86,7 @@ export function CustomReportsTab() {
       visible: true,
       order: index,
     }));
-    setFormData(prev => ({ ...prev, source_table: table, columns }));
+    setFormData(prev => ({ ...prev, source_table: table, columns, filters: [], sorting: [] }));
   };
 
   const handleColumnToggle = (field: string, visible: boolean) => {
@@ -228,11 +242,20 @@ export function CustomReportsTab() {
                       />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openPreviewDialog(report)}
+                          title="معاينة التقرير"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => openEditDialog(report)}
+                          title="تعديل"
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
@@ -241,6 +264,7 @@ export function CustomReportsTab() {
                           size="icon"
                           onClick={() => handleDelete(report.id)}
                           className="text-destructive hover:text-destructive"
+                          title="حذف"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -347,6 +371,13 @@ export function CustomReportsTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Preview Dialog */}
+      <CustomReportPreviewDialog
+        open={previewDialogOpen}
+        onOpenChange={setPreviewDialogOpen}
+        report={previewReport}
+      />
     </>
   );
 }

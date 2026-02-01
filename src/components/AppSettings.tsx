@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn, Image, Lock, Eye, EyeOff, Building2, X, BookOpen, FileText, FileImage, Printer, SlidersHorizontal } from 'lucide-react';
+import { Settings, Palette, AlertTriangle, Save, RotateCcw, Upload, LayoutDashboard, Tag, LogIn, Image, Lock, Eye, EyeOff, Building2, X, BookOpen, FileText, FileImage, Printer, SlidersHorizontal, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +31,7 @@ import { MenuLabelsSettingsTab } from '@/components/settings/MenuLabelsSettingsT
 import { CustomInvoiceTemplateTab } from '@/components/settings/CustomInvoiceTemplateTab';
 import { ReportSettingsTab } from '@/components/settings/ReportSettingsTab';
 import { AdvancedReportSettingsTab } from '@/components/settings/AdvancedReportSettingsTab';
+import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 
 interface AppSettingsProps {
   setActivePage: (page: ActivePage) => void;
@@ -408,7 +409,7 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
       </div>
 
       <Tabs defaultValue="company" className="w-full">
-        <TabsList className="grid w-full grid-cols-11 lg:w-auto lg:inline-grid overflow-x-auto">
+        <TabsList className="grid w-full grid-cols-12 lg:w-auto lg:inline-grid overflow-x-auto">
           <TabsTrigger value="company" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             <span className="hidden sm:inline">شركتي</span>
@@ -449,6 +450,10 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
             <Lock className="w-4 h-4" />
             <span className="hidden sm:inline">كلمة المرور</span>
           </TabsTrigger>
+          <TabsTrigger value="security" className="flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            <span className="hidden sm:inline">الأمان</span>
+          </TabsTrigger>
           <TabsTrigger value="danger" className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
             <span className="hidden sm:inline">الخطر</span>
@@ -463,6 +468,11 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
         {/* Advanced Report Settings Tab */}
         <TabsContent value="advanced-reports" className="mt-6">
           <AdvancedReportSettingsTab />
+        </TabsContent>
+
+        {/* Security Tab (2FA) */}
+        <TabsContent value="security" className="mt-6">
+          <TwoFactorSetup />
         </TabsContent>
 
         {/* Invoice Settings Tab */}

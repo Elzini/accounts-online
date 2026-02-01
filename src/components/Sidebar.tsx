@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -51,6 +51,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'zakat-reports': Scale,
   'trial-balance-analysis': FileSpreadsheet,
   'financial-statements': FileText,
+  'fixed-assets': Boxes,
   'users-management': UserCog,
   'app-settings': Settings,
   'audit-logs': ClipboardList,
@@ -242,6 +243,10 @@ export function Sidebar({
     id: 'financial-statements' as ActivePage,
     label: 'القوائم المالية الشاملة',
     icon: FileText
+  }, {
+    id: 'fixed-assets' as ActivePage,
+    label: 'الأصول الثابتة',
+    icon: Boxes
   }];
   const hasAccess = (permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users') => {
     if (!permission) return true;

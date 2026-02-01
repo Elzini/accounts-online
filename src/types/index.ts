@@ -99,4 +99,5 @@ export type ActivePage =
   | 'employees'
   | 'payroll'
   | 'account-statement'
-  | 'control-center';
+  | 'control-center'
+  | 'fixed-assets';
