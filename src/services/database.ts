@@ -189,9 +189,16 @@ export async function updateCar(id: string, car: CarUpdate) {
   
   if (error) throw error;
   
-  // If purchase price was updated, recalculate profit in related sales
-  if (car.purchase_price !== undefined) {
-    await recalculateSalesProfitForCar(id, car.purchase_price);
+  // Always recalculate profit when purchase price is provided (even if same value)
+  if (car.purchase_price !== undefined && car.purchase_price !== null) {
+    const purchasePrice = typeof car.purchase_price === 'string' 
+      ? parseFloat(car.purchase_price) 
+      : Number(car.purchase_price);
+    
+    if (!isNaN(purchasePrice)) {
+      console.log('Recalculating profit for car:', id, 'with price:', purchasePrice);
+      await recalculateSalesProfitForCar(id, purchasePrice);
+    }
   }
   
   return data;
@@ -199,6 +206,8 @@ export async function updateCar(id: string, car: CarUpdate) {
 
 // Recalculate profit for all sales related to a car when purchase price changes
 async function recalculateSalesProfitForCar(carId: string, newPurchasePrice: number) {
+  console.log('Starting profit recalculation for car:', carId, 'new price:', newPurchasePrice);
+  
   // Update sale_items profit where this car was sold
   const { data: saleItems, error: fetchItemsError } = await supabase
     .from('sale_items')
@@ -210,13 +219,20 @@ async function recalculateSalesProfitForCar(carId: string, newPurchasePrice: num
     return;
   }
   
+  console.log('Found sale_items:', saleItems?.length || 0);
+  
   // Update each sale_item's profit
   for (const item of saleItems || []) {
     const newProfit = Number(item.sale_price) - newPurchasePrice;
-    await supabase
+    console.log('Updating sale_item:', item.id, 'sale_price:', item.sale_price, 'new profit:', newProfit);
+    const { error: updateItemError } = await supabase
       .from('sale_items')
       .update({ profit: newProfit })
       .eq('id', item.id);
+    
+    if (updateItemError) {
+      console.error('Error updating sale_item profit:', updateItemError);
+    }
   }
   
   // Update main sales table profit for single-car sales (where car_id matches directly)
@@ -230,14 +246,21 @@ async function recalculateSalesProfitForCar(carId: string, newPurchasePrice: num
     return;
   }
   
+  console.log('Found direct sales:', directSales?.length || 0);
+  
   for (const sale of directSales || []) {
     const commission = Number(sale.commission) || 0;
     const otherExpenses = Number(sale.other_expenses) || 0;
     const newProfit = Number(sale.sale_price) - newPurchasePrice - commission - otherExpenses;
-    await supabase
+    console.log('Updating direct sale:', sale.id, 'new profit:', newProfit);
+    const { error: updateSaleError } = await supabase
       .from('sales')
       .update({ profit: newProfit })
       .eq('id', sale.id);
+    
+    if (updateSaleError) {
+      console.error('Error updating sale profit:', updateSaleError);
+    }
   }
   
   // For multi-car sales, update the total profit by summing all sale_items
