@@ -110,108 +110,32 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
   };
 
   const handlePrintPdf = () => {
-    if (!data.cars || data.cars.length === 0) return;
-    
-    const totalPurchase = data.cars.reduce((sum, c) => sum + c.purchasePrice, 0);
-    const totalSale = data.cars.reduce((sum, c) => sum + (c.salePrice || 0), 0);
-    const totalProfit = data.cars.reduce((sum, c) => sum + (c.profit || 0), 0);
+    const totalPurchase = data.cars?.reduce((sum, c) => sum + c.purchasePrice, 0) || 0;
+    const totalSale = data.cars?.reduce((sum, c) => sum + (c.salePrice || 0), 0) || 0;
+    const totalProfit = data.cars?.reduce((sum, c) => sum + (c.profit || 0), 0) || 0;
 
-    const printContent = `
-      <!DOCTYPE html>
-      <html dir="rtl" lang="ar">
-      <head>
-        <meta charset="UTF-8">
-        <title>تقرير ${data.title}</title>
-        <style>
-          @page { size: A4 landscape; margin: 15mm; }
-          * { box-sizing: border-box; }
-          body { 
-            font-family: 'Segoe UI', Tahoma, Arial, sans-serif; 
-            direction: rtl; 
-            padding: 20px;
-            color: #1f2937;
-          }
-          .header { 
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8); 
-            color: white; 
-            padding: 20px; 
-            border-radius: 8px; 
-            margin-bottom: 20px;
-            text-align: center;
-          }
-          .header h1 { margin: 0 0 5px 0; font-size: 24px; }
-          .header p { margin: 0; opacity: 0.9; font-size: 14px; }
-          .summary { 
-            display: flex; 
-            gap: 15px; 
-            margin-bottom: 20px; 
-            flex-wrap: wrap;
-          }
-          .summary-card { 
-            flex: 1; 
-            min-width: 150px;
-            background: #f8fafc; 
-            border: 1px solid #e2e8f0; 
-            padding: 15px; 
-            border-radius: 8px; 
-            text-align: center;
-          }
-          .summary-card .label { font-size: 12px; color: #64748b; margin-bottom: 5px; }
-          .summary-card .value { font-size: 18px; font-weight: bold; color: #1e40af; }
-          table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-          th { 
-            background: #3b82f6; 
-            color: white; 
-            padding: 12px 8px; 
-            text-align: right; 
-            font-size: 13px;
-          }
-          td { 
-            padding: 10px 8px; 
-            border-bottom: 1px solid #e2e8f0; 
-            font-size: 12px;
-          }
-          tr:nth-child(even) { background: #f8fafc; }
-          .profit-positive { color: #16a34a; font-weight: bold; }
-          .profit-negative { color: #dc2626; font-weight: bold; }
-          .footer { 
-            margin-top: 20px; 
-            text-align: center; 
-            font-size: 11px; 
-            color: #94a3b8;
-          }
-          @media print {
-            body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>تقرير ${data.title}</h1>
-          <p>تاريخ التصدير: ${new Date().toLocaleDateString('ar-SA')}</p>
-        </div>
-        
-        <div class="summary">
-          <div class="summary-card">
-            <div class="label">عدد السيارات</div>
-            <div class="value">${data.cars.length}</div>
-          </div>
-          <div class="summary-card">
-            <div class="label">إجمالي الشراء</div>
-            <div class="value">${formatCurrencyForExport(totalPurchase)}</div>
-          </div>
-          <div class="summary-card">
-            <div class="label">إجمالي البيع</div>
-            <div class="value">${formatCurrencyForExport(totalSale)}</div>
-          </div>
-          <div class="summary-card">
-            <div class="label">إجمالي الربح</div>
-            <div class="value" style="color: ${totalProfit >= 0 ? '#16a34a' : '#dc2626'}">
-              ${formatCurrencyForExport(totalProfit)}
+    // Build breakdown section HTML
+    const breakdownHtml = data.breakdown.length > 0 ? `
+      <div class="breakdown-section">
+        <h3>📊 تفاصيل الحساب</h3>
+        <div class="breakdown-items">
+          ${data.breakdown.map(item => `
+            <div class="breakdown-row ${item.type || ''}">
+              <span class="breakdown-icon">
+                ${item.type === 'add' ? '+' : item.type === 'subtract' ? '−' : item.type === 'total' ? '=' : ''}
+              </span>
+              <span class="breakdown-label">${item.label}</span>
+              <span class="breakdown-value ${item.type || ''}">${formatCurrencyForExport(item.value)}</span>
             </div>
-          </div>
+          `).join('')}
         </div>
-        
+      </div>
+    ` : '';
+
+    // Build cars table HTML
+    const carsTableHtml = data.cars && data.cars.length > 0 ? `
+      <div class="cars-section">
+        <h3>🚗 بيان السيارات (${data.cars.length} سيارة)</h3>
         <table>
           <thead>
             <tr>
@@ -242,6 +166,149 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
             `).join('')}
           </tbody>
         </table>
+        <div class="cars-summary">
+          <span>إجمالي الشراء: <strong>${formatCurrencyForExport(totalPurchase)}</strong></span>
+          <span>إجمالي البيع: <strong>${formatCurrencyForExport(totalSale)}</strong></span>
+          <span style="color: ${totalProfit >= 0 ? '#16a34a' : '#dc2626'}">إجمالي الربح: <strong>${formatCurrencyForExport(totalProfit)}</strong></span>
+        </div>
+      </div>
+    ` : '';
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="UTF-8">
+        <title>تقرير ${data.title}</title>
+        <style>
+          @page { size: A4 landscape; margin: 15mm; }
+          * { box-sizing: border-box; }
+          body { 
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif; 
+            direction: rtl; 
+            padding: 20px;
+            color: #1f2937;
+          }
+          .header { 
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8); 
+            color: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin-bottom: 20px;
+            text-align: center;
+          }
+          .header h1 { margin: 0 0 5px 0; font-size: 24px; }
+          .header .value { font-size: 32px; font-weight: bold; margin: 10px 0; }
+          .header p { margin: 0; opacity: 0.9; font-size: 14px; }
+          
+          /* Breakdown Section */
+          .breakdown-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+          }
+          .breakdown-section h3 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            color: #1e40af;
+          }
+          .breakdown-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+          .breakdown-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+          }
+          .breakdown-row.total {
+            background: #1e40af;
+            color: white;
+            font-weight: bold;
+          }
+          .breakdown-icon {
+            width: 24px;
+            font-size: 18px;
+            font-weight: bold;
+          }
+          .breakdown-row.add .breakdown-icon { color: #16a34a; }
+          .breakdown-row.subtract .breakdown-icon { color: #dc2626; }
+          .breakdown-row.total .breakdown-icon { color: white; }
+          .breakdown-label {
+            flex: 1;
+            font-size: 14px;
+          }
+          .breakdown-value {
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: 600;
+          }
+          .breakdown-value.add { color: #16a34a; }
+          .breakdown-value.subtract { color: #dc2626; }
+          .breakdown-row.total .breakdown-value { color: white; }
+          
+          /* Cars Section */
+          .cars-section {
+            margin-top: 20px;
+          }
+          .cars-section h3 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            color: #1e40af;
+          }
+          table { width: 100%; border-collapse: collapse; }
+          th { 
+            background: #3b82f6; 
+            color: white; 
+            padding: 12px 8px; 
+            text-align: right; 
+            font-size: 13px;
+          }
+          td { 
+            padding: 10px 8px; 
+            border-bottom: 1px solid #e2e8f0; 
+            font-size: 12px;
+          }
+          tr:nth-child(even) { background: #f8fafc; }
+          .profit-positive { color: #16a34a; font-weight: bold; }
+          .profit-negative { color: #dc2626; font-weight: bold; }
+          .cars-summary {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin-top: 15px;
+            padding: 12px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            font-size: 14px;
+          }
+          .footer { 
+            margin-top: 20px; 
+            text-align: center; 
+            font-size: 11px; 
+            color: #94a3b8;
+          }
+          @media print {
+            body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>تقرير ${data.title}</h1>
+          <div class="value">${data.value}</div>
+          ${data.subtitle ? `<p>${data.subtitle}</p>` : ''}
+          <p>تاريخ التصدير: ${new Date().toLocaleDateString('ar-SA')}</p>
+        </div>
+        
+        ${breakdownHtml}
+        ${carsTableHtml}
         
         <div class="footer">
           تم إنشاء هذا التقرير بواسطة نظام إدارة معرض السيارات
@@ -260,7 +327,7 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
     }
   };
 
-  const hasExportableData = data.showCarsTable && data.cars && data.cars.length > 0;
+  const hasExportableData = (data.showCarsTable && data.cars && data.cars.length > 0) || data.breakdown.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
