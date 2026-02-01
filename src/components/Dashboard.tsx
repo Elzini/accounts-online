@@ -464,6 +464,142 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             />
           </div>
 
+          {/* Installments Stats Cards - Right below main stats */}
+          {(() => {
+            const activeInstallments = installmentSales.filter(s => s.status === 'active');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // Calculate installment stats
+            let totalDueAmount = 0;
+            let overdueCount = 0;
+            let overdueAmount = 0;
+            let upcomingThisMonth = 0;
+            
+            // Get next payment info for the main card
+            let nextPaymentInfo: { customerName: string; amount: number; dueDate: string; isOverdue: boolean } | null = null;
+            
+            activeInstallments.forEach(installment => {
+              const unpaidPayments = installment.payments?.filter(p => p.status !== 'paid') || [];
+              unpaidPayments.forEach(payment => {
+                const dueDate = new Date(payment.due_date);
+                dueDate.setHours(0, 0, 0, 0);
+                totalDueAmount += payment.amount - (payment.paid_amount || 0);
+                
+                if (dueDate < today) {
+                  overdueCount++;
+                  overdueAmount += payment.amount - (payment.paid_amount || 0);
+                } else {
+                  const thisMonth = new Date();
+                  const endOfMonth = new Date(thisMonth.getFullYear(), thisMonth.getMonth() + 1, 0);
+                  if (dueDate <= endOfMonth) {
+                    upcomingThisMonth++;
+                  }
+                }
+              });
+              
+              // Find next payment for the info card
+              const nextPayment = unpaidPayments
+                .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())[0];
+              
+              if (nextPayment && !nextPaymentInfo) {
+                const paymentDueDate = new Date(nextPayment.due_date);
+                paymentDueDate.setHours(0, 0, 0, 0);
+                nextPaymentInfo = {
+                  customerName: installment.sale?.customer?.name || 'عميل غير محدد',
+                  amount: nextPayment.amount - (nextPayment.paid_amount || 0),
+                  dueDate: nextPayment.due_date,
+                  isOverdue: paymentDueDate < today
+                };
+              }
+            });
+            
+            if (activeInstallments.length === 0 && installmentSales.length === 0) return null;
+            
+            return (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
+                <StatCard
+                  title="عقود التقسيط النشطة"
+                  value={activeInstallments.length}
+                  icon={CreditCard}
+                  gradient="primary"
+                  subtitle="عقد نشط"
+                  onClick={() => setActivePage('installments')}
+                />
+                <StatCard
+                  title="الأقساط المتأخرة"
+                  value={overdueCount}
+                  icon={AlertTriangle}
+                  gradient="danger"
+                  subtitle={`${new Intl.NumberFormat('ar-SA').format(overdueAmount)} ر.س`}
+                  onClick={() => setActivePage('installments')}
+                />
+                <StatCard
+                  title="أقساط الشهر الحالي"
+                  value={upcomingThisMonth}
+                  icon={Calendar}
+                  gradient="warning"
+                  subtitle="قسط مستحق"
+                  onClick={() => setActivePage('installments')}
+                />
+                <StatCard
+                  title="إجمالي المستحق"
+                  value={`${new Intl.NumberFormat('ar-SA').format(totalDueAmount)} ر.س`}
+                  icon={DollarSign}
+                  gradient="success"
+                  subtitle="ريال سعودي"
+                  onClick={() => setActivePage('installments')}
+                />
+                
+                {/* Customer Installment Info Card */}
+                {nextPaymentInfo && (
+                  <div 
+                    className="col-span-2 lg:col-span-4 bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 shadow-sm border border-border hover-lift animate-fade-in cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => setActivePage('installments')}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0 ${
+                          nextPaymentInfo.isOverdue ? 'gradient-danger' : 'gradient-primary'
+                        }`}>
+                          <Users className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">القسط القادم</p>
+                          <p className="text-lg sm:text-xl md:text-2xl font-bold text-card-foreground">
+                            {nextPaymentInfo.customerName}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 sm:gap-8">
+                        <div className="text-center">
+                          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">المبلغ</p>
+                          <p className="text-base sm:text-lg md:text-xl font-bold text-card-foreground">
+                            {new Intl.NumberFormat('ar-SA').format(nextPaymentInfo.amount)} ر.س
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">تاريخ الاستحقاق</p>
+                          <p className={`text-base sm:text-lg md:text-xl font-bold ${
+                            nextPaymentInfo.isOverdue ? 'text-destructive' : 'text-card-foreground'
+                          }`}>
+                            {new Date(nextPaymentInfo.dueDate).toLocaleDateString('ar-SA')}
+                          </p>
+                        </div>
+                        {nextPaymentInfo.isOverdue && (
+                          <Badge variant="destructive" className="text-xs sm:text-sm px-3 py-1">
+                            متأخر
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Partner Dealership Transfers */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
             {/* Incoming Cars */}
@@ -576,176 +712,6 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               )}
             </div>
           </div>
-
-          {/* Installments Stats Section */}
-          {(() => {
-            const activeInstallments = installmentSales.filter(s => s.status === 'active');
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            // Calculate installment stats
-            let totalDueAmount = 0;
-            let overdueCount = 0;
-            let overdueAmount = 0;
-            let upcomingThisMonth = 0;
-            
-            activeInstallments.forEach(installment => {
-              const unpaidPayments = installment.payments?.filter(p => p.status !== 'paid') || [];
-              unpaidPayments.forEach(payment => {
-                const dueDate = new Date(payment.due_date);
-                dueDate.setHours(0, 0, 0, 0);
-                totalDueAmount += payment.amount - (payment.paid_amount || 0);
-                
-                if (dueDate < today) {
-                  overdueCount++;
-                  overdueAmount += payment.amount - (payment.paid_amount || 0);
-                } else {
-                  // Check if due this month
-                  const thisMonth = new Date();
-                  const endOfMonth = new Date(thisMonth.getFullYear(), thisMonth.getMonth() + 1, 0);
-                  if (dueDate <= endOfMonth) {
-                    upcomingThisMonth++;
-                  }
-                }
-              });
-            });
-            
-            if (activeInstallments.length === 0 && installmentSales.length === 0) return null;
-            
-            return (
-              <>
-                {/* Installments Stats Cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-                  <StatCard
-                    title="عقود التقسيط النشطة"
-                    value={activeInstallments.length}
-                    icon={CreditCard}
-                    gradient="primary"
-                    subtitle="عقد نشط"
-                    onClick={() => setActivePage('installments')}
-                  />
-                  <StatCard
-                    title="الأقساط المتأخرة"
-                    value={overdueCount}
-                    icon={AlertTriangle}
-                    gradient="danger"
-                    subtitle={`${new Intl.NumberFormat('ar-SA').format(overdueAmount)} ر.س`}
-                    onClick={() => setActivePage('installments')}
-                  />
-                  <StatCard
-                    title="أقساط الشهر الحالي"
-                    value={upcomingThisMonth}
-                    icon={Calendar}
-                    gradient="warning"
-                    subtitle="قسط مستحق"
-                    onClick={() => setActivePage('installments')}
-                  />
-                  <StatCard
-                    title="إجمالي المستحق"
-                    value={`${new Intl.NumberFormat('ar-SA').format(totalDueAmount)} ر.س`}
-                    icon={DollarSign}
-                    gradient="success"
-                    subtitle="ريال سعودي"
-                    onClick={() => setActivePage('installments')}
-                  />
-                </div>
-
-                {/* Installments Details List */}
-                {activeInstallments.length > 0 && (
-                  <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
-                    <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
-                      <div>
-                        <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground flex items-center gap-1.5 sm:gap-2">
-                          <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                          تفاصيل الأقساط المستحقة
-                        </h2>
-                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-                          قائمة بالأقساط القادمة والمتأخرة
-                        </p>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setActivePage('installments')}
-                        className="text-primary h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
-                      >
-                        عرض الكل
-                      </Button>
-                    </div>
-                    
-                    <div className="space-y-2 max-h-[350px] overflow-y-auto">
-                      {activeInstallments
-                        .slice(0, 5)
-                        .map((installment) => {
-                          // Find next unpaid payment
-                          const nextPayment = installment.payments
-                            ?.filter(p => p.status !== 'paid')
-                            .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())[0];
-                          
-                          const isOverdue = nextPayment && new Date(nextPayment.due_date) < new Date();
-                          const paidCount = installment.payments?.filter(p => p.status === 'paid').length || 0;
-                          const totalCount = installment.number_of_installments;
-                          
-                          return (
-                            <div 
-                              key={installment.id} 
-                              className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                                isOverdue 
-                                  ? 'bg-destructive/5 border-destructive/30 hover:bg-destructive/10' 
-                                  : 'bg-muted/30 border-border hover:bg-muted/50'
-                              }`}
-                              onClick={() => setActivePage('installments')}
-                            >
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                                    isOverdue ? 'bg-destructive/20' : 'bg-primary/10'
-                                  }`}>
-                                    {isOverdue ? (
-                                      <AlertTriangle className="w-5 h-5 text-destructive" />
-                                    ) : (
-                                      <CreditCard className="w-5 h-5 text-primary" />
-                                    )}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="font-semibold text-sm truncate">
-                                      {installment.sale?.customer?.name || 'عميل غير محدد'}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground truncate">
-                                      {installment.sale?.car?.name} {installment.sale?.car?.model}
-                                    </p>
-                                  </div>
-                                </div>
-                                
-                                <div className="text-left shrink-0 space-y-1">
-                                  <div className="flex items-center gap-2">
-                                    <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                                    <span className={`text-xs font-medium ${isOverdue ? 'text-destructive' : ''}`}>
-                                      {nextPayment ? new Date(nextPayment.due_date).toLocaleDateString('ar-SA') : '-'}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs text-muted-foreground">
-                                      القسط: {new Intl.NumberFormat('ar-SA').format(installment.installment_amount)} ر.س
-                                    </span>
-                                  </div>
-                                  <Badge 
-                                    variant={isOverdue ? 'destructive' : 'outline'} 
-                                    className="text-[10px] h-5"
-                                  >
-                                    {isOverdue ? 'متأخر' : `${paidCount}/${totalCount}`}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </div>
-                )}
-              </>
-            );
-          })()}
 
           {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
