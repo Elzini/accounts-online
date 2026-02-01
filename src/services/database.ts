@@ -619,23 +619,16 @@ export async function fetchStats(fiscalYearId?: string | null) {
     }
   }
 
-  // Available cars count:
-  // - نفلتر حسب fiscal_year_id حتى تظهر السيارات المُرحّلة في السنة الجديدة
-  // - احتياط للبيانات القديمة: لو fiscal_year_id فارغ، نرجع لفلترة purchase_date داخل نطاق السنة
+  // Available cars count - filter by purchase_date within fiscal year
   let availableCarsQuery = supabase
     .from('cars')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'available');
 
-  if (fiscalYearId) {
-    if (fiscalYearStart && fiscalYearEnd) {
-      // (fiscal_year_id = fiscalYearId) OR (fiscal_year_id is null AND purchase_date within FY)
-      availableCarsQuery = availableCarsQuery.or(
-        `fiscal_year_id.eq.${fiscalYearId},and(fiscal_year_id.is.null,purchase_date.gte.${fiscalYearStart},purchase_date.lte.${fiscalYearEnd})`
-      );
-    } else {
-      availableCarsQuery = availableCarsQuery.eq('fiscal_year_id', fiscalYearId);
-    }
+  if (fiscalYearStart && fiscalYearEnd) {
+    availableCarsQuery = availableCarsQuery
+      .gte('purchase_date', fiscalYearStart)
+      .lte('purchase_date', fiscalYearEnd);
   }
 
   const { count: availableCars } = await availableCarsQuery;

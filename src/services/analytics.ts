@@ -115,18 +115,11 @@ export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<Adv
     `)
     .order('sale_date', { ascending: false });
 
-  // Apply fiscal year filter if provided
+  // Apply fiscal year filter - filter by date only
   if (fiscalYearStart && fiscalYearEnd) {
-    // Include cars migrated into this fiscal year (fiscal_year_id), while keeping backward-compat for old data
-    if (fiscalYearId) {
-      allCarsQuery = allCarsQuery.or(
-        `fiscal_year_id.eq.${fiscalYearId},and(fiscal_year_id.is.null,purchase_date.gte.${fiscalYearStart},purchase_date.lte.${fiscalYearEnd})`
-      );
-    } else {
-      allCarsQuery = allCarsQuery
-        .gte('purchase_date', fiscalYearStart)
-        .lte('purchase_date', fiscalYearEnd);
-    }
+    allCarsQuery = allCarsQuery
+      .gte('purchase_date', fiscalYearStart)
+      .lte('purchase_date', fiscalYearEnd);
     
     allSalesQuery = allSalesQuery
       .gte('sale_date', fiscalYearStart)
