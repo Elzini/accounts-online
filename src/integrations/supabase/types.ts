@@ -1133,6 +1133,7 @@ export type Database = {
           description: string
           expense_date: string
           fiscal_year_id: string | null
+          has_vat_invoice: boolean | null
           id: string
           notes: string | null
           payment_method: string | null
@@ -1150,6 +1151,7 @@ export type Database = {
           description: string
           expense_date?: string
           fiscal_year_id?: string | null
+          has_vat_invoice?: boolean | null
           id?: string
           notes?: string | null
           payment_method?: string | null
@@ -1167,6 +1169,7 @@ export type Database = {
           description?: string
           expense_date?: string
           fiscal_year_id?: string | null
+          has_vat_invoice?: boolean | null
           id?: string
           notes?: string | null
           payment_method?: string | null

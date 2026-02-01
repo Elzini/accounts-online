@@ -85,9 +85,22 @@ export async function getVATReturnReport(
   const { data: purchasesData, error: purchasesError } = await purchasesQuery;
   if (purchasesError) throw purchasesError;
 
-  // ملاحظة مهمة: المصاريف العامة (مثل الإيجار) لا تُضاف للإقرار الضريبي
-  // لأن ضريبة المدخلات تُحتسب فقط على المشتريات التي لها فواتير ضريبية صحيحة
-  // المصاريف التشغيلية عادةً لا تحتوي على فواتير ضريبية قابلة للاسترداد
+  // Fetch expenses with VAT invoices (للمصاريف التي لها فواتير ضريبية فقط)
+  let expensesQuery = supabase
+    .from('expenses')
+    .select('id, amount, expense_date, has_vat_invoice')
+    .eq('company_id', companyId)
+    .eq('has_vat_invoice', true); // فقط المصاريف التي لها فواتير ضريبية
+
+  if (startDate) {
+    expensesQuery = expensesQuery.gte('expense_date', startDate);
+  }
+  if (endDate) {
+    expensesQuery = expensesQuery.lte('expense_date', endDate);
+  }
+
+  const { data: expensesData, error: expensesError } = await expensesQuery;
+  if (expensesError) throw expensesError;
 
   // Calculate sales totals
   // All car sales are standard rated (15% VAT)
@@ -95,36 +108,41 @@ export async function getVATReturnReport(
   // الضريبة تُحسب كـ: المبلغ الأساسي × نسبة الضريبة
   const totalSalesAmount = (salesData || []).reduce((sum, sale) => {
     const salePrice = Number(sale.sale_price) || 0;
-    // سعر البيع المخزن هو المبلغ الأساسي
     return sum + salePrice;
   }, 0);
 
   const totalSalesVAT = (salesData || []).reduce((sum, sale) => {
     const salePrice = Number(sale.sale_price) || 0;
-    // الضريبة = المبلغ الأساسي × نسبة الضريبة
     const vat = salePrice * (taxRate / 100);
     return sum + vat;
   }, 0);
 
-  // Calculate purchases totals (car inventory purchases ONLY)
-  // فقط مشتريات السيارات التي لها فواتير ضريبية
+  // Calculate purchases totals (car inventory purchases)
   const totalCarPurchasesAmount = (purchasesData || []).reduce((sum, car) => {
     const purchasePrice = Number(car.purchase_price) || 0;
-    // سعر الشراء المخزن هو المبلغ الأساسي
     return sum + purchasePrice;
   }, 0);
 
   const totalCarPurchasesVAT = (purchasesData || []).reduce((sum, car) => {
     const purchasePrice = Number(car.purchase_price) || 0;
-    // الضريبة = المبلغ الأساسي × نسبة الضريبة
     const vat = purchasePrice * (taxRate / 100);
     return sum + vat;
   }, 0);
 
-  // Total purchases = car purchases only (no general expenses)
-  // المشتريات = مشتريات السيارات فقط (بدون المصاريف التشغيلية)
-  const totalPurchasesAmount = totalCarPurchasesAmount;
-  const totalPurchasesVAT = totalCarPurchasesVAT;
+  // Calculate expenses with VAT invoices (مصاريف لها فواتير ضريبية)
+  const totalVatExpensesAmount = (expensesData || []).reduce((sum, exp) => {
+    return sum + (Number(exp.amount) || 0);
+  }, 0);
+
+  const totalVatExpensesVAT = (expensesData || []).reduce((sum, exp) => {
+    const amount = Number(exp.amount) || 0;
+    const vat = amount * (taxRate / 100);
+    return sum + vat;
+  }, 0);
+
+  // Total purchases = car purchases + expenses with VAT invoices
+  const totalPurchasesAmount = totalCarPurchasesAmount + totalVatExpensesAmount;
+  const totalPurchasesVAT = totalCarPurchasesVAT + totalVatExpensesVAT;
 
   // Build the report structure
   const sales: VATReturnSales = {
