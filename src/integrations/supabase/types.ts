@@ -68,6 +68,54 @@ export type Database = {
           },
         ]
       }
+      account_mappings: {
+        Row: {
+          account_id: string | null
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          mapping_key: string
+          mapping_type: string
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          mapping_key: string
+          mapping_type: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          mapping_key?: string
+          mapping_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_mappings_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_mappings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           company_id: string | null
@@ -890,6 +938,68 @@ export type Database = {
           },
         ]
       }
+      custom_reports: {
+        Row: {
+          columns: Json
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          filters: Json | null
+          grouping: Json | null
+          id: string
+          is_active: boolean
+          name: string
+          report_type: string
+          sorting: Json | null
+          source_table: string
+          styling: Json | null
+          updated_at: string
+        }
+        Insert: {
+          columns?: Json
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          filters?: Json | null
+          grouping?: Json | null
+          id?: string
+          is_active?: boolean
+          name: string
+          report_type?: string
+          sorting?: Json | null
+          source_table: string
+          styling?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          columns?: Json
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          filters?: Json | null
+          grouping?: Json | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          report_type?: string
+          sorting?: Json | null
+          source_table?: string
+          styling?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -1210,6 +1320,44 @@ export type Database = {
             columns: ["fiscal_year_id"]
             isOneToOne: false
             referencedRelation: "fiscal_years"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_statement_config: {
+        Row: {
+          company_id: string
+          created_at: string
+          display_options: Json | null
+          id: string
+          sections: Json
+          statement_type: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          display_options?: Json | null
+          id?: string
+          sections?: Json
+          statement_type: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          display_options?: Json | null
+          id?: string
+          sections?: Json
+          statement_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_statement_config_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -1762,6 +1910,111 @@ export type Database = {
             columns: ["journal_entry_id"]
             isOneToOne: false
             referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entry_rules: {
+        Row: {
+          amount_field: string | null
+          company_id: string
+          conditions: Json | null
+          created_at: string
+          credit_account_id: string | null
+          debit_account_id: string | null
+          description_template: string | null
+          id: string
+          is_enabled: boolean
+          name: string
+          priority: number | null
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount_field?: string | null
+          company_id: string
+          conditions?: Json | null
+          created_at?: string
+          credit_account_id?: string | null
+          debit_account_id?: string | null
+          description_template?: string | null
+          id?: string
+          is_enabled?: boolean
+          name: string
+          priority?: number | null
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          amount_field?: string | null
+          company_id?: string
+          conditions?: Json | null
+          created_at?: string
+          credit_account_id?: string | null
+          debit_account_id?: string | null
+          description_template?: string | null
+          id?: string
+          is_enabled?: boolean
+          name?: string
+          priority?: number | null
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entry_rules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_rules_credit_account_id_fkey"
+            columns: ["credit_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_rules_debit_account_id_fkey"
+            columns: ["debit_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_configuration: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          menu_items: Json
+          theme_settings: Json
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          menu_items?: Json
+          theme_settings?: Json
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          menu_items?: Json
+          theme_settings?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_configuration_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
