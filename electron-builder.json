@@ -11,7 +11,7 @@
     "electron/**/*"
   ],
   "extraMetadata": {
-    "main": "electron/main.js"
+    "main": "electron/main.cjs"
   },
   "asar": true,
   "asarUnpack": [

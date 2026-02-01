@@ -28,7 +28,8 @@ jobs:
       - name: Fix package.json for electron-builder
         shell: bash
         run: |
-          # Add missing fields
+          # Set main entry point and metadata
+          npm pkg set main="electron/main.cjs"
           npm pkg set description="Car Showroom Management System"
           npm pkg set author="Ashbal Al-Nimar"
           

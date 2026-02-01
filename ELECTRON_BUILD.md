@@ -58,7 +58,7 @@ npm install
 أضف أيضاً في المستوى الرئيسي للملف:
 ```json
 {
-  "main": "electron/main.js",
+  "main": "electron/main.cjs",
   "author": "Your Name",
   "description": "نظام إدارة معرض السيارات"
 }

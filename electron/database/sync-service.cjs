@@ -3,7 +3,7 @@
  * Synchronizes local SQLite database with Supabase cloud
  */
 
-const { getDatabase, sync, tables } = require('./database');
+const { getDatabase, sync, tables } = require('./database.cjs');
 
 // Supabase configuration
 const SUPABASE_URL = 'https://qbtkhiotvhcpmuzawkhi.supabase.co';

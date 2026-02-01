@@ -5,7 +5,7 @@
 
 const path = require('path');
 const { app } = require('electron');
-const { SCHEMA } = require('./schema');
+const { SCHEMA } = require('./schema.cjs');
 
 let db = null;
 
