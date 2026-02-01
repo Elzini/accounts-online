@@ -21,15 +21,18 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci
+
+      - name: Install Electron app deps (rebuild native modules)
+        run: npx electron-builder install-app-deps
 
       - name: Build Vite app
         run: npm run build
 
       - name: Build Electron Windows
-        run: npx electron-builder --win --x64 --publish never
+        run: npx electron-builder --config electron-builder.json --win --x64 --publish never --debug
         env:
-          DEBUG: electron-builder
+          DEBUG: electron-builder,electron-builder:*
 
       - name: Upload Windows EXE
         uses: actions/upload-artifact@v4
