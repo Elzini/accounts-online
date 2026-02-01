@@ -364,20 +364,47 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       other_expenses: String(sale.other_expenses || ''),
     });
 
-    // Load the car from this sale
-    const car = allCars.find(c => c.id === sale.car_id);
-    if (car) {
-      setSelectedCars([{
-        id: crypto.randomUUID(),
-        car_id: car.id,
-        sale_price: String(sale.sale_price),
-        purchase_price: Number(car.purchase_price),
-        car_name: car.name,
-        model: car.model || '',
-        chassis_number: car.chassis_number,
-        quantity: 1,
-        pendingTransfer: null,
-      }]);
+    // Check if this is a multi-car sale (has sale_items)
+    if (sale.sale_items && sale.sale_items.length > 0) {
+      // Multi-car sale: load all items
+      const loadedCars: SelectedCarItem[] = [];
+      
+      for (const item of sale.sale_items) {
+        const car = allCars.find(c => c.id === item.car_id);
+        if (car) {
+          loadedCars.push({
+            id: crypto.randomUUID(),
+            car_id: car.id,
+            sale_price: String(item.sale_price || 0),
+            purchase_price: Number(car.purchase_price),
+            car_name: car.name,
+            model: car.model || '',
+            chassis_number: car.chassis_number,
+            quantity: 1,
+            pendingTransfer: null,
+          });
+        }
+      }
+      
+      if (loadedCars.length > 0) {
+        setSelectedCars(loadedCars);
+      }
+    } else {
+      // Single car sale: load from car_id
+      const car = allCars.find(c => c.id === sale.car_id);
+      if (car) {
+        setSelectedCars([{
+          id: crypto.randomUUID(),
+          car_id: car.id,
+          sale_price: String(sale.sale_price),
+          purchase_price: Number(car.purchase_price),
+          car_name: car.name,
+          model: car.model || '',
+          chassis_number: car.chassis_number,
+          quantity: 1,
+          pendingTransfer: null,
+        }]);
+      }
     }
   };
 
