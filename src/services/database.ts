@@ -710,10 +710,35 @@ export async function fetchStats(fiscalYearId?: string | null) {
   // Sum all approved payroll net salaries
   const payrollExpenses = payrollData?.reduce((sum, p) => sum + (Number(p.total_net_salaries) || 0), 0) || 0;
   
-  // Total general expenses = regular expenses + payroll expenses
-  const generalExpenses = generalExpensesFromExpenses + payrollExpenses;
+  // Get due prepaid expense amortizations (rent, etc.) - include pending ones that are due
+  let prepaidAmortQuery = supabase
+    .from('prepaid_expense_amortizations')
+    .select(`
+      amount,
+      amortization_date,
+      status,
+      prepaid_expense:prepaid_expenses(company_id, status)
+    `)
+    .lte('amortization_date', toDateOnly(now)); // Due up to today
   
-  // Net profit = Gross profit - Car expenses - General expenses (including payroll)
+  if (fiscalYearStart && fiscalYearEnd) {
+    prepaidAmortQuery = prepaidAmortQuery
+      .gte('amortization_date', fiscalYearStart)
+      .lte('amortization_date', fiscalYearEnd);
+  }
+  
+  const { data: prepaidAmortData } = await prepaidAmortQuery;
+  
+  // Calculate pending (unprocessed) prepaid amortizations that are due - these should be included in expenses
+  const pendingPrepaidExpenses = prepaidAmortData?.filter(a => {
+    const prepaid = a.prepaid_expense as any;
+    return a.status === 'pending' && prepaid?.status === 'active';
+  }).reduce((sum, a) => sum + (Number(a.amount) || 0), 0) || 0;
+  
+  // Total general expenses = regular expenses + payroll expenses + pending prepaid expenses
+  const generalExpenses = generalExpensesFromExpenses + payrollExpenses + pendingPrepaidExpenses;
+  
+  // Net profit = Gross profit - Car expenses - General expenses (including payroll and prepaid)
   const totalProfit = totalGrossProfit - carExpenses - generalExpenses;
 
   // Month sales count (within current month and fiscal year)
@@ -792,6 +817,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
     totalGeneralExpenses: generalExpenses,
     // Detailed expense breakdown
     payrollExpenses,
+    prepaidExpensesDue: pendingPrepaidExpenses,
     otherGeneralExpenses: generalExpensesFromExpenses,
     // Extended breakdown data
     purchasesCount,
