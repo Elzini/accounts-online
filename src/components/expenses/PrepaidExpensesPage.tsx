@@ -1,8 +1,18 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { format, addMonths, differenceInMonths } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { Plus, Eye, Clock, CheckCircle, XCircle, Play, Calendar, Banknote } from 'lucide-react';
+import { Plus, Eye, Clock, CheckCircle, XCircle, Play, Calendar, Banknote, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -35,6 +45,8 @@ import {
   usePrepaidExpenses,
   usePrepaidExpenseAmortizations,
   useCreatePrepaidExpense,
+  useUpdatePrepaidExpense,
+  useDeletePrepaidExpense,
   useProcessAmortization,
   useProcessAllDueAmortizations,
 } from '@/hooks/usePrepaidExpenses';
@@ -48,6 +60,8 @@ export default function PrepaidExpensesPage() {
   const { data: categories = [] } = useExpenseCategories();
   const { data: accounts = [] } = useAccounts();
   const createMutation = useCreatePrepaidExpense();
+  const updateMutation = useUpdatePrepaidExpense();
+  const deleteMutation = useDeletePrepaidExpense();
   const processAllMutation = useProcessAllDueAmortizations();
   
   // تصفية حسابات المصروفات (5xxx) للإطفاء
@@ -69,6 +83,8 @@ export default function PrepaidExpensesPage() {
   );
   
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<PrepaidExpense | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
@@ -145,6 +161,64 @@ export default function PrepaidExpensesPage() {
     } catch (error) {
       toast.error('حدث خطأ أثناء تنفيذ الإطفاءات');
     }
+  };
+
+  const handleEdit = (expense: PrepaidExpense) => {
+    setSelectedExpense(expense);
+    setDescription(expense.description);
+    setTotalAmount(expense.total_amount.toString());
+    setStartDate(expense.start_date);
+    setNumberOfMonths(expense.number_of_months.toString());
+    setCategoryId(expense.category_id || '');
+    setPaymentDate(expense.payment_date);
+    setPaymentMethod(expense.payment_method || 'cash');
+    setNotes(expense.notes || '');
+    setShowEditDialog(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedExpense) return;
+
+    try {
+      await updateMutation.mutateAsync({
+        id: selectedExpense.id,
+        updates: {
+          description,
+          total_amount: parseFloat(totalAmount),
+          number_of_months: parseInt(numberOfMonths),
+          monthly_amount: parseFloat(totalAmount) / parseInt(numberOfMonths),
+          category_id: categoryId || null,
+          payment_date: paymentDate,
+          payment_method: paymentMethod,
+          notes: notes || null,
+        },
+      });
+      toast.success('تم تحديث المصروف المقدم بنجاح');
+      setShowEditDialog(false);
+      resetForm();
+      setSelectedExpense(null);
+    } catch (error) {
+      toast.error('حدث خطأ أثناء تحديث المصروف المقدم');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedExpense) return;
+
+    try {
+      await deleteMutation.mutateAsync(selectedExpense.id);
+      toast.success('تم حذف المصروف المقدم بنجاح');
+      setShowDeleteDialog(false);
+      setSelectedExpense(null);
+    } catch (error) {
+      toast.error('حدث خطأ أثناء حذف المصروف المقدم');
+    }
+  };
+
+  const openDeleteDialog = (expense: PrepaidExpense) => {
+    setSelectedExpense(expense);
+    setShowDeleteDialog(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -489,16 +563,36 @@ export default function PrepaidExpensesPage() {
                     </TableCell>
                     <TableCell>{getStatusBadge(expense.status)}</TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setSelectedExpense(expense);
-                          setShowDetailsDialog(true);
-                        }}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedExpense(expense);
+                            setShowDetailsDialog(true);
+                          }}
+                          title="عرض التفاصيل"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(expense)}
+                          title="تعديل"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openDeleteDialog(expense)}
+                          className="text-destructive hover:text-destructive"
+                          title="حذف"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -514,6 +608,151 @@ export default function PrepaidExpensesPage() {
         open={showDetailsDialog}
         onOpenChange={setShowDetailsDialog}
       />
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={(open) => {
+        setShowEditDialog(open);
+        if (!open) {
+          resetForm();
+          setSelectedExpense(null);
+        }
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>تعديل المصروف المقدم</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdate} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">الوصف *</Label>
+              <Input
+                id="edit-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="مثال: إيجار المعرض لسنة 2026"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-totalAmount">المبلغ الإجمالي *</Label>
+                <Input
+                  id="edit-totalAmount"
+                  type="number"
+                  value={totalAmount}
+                  onChange={(e) => setTotalAmount(e.target.value)}
+                  placeholder="120000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-numberOfMonths">عدد الأشهر *</Label>
+                <Input
+                  id="edit-numberOfMonths"
+                  type="number"
+                  value={numberOfMonths}
+                  onChange={(e) => setNumberOfMonths(e.target.value)}
+                  min="1"
+                  max="60"
+                />
+              </div>
+            </div>
+
+            {totalAmount && numberOfMonths && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  القسط الشهري: <span className="font-bold text-foreground">
+                    {(parseFloat(totalAmount) / parseInt(numberOfMonths || '1')).toLocaleString()} ر.س
+                  </span>
+                </p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-category">التصنيف</Label>
+                <Select value={categoryId} onValueChange={setCategoryId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر التصنيف" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-paymentMethod">طريقة الدفع</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">نقداً</SelectItem>
+                    <SelectItem value="bank">تحويل بنكي</SelectItem>
+                    <SelectItem value="check">شيك</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-notes">ملاحظات</Label>
+              <Textarea
+                id="edit-notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="ملاحظات إضافية..."
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => {
+                setShowEditDialog(false);
+                resetForm();
+                setSelectedExpense(null);
+              }}>
+                إلغاء
+              </Button>
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف المصروف المقدم "{selectedExpense?.description}"؟
+              <br />
+              <span className="text-destructive font-medium">
+                سيتم حذف جميع سجلات الإطفاء المرتبطة به.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel onClick={() => {
+              setShowDeleteDialog(false);
+              setSelectedExpense(null);
+            }}>
+              إلغاء
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'جاري الحذف...' : 'حذف'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
