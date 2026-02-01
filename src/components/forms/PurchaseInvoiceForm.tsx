@@ -9,7 +9,8 @@ import {
   ChevronRight,
   ChevronLeft,
   Car,
-  ArrowRight
+  ArrowRight,
+  RotateCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,9 +19,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
-import { useSuppliers, useAddPurchaseBatch, useCars } from '@/hooks/useDatabase';
+import { useSuppliers, useAddPurchaseBatch, useCars, useUpdateCar, useDeleteCar } from '@/hooks/useDatabase';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { PurchaseInvoiceDialog } from '@/components/invoices/PurchaseInvoiceDialog';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -61,6 +72,8 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const { company } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
   const addPurchaseBatch = useAddPurchaseBatch();
+  const updateCar = useUpdateCar();
+  const deleteCar = useDeleteCar();
 
   // Generate next invoice number
   const nextInvoiceNumber = useMemo(() => {
@@ -97,6 +110,10 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('amount');
   const [currentInvoiceIndex, setCurrentInvoiceIndex] = useState(0);
+  const [isViewingExisting, setIsViewingExisting] = useState(false);
+  const [currentCarId, setCurrentCarId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
 
   const selectedSupplier = suppliers.find(s => s.id === invoiceData.supplier_id);
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_purchases ? (taxSettings?.tax_rate || 15) : 0;
@@ -260,6 +277,8 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     setCars([createEmptyCar()]);
     setDiscount(0);
     setSavedBatchData(null);
+    setIsViewingExisting(false);
+    setCurrentCarId(null);
   };
 
   const handleCloseInvoice = (open: boolean) => {
@@ -302,6 +321,9 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   };
 
   const loadCarData = (car: any) => {
+    setIsViewingExisting(true);
+    setCurrentCarId(car.id);
+    
     setInvoiceData({
       invoice_number: String(car.inventory_number || ''),
       supplier_id: car.supplier_id || '',
@@ -323,6 +345,97 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       quantity: 1,
       unit: 'سيارة',
     }]);
+  };
+
+  // Handle delete purchase
+  const handleDeletePurchase = async () => {
+    if (!currentCarId) return;
+    
+    const car = existingCars.find(c => c.id === currentCarId);
+    if (!car) return;
+    
+    // Can't delete sold cars
+    if (car.status === 'sold') {
+      toast.error('لا يمكن حذف سيارة مباعة');
+      return;
+    }
+    
+    try {
+      await deleteCar.mutateAsync(currentCarId);
+      toast.success('تم حذف فاتورة الشراء بنجاح');
+      setDeleteDialogOpen(false);
+      handleNewInvoice();
+    } catch (error) {
+      toast.error('حدث خطأ أثناء حذف الفاتورة');
+    }
+  };
+
+  // Handle reverse purchase (same as delete for purchases)
+  const handleReversePurchase = async () => {
+    if (!currentCarId) return;
+    
+    const car = existingCars.find(c => c.id === currentCarId);
+    if (!car) return;
+    
+    // Can't reverse sold cars
+    if (car.status === 'sold') {
+      toast.error('لا يمكن إرجاع فاتورة سيارة مباعة');
+      return;
+    }
+    
+    try {
+      await deleteCar.mutateAsync(currentCarId);
+      toast.success('تم إرجاع فاتورة الشراء بنجاح وحذف السيارة من المخزون');
+      setReverseDialogOpen(false);
+      handleNewInvoice();
+    } catch (error) {
+      toast.error('حدث خطأ أثناء إرجاع الفاتورة');
+    }
+  };
+
+  // Handle update purchase
+  const handleUpdatePurchase = async () => {
+    if (!currentCarId) return;
+
+    const carData = cars[0];
+    if (!carData || !carData.chassis_number || !carData.name || !carData.purchase_price) {
+      toast.error('الرجاء ملء جميع الحقول المطلوبة');
+      return;
+    }
+
+    try {
+      await updateCar.mutateAsync({
+        id: currentCarId,
+        car: {
+          name: carData.name,
+          model: carData.model || null,
+          chassis_number: carData.chassis_number,
+          color: carData.color || null,
+          purchase_price: parseFloat(carData.purchase_price),
+          purchase_date: invoiceData.purchase_date,
+          payment_account_id: invoiceData.payment_account_id || null,
+          supplier_id: invoiceData.supplier_id || null,
+        }
+      });
+      toast.success('تم تحديث بيانات الشراء بنجاح');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء تحديث البيانات');
+    }
+  };
+
+  // Handle print existing invoice
+  const handlePrintExisting = () => {
+    if (!currentCarId) return;
+    
+    const car = existingCars.find(c => c.id === currentCarId);
+    if (!car) return;
+
+    setSavedBatchData({
+      batch: { id: car.id },
+      supplier: selectedSupplier,
+      cars: cars,
+    });
+    setInvoiceOpen(true);
   };
 
   // Prepare invoice preview data
@@ -661,19 +774,45 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           {/* Action Buttons */}
           <div className="p-4 bg-muted/50 border-t flex flex-wrap gap-2 justify-between">
             <div className="flex flex-wrap gap-2">
-              <Button onClick={handleSubmit} className="gap-2 gradient-primary" disabled={addPurchaseBatch.isPending}>
-                <Save className="w-4 h-4" />
-                {addPurchaseBatch.isPending ? 'جاري الحفظ...' : 'اعتماد'}
-              </Button>
+              {isViewingExisting ? (
+                <Button onClick={handleUpdatePurchase} className="gap-2 gradient-primary" disabled={updateCar.isPending}>
+                  <Save className="w-4 h-4" />
+                  {updateCar.isPending ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+                </Button>
+              ) : (
+                <Button onClick={handleSubmit} className="gap-2 gradient-primary" disabled={addPurchaseBatch.isPending}>
+                  <Save className="w-4 h-4" />
+                  {addPurchaseBatch.isPending ? 'جاري الحفظ...' : 'اعتماد'}
+                </Button>
+              )}
               <Button variant="outline" onClick={handleNewInvoice} className="gap-2">
                 <Plus className="w-4 h-4" />
                 جديد
               </Button>
-              <Button variant="outline" className="gap-2" disabled>
+              <Button 
+                variant="outline" 
+                className="gap-2" 
+                disabled={!isViewingExisting}
+                onClick={handlePrintExisting}
+              >
                 <Printer className="w-4 h-4" />
                 طباعة
               </Button>
-              <Button variant="outline" className="gap-2 text-destructive hover:text-destructive" disabled>
+              <Button 
+                variant="outline" 
+                className="gap-2 text-orange-500 hover:text-orange-600" 
+                disabled={!isViewingExisting}
+                onClick={() => setReverseDialogOpen(true)}
+              >
+                <RotateCcw className="w-4 h-4" />
+                إرجاع
+              </Button>
+              <Button 
+                variant="outline" 
+                className="gap-2 text-destructive hover:text-destructive" 
+                disabled={!isViewingExisting}
+                onClick={() => setDeleteDialogOpen(true)}
+              >
                 <Trash2 className="w-4 h-4" />
                 حذف
               </Button>
@@ -748,6 +887,57 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           data={invoicePreviewData}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>هل أنت متأكد من حذف فاتورة الشراء؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم حذف السيارة من المخزون. لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePurchase}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteCar.isPending ? 'جاري الحذف...' : 'حذف'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reverse Confirmation Dialog */}
+      <AlertDialog open={reverseDialogOpen} onOpenChange={setReverseDialogOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-orange-500" />
+              إرجاع فاتورة الشراء
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>هل أنت متأكد من إرجاع هذه الفاتورة؟</p>
+              <ul className="list-disc list-inside text-muted-foreground">
+                <li>سيتم حذف السيارة من المخزون</li>
+                <li>سيتم حذف القيد المحاسبي المرتبط</li>
+                <li>سيتم تحديث الإحصائيات والتقارير</li>
+              </ul>
+              <p className="text-destructive font-medium">لا يمكن التراجع عن هذا الإجراء.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleReversePurchase}
+              className="bg-orange-600 text-white hover:bg-orange-700"
+            >
+              {deleteCar.isPending ? 'جاري الإرجاع...' : 'إرجاع الفاتورة'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
