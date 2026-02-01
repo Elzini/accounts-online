@@ -109,40 +109,155 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
     });
   };
 
-  const handleExportPdf = () => {
+  const handlePrintPdf = () => {
     if (!data.cars || data.cars.length === 0) return;
     
     const totalPurchase = data.cars.reduce((sum, c) => sum + c.purchasePrice, 0);
     const totalSale = data.cars.reduce((sum, c) => sum + (c.salePrice || 0), 0);
     const totalProfit = data.cars.reduce((sum, c) => sum + (c.profit || 0), 0);
 
-    exportToPdf({
-      title: `تقرير ${data.title}`,
-      subtitle: `تاريخ التصدير: ${new Date().toLocaleDateString('ar-SA')}`,
-      fileName: `تقرير_${data.title.replace(/\s/g, '_')}_${new Date().toLocaleDateString('ar-SA')}`,
-      columns: [
-        { header: 'السيارة', key: 'name' },
-        { header: 'الموديل', key: 'model' },
-        { header: 'سعر الشراء', key: 'purchasePrice' },
-        { header: 'سعر البيع', key: 'salePrice' },
-        { header: 'الربح', key: 'profit' },
-        { header: 'التاريخ', key: 'saleDate' },
-      ],
-      data: data.cars.map(car => ({
-        name: car.name,
-        model: car.model || '-',
-        purchasePrice: formatCurrencyForExport(car.purchasePrice),
-        salePrice: car.salePrice !== undefined ? formatCurrencyForExport(car.salePrice) : '-',
-        profit: car.profit !== undefined ? formatCurrencyForExport(car.profit) : '-',
-        saleDate: car.saleDate ? formatDate(car.saleDate) : '-',
-      })),
-      summaryCards: [
-        { label: 'عدد السيارات', value: String(data.cars.length) },
-        { label: 'إجمالي الشراء', value: formatCurrencyForExport(totalPurchase) },
-        { label: 'إجمالي البيع', value: formatCurrencyForExport(totalSale) },
-        { label: 'إجمالي الربح', value: formatCurrencyForExport(totalProfit) },
-      ],
-    });
+    const printContent = `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="UTF-8">
+        <title>تقرير ${data.title}</title>
+        <style>
+          @page { size: A4 landscape; margin: 15mm; }
+          * { box-sizing: border-box; }
+          body { 
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif; 
+            direction: rtl; 
+            padding: 20px;
+            color: #1f2937;
+          }
+          .header { 
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8); 
+            color: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin-bottom: 20px;
+            text-align: center;
+          }
+          .header h1 { margin: 0 0 5px 0; font-size: 24px; }
+          .header p { margin: 0; opacity: 0.9; font-size: 14px; }
+          .summary { 
+            display: flex; 
+            gap: 15px; 
+            margin-bottom: 20px; 
+            flex-wrap: wrap;
+          }
+          .summary-card { 
+            flex: 1; 
+            min-width: 150px;
+            background: #f8fafc; 
+            border: 1px solid #e2e8f0; 
+            padding: 15px; 
+            border-radius: 8px; 
+            text-align: center;
+          }
+          .summary-card .label { font-size: 12px; color: #64748b; margin-bottom: 5px; }
+          .summary-card .value { font-size: 18px; font-weight: bold; color: #1e40af; }
+          table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+          th { 
+            background: #3b82f6; 
+            color: white; 
+            padding: 12px 8px; 
+            text-align: right; 
+            font-size: 13px;
+          }
+          td { 
+            padding: 10px 8px; 
+            border-bottom: 1px solid #e2e8f0; 
+            font-size: 12px;
+          }
+          tr:nth-child(even) { background: #f8fafc; }
+          .profit-positive { color: #16a34a; font-weight: bold; }
+          .profit-negative { color: #dc2626; font-weight: bold; }
+          .footer { 
+            margin-top: 20px; 
+            text-align: center; 
+            font-size: 11px; 
+            color: #94a3b8;
+          }
+          @media print {
+            body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>تقرير ${data.title}</h1>
+          <p>تاريخ التصدير: ${new Date().toLocaleDateString('ar-SA')}</p>
+        </div>
+        
+        <div class="summary">
+          <div class="summary-card">
+            <div class="label">عدد السيارات</div>
+            <div class="value">${data.cars.length}</div>
+          </div>
+          <div class="summary-card">
+            <div class="label">إجمالي الشراء</div>
+            <div class="value">${formatCurrencyForExport(totalPurchase)}</div>
+          </div>
+          <div class="summary-card">
+            <div class="label">إجمالي البيع</div>
+            <div class="value">${formatCurrencyForExport(totalSale)}</div>
+          </div>
+          <div class="summary-card">
+            <div class="label">إجمالي الربح</div>
+            <div class="value" style="color: ${totalProfit >= 0 ? '#16a34a' : '#dc2626'}">
+              ${formatCurrencyForExport(totalProfit)}
+            </div>
+          </div>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>السيارة</th>
+              <th>الموديل</th>
+              <th>رقم الهيكل</th>
+              <th>سعر الشراء</th>
+              <th>سعر البيع</th>
+              <th>الربح</th>
+              <th>التاريخ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.cars.map((car, idx) => `
+              <tr>
+                <td>${idx + 1}</td>
+                <td>${car.name}</td>
+                <td>${car.model || '-'}</td>
+                <td style="font-family: monospace; font-size: 11px;">${car.chassisNumber || '-'}</td>
+                <td>${formatCurrencyForExport(car.purchasePrice)}</td>
+                <td>${car.salePrice !== undefined ? formatCurrencyForExport(car.salePrice) : '-'}</td>
+                <td class="${(car.profit || 0) >= 0 ? 'profit-positive' : 'profit-negative'}">
+                  ${car.profit !== undefined ? formatCurrencyForExport(car.profit) : '-'}
+                </td>
+                <td>${car.saleDate ? formatDate(car.saleDate) : '-'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="footer">
+          تم إنشاء هذا التقرير بواسطة نظام إدارة معرض السيارات
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
   };
 
   const hasExportableData = data.showCarsTable && data.cars && data.cars.length > 0;
@@ -158,7 +273,7 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
             </div>
             {hasExportableData && (
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleExportPdf}>
+                <Button variant="outline" size="sm" onClick={handlePrintPdf}>
                   <Printer className="w-4 h-4 ml-1" />
                   PDF
                 </Button>
