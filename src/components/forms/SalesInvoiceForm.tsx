@@ -49,6 +49,8 @@ import { PaymentAccountSelector } from './PaymentAccountSelector';
 import { useImportedInvoiceData } from '@/hooks/useImportedInvoiceData';
 import { getPendingTransferForCar, linkTransferToSale } from '@/hooks/useTransfers';
 import { CarTransfer } from '@/services/transfers';
+import { useAddInstallmentSale } from '@/hooks/useInstallments';
+import { useCompanyId } from '@/hooks/useCompanyId';
 
 interface SalesInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -80,6 +82,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const deleteSale = useDeleteSale();
   const reverseSale = useReverseSale();
   const updateSale = useUpdateSale();
+  const addInstallmentSale = useAddInstallmentSale();
+  const companyId = useCompanyId();
 
   // Available cars for sale
   const availableCars = useMemo(() => 
@@ -103,6 +107,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     price_includes_tax: true,
     commission: '',
     other_expenses: '',
+    is_installment: false,
+    down_payment: '',
+    number_of_installments: '12',
   });
 
   // Set default payment account
@@ -295,6 +302,33 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           }
         }
       }
+
+      // Create installment contract if enabled
+      if (invoiceData.is_installment && companyId) {
+        const downPayment = parseFloat(invoiceData.down_payment) || 0;
+        const numberOfInstallments = parseInt(invoiceData.number_of_installments) || 12;
+        const remainingAmount = calculations.finalTotal - downPayment;
+        const installmentAmount = remainingAmount / numberOfInstallments;
+
+        try {
+          await addInstallmentSale.mutateAsync({
+            company_id: companyId,
+            sale_id: sale.id,
+            total_amount: calculations.finalTotal,
+            down_payment: downPayment,
+            remaining_amount: remainingAmount,
+            number_of_installments: numberOfInstallments,
+            installment_amount: installmentAmount,
+            start_date: invoiceData.sale_date,
+            status: 'active',
+            notes: invoiceData.notes || null,
+          });
+          toast.success('تم إنشاء عقد التقسيط بنجاح');
+        } catch (error) {
+          console.error('Installment creation error:', error);
+          toast.error('حدث خطأ أثناء إنشاء عقد التقسيط');
+        }
+      }
       
       // Store saved data for invoice
       setSavedSaleData({
@@ -323,6 +357,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       price_includes_tax: true,
       commission: '',
       other_expenses: '',
+      is_installment: false,
+      down_payment: '',
+      number_of_installments: '12',
     });
     setSelectedCars([]);
     setDiscount(0);
@@ -386,6 +423,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       price_includes_tax: true,
       commission: String(sale.commission || ''),
       other_expenses: String(sale.other_expenses || ''),
+      is_installment: false,
+      down_payment: '',
+      number_of_installments: '12',
     });
 
     // Check if this is a multi-car sale (has sale_items)
@@ -727,6 +767,63 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   className="h-9 text-sm"
                 />
               </div>
+            </div>
+
+            {/* Row 4 - Installment options */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 pt-2 border-t">
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="is_installment"
+                  checked={invoiceData.is_installment}
+                  onCheckedChange={(checked) => setInvoiceData({ ...invoiceData, is_installment: !!checked })}
+                />
+                <Label htmlFor="is_installment" className="text-xs cursor-pointer font-medium text-primary">
+                  بيع بالتقسيط
+                </Label>
+              </div>
+              {invoiceData.is_installment && (
+                <>
+                  <div className="space-y-1">
+                    <Label className="text-xs">الدفعة المقدمة</Label>
+                    <Input
+                      type="number"
+                      value={invoiceData.down_payment}
+                      onChange={(e) => setInvoiceData({ ...invoiceData, down_payment: e.target.value })}
+                      className="h-9 text-sm"
+                      placeholder="0"
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">عدد الأقساط</Label>
+                    <Select 
+                      value={invoiceData.number_of_installments} 
+                      onValueChange={(v) => setInvoiceData({ ...invoiceData, number_of_installments: v })}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[3, 6, 9, 12, 18, 24, 36, 48, 60].map(num => (
+                          <SelectItem key={num} value={String(num)}>{num} شهر</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">المتبقي</Label>
+                    <div className="h-9 flex items-center text-sm font-medium text-destructive bg-background px-3 rounded-md border">
+                      {formatCurrency(calculations.finalTotal - (parseFloat(invoiceData.down_payment) || 0))} ر.س
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">قيمة القسط</Label>
+                    <div className="h-9 flex items-center text-sm font-medium text-primary bg-background px-3 rounded-md border">
+                      {formatCurrency((calculations.finalTotal - (parseFloat(invoiceData.down_payment) || 0)) / (parseInt(invoiceData.number_of_installments) || 12))} ر.س
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
