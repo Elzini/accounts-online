@@ -17,6 +17,7 @@ import { CustomReportsTab } from './tabs/CustomReportsTab';
 import { FinancialStatementsConfigTab } from './tabs/FinancialStatementsConfigTab';
 import { MenuConfigurationTab } from './tabs/MenuConfigurationTab';
 import { ThemeConfigurationTab } from './tabs/ThemeConfigurationTab';
+import { DashboardConfigTab } from './tabs/DashboardConfigTab';
 
 export function ControlCenterPage() {
   return (
@@ -32,8 +33,12 @@ export function ControlCenterPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="account-mappings" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid overflow-x-auto">
+      <Tabs defaultValue="dashboard-config" className="w-full">
+        <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid overflow-x-auto">
+          <TabsTrigger value="dashboard-config" className="flex items-center gap-2">
+            <LayoutGrid className="w-4 h-4" />
+            <span className="hidden sm:inline">لوحة التحكم</span>
+          </TabsTrigger>
           <TabsTrigger value="account-mappings" className="flex items-center gap-2">
             <Database className="w-4 h-4" />
             <span className="hidden sm:inline">ربط الحسابات</span>
@@ -59,6 +64,10 @@ export function ControlCenterPage() {
             <span className="hidden sm:inline">المظهر</span>
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="dashboard-config" className="mt-6">
+          <DashboardConfigTab />
+        </TabsContent>
 
         <TabsContent value="account-mappings" className="mt-6">
           <AccountMappingsTab />

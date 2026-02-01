@@ -521,3 +521,77 @@ export async function deleteJournalEntryRule(id: string): Promise<void> {
 
   if (error) throw error;
 }
+
+// Dashboard Configuration Types
+export interface DashboardConfig {
+  id: string;
+  company_id: string;
+  stat_cards: StatCardConfig[];
+  analytics_settings: AnalyticsSettings;
+  layout_settings: LayoutSettings;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StatCardConfig {
+  id: string;
+  type: string;
+  label: string;
+  visible: boolean;
+  order: number;
+  size: 'small' | 'medium' | 'large';
+  color?: string;
+}
+
+export interface AnalyticsSettings {
+  components?: AnalyticsComponentConfig[];
+}
+
+export interface AnalyticsComponentConfig {
+  componentId: string;
+  visible: boolean;
+  order: number;
+  size: 'half' | 'full';
+}
+
+export interface LayoutSettings {
+  cardsPerRow?: number;
+  cardSpacing?: number;
+  showOverviewTab?: boolean;
+  showAnalyticsTab?: boolean;
+  defaultTab?: 'overview' | 'analytics';
+}
+
+// Fetch dashboard configuration
+export async function fetchDashboardConfig(companyId: string): Promise<DashboardConfig | null> {
+  const { data, error } = await supabase
+    .from('dashboard_config')
+    .select('*')
+    .eq('company_id', companyId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  if (!data) return null;
+  
+  return {
+    ...data,
+    stat_cards: (data.stat_cards || []) as unknown as StatCardConfig[],
+    analytics_settings: (data.analytics_settings || {}) as unknown as AnalyticsSettings,
+    layout_settings: (data.layout_settings || {}) as unknown as LayoutSettings,
+  };
+}
+
+// Save dashboard configuration
+export async function saveDashboardConfig(companyId: string, config: Partial<DashboardConfig>): Promise<void> {
+  const { error } = await supabase
+    .from('dashboard_config' as any)
+    .upsert({
+      company_id: companyId,
+      stat_cards: config.stat_cards || [],
+      analytics_settings: config.analytics_settings || {},
+      layout_settings: config.layout_settings || {},
+      updated_at: new Date().toISOString(),
+    } as any, { onConflict: 'company_id' });
+
+  if (error) throw error;
+}

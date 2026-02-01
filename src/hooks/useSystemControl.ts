@@ -15,11 +15,14 @@ import {
   createJournalEntryRule,
   updateJournalEntryRule,
   deleteJournalEntryRule,
+  fetchDashboardConfig,
+  saveDashboardConfig,
   CustomReport,
   MenuConfiguration,
   AccountMapping,
   FinancialStatementConfig,
   JournalEntryRule,
+  DashboardConfig,
 } from '@/services/systemControl';
 
 // Custom Reports Hooks
@@ -188,6 +191,30 @@ export function useDeleteJournalEntryRule() {
     mutationFn: deleteJournalEntryRule,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['journal-entry-rules', companyId] });
+    },
+  });
+}
+
+// Dashboard Configuration Hooks
+export function useDashboardConfig() {
+  const { companyId } = useCompany();
+  
+  return useQuery({
+    queryKey: ['dashboard-config', companyId],
+    queryFn: () => companyId ? fetchDashboardConfig(companyId) : null,
+    enabled: !!companyId,
+  });
+}
+
+export function useSaveDashboardConfig() {
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+  
+  return useMutation({
+    mutationFn: (config: Partial<DashboardConfig>) => 
+      saveDashboardConfig(companyId!, config),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard-config', companyId] });
     },
   });
 }
