@@ -25,6 +25,27 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Fix package.json for electron-builder
+        shell: bash
+        run: |
+          # Add missing fields
+          npm pkg set description="Car Showroom Management System"
+          npm pkg set author="Ashbal Al-Nimar"
+          
+          # Move electron to devDependencies
+          ELECTRON_VER=$(node -p "require('./package.json').dependencies.electron || ''")
+          if [ -n "$ELECTRON_VER" ]; then
+            npm pkg delete dependencies.electron
+            npm pkg set devDependencies.electron="$ELECTRON_VER"
+          fi
+          
+          # Move electron-builder to devDependencies
+          EB_VER=$(node -p "require('./package.json').dependencies['electron-builder'] || ''")
+          if [ -n "$EB_VER" ]; then
+            npm pkg delete dependencies.electron-builder
+            npm pkg set devDependencies.electron-builder="$EB_VER"
+          fi
+
       - name: Install dependencies
         run: npm install --legacy-peer-deps
         env:
