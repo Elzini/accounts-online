@@ -2049,6 +2049,7 @@ export type Database = {
           number_of_months: number
           payment_date: string
           payment_method: string | null
+          prepaid_asset_account_id: string | null
           remaining_amount: number
           start_date: string
           status: string
@@ -2070,6 +2071,7 @@ export type Database = {
           number_of_months?: number
           payment_date?: string
           payment_method?: string | null
+          prepaid_asset_account_id?: string | null
           remaining_amount: number
           start_date: string
           status?: string
@@ -2091,6 +2093,7 @@ export type Database = {
           number_of_months?: number
           payment_date?: string
           payment_method?: string | null
+          prepaid_asset_account_id?: string | null
           remaining_amount?: number
           start_date?: string
           status?: string
@@ -2115,6 +2118,13 @@ export type Database = {
           {
             foreignKeyName: "prepaid_expenses_expense_account_id_fkey"
             columns: ["expense_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaid_expenses_prepaid_asset_account_id_fkey"
+            columns: ["prepaid_asset_account_id"]
             isOneToOne: false
             referencedRelation: "account_categories"
             referencedColumns: ["id"]
