@@ -37,6 +37,7 @@ import { PurchaseInvoiceDialog } from '@/components/invoices/PurchaseInvoiceDial
 import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { PaymentAccountSelector } from './PaymentAccountSelector';
+import { InvoiceSearchBar } from './InvoiceSearchBar';
 
 interface PurchaseInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -486,6 +487,38 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             >
               <X className="w-5 h-5" />
             </Button>
+          </div>
+
+          {/* Search Bar */}
+          <div className="p-3 border-b bg-muted/20">
+            <InvoiceSearchBar
+              mode="purchases"
+              purchases={existingCars}
+              suppliers={suppliers}
+              onSelectResult={(result) => {
+                if (result.type === 'invoice' || result.type === 'car') {
+                  // Load the car/purchase
+                  const car = result.data;
+                  const carIndex = existingCars.findIndex(c => c.id === car.id);
+                  if (carIndex >= 0) {
+                    setCurrentInvoiceIndex(carIndex);
+                    loadCarData(existingCars[carIndex]);
+                  }
+                } else if (result.type === 'supplier') {
+                  // Load first purchase of this supplier or set supplier for new invoice
+                  const supplierPurchases = result.data.purchases;
+                  if (supplierPurchases && supplierPurchases.length > 0) {
+                    const carIndex = existingCars.findIndex(c => c.id === supplierPurchases[0].id);
+                    if (carIndex >= 0) {
+                      setCurrentInvoiceIndex(carIndex);
+                      loadCarData(existingCars[carIndex]);
+                    }
+                  } else {
+                    setInvoiceData(prev => ({ ...prev, supplier_id: result.id }));
+                  }
+                }
+              }}
+            />
           </div>
 
           {/* Invoice Header Form */}

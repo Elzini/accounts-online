@@ -51,6 +51,7 @@ import { getPendingTransferForCar, linkTransferToSale } from '@/hooks/useTransfe
 import { CarTransfer } from '@/services/transfers';
 import { useAddInstallmentSale } from '@/hooks/useInstallments';
 import { useCompanyId } from '@/hooks/useCompanyId';
+import { InvoiceSearchBar } from './InvoiceSearchBar';
 
 interface SalesInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -610,6 +611,38 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             >
               <X className="w-5 h-5" />
             </Button>
+          </div>
+
+          {/* Search Bar */}
+          <div className="p-3 border-b bg-muted/20">
+            <InvoiceSearchBar
+              mode="sales"
+              sales={salesWithItems}
+              customers={customers}
+              onSelectResult={(result) => {
+                if (result.type === 'invoice' || result.type === 'car') {
+                  // Load the sale
+                  const sale = result.data;
+                  const saleIndex = existingSales.findIndex(s => s.id === sale.id);
+                  if (saleIndex >= 0) {
+                    setCurrentInvoiceIndex(saleIndex);
+                    loadSaleData(existingSales[saleIndex]);
+                  }
+                } else if (result.type === 'customer') {
+                  // Load first sale of this customer or set customer for new invoice
+                  const customerSales = result.data.sales;
+                  if (customerSales && customerSales.length > 0) {
+                    const saleIndex = existingSales.findIndex(s => s.id === customerSales[0].id);
+                    if (saleIndex >= 0) {
+                      setCurrentInvoiceIndex(saleIndex);
+                      loadSaleData(existingSales[saleIndex]);
+                    }
+                  } else {
+                    setInvoiceData(prev => ({ ...prev, customer_id: result.id }));
+                  }
+                }
+              }}
+            />
           </div>
 
           {/* Invoice Header Form */}
