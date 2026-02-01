@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { 
   LayoutDashboard, 
   Users, 
@@ -27,13 +28,18 @@ import {
   Clock,
   Calendar,
   FileSpreadsheet,
-  Settings2
+  Settings2,
+  ChevronDown,
+  ChevronRight,
+  LucideIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppSettings } from '@/hooks/useSettings';
+import { useMenuConfiguration } from '@/hooks/useSystemControl';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import defaultLogo from '@/assets/logo.png';
 
 interface SidebarProps {
@@ -41,17 +47,67 @@ interface SidebarProps {
   setActivePage: (page: ActivePage) => void;
 }
 
+// Icon mapping for dynamic menu
+const ICON_MAP: Record<string, LucideIcon> = {
+  'dashboard': LayoutDashboard,
+  'customers': Users,
+  'suppliers': Truck,
+  'purchases': ShoppingCart,
+  'sales': DollarSign,
+  'partner-dealerships': Building2,
+  'car-transfers': ArrowLeftRight,
+  'employees': Users,
+  'payroll': CreditCard,
+  'expenses': Wallet,
+  'prepaid-expenses': Clock,
+  'quotations': FileCheck,
+  'installments': CreditCard,
+  'vouchers': Receipt,
+  'financing': Landmark,
+  'banking': Scale,
+  'inventory-report': Package,
+  'profit-report': TrendingUp,
+  'purchases-report': FileText,
+  'sales-report': DollarSign,
+  'customers-report': Users,
+  'suppliers-report': Truck,
+  'commissions-report': DollarSign,
+  'transfers-report': ArrowLeftRight,
+  'partner-report': Building2,
+  'fiscal-years': Calendar,
+  'tax-settings': Percent,
+  'chart-of-accounts': BookOpen,
+  'journal-entries': Calculator,
+  'general-ledger': FileText,
+  'account-statement': ClipboardList,
+  'vat-return-report': Receipt,
+  'financial-reports': PieChart,
+  'zakat-reports': Scale,
+  'trial-balance-analysis': FileSpreadsheet,
+  'financial-statements': FileText,
+  'users-management': UserCog,
+  'app-settings': Settings,
+  'audit-logs': ClipboardList,
+  'backups': Database,
+  'control-center': Settings2,
+};
+
 export function Sidebar({ activePage, setActivePage }: SidebarProps) {
   const navigate = useNavigate();
   const { permissions } = useAuth();
   const { data: settings } = useAppSettings();
+  const { data: menuConfig } = useMenuConfiguration();
+  
+  // Track collapsed sections
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
   // Use company logo if available, otherwise use default
   const logoUrl = settings?.company_logo_url || defaultLogo;
   const appName = settings?.app_name || 'منصة إدارة المعارض';
   const appSubtitle = settings?.app_subtitle || 'لتجارة السيارات';
 
-  const menuItems = [
+  // Default menu structure
+  const defaultMenuItems = [
     { id: 'dashboard' as ActivePage, label: settings?.dashboard_title || 'الرئيسية', icon: LayoutDashboard },
     { id: 'customers' as ActivePage, label: settings?.customers_title || 'العملاء', icon: Users, permission: 'sales' as const },
     { id: 'suppliers' as ActivePage, label: settings?.suppliers_title || 'الموردين', icon: Truck, permission: 'purchases' as const },
@@ -109,6 +165,154 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
 
   const canManageUsers = permissions.admin || permissions.users || permissions.super_admin;
   const isSuperAdmin = permissions.super_admin;
+
+  // Get menu configuration for a section
+  const getSectionConfig = (sectionId: string) => {
+    if (!menuConfig?.menu_items) return null;
+    return menuConfig.menu_items.find(item => item.id === sectionId);
+  };
+
+  // Check if section is visible
+  const isSectionVisible = (sectionId: string) => {
+    const config = getSectionConfig(sectionId);
+    return config ? config.visible !== false : true;
+  };
+
+  // Check if section is collapsible
+  const isSectionCollapsible = (sectionId: string) => {
+    const config = getSectionConfig(sectionId);
+    return config?.isCollapsible === true;
+  };
+
+  // Get section label
+  const getSectionLabel = (sectionId: string, defaultLabel: string) => {
+    const config = getSectionConfig(sectionId);
+    return config?.label || defaultLabel;
+  };
+
+  // Get item config
+  const getItemConfig = (sectionId: string, itemId: string) => {
+    const section = getSectionConfig(sectionId);
+    if (!section?.children) return null;
+    return section.children.find(child => child.id === itemId);
+  };
+
+  // Check if item is visible
+  const isItemVisible = (sectionId: string, itemId: string) => {
+    const itemConfig = getItemConfig(sectionId, itemId);
+    return itemConfig ? itemConfig.visible !== false : true;
+  };
+
+  // Get item label
+  const getItemLabel = (sectionId: string, itemId: string, defaultLabel: string) => {
+    const itemConfig = getItemConfig(sectionId, itemId);
+    return itemConfig?.label || defaultLabel;
+  };
+
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }));
+  };
+
+  // Render a collapsible section
+  const renderCollapsibleSection = (
+    sectionId: string,
+    defaultLabel: string,
+    items: Array<{ id: ActivePage; label: string; icon: LucideIcon; permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users' }>,
+    showCondition: boolean = true
+  ) => {
+    if (!showCondition || !isSectionVisible(sectionId)) return null;
+
+    const isCollapsible = isSectionCollapsible(sectionId);
+    const sectionLabel = getSectionLabel(sectionId, defaultLabel);
+    const isCollapsed = collapsedSections[sectionId];
+
+    const filteredItems = items.filter(item => 
+      hasAccess(item.permission) && isItemVisible(sectionId, item.id)
+    );
+
+    if (filteredItems.length === 0) return null;
+
+    if (!isCollapsible) {
+      return (
+        <div className="mb-4 sm:mb-5">
+          <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">
+            {sectionLabel}
+          </p>
+          <ul className="space-y-1">
+            {filteredItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activePage === item.id;
+              const itemLabel = getItemLabel(sectionId, item.id, item.label);
+              return (
+                <li key={item.id}>
+                  <button
+                    onClick={() => setActivePage(item.id)}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
+                      isActive 
+                        ? "gradient-primary text-white shadow-md" 
+                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
+                    )}
+                  >
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                    <span className="font-medium text-sm sm:text-base truncate">{itemLabel}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      );
+    }
+
+    return (
+      <Collapsible 
+        open={!isCollapsed} 
+        onOpenChange={() => toggleSection(sectionId)}
+        className="mb-4 sm:mb-5"
+      >
+        <CollapsibleTrigger asChild>
+          <button className="flex items-center justify-between w-full text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3 hover:text-sidebar-foreground/70 transition-colors">
+            <span>{sectionLabel}</span>
+            {isCollapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <ul className="space-y-1">
+            {filteredItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activePage === item.id;
+              const itemLabel = getItemLabel(sectionId, item.id, item.label);
+              return (
+                <li key={item.id}>
+                  <button
+                    onClick={() => setActivePage(item.id)}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
+                      isActive 
+                        ? "gradient-primary text-white shadow-md" 
+                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
+                    )}
+                  >
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                    <span className="font-medium text-sm sm:text-base truncate">{itemLabel}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  };
+
   return (
     <aside className="w-[280px] sm:w-64 min-h-screen max-h-[100dvh] gradient-dark text-sidebar-foreground flex flex-col shrink-0">
       {/* Logo */}
@@ -131,152 +335,39 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
 
       {/* Main Menu */}
       <nav className="flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto">
-        <div className="mb-4 sm:mb-5">
-          <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">القائمة الرئيسية</p>
-          <ul className="space-y-1">
-            {menuItems.filter(item => hasAccess(item.permission)).map((item) => {
-              const Icon = item.icon;
-              const isActive = activePage === item.id;
-              return (
-                <li key={item.id}>
-                  <button
-                    onClick={() => setActivePage(item.id)}
-                    className={cn(
-                      "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
-                      isActive 
-                        ? "gradient-primary text-white shadow-md" 
-                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
-                    )}
-                  >
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                    <span className="font-medium text-sm sm:text-base truncate">{item.label}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        {/* Main Section */}
+        {renderCollapsibleSection('main', 'القائمة الرئيسية', defaultMenuItems)}
 
         {/* Transfers */}
-        {(permissions.admin || permissions.sales || permissions.purchases) && (
-          <div className="mb-4 sm:mb-5">
-            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">
-              {settings?.transfers_section_title || 'التحويلات'}
-            </p>
-            <ul className="space-y-1">
-              {transferItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activePage === item.id;
-                return (
-                  <li key={item.id}>
-                    <button
-                      onClick={() => setActivePage(item.id)}
-                      className={cn(
-                        "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
-                        isActive 
-                          ? "gradient-primary text-white shadow-md" 
-                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
-                      )}
-                    >
-                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                      <span className="font-medium text-sm sm:text-base truncate">{item.label}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+        {renderCollapsibleSection(
+          'transfers', 
+          settings?.transfers_section_title || 'التحويلات', 
+          transferItems,
+          permissions.admin || permissions.sales || permissions.purchases
         )}
 
         {/* Finance Section */}
-        {(permissions.admin || permissions.sales || permissions.purchases) && (
-          <div className="mb-4 sm:mb-5">
-            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">
-              {settings?.finance_section_title || 'المالية'}
-            </p>
-            <ul className="space-y-1">
-              {financeItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activePage === item.id;
-                return (
-                  <li key={item.id}>
-                    <button
-                      onClick={() => setActivePage(item.id)}
-                      className={cn(
-                        "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
-                        isActive 
-                          ? "gradient-primary text-white shadow-md" 
-                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
-                      )}
-                    >
-                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                      <span className="font-medium text-sm sm:text-base truncate">{item.label}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+        {renderCollapsibleSection(
+          'finance', 
+          settings?.finance_section_title || 'المالية', 
+          financeItems,
+          permissions.admin || permissions.sales || permissions.purchases
         )}
-        {hasAccess('reports') && (
-          <div className="mb-4 sm:mb-5">
-            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">
-              {settings?.reports_title || 'التقارير'}
-            </p>
-            <ul className="space-y-1">
-              {reportItems.filter(item => hasAccess(item.permission)).map((item) => {
-                const Icon = item.icon;
-                const isActive = activePage === item.id;
-                return (
-                  <li key={item.id}>
-                    <button
-                      onClick={() => setActivePage(item.id)}
-                      className={cn(
-                        "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
-                        isActive 
-                          ? "gradient-primary text-white shadow-md" 
-                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
-                      )}
-                    >
-                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                      <span className="font-medium text-sm sm:text-base truncate">{item.label}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+
+        {/* Reports */}
+        {renderCollapsibleSection(
+          'reports', 
+          settings?.reports_title || 'التقارير', 
+          reportItems,
+          hasAccess('reports')
         )}
 
         {/* Accounting */}
-        {(permissions.admin || permissions.reports) && (
-          <div className="mb-4 sm:mb-5">
-            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">
-              {settings?.accounting_section_title || 'المحاسبة'}
-            </p>
-            <ul className="space-y-1">
-              {accountingItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activePage === item.id;
-                return (
-                  <li key={item.id}>
-                    <button
-                      onClick={() => setActivePage(item.id)}
-                      className={cn(
-                        "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
-                        isActive 
-                          ? "gradient-primary text-white shadow-md" 
-                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
-                      )}
-                    >
-                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                      <span className="font-medium text-sm sm:text-base truncate">{item.label}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+        {renderCollapsibleSection(
+          'accounting', 
+          settings?.accounting_section_title || 'المحاسبة', 
+          accountingItems,
+          permissions.admin || permissions.reports
         )}
 
         {/* Super Admin - Companies */}
@@ -304,85 +395,18 @@ export function Sidebar({ activePage, setActivePage }: SidebarProps) {
           </div>
         )}
 
-        {/* Users Management */}
-        {canManageUsers && (
-          <div>
-            <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">
-              {settings?.admin_section_title || 'الإدارة'}
-            </p>
-            <ul className="space-y-1">
-              <li>
-                <button
-                  onClick={() => setActivePage('users-management')}
-                  className={cn(
-                    "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
-                    activePage === 'users-management'
-                      ? "gradient-primary text-white shadow-md" 
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
-                  )}
-                >
-                  <UserCog className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                  <span className="font-medium text-sm sm:text-base truncate">{settings?.users_management_title || 'إدارة المستخدمين'}</span>
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setActivePage('app-settings')}
-                  className={cn(
-                    "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
-                    activePage === 'app-settings'
-                      ? "gradient-primary text-white shadow-md" 
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
-                  )}
-                >
-                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                  <span className="font-medium text-sm sm:text-base truncate">{settings?.app_settings_title || 'إعدادات النظام'}</span>
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setActivePage('audit-logs')}
-                  className={cn(
-                    "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
-                    activePage === 'audit-logs'
-                      ? "gradient-primary text-white shadow-md" 
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
-                  )}
-                >
-                  <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                  <span className="font-medium text-sm sm:text-base truncate">{settings?.audit_logs_title || 'سجل التدقيق'}</span>
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setActivePage('backups')}
-                  className={cn(
-                    "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
-                    activePage === 'backups'
-                      ? "gradient-primary text-white shadow-md" 
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
-                  )}
-                >
-                  <Database className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                  <span className="font-medium text-sm sm:text-base truncate">{settings?.backups_title || 'النسخ الاحتياطي'}</span>
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setActivePage('control-center')}
-                  className={cn(
-                    "w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200",
-                    activePage === 'control-center'
-                      ? "gradient-primary text-white shadow-md" 
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white"
-                  )}
-                >
-                  <Settings2 className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                  <span className="font-medium text-sm sm:text-base truncate">مركز التحكم</span>
-                </button>
-              </li>
-            </ul>
-          </div>
+        {/* Admin Section */}
+        {canManageUsers && renderCollapsibleSection(
+          'admin',
+          settings?.admin_section_title || 'الإدارة',
+          [
+            { id: 'users-management' as ActivePage, label: settings?.users_management_title || 'إدارة المستخدمين', icon: UserCog },
+            { id: 'app-settings' as ActivePage, label: settings?.app_settings_title || 'إعدادات النظام', icon: Settings },
+            { id: 'audit-logs' as ActivePage, label: settings?.audit_logs_title || 'سجل التدقيق', icon: ClipboardList },
+            { id: 'backups' as ActivePage, label: settings?.backups_title || 'النسخ الاحتياطي', icon: Database },
+            { id: 'control-center' as ActivePage, label: 'مركز التحكم', icon: Settings2 },
+          ],
+          canManageUsers
         )}
       </nav>
 
