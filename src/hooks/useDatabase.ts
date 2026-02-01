@@ -147,6 +147,11 @@ export function useUpdateCar() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cars', companyId] });
       queryClient.invalidateQueries({ queryKey: ['stats', companyId] });
+      // Invalidate sales to reflect updated profit calculations
+      queryClient.invalidateQueries({ queryKey: ['sales', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['sales-with-items', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
     },
   });
 }
