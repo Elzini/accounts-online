@@ -1,0 +1,57 @@
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "com.ashbal-alnimar.accounts",
+  "productName": "نظام إدارة معرض السيارات",
+  "copyright": "Copyright © 2024 Ashbal Al-Nimar",
+  "directories": {
+    "output": "release",
+    "buildResources": "electron/resources"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "!electron/resources"
+  ],
+  "extraMetadata": {
+    "main": "electron/main.js"
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64", "ia32"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "public/pwa-512x512.png",
+    "artifactName": "${productName}-${version}-${arch}.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "installerIcon": "public/pwa-512x512.png",
+    "uninstallerIcon": "public/pwa-512x512.png",
+    "installerHeaderIcon": "public/pwa-512x512.png",
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "معرض السيارات",
+    "language": "1025"
+  },
+  "portable": {
+    "artifactName": "${productName}-Portable-${version}.${ext}"
+  },
+  "mac": {
+    "target": ["dmg", "zip"],
+    "icon": "public/pwa-512x512.png",
+    "category": "public.app-category.business"
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "icon": "public/pwa-512x512.png",
+    "category": "Office"
+  },
+  "publish": null
+}
