@@ -19,36 +19,31 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
+
+      - name: Rebuild native modules for Electron
+        run: npx electron-rebuild
 
       - name: Build Vite app
         run: npm run build
 
-      - name: Build Electron (Windows Installer)
-        run: npx electron-builder --win nsis
+      - name: Build Electron (Windows)
+        run: npx electron-builder --win --x64
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Electron (Portable)
-        run: npx electron-builder --win portable
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: List release files
+        run: dir release
+        shell: cmd
 
-      - name: Upload Windows Installer
+      - name: Upload Windows EXE
         uses: actions/upload-artifact@v4
         with:
-          name: Windows-Installer
-          path: release/*.exe
-          retention-days: 30
-
-      - name: Upload Portable EXE
-        uses: actions/upload-artifact@v4
-        with:
-          name: Windows-Portable
-          path: release/*Portable*.exe
+          name: Windows-EXE
+          path: |
+            release/*.exe
           retention-days: 30
 
   create-release:
