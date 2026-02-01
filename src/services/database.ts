@@ -688,10 +688,32 @@ export async function fetchStats(fiscalYearId?: string | null) {
     .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0) || 0;
   
   // Calculate general expenses (not linked to any car)
-  const generalExpenses = expensesData?.filter(exp => !exp.car_id)
+  const generalExpensesFromExpenses = expensesData?.filter(exp => !exp.car_id)
     .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0) || 0;
   
-  // Net profit = Gross profit - Car expenses - General expenses
+  // Get approved payroll expenses (salaries are administrative expenses)
+  let payrollQuery = supabase
+    .from('payroll_records')
+    .select('total_net_salaries')
+    .eq('status', 'approved');
+  
+  if (fiscalYearStart && fiscalYearEnd) {
+    // Filter by payroll month/year that falls within fiscal year range
+    // We'll use created_at as a proxy for the payroll period
+    payrollQuery = payrollQuery
+      .gte('created_at', fiscalYearStart)
+      .lte('created_at', fiscalYearEnd + 'T23:59:59');
+  }
+  
+  const { data: payrollData } = await payrollQuery;
+  
+  // Sum all approved payroll net salaries
+  const payrollExpenses = payrollData?.reduce((sum, p) => sum + (Number(p.total_net_salaries) || 0), 0) || 0;
+  
+  // Total general expenses = regular expenses + payroll expenses
+  const generalExpenses = generalExpensesFromExpenses + payrollExpenses;
+  
+  // Net profit = Gross profit - Car expenses - General expenses (including payroll)
   const totalProfit = totalGrossProfit - carExpenses - generalExpenses;
 
   // Month sales count (within current month and fiscal year)
@@ -768,6 +790,9 @@ export async function fetchStats(fiscalYearId?: string | null) {
     totalGrossProfit,
     totalCarExpenses: carExpenses,
     totalGeneralExpenses: generalExpenses,
+    // Detailed expense breakdown
+    payrollExpenses,
+    otherGeneralExpenses: generalExpensesFromExpenses,
     // Extended breakdown data
     purchasesCount,
     monthSalesProfit,

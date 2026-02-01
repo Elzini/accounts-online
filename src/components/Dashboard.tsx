@@ -38,6 +38,9 @@ interface DashboardProps {
     totalGrossProfit?: number;
     totalCarExpenses?: number;
     totalGeneralExpenses?: number;
+    // Detailed expense breakdown
+    payrollExpenses?: number;
+    otherGeneralExpenses?: number;
     purchasesCount?: number;
     monthSalesProfit?: number;
     totalSalesCount?: number;
@@ -313,13 +316,15 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           breakdown: [
             { label: 'إجمالي الربح من المبيعات', value: stats.totalGrossProfit || 0, type: 'add' },
             { label: 'مصاريف مرتبطة بالسيارات المباعة', value: stats.totalCarExpenses || 0, type: 'subtract' },
-            { label: 'مصاريف عامة', value: stats.totalGeneralExpenses || 0, type: 'subtract' },
+            { label: 'مصاريف الرواتب والأجور', value: stats.payrollExpenses || 0, type: 'subtract' },
+            { label: 'مصاريف عامة أخرى', value: stats.otherGeneralExpenses || 0, type: 'subtract' },
             { label: 'صافي الربح', value: stats.totalProfit, type: 'total' },
           ],
-          formula: 'صافي الربح = إجمالي الربح - مصاريف السيارات - المصاريف العامة',
+          formula: 'صافي الربح = إجمالي الربح - مصاريف السيارات - الرواتب - المصاريف العامة',
           notes: [
             'الربح الإجمالي = سعر البيع - سعر الشراء - العمولة - مصاريف أخرى',
             'المصاريف المرتبطة بالسيارات تُخصم فقط عند بيع السيارة',
+            'مصاريف الرواتب تشمل جميع مسيرات الرواتب المعتمدة',
           ],
           showCarsTable: true,
           cars: buildSalesCarDetails(fiscalYearSales),
