@@ -23,20 +23,13 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Rebuild native modules for Electron
-        run: npx electron-rebuild
-
       - name: Build Vite app
         run: npm run build
 
-      - name: Build Electron (Windows)
-        run: npx electron-builder --win --x64
+      - name: Build Electron Windows
+        run: npx electron-builder --win --x64 --publish never
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: List release files
-        run: dir release
-        shell: cmd
+          DEBUG: electron-builder
 
       - name: Upload Windows EXE
         uses: actions/upload-artifact@v4
@@ -45,6 +38,7 @@ jobs:
           path: |
             release/*.exe
           retention-days: 30
+          if-no-files-found: warn
 
   create-release:
     needs: build-windows
