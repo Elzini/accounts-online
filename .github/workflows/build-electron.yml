@@ -47,11 +47,15 @@ jobs:
             npm pkg set devDependencies.electron-builder="$EB_VER"
           fi
 
-      - name: Clean npm cache
-        run: npm cache clean --force
+      - name: Clean npm cache and lockfile
+        shell: bash
+        run: |
+          npm cache clean --force
+          rm -f package-lock.json
+          rm -rf node_modules
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps --force
+        run: npm install --legacy-peer-deps --no-package-lock
 
       - name: Rebuild native modules for Electron
         run: npx electron-rebuild -f -w better-sqlite3
