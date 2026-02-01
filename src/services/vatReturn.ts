@@ -51,7 +51,8 @@ export async function getVATReturnReport(
 
   const taxRate = taxSettings?.tax_rate || 15;
 
-  // Fetch sales data with their total VAT
+  // Fetch sales data - must match exactly what's shown in sales table
+  // Sales table shows: sale_price (base amount before VAT)
   let salesQuery = supabase
     .from('sales')
     .select('id, sale_price, sale_date, car_id')
@@ -67,7 +68,8 @@ export async function getVATReturnReport(
   const { data: salesData, error: salesError } = await salesQuery;
   if (salesError) throw salesError;
 
-  // Fetch cars purchase data (purchases)
+  // Fetch car purchases - must match exactly what's shown in purchases table
+  // Purchases table shows cars with: purchase_price (base amount before VAT)
   let purchasesQuery = supabase
     .from('cars')
     .select('id, purchase_price, purchase_date')
@@ -83,11 +85,14 @@ export async function getVATReturnReport(
   const { data: purchasesData, error: purchasesError } = await purchasesQuery;
   if (purchasesError) throw purchasesError;
 
-  // Fetch expenses (for additional purchases/VAT)
+  // Fetch expenses - general expenses (NOT car-related)
+  // Only include general expenses (car_id IS NULL) to avoid double counting
+  // Car expenses are already included in car purchase price or tracked separately
   let expensesQuery = supabase
     .from('expenses')
-    .select('id, amount, expense_date')
-    .eq('company_id', companyId);
+    .select('id, amount, expense_date, car_id')
+    .eq('company_id', companyId)
+    .is('car_id', null); // Only general expenses, not car-specific
 
   if (startDate) {
     expensesQuery = expensesQuery.gte('expense_date', startDate);
