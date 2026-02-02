@@ -71,24 +71,31 @@ export function LoginSettingsAdmin() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const updates = Object.entries(settings).map(([key, value]) => ({
-        key,
-        value,
-        company_id: null,
-      }));
-
-      for (const update of updates) {
-        const { error } = await supabase
+      for (const [key, value] of Object.entries(settings)) {
+        // Check if setting exists
+        const { data: existing } = await supabase
           .from('app_settings')
-          .upsert({
-            key: update.key,
-            value: update.value,
-            company_id: null,
-          }, {
-            onConflict: 'key',
-          });
-        
-        if (error) throw error;
+          .select('id')
+          .eq('key', key)
+          .is('company_id', null)
+          .maybeSingle();
+
+        if (existing) {
+          // Update existing
+          const { error } = await supabase
+            .from('app_settings')
+            .update({ value })
+            .eq('id', existing.id);
+          
+          if (error) throw error;
+        } else {
+          // Insert new
+          const { error } = await supabase
+            .from('app_settings')
+            .insert({ key, value, company_id: null });
+          
+          if (error) throw error;
+        }
       }
 
       toast.success('تم حفظ إعدادات شاشة الدخول بنجاح');
@@ -129,8 +136,29 @@ export function LoginSettingsAdmin() {
         .from('app-logos')
         .getPublicUrl(fileName);
       
-      setSettings({ ...settings, login_logo_url: data.publicUrl });
-      toast.success('تم رفع الشعار بنجاح');
+      const newLogoUrl = data.publicUrl;
+      setSettings(prev => ({ ...prev, login_logo_url: newLogoUrl }));
+      
+      // Save to database immediately
+      const { data: existing } = await supabase
+        .from('app_settings')
+        .select('id')
+        .eq('key', 'login_logo_url')
+        .is('company_id', null)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from('app_settings')
+          .update({ value: newLogoUrl })
+          .eq('id', existing.id);
+      } else {
+        await supabase
+          .from('app_settings')
+          .insert({ key: 'login_logo_url', value: newLogoUrl, company_id: null });
+      }
+
+      toast.success('تم رفع الشعار وحفظه بنجاح');
     } catch (error) {
       console.error('Error uploading logo:', error);
       toast.error('حدث خطأ أثناء رفع الشعار');
