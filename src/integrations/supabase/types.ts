@@ -1432,6 +1432,13 @@ export type Database = {
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "employee_advances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       employees: {
@@ -3205,6 +3212,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payroll_items_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payroll_items_payroll_id_fkey"
             columns: ["payroll_id"]
             isOneToOne: false
@@ -4753,6 +4767,74 @@ export type Database = {
       }
     }
     Views: {
+      employees_safe: {
+        Row: {
+          bank_name: string | null
+          base_salary: number | null
+          company_id: string | null
+          created_at: string | null
+          employee_number: number | null
+          hire_date: string | null
+          housing_allowance: number | null
+          iban_masked: string | null
+          id: string | null
+          id_number_masked: string | null
+          is_active: boolean | null
+          job_title: string | null
+          name: string | null
+          notes: string | null
+          phone: string | null
+          transport_allowance: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          bank_name?: string | null
+          base_salary?: number | null
+          company_id?: string | null
+          created_at?: string | null
+          employee_number?: number | null
+          hire_date?: string | null
+          housing_allowance?: number | null
+          iban_masked?: never
+          id?: string | null
+          id_number_masked?: never
+          is_active?: boolean | null
+          job_title?: string | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          transport_allowance?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          bank_name?: string | null
+          base_salary?: number | null
+          company_id?: string | null
+          created_at?: string | null
+          employee_number?: number | null
+          hire_date?: string | null
+          housing_allowance?: number | null
+          iban_masked?: never
+          id?: string | null
+          id_number_masked?: never
+          is_active?: boolean | null
+          job_title?: string | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          transport_allowance?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financing_companies_safe: {
         Row: {
           api_endpoint: string | null
