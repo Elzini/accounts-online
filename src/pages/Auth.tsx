@@ -41,6 +41,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     login_button_text: defaultSettings.login_button_text,
     login_logo_url: '',
   });
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   // Fetch global settings (not tied to any company)
   useEffect(() => {
@@ -52,18 +53,23 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
       if (error) {
         console.error('Error fetching global settings:', error);
+        setSettingsLoaded(true);
         return;
       }
 
       if (data) {
-        const newSettings = { ...globalSettings };
-        data.forEach((row) => {
-          if (row.key in newSettings && row.value) {
-            (newSettings as any)[row.key] = row.value;
-          }
+        setGlobalSettings(prev => {
+          const next = { ...prev };
+          data.forEach((row) => {
+            if (row.key in next && row.value) {
+              (next as any)[row.key] = row.value;
+            }
+          });
+          return next;
         });
-        setGlobalSettings(newSettings);
       }
+
+      setSettingsLoaded(true);
     };
 
     fetchGlobalSettings();
@@ -145,12 +151,15 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           {/* Header */}
           <div className="p-8 text-center" style={{ background: headerGradient }}>
             <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-4 overflow-hidden">
-              <img
-                src={globalSettings.login_logo_url || logo}
-                alt="شعار النظام"
-                className="w-16 h-16 object-contain"
-                loading="lazy"
-              />
+              {settingsLoaded ? (
+                <img
+                  src={globalSettings.login_logo_url || logo}
+                  alt="شعار النظام"
+                  className="w-16 h-16 object-contain"
+                />
+              ) : (
+                <div className="w-16 h-16 animate-pulse bg-white/20 rounded-lg" />
+              )}
             </div>
             <h1 className="text-2xl font-bold text-white">{pageTitle}</h1>
             <p className="text-white/80 text-sm mt-1">{pageSubtitle}</p>
