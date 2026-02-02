@@ -80,16 +80,52 @@ export interface PayrollItem {
   employee?: Employee;
 }
 
-// Employees
+// Helper to map employees_safe view fields to Employee interface
+function mapSafeEmployeeToEmployee(safeEmployee: Record<string, unknown>): Employee {
+  return {
+    ...safeEmployee,
+    id_number: safeEmployee.id_number_masked as string | null,
+    iban: safeEmployee.iban_masked as string | null,
+  } as Employee;
+}
+
+// Helper to map advance with safe employee
+function mapAdvanceWithSafeEmployee(advance: Record<string, unknown>): EmployeeAdvance {
+  const employee = advance.employee as Record<string, unknown> | null;
+  return {
+    ...advance,
+    employee: employee ? mapSafeEmployeeToEmployee(employee) : undefined,
+  } as EmployeeAdvance;
+}
+
+// Helper to map payroll item with safe employee
+function mapPayrollItemWithSafeEmployee(item: Record<string, unknown>): PayrollItem {
+  const employee = item.employee as Record<string, unknown> | null;
+  return {
+    ...item,
+    employee: employee ? mapSafeEmployeeToEmployee(employee) : undefined,
+  } as PayrollItem;
+}
+
+// Use employees_safe view for read operations to mask sensitive PII (id_number, iban)
+// The view shows only last 4 digits of identity documents for non-admin users
 export async function fetchEmployees(companyId: string): Promise<Employee[]> {
   const { data, error } = await supabase
-    .from('employees')
+    .from('employees_safe')
     .select('*')
     .eq('company_id', companyId)
     .order('employee_number', { ascending: true });
 
   if (error) throw error;
-  return data || [];
+  // Map the masked fields back to expected field names for UI compatibility
+  return (data || []).map(employee => ({
+    ...employee,
+    id_number: employee.id_number_masked,
+    iban: employee.iban_masked,
+    // Not exposed in safe view - provide null for type compatibility
+    id_number_encrypted: null as string | null,
+    iban_encrypted: null as string | null,
+  })) as Employee[];
 }
 
 export async function addEmployee(employee: Omit<Employee, 'id' | 'employee_number' | 'created_at' | 'updated_at'>): Promise<Employee> {
@@ -128,7 +164,7 @@ export async function deleteEmployee(id: string): Promise<void> {
 export async function fetchEmployeeAdvances(companyId: string, employeeId?: string): Promise<EmployeeAdvance[]> {
   let query = supabase
     .from('employee_advances')
-    .select('*, employee:employees(*)')
+    .select('*, employee:employees_safe(*)')
     .eq('company_id', companyId)
     .order('advance_date', { ascending: false });
 
@@ -138,19 +174,19 @@ export async function fetchEmployeeAdvances(companyId: string, employeeId?: stri
 
   const { data, error } = await query;
   if (error) throw error;
-  return data || [];
+  return (data || []).map(mapAdvanceWithSafeEmployee);
 }
 
 export async function fetchPendingAdvances(companyId: string): Promise<EmployeeAdvance[]> {
   const { data, error } = await supabase
     .from('employee_advances')
-    .select('*, employee:employees(*)')
+    .select('*, employee:employees_safe(*)')
     .eq('company_id', companyId)
     .eq('is_deducted', false)
     .order('advance_date', { ascending: true });
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map(mapAdvanceWithSafeEmployee);
 }
 
 export async function addEmployeeAdvance(advance: Omit<EmployeeAdvance, 'id' | 'created_at' | 'employee'>): Promise<EmployeeAdvance> {
@@ -228,13 +264,13 @@ export async function fetchPayrollWithItems(payrollId: string): Promise<PayrollR
 
   const { data: items, error: itemsError } = await supabase
     .from('payroll_items')
-    .select('*, employee:employees(*)')
+    .select('*, employee:employees_safe(*)')
     .eq('payroll_id', payrollId)
     .order('created_at', { ascending: true });
 
   if (itemsError) throw itemsError;
 
-  return { ...payroll, items: items || [] } as PayrollRecord;
+  return { ...payroll, items: (items || []).map(mapPayrollItemWithSafeEmployee) } as PayrollRecord;
 }
 
 export async function createPayrollRecord(
@@ -303,11 +339,11 @@ export async function generatePayrollItems(
   const { data, error } = await supabase
     .from('payroll_items')
     .insert(items)
-    .select('*, employee:employees(*)');
+    .select('*, employee:employees_safe(*)');
 
   if (error) throw error;
 
-  return data || [];
+  return (data || []).map(mapPayrollItemWithSafeEmployee);
 }
 
 export async function updatePayrollItem(
@@ -338,11 +374,11 @@ export async function updatePayrollItem(
       net_salary: netSalary,
     })
     .eq('id', itemId)
-    .select('*, employee:employees(*)')
+    .select('*, employee:employees_safe(*)')
     .single();
 
   if (error) throw error;
-  return data;
+  return mapPayrollItemWithSafeEmployee(data as Record<string, unknown>);
 }
 
 export async function updatePayrollTotals(payrollId: string): Promise<PayrollRecord> {
