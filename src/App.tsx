@@ -8,6 +8,9 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CompanyProvider, useCompany } from "@/contexts/CompanyContext";
 import { FiscalYearProvider } from "@/contexts/FiscalYearContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { NetworkStatusIndicator } from "@/components/pwa/NetworkStatusIndicator";
+import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
+import { InstallBanner } from "@/components/pwa/InstallBanner";
 import Index from "./pages/Index";
 import AuthChoice from "./pages/AuthChoice";
 import Auth from "./pages/Auth";
@@ -16,7 +19,6 @@ import Register from "./pages/Register";
 import Companies from "./pages/Companies";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
-
 const queryClient = new QueryClient();
 
 function LoadingSpinner() {
@@ -170,6 +172,9 @@ function App() {
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
+                  <NetworkStatusIndicator />
+                  <UpdatePrompt />
+                  <InstallBanner />
                   <AppRoutes />
                 </BrowserRouter>
               </TooltipProvider>
