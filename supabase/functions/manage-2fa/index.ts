@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import * as OTPAuth from "https://esm.sh/otpauth@9.2.2";
 
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -10,6 +11,87 @@ const corsHeaders = {
 interface RequestBody {
   action: 'setup' | 'verify' | 'disable' | 'check' | 'verify-login';
   token?: string;
+}
+
+// AES-256-GCM Encryption utilities
+async function getEncryptionKey(): Promise<CryptoKey> {
+  const keyString = Deno.env.get("TWO_FA_ENCRYPTION_KEY");
+  if (!keyString) {
+    throw new Error("Encryption key not configured");
+  }
+  
+  // Derive a proper 256-bit key from the secret using PBKDF2
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(keyString),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits", "deriveKey"]
+  );
+  
+  return await crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: new TextEncoder().encode("2fa-salt-v1"), // Static salt for deterministic key derivation
+      iterations: 100000,
+      hash: "SHA-256"
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptSecret(plaintext: string): Promise<string> {
+  const key = await getEncryptionKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV for AES-GCM
+  
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    new TextEncoder().encode(plaintext)
+  );
+  
+  // Combine IV + encrypted data and encode as base64
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(encrypted), iv.length);
+  
+  // Prefix with "enc:" to identify encrypted values
+  return "enc:" + btoa(String.fromCharCode(...combined));
+}
+
+async function decryptSecret(ciphertext: string): Promise<string> {
+  // Handle legacy base64-encoded secrets (not encrypted)
+  if (!ciphertext.startsWith("enc:")) {
+    // Legacy format - just base64 decode
+    return atob(ciphertext);
+  }
+  
+  // New encrypted format
+  const key = await getEncryptionKey();
+  const base64Data = ciphertext.slice(4); // Remove "enc:" prefix
+  const combined = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+  
+  const iv = combined.slice(0, 12);
+  const encrypted = combined.slice(12);
+  
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv },
+    key,
+    encrypted
+  );
+  
+  return new TextDecoder().decode(decrypted);
+}
+
+async function encryptBackupCode(code: string): Promise<string> {
+  return await encryptSecret(code);
+}
+
+async function decryptBackupCode(encrypted: string): Promise<string> {
+  return await decryptSecret(encrypted);
 }
 
 serve(async (req) => {
@@ -65,8 +147,13 @@ serve(async (req) => {
           backupCodes.push(code);
         }
 
-        // Store the secret (encrypted in a real scenario, using base64 for demo)
-        const encryptedSecret = btoa(secret);
+        // Encrypt the secret using AES-256-GCM
+        const encryptedSecret = await encryptSecret(secret);
+        
+        // Encrypt backup codes
+        const encryptedBackupCodes = await Promise.all(
+          backupCodes.map(code => encryptBackupCode(code))
+        );
 
         await adminClient
           .from('user_2fa')
@@ -74,7 +161,7 @@ serve(async (req) => {
             user_id: user.id,
             secret_encrypted: encryptedSecret,
             is_enabled: false,
-            backup_codes: backupCodes.map(c => btoa(c)),
+            backup_codes: encryptedBackupCodes,
           }, { onConflict: 'user_id' });
 
         return new Response(
@@ -104,7 +191,8 @@ serve(async (req) => {
           throw new Error("لم يتم إعداد المصادقة الثنائية");
         }
 
-        const secret = atob(twoFaData.secret_encrypted);
+        // Decrypt the secret (handles both legacy and new format)
+        const secret = await decryptSecret(twoFaData.secret_encrypted);
 
         const totp = new OTPAuth.TOTP({
           issuer: "Elzini System",
@@ -152,8 +240,8 @@ serve(async (req) => {
           throw new Error("المصادقة الثنائية غير مفعلة");
         }
 
-        // First try TOTP
-        const secret = atob(twoFaData.secret_encrypted);
+        // Decrypt the secret (handles both legacy and new format)
+        const secret = await decryptSecret(twoFaData.secret_encrypted);
         const totp = new OTPAuth.TOTP({
           issuer: "Elzini System",
           label: user.email || user.id,
@@ -168,20 +256,22 @@ serve(async (req) => {
         // If TOTP fails, try backup codes
         if (!isValid && twoFaData.backup_codes) {
           const tokenUpper = token.toUpperCase();
-          const backupIndex = twoFaData.backup_codes.findIndex(
-            (code: string) => atob(code) === tokenUpper
-          );
-
-          if (backupIndex !== -1) {
-            isValid = true;
-            // Remove used backup code
-            const newBackupCodes = [...twoFaData.backup_codes];
-            newBackupCodes.splice(backupIndex, 1);
-            
-            await adminClient
-              .from('user_2fa')
-              .update({ backup_codes: newBackupCodes })
-              .eq('user_id', user.id);
+          
+          // Decrypt and check each backup code
+          for (let i = 0; i < twoFaData.backup_codes.length; i++) {
+            const decryptedCode = await decryptBackupCode(twoFaData.backup_codes[i]);
+            if (decryptedCode === tokenUpper) {
+              isValid = true;
+              // Remove used backup code
+              const newBackupCodes = [...twoFaData.backup_codes];
+              newBackupCodes.splice(i, 1);
+              
+              await adminClient
+                .from('user_2fa')
+                .update({ backup_codes: newBackupCodes })
+                .eq('user_id', user.id);
+              break;
+            }
           }
         }
 
@@ -207,7 +297,8 @@ serve(async (req) => {
           throw new Error("المصادقة الثنائية غير مفعلة");
         }
 
-        const secret = atob(twoFaData.secret_encrypted);
+        // Decrypt the secret (handles both legacy and new format)
+        const secret = await decryptSecret(twoFaData.secret_encrypted);
         const totp = new OTPAuth.TOTP({
           issuer: "Elzini System",
           label: user.email || user.id,
