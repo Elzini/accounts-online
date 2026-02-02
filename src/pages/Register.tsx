@@ -1,26 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Building2, Mail, Lock, Phone, User, CheckCircle, Car, HardHat, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { defaultSettings } from '@/services/settings';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
+import { usePublicAuthSettings } from '@/hooks/usePublicAuthSettings';
 
 type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading';
-interface GlobalSettings {
-  login_bg_color: string;
-  login_card_color: string;
-  login_header_gradient_start: string;
-  login_header_gradient_end: string;
-  login_logo_url: string;
-  register_title: string;
-  register_subtitle: string;
-  register_button_text: string;
-}
 
 const companyTypes: { value: CompanyActivityType; label: string; icon: React.ReactNode }[] = [
   { value: 'car_dealership', label: 'معرض سيارات', icon: <Car className="w-4 h-4" /> },
@@ -39,50 +29,8 @@ export default function Register() {
   const [emailSent, setEmailSent] = useState(false);
   const navigate = useNavigate();
 
-  // Use global settings (company_id = null) for public pages
-  const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
-    login_bg_color: defaultSettings.login_bg_color,
-    login_card_color: defaultSettings.login_card_color,
-    login_header_gradient_start: defaultSettings.login_header_gradient_start,
-    login_header_gradient_end: defaultSettings.login_header_gradient_end,
-    login_logo_url: '',
-    register_title: 'تسجيل شركة جديدة',
-    register_subtitle: 'أنشئ حساب شركتك الآن',
-    register_button_text: 'تسجيل الشركة',
-  });
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
-
-  // Fetch global settings (not tied to any company)
-  useEffect(() => {
-    const fetchGlobalSettings = async () => {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .select('key, value')
-        .is('company_id', null);
-      
-      if (error) {
-        console.error('Error fetching global settings:', error);
-        setSettingsLoaded(true);
-        return;
-      }
-
-      if (data) {
-        setGlobalSettings(prev => {
-          const next = { ...prev };
-          data.forEach(row => {
-            if (row.key in next && row.value) {
-              (next as any)[row.key] = row.value;
-            }
-          });
-          return next;
-        });
-      }
-
-      setSettingsLoaded(true);
-    };
-
-    fetchGlobalSettings();
-  }, []);
+  // Fetch settings from secure edge function
+  const { settings: globalSettings, loading: settingsLoading } = usePublicAuthSettings();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -218,11 +166,11 @@ export default function Register() {
             style={{ background: headerGradient }}
           >
             <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-4 overflow-hidden">
-              {settingsLoaded ? (
+              {!settingsLoading ? (
                 <img 
                   src={globalSettings.login_logo_url || logo} 
                   alt="شعار النظام" 
-                  className="w-16 h-16 object-contain" 
+                  className="w-16 h-16 object-contain"
                 />
               ) : (
                 <div className="w-16 h-16 animate-pulse bg-white/20 rounded-lg" />
@@ -240,10 +188,9 @@ export default function Register() {
                 <Building2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="companyName"
-                  type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="أدخل اسم الشركة"
+                  placeholder="أدخل اسم شركتك"
                   className="h-12 pr-10"
                   required
                 />
@@ -252,7 +199,7 @@ export default function Register() {
 
             <div className="space-y-2">
               <Label htmlFor="companyType">نوع النشاط</Label>
-              <Select value={companyType} onValueChange={(value) => setCompanyType(value as CompanyActivityType)}>
+              <Select value={companyType} onValueChange={(v) => setCompanyType(v as CompanyActivityType)}>
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder="اختر نوع النشاط" />
                 </SelectTrigger>
@@ -287,7 +234,7 @@ export default function Register() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">رقم الهاتف</Label>
+              <Label htmlFor="phone">رقم الجوال</Label>
               <div className="relative">
                 <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -295,7 +242,7 @@ export default function Register() {
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="أدخل رقم الهاتف"
+                  placeholder="05xxxxxxxx"
                   className="h-12 pr-10"
                   dir="ltr"
                   required
@@ -330,7 +277,7 @@ export default function Register() {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="أعد إدخال كلمة المرور"
+                  placeholder="أعد كتابة كلمة المرور"
                   className="h-12 pr-10"
                   dir="ltr"
                   required
