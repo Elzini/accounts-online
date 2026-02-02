@@ -224,7 +224,8 @@ function parseTrialBalanceSheet(rows: any[][], result: ComprehensiveFinancialDat
   });
 }
 
-// تحديد أعمدة ميزان المراجعة
+// تحديد أعمدة ميزان المراجعة - هيكل مداد RTL
+// الترتيب من اليمين لليسار: الرقم | اسم الحساب | الرصيد السابق (مدين/دائن) | الحركة (مدين/دائن) | الصافي (مدين/دائن)
 function detectTrialBalanceColumns(rows: any[][]): {
   startRow: number;
   nameCol: number;
@@ -248,12 +249,10 @@ function detectTrialBalanceColumns(rows: any[][]): {
     closingCredit: -1,
   };
   
-  // البحث عن صف العناوين (مدين/دائن)
+  // البحث عن صف العناوين (مدين/دائن) - نبحث عن أي صف يحتوي على كلمة "مدين" أو "دائن"
   for (let i = 0; i < Math.min(rows.length, 20); i++) {
     const row = rows[i];
     if (!row) continue;
-    
-    const rowStr = row.map((c: any) => String(c || '')).join(' ');
     
     // البحث عن صف يحتوي على مدين/دائن متعدد
     const debitCols: number[] = [];
@@ -267,23 +266,61 @@ function detectTrialBalanceColumns(rows: any[][]): {
       if (cell === 'الرقم' || cell === 'رقم الحساب' || cell === 'الكود') result.codeCol = j;
     }
     
-    // إذا وجدنا 3 أعمدة مدين و3 دائن (سابق، حركة، صافي)
+    // إذا وجدنا 3 أعمدة مدين و3 دائن (صافي، حركة، سابق) - RTL
     if (debitCols.length >= 3 && creditCols.length >= 3) {
       result.startRow = i + 1; // الصف التالي للعناوين
       
-      // ترتيب مداد: الصافي أولاً ثم الحركة ثم السابق (RTL)
-      // أو العكس، نحدد بناءً على ترتيب الأعمدة
+      // مداد RTL: من اليسار لليمين = الصافي، الحركة، السابق
+      // ترتيب الأعمدة (من أصغر index لأكبر): 
+      // الصافي (مدين/دائن) | الحركة (مدين/دائن) | السابق (مدين/دائن) | اسم الحساب | الرقم
+      
+      // نرتب الأعمدة من الأصغر للأكبر
+      debitCols.sort((a, b) => a - b);
+      creditCols.sort((a, b) => a - b);
+      
+      // الصافي في أقصى اليسار
       result.closingDebit = debitCols[0];
       result.closingCredit = creditCols[0];
+      // الحركة في الوسط
       result.movementDebit = debitCols[1];
       result.movementCredit = creditCols[1];
+      // السابق في أقصى اليمين (قبل اسم الحساب)
       result.openingDebit = debitCols[2];
       result.openingCredit = creditCols[2];
       
       console.log('📊 Found header row at:', i);
-      console.log('📊 Debit columns:', debitCols);
-      console.log('📊 Credit columns:', creditCols);
+      console.log('📊 Debit columns (sorted):', debitCols, '-> Closing, Movement, Opening');
+      console.log('📊 Credit columns (sorted):', creditCols);
+      console.log('📊 Name column:', result.nameCol);
+      console.log('📊 Code column:', result.codeCol);
       break;
+    }
+  }
+  
+  // إذا لم نجد عناوين، نبحث عن أول صف يحتوي على بيانات رقمية
+  if (result.startRow === -1) {
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length < 5) continue;
+      
+      // نبحث عن صف يبدأ بأرقام (كود الحساب)
+      const lastCell = String(row[row.length - 1] || '').trim();
+      if (/^\d{1,4}$/.test(lastCell)) {
+        result.startRow = i;
+        result.codeCol = row.length - 1;
+        result.nameCol = row.length - 2;
+        
+        // تخمين الأعمدة الرقمية
+        result.closingDebit = 0;
+        result.closingCredit = 1;
+        result.movementDebit = 2;
+        result.movementCredit = 3;
+        result.openingDebit = 4;
+        result.openingCredit = 5;
+        
+        console.log('📊 Fallback: Detected data start at row:', i);
+        break;
+      }
     }
   }
   
@@ -344,53 +381,69 @@ function parseNumber(value: any): number {
   return Math.abs(negative ? -num : num);
 }
 
-// تصنيف الحساب بناءً على كود مداد
+// تصنيف الحساب بناءً على كود مداد - متوافق مع هيكل مداد
+// 1xxx = أصول | 2xxx = خصوم (25 = ملكية) | 3xxx = إيرادات (309x = ضريبة) | 4xxx = مصروفات (45 = مشتريات) | 5xxx = ملكية
 function categorizeAccountMedad(code: string, name: string): string {
   const lowerName = name.toLowerCase();
+  const arabicName = name;
   
   // 1xxx - الأصول
   if (code.startsWith('1')) {
-    // 11xx - الأصول الثابتة
+    // 11xx, 110x, 15xx - الأصول الثابتة (صافي الأصول الثابتة)
     if (code.startsWith('11') || code.startsWith('110') || code.startsWith('15')) {
       return 'أصول ثابتة';
     }
-    // 12xx, 13xx, 14xx - الأصول المتداولة
+    // 12xx, 13xx, 14xx - الأصول المتداولة (نقد، بنوك، مدينون، مخزون)
     return 'أصول متداولة';
   }
   
   // 2xxx - الخصوم وحقوق الملكية
   if (code.startsWith('2')) {
-    // 25xx - حقوق الملكية (جاري المالك)
+    // 25xx - حقوق الملكية (جاري المالك، رأس المال)
     if (code.startsWith('25')) {
       return 'حقوق ملكية';
     }
-    // 21xx-24xx - الخصوم
+    // 21xx-24xx - الخصوم المتداولة (دائنون، رواتب مستحقة، ضريبة)
     return 'خصوم';
   }
   
-  // 3xxx - الإيرادات
+  // 3xxx - الإيرادات (المبيعات) أو ضريبة القيمة المضافة
   if (code.startsWith('3')) {
+    // 309x - ضريبة القيمة المضافة (مدخلات/مخرجات) - تعامل كخصوم
+    if (code.startsWith('309')) {
+      return 'خصوم';
+    }
+    // 31xx - المبيعات
     return 'إيرادات';
   }
   
-  // 4xxx - المصروفات
+  // 4xxx - المصروفات والمشتريات
   if (code.startsWith('4')) {
-    // 45xx - المشتريات
+    // 45xx - المشتريات (تكلفة البضاعة المباعة)
     if (code.startsWith('45')) {
       return 'مشتريات';
     }
+    // 41xx-44xx - مصاريف عمومية وإدارية
     return 'مصروفات';
   }
   
-  // تصنيف بناءً على الاسم
-  if (lowerName.includes('أثاث') || lowerName.includes('معدات') || lowerName.includes('أجهز')) return 'أصول ثابتة';
-  if (lowerName.includes('بنك') || lowerName.includes('نقد') || lowerName.includes('عهد')) return 'أصول متداولة';
-  if (lowerName.includes('ضريبة') || lowerName.includes('مستحق') || lowerName.includes('دائن')) return 'خصوم';
-  if (lowerName.includes('جاري') || lowerName.includes('رأس المال')) return 'حقوق ملكية';
-  if (lowerName.includes('مبيعات') || lowerName.includes('إيراد')) return 'إيرادات';
-  if (lowerName.includes('مشتريات')) return 'مشتريات';
-  if (lowerName.includes('مصروف') || lowerName.includes('مصاريف')) return 'مصروفات';
+  // 5xxx - حقوق الملكية (جاري الشركاء)
+  if (code.startsWith('5')) {
+    return 'حقوق ملكية';
+  }
   
+  // تصنيف بناءً على الاسم إذا لم يتطابق الكود
+  if (arabicName.includes('أثاث') || arabicName.includes('معدات') || arabicName.includes('أجهز') || arabicName.includes('مركب')) return 'أصول ثابتة';
+  if (arabicName.includes('بنك') || arabicName.includes('نقد') || arabicName.includes('عهد') || arabicName.includes('مصرف')) return 'أصول متداولة';
+  if (arabicName.includes('إيجار مدفوع') || arabicName.includes('مدفوع مقدما')) return 'أصول متداولة';
+  if (arabicName.includes('ضريبة') || arabicName.includes('مستحق') || arabicName.includes('دائن')) return 'خصوم';
+  if (arabicName.includes('رواتب مستحقة')) return 'خصوم';
+  if (arabicName.includes('جاري') || arabicName.includes('رأس المال') || arabicName.includes('ملكية')) return 'حقوق ملكية';
+  if (arabicName.includes('مبيعات') || arabicName.includes('إيراد')) return 'إيرادات';
+  if (arabicName.includes('مشتريات')) return 'مشتريات';
+  if (arabicName.includes('مصروف') || arabicName.includes('مصاريف')) return 'مصروفات';
+  
+  console.log(`⚠️ Unclassified account: ${code} - ${name}`);
   return 'غير مصنف';
 }
 
