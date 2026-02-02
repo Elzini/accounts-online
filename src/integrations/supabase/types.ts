@@ -2256,6 +2256,418 @@ export type Database = {
           },
         ]
       }
+      inventory_items: {
+        Row: {
+          average_cost: number | null
+          barcode: string | null
+          brand: string | null
+          category: string | null
+          cogs_account_id: string | null
+          company_id: string
+          conversion_rate: number | null
+          cost_price: number | null
+          created_at: string
+          description: string | null
+          dimensions: string | null
+          has_batch_tracking: boolean | null
+          has_expiry_date: boolean | null
+          has_serial_number: boolean | null
+          id: string
+          image_url: string | null
+          inventory_account_id: string | null
+          is_active: boolean | null
+          is_purchasable: boolean | null
+          is_sellable: boolean | null
+          is_vat_exempt: boolean | null
+          item_code: string
+          item_name: string
+          item_name_en: string | null
+          item_type: string | null
+          last_cost: number | null
+          location: string | null
+          maximum_stock: number | null
+          minimum_price: number | null
+          model: string | null
+          notes: string | null
+          quantity_available: number | null
+          quantity_on_hand: number | null
+          quantity_reserved: number | null
+          reorder_level: number | null
+          reorder_quantity: number | null
+          sales_account_id: string | null
+          secondary_unit: string | null
+          selling_price: number | null
+          shelf: string | null
+          subcategory: string | null
+          unit: string | null
+          updated_at: string
+          valuation_method: string | null
+          vat_rate: number | null
+          weight: number | null
+          wholesale_price: number | null
+        }
+        Insert: {
+          average_cost?: number | null
+          barcode?: string | null
+          brand?: string | null
+          category?: string | null
+          cogs_account_id?: string | null
+          company_id: string
+          conversion_rate?: number | null
+          cost_price?: number | null
+          created_at?: string
+          description?: string | null
+          dimensions?: string | null
+          has_batch_tracking?: boolean | null
+          has_expiry_date?: boolean | null
+          has_serial_number?: boolean | null
+          id?: string
+          image_url?: string | null
+          inventory_account_id?: string | null
+          is_active?: boolean | null
+          is_purchasable?: boolean | null
+          is_sellable?: boolean | null
+          is_vat_exempt?: boolean | null
+          item_code: string
+          item_name: string
+          item_name_en?: string | null
+          item_type?: string | null
+          last_cost?: number | null
+          location?: string | null
+          maximum_stock?: number | null
+          minimum_price?: number | null
+          model?: string | null
+          notes?: string | null
+          quantity_available?: number | null
+          quantity_on_hand?: number | null
+          quantity_reserved?: number | null
+          reorder_level?: number | null
+          reorder_quantity?: number | null
+          sales_account_id?: string | null
+          secondary_unit?: string | null
+          selling_price?: number | null
+          shelf?: string | null
+          subcategory?: string | null
+          unit?: string | null
+          updated_at?: string
+          valuation_method?: string | null
+          vat_rate?: number | null
+          weight?: number | null
+          wholesale_price?: number | null
+        }
+        Update: {
+          average_cost?: number | null
+          barcode?: string | null
+          brand?: string | null
+          category?: string | null
+          cogs_account_id?: string | null
+          company_id?: string
+          conversion_rate?: number | null
+          cost_price?: number | null
+          created_at?: string
+          description?: string | null
+          dimensions?: string | null
+          has_batch_tracking?: boolean | null
+          has_expiry_date?: boolean | null
+          has_serial_number?: boolean | null
+          id?: string
+          image_url?: string | null
+          inventory_account_id?: string | null
+          is_active?: boolean | null
+          is_purchasable?: boolean | null
+          is_sellable?: boolean | null
+          is_vat_exempt?: boolean | null
+          item_code?: string
+          item_name?: string
+          item_name_en?: string | null
+          item_type?: string | null
+          last_cost?: number | null
+          location?: string | null
+          maximum_stock?: number | null
+          minimum_price?: number | null
+          model?: string | null
+          notes?: string | null
+          quantity_available?: number | null
+          quantity_on_hand?: number | null
+          quantity_reserved?: number | null
+          reorder_level?: number | null
+          reorder_quantity?: number | null
+          sales_account_id?: string | null
+          secondary_unit?: string | null
+          selling_price?: number | null
+          shelf?: string | null
+          subcategory?: string | null
+          unit?: string | null
+          updated_at?: string
+          valuation_method?: string | null
+          vat_rate?: number | null
+          weight?: number | null
+          wholesale_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_cogs_account_id_fkey"
+            columns: ["cogs_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_inventory_account_id_fkey"
+            columns: ["inventory_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_sales_account_id_fkey"
+            columns: ["sales_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_items: {
+        Row: {
+          account_id: string | null
+          car_id: string | null
+          created_at: string
+          discount_amount: number | null
+          discount_percent: number | null
+          id: string
+          inventory_item_id: string | null
+          invoice_id: string
+          item_code: string | null
+          item_description: string
+          quantity: number
+          taxable_amount: number
+          total: number
+          unit: string | null
+          unit_price: number
+          vat_amount: number
+          vat_rate: number | null
+        }
+        Insert: {
+          account_id?: string | null
+          car_id?: string | null
+          created_at?: string
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          inventory_item_id?: string | null
+          invoice_id: string
+          item_code?: string | null
+          item_description: string
+          quantity?: number
+          taxable_amount: number
+          total: number
+          unit?: string | null
+          unit_price: number
+          vat_amount: number
+          vat_rate?: number | null
+        }
+        Update: {
+          account_id?: string | null
+          car_id?: string | null
+          created_at?: string
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          inventory_item_id?: string | null
+          invoice_id?: string
+          item_code?: string | null
+          item_description?: string
+          quantity?: number
+          taxable_amount?: number
+          total?: number
+          unit?: string | null
+          unit_price?: number
+          vat_amount?: number
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          amount_paid: number | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          customer_address: string | null
+          customer_id: string | null
+          customer_name: string | null
+          customer_vat_number: string | null
+          discount_amount: number | null
+          due_date: string | null
+          fiscal_year_id: string | null
+          id: string
+          internal_notes: string | null
+          invoice_date: string
+          invoice_number: string
+          invoice_type: string
+          journal_entry_id: string | null
+          notes: string | null
+          payment_method: string | null
+          payment_status: string | null
+          sale_id: string | null
+          status: string
+          subtotal: number
+          supplier_id: string | null
+          taxable_amount: number
+          total: number
+          updated_at: string
+          vat_amount: number
+          vat_rate: number | null
+          zatca_invoice_hash: string | null
+          zatca_qr: string | null
+          zatca_status: string | null
+          zatca_uuid: string | null
+        }
+        Insert: {
+          amount_paid?: number | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          customer_address?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_vat_number?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          fiscal_year_id?: string | null
+          id?: string
+          internal_notes?: string | null
+          invoice_date?: string
+          invoice_number: string
+          invoice_type?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          sale_id?: string | null
+          status?: string
+          subtotal?: number
+          supplier_id?: string | null
+          taxable_amount?: number
+          total?: number
+          updated_at?: string
+          vat_amount?: number
+          vat_rate?: number | null
+          zatca_invoice_hash?: string | null
+          zatca_qr?: string | null
+          zatca_status?: string | null
+          zatca_uuid?: string | null
+        }
+        Update: {
+          amount_paid?: number | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          customer_address?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_vat_number?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          fiscal_year_id?: string | null
+          id?: string
+          internal_notes?: string | null
+          invoice_date?: string
+          invoice_number?: string
+          invoice_type?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          sale_id?: string | null
+          status?: string
+          subtotal?: number
+          supplier_id?: string | null
+          taxable_amount?: number
+          total?: number
+          updated_at?: string
+          vat_amount?: number
+          vat_rate?: number | null
+          zatca_invoice_hash?: string | null
+          zatca_qr?: string | null
+          zatca_status?: string | null
+          zatca_uuid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_fiscal_year_id_fkey"
+            columns: ["fiscal_year_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_entries: {
         Row: {
           company_id: string
@@ -2882,6 +3294,348 @@ export type Database = {
           },
         ]
       }
+      project_billings: {
+        Row: {
+          amount_received: number | null
+          billing_date: string
+          billing_number: number
+          billing_type: string
+          company_id: string
+          created_at: string
+          deductions: number | null
+          gross_amount: number
+          id: string
+          invoice_id: string | null
+          journal_entry_id: string | null
+          net_amount: number
+          notes: string | null
+          payment_date: string | null
+          project_id: string
+          retention_held: number | null
+          status: string | null
+          vat_amount: number | null
+        }
+        Insert: {
+          amount_received?: number | null
+          billing_date?: string
+          billing_number: number
+          billing_type?: string
+          company_id: string
+          created_at?: string
+          deductions?: number | null
+          gross_amount: number
+          id?: string
+          invoice_id?: string | null
+          journal_entry_id?: string | null
+          net_amount: number
+          notes?: string | null
+          payment_date?: string | null
+          project_id: string
+          retention_held?: number | null
+          status?: string | null
+          vat_amount?: number | null
+        }
+        Update: {
+          amount_received?: number | null
+          billing_date?: string
+          billing_number?: number
+          billing_type?: string
+          company_id?: string
+          created_at?: string
+          deductions?: number | null
+          gross_amount?: number
+          id?: string
+          invoice_id?: string | null
+          journal_entry_id?: string | null
+          net_amount?: number
+          notes?: string | null
+          payment_date?: string | null
+          project_id?: string
+          retention_held?: number | null
+          status?: string | null
+          vat_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_billings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_billings_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_billings_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_billings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_costs: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          company_id: string
+          cost_date: string
+          cost_type: string
+          created_at: string
+          description: string
+          expense_id: string | null
+          id: string
+          is_approved: boolean | null
+          journal_entry_id: string | null
+          notes: string | null
+          project_id: string
+          quantity: number | null
+          supplier_id: string | null
+          total_cost: number
+          unit_cost: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id: string
+          cost_date?: string
+          cost_type: string
+          created_at?: string
+          description: string
+          expense_id?: string | null
+          id?: string
+          is_approved?: boolean | null
+          journal_entry_id?: string | null
+          notes?: string | null
+          project_id: string
+          quantity?: number | null
+          supplier_id?: string | null
+          total_cost: number
+          unit_cost: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id?: string
+          cost_date?: string
+          cost_type?: string
+          created_at?: string
+          description?: string
+          expense_id?: string | null
+          id?: string
+          is_approved?: boolean | null
+          journal_entry_id?: string | null
+          notes?: string | null
+          project_id?: string
+          quantity?: number | null
+          supplier_id?: string | null
+          total_cost?: number
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_costs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_costs_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_costs_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_costs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_costs_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          actual_end_date: string | null
+          billed_amount: number | null
+          client_contact: string | null
+          client_id: string | null
+          client_name: string | null
+          collected_amount: number | null
+          company_id: string
+          completion_percentage: number | null
+          contract_date: string | null
+          contract_number: string | null
+          contract_value: number
+          cost_account_id: string | null
+          cost_to_date: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          expected_end_date: string | null
+          fiscal_year_id: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          profit_to_date: number | null
+          project_code: string | null
+          project_name: string
+          project_number: number
+          retention_amount: number | null
+          retention_percentage: number | null
+          revenue_account_id: string | null
+          revenue_to_date: number | null
+          site_address: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+          wip_account_id: string | null
+        }
+        Insert: {
+          actual_end_date?: string | null
+          billed_amount?: number | null
+          client_contact?: string | null
+          client_id?: string | null
+          client_name?: string | null
+          collected_amount?: number | null
+          company_id: string
+          completion_percentage?: number | null
+          contract_date?: string | null
+          contract_number?: string | null
+          contract_value?: number
+          cost_account_id?: string | null
+          cost_to_date?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expected_end_date?: string | null
+          fiscal_year_id?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          profit_to_date?: number | null
+          project_code?: string | null
+          project_name: string
+          project_number: number
+          retention_amount?: number | null
+          retention_percentage?: number | null
+          revenue_account_id?: string | null
+          revenue_to_date?: number | null
+          site_address?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          wip_account_id?: string | null
+        }
+        Update: {
+          actual_end_date?: string | null
+          billed_amount?: number | null
+          client_contact?: string | null
+          client_id?: string | null
+          client_name?: string | null
+          collected_amount?: number | null
+          company_id?: string
+          completion_percentage?: number | null
+          contract_date?: string | null
+          contract_number?: string | null
+          contract_value?: number
+          cost_account_id?: string | null
+          cost_to_date?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expected_end_date?: string | null
+          fiscal_year_id?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          profit_to_date?: number | null
+          project_code?: string | null
+          project_name?: string
+          project_number?: number
+          retention_amount?: number | null
+          retention_percentage?: number | null
+          revenue_account_id?: string | null
+          revenue_to_date?: number | null
+          site_address?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          wip_account_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_cost_account_id_fkey"
+            columns: ["cost_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_fiscal_year_id_fkey"
+            columns: ["fiscal_year_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_revenue_account_id_fkey"
+            columns: ["revenue_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_wip_account_id_fkey"
+            columns: ["wip_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchase_batches: {
         Row: {
           company_id: string | null
@@ -3179,6 +3933,110 @@ export type Database = {
           },
         ]
       }
+      stock_movements: {
+        Row: {
+          average_cost_after: number | null
+          balance_after: number | null
+          batch_number: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          expiry_date: string | null
+          from_location: string | null
+          id: string
+          invoice_id: string | null
+          item_id: string
+          journal_entry_id: string | null
+          movement_date: string
+          movement_type: string
+          notes: string | null
+          quantity: number
+          reference_id: string | null
+          reference_type: string | null
+          serial_number: string | null
+          to_location: string | null
+          total_cost: number | null
+          unit_cost: number | null
+        }
+        Insert: {
+          average_cost_after?: number | null
+          balance_after?: number | null
+          batch_number?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          expiry_date?: string | null
+          from_location?: string | null
+          id?: string
+          invoice_id?: string | null
+          item_id: string
+          journal_entry_id?: string | null
+          movement_date?: string
+          movement_type: string
+          notes?: string | null
+          quantity: number
+          reference_id?: string | null
+          reference_type?: string | null
+          serial_number?: string | null
+          to_location?: string | null
+          total_cost?: number | null
+          unit_cost?: number | null
+        }
+        Update: {
+          average_cost_after?: number | null
+          balance_after?: number | null
+          batch_number?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          expiry_date?: string | null
+          from_location?: string | null
+          id?: string
+          invoice_id?: string | null
+          item_id?: string
+          journal_entry_id?: string | null
+          movement_date?: string
+          movement_type?: string
+          notes?: string | null
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          serial_number?: string | null
+          to_location?: string | null
+          total_cost?: number | null
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           address: string | null
@@ -3395,6 +4253,80 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sessions: {
+        Row: {
+          browser: string | null
+          city: string | null
+          company_id: string | null
+          country: string | null
+          device_type: string | null
+          ended_at: string | null
+          expires_at: string | null
+          id: string
+          ip_address: string | null
+          is_active: boolean | null
+          is_suspicious: boolean | null
+          last_activity: string
+          os: string | null
+          risk_score: number | null
+          session_token: string | null
+          started_at: string
+          termination_reason: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          browser?: string | null
+          city?: string | null
+          company_id?: string | null
+          country?: string | null
+          device_type?: string | null
+          ended_at?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean | null
+          is_suspicious?: boolean | null
+          last_activity?: string
+          os?: string | null
+          risk_score?: number | null
+          session_token?: string | null
+          started_at?: string
+          termination_reason?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          browser?: string | null
+          city?: string | null
+          company_id?: string | null
+          country?: string | null
+          device_type?: string | null
+          ended_at?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean | null
+          is_suspicious?: boolean | null
+          last_activity?: string
+          os?: string | null
+          risk_score?: number | null
+          session_token?: string | null
+          started_at?: string
+          termination_reason?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sessions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vouchers: {
         Row: {
           amount: number
@@ -3457,6 +4389,56 @@ export type Database = {
             columns: ["journal_entry_id"]
             isOneToOne: false
             referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouses: {
+        Row: {
+          address: string | null
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          manager: string | null
+          phone: string | null
+          updated_at: string
+          warehouse_code: string
+          warehouse_name: string
+        }
+        Insert: {
+          address?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          manager?: string | null
+          phone?: string | null
+          updated_at?: string
+          warehouse_code: string
+          warehouse_name: string
+        }
+        Update: {
+          address?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          manager?: string | null
+          phone?: string | null
+          updated_at?: string
+          warehouse_code?: string
+          warehouse_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -3530,6 +4512,14 @@ export type Database = {
       }
       get_car_expenses: { Args: { p_car_id: string }; Returns: number }
       get_current_company_id: { Args: never; Returns: string }
+      get_next_invoice_number: {
+        Args: { _company_id: string; _invoice_type: string }
+        Returns: string
+      }
+      get_next_project_number: {
+        Args: { _company_id: string }
+        Returns: number
+      }
       get_strict_company_id: { Args: never; Returns: string }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_permission: {
