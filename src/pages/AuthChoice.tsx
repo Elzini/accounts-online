@@ -1,17 +1,41 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Building2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
 
 export default function AuthChoice() {
+  const [loginLogoUrl, setLoginLogoUrl] = useState<string>('');
+
+  useEffect(() => {
+    const fetchLoginLogo = async () => {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'login_logo_url')
+        .is('company_id', null)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching login logo:', error);
+        return;
+      }
+
+      if (data?.value) setLoginLogoUrl(data.value);
+    };
+
+    fetchLoginLogo();
+  }, []);
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/10 via-background to-primary/5">
       <div className="w-full max-w-2xl">
         {/* Logo & Title */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 overflow-hidden">
-            <img src={logo} alt="شعار النظام" className="w-16 h-16 object-contain" />
+            <img src={loginLogoUrl || logo} alt="شعار النظام" className="w-16 h-16 object-contain" loading="lazy" />
           </div>
           <h1 className="text-3xl font-bold text-foreground">مرحباً بك</h1>
           <p className="text-muted-foreground mt-2">اختر طريقة الدخول المناسبة</p>
