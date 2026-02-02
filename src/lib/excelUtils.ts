@@ -129,7 +129,6 @@ export async function read(data: ArrayBuffer | Uint8Array, options?: { type: str
     ? new Uint8Array(data).buffer as ArrayBuffer
     : data;
   return readExcelFile(arrayBuffer);
-  return readExcelFile(arrayBuffer);
 }
 
 // Get sheet data as 2D array (for compatibility with existing code)

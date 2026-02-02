@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator, Upload, X, FileUp, Save, Trash2, FolderOpen, FileText, Eye, Sparkles, Image } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { read, utils } from '@/lib/excelUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -417,18 +417,17 @@ export function TrialBalanceAnalysisPage() {
     setIsUploading(true);
     const reader = new FileReader();
     
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const arrayBuffer = e.target?.result as ArrayBuffer;
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const workbook = await read(arrayBuffer, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         // IMPORTANT: defval keeps empty cells so column positions don't shift
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+        const jsonData = utils.sheet_to_json(worksheet, {
           header: 1,
           defval: '',
           blankrows: false,
-          raw: true,
         }) as any[][];
 
         console.log('Excel rows count:', jsonData.length);
@@ -1350,11 +1349,11 @@ export function TrialBalanceAnalysisPage() {
     );
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     setIsExporting(true);
 
     try {
-      const wb = XLSX.utils.book_new();
+      const wb = utils.book_new();
 
       // Sheet 1: قائمة الدخل
       const incomeStatementData = [
@@ -1373,9 +1372,8 @@ export function TrialBalanceAnalysisPage() {
         [''],
         ['صافي الربح / (الخسارة)', netIncome],
       ];
-      const wsIncome = XLSX.utils.aoa_to_sheet(incomeStatementData);
-      wsIncome['!cols'] = [{ wch: 40 }, { wch: 20 }];
-      XLSX.utils.book_append_sheet(wb, wsIncome, 'قائمة الدخل');
+      const wsIncome = utils.aoa_to_sheet(incomeStatementData);
+      utils.book_append_sheet(wb, wsIncome, 'قائمة الدخل');
 
       // Sheet 2: قائمة المركز المالي
       const balanceSheetData = [
@@ -1406,9 +1404,8 @@ export function TrialBalanceAnalysisPage() {
         [''],
         ['إجمالي الخصوم وحقوق الملكية', totalLiabilitiesAndEquity],
       ];
-      const wsBalance = XLSX.utils.aoa_to_sheet(balanceSheetData);
-      wsBalance['!cols'] = [{ wch: 40 }, { wch: 20 }];
-      XLSX.utils.book_append_sheet(wb, wsBalance, 'المركز المالي');
+      const wsBalance = utils.aoa_to_sheet(balanceSheetData);
+      utils.book_append_sheet(wb, wsBalance, 'المركز المالي');
 
       // Sheet 3: حساب الزكاة
       const zakatData = [
@@ -1431,12 +1428,12 @@ export function TrialBalanceAnalysisPage() {
         ['نسبة الزكاة', '2.5%'],
         ['الزكاة المستحقة', zakatDue],
       ];
-      const wsZakat = XLSX.utils.aoa_to_sheet(zakatData);
-      wsZakat['!cols'] = [{ wch: 45 }, { wch: 20 }];
-      XLSX.utils.book_append_sheet(wb, wsZakat, 'حساب الزكاة');
+      const wsZakat = utils.aoa_to_sheet(zakatData);
+      utils.book_append_sheet(wb, wsZakat, 'حساب الزكاة');
 
       // تحميل الملف
-      XLSX.writeFile(wb, `القوائم_المالية_${data.period.to}.xlsx`);
+      const { writeFile } = await import('@/lib/excelUtils');
+      await writeFile(wb, `القوائم_المالية_${data.period.to}.xlsx`);
     } finally {
       setIsExporting(false);
     }
