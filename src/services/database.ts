@@ -602,6 +602,15 @@ export async function fetchStats(fiscalYearId?: string | null) {
   const startOfMonth = toDateOnly(new Date(now.getFullYear(), now.getMonth(), 1));
   const endOfMonth = toDateOnly(new Date(now.getFullYear(), now.getMonth() + 1, 0));
 
+  // Parse YYYY-MM-DD as a *local* date (avoid timezone shifting from Date("YYYY-MM-DD") which is UTC).
+  const parseLocalISODate = (iso: string, endOfDay = false) => {
+    const [y, m, d] = iso.split('-').map(Number);
+    const dt = new Date(y, (m || 1) - 1, d || 1);
+    if (endOfDay) dt.setHours(23, 59, 59, 999);
+    else dt.setHours(0, 0, 0, 0);
+    return dt;
+  };
+
   // Get fiscal year date range if provided
   let fiscalYearStart: string | null = null;
   let fiscalYearEnd: string | null = null;
@@ -701,11 +710,13 @@ export async function fetchStats(fiscalYearId?: string | null) {
   // Filter payroll by fiscal year using month/year fields instead of created_at
   let payrollData = allPayrollData;
   if (fiscalYearStart && fiscalYearEnd) {
-    const fyStartDate = new Date(fiscalYearStart);
-    const fyEndDate = new Date(fiscalYearEnd);
+    // IMPORTANT: use local date parsing to avoid excluding boundary months (e.g., month 1) بسبب فرق التوقيت.
+    const fyStartDate = parseLocalISODate(fiscalYearStart, false);
+    const fyEndDate = parseLocalISODate(fiscalYearEnd, true);
     payrollData = allPayrollData?.filter(p => {
       // Build a date from payroll month/year (first day of month)
-      const payrollDate = new Date(p.year, p.month - 1, 1);
+      const payrollDate = new Date(Number(p.year), Number(p.month) - 1, 1);
+      payrollDate.setHours(0, 0, 0, 0);
       return payrollDate >= fyStartDate && payrollDate <= fyEndDate;
     }) || [];
   }
