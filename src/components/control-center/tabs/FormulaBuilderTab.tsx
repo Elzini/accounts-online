@@ -38,6 +38,7 @@ import {
   FormulaVariable,
   FORMULA_CATEGORIES,
   OPERATORS,
+  DEFAULT_FORMULAS,
   generateNodeId,
   formulaToString,
   evaluateFormula,
@@ -227,6 +228,13 @@ export function FormulaBuilderTab() {
       toast.error('يرجى اختيار شركة أولاً');
       return;
     }
+
+    const defaultsCount = (DEFAULT_FORMULAS[selectedCategory] || []).length;
+    if (defaultsCount === 0) {
+      toast.info('لا توجد معادلات افتراضية لهذه الفئة حالياً');
+      return;
+    }
+
     setIsSeedingDefaults(true);
     try {
       const { inserted } = await seedDefaultFormulas(companyId, selectedCategory);
@@ -298,7 +306,7 @@ export function FormulaBuilderTab() {
                     ) : formulas.length === 0 && !isCreatingNew ? (
                       <div className="text-center py-8 text-muted-foreground">
                         <p className="mb-2">لا توجد معادلات محفوظة لهذه الفئة</p>
-                        <p className="text-xs mb-4">يمكنك إضافة المعادلات الافتراضية (مثل: إجمالي الربح / صافي الربح) ثم تعديلها.</p>
+                        <p className="text-xs mb-4">يمكنك إضافة المعادلات الافتراضية ثم تعديلها، أو إنشاء معادلة جديدة.</p>
                         <div className="flex items-center justify-center gap-2">
                           <Button
                             variant="outline"
