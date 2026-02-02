@@ -1042,6 +1042,103 @@ export type Database = {
           },
         ]
       }
+      contracts: {
+        Row: {
+          advance_payment: number | null
+          advance_percentage: number | null
+          company_id: string
+          contract_number: number
+          contract_type: string | null
+          contract_value: number
+          contractor_address: string | null
+          contractor_name: string | null
+          contractor_phone: string | null
+          created_at: string
+          description: string | null
+          end_date: string | null
+          fiscal_year_id: string | null
+          id: string
+          notes: string | null
+          payment_terms: string | null
+          project_id: string | null
+          retention_percentage: number | null
+          start_date: string | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          advance_payment?: number | null
+          advance_percentage?: number | null
+          company_id: string
+          contract_number?: number
+          contract_type?: string | null
+          contract_value?: number
+          contractor_address?: string | null
+          contractor_name?: string | null
+          contractor_phone?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          fiscal_year_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_terms?: string | null
+          project_id?: string | null
+          retention_percentage?: number | null
+          start_date?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          advance_payment?: number | null
+          advance_percentage?: number | null
+          company_id?: string
+          contract_number?: number
+          contract_type?: string | null
+          contract_value?: number
+          contractor_address?: string | null
+          contractor_name?: string | null
+          contractor_phone?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          fiscal_year_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_terms?: string | null
+          project_id?: string | null
+          retention_percentage?: number | null
+          start_date?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_fiscal_year_id_fkey"
+            columns: ["fiscal_year_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_reports: {
         Row: {
           columns: Json
@@ -3394,6 +3491,110 @@ export type Database = {
           },
         ]
       }
+      progress_billings: {
+        Row: {
+          advance_deduction: number | null
+          approved_at: string | null
+          approved_by: string | null
+          billing_date: string
+          billing_number: number
+          company_id: string
+          contract_id: string | null
+          created_at: string
+          fiscal_year_id: string | null
+          id: string
+          notes: string | null
+          other_deductions: number | null
+          payment_date: string | null
+          period_end: string | null
+          period_start: string | null
+          previous_billings: number | null
+          project_id: string | null
+          retention_amount: number | null
+          status: string | null
+          updated_at: string
+          vat_amount: number | null
+          work_completed_value: number
+        }
+        Insert: {
+          advance_deduction?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          billing_date?: string
+          billing_number?: number
+          company_id: string
+          contract_id?: string | null
+          created_at?: string
+          fiscal_year_id?: string | null
+          id?: string
+          notes?: string | null
+          other_deductions?: number | null
+          payment_date?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          previous_billings?: number | null
+          project_id?: string | null
+          retention_amount?: number | null
+          status?: string | null
+          updated_at?: string
+          vat_amount?: number | null
+          work_completed_value?: number
+        }
+        Update: {
+          advance_deduction?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          billing_date?: string
+          billing_number?: number
+          company_id?: string
+          contract_id?: string | null
+          created_at?: string
+          fiscal_year_id?: string | null
+          id?: string
+          notes?: string | null
+          other_deductions?: number | null
+          payment_date?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          previous_billings?: number | null
+          project_id?: string | null
+          retention_amount?: number | null
+          status?: string | null
+          updated_at?: string
+          vat_amount?: number | null
+          work_completed_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progress_billings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "progress_billings_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "progress_billings_fiscal_year_id_fkey"
+            columns: ["fiscal_year_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "progress_billings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_billings: {
         Row: {
           amount_received: number | null
@@ -3644,7 +3845,7 @@ export type Database = {
           profit_to_date?: number | null
           project_code?: string | null
           project_name: string
-          project_number: number
+          project_number?: number
           retention_amount?: number | null
           retention_percentage?: number | null
           revenue_account_id?: string | null

@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
 import { useAppSettings } from '@/hooks/useSettings';
 import { useMenuConfiguration } from '@/hooks/useSystemControl';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import defaultLogo from '@/assets/logo.png';
+
 interface SidebarProps {
   activePage: ActivePage;
   setActivePage: (page: ActivePage) => void;
@@ -57,8 +59,16 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'app-settings': Settings,
   'audit-logs': ClipboardList,
   'backups': Database,
-  'control-center': Settings2
+  'control-center': Settings2,
+  // Construction icons
+  'projects': Building2,
+  'contracts': FileText,
+  'progress-billings': Receipt,
+  'materials': Package,
+  'subcontractors': Users,
+  'equipment': Wrench
 };
+
 export function Sidebar({
   activePage,
   setActivePage
@@ -67,6 +77,7 @@ export function Sidebar({
   const {
     permissions
   } = useAuth();
+  const { company } = useCompany();
   const {
     data: settings
   } = useAppSettings();
@@ -74,15 +85,70 @@ export function Sidebar({
     data: menuConfig
   } = useMenuConfiguration();
 
+  // Get company type
+  const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
+
   // Track collapsed sections
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
   // Use company logo if available, otherwise use default
   const logoUrl = settings?.company_logo_url || defaultLogo;
-  const appName = settings?.app_name || 'منصة إدارة المعارض';
-  const appSubtitle = settings?.app_subtitle || 'لتجارة السيارات';
+  
+  // Dynamic app name/subtitle based on company type
+  const getAppName = () => {
+    if (settings?.app_name) return settings.app_name;
+    switch (companyType) {
+      case 'construction': return 'نظام إدارة المقاولات';
+      case 'general_trading': return 'نظام إدارة التجارة';
+      default: return 'منصة إدارة المعارض';
+    }
+  };
+  
+  const getAppSubtitle = () => {
+    if (settings?.app_subtitle) return settings.app_subtitle;
+    switch (companyType) {
+      case 'construction': return 'للمشاريع والعقود';
+      case 'general_trading': return 'للتجارة العامة';
+      default: return 'لتجارة السيارات';
+    }
+  };
+  
+  const appName = getAppName();
+  const appSubtitle = getAppSubtitle();
 
-  // Default menu structure
+  // Construction-specific menu items
+  const constructionMenuItems = [{
+    id: 'dashboard' as ActivePage,
+    label: 'الرئيسية',
+    icon: LayoutDashboard
+  }, {
+    id: 'projects' as ActivePage,
+    label: 'المشاريع',
+    icon: Building2,
+    permission: 'purchases' as const
+  }, {
+    id: 'contracts' as ActivePage,
+    label: 'العقود',
+    icon: FileText,
+    permission: 'purchases' as const
+  }, {
+    id: 'progress-billings' as ActivePage,
+    label: 'المستخلصات',
+    icon: Receipt,
+    permission: 'sales' as const
+  }, {
+    id: 'customers' as ActivePage,
+    label: 'العملاء',
+    icon: Users,
+    permission: 'sales' as const
+  }, {
+    id: 'suppliers' as ActivePage,
+    label: 'الموردين',
+    icon: Truck,
+    permission: 'purchases' as const
+  }];
+
+  // Default menu structure (car dealership)
   const defaultMenuItems = [{
     id: 'dashboard' as ActivePage,
     label: settings?.dashboard_title || 'الرئيسية',
@@ -382,11 +448,13 @@ export function Sidebar({
 
       {/* Main Menu */}
       <nav className="flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto">
-        {/* Main Section */}
-        {renderCollapsibleSection('main', 'القائمة الرئيسية', defaultMenuItems)}
+        {/* Main Section - Changes based on company type */}
+        {renderCollapsibleSection('main', 'القائمة الرئيسية', 
+          companyType === 'construction' ? constructionMenuItems : defaultMenuItems
+        )}
 
-        {/* Transfers */}
-        {renderCollapsibleSection('transfers', settings?.transfers_section_title || 'التحويلات', transferItems, permissions.admin || permissions.sales || permissions.purchases)}
+        {/* Transfers - Only for car dealership */}
+        {companyType === 'car_dealership' && renderCollapsibleSection('transfers', settings?.transfers_section_title || 'التحويلات', transferItems, permissions.admin || permissions.sales || permissions.purchases)}
 
         {/* Finance Section */}
         {renderCollapsibleSection('finance', settings?.finance_section_title || 'المالية', financeItems, permissions.admin || permissions.sales || permissions.purchases)}
@@ -439,7 +507,11 @@ export function Sidebar({
 
       {/* Footer */}
       <div className="p-3 sm:p-4 border-t border-sidebar-border">
-        <p className="text-[10px] sm:text-xs text-center text-sidebar-foreground/50">نظام إدارة المعرض © 2026</p>
+        <p className="text-[10px] sm:text-xs text-center text-sidebar-foreground/50">
+          {companyType === 'construction' ? 'نظام إدارة المقاولات' : 
+           companyType === 'general_trading' ? 'نظام إدارة التجارة' : 
+           'نظام إدارة المعرض'} © 2026
+        </p>
       </div>
     </aside>;
 }

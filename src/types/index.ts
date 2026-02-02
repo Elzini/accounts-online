@@ -101,4 +101,12 @@ export type ActivePage =
   | 'account-statement'
   | 'control-center'
   | 'fixed-assets'
-  | 'medad-import';
+  | 'medad-import'
+  // Construction module pages
+  | 'projects'
+  | 'contracts'
+  | 'progress-billings'
+  | 'project-costs'
+  | 'subcontractors'
+  | 'equipment'
+  | 'materials';
