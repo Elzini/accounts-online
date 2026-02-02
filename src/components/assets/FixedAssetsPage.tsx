@@ -49,14 +49,14 @@ export function FixedAssetsPage() {
   const { data: depreciationEntries = [] } = useDepreciationEntries();
   const { data: accounts = [] } = useAccounts();
   
-  // Filter accounts by type for dropdowns
+  // Filter accounts by type for dropdowns (database uses plural: 'assets', 'expenses')
   const assetAccounts = useMemo(() => 
-    accounts.filter(acc => acc.type === 'asset' && acc.code.startsWith('13')),
+    accounts.filter(acc => acc.type === 'assets' && acc.code.startsWith('13')),
     [accounts]
   );
   
   const expenseAccounts = useMemo(() => 
-    accounts.filter(acc => acc.type === 'expense'),
+    accounts.filter(acc => acc.type === 'expenses'),
     [accounts]
   );
   
