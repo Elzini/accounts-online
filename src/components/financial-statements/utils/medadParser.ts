@@ -38,6 +38,22 @@ export function parseMedadExcel(workbook: XLSX.WorkBook): ComprehensiveFinancial
   
   console.log('📊 Parsing Medad Excel - Sheets:', workbook.SheetNames);
   
+  // تحقق إذا كان ملف ميزان مراجعة شامل (ورقة واحدة باسم Report أو مشابه)
+  const isTrialBalanceFile = workbook.SheetNames.length === 1 || 
+    workbook.SheetNames.some(name => name.toLowerCase().includes('report') || name.includes('ميزان'));
+  
+  if (isTrialBalanceFile) {
+    console.log('📊 Detected Trial Balance format - parsing as unified sheet');
+    const sheetName = workbook.SheetNames[0];
+    const ws = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', blankrows: false }) as any[][];
+    
+    parseTrialBalanceSheet(rows, result);
+    return result;
+  }
+  
+  // ========= الطريقة الأصلية: ملفات القوائم المالية المنفصلة =========
+  
   // استخراج اسم الشركة من الغلاف
   const coverSheet = findSheet(workbook, MEDAD_SHEET_NAMES.cover);
   if (coverSheet) {
@@ -76,6 +92,412 @@ export function parseMedadExcel(workbook: XLSX.WorkBook): ComprehensiveFinancial
   });
   
   return result;
+}
+
+// ========= تحليل ميزان المراجعة الشامل من مداد =========
+function parseTrialBalanceSheet(rows: any[][], result: ComprehensiveFinancialData) {
+  console.log('📊 Parsing Trial Balance Sheet - Total rows:', rows.length);
+  
+  // استخراج معلومات الشركة من الصفوف الأولى
+  for (let i = 0; i < Math.min(rows.length, 15); i++) {
+    const row = rows[i];
+    if (!row) continue;
+    
+    const rowText = row.map((c: any) => String(c || '')).join(' ').trim();
+    
+    // اسم الشركة
+    if (!result.companyName && rowText.length > 5) {
+      const firstCell = String(row[0] || '').trim();
+      // تجاهل الخلايا التي تحتوي على عناوين
+      if (firstCell.length > 5 && !firstCell.includes('ميزان') && !firstCell.includes('Report') && 
+          !firstCell.includes('Vat') && !firstCell.includes('الصفحة')) {
+        // ابحث عن أول خلية غير فارغة
+        for (const cell of row) {
+          const cellText = String(cell || '').trim();
+          if (cellText.length > 5 && !cellText.includes('ميزان') && !cellText.includes('Report')) {
+            result.companyName = cellText;
+            break;
+          }
+        }
+      }
+    }
+    
+    // الرقم الضريبي (يمكن تخزينه في اسم الشركة أو ملاحظة)
+    const vatMatch = rowText.match(/3\d{14}/);
+    if (vatMatch) {
+      // نضيفه لاسم الشركة إذا لم يكن موجوداً
+      console.log('📊 Found VAT Number:', vatMatch[0]);
+    }
+    
+    // التاريخ
+    const dateMatch = rowText.match(/(\d{4}-\d{2}-\d{2})/g);
+    if (dateMatch && dateMatch.length >= 1) {
+      result.reportDate = dateMatch[dateMatch.length - 1]; // آخر تاريخ (إلى)
+    }
+  }
+  
+  // تحديد أعمدة البيانات
+  const colMap = detectTrialBalanceColumns(rows);
+  console.log('📊 Column Map:', colMap);
+  
+  if (colMap.startRow === -1) {
+    console.warn('⚠️ Could not detect data columns');
+    return;
+  }
+  
+  // تصنيف الحسابات
+  const accounts = {
+    fixedAssets: [] as { name: string; amount: number; code: string }[],
+    currentAssets: [] as { name: string; amount: number; code: string }[],
+    currentLiabilities: [] as { name: string; amount: number; code: string }[],
+    equity: [] as { name: string; amount: number; code: string }[],
+    revenue: [] as { name: string; amount: number; code: string }[],
+    expenses: [] as { name: string; amount: number; code: string }[],
+    purchases: [] as { name: string; amount: number; code: string }[],
+  };
+  
+  // معالجة كل صف من البيانات
+  for (let i = colMap.startRow; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length === 0) continue;
+    
+    // استخراج البيانات
+    const accountName = extractAccountName(row, colMap);
+    const accountCode = extractAccountCode(row, colMap);
+    const closingDebit = parseNumber(row[colMap.closingDebit]);
+    const closingCredit = parseNumber(row[colMap.closingCredit]);
+    
+    // تجاهل الصفوف الفارغة أو العناوين
+    if (!accountName || accountName.length < 2) continue;
+    if (accountName.includes('اسم الحساب') || accountName.includes('البيان')) continue;
+    
+    // تجاهل الحسابات الرئيسية ذات رقم واحد (1، 2، 3، 4)
+    if (accountCode.length === 1) continue;
+    
+    // حساب الصافي
+    const netAmount = Math.abs(closingDebit - closingCredit);
+    if (netAmount === 0 && closingDebit === 0 && closingCredit === 0) continue;
+    
+    const displayAmount = Math.max(closingDebit, closingCredit);
+    
+    // تصنيف الحساب
+    const category = categorizeAccountMedad(accountCode, accountName);
+    
+    console.log(`📌 ${accountCode} - ${accountName}: ${category} = ${displayAmount.toFixed(2)}`);
+    
+    const accountItem = { name: accountName, amount: displayAmount, code: accountCode };
+    
+    switch (category) {
+      case 'أصول ثابتة':
+        accounts.fixedAssets.push(accountItem);
+        break;
+      case 'أصول متداولة':
+        accounts.currentAssets.push(accountItem);
+        break;
+      case 'خصوم':
+        accounts.currentLiabilities.push(accountItem);
+        break;
+      case 'حقوق ملكية':
+        accounts.equity.push(accountItem);
+        break;
+      case 'إيرادات':
+        accounts.revenue.push(accountItem);
+        break;
+      case 'مشتريات':
+        accounts.purchases.push(accountItem);
+        break;
+      case 'مصروفات':
+        accounts.expenses.push(accountItem);
+        break;
+    }
+  }
+  
+  // تحويل الحسابات إلى القوائم المالية
+  buildFinancialStatements(accounts, result);
+  
+  console.log('📊 Final Result:', {
+    totalAssets: result.balanceSheet.totalAssets,
+    totalLiabilities: result.balanceSheet.totalLiabilities,
+    totalEquity: result.balanceSheet.totalEquity,
+    revenue: result.incomeStatement.revenue,
+    expenses: result.incomeStatement.generalAndAdminExpenses,
+  });
+}
+
+// تحديد أعمدة ميزان المراجعة
+function detectTrialBalanceColumns(rows: any[][]): {
+  startRow: number;
+  nameCol: number;
+  codeCol: number;
+  openingDebit: number;
+  openingCredit: number;
+  movementDebit: number;
+  movementCredit: number;
+  closingDebit: number;
+  closingCredit: number;
+} {
+  const result = {
+    startRow: -1,
+    nameCol: -1,
+    codeCol: -1,
+    openingDebit: -1,
+    openingCredit: -1,
+    movementDebit: -1,
+    movementCredit: -1,
+    closingDebit: -1,
+    closingCredit: -1,
+  };
+  
+  // البحث عن صف العناوين (مدين/دائن)
+  for (let i = 0; i < Math.min(rows.length, 20); i++) {
+    const row = rows[i];
+    if (!row) continue;
+    
+    const rowStr = row.map((c: any) => String(c || '')).join(' ');
+    
+    // البحث عن صف يحتوي على مدين/دائن متعدد
+    const debitCols: number[] = [];
+    const creditCols: number[] = [];
+    
+    for (let j = 0; j < row.length; j++) {
+      const cell = String(row[j] || '').trim();
+      if (cell === 'مدين' || cell === 'المدين') debitCols.push(j);
+      if (cell === 'دائن' || cell === 'الدائن') creditCols.push(j);
+      if (cell === 'اسم الحساب' || cell === 'البيان') result.nameCol = j;
+      if (cell === 'الرقم' || cell === 'رقم الحساب' || cell === 'الكود') result.codeCol = j;
+    }
+    
+    // إذا وجدنا 3 أعمدة مدين و3 دائن (سابق، حركة، صافي)
+    if (debitCols.length >= 3 && creditCols.length >= 3) {
+      result.startRow = i + 1; // الصف التالي للعناوين
+      
+      // ترتيب مداد: الصافي أولاً ثم الحركة ثم السابق (RTL)
+      // أو العكس، نحدد بناءً على ترتيب الأعمدة
+      result.closingDebit = debitCols[0];
+      result.closingCredit = creditCols[0];
+      result.movementDebit = debitCols[1];
+      result.movementCredit = creditCols[1];
+      result.openingDebit = debitCols[2];
+      result.openingCredit = creditCols[2];
+      
+      console.log('📊 Found header row at:', i);
+      console.log('📊 Debit columns:', debitCols);
+      console.log('📊 Credit columns:', creditCols);
+      break;
+    }
+  }
+  
+  return result;
+}
+
+// استخراج اسم الحساب من الصف
+function extractAccountName(row: any[], colMap: any): string {
+  // إذا عرفنا عمود الاسم
+  if (colMap.nameCol >= 0) {
+    return String(row[colMap.nameCol] || '').trim();
+  }
+  
+  // البحث عن أول خلية نصية
+  for (let j = 0; j < row.length; j++) {
+    const cell = String(row[j] || '').trim();
+    if (cell.length > 2 && !/^\d+(\.\d+)?$/.test(cell) && 
+        !cell.includes('مدين') && !cell.includes('دائن')) {
+      return cell;
+    }
+  }
+  
+  return '';
+}
+
+// استخراج كود الحساب من الصف
+function extractAccountCode(row: any[], colMap: any): string {
+  // إذا عرفنا عمود الكود
+  if (colMap.codeCol >= 0) {
+    const code = String(row[colMap.codeCol] || '').trim();
+    if (/^\d+$/.test(code)) return code;
+  }
+  
+  // البحث من نهاية الصف عن رقم
+  for (let j = row.length - 1; j >= 0; j--) {
+    const cell = String(row[j] || '').trim();
+    if (/^\d+$/.test(cell) && cell.length <= 6) {
+      return cell;
+    }
+  }
+  
+  return '';
+}
+
+// تحويل القيمة إلى رقم
+function parseNumber(value: any): number {
+  if (typeof value === 'number' && !isNaN(value)) return Math.abs(value);
+  if (typeof value !== 'string') return 0;
+  
+  const str = value.trim();
+  if (!str) return 0;
+  
+  const negative = str.includes('(') && str.includes(')');
+  const cleaned = str.replace(/[()]/g, '').replace(/,/g, '').replace(/\s/g, '');
+  const num = parseFloat(cleaned);
+  
+  if (isNaN(num)) return 0;
+  return Math.abs(negative ? -num : num);
+}
+
+// تصنيف الحساب بناءً على كود مداد
+function categorizeAccountMedad(code: string, name: string): string {
+  const lowerName = name.toLowerCase();
+  
+  // 1xxx - الأصول
+  if (code.startsWith('1')) {
+    // 11xx - الأصول الثابتة
+    if (code.startsWith('11') || code.startsWith('110') || code.startsWith('15')) {
+      return 'أصول ثابتة';
+    }
+    // 12xx, 13xx, 14xx - الأصول المتداولة
+    return 'أصول متداولة';
+  }
+  
+  // 2xxx - الخصوم وحقوق الملكية
+  if (code.startsWith('2')) {
+    // 25xx - حقوق الملكية (جاري المالك)
+    if (code.startsWith('25')) {
+      return 'حقوق ملكية';
+    }
+    // 21xx-24xx - الخصوم
+    return 'خصوم';
+  }
+  
+  // 3xxx - الإيرادات
+  if (code.startsWith('3')) {
+    return 'إيرادات';
+  }
+  
+  // 4xxx - المصروفات
+  if (code.startsWith('4')) {
+    // 45xx - المشتريات
+    if (code.startsWith('45')) {
+      return 'مشتريات';
+    }
+    return 'مصروفات';
+  }
+  
+  // تصنيف بناءً على الاسم
+  if (lowerName.includes('أثاث') || lowerName.includes('معدات') || lowerName.includes('أجهز')) return 'أصول ثابتة';
+  if (lowerName.includes('بنك') || lowerName.includes('نقد') || lowerName.includes('عهد')) return 'أصول متداولة';
+  if (lowerName.includes('ضريبة') || lowerName.includes('مستحق') || lowerName.includes('دائن')) return 'خصوم';
+  if (lowerName.includes('جاري') || lowerName.includes('رأس المال')) return 'حقوق ملكية';
+  if (lowerName.includes('مبيعات') || lowerName.includes('إيراد')) return 'إيرادات';
+  if (lowerName.includes('مشتريات')) return 'مشتريات';
+  if (lowerName.includes('مصروف') || lowerName.includes('مصاريف')) return 'مصروفات';
+  
+  return 'غير مصنف';
+}
+
+// بناء القوائم المالية من الحسابات المصنفة
+function buildFinancialStatements(accounts: any, result: ComprehensiveFinancialData) {
+  // قائمة المركز المالي - الأصول غير المتداولة
+  let totalNonCurrentAssets = 0;
+  accounts.fixedAssets.forEach((acc: any) => {
+    result.balanceSheet.nonCurrentAssets.push({
+      name: acc.name,
+      amount: acc.amount,
+      note: acc.code,
+    });
+    totalNonCurrentAssets += acc.amount;
+  });
+  result.balanceSheet.totalNonCurrentAssets = totalNonCurrentAssets;
+  
+  // قائمة المركز المالي - الأصول المتداولة
+  let totalCurrentAssets = 0;
+  accounts.currentAssets.forEach((acc: any) => {
+    result.balanceSheet.currentAssets.push({
+      name: acc.name,
+      amount: acc.amount,
+      note: acc.code,
+    });
+    totalCurrentAssets += acc.amount;
+  });
+  result.balanceSheet.totalCurrentAssets = totalCurrentAssets;
+  result.balanceSheet.totalAssets = totalNonCurrentAssets + totalCurrentAssets;
+  
+  // قائمة المركز المالي - المطلوبات المتداولة
+  let totalCurrentLiabilities = 0;
+  accounts.currentLiabilities.forEach((acc: any) => {
+    result.balanceSheet.currentLiabilities.push({
+      name: acc.name,
+      amount: acc.amount,
+      note: acc.code,
+    });
+    totalCurrentLiabilities += acc.amount;
+  });
+  result.balanceSheet.totalCurrentLiabilities = totalCurrentLiabilities;
+  result.balanceSheet.totalLiabilities = totalCurrentLiabilities;
+  
+  // قائمة المركز المالي - حقوق الملكية
+  let totalEquity = 0;
+  accounts.equity.forEach((acc: any) => {
+    result.balanceSheet.equity.push({
+      name: acc.name,
+      amount: acc.amount,
+      note: acc.code,
+    });
+    totalEquity += acc.amount;
+  });
+  result.balanceSheet.totalEquity = totalEquity;
+  result.balanceSheet.totalLiabilitiesAndEquity = totalCurrentLiabilities + totalEquity;
+  
+  // قائمة الدخل - الإيرادات
+  let totalRevenue = 0;
+  accounts.revenue.forEach((acc: any) => {
+    totalRevenue += acc.amount;
+  });
+  result.incomeStatement.revenue = totalRevenue;
+  
+  // قائمة الدخل - المشتريات (تكلفة الإيرادات)
+  let totalPurchases = 0;
+  accounts.purchases.forEach((acc: any) => {
+    totalPurchases += acc.amount;
+  });
+  result.incomeStatement.costOfRevenue = totalPurchases;
+  
+  // قائمة الدخل - المصروفات
+  let totalExpenses = 0;
+  accounts.expenses.forEach((acc: any) => {
+    totalExpenses += acc.amount;
+  });
+  result.incomeStatement.generalAndAdminExpenses = totalExpenses;
+  
+  // حساب الأرباح
+  result.incomeStatement.grossProfit = totalRevenue - totalPurchases;
+  result.incomeStatement.operatingProfit = result.incomeStatement.grossProfit - totalExpenses;
+  result.incomeStatement.profitBeforeZakat = result.incomeStatement.operatingProfit;
+  result.incomeStatement.netProfit = result.incomeStatement.profitBeforeZakat;
+  result.incomeStatement.totalComprehensiveIncome = result.incomeStatement.netProfit;
+  
+  // إيضاح تكلفة الإيرادات
+  if (!result.notes.costOfRevenue) {
+    result.notes.costOfRevenue = { items: [], total: 0 };
+  }
+  accounts.purchases.forEach((acc: any) => {
+    result.notes.costOfRevenue!.items.push({
+      name: acc.name,
+      amount: acc.amount,
+    });
+  });
+  result.notes.costOfRevenue!.total = totalPurchases;
+  
+  // إيضاح المصاريف الإدارية
+  if (!result.notes.generalAndAdminExpenses) {
+    result.notes.generalAndAdminExpenses = { items: [], total: 0 };
+  }
+  accounts.expenses.forEach((acc: any) => {
+    result.notes.generalAndAdminExpenses!.items.push({
+      name: acc.name,
+      amount: acc.amount,
+    });
+  });
+  result.notes.generalAndAdminExpenses!.total = totalExpenses;
 }
 
 function findSheet(workbook: XLSX.WorkBook, keywords: string[]): any[][] | null {
