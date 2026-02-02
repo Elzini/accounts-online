@@ -351,25 +351,44 @@ export function TrialBalanceAnalysisPage() {
     }
   };
 
-  // دالة تصنيف الحساب (مستقلة للاستخدام مع AI)
+  // دالة تصنيف الحساب (متوافقة مع مداد ERP)
+  // هيكل مداد: 1=أصول، 2=خصوم+حقوق ملكية، 3=إيرادات، 4=مصروفات/مشتريات
   const categorizeAccountByCode = (code: string, name: string): string => {
     const lowerName = name.toLowerCase();
     
-    // تصنيف بناءً على كود الحساب
-    if (code.startsWith('11') || code.startsWith('15')) return 'أصول ثابتة';
-    if (code.startsWith('12') || code.startsWith('13') || code.startsWith('14')) return 'أصول متداولة';
-    if (code.startsWith('2') && !code.startsWith('25')) return 'خصوم';
-    if (code.startsWith('25') || code.startsWith('3')) return 'حقوق ملكية';
-    if (code.startsWith('4')) return 'إيرادات';
+    // تصنيف بناءً على كود الحساب في مداد
+    if (code.startsWith('1')) {
+      // 11xx, 15xx - أصول ثابتة
+      if (code.startsWith('11') || code.startsWith('110') || code.startsWith('15')) {
+        return 'أصول ثابتة';
+      }
+      // 12xx, 13xx, 14xx - أصول متداولة
+      return 'أصول متداولة';
+    }
+    
+    if (code.startsWith('2')) {
+      // 25xx - حقوق ملكية
+      if (code.startsWith('25')) return 'حقوق ملكية';
+      // باقي 2xxx - خصوم
+      return 'خصوم';
+    }
+    
+    // 3xxx - إيرادات
+    if (code.startsWith('3')) return 'إيرادات';
+    
+    // 4xxx - مصروفات
+    if (code.startsWith('4')) return 'مصروفات';
+    
+    // 5xxx, 6xxx - مصروفات إضافية
     if (code.startsWith('5') || code.startsWith('6')) return 'مصروفات';
     
     // تصنيف بناءً على الاسم
-    if (lowerName.includes('أثاث') || lowerName.includes('معدات') || lowerName.includes('مباني')) return 'أصول ثابتة';
-    if (lowerName.includes('بنك') || lowerName.includes('نقد') || lowerName.includes('صندوق') || lowerName.includes('عملاء')) return 'أصول متداولة';
-    if (lowerName.includes('موردين') || lowerName.includes('دائن') || lowerName.includes('ضريبة')) return 'خصوم';
-    if (lowerName.includes('رأس المال') || lowerName.includes('أرباح')) return 'حقوق ملكية';
+    if (lowerName.includes('أثاث') || lowerName.includes('معدات') || lowerName.includes('مباني') || lowerName.includes('أجهز')) return 'أصول ثابتة';
+    if (lowerName.includes('بنك') || lowerName.includes('نقد') || lowerName.includes('صندوق') || lowerName.includes('عملاء') || lowerName.includes('عهد') || lowerName.includes('مدفوع مقدم')) return 'أصول متداولة';
+    if (lowerName.includes('موردين') || lowerName.includes('دائن') || lowerName.includes('ضريبة') || lowerName.includes('مستحق')) return 'خصوم';
+    if (lowerName.includes('رأس المال') || lowerName.includes('جاري') || lowerName.includes('أرباح محتجزة') || lowerName.includes('حقوق')) return 'حقوق ملكية';
     if (lowerName.includes('مبيعات') || lowerName.includes('إيراد')) return 'إيرادات';
-    if (lowerName.includes('مصروف') || lowerName.includes('مصاريف') || lowerName.includes('رواتب')) return 'مصروفات';
+    if (lowerName.includes('مصروف') || lowerName.includes('مصاريف') || lowerName.includes('رواتب') || lowerName.includes('إيجار')) return 'مصروفات';
     
     return 'أصول متداولة'; // افتراضي
   };
@@ -547,110 +566,123 @@ export function TrialBalanceAnalysisPage() {
       return { added: true };
     };
 
-    // دالة لتصنيف الحساب بناءً على الكود والاسم
+    // دالة لتصنيف الحساب بناءً على الكود والاسم - متوافق مع مداد ERP
+    // هيكل مداد: 1=أصول، 2=خصوم+حقوق ملكية، 3=إيرادات، 4=مصروفات/مشتريات
     const categorizeAccount = (code: string, name: string): string => {
       const lowerName = name.toLowerCase();
       const trimmedName = name.trim();
       
-      // === تصنيف الحسابات الرئيسية بأسمائها الدقيقة ===
-      if (trimmedName === 'صافي الأصول الثابتة' || 
-          trimmedName.includes('إجمالي الأصول الثابتة') ||
-          trimmedName.includes('اجمالي الأصول الثابتة')) {
-        return 'أصول ثابتة';
-      }
-      if (trimmedName === 'الأصول المتداولة' || 
-          trimmedName.includes('إجمالي الأصول المتداولة') ||
-          trimmedName.includes('اجمالي الأصول المتداولة')) {
+      // === تصنيف بناءً على كود الحساب في مداد ===
+      
+      // 1xxx - الأصول
+      if (code.startsWith('1')) {
+        // 11xx - الأصول الثابتة (صافي الأصول الثابتة، أثاث، أجهزة)
+        if (code.startsWith('11') || code.startsWith('110') || code.startsWith('15')) {
+          return 'أصول ثابتة';
+        }
+        // 12xx, 13xx, 14xx - الأصول المتداولة (بنوك، عهد، إيجار مدفوع مقدماً)
         return 'أصول متداولة';
       }
-      if (trimmedName === 'الخصوم' || 
-          trimmedName === 'أرصدة دائنة أخرى' ||
-          trimmedName.includes('إجمالي الخصوم') ||
-          trimmedName.includes('اجمالي الخصوم')) {
+      
+      // 2xxx - الخصوم وحقوق الملكية
+      if (code.startsWith('2')) {
+        // 25xx - حقوق الملكية (جاري المالك، جاري الشريك)
+        if (code.startsWith('25')) {
+          return 'حقوق ملكية';
+        }
+        // 21xx, 22xx, 23xx, 24xx - الخصوم (رواتب مستحقة، ضريبة القيمة المضافة)
         return 'خصوم';
       }
-      if (trimmedName === 'حقوق الملكية ورأس المال' || 
-          trimmedName.includes('إجمالي حقوق الملكية') ||
-          trimmedName.includes('اجمالي حقوق الملكية')) {
-        return 'حقوق ملكية';
-      }
-      if (trimmedName === 'الإيرادات' || 
-          trimmedName === 'المبيعات' ||
-          trimmedName.includes('إجمالي الإيرادات') ||
-          trimmedName.includes('اجمالي الإيرادات') ||
-          trimmedName.includes('إجمالي المبيعات')) {
+      
+      // 3xxx - الإيرادات (المبيعات)
+      if (code.startsWith('3')) {
         return 'إيرادات';
       }
-      if (trimmedName === 'المصروفات' || 
-          trimmedName === 'المصاريف العمومية والإدارية' ||
-          trimmedName.includes('إجمالي المصروفات') ||
-          trimmedName.includes('اجمالي المصروفات')) {
+      
+      // 4xxx - المصروفات والمشتريات
+      if (code.startsWith('4')) {
+        // 45xx - المشتريات (تكلفة البضاعة المباعة)
+        if (code.startsWith('45')) {
+          return 'مشتريات';
+        }
+        // 41xx - المصاريف العمومية والإدارية
+        // 44xx - مصاريف التشغيل
         return 'مصروفات';
       }
       
-      // === تصنيف بناءً على كود الحساب ===
-      // الأصول الثابتة (11xx, 15xx)
-      if (code.startsWith('11') || code.startsWith('15') || 
-          lowerName.includes('أثاث') || lowerName.includes('أجهز') || 
+      // 5xxx - مصروفات إضافية (في بعض الأنظمة)
+      if (code.startsWith('5') || code.startsWith('6')) {
+        return 'مصروفات';
+      }
+      
+      // === تصنيف بناءً على اسم الحساب (fallback) ===
+      
+      // الأصول الثابتة
+      if (lowerName.includes('أثاث') || lowerName.includes('أجهز') || 
           lowerName.includes('معدات') || lowerName.includes('سيارات') || 
           lowerName.includes('مباني') || lowerName.includes('عقار') ||
+          lowerName.includes('صافي الأصول الثابتة') ||
           lowerName.includes('مجمع استهلاك') || lowerName.includes('مجمع الاستهلاك')) {
         return 'أصول ثابتة';
       }
       
-      // الأصول المتداولة (12xx, 13xx, 14xx)
-      if (code.startsWith('12') || code.startsWith('13') || code.startsWith('14') || 
-          lowerName.includes('بنك') || lowerName.includes('عهد') || lowerName.includes('مقدم') || 
-          lowerName.includes('نقد') || lowerName.includes('صندوق') || lowerName.includes('ذمم') || 
-          lowerName.includes('مدين') || lowerName.includes('مدينة') || 
-          lowerName.includes('إيجار مدفوع') || lowerName.includes('ايجار مدفوع') ||
+      // الأصول المتداولة
+      if (lowerName.includes('بنك') || lowerName.includes('مصرف') ||
+          lowerName.includes('عهد') || lowerName.includes('عهدة') ||
+          lowerName.includes('مدفوع مقدم') || lowerName.includes('إيجار مدفوع') ||
+          lowerName.includes('ايجار مدفوع') ||
+          lowerName.includes('نقد') || lowerName.includes('صندوق') || 
+          lowerName.includes('ذمم مدين') || lowerName.includes('حسابات مدينة') ||
           lowerName.includes('مخزون') || lowerName.includes('بضاعة') ||
-          lowerName.includes('عملاء') || lowerName.includes('زبائن')) {
+          lowerName.includes('عملاء') || lowerName.includes('زبائن') ||
+          lowerName.includes('اطراف ذات علاقه') || lowerName.includes('أطراف ذات علاقة')) {
         return 'أصول متداولة';
       }
       
-      // الخصوم (2xxx ما عدا 25xx)
-      if ((code.startsWith('2') && !code.startsWith('25')) || 
-          lowerName.includes('دائن') || lowerName.includes('دائنة') || 
-          lowerName.includes('مستحق') || lowerName.includes('موردين') || lowerName.includes('موردون') ||
-          lowerName.includes('رواتب مستحق') || lowerName.includes('ضريبة') || 
-          lowerName.includes('ضريبة المخرجات') || lowerName.includes('ضرائب') ||
-          lowerName.includes('قرض') || lowerName.includes('دائنون') ||
-          lowerName.includes('مصاريف مستحقة') || lowerName.includes('التزام') ||
-          lowerName.includes('اطراف ذات علاقه')) {
-        return 'خصوم';
-      }
-      
-      // حقوق الملكية (25xx, 3xxx)
-      if (code.startsWith('25') || code.startsWith('3') || 
-          lowerName.includes('رأس المال') || lowerName.includes('راس المال') || 
+      // حقوق الملكية
+      if (lowerName.includes('رأس المال') || lowerName.includes('راس المال') || 
           lowerName.includes('جاري الشريك') || lowerName.includes('جاري المالك') || 
           lowerName.includes('جاري فلاح') || lowerName.includes('جاري شريك') ||
+          lowerName.includes('حقوق الملكية') || lowerName.includes('حقوق ملكية') ||
           lowerName.includes('احتياطي') || lowerName.includes('أرباح محتجزة') ||
-          lowerName.includes('أرباح مبقاة') || lowerName.includes('أرباح مرحلة') ||
-          lowerName.includes('خسائر مرحلة') || lowerName.includes('حقوق مساهمين')) {
+          lowerName.includes('أرباح مبقاة') || lowerName.includes('أرباح مرحلة')) {
         return 'حقوق ملكية';
       }
       
-      // الإيرادات (4xxx ما عدا 45xx)
-      if ((code.startsWith('4') && !code.startsWith('45')) || 
-          lowerName.includes('مبيعات') || lowerName.includes('إيراد') || lowerName.includes('ايراد')) {
+      // الخصوم
+      if (lowerName.includes('دائن') || lowerName.includes('دائنة') || 
+          lowerName.includes('رواتب مستحق') || lowerName.includes('مستحقة') ||
+          lowerName.includes('موردين') || lowerName.includes('موردون') ||
+          lowerName.includes('ضريبة') || lowerName.includes('ضرائب') ||
+          lowerName.includes('ضريبة المخرجات') || lowerName.includes('ضريبة المدخلات') ||
+          lowerName.includes('قرض') || lowerName.includes('دائنون') ||
+          lowerName.includes('مصاريف مستحقة') || lowerName.includes('التزام') ||
+          lowerName.includes('أرصدة دائنة')) {
+        return 'خصوم';
+      }
+      
+      // الإيرادات
+      if (lowerName.includes('مبيعات') || lowerName.includes('إيراد') || 
+          lowerName.includes('ايراد') || lowerName.includes('الإيرادات')) {
         return 'إيرادات';
       }
       
-      // المشتريات (45xx)
-      if (code.startsWith('45') || lowerName.includes('مشتريات')) {
+      // المشتريات
+      if (lowerName.includes('مشتريات') || lowerName.includes('تكلفة البضاعة')) {
         return 'مشتريات';
       }
       
-      // المصروفات (5xxx)
-      if (code.startsWith('5') || lowerName.includes('مصروف') || lowerName.includes('مصاريف') || 
-          lowerName.includes('رواتب') || lowerName.includes('إيجار') || lowerName.includes('استهلاك') ||
-          lowerName.includes('صيانة') || lowerName.includes('الصيانات')) {
+      // المصروفات
+      if (lowerName.includes('مصروف') || lowerName.includes('مصاريف') || 
+          lowerName.includes('رواتب') && !lowerName.includes('مستحق') ||
+          lowerName.includes('إيجار') || lowerName.includes('ايجار') ||
+          lowerName.includes('نظاف') || lowerName.includes('ضيافة') ||
+          lowerName.includes('لوازم مكتبية') || lowerName.includes('متنوعة') ||
+          lowerName.includes('استهلاك') || lowerName.includes('صيانة')) {
         return 'مصروفات';
       }
       
-      console.log('غير مصنف:', name, 'Code:', code);
+      console.log('⚠️ غير مصنف:', name, 'Code:', code);
       return 'غير مصنف';
     };
 
