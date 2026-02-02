@@ -82,9 +82,10 @@ export interface BankReconciliation {
 export type BankAccountInsert = Omit<BankAccount, 'id' | 'created_at' | 'updated_at' | 'account_category'>;
 
 // Bank Accounts
+// Use bank_accounts_safe view for read operations to mask sensitive fields (account numbers, IBAN)
 export async function fetchBankAccounts(): Promise<BankAccount[]> {
   const { data, error } = await supabase
-    .from('bank_accounts')
+    .from('bank_accounts_safe')
     .select(`
       *,
       account_category:account_categories(id, code, name)
@@ -92,7 +93,16 @@ export async function fetchBankAccounts(): Promise<BankAccount[]> {
     .order('account_name');
   
   if (error) throw error;
-  return (data || []) as BankAccount[];
+  // Map masked fields back to expected field names for UI compatibility
+  return (data || []).map(account => ({
+    ...account,
+    account_number: account.account_number_masked,
+    iban: account.iban_masked,
+    swift_code: account.swift_code_masked,
+    // Not exposed in safe view - provide null for type compatibility
+    account_number_encrypted: null as string | null,
+    iban_encrypted: null as string | null,
+  })) as BankAccount[];
 }
 
 export async function addBankAccount(account: BankAccountInsert): Promise<BankAccount> {
