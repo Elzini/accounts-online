@@ -7,7 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
 
 export default function AuthChoice() {
-  const [loginLogoUrl, setLoginLogoUrl] = useState<string>('');
+  const [loginLogoUrl, setLoginLogoUrl] = useState<string | null>(null);
+  const [logoLoaded, setLogoLoaded] = useState(false);
 
   useEffect(() => {
     const fetchLoginLogo = async () => {
@@ -20,10 +21,13 @@ export default function AuthChoice() {
 
       if (error) {
         console.error('Error fetching login logo:', error);
+        setLoginLogoUrl('');
+        setLogoLoaded(true);
         return;
       }
 
-      if (data?.value) setLoginLogoUrl(data.value);
+      setLoginLogoUrl(data?.value || '');
+      setLogoLoaded(true);
     };
 
     fetchLoginLogo();
@@ -35,7 +39,11 @@ export default function AuthChoice() {
         {/* Logo & Title */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 overflow-hidden">
-            <img src={loginLogoUrl || logo} alt="شعار النظام" className="w-16 h-16 object-contain" loading="lazy" />
+            {logoLoaded ? (
+              <img src={loginLogoUrl || logo} alt="شعار النظام" className="w-16 h-16 object-contain" />
+            ) : (
+              <div className="w-16 h-16 animate-pulse bg-primary/20 rounded-lg" />
+            )}
           </div>
           <h1 className="text-3xl font-bold text-foreground">مرحباً بك</h1>
           <p className="text-muted-foreground mt-2">اختر طريقة الدخول المناسبة</p>
