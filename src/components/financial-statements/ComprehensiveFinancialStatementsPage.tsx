@@ -21,6 +21,7 @@ import { useExcelExport } from '@/hooks/useExcelExport';
 
 import { ComprehensiveFinancialData, emptyFinancialData } from './types';
 import parseMedadExcel from './utils/medadParser';
+import { printFinancialStatementsPDF } from './utils/pdfExport';
 import { BalanceSheetView } from './views/BalanceSheetView';
 import { IncomeStatementView } from './views/IncomeStatementView';
 import { EquityChangesView } from './views/EquityChangesView';
@@ -114,6 +115,16 @@ export function ComprehensiveFinancialStatementsPage() {
     toast.info('تم مسح البيانات');
   };
 
+  // تصدير القوائم المالية كـ PDF
+  const handleExportPDF = () => {
+    if (!hasData) {
+      toast.error('لا توجد بيانات للتصدير');
+      return;
+    }
+    printFinancialStatementsPDF(data);
+    toast.success('جاري فتح نافذة الطباعة...');
+  };
+
   // تصدير القوائم
   const ExportDropdown = ({ onExport }: { onExport: (type: 'print' | 'excel' | 'pdf') => void }) => (
     <DropdownMenu>
@@ -124,6 +135,10 @@ export function ComprehensiveFinancialStatementsPage() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => onExport('pdf')} className="gap-2 cursor-pointer">
+          <FileText className="w-4 h-4" />
+          تصدير PDF
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onExport('print')} className="gap-2 cursor-pointer">
           <Printer className="w-4 h-4" />
           طباعة
@@ -135,6 +150,18 @@ export function ComprehensiveFinancialStatementsPage() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
+
+  // معالجة التصدير
+  const handleExport = (type: 'print' | 'excel' | 'pdf') => {
+    if (type === 'pdf') {
+      handleExportPDF();
+    } else if (type === 'print') {
+      handleExportPDF(); // نفس وظيفة PDF للطباعة
+    } else if (type === 'excel') {
+      toast.info('جاري تصدير Excel...');
+      // يمكن إضافة تصدير Excel لاحقاً
+    }
+  };
 
   const hasData = dataSource !== 'none';
 
@@ -329,7 +356,7 @@ export function ComprehensiveFinancialStatementsPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>قائمة المركز المالي</CardTitle>
-                    <ExportDropdown onExport={() => {}} />
+                    <ExportDropdown onExport={handleExport} />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -350,7 +377,7 @@ export function ComprehensiveFinancialStatementsPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>قائمة الدخل الشامل</CardTitle>
-                    <ExportDropdown onExport={() => {}} />
+                    <ExportDropdown onExport={handleExport} />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -371,7 +398,7 @@ export function ComprehensiveFinancialStatementsPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>قائمة التغير في حقوق الملكية</CardTitle>
-                    <ExportDropdown onExport={() => {}} />
+                    <ExportDropdown onExport={handleExport} />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -391,7 +418,7 @@ export function ComprehensiveFinancialStatementsPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>قائمة التدفق النقدي</CardTitle>
-                    <ExportDropdown onExport={() => {}} />
+                    <ExportDropdown onExport={handleExport} />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -412,7 +439,7 @@ export function ComprehensiveFinancialStatementsPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>الإيضاحات على القوائم المالية</CardTitle>
-                    <ExportDropdown onExport={() => {}} />
+                    <ExportDropdown onExport={handleExport} />
                   </div>
                   <CardDescription>كما في {data.reportDate || '31 ديسمبر 2025م'}</CardDescription>
                 </CardHeader>
