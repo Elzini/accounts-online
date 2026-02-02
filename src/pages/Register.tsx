@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Building2, Mail, Lock, Phone, User, CheckCircle } from 'lucide-react';
+import { Building2, Mail, Lock, Phone, User, CheckCircle, Car, HardHat, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { defaultSettings } from '@/services/settings';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
 
+type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading';
 interface GlobalSettings {
   login_bg_color: string;
   login_card_color: string;
@@ -20,8 +22,15 @@ interface GlobalSettings {
   register_button_text: string;
 }
 
+const companyTypes: { value: CompanyActivityType; label: string; icon: React.ReactNode }[] = [
+  { value: 'car_dealership', label: 'معرض سيارات', icon: <Car className="w-4 h-4" /> },
+  { value: 'construction', label: 'مقاولات', icon: <HardHat className="w-4 h-4" /> },
+  { value: 'general_trading', label: 'تجارة عامة', icon: <Package className="w-4 h-4" /> },
+];
+
 export default function Register() {
   const [companyName, setCompanyName] = useState('');
+  const [companyType, setCompanyType] = useState<CompanyActivityType>('car_dealership');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -93,6 +102,7 @@ export default function Register() {
           data: {
             username: companyName,
             phone: phone,
+            company_type: companyType,
           },
           emailRedirectTo: `${window.location.origin}/auth`
         }
@@ -228,6 +238,25 @@ export default function Register() {
                   required
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="companyType">نوع النشاط</Label>
+              <Select value={companyType} onValueChange={(value) => setCompanyType(value as CompanyActivityType)}>
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="اختر نوع النشاط" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companyTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      <div className="flex items-center gap-2">
+                        {type.icon}
+                        <span>{type.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
