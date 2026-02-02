@@ -206,9 +206,12 @@ export type Database = {
           entity_id: string | null
           entity_type: string
           id: string
+          integrity_hash: string | null
           ip_address: string | null
           new_data: Json | null
           old_data: Json | null
+          previous_hash: string | null
+          sequence_number: number | null
           user_agent: string | null
           user_id: string
         }
@@ -219,9 +222,12 @@ export type Database = {
           entity_id?: string | null
           entity_type: string
           id?: string
+          integrity_hash?: string | null
           ip_address?: string | null
           new_data?: Json | null
           old_data?: Json | null
+          previous_hash?: string | null
+          sequence_number?: number | null
           user_agent?: string | null
           user_id: string
         }
@@ -232,9 +238,12 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string
           id?: string
+          integrity_hash?: string | null
           ip_address?: string | null
           new_data?: Json | null
           old_data?: Json | null
+          previous_hash?: string | null
+          sequence_number?: number | null
           user_agent?: string | null
           user_id?: string
         }
@@ -359,11 +368,13 @@ export type Database = {
           account_category_id: string | null
           account_name: string
           account_number: string | null
+          account_number_encrypted: string | null
           bank_name: string
           company_id: string
           created_at: string
           current_balance: number | null
           iban: string | null
+          iban_encrypted: string | null
           id: string
           is_active: boolean
           notes: string | null
@@ -375,11 +386,13 @@ export type Database = {
           account_category_id?: string | null
           account_name: string
           account_number?: string | null
+          account_number_encrypted?: string | null
           bank_name: string
           company_id: string
           created_at?: string
           current_balance?: number | null
           iban?: string | null
+          iban_encrypted?: string | null
           id?: string
           is_active?: boolean
           notes?: string | null
@@ -391,11 +404,13 @@ export type Database = {
           account_category_id?: string | null
           account_name?: string
           account_number?: string | null
+          account_number_encrypted?: string | null
           bank_name?: string
           company_id?: string
           created_at?: string
           current_balance?: number | null
           iban?: string | null
+          iban_encrypted?: string | null
           id?: string
           is_active?: boolean
           notes?: string | null
@@ -1096,6 +1111,7 @@ export type Database = {
           created_at: string
           id: string
           id_number: string | null
+          id_number_encrypted: string | null
           name: string
           phone: string
           registration_number: string | null
@@ -1107,6 +1123,7 @@ export type Database = {
           created_at?: string
           id?: string
           id_number?: string | null
+          id_number_encrypted?: string | null
           name: string
           phone: string
           registration_number?: string | null
@@ -1118,6 +1135,7 @@ export type Database = {
           created_at?: string
           id?: string
           id_number?: string | null
+          id_number_encrypted?: string | null
           name?: string
           phone?: string
           registration_number?: string | null
@@ -1329,8 +1347,10 @@ export type Database = {
           hire_date: string | null
           housing_allowance: number
           iban: string | null
+          iban_encrypted: string | null
           id: string
           id_number: string | null
+          id_number_encrypted: string | null
           is_active: boolean
           job_title: string
           name: string
@@ -1348,8 +1368,10 @@ export type Database = {
           hire_date?: string | null
           housing_allowance?: number
           iban?: string | null
+          iban_encrypted?: string | null
           id?: string
           id_number?: string | null
+          id_number_encrypted?: string | null
           is_active?: boolean
           job_title: string
           name: string
@@ -1367,8 +1389,10 @@ export type Database = {
           hire_date?: string | null
           housing_allowance?: number
           iban?: string | null
+          iban_encrypted?: string | null
           id?: string
           id_number?: string | null
+          id_number_encrypted?: string | null
           is_active?: boolean
           job_title?: string
           name?: string
@@ -1380,6 +1404,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "employees_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      encryption_keys: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          key_hash: string
+          key_name: string
+          rotated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          key_hash: string
+          key_name: string
+          rotated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          key_hash?: string
+          key_name?: string
+          rotated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encryption_keys_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -3432,6 +3494,10 @@ export type Database = {
         Args: { _company_id: string }
         Returns: boolean
       }
+      can_access_with_permission: {
+        Args: { _company_id: string; required_permission: string }
+        Returns: boolean
+      }
       create_default_accounts: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -3440,8 +3506,31 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      create_immutable_audit_log: {
+        Args: {
+          _action: string
+          _company_id: string
+          _entity_id?: string
+          _entity_type: string
+          _ip_address?: string
+          _new_data?: Json
+          _old_data?: Json
+          _user_agent?: string
+          _user_id: string
+        }
+        Returns: string
+      }
+      decrypt_sensitive_data: {
+        Args: { encrypted_text: string; encryption_key: string }
+        Returns: string
+      }
+      encrypt_sensitive_data: {
+        Args: { encryption_key: string; plain_text: string }
+        Returns: string
+      }
       get_car_expenses: { Args: { p_car_id: string }; Returns: number }
       get_current_company_id: { Args: never; Returns: string }
+      get_strict_company_id: { Args: never; Returns: string }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_permission: {
         Args: {
@@ -3465,6 +3554,7 @@ export type Database = {
         Returns: undefined
       }
       process_prepaid_expense_amortizations: { Args: never; Returns: number }
+      rbac_check: { Args: { required_permission: string }; Returns: boolean }
       regenerate_journal_entries: {
         Args: { p_company_id: string }
         Returns: string
@@ -3477,6 +3567,7 @@ export type Database = {
         Args: { _permission: Database["public"]["Enums"]["user_permission"] }
         Returns: boolean
       }
+      strict_company_check: { Args: { _company_id: string }; Returns: boolean }
       sync_accounting_settings_to_all_companies: {
         Args: never
         Returns: undefined
@@ -3490,6 +3581,15 @@ export type Database = {
       user_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
+      }
+      verify_audit_log_integrity: {
+        Args: { _company_id: string }
+        Returns: {
+          broken_at_id: string
+          broken_at_sequence: number
+          is_valid: boolean
+          message: string
+        }[]
       }
     }
     Enums: {
