@@ -551,6 +551,71 @@ function buildFinancialStatements(accounts: any, result: ComprehensiveFinancialD
     });
   });
   result.notes.generalAndAdminExpenses!.total = totalExpenses;
+  
+  // ===== إيضاح مخصص الزكاة (11) - طبقاً لهيكل مداد =====
+  const profitBeforeZakat = result.incomeStatement.profitBeforeZakat;
+  const adjustedNetProfit = profitBeforeZakat; // يمكن إضافة تعديلات لاحقاً
+  const zakatOnAdjustedProfit = Math.max(0, adjustedNetProfit * 0.025);
+  
+  // استخراج رأس المال وجاري الشركاء من حقوق الملكية
+  let capital = 0;
+  let partnersCurrentAccount = 0;
+  accounts.equity.forEach((acc: any) => {
+    const name = acc.name.toLowerCase();
+    if (name.includes('رأس المال') || name.includes('رأس مال')) {
+      capital += acc.amount;
+    } else if (name.includes('جاري') || name.includes('شركاء')) {
+      partnersCurrentAccount += acc.amount;
+    }
+  });
+  
+  // حساب الوعاء الزكوي
+  const zakatBaseSubtotal = capital + partnersCurrentAccount + adjustedNetProfit;
+  const fixedAssetsNet = totalNonCurrentAssets;
+  const zakatBase = Math.max(0, zakatBaseSubtotal - fixedAssetsNet);
+  const zakatOnBase = zakatBase * 0.025;
+  
+  // إجمالي مخصص الزكاة = الأعلى من (زكاة صافي الربح) أو (زكاة الوعاء)
+  const totalZakatProvision = Math.max(zakatOnAdjustedProfit, zakatOnBase);
+  
+  result.notes.zakat = {
+    // أ- احتساب المخصص
+    profitBeforeZakat,
+    adjustmentsOnNetIncome: 0,
+    adjustedNetProfit,
+    zakatOnAdjustedProfit,
+    
+    // الوعاء الزكوي
+    capital,
+    partnersCurrentAccount,
+    statutoryReserve: 0,
+    employeeBenefitsLiabilities: 0,
+    zakatBaseSubtotal,
+    
+    // ينزل (الحسميات)
+    fixedAssetsNet,
+    intangibleAssetsNet: 0,
+    other: 0,
+    totalDeductions: fixedAssetsNet,
+    
+    zakatBase,
+    zakatOnBase,
+    totalZakatProvision,
+    
+    // ب- حركة المخصص
+    openingBalance: 0,
+    provisionForYear: totalZakatProvision,
+    paidDuringYear: 0,
+    closingBalance: totalZakatProvision,
+    
+    // ج- الموقف الزكوي
+    zakatStatus: 'تم إعداد مخصص الزكاة بشكل تقديري بناء على رأي فني في محايد حيث تعتقد إدارة المنشأة أنه كافي وفي حالة وجود فروقات ما بين مخصص الزكاة والربط النهائي سيتم إثباتها كتغيرات في التقديرات المحاسبية في الفترة التي يصدر فيها الربط النهائي.',
+  };
+  
+  // تحديث الزكاة في قائمة الدخل
+  result.incomeStatement.zakat = totalZakatProvision;
+  result.incomeStatement.netProfit = profitBeforeZakat - totalZakatProvision;
+  result.incomeStatement.totalComprehensiveIncome = result.incomeStatement.netProfit;
 }
 
 function findSheet(workbook: XLSX.WorkBook, keywords: string[]): any[][] | null {
