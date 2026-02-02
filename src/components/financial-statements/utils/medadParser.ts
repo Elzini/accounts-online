@@ -224,8 +224,32 @@ function parseTrialBalanceSheet(rows: any[][], result: ComprehensiveFinancialDat
   });
 }
 
-// تحديد أعمدة ميزان المراجعة - هيكل مداد RTL
-// الترتيب من اليمين لليسار: الرقم | اسم الحساب | الرصيد السابق (مدين/دائن) | الحركة (مدين/دائن) | الصافي (مدين/دائن)
+// ===== أدوات مساعدة لاكتشاف الأعمدة بشكل مرن =====
+function normalizeHeaderCell(value: any): string {
+  return String(value ?? '')
+    .toLowerCase()
+    .replace(/[\u064B-\u0652]/g, '') // تشكيل
+    .replace(/[\u200f\u200e]/g, '') // اتجاه النص
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function includesAny(text: string, needles: string[]) {
+  return needles.some(n => text.includes(n));
+}
+
+const HEADER_KEYWORDS = {
+  debit: ['مدين', 'المدين', 'debit', 'dr', 'd.r', 'd'],
+  credit: ['دائن', 'الدائن', 'credit', 'cr', 'c.r', 'c'],
+  name: ['اسم الحساب', 'البيان', 'الحساب', 'account name', 'name'],
+  code: ['الرقم', 'رقم الحساب', 'الكود', 'كود', 'code', 'account no', 'account number'],
+  opening: ['رصيد سابق', 'افتتاح', 'opening', 'previous', 'begin'],
+  movement: ['الحركة', 'دوران', 'movement', 'turnover'],
+  closing: ['ختام', 'ختامي', 'الصافي', 'الرصيد الختامي', 'closing', 'ending', 'net'],
+};
+
+// تحديد أعمدة ميزان المراجعة - يدعم أكثر من تنسيق (RTL/LTR) وعناوين متعددة
+// الهدف: استخراج أعمدة (Opening/Movement/Closing) لكل من (Debit/Credit)
 function detectTrialBalanceColumns(rows: any[][]): {
   startRow: number;
   nameCol: number;
@@ -248,82 +272,145 @@ function detectTrialBalanceColumns(rows: any[][]): {
     closingDebit: -1,
     closingCredit: -1,
   };
-  
-  // البحث عن صف العناوين (مدين/دائن) - نبحث عن أي صف يحتوي على كلمة "مدين" أو "دائن"
-  for (let i = 0; i < Math.min(rows.length, 20); i++) {
+
+  type Pair = { debit: number; credit: number; section: 'opening' | 'movement' | 'closing' | 'unknown' };
+
+  const inferSection = (headerRow: any[], prevRow: any[] | undefined, colIdx: number): Pair['section'] => {
+    const cell = normalizeHeaderCell(headerRow[colIdx]);
+    const above = prevRow ? normalizeHeaderCell(prevRow[colIdx]) : '';
+    const text = `${above} ${cell}`;
+    if (includesAny(text, HEADER_KEYWORDS.opening)) return 'opening';
+    if (includesAny(text, HEADER_KEYWORDS.movement)) return 'movement';
+    if (includesAny(text, HEADER_KEYWORDS.closing)) return 'closing';
+    return 'unknown';
+  };
+
+  const pickClosest = (from: number, candidates: number[], used: Set<number>) => {
+    let best = -1;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (const c of candidates) {
+      if (used.has(c)) continue;
+      const dist = Math.abs(c - from);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = c;
+      }
+    }
+    return best;
+  };
+
+  // 1) Try to find a header row that contains Debit/Credit labels (Arabic/English)
+  for (let i = 0; i < Math.min(rows.length, 40); i++) {
     const row = rows[i];
     if (!row) continue;
-    
-    // البحث عن صف يحتوي على مدين/دائن متعدد
+
+    const prevRow = i > 0 ? rows[i - 1] : undefined;
+
     const debitCols: number[] = [];
     const creditCols: number[] = [];
-    
+
     for (let j = 0; j < row.length; j++) {
-      const cell = String(row[j] || '').trim();
-      if (cell === 'مدين' || cell === 'المدين') debitCols.push(j);
-      if (cell === 'دائن' || cell === 'الدائن') creditCols.push(j);
-      if (cell === 'اسم الحساب' || cell === 'البيان') result.nameCol = j;
-      if (cell === 'الرقم' || cell === 'رقم الحساب' || cell === 'الكود') result.codeCol = j;
+      const cellNorm = normalizeHeaderCell(row[j]);
+      if (!cellNorm) continue;
+
+      // name/code columns (more flexible)
+      if (result.nameCol === -1 && includesAny(cellNorm, HEADER_KEYWORDS.name)) result.nameCol = j;
+      if (result.codeCol === -1 && includesAny(cellNorm, HEADER_KEYWORDS.code)) result.codeCol = j;
+
+      if (includesAny(cellNorm, HEADER_KEYWORDS.debit)) debitCols.push(j);
+      if (includesAny(cellNorm, HEADER_KEYWORDS.credit)) creditCols.push(j);
     }
-    
-    // إذا وجدنا 3 أعمدة مدين و3 دائن (صافي، حركة، سابق) - RTL
-    if (debitCols.length >= 3 && creditCols.length >= 3) {
-      result.startRow = i + 1; // الصف التالي للعناوين
-      
-      // مداد RTL: من اليسار لليمين = الصافي، الحركة، السابق
-      // ترتيب الأعمدة (من أصغر index لأكبر): 
-      // الصافي (مدين/دائن) | الحركة (مدين/دائن) | السابق (مدين/دائن) | اسم الحساب | الرقم
-      
-      // نرتب الأعمدة من الأصغر للأكبر
-      debitCols.sort((a, b) => a - b);
-      creditCols.sort((a, b) => a - b);
-      
-      // الصافي في أقصى اليسار
-      result.closingDebit = debitCols[0];
-      result.closingCredit = creditCols[0];
-      // الحركة في الوسط
-      result.movementDebit = debitCols[1];
-      result.movementCredit = creditCols[1];
-      // السابق في أقصى اليمين (قبل اسم الحساب)
-      result.openingDebit = debitCols[2];
-      result.openingCredit = creditCols[2];
-      
-      console.log('📊 Found header row at:', i);
-      console.log('📊 Debit columns (sorted):', debitCols, '-> Closing, Movement, Opening');
-      console.log('📊 Credit columns (sorted):', creditCols);
-      console.log('📊 Name column:', result.nameCol);
-      console.log('📊 Code column:', result.codeCol);
-      break;
-    }
-  }
-  
-  // إذا لم نجد عناوين، نبحث عن أول صف يحتوي على بيانات رقمية
-  if (result.startRow === -1) {
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row || row.length < 5) continue;
-      
-      // نبحث عن صف يبدأ بأرقام (كود الحساب)
-      const lastCell = String(row[row.length - 1] || '').trim();
-      if (/^\d{1,4}$/.test(lastCell)) {
-        result.startRow = i;
-        result.codeCol = row.length - 1;
-        result.nameCol = row.length - 2;
-        
-        // تخمين الأعمدة الرقمية
-        result.closingDebit = 0;
-        result.closingCredit = 1;
-        result.movementDebit = 2;
-        result.movementCredit = 3;
-        result.openingDebit = 4;
-        result.openingCredit = 5;
-        
-        console.log('📊 Fallback: Detected data start at row:', i);
-        break;
+
+    // Need at least 2 pairs to be confident
+    if (debitCols.length >= 2 && creditCols.length >= 2) {
+      // Build pairs by proximity
+      const usedCredits = new Set<number>();
+      const pairs: Pair[] = [];
+      for (const d of debitCols) {
+        const c = pickClosest(d, creditCols, usedCredits);
+        if (c === -1) continue;
+        usedCredits.add(c);
+        const section = inferSection(row, prevRow, d) !== 'unknown'
+          ? inferSection(row, prevRow, d)
+          : inferSection(row, prevRow, c);
+        pairs.push({ debit: d, credit: c, section });
+      }
+
+      // Try to map by detected sections first
+      const opening = pairs.find(p => p.section === 'opening');
+      const movement = pairs.find(p => p.section === 'movement');
+      const closing = pairs.find(p => p.section === 'closing');
+
+      // Fallback: if sections not detected, assume LTR order = Opening, Movement, Closing based on column positions
+      const pairsSorted = [...pairs].sort((a, b) => Math.min(a.debit, a.credit) - Math.min(b.debit, b.credit));
+
+      const inferredOpening = opening || pairsSorted[0];
+      const inferredMovement = movement || pairsSorted[1];
+      const inferredClosing = closing || pairsSorted[2] || pairsSorted[pairsSorted.length - 1];
+
+      if (inferredOpening && inferredMovement && inferredClosing) {
+        result.startRow = i + 1;
+        result.openingDebit = inferredOpening.debit;
+        result.openingCredit = inferredOpening.credit;
+        result.movementDebit = inferredMovement.debit;
+        result.movementCredit = inferredMovement.credit;
+        result.closingDebit = inferredClosing.debit;
+        result.closingCredit = inferredClosing.credit;
+
+        // If name/code are still unknown, guess them as the last two non-numeric columns
+        if (result.nameCol === -1 || result.codeCol === -1) {
+          const textCols = row
+            .map((v, idx) => ({ idx, v: normalizeHeaderCell(v) }))
+            .filter(x => x.v && !includesAny(x.v, [...HEADER_KEYWORDS.debit, ...HEADER_KEYWORDS.credit, ...HEADER_KEYWORDS.opening, ...HEADER_KEYWORDS.movement, ...HEADER_KEYWORDS.closing]));
+          // Prefer rightmost columns (common in RTL exports)
+          if (textCols.length >= 2) {
+            const sorted = textCols.sort((a, b) => b.idx - a.idx);
+            // code often more right than name
+            if (result.codeCol === -1) result.codeCol = sorted[0].idx;
+            if (result.nameCol === -1) result.nameCol = sorted[1].idx;
+          }
+        }
+
+        console.log('📊 Found header row at:', i);
+        console.log('📊 Mapped columns:', result);
+        return result;
       }
     }
   }
-  
+
+  // 2) Fallback: find first data-like row and guess columns
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length < 6) continue;
+
+    // Heuristic: a data row usually has a code (digits) + name (text) + at least 2 numeric cells
+    const cells = row.map(v => String(v ?? '').trim());
+    const numericIdxs = cells
+      .map((c, idx) => ({ idx, c }))
+      .filter(x => /[-(]?[0-9٠-٩][0-9٠-٩,\.٬٫\s]*\)?$/.test(x.c) && x.c.length > 0)
+      .map(x => x.idx);
+
+    const codeIdx = cells.findIndex(c => /^\d{1,12}$/.test(c));
+    const nameIdx = cells.findIndex(c => c.length > 2 && !/^\d+$/.test(c) && !c.includes('مدين') && !c.includes('دائن'));
+
+    if (numericIdxs.length >= 2 && codeIdx !== -1 && nameIdx !== -1) {
+      result.startRow = i;
+      result.codeCol = codeIdx;
+      result.nameCol = nameIdx;
+
+      const nums = [...numericIdxs].sort((a, b) => a - b);
+      // Try to take first 6 numeric columns as Closing/Movement/Opening pairs (best effort)
+      result.closingDebit = nums[0];
+      result.closingCredit = nums[1];
+      result.movementDebit = nums[2] ?? nums[0];
+      result.movementCredit = nums[3] ?? nums[1];
+      result.openingDebit = nums[4] ?? nums[0];
+      result.openingCredit = nums[5] ?? nums[1];
+      console.log('📊 Fallback: Detected data start at row:', i, 'with columns:', result);
+      return result;
+    }
+  }
+
   return result;
 }
 
@@ -374,7 +461,13 @@ function parseNumber(value: any): number {
   if (!str) return 0;
   
   const negative = str.includes('(') && str.includes(')');
-  const cleaned = str.replace(/[()]/g, '').replace(/,/g, '').replace(/\s/g, '');
+  const cleaned = str
+    .replace(/[()]/g, '')
+    .replace(/,/g, '')
+    .replace(/٬/g, '') // Arabic thousands
+    .replace(/٫/g, '.') // Arabic decimal
+    .replace(/\s/g, '')
+    .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))); // Arabic digits
   const num = parseFloat(cleaned);
   
   if (isNaN(num)) return 0;
