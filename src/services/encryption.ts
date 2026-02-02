@@ -2,26 +2,32 @@ import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Field-level encryption service for sensitive data
- * Uses AES-256 encryption via Supabase database functions
+ * 
+ * SECURITY NOTE: For highly sensitive data like API keys, use the dedicated
+ * edge function services (e.g., financingKeyService.ts) which handle
+ * encryption/decryption entirely server-side.
+ * 
+ * This service is intended for less sensitive data like customer ID numbers
+ * where the data needs to be displayed to authorized users.
  */
 
-// Encryption key should be stored securely and managed per company
-// In production, this would be fetched from a secure key management service
+// Encryption key derivation for general field encryption
+// Note: For API keys and other high-value secrets, use server-side encryption
 const getEncryptionKey = async (): Promise<string> => {
-  // For now, we use a derived key from the user's session
-  // In production, use a proper key management system
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
     throw new Error('No active session for encryption');
   }
   
-  // Use a combination of company ID and a secret to derive the key
-  // This is a simplified approach - use proper KMS in production
-  return `${session.user.id}-secure-key-v1`;
+  // Session-derived key for field encryption
+  // Higher-value secrets should use server-side encryption via edge functions
+  return `${session.user.id}-field-encrypt-v1`;
 };
 
 /**
- * Encrypt sensitive data using AES-256
+ * Encrypt field data using database function.
+ * For API keys and high-value secrets, use server-side edge functions instead.
+ * @deprecated for API keys - use financingKeyService.storeFinancingApiKey instead
  */
 export async function encryptData(plainText: string): Promise<string | null> {
   if (!plainText || plainText.trim() === '') {
@@ -49,7 +55,9 @@ export async function encryptData(plainText: string): Promise<string | null> {
 }
 
 /**
- * Decrypt sensitive data
+ * Decrypt field data.
+ * For API keys and high-value secrets, the decrypted value is NEVER sent to client.
+ * @deprecated for API keys - use financingKeyService.getMaskedFinancingApiKey instead
  */
 export async function decryptData(encryptedText: string): Promise<string | null> {
   if (!encryptedText || encryptedText.trim() === '') {

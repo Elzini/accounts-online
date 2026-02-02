@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.public-auth-settings]
 verify_jwt = false
+
+[functions.manage-financing-key]
+verify_jwt = false
