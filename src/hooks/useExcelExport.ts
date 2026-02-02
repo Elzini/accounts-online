@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 interface TableColumn {
   header: string;
@@ -14,65 +14,99 @@ interface ExcelExportOptions {
 }
 
 export function useExcelExport() {
-  const exportToExcel = ({
+  const exportToExcel = async ({
     title,
     columns,
     data,
     fileName,
     summaryData,
   }: ExcelExportOptions) => {
-    // Create workbook
-    const workbook = XLSX.utils.book_new();
+    // Create workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Application';
+    workbook.created = new Date();
+    
+    // Truncate sheet name to 31 characters (Excel limit)
+    const sheetName = title.substring(0, 31);
+    const worksheet = workbook.addWorksheet(sheetName, {
+      views: [{ rightToLeft: true }], // RTL support for Arabic
+    });
 
-    // Prepare header row
-    const headers = columns.map(col => col.header);
-
-    // Prepare data rows
-    const rows = data.map(row => 
-      columns.map(col => row[col.key] || '-')
-    );
-
-    // Create worksheet data
-    const worksheetData: (string | number)[][] = [];
+    let currentRow = 1;
 
     // Add title
-    worksheetData.push([title]);
-    worksheetData.push([]); // Empty row
+    worksheet.mergeCells(currentRow, 1, currentRow, columns.length);
+    const titleCell = worksheet.getCell(currentRow, 1);
+    titleCell.value = title;
+    titleCell.font = { bold: true, size: 16 };
+    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    currentRow += 2;
 
     // Add summary data if provided
     if (summaryData && summaryData.length > 0) {
       summaryData.forEach(item => {
-        worksheetData.push([item.label, String(item.value)]);
+        const row = worksheet.getRow(currentRow);
+        row.getCell(1).value = item.label;
+        row.getCell(2).value = String(item.value);
+        row.getCell(1).font = { bold: true };
+        currentRow++;
       });
-      worksheetData.push([]); // Empty row
+      currentRow++;
     }
 
-    // Add date
-    worksheetData.push(['تاريخ التصدير:', new Date().toLocaleDateString('ar-SA')]);
-    worksheetData.push([]); // Empty row
+    // Add export date
+    const dateRow = worksheet.getRow(currentRow);
+    dateRow.getCell(1).value = 'تاريخ التصدير:';
+    dateRow.getCell(2).value = new Date().toLocaleDateString('ar-SA');
+    dateRow.getCell(1).font = { bold: true };
+    currentRow += 2;
 
     // Add headers
-    worksheetData.push(headers);
+    const headerRow = worksheet.getRow(currentRow);
+    columns.forEach((col, index) => {
+      const cell = headerRow.getCell(index + 1);
+      cell.value = col.header;
+      cell.font = { bold: true };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' },
+      };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' },
+      };
+    });
+    currentRow++;
 
     // Add data rows
-    rows.forEach(row => worksheetData.push(row));
-
-    // Create worksheet
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    data.forEach(rowData => {
+      const row = worksheet.getRow(currentRow);
+      columns.forEach((col, index) => {
+        const cell = row.getCell(index + 1);
+        cell.value = rowData[col.key] ?? '-';
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+      });
+      currentRow++;
+    });
 
     // Set column widths
-    const colWidths = columns.map(() => ({ wch: 20 }));
-    worksheet['!cols'] = colWidths;
-
-    // Set RTL direction
-    worksheet['!dir'] = 'rtl';
-
-    // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, title.substring(0, 31));
+    columns.forEach((_, index) => {
+      worksheet.getColumn(index + 1).width = 20;
+    });
 
     // Generate file and download
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
     
     // Create download link
     const url = window.URL.createObjectURL(blob);

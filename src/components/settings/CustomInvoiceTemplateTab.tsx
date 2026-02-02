@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
+import { readExcelFile, utils, writeFile } from '@/lib/excelUtils';
 import { parseExcelToInvoiceItems, ImportedInvoiceItem } from '@/services/importedInvoiceData';
 import { useImportedInvoiceData, useSaveImportedInvoiceData, useDeleteImportedInvoiceData } from '@/hooks/useImportedInvoiceData';
 import { ExcelItemsEditor } from './ExcelItemsEditor';
@@ -115,17 +115,17 @@ export function CustomInvoiceTemplateTab() {
 
     try {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
-          const data = new Uint8Array(event.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
+          const arrayBuffer = event.target?.result as ArrayBuffer;
+          const workbook = await readExcelFile(arrayBuffer);
           
           // Get the first sheet
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
           
           // Convert to JSON
-          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          const jsonData = worksheet.jsonData;
           
           if (jsonData.length === 0) {
             toast.error('الملف فارغ أو لا يحتوي على بيانات');
@@ -207,7 +207,7 @@ export function CustomInvoiceTemplateTab() {
     }
   };
 
-  const downloadSampleExcel = () => {
+  const downloadSampleExcel = async () => {
     const sampleData = [
       {
         'اسم المنتج': 'سيارة تويوتا كامري 2024',
@@ -225,10 +225,10 @@ export function CustomInvoiceTemplateTab() {
       },
     ];
 
-    const worksheet = XLSX.utils.json_to_sheet(sampleData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'بيانات الفاتورة');
-    XLSX.writeFile(workbook, 'نموذج_بيانات_الفاتورة.xlsx');
+    const worksheet = utils.json_to_sheet(sampleData);
+    const workbook = utils.book_new();
+    utils.book_append_sheet(workbook, worksheet, 'بيانات الفاتورة');
+    await writeFile(workbook, 'نموذج_بيانات_الفاتورة.xlsx');
     toast.success('تم تحميل النموذج بنجاح');
   };
 

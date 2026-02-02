@@ -18,6 +18,7 @@ import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompany } from '@/contexts/CompanyContext';
 import { LedgerPreviewDialog } from './LedgerPreviewDialog';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
+import { createSimpleExcel, downloadExcelBuffer } from '@/lib/excelUtils';
 
 export function GeneralLedgerPage() {
   const { data: accounts = [], isLoading: isLoadingAccounts } = useAccounts();
@@ -130,8 +131,6 @@ export function GeneralLedgerPage() {
   const handleExportExcel = async () => {
     if (!ledger) return;
     
-    const XLSX = await import('xlsx');
-    
     const data = [
       // Header info
       ['دفتر الأستاذ العام'],
@@ -165,10 +164,8 @@ export function GeneralLedgerPage() {
       ['عدد الحركات', filteredEntries.length],
     ];
 
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'دفتر الأستاذ');
-    XLSX.writeFile(wb, `دفتر_الأستاذ_${ledger.account.code}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+    const buffer = await createSimpleExcel('دفتر الأستاذ', data, { rtl: true });
+    downloadExcelBuffer(buffer, `دفتر_الأستاذ_${ledger.account.code}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
   // Export to PDF
