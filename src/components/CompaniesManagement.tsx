@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -64,9 +65,16 @@ interface Company {
   address: string | null;
   logo_url: string | null;
   is_active: boolean;
+  company_type: 'car_dealership' | 'construction' | 'general_trading';
   created_at: string;
   updated_at: string;
 }
+
+const COMPANY_TYPES = [
+  { value: 'car_dealership', label: 'معرض سيارات', icon: '🚗' },
+  { value: 'construction', label: 'مقاولات', icon: '🏗️' },
+  { value: 'general_trading', label: 'تجارة عامة', icon: '🏪' },
+] as const;
 
 interface CompanyStats {
   company_id: string;
@@ -92,6 +100,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
     phone: '',
     address: '',
     is_active: true,
+    company_type: 'car_dealership' as 'car_dealership' | 'construction' | 'general_trading',
   });
 
   // Fetch companies
@@ -146,6 +155,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
           phone: data.phone || null,
           address: data.address || null,
           is_active: data.is_active,
+          company_type: data.company_type,
         })
         .select()
         .single();
@@ -221,6 +231,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
       phone: '',
       address: '',
       is_active: true,
+      company_type: 'car_dealership',
     });
   };
 
@@ -231,6 +242,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
       phone: company.phone || '',
       address: company.address || '',
       is_active: company.is_active,
+      company_type: company.company_type || 'car_dealership',
     });
     setEditDialogOpen(true);
   };
@@ -348,6 +360,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
             <TableRow className="bg-muted/50">
               <TableHead className="text-right font-bold">#</TableHead>
               <TableHead className="text-right font-bold">اسم الشركة</TableHead>
+              <TableHead className="text-right font-bold">نوع النشاط</TableHead>
               <TableHead className="text-right font-bold">الهاتف</TableHead>
               <TableHead className="text-center font-bold">المستخدمين</TableHead>
               <TableHead className="text-center font-bold">السيارات</TableHead>
@@ -368,6 +381,12 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
                       <Building2 className="w-4 h-4 text-primary" />
                       <span className="font-semibold">{company.name}</span>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="gap-1">
+                      {COMPANY_TYPES.find(t => t.value === company.company_type)?.icon || '🏢'}
+                      <span className="mr-1">{COMPANY_TYPES.find(t => t.value === company.company_type)?.label || 'غير محدد'}</span>
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     {company.phone ? (
@@ -489,6 +508,29 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
               />
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="company_type">نوع النشاط *</Label>
+              <Select 
+                value={formData.company_type} 
+                onValueChange={(value: 'car_dealership' | 'construction' | 'general_trading') => 
+                  setFormData({ ...formData, company_type: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر نوع النشاط" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COMPANY_TYPES.map(type => (
+                    <SelectItem key={type.value} value={type.value}>
+                      <span className="flex items-center gap-2">
+                        <span>{type.icon}</span>
+                        <span>{type.label}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="phone">الهاتف</Label>
               <Input
                 id="phone"
@@ -603,6 +645,15 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
                 <div>
                   <Label className="text-muted-foreground text-sm">اسم الشركة</Label>
                   <p className="font-semibold text-lg">{selectedCompany.name}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-sm">نوع النشاط</Label>
+                  <p>
+                    <Badge variant="outline" className="gap-1">
+                      {COMPANY_TYPES.find(t => t.value === selectedCompany.company_type)?.icon || '🏢'}
+                      <span className="mr-1">{COMPANY_TYPES.find(t => t.value === selectedCompany.company_type)?.label || 'غير محدد'}</span>
+                    </Badge>
+                  </p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground text-sm">الحالة</Label>

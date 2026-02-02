@@ -785,9 +785,49 @@ export type Database = {
           },
         ]
       }
+      coa_templates: {
+        Row: {
+          code: string
+          company_type: Database["public"]["Enums"]["company_activity_type"]
+          created_at: string
+          id: string
+          is_header: boolean | null
+          name: string
+          name_en: string | null
+          parent_code: string | null
+          sort_order: number | null
+          type: string
+        }
+        Insert: {
+          code: string
+          company_type: Database["public"]["Enums"]["company_activity_type"]
+          created_at?: string
+          id?: string
+          is_header?: boolean | null
+          name: string
+          name_en?: string | null
+          parent_code?: string | null
+          sort_order?: number | null
+          type: string
+        }
+        Update: {
+          code?: string
+          company_type?: Database["public"]["Enums"]["company_activity_type"]
+          created_at?: string
+          id?: string
+          is_header?: boolean | null
+          name?: string
+          name_en?: string | null
+          parent_code?: string | null
+          sort_order?: number | null
+          type?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           address: string | null
+          company_type: Database["public"]["Enums"]["company_activity_type"]
           created_at: string
           id: string
           invoice_logo_url: string | null
@@ -800,6 +840,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          company_type?: Database["public"]["Enums"]["company_activity_type"]
           created_at?: string
           id?: string
           invoice_logo_url?: string | null
@@ -812,6 +853,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          company_type?: Database["public"]["Enums"]["company_activity_type"]
           created_at?: string
           id?: string
           invoice_logo_url?: string | null
@@ -1954,6 +1996,87 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      industry_dashboard_config: {
+        Row: {
+          card_key: string
+          color: string | null
+          company_type: Database["public"]["Enums"]["company_activity_type"]
+          created_at: string
+          data_source: string | null
+          icon: string | null
+          id: string
+          label_ar: string
+          label_en: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          card_key: string
+          color?: string | null
+          company_type: Database["public"]["Enums"]["company_activity_type"]
+          created_at?: string
+          data_source?: string | null
+          icon?: string | null
+          id?: string
+          label_ar: string
+          label_en?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          card_key?: string
+          color?: string | null
+          company_type?: Database["public"]["Enums"]["company_activity_type"]
+          created_at?: string
+          data_source?: string | null
+          icon?: string | null
+          id?: string
+          label_ar?: string
+          label_en?: string | null
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      industry_menu_config: {
+        Row: {
+          company_type: Database["public"]["Enums"]["company_activity_type"]
+          created_at: string
+          icon: string | null
+          id: string
+          is_visible: boolean | null
+          label_ar: string
+          label_en: string | null
+          menu_key: string
+          parent_key: string | null
+          route: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          company_type: Database["public"]["Enums"]["company_activity_type"]
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_visible?: boolean | null
+          label_ar: string
+          label_en?: string | null
+          menu_key: string
+          parent_key?: string | null
+          route?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          company_type?: Database["public"]["Enums"]["company_activity_type"]
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_visible?: boolean | null
+          label_ar?: string
+          label_en?: string | null
+          menu_key?: string
+          parent_key?: string | null
+          route?: string | null
+          sort_order?: number | null
+        }
+        Relationships: []
       }
       installment_payments: {
         Row: {
@@ -3357,6 +3480,10 @@ export type Database = {
       }
     }
     Enums: {
+      company_activity_type:
+        | "car_dealership"
+        | "construction"
+        | "general_trading"
       transfer_status: "pending" | "sold" | "returned"
       transfer_type: "outgoing" | "incoming"
       user_permission:
@@ -3493,6 +3620,11 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      company_activity_type: [
+        "car_dealership",
+        "construction",
+        "general_trading",
+      ],
       transfer_status: ["pending", "sold", "returned"],
       transfer_type: ["outgoing", "incoming"],
       user_permission: [
