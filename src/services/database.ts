@@ -59,14 +59,23 @@ export interface MultiCarSaleData {
 }
 
 // Customers
+// Use customers_safe view for read operations to mask sensitive PII (id_number, registration_number)
+// The view shows only last 4 digits of identity documents for non-admin users
 export async function fetchCustomers() {
   const { data, error } = await supabase
-    .from('customers')
+    .from('customers_safe')
     .select('*')
     .order('created_at', { ascending: false });
   
   if (error) throw error;
-  return data;
+  // Map the masked fields back to expected field names for UI compatibility
+  return data?.map(customer => ({
+    ...customer,
+    id_number: customer.id_number_masked,
+    registration_number: customer.registration_number_masked,
+    // Not exposed in safe view - provide null for type compatibility
+    id_number_encrypted: null as string | null,
+  })) || [];
 }
 
 export async function addCustomer(customer: CustomerInsert) {
