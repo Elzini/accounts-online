@@ -2021,6 +2021,106 @@ export type Database = {
           },
         ]
       }
+      formula_definitions: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          display_order: number | null
+          formula_category: string
+          formula_expression: Json
+          formula_key: string
+          formula_name: string
+          id: string
+          is_active: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          formula_category: string
+          formula_expression: Json
+          formula_key: string
+          formula_name: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          formula_category?: string
+          formula_expression?: Json
+          formula_key?: string
+          formula_name?: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formula_definitions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      formula_variables: {
+        Row: {
+          color: string | null
+          company_id: string | null
+          created_at: string
+          data_source: string
+          icon: string | null
+          id: string
+          is_system: boolean | null
+          query_definition: Json | null
+          variable_category: string
+          variable_key: string
+          variable_name: string
+        }
+        Insert: {
+          color?: string | null
+          company_id?: string | null
+          created_at?: string
+          data_source: string
+          icon?: string | null
+          id?: string
+          is_system?: boolean | null
+          query_definition?: Json | null
+          variable_category: string
+          variable_key: string
+          variable_name: string
+        }
+        Update: {
+          color?: string | null
+          company_id?: string | null
+          created_at?: string
+          data_source?: string
+          icon?: string | null
+          id?: string
+          is_system?: boolean | null
+          query_definition?: Json | null
+          variable_category?: string
+          variable_key?: string
+          variable_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formula_variables_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       imported_invoice_data: {
         Row: {
           company_id: string

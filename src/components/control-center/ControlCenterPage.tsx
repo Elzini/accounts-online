@@ -7,7 +7,8 @@ import {
   Palette,
   Calculator,
   GitBranch,
-  LayoutGrid
+  LayoutGrid,
+  FunctionSquare
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +19,7 @@ import { FinancialStatementsConfigTab } from './tabs/FinancialStatementsConfigTa
 import { MenuConfigurationTab } from './tabs/MenuConfigurationTab';
 import { ThemeConfigurationTab } from './tabs/ThemeConfigurationTab';
 import { DashboardConfigTab } from './tabs/DashboardConfigTab';
+import { FormulaBuilderTab } from './tabs/FormulaBuilderTab';
 
 export function ControlCenterPage() {
   return (
@@ -33,8 +35,12 @@ export function ControlCenterPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="dashboard-config" className="w-full">
-        <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid overflow-x-auto">
+      <Tabs defaultValue="formula-builder" className="w-full">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 lg:w-auto lg:inline-grid overflow-x-auto">
+          <TabsTrigger value="formula-builder" className="flex items-center gap-2">
+            <FunctionSquare className="w-4 h-4" />
+            <span className="hidden sm:inline">محرر المعادلات</span>
+          </TabsTrigger>
           <TabsTrigger value="dashboard-config" className="flex items-center gap-2">
             <LayoutGrid className="w-4 h-4" />
             <span className="hidden sm:inline">لوحة التحكم</span>
@@ -64,6 +70,10 @@ export function ControlCenterPage() {
             <span className="hidden sm:inline">المظهر</span>
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="formula-builder" className="mt-6">
+          <FormulaBuilderTab />
+        </TabsContent>
 
         <TabsContent value="dashboard-config" className="mt-6">
           <DashboardConfigTab />
