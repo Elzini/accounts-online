@@ -3428,6 +3428,10 @@ export type Database = {
         }
         Returns: number
       }
+      can_access_company_data: {
+        Args: { _company_id: string }
+        Returns: boolean
+      }
       create_default_accounts: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -3437,6 +3441,7 @@ export type Database = {
         Returns: undefined
       }
       get_car_expenses: { Args: { p_car_id: string }; Returns: number }
+      get_current_company_id: { Args: never; Returns: string }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_permission: {
         Args: {
@@ -3463,6 +3468,14 @@ export type Database = {
       regenerate_journal_entries: {
         Args: { p_company_id: string }
         Returns: string
+      }
+      secure_belongs_to_company: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
+      secure_has_permission: {
+        Args: { _permission: Database["public"]["Enums"]["user_permission"] }
+        Returns: boolean
       }
       sync_accounting_settings_to_all_companies: {
         Args: never
