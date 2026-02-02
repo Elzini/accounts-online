@@ -693,17 +693,22 @@ export async function fetchStats(fiscalYearId?: string | null) {
   // Advances are NOT deducted because they were already paid out earlier
   let payrollQuery = supabase
     .from('payroll_records')
-    .select('total_base_salaries, total_allowances, total_bonuses, total_overtime, total_absences')
+    .select('month, year, total_base_salaries, total_allowances, total_bonuses, total_overtime, total_absences')
     .eq('status', 'approved');
   
-  if (fiscalYearStart && fiscalYearEnd) {
-    // Filter by payroll month/year that falls within fiscal year range
-    payrollQuery = payrollQuery
-      .gte('created_at', fiscalYearStart)
-      .lte('created_at', fiscalYearEnd + 'T23:59:59');
-  }
+  const { data: allPayrollData } = await payrollQuery;
   
-  const { data: payrollData } = await payrollQuery;
+  // Filter payroll by fiscal year using month/year fields instead of created_at
+  let payrollData = allPayrollData;
+  if (fiscalYearStart && fiscalYearEnd) {
+    const fyStartDate = new Date(fiscalYearStart);
+    const fyEndDate = new Date(fiscalYearEnd);
+    payrollData = allPayrollData?.filter(p => {
+      // Build a date from payroll month/year (first day of month)
+      const payrollDate = new Date(p.year, p.month - 1, 1);
+      return payrollDate >= fyStartDate && payrollDate <= fyEndDate;
+    }) || [];
+  }
   
   // Sum all approved payroll: (base + allowances + bonuses + overtime) - absences
   const payrollExpenses = payrollData?.reduce((sum, p) => {
