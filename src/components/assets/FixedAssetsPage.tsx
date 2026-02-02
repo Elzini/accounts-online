@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, Calculator, FileDown, Building2, TrendingDown } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,8 @@ import {
   type FixedAsset,
   type CreateAssetInput,
 } from '@/hooks/useFixedAssets';
+import { useAccounts } from '@/hooks/useAccounting';
+import { AccountSearchSelect } from '@/components/accounting/AccountSearchSelect';
 import { toast } from 'sonner';
 
 const STATUS_LABELS: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -45,6 +47,18 @@ export function FixedAssetsPage() {
   const { data: summary } = useAssetsSummary();
   const { data: categories = [] } = useAssetCategories();
   const { data: depreciationEntries = [] } = useDepreciationEntries();
+  const { data: accounts = [] } = useAccounts();
+  
+  // Filter accounts by type for dropdowns
+  const assetAccounts = useMemo(() => 
+    accounts.filter(acc => acc.type === 'asset' && acc.code.startsWith('13')),
+    [accounts]
+  );
+  
+  const expenseAccounts = useMemo(() => 
+    accounts.filter(acc => acc.type === 'expense'),
+    [accounts]
+  );
   
   const createAsset = useCreateFixedAsset();
   const updateAsset = useUpdateFixedAsset();
@@ -70,6 +84,9 @@ export function FixedAssetsPage() {
     location: '',
     serial_number: '',
     notes: '',
+    account_category_id: '',
+    depreciation_account_id: '',
+    accumulated_depreciation_account_id: '',
   });
 
   const [depreciationPeriod, setDepreciationPeriod] = useState({
@@ -97,6 +114,9 @@ export function FixedAssetsPage() {
       location: '',
       serial_number: '',
       notes: '',
+      account_category_id: '',
+      depreciation_account_id: '',
+      accumulated_depreciation_account_id: '',
     });
     setDialogOpen(true);
   };
@@ -116,6 +136,9 @@ export function FixedAssetsPage() {
       location: asset.location || '',
       serial_number: asset.serial_number || '',
       notes: asset.notes || '',
+      account_category_id: asset.account_category_id || '',
+      depreciation_account_id: asset.depreciation_account_id || '',
+      accumulated_depreciation_account_id: asset.accumulated_depreciation_account_id || '',
     });
     setDialogOpen(true);
   };
@@ -577,13 +600,61 @@ export function FixedAssetsPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>الموقع</Label>
-              <Input
-                value={formData.location}
-                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                placeholder="مثال: المستودع الرئيسي"
-              />
+            {/* حسابات الأصول المحاسبية */}
+            <div className="border-t pt-4 mt-4">
+              <h4 className="font-medium text-sm mb-4 text-muted-foreground">الحسابات المحاسبية</h4>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>حساب الأصل الثابت *</Label>
+                  <AccountSearchSelect
+                    accounts={assetAccounts.map(acc => ({ id: acc.id, code: acc.code, name: acc.name }))}
+                    value={formData.account_category_id || ''}
+                    onChange={(value) => setFormData(prev => ({ ...prev, account_category_id: value }))}
+                    placeholder="اختر حساب الأصل (سيارات، معدات، أثاث...)"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    الحساب الذي سيُقيد فيه الأصل (مثل: سيارات، معدات، أثاث مكتبي، أجهزة كمبيوتر)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>حساب مصروف الإهلاك</Label>
+                  <AccountSearchSelect
+                    accounts={expenseAccounts.map(acc => ({ id: acc.id, code: acc.code, name: acc.name }))}
+                    value={formData.depreciation_account_id || ''}
+                    onChange={(value) => setFormData(prev => ({ ...prev, depreciation_account_id: value }))}
+                    placeholder="اختر حساب مصروف الإهلاك"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    حساب المصروفات للإهلاك الدوري (افتراضي: 5401 - مصروف الإهلاك)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>حساب الإهلاك المتراكم</Label>
+                  <AccountSearchSelect
+                    accounts={assetAccounts.map(acc => ({ id: acc.id, code: acc.code, name: acc.name }))}
+                    value={formData.accumulated_depreciation_account_id || ''}
+                    onChange={(value) => setFormData(prev => ({ ...prev, accumulated_depreciation_account_id: value }))}
+                    placeholder="اختر حساب الإهلاك المتراكم"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    حساب مجمع الإهلاك (افتراضي: 1390 - مجمع الإهلاك)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>الرقم التسلسلي</Label>
+                <Input
+                  value={formData.serial_number}
+                  onChange={(e) => setFormData(prev => ({ ...prev, serial_number: e.target.value }))}
+                  placeholder="اختياري"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
