@@ -100,4 +100,5 @@ export type ActivePage =
   | 'payroll'
   | 'account-statement'
   | 'control-center'
-  | 'fixed-assets';
+  | 'fixed-assets'
+  | 'medad-import';
