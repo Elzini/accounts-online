@@ -22,7 +22,7 @@ import {
   FileText,
   Package
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { readExcelFile, sheetToJson, ExcelWorkbook } from '@/lib/excelUtils';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
@@ -112,7 +112,7 @@ export function MedadImportPage() {
     
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const workbook = await readExcelFile(arrayBuffer);
       
       setProgress(30);
       
@@ -127,7 +127,7 @@ export function MedadImportPage() {
       // تحليل كل ورقة في الملف
       for (const sheetName of workbook.SheetNames) {
         const sheet = workbook.Sheets[sheetName];
-        const data = XLSX.utils.sheet_to_json(sheet);
+        const data = sheet.jsonData;
         
         if (data.length === 0) continue;
         

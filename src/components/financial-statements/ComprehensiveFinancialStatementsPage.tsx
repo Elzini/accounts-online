@@ -13,7 +13,7 @@ import {
   Building2, Calculator, TrendingUp, Scale, Wallet, BarChart3,
   Loader2, Database, BookOpen, FileCheck, Users, Package
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { readExcelFile, ExcelWorkbook } from '@/lib/excelUtils';
 import { toast } from 'sonner';
 import { useCompany } from '@/contexts/CompanyContext';
 import { usePrintReport } from '@/hooks/usePrintReport';
@@ -58,63 +58,47 @@ export function ComprehensiveFinancialStatementsPage() {
     setIsLoading(true);
     
     try {
-      const reader = new FileReader();
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = await readExcelFile(arrayBuffer);
       
-      reader.onload = (e) => {
-        try {
-          const arrayBuffer = e.target?.result as ArrayBuffer;
-          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-          
-          console.log('📊 Medad Excel Sheets:', workbook.SheetNames);
-          
-          const parsedData = parseMedadExcel(workbook);
-
-           // إذا لم نستخرج أي أرقام فعلية، لا نعرض تقرير فارغ (0) بشكل مضلل
-           const isEffectivelyEmpty =
-             (parsedData.balanceSheet?.totalAssets || 0) === 0 &&
-             (parsedData.balanceSheet?.totalLiabilitiesAndEquity || 0) === 0 &&
-             (parsedData.incomeStatement?.revenue || 0) === 0 &&
-             (parsedData.incomeStatement?.costOfRevenue || 0) === 0 &&
-             (parsedData.incomeStatement?.generalAndAdminExpenses || 0) === 0;
-
-           if (isEffectivelyEmpty) {
-             console.warn('⚠️ Parsed data is empty – likely column/header mismatch in trial balance sheet');
-             setData(emptyFinancialData);
-             setFileName(null);
-             setDataSource('none');
-             setActiveTab('overview');
-             toast.error('تم رفع الملف لكن لم يتم التعرف على أعمدة ميزان المراجعة. جرّب إعادة تصدير الملف من مداد أو ارسل لقطة من أعلى الجدول (عناوين الأعمدة).');
-             return;
-           }
-          
-          // إضافة اسم الشركة من إعدادات النظام إذا لم يتم العثور عليه
-          if (!parsedData.companyName && company?.name) {
-            parsedData.companyName = company.name;
-          }
-          
-          setData(parsedData);
-          setFileName(file.name);
-          setDataSource('excel');
-          setActiveTab('balance-sheet');
-          
-          toast.success(`تم استيراد القوائم المالية بنجاح (${workbook.SheetNames.length} صفحة)`);
-        } catch (error) {
-          console.error('Error parsing Excel:', error);
-          toast.error('خطأ في تحليل ملف Excel');
-        } finally {
-          setIsLoading(false);
-        }
-      };
+      console.log('📊 Medad Excel Sheets:', workbook.SheetNames);
       
-      reader.onerror = () => {
-        toast.error('خطأ في قراءة الملف');
+      const parsedData = parseMedadExcel(workbook);
+
+      // إذا لم نستخرج أي أرقام فعلية، لا نعرض تقرير فارغ (0) بشكل مضلل
+      const isEffectivelyEmpty =
+        (parsedData.balanceSheet?.totalAssets || 0) === 0 &&
+        (parsedData.balanceSheet?.totalLiabilitiesAndEquity || 0) === 0 &&
+        (parsedData.incomeStatement?.revenue || 0) === 0 &&
+        (parsedData.incomeStatement?.costOfRevenue || 0) === 0 &&
+        (parsedData.incomeStatement?.generalAndAdminExpenses || 0) === 0;
+
+      if (isEffectivelyEmpty) {
+        console.warn('⚠️ Parsed data is empty – likely column/header mismatch in trial balance sheet');
+        setData(emptyFinancialData);
+        setFileName(null);
+        setDataSource('none');
+        setActiveTab('overview');
+        toast.error('تم رفع الملف لكن لم يتم التعرف على أعمدة ميزان المراجعة. جرّب إعادة تصدير الملف من مداد أو ارسل لقطة من أعلى الجدول (عناوين الأعمدة).');
         setIsLoading(false);
-      };
+        return;
+      }
       
-      reader.readAsArrayBuffer(file);
+      // إضافة اسم الشركة من إعدادات النظام إذا لم يتم العثور عليه
+      if (!parsedData.companyName && company?.name) {
+        parsedData.companyName = company.name;
+      }
+      
+      setData(parsedData);
+      setFileName(file.name);
+      setDataSource('excel');
+      setActiveTab('balance-sheet');
+      
+      toast.success(`تم استيراد القوائم المالية بنجاح (${workbook.SheetNames.length} صفحة)`);
     } catch (error) {
-      console.error('Error reading file:', error);
-      toast.error('خطأ في قراءة الملف');
+      console.error('Error parsing Excel:', error);
+      toast.error('خطأ في تحليل ملف Excel');
+    } finally {
       setIsLoading(false);
     }
     

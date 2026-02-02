@@ -16,7 +16,7 @@ import {
   Building2, Calculator, TrendingUp, Scale, Wallet, BarChart3,
   Loader2, Database, X, Save, Edit3
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { readExcelFile, ExcelWorkbook } from '@/lib/excelUtils';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -209,82 +209,64 @@ export function FinancialStatementsPage() {
     console.log('📁 Starting to parse file:', file.name);
     
     try {
-      const reader = new FileReader();
+      const arrayBuffer = await file.arrayBuffer();
+      console.log('📦 File loaded, size:', arrayBuffer?.byteLength, 'bytes');
       
-      reader.onerror = (error) => {
-        console.error('❌ FileReader error:', error);
-        toast.error('خطأ في قراءة الملف');
+      if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+        toast.error('الملف فارغ');
         setIsLoading(false);
-      };
+        return;
+      }
       
-      reader.onload = (e) => {
-        try {
-          const arrayBuffer = e.target?.result as ArrayBuffer;
-          console.log('📦 File loaded, size:', arrayBuffer?.byteLength, 'bytes');
-          
-          if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-            toast.error('الملف فارغ');
-            setIsLoading(false);
-            return;
-          }
-          
-          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-          console.log('📊 Workbook sheets:', workbook.SheetNames);
-          
-          if (workbook.SheetNames.length === 0) {
-            toast.error('الملف لا يحتوي على أي صفحات');
-            setIsLoading(false);
-            return;
-          }
-          
-          // Log raw data from each sheet
-          workbook.SheetNames.forEach((sheetName, idx) => {
-            const ws = workbook.Sheets[sheetName];
-            const rawData = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as any[][];
-            console.log(`📄 Sheet ${idx + 1} "${sheetName}": ${rawData.length} rows`);
-            if (rawData.length > 0) {
-              console.log('  First 3 rows:', rawData.slice(0, 3));
-            }
-          });
-          
-          const parsedData = parseFinancialStatements(workbook);
-          console.log('✅ Parsed data:', parsedData);
-          
-          // Check if any data was parsed
-          const hasData = 
-            parsedData.balanceSheet.currentAssets.length > 0 ||
-            parsedData.balanceSheet.fixedAssets.length > 0 ||
-            parsedData.balanceSheet.totalAssets > 0 ||
-            parsedData.incomeStatement.revenue > 0 ||
-            parsedData.incomeStatement.netProfit !== 0;
-          
-          if (!hasData) {
-            console.warn('⚠️ No financial data was extracted from the file');
-            toast.warning('لم يتم العثور على بيانات مالية في الملف - تأكد من تطابق أسماء الصفحات أو العناوين');
-          }
-          
-          setData(parsedData);
-          setFileName(file.name);
-          setDataSource('excel');
-          toast.success(`تم تحليل الملف بنجاح (${workbook.SheetNames.length} صفحة)`);
-        } catch (error) {
-          console.error('❌ Error parsing Excel:', error);
-          toast.error('خطأ في تحليل الملف: ' + (error as Error).message);
-        } finally {
-          setIsLoading(false);
+      const workbook = await readExcelFile(arrayBuffer);
+      console.log('📊 Workbook sheets:', workbook.SheetNames);
+      
+      if (workbook.SheetNames.length === 0) {
+        toast.error('الملف لا يحتوي على أي صفحات');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Log raw data from each sheet
+      workbook.SheetNames.forEach((sheetName, idx) => {
+        const ws = workbook.Sheets[sheetName];
+        const rawData = ws.data;
+        console.log(`📄 Sheet ${idx + 1} "${sheetName}": ${rawData.length} rows`);
+        if (rawData.length > 0) {
+          console.log('  First 3 rows:', rawData.slice(0, 3));
         }
-      };
+      });
       
-      reader.readAsArrayBuffer(file);
+      const parsedData = parseFinancialStatements(workbook);
+      console.log('✅ Parsed data:', parsedData);
+      
+      // Check if any data was parsed
+      const hasData = 
+        parsedData.balanceSheet.currentAssets.length > 0 ||
+        parsedData.balanceSheet.fixedAssets.length > 0 ||
+        parsedData.balanceSheet.totalAssets > 0 ||
+        parsedData.incomeStatement.revenue > 0 ||
+        parsedData.incomeStatement.netProfit !== 0;
+      
+      if (!hasData) {
+        console.warn('⚠️ No financial data was extracted from the file');
+        toast.warning('لم يتم العثور على بيانات مالية في الملف - تأكد من تطابق أسماء الصفحات أو العناوين');
+      }
+      
+      setData(parsedData);
+      setFileName(file.name);
+      setDataSource('excel');
+      toast.success(`تم تحليل الملف بنجاح (${workbook.SheetNames.length} صفحة)`);
     } catch (error) {
-      console.error('❌ Error reading file:', error);
-      toast.error('خطأ في قراءة الملف');
+      console.error('❌ Error parsing Excel:', error);
+      toast.error('خطأ في تحليل الملف: ' + (error as Error).message);
+    } finally {
       setIsLoading(false);
     }
   };
 
   // ===== Parse Financial Statements from Excel =====
-  const parseFinancialStatements = (workbook: XLSX.WorkBook): FinancialData => {
+  const parseFinancialStatements = (workbook: ExcelWorkbook): FinancialData => {
     const result: FinancialData = JSON.parse(JSON.stringify(emptyFinancialData));
     
     console.log('🔍 Parsing Excel - Sheets:', workbook.SheetNames);
@@ -292,7 +274,7 @@ export function FinancialStatementsPage() {
     // Try to find financial data across all sheets
     workbook.SheetNames.forEach((sheetName, sheetIndex) => {
       const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      const jsonData = worksheet.data;
       
       console.log(`📄 Sheet ${sheetIndex + 1}: "${sheetName}" - Rows: ${jsonData.length}`);
       

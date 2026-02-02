@@ -1,6 +1,6 @@
 // محلل ملفات Excel من مداد
 
-import * as XLSX from 'xlsx';
+import { ExcelWorkbook, sheetToArray } from '@/lib/excelUtils';
 import { 
   ComprehensiveFinancialData, 
   emptyFinancialData,
@@ -33,7 +33,7 @@ const MEDAD_SHEET_NAMES = {
   notes: ['النقد وأرصدة', 'ممتلكات ومعدات', 'الدائنون', 'مخصص الزكاة', 'المخصصات ورأس المال', 'تكلفة الإيرادات', 'مصاريف ادارية'],
 };
 
-export function parseMedadExcel(workbook: XLSX.WorkBook): ComprehensiveFinancialData {
+export function parseMedadExcel(workbook: ExcelWorkbook): ComprehensiveFinancialData {
   const result: ComprehensiveFinancialData = JSON.parse(JSON.stringify(emptyFinancialData));
   
   console.log('📊 Parsing Medad Excel - Sheets:', workbook.SheetNames);
@@ -46,7 +46,7 @@ export function parseMedadExcel(workbook: XLSX.WorkBook): ComprehensiveFinancial
     console.log('📊 Detected Trial Balance format - parsing as unified sheet');
     const sheetName = workbook.SheetNames[0];
     const ws = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', blankrows: false }) as any[][];
+    const rows = sheetToArray(ws).filter(row => row.some(cell => cell !== '' && cell !== null && cell !== undefined));
     
     parseTrialBalanceSheet(rows, result);
     return result;
@@ -87,7 +87,7 @@ export function parseMedadExcel(workbook: XLSX.WorkBook): ComprehensiveFinancial
   // تحليل الإيضاحات
   workbook.SheetNames.forEach(sheetName => {
     const ws = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+    const rows = sheetToArray(ws);
     parseNoteSheet(sheetName, rows, result);
   });
   
@@ -799,12 +799,12 @@ function buildFinancialStatements(accounts: any, result: ComprehensiveFinancialD
   }
 }
 
-function findSheet(workbook: XLSX.WorkBook, keywords: string[]): any[][] | null {
+function findSheet(workbook: ExcelWorkbook, keywords: string[]): any[][] | null {
   for (const name of workbook.SheetNames) {
     const lowerName = name.toLowerCase();
     if (keywords.some(kw => name.includes(kw) || lowerName.includes(kw.toLowerCase()))) {
       const ws = workbook.Sheets[name];
-      return XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+      return sheetToArray(ws);
     }
   }
   return null;
