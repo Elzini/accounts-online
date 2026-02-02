@@ -69,9 +69,10 @@ export type FinancingCompanyInsert = Omit<FinancingCompany, 'id' | 'created_at' 
 export type FinancingContractInsert = Omit<FinancingContract, 'id' | 'created_at' | 'updated_at' | 'financing_company' | 'customer' | 'car' | 'sale' | 'financing_payments'>;
 
 // Financing Companies
+// Note: Uses safe view that excludes api_key_encrypted for security
 export async function fetchFinancingCompanies(): Promise<FinancingCompany[]> {
   const { data, error } = await supabase
-    .from('financing_companies')
+    .from('financing_companies_safe')
     .select('*')
     .order('name');
   
@@ -117,7 +118,7 @@ export async function fetchFinancingContracts(): Promise<FinancingContract[]> {
     .from('financing_contracts')
     .select(`
       *,
-      financing_company:financing_companies(*),
+      financing_company:financing_companies_safe(*),
       customer:customers(id, name, phone),
       car:cars(id, name, model, chassis_number),
       sale:sales(id, sale_number),
@@ -134,7 +135,7 @@ export async function fetchFinancingContract(id: string): Promise<FinancingContr
     .from('financing_contracts')
     .select(`
       *,
-      financing_company:financing_companies(*),
+      financing_company:financing_companies_safe(*),
       customer:customers(id, name, phone),
       car:cars(id, name, model, chassis_number),
       sale:sales(id, sale_number),
@@ -254,7 +255,7 @@ export async function getOverdueFinancingPayments(): Promise<(FinancingPayment &
       *,
       contract:financing_contracts(
         *,
-        financing_company:financing_companies(name),
+        financing_company:financing_companies_safe(name),
         customer:customers(id, name, phone)
       )
     `)

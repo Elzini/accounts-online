@@ -1865,6 +1865,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "financing_contracts_financing_company_id_fkey"
+            columns: ["financing_company_id"]
+            isOneToOne: false
+            referencedRelation: "financing_companies_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "financing_contracts_sale_id_fkey"
             columns: ["sale_id"]
             isOneToOne: false
@@ -4746,7 +4753,54 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      financing_companies_safe: {
+        Row: {
+          api_endpoint: string | null
+          bank_name: string | null
+          commission_rate: number | null
+          company_id: string | null
+          contact_person: string | null
+          created_at: string | null
+          email: string | null
+          id: string | null
+          is_active: boolean | null
+          name: string | null
+          notes: string | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_endpoint?: string | null
+          bank_name?: string | null
+          commission_rate?: number | null
+          company_id?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_endpoint?: string | null
+          bank_name?: string | null
+          commission_rate?: number | null
+          company_id?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       apply_default_settings_to_company: {
