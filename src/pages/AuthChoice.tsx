@@ -1,37 +1,12 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Building2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
+import { usePublicAuthSettings } from '@/hooks/usePublicAuthSettings';
 
 export default function AuthChoice() {
-  const [loginLogoUrl, setLoginLogoUrl] = useState<string | null>(null);
-  const [logoLoaded, setLogoLoaded] = useState(false);
-
-  useEffect(() => {
-    const fetchLoginLogo = async () => {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'login_logo_url')
-        .is('company_id', null)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching login logo:', error);
-        setLoginLogoUrl('');
-        setLogoLoaded(true);
-        return;
-      }
-
-      setLoginLogoUrl(data?.value || '');
-      setLogoLoaded(true);
-    };
-
-    fetchLoginLogo();
-  }, []);
+  const { settings, loading: logoLoading } = usePublicAuthSettings();
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/10 via-background to-primary/5">
@@ -39,8 +14,8 @@ export default function AuthChoice() {
         {/* Logo & Title */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 overflow-hidden">
-            {logoLoaded ? (
-              <img src={loginLogoUrl || logo} alt="شعار النظام" className="w-16 h-16 object-contain" />
+            {!logoLoading ? (
+              <img src={settings.login_logo_url || logo} alt="شعار النظام" className="w-16 h-16 object-contain" />
             ) : (
               <div className="w-16 h-16 animate-pulse bg-primary/20 rounded-lg" />
             )}

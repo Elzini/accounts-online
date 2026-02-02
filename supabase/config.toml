@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.auto-backup]
 verify_jwt = false
+
+[functions.public-auth-settings]
+verify_jwt = false

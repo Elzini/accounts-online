@@ -1,25 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Shield, Building2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { defaultSettings } from '@/services/settings';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
-
-interface GlobalSettings {
-  login_title: string;
-  login_subtitle: string;
-  login_bg_color: string;
-  login_card_color: string;
-  login_header_gradient_start: string;
-  login_header_gradient_end: string;
-  login_button_text: string;
-  login_logo_url: string;
-}
+import { usePublicAuthSettings } from '@/hooks/usePublicAuthSettings';
 
 type AuthMode = 'company' | 'super_admin';
 
@@ -30,51 +19,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
-  // Use global settings (company_id = null) for public pages
-  const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
-    login_title: defaultSettings.login_title,
-    login_subtitle: defaultSettings.login_subtitle,
-    login_bg_color: defaultSettings.login_bg_color,
-    login_card_color: defaultSettings.login_card_color,
-    login_header_gradient_start: defaultSettings.login_header_gradient_start,
-    login_header_gradient_end: defaultSettings.login_header_gradient_end,
-    login_button_text: defaultSettings.login_button_text,
-    login_logo_url: '',
-  });
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
-
-  // Fetch global settings (not tied to any company)
-  useEffect(() => {
-    const fetchGlobalSettings = async () => {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .select('key, value')
-        .is('company_id', null);
-
-      if (error) {
-        console.error('Error fetching global settings:', error);
-        setSettingsLoaded(true);
-        return;
-      }
-
-      if (data) {
-        setGlobalSettings(prev => {
-          const next = { ...prev };
-          data.forEach((row) => {
-            if (row.key in next && row.value) {
-              (next as any)[row.key] = row.value;
-            }
-          });
-          return next;
-        });
-      }
-
-      setSettingsLoaded(true);
-    };
-
-    fetchGlobalSettings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Fetch settings from secure edge function
+  const { settings: globalSettings, loading: settingsLoading } = usePublicAuthSettings();
 
   const headerGradient = useMemo(
     () => `linear-gradient(135deg, ${globalSettings.login_header_gradient_start}, ${globalSettings.login_header_gradient_end})`,
@@ -151,7 +97,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           {/* Header */}
           <div className="p-8 text-center" style={{ background: headerGradient }}>
             <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-4 overflow-hidden">
-              {settingsLoaded ? (
+              {!settingsLoading ? (
                 <img
                   src={globalSettings.login_logo_url || logo}
                   alt="شعار النظام"
