@@ -12,6 +12,20 @@ serve(async (req) => {
   }
 
   try {
+    // Validate secret token to prevent unauthorized access
+    const secretToken = Deno.env.get("BACKUP_SECRET_TOKEN");
+    const authHeader = req.headers.get("X-Backup-Token") || req.headers.get("Authorization")?.replace("Bearer ", "");
+
+    if (!secretToken || !authHeader || authHeader !== secretToken) {
+      console.error("Unauthorized backup attempt");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401 
+        }
+      );
+    }
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     
@@ -92,7 +106,7 @@ serve(async (req) => {
         results.push({
           company_id: schedule.company_id,
           status: "failed",
-          error: error.message
+          error: error instanceof Error ? error.message : "Unknown error"
         });
       }
     }
@@ -110,7 +124,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Auto backup error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Internal server error" }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500 
