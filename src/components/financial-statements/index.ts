@@ -1,4 +1,4 @@
-// تصدير المكونات
+// تصدير المكونات الرئيسية
 
 export { ComprehensiveFinancialStatementsPage } from './ComprehensiveFinancialStatementsPage';
 export * from './types';
