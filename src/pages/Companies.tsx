@@ -57,7 +57,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import logo from '@/assets/logo.png';
+import defaultLogo from '@/assets/logo.png';
 import { LoginSettingsAdmin } from '@/components/LoginSettingsAdmin';
 import { AllUsersManagement } from '@/components/super-admin/AllUsersManagement';
 import { CompanyAccountingSettings } from '@/components/super-admin/CompanyAccountingSettings';
@@ -88,8 +88,39 @@ export default function Companies() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  const [headerLogoUrl, setHeaderLogoUrl] = useState<string>('');
+  const [headerLogoLoaded, setHeaderLogoLoaded] = useState(false);
+
   useEffect(() => {
     document.title = 'إدارة الشركات';
+
+    let mounted = true;
+    const fetchHeaderLogo = async () => {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'login_logo_url')
+        .is('company_id', null)
+        .maybeSingle();
+
+      if (!mounted) return;
+
+      if (error) {
+        console.error('Error fetching global logo for companies header:', error);
+        setHeaderLogoUrl('');
+        setHeaderLogoLoaded(true);
+        return;
+      }
+
+      setHeaderLogoUrl(data?.value || '');
+      setHeaderLogoLoaded(true);
+    };
+
+    fetchHeaderLogo();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
   
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -297,7 +328,18 @@ export default function Companies() {
       <header className="border-b bg-card shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <img src={logo} alt="Logo" className="w-10 h-10 rounded-lg object-cover" />
+            {headerLogoLoaded ? (
+              <img
+                src={headerLogoUrl || defaultLogo}
+                alt="شعار النظام"
+                className="w-10 h-10 rounded-lg object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = defaultLogo;
+                }}
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-lg bg-muted animate-pulse" />
+            )}
             <div>
               <h1 className="font-bold text-lg text-foreground">إدارة الشركات</h1>
               <p className="text-xs text-muted-foreground">لوحة تحكم مدير النظام</p>
