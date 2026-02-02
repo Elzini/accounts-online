@@ -56,6 +56,7 @@ import { AccountStatementReport } from '@/components/reports/AccountStatementRep
 import { ControlCenterPage } from '@/components/control-center/ControlCenterPage';
 import { FixedAssetsPage } from '@/components/assets/FixedAssetsPage';
 import { MedadImportPage } from '@/components/import/MedadImportPage';
+import { ProjectsPage, ContractsPage, ProgressBillingsPage } from '@/components/construction';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
@@ -156,6 +157,10 @@ const Index = () => {
       case 'control-center': return <ControlCenterPage />;
       case 'fixed-assets': return <FixedAssetsPage />;
       case 'medad-import': return <MedadImportPage />;
+      // Construction module
+      case 'projects': return <ProjectsPage />;
+      case 'contracts': return <ContractsPage />;
+      case 'progress-billings': return <ProgressBillingsPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };

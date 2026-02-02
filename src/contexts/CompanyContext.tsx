@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 
+export type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading';
+
 export interface Company {
   id: string;
   name: string;
@@ -10,6 +12,7 @@ export interface Company {
   address: string | null;
   logo_url: string | null;
   is_active: boolean;
+  company_type: CompanyActivityType;
   created_at: string;
   updated_at: string;
 }
