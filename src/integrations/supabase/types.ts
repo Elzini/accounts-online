@@ -488,6 +488,13 @@ export type Database = {
             referencedRelation: "bank_accounts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bank_reconciliations_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       bank_statements: {
@@ -542,6 +549,13 @@ export type Database = {
             columns: ["bank_account_id"]
             isOneToOne: false
             referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statements_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -610,6 +624,13 @@ export type Database = {
             columns: ["bank_account_id"]
             isOneToOne: false
             referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts_safe"
             referencedColumns: ["id"]
           },
           {
@@ -4802,6 +4823,65 @@ export type Database = {
       }
     }
     Views: {
+      bank_accounts_safe: {
+        Row: {
+          account_category_id: string | null
+          account_name: string | null
+          account_number_masked: string | null
+          bank_name: string | null
+          company_id: string | null
+          created_at: string | null
+          current_balance: number | null
+          iban_masked: string | null
+          id: string | null
+          is_active: boolean | null
+          notes: string | null
+          opening_balance: number | null
+          swift_code_masked: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_category_id?: string | null
+          account_name?: string | null
+          account_number_masked?: never
+          bank_name?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          current_balance?: number | null
+          iban_masked?: never
+          id?: string | null
+          is_active?: boolean | null
+          notes?: string | null
+          opening_balance?: number | null
+          swift_code_masked?: never
+          updated_at?: string | null
+        }
+        Update: {
+          account_category_id?: string | null
+          account_name?: string | null
+          account_number_masked?: never
+          bank_name?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          current_balance?: number | null
+          iban_masked?: never
+          id?: string | null
+          is_active?: boolean | null
+          notes?: string | null
+          opening_balance?: number | null
+          swift_code_masked?: never
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_accounts_account_category_id_fkey"
+            columns: ["account_category_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers_safe: {
         Row: {
           address: string | null
