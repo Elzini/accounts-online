@@ -252,6 +252,21 @@ export interface EventsAfterReportingPeriodNote {
   description: string;
 }
 
+// إيضاح السياسات المحاسبية
+export interface AccountingPoliciesNote {
+  policies: {
+    title: string;
+    content: string;
+  }[];
+}
+
+// إيضاح الدائنون والمطلوبات
+export interface CreditorsNote {
+  items: { name: string; amount: number; previousAmount?: number }[];
+  total: number;
+  previousTotal?: number;
+}
+
 // إيضاح الزكاة
 export interface ZakatNote {
   // احتساب المخصص
@@ -312,12 +327,14 @@ export interface ComprehensiveFinancialData {
   
   // الإيضاحات
   notes: {
+    accountingPolicies?: AccountingPoliciesNote;
     cashAndBank?: CashAndBankNote;
     otherCurrentAssets?: OtherCurrentAssetsNote;
     fixedAssets?: FixedAssetsNote;
     accruedExpenses?: AccruedExpensesNote;
     relatedPartyBalances?: RelatedPartyBalancesNote;
     otherCurrentLiabilities?: OtherCurrentLiabilitiesNote;
+    creditors?: CreditorsNote;
     financeLeases?: FinanceLeasesNote;
     employeeBenefits?: EmployeeBenefitsNote;
     capital?: CapitalNote;
