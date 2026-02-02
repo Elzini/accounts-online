@@ -1,5 +1,5 @@
 // Formula Builder Tab - تبويب بناء المعادلات
-import { useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { 
   Calculator, 
   Plus, 
@@ -41,14 +41,20 @@ import {
   generateNodeId,
   formulaToString,
   evaluateFormula,
-  DEFAULT_FORMULAS
+  seedDefaultFormulas
 } from '@/services/formulas';
 import { FormulaCanvas } from './formula-builder/FormulaCanvas';
 import { VariablesPalette } from './formula-builder/VariablesPalette';
 import { FormulaPreview } from './formula-builder/FormulaPreview';
 import { cn } from '@/lib/utils';
+import { useCompany } from '@/contexts/CompanyContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 export function FormulaBuilderTab() {
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+
   const [selectedCategory, setSelectedCategory] = useState('profit');
   const [editingFormula, setEditingFormula] = useState<FormulaDefinition | null>(null);
   const [formulaNodes, setFormulaNodes] = useState<FormulaNode[]>([]);
@@ -59,6 +65,7 @@ export function FormulaBuilderTab() {
   const [formulaToDelete, setFormulaToDelete] = useState<string | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [testResult, setTestResult] = useState<number | null>(null);
+  const [isSeedingDefaults, setIsSeedingDefaults] = useState(false);
 
   const { data: variables = [], isLoading: loadingVariables } = useFormulaVariables();
   const { data: formulas = [], isLoading: loadingFormulas } = useFormulaDefinitions(selectedCategory);
@@ -215,19 +222,35 @@ export function FormulaBuilderTab() {
     setTestResult(result);
   };
 
-  const handleLoadDefault = useCallback(() => {
-    const defaults = DEFAULT_FORMULAS[selectedCategory];
-    if (defaults && defaults.length > 0) {
-      const first = defaults[0];
-      setFormulaNodes(first.expression);
-      setFormulaName(first.name);
-      setFormulaKey(first.key);
-      setFormulaDescription('');
-      setIsCreatingNew(true);
+  const handleSeedDefaults = useCallback(async () => {
+    if (!companyId) {
+      toast.error('يرجى اختيار شركة أولاً');
+      return;
     }
-  }, [selectedCategory]);
+    setIsSeedingDefaults(true);
+    try {
+      const { inserted } = await seedDefaultFormulas(companyId, selectedCategory);
+      await queryClient.invalidateQueries({ queryKey: ['formula-definitions', companyId, selectedCategory] });
+      toast.success(inserted > 0 ? `تم إضافة ${inserted} معادلة افتراضية` : 'المعادلات الافتراضية موجودة بالفعل');
+    } catch (e: any) {
+      console.error('Seed default formulas error:', e);
+      toast.error('تعذر إضافة المعادلات الافتراضية');
+    } finally {
+      setIsSeedingDefaults(false);
+    }
+  }, [companyId, queryClient, selectedCategory]);
 
-  const categoryConfig = FORMULA_CATEGORIES.find(c => c.key === selectedCategory);
+  // If we have formulas but nothing selected yet, auto-select the first one.
+  useEffect(() => {
+    if (!editingFormula && !isCreatingNew && formulas.length > 0) {
+      setEditingFormula(formulas[0]);
+      setFormulaNodes(formulas[0].formula_expression || []);
+      setFormulaName(formulas[0].formula_name);
+      setFormulaKey(formulas[0].formula_key);
+      setFormulaDescription(formulas[0].description || '');
+      setTestResult(null);
+    }
+  }, [editingFormula, formulas, isCreatingNew]);
 
   return (
     <Card>
@@ -274,10 +297,22 @@ export function FormulaBuilderTab() {
                       </div>
                     ) : formulas.length === 0 && !isCreatingNew ? (
                       <div className="text-center py-8 text-muted-foreground">
-                        <p className="mb-4">لا توجد معادلات مخصصة</p>
-                        <Button variant="outline" size="sm" onClick={handleLoadDefault}>
-                          تحميل الإعدادات الافتراضية
-                        </Button>
+                        <p className="mb-2">لا توجد معادلات محفوظة لهذه الفئة</p>
+                        <p className="text-xs mb-4">يمكنك إضافة المعادلات الافتراضية (مثل: إجمالي الربح / صافي الربح) ثم تعديلها.</p>
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleSeedDefaults}
+                            disabled={isSeedingDefaults}
+                          >
+                            {isSeedingDefaults ? 'جارٍ الإضافة...' : 'إضافة المعادلات الافتراضية'}
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={handleNewFormula}>
+                            <Plus className="w-4 h-4 ml-1" />
+                            معادلة جديدة
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <div className="space-y-2">

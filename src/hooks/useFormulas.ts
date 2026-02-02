@@ -5,9 +5,10 @@ import * as formulaService from '@/services/formulas';
 import { toast } from 'sonner';
 
 export function useFormulaVariables() {
+  const { companyId } = useCompany();
   return useQuery({
-    queryKey: ['formula-variables'],
-    queryFn: formulaService.fetchFormulaVariables,
+    queryKey: ['formula-variables', companyId],
+    queryFn: () => formulaService.fetchFormulaVariables(companyId),
   });
 }
 
@@ -16,7 +17,10 @@ export function useFormulaDefinitions(category?: string) {
   
   return useQuery({
     queryKey: ['formula-definitions', companyId, category],
-    queryFn: () => formulaService.fetchFormulaDefinitions(category),
+    queryFn: () => {
+      if (!companyId) throw new Error('No company selected');
+      return formulaService.fetchFormulaDefinitions(companyId, category);
+    },
     enabled: !!companyId,
   });
 }

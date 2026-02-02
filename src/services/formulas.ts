@@ -66,21 +66,33 @@ export const FUNCTIONS = [
 ];
 
 // Fetch all formula variables
-export async function fetchFormulaVariables(): Promise<FormulaVariable[]> {
-  const { data, error } = await supabase
+export async function fetchFormulaVariables(companyId?: string | null): Promise<FormulaVariable[]> {
+  let query = supabase
     .from('formula_variables')
     .select('*')
     .order('variable_category', { ascending: true });
+
+  // Prefer server-side isolation, but also filter here to avoid cross-company leakage
+  if (companyId) {
+    // system variables OR company variables
+    query = query.or(`is_system.eq.true,company_id.eq.${companyId}`);
+  } else {
+    // only system variables when no company is selected
+    query = query.eq('is_system', true);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return data || [];
 }
 
 // Fetch formula definitions by category
-export async function fetchFormulaDefinitions(category?: string): Promise<FormulaDefinition[]> {
+export async function fetchFormulaDefinitions(companyId: string, category?: string): Promise<FormulaDefinition[]> {
   let query = supabase
     .from('formula_definitions')
     .select('*')
+    .eq('company_id', companyId)
     .order('display_order', { ascending: true });
 
   if (category) {
@@ -95,6 +107,47 @@ export async function fetchFormulaDefinitions(category?: string): Promise<Formul
     ...item,
     formula_expression: (item.formula_expression as unknown) as FormulaNode[],
   }));
+}
+
+export async function seedDefaultFormulas(
+  companyId: string,
+  category: string
+): Promise<{ inserted: number }>{
+  const defaults = DEFAULT_FORMULAS[category] || [];
+  if (defaults.length === 0) return { inserted: 0 };
+
+  const { data: existing, error: existingError } = await supabase
+    .from('formula_definitions')
+    .select('formula_key, display_order')
+    .eq('company_id', companyId)
+    .eq('formula_category', category);
+
+  if (existingError) throw existingError;
+
+  const existingKeys = new Set((existing || []).map((r: any) => r.formula_key));
+  const maxOrder = (existing || []).reduce((max: number, r: any) => Math.max(max, Number(r.display_order) || 0), -1);
+  const startOrder = maxOrder >= 0 ? maxOrder + 1 : (existing?.length || 0);
+
+  const missing = defaults.filter(d => !existingKeys.has(d.key));
+  if (missing.length === 0) return { inserted: 0 };
+
+  const rows = missing.map((d, idx) => ({
+    company_id: companyId,
+    formula_category: category,
+    formula_key: d.key,
+    formula_name: d.name,
+    formula_expression: JSON.parse(JSON.stringify(d.expression)),
+    description: null,
+    is_active: true,
+    display_order: startOrder + idx,
+  }));
+
+  const { error: insertError } = await supabase
+    .from('formula_definitions')
+    .insert(rows);
+
+  if (insertError) throw insertError;
+  return { inserted: rows.length };
 }
 
 // Save a formula definition
