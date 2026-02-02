@@ -1,6 +1,22 @@
 // Formula Builder Service - خدمة بناء المعادلات
 import { supabase } from '@/integrations/supabase/client';
+import { create, all } from 'mathjs';
 
+// Create a restricted math.js instance for safe expression evaluation
+// This prevents access to dangerous functions and global scope
+const math = create(all);
+
+// Restrict to only safe math operations - no function creation, import, etc.
+const limitedEvaluate = math.evaluate;
+math.import({
+  'import': function () { throw new Error('Function import is disabled'); },
+  'createUnit': function () { throw new Error('Function createUnit is disabled'); },
+  'evaluate': function () { throw new Error('Function evaluate is disabled'); },
+  'parse': function () { throw new Error('Function parse is disabled'); },
+  'simplify': function () { throw new Error('Function simplify is disabled'); },
+  'derivative': function () { throw new Error('Function derivative is disabled'); },
+  'config': function () { throw new Error('Function config is disabled'); },
+}, { override: true });
 // Types
 export interface FormulaNode {
   id: string;
@@ -244,11 +260,72 @@ export async function deleteCustomVariable(id: string): Promise<void> {
   if (error) throw error;
 }
 
+// Allowed operators and functions for formula validation
+const ALLOWED_OPERATORS = new Set(['+', '-', '*', '/', '%']);
+const ALLOWED_NODE_TYPES = new Set(['variable', 'operator', 'number', 'parenthesis', 'function']);
+const ALLOWED_FUNCTIONS_SET = new Set(['SUM', 'AVG', 'MAX', 'MIN', 'ABS', 'ROUND', 'IF', 'sum', 'avg', 'max', 'min', 'abs', 'round']);
+
+// Validate a formula node to prevent injection
+function validateFormulaNode(node: FormulaNode): boolean {
+  // Check node type is allowed
+  if (!ALLOWED_NODE_TYPES.has(node.type)) {
+    console.warn('Invalid node type:', node.type);
+    return false;
+  }
+
+  // Validate based on type
+  switch (node.type) {
+    case 'operator':
+      if (!ALLOWED_OPERATORS.has(node.value)) {
+        console.warn('Invalid operator:', node.value);
+        return false;
+      }
+      break;
+    case 'number':
+      // Must be a valid number
+      if (!/^-?\d+(\.\d+)?$/.test(node.value)) {
+        console.warn('Invalid number format:', node.value);
+        return false;
+      }
+      break;
+    case 'parenthesis':
+      if (node.value !== '(' && node.value !== ')') {
+        console.warn('Invalid parenthesis:', node.value);
+        return false;
+      }
+      break;
+    case 'function':
+      if (!ALLOWED_FUNCTIONS_SET.has(node.value)) {
+        console.warn('Invalid function:', node.value);
+        return false;
+      }
+      break;
+    case 'variable':
+      // Variable names should only contain alphanumeric and underscore
+      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(node.value)) {
+        console.warn('Invalid variable name:', node.value);
+        return false;
+      }
+      break;
+  }
+
+  return true;
+}
+
 // Evaluate a formula expression with given variable values
+// Uses mathjs for safe evaluation - no access to global scope or dangerous functions
 export function evaluateFormula(expression: FormulaNode[], variableValues: Record<string, number>): number {
   if (!expression || expression.length === 0) return 0;
 
-  // Build the expression string
+  // Validate all nodes before evaluation
+  for (const node of expression) {
+    if (!validateFormulaNode(node)) {
+      console.error('Formula validation failed - potentially malicious input detected');
+      return 0;
+    }
+  }
+
+  // Build the expression string from validated nodes
   let exprString = '';
   for (const node of expression) {
     switch (node.type) {
@@ -266,21 +343,29 @@ export function evaluateFormula(expression: FormulaNode[], variableValues: Recor
         exprString += node.value;
         break;
       case 'function':
-        // Handle functions specially
-        exprString += node.value;
+        // Map function names to mathjs equivalents
+        const funcMap: Record<string, string> = {
+          'SUM': 'sum',
+          'AVG': 'mean',
+          'MAX': 'max',
+          'MIN': 'min',
+          'ABS': 'abs',
+          'ROUND': 'round',
+        };
+        exprString += funcMap[node.value] || node.value.toLowerCase();
         break;
       default:
         exprString += node.value;
     }
   }
 
-  // Safely evaluate the expression
+  // Safely evaluate using mathjs (sandboxed, no global scope access)
   try {
     // Replace percentage operator with division by 100
     exprString = exprString.replace(/(\d+(?:\.\d+)?)\s*%/g, '($1 / 100)');
     
-    // Use Function constructor for safe evaluation (no access to global scope)
-    const result = new Function('return ' + exprString)();
+    // Use mathjs for safe evaluation - it cannot access window, localStorage, or execute arbitrary code
+    const result = limitedEvaluate(exprString);
     
     if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
       return result;
