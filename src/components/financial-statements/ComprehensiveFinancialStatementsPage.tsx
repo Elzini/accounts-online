@@ -31,7 +31,10 @@ import {
   CostOfRevenueNoteView, 
   GeneralExpensesNoteView,
   EmployeeBenefitsNoteView,
-  CapitalNoteView 
+  CapitalNoteView,
+  AccountingPoliciesNoteView,
+  FixedAssetsNoteView,
+  CreditorsNoteView,
 } from './notes/OtherNotesViews';
 
 export function ComprehensiveFinancialStatementsPage() {
@@ -416,6 +419,17 @@ export function ComprehensiveFinancialStatementsPage() {
                 <CardContent>
                   <ScrollArea className="h-[700px]">
                     <div className="space-y-8">
+                      {/* إيضاح السياسات المحاسبية */}
+                      {data.notes.accountingPolicies && (
+                        <>
+                          <AccountingPoliciesNoteView 
+                            data={data.notes.accountingPolicies} 
+                            noteNumber={3}
+                          />
+                          <Separator />
+                        </>
+                      )}
+
                       {/* إيضاح النقد والبنوك */}
                       {data.notes.cashAndBank && (
                         <>
@@ -423,6 +437,30 @@ export function ComprehensiveFinancialStatementsPage() {
                             data={data.notes.cashAndBank} 
                             reportDate={data.reportDate || '31 ديسمبر 2025م'}
                             noteNumber={5}
+                          />
+                          <Separator />
+                        </>
+                      )}
+
+                      {/* إيضاح ممتلكات ومعدات */}
+                      {data.notes.fixedAssets && (
+                        <>
+                          <FixedAssetsNoteView 
+                            data={data.notes.fixedAssets} 
+                            reportDate={data.reportDate || '31 ديسمبر 2025م'}
+                            noteNumber={7}
+                          />
+                          <Separator />
+                        </>
+                      )}
+
+                      {/* إيضاح الدائنون */}
+                      {data.notes.creditors && (
+                        <>
+                          <CreditorsNoteView 
+                            data={data.notes.creditors} 
+                            reportDate={data.reportDate || '31 ديسمبر 2025م'}
+                            noteNumber={8}
                           />
                           <Separator />
                         </>

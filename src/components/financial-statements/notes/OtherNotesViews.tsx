@@ -8,8 +8,189 @@ import {
   EmployeeBenefitsNote,
   CapitalNote,
   FixedAssetsNote,
+  AccountingPoliciesNote,
+  CreditorsNote,
 } from '../types';
 import { formatNumber } from '../utils/numberFormatting';
+
+// إيضاح السياسات المحاسبية
+interface AccountingPoliciesNoteViewProps {
+  data: AccountingPoliciesNote;
+  noteNumber?: number;
+}
+
+export function AccountingPoliciesNoteView({ data, noteNumber = 3 }: AccountingPoliciesNoteViewProps) {
+  return (
+    <div className="space-y-6" dir="rtl">
+      <h3 className="text-lg font-bold">{noteNumber}- السياسات المحاسبية الهامة</h3>
+      <div className="space-y-4">
+        {data.policies.map((policy, idx) => (
+          <div key={idx} className="space-y-1">
+            <h4 className="font-semibold text-sm">{noteNumber}-{idx + 1} {policy.title}</h4>
+            <p className="text-sm text-muted-foreground whitespace-pre-line">{policy.content}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// إيضاح ممتلكات ومعدات (الأصول الثابتة)
+interface FixedAssetsNoteViewProps {
+  data: FixedAssetsNote;
+  reportDate: string;
+  noteNumber?: number;
+}
+
+export function FixedAssetsNoteView({ data, reportDate, noteNumber = 7 }: FixedAssetsNoteViewProps) {
+  const currentYear = reportDate ? reportDate.match(/\d{4}/)?.[0] + 'م' : '2025م';
+  
+  return (
+    <div className="space-y-4" dir="rtl">
+      <h3 className="text-lg font-bold">{noteNumber}- العقارات والآلات والمعدات</h3>
+      <div className="overflow-x-auto">
+        <Table className="border text-xs">
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="text-right font-bold">البيان</TableHead>
+              {data.categories.map((cat, idx) => (
+                <TableHead key={idx} className="text-center font-bold whitespace-nowrap">{cat}</TableHead>
+              ))}
+              <TableHead className="text-center font-bold">المجموع</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {/* التكلفة */}
+            <TableRow className="bg-muted/30">
+              <TableCell colSpan={data.categories.length + 2} className="font-bold">التكلفة</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>الرصيد في بداية الفترة</TableCell>
+              {data.costOpening.map((val, idx) => (
+                <TableCell key={idx} className="text-center font-mono">{formatNumber(val)}</TableCell>
+              ))}
+              <TableCell className="text-center font-mono font-bold">{formatNumber(data.totals.costOpening)}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>الإضافات خلال الفترة</TableCell>
+              {data.costAdditions.map((val, idx) => (
+                <TableCell key={idx} className="text-center font-mono">{formatNumber(val)}</TableCell>
+              ))}
+              <TableCell className="text-center font-mono font-bold">{formatNumber(data.totals.costAdditions)}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>الاستبعادات خلال الفترة</TableCell>
+              {data.costDisposals.map((val, idx) => (
+                <TableCell key={idx} className="text-center font-mono text-destructive">
+                  {val > 0 ? `(${formatNumber(val)})` : '-'}
+                </TableCell>
+              ))}
+              <TableCell className="text-center font-mono font-bold text-destructive">
+                {data.totals.costDisposals > 0 ? `(${formatNumber(data.totals.costDisposals)})` : '-'}
+              </TableCell>
+            </TableRow>
+            <TableRow className="border-t font-semibold">
+              <TableCell>الرصيد في نهاية الفترة</TableCell>
+              {data.costClosing.map((val, idx) => (
+                <TableCell key={idx} className="text-center font-mono">{formatNumber(val)}</TableCell>
+              ))}
+              <TableCell className="text-center font-mono font-bold">{formatNumber(data.totals.costClosing)}</TableCell>
+            </TableRow>
+            
+            {/* الإهلاك المتراكم */}
+            <TableRow className="bg-muted/30">
+              <TableCell colSpan={data.categories.length + 2} className="font-bold">الإهلاك المتراكم</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>الرصيد في بداية الفترة</TableCell>
+              {data.depreciationOpening.map((val, idx) => (
+                <TableCell key={idx} className="text-center font-mono">{formatNumber(val)}</TableCell>
+              ))}
+              <TableCell className="text-center font-mono font-bold">{formatNumber(data.totals.depreciationOpening)}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>الإهلاك للفترة</TableCell>
+              {data.depreciationAdditions.map((val, idx) => (
+                <TableCell key={idx} className="text-center font-mono">{formatNumber(val)}</TableCell>
+              ))}
+              <TableCell className="text-center font-mono font-bold">{formatNumber(data.totals.depreciationAdditions)}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>استبعادات الإهلاك</TableCell>
+              {data.depreciationDisposals.map((val, idx) => (
+                <TableCell key={idx} className="text-center font-mono text-destructive">
+                  {val > 0 ? `(${formatNumber(val)})` : '-'}
+                </TableCell>
+              ))}
+              <TableCell className="text-center font-mono font-bold text-destructive">
+                {data.totals.depreciationDisposals > 0 ? `(${formatNumber(data.totals.depreciationDisposals)})` : '-'}
+              </TableCell>
+            </TableRow>
+            <TableRow className="border-t font-semibold">
+              <TableCell>الرصيد في نهاية الفترة</TableCell>
+              {data.depreciationClosing.map((val, idx) => (
+                <TableCell key={idx} className="text-center font-mono">{formatNumber(val)}</TableCell>
+              ))}
+              <TableCell className="text-center font-mono font-bold">{formatNumber(data.totals.depreciationClosing)}</TableCell>
+            </TableRow>
+            
+            {/* صافي القيمة الدفترية */}
+            <TableRow className="bg-primary/10 font-bold border-t-2">
+              <TableCell>صافي القيمة الدفترية في {currentYear}</TableCell>
+              {data.netBookValueClosing.map((val, idx) => (
+                <TableCell key={idx} className="text-center font-mono">{formatNumber(val)}</TableCell>
+              ))}
+              <TableCell className="text-center font-mono">{formatNumber(data.totals.netBookValueClosing)}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+// إيضاح الدائنون
+interface CreditorsNoteViewProps {
+  data: CreditorsNote;
+  reportDate: string;
+  previousReportDate?: string;
+  noteNumber?: number;
+}
+
+export function CreditorsNoteView({ data, reportDate, previousReportDate, noteNumber = 8 }: CreditorsNoteViewProps) {
+  const currentYear = reportDate ? reportDate.match(/\d{4}/)?.[0] + 'م' : '2025م';
+  const previousYear = previousReportDate ? previousReportDate.match(/\d{4}/)?.[0] + 'م' : '2024م';
+  const hasPreviousData = data.previousTotal !== undefined && data.previousTotal > 0;
+
+  return (
+    <div className="space-y-4" dir="rtl">
+      <h3 className="text-lg font-bold">{noteNumber}- الدائنون</h3>
+      <Table className="border text-sm">
+        <TableHeader>
+          <TableRow className="bg-muted/50">
+            <TableHead className="text-right font-bold w-2/3">البيان</TableHead>
+            <TableHead className="text-center font-bold">{currentYear}</TableHead>
+            {hasPreviousData && <TableHead className="text-center font-bold">{previousYear}</TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.items.map((item, idx) => (
+            <TableRow key={idx}>
+              <TableCell>{item.name}</TableCell>
+              <TableCell className="text-center font-mono">{formatNumber(item.amount)}</TableCell>
+              {hasPreviousData && <TableCell className="text-center font-mono">{formatNumber(item.previousAmount)}</TableCell>}
+            </TableRow>
+          ))}
+          <TableRow className="font-bold bg-primary/10 border-t">
+            <TableCell>المجموع</TableCell>
+            <TableCell className="text-center font-mono">{formatNumber(data.total)}</TableCell>
+            {hasPreviousData && <TableCell className="text-center font-mono">{formatNumber(data.previousTotal)}</TableCell>}
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
 
 // إيضاح النقد وأرصدة لدى البنوك
 interface CashAndBankNoteViewProps {

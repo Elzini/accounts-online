@@ -616,6 +616,94 @@ function buildFinancialStatements(accounts: any, result: ComprehensiveFinancialD
   result.incomeStatement.zakat = totalZakatProvision;
   result.incomeStatement.netProfit = profitBeforeZakat - totalZakatProvision;
   result.incomeStatement.totalComprehensiveIncome = result.incomeStatement.netProfit;
+  
+  // ===== إيضاح السياسات المحاسبية (3) =====
+  result.notes.accountingPolicies = {
+    policies: [
+      {
+        title: 'أساس الإعداد',
+        content: 'تم إعداد هذه القوائم المالية وفقاً للمعايير الدولية للتقرير المالي (IFRS) المعتمدة في المملكة العربية السعودية والمتطلبات الأخرى الصادرة عن الهيئة السعودية للمحاسبين القانونيين.'
+      },
+      {
+        title: 'أساس القياس',
+        content: 'تم إعداد القوائم المالية على أساس التكلفة التاريخية باستثناء ما تم الإفصاح عنه بخلاف ذلك.'
+      },
+      {
+        title: 'العملة الوظيفية وعملة العرض',
+        content: 'تعرض هذه القوائم المالية بالريال السعودي وهو العملة الوظيفية للشركة.'
+      },
+      {
+        title: 'الإيرادات',
+        content: 'يتم الاعتراف بالإيرادات عند انتقال السيطرة على البضاعة أو الخدمات إلى العميل بمبلغ يعكس العوض الذي تتوقع الشركة أن يحق لها مقابل تلك البضائع أو الخدمات.'
+      },
+      {
+        title: 'العقارات والآلات والمعدات',
+        content: 'تثبت العقارات والآلات والمعدات بالتكلفة ناقصاً الإهلاك المتراكم وخسائر الانخفاض في القيمة. يحسب الإهلاك باستخدام طريقة القسط الثابت على مدى العمر الإنتاجي المقدر للأصول.'
+      },
+      {
+        title: 'الزكاة',
+        content: 'تخضع الشركة لنظام الزكاة المعمول به في المملكة العربية السعودية. يتم احتساب مخصص الزكاة على أساس الوعاء الزكوي وفقاً للقواعد واللوائح الصادرة عن الهيئة العامة للزكاة والدخل.'
+      }
+    ]
+  };
+  
+  // ===== إيضاح ممتلكات ومعدات (7) - الأصول الثابتة =====
+  if (accounts.fixedAssets.length > 0) {
+    const categories = accounts.fixedAssets.map((acc: any) => acc.name);
+    const amounts = accounts.fixedAssets.map((acc: any) => acc.amount);
+    
+    result.notes.fixedAssets = {
+      categories,
+      costOpening: amounts.map(() => 0),
+      costAdditions: amounts,
+      costDisposals: amounts.map(() => 0),
+      costClosing: amounts,
+      depreciationOpening: amounts.map(() => 0),
+      depreciationAdditions: amounts.map(() => 0),
+      depreciationDisposals: amounts.map(() => 0),
+      depreciationClosing: amounts.map(() => 0),
+      netBookValueClosing: amounts,
+      netBookValuePreviousClosing: amounts.map(() => 0),
+      totals: {
+        costOpening: 0,
+        costAdditions: totalNonCurrentAssets,
+        costDisposals: 0,
+        costClosing: totalNonCurrentAssets,
+        depreciationOpening: 0,
+        depreciationAdditions: 0,
+        depreciationDisposals: 0,
+        depreciationClosing: 0,
+        netBookValueClosing: totalNonCurrentAssets,
+        netBookValuePreviousClosing: 0,
+      }
+    };
+  }
+  
+  // ===== إيضاح الدائنون (8) =====
+  if (accounts.currentLiabilities.length > 0) {
+    result.notes.creditors = {
+      items: accounts.currentLiabilities.map((acc: any) => ({
+        name: acc.name,
+        amount: acc.amount,
+      })),
+      total: totalCurrentLiabilities,
+    };
+  }
+  
+  // ===== إيضاح النقد والبنوك (5) =====
+  const cashAndBankAccounts = accounts.currentAssets.filter((acc: any) => {
+    const name = acc.name.toLowerCase();
+    return name.includes('بنك') || name.includes('نقد') || name.includes('مصرف') || name.includes('صندوق');
+  });
+  if (cashAndBankAccounts.length > 0) {
+    result.notes.cashAndBank = {
+      items: cashAndBankAccounts.map((acc: any) => ({
+        name: acc.name,
+        amount: acc.amount,
+      })),
+      total: cashAndBankAccounts.reduce((sum: number, acc: any) => sum + acc.amount, 0),
+    };
+  }
 }
 
 function findSheet(workbook: XLSX.WorkBook, keywords: string[]): any[][] | null {
