@@ -68,6 +68,24 @@ export function ComprehensiveFinancialStatementsPage() {
           console.log('📊 Medad Excel Sheets:', workbook.SheetNames);
           
           const parsedData = parseMedadExcel(workbook);
+
+           // إذا لم نستخرج أي أرقام فعلية، لا نعرض تقرير فارغ (0) بشكل مضلل
+           const isEffectivelyEmpty =
+             (parsedData.balanceSheet?.totalAssets || 0) === 0 &&
+             (parsedData.balanceSheet?.totalLiabilitiesAndEquity || 0) === 0 &&
+             (parsedData.incomeStatement?.revenue || 0) === 0 &&
+             (parsedData.incomeStatement?.costOfRevenue || 0) === 0 &&
+             (parsedData.incomeStatement?.generalAndAdminExpenses || 0) === 0;
+
+           if (isEffectivelyEmpty) {
+             console.warn('⚠️ Parsed data is empty – likely column/header mismatch in trial balance sheet');
+             setData(emptyFinancialData);
+             setFileName(null);
+             setDataSource('none');
+             setActiveTab('overview');
+             toast.error('تم رفع الملف لكن لم يتم التعرف على أعمدة ميزان المراجعة. جرّب إعادة تصدير الملف من مداد أو ارسل لقطة من أعلى الجدول (عناوين الأعمدة).');
+             return;
+           }
           
           // إضافة اسم الشركة من إعدادات النظام إذا لم يتم العثور عليه
           if (!parsedData.companyName && company?.name) {
