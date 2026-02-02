@@ -4521,14 +4521,18 @@ export type Database = {
         Returns: number
       }
       get_strict_company_id: { Args: never; Returns: string }
-      get_user_company_id: { Args: { _user_id: string }; Returns: string }
-      has_permission: {
-        Args: {
-          _permission: Database["public"]["Enums"]["user_permission"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      get_user_company_id:
+        | { Args: never; Returns: string }
+        | { Args: { _user_id: string }; Returns: string }
+      has_permission:
+        | { Args: { _permission: string }; Returns: boolean }
+        | {
+            Args: {
+              _permission: Database["public"]["Enums"]["user_permission"]
+              _user_id: string
+            }
+            Returns: boolean
+          }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       log_audit_event: {
