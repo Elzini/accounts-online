@@ -292,4 +292,38 @@
   .table-responsive table {
     @apply min-w-[600px] sm:min-w-full;
   }
+
+  /* PWA Standalone mode optimizations */
+  @media (display-mode: standalone) {
+    body {
+      overscroll-behavior-y: contain;
+    }
+    
+    /* Prevent pull-to-refresh on the whole page */
+    html {
+      overscroll-behavior-y: contain;
+    }
+  }
+
+  /* iOS specific fixes */
+  @supports (-webkit-touch-callout: none) {
+    body {
+      /* Disable iOS rubber banding */
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    #root {
+      height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  /* Smooth transitions for theme changes */
+  .theme-transition {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
 }
