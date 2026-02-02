@@ -48,7 +48,7 @@ import { FinancingPage } from '@/components/financing/FinancingPage';
 import { BankingPage } from '@/components/banking/BankingPage';
 import { FiscalYearSelectionDialog } from '@/components/FiscalYearSelectionDialog';
 import { TrialBalanceAnalysisPage } from '@/components/reports/TrialBalanceAnalysisPage';
-import { FinancialStatementsPage } from '@/components/reports/FinancialStatementsPage';
+import { ComprehensiveFinancialStatementsPage } from '@/components/financial-statements';
 import { VATReturnReportPage } from '@/components/accounting/VATReturnReportPage';
 import { EmployeesPage } from '@/components/payroll/EmployeesPage';
 import { PayrollPage } from '@/components/payroll/PayrollPage';
@@ -148,7 +148,7 @@ const Index = () => {
       case 'zakat-reports': return <ZakatReportsPage />;
       case 'fiscal-years': return <FiscalYearsPage />;
       case 'trial-balance-analysis': return <TrialBalanceAnalysisPage />;
-      case 'financial-statements': return <FinancialStatementsPage />;
+      case 'financial-statements': return <ComprehensiveFinancialStatementsPage />;
       case 'vat-return-report': return <VATReturnReportPage />;
       case 'employees': return <EmployeesPage />;
       case 'payroll': return <PayrollPage />;
