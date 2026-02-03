@@ -183,34 +183,6 @@ export async function getSystemFinancialStatements(
   const { data: lines, error } = await query;
   if (error) throw error;
 
-  // === جلب بيانات الربح الفعلي من جدول المبيعات ===
-  let salesQuery = supabase
-    .from('sales')
-    .select('sale_price, profit, car:cars!inner(purchase_price)')
-    .eq('car.company_id', companyId);
-
-  if (startDate) {
-    salesQuery = salesQuery.gte('sale_date', startDate);
-  }
-  if (endDate) {
-    salesQuery = salesQuery.lte('sale_date', endDate);
-  }
-
-  const { data: salesData, error: salesError } = await salesQuery;
-  
-  // حساب الأرباح الفعلية من المبيعات
-  let actualSalesRevenue = 0;
-  let actualCostOfSales = 0;
-  let actualGrossProfit = 0;
-  
-  if (!salesError && salesData) {
-    salesData.forEach((sale: any) => {
-      actualSalesRevenue += Number(sale.sale_price) || 0;
-      actualCostOfSales += Number(sale.car?.purchase_price) || 0;
-      actualGrossProfit += Number(sale.profit) || 0;
-    });
-  }
-
   // تجميع الأرصدة لكل حساب من القيود
   const balances = new Map<string, { debit: number; credit: number }>();
   (lines || []).forEach((line: any) => {
@@ -276,31 +248,27 @@ export async function getSystemFinancialStatements(
   const totalNonCurrentLiabilities = nonCurrentLiabilities.reduce((sum, l) => sum + l.amount, 0);
   const totalLiabilities = totalCurrentLiabilities + totalNonCurrentLiabilities;
 
-  // ===== قائمة الدخل =====
-  // استخدم بيانات المبيعات الفعلية إذا كانت متوفرة (أكثر دقة)
-  // لأن القيود المحاسبية قد لا تعكس تكلفة المبيعات الفعلية بشكل صحيح
-  const useActualSalesData = actualSalesRevenue > 0;
-  
-  // الإيرادات من القيود أو من المبيعات
-  const totalRevenue = useActualSalesData ? actualSalesRevenue : revenueAccounts.reduce((sum, a) => sum + getBalance(a), 0);
+  // ===== قائمة الدخل - حساب من القيود المحاسبية =====
+  // الإيرادات من حسابات الإيرادات
+  const totalRevenue = revenueAccounts.reduce((sum, a) => sum + getBalance(a), 0);
   
   // تصنيف المصروفات من القيود
-  // تكلفة البضاعة المباعة (COGS) - تشمل حسابات المخزون والمشتريات
+  // تكلفة البضاعة المباعة (COGS) - تشمل حساب 5101 وما يبدأ بـ 51
   const cogsAccounts = expenseAccounts.filter(a => 
     a.code.startsWith('51') || a.name.includes('تكلفة') || a.name.includes('مشتريات') || a.name.includes('بضاعة')
   );
-  // المصروفات الإدارية والعمومية
+  // المصروفات الإدارية والعمومية - باقي المصروفات
   const adminAccounts = expenseAccounts.filter(a => 
     !a.code.startsWith('51') && !a.name.includes('تكلفة') && !a.name.includes('مشتريات') && !a.name.includes('بضاعة')
   );
 
-  // تكلفة المبيعات: استخدم البيانات الفعلية من جدول المبيعات إذا توفرت
-  const costOfRevenue = useActualSalesData ? actualCostOfSales : cogsAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
+  // تكلفة المبيعات من القيود (حساب 5101)
+  const costOfRevenue = cogsAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
   const generalAndAdminExpenses = adminAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
 
-  // حساب الأرباح الصحيح:
+  // حساب الأرباح من القيود المحاسبية:
   // الربح الإجمالي = الإيرادات - تكلفة البضاعة المباعة
-  const grossProfit = useActualSalesData ? actualGrossProfit : (totalRevenue - costOfRevenue);
+  const grossProfit = totalRevenue - costOfRevenue;
   // ربح العمليات = الربح الإجمالي - المصروفات الإدارية
   const operatingProfit = grossProfit - generalAndAdminExpenses;
   // الربح قبل الزكاة
