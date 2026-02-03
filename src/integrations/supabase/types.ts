@@ -5072,39 +5072,39 @@ export type Database = {
       }
       suppliers_safe: {
         Row: {
-          address: string | null
+          address_masked: string | null
           company_id: string | null
           created_at: string | null
           id: string | null
-          id_number: string | null
+          id_number_masked: string | null
           name: string | null
           notes: string | null
-          phone: string | null
-          registration_number: string | null
+          phone_masked: string | null
+          registration_number_masked: string | null
           updated_at: string | null
         }
         Insert: {
-          address?: never
+          address_masked?: never
           company_id?: string | null
           created_at?: string | null
           id?: string | null
-          id_number?: never
+          id_number_masked?: never
           name?: string | null
           notes?: string | null
-          phone?: never
-          registration_number?: never
+          phone_masked?: never
+          registration_number_masked?: never
           updated_at?: string | null
         }
         Update: {
-          address?: never
+          address_masked?: never
           company_id?: string | null
           created_at?: string | null
           id?: string | null
-          id_number?: never
+          id_number_masked?: never
           name?: string | null
           notes?: string | null
-          phone?: never
-          registration_number?: never
+          phone_masked?: never
+          registration_number_masked?: never
           updated_at?: string | null
         }
         Relationships: [
