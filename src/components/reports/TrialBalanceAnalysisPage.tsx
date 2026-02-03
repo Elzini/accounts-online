@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator, Upload, X, FileUp, Save, Trash2, FolderOpen, FileText, Eye, Sparkles, Image, Database, Loader2 } from 'lucide-react';
+import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator, Upload, X, FileUp, Save, Trash2, FolderOpen, FileText, Eye, Sparkles, Image, Database, Loader2, AlertTriangle, CheckCircle2, Wrench } from 'lucide-react';
 import { read, utils } from '@/lib/excelUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -15,6 +15,9 @@ import html2canvas from 'html2canvas';
 import { TrialBalancePreviewDialog } from './TrialBalancePreviewDialog';
 import { getSystemTrialBalance } from '@/services/systemFinancialData';
 import { TrialBalanceFormulaEditor } from './trial-balance/TrialBalanceFormulaEditor';
+import { useSales } from '@/hooks/useDatabase';
+import { useExpenses } from '@/hooks/useExpenses';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 interface TrialBalanceData {
   companyName: string;
@@ -83,6 +86,11 @@ export function TrialBalanceAnalysisPage() {
   const { companyId, company } = useCompany();
   const { user } = useAuth();
   const { selectedFiscalYear } = useFiscalYear();
+  const { filterByFiscalYear } = useFiscalYearFilter();
+  
+  // جلب بيانات المبيعات والمصاريف لمقارنة الأرباح
+  const { data: sales = [] } = useSales();
+  const { data: expenses = [] } = useExpenses();
   
   const [data, setData] = useState<TrialBalanceData>(emptyData);
   const [isExporting, setIsExporting] = useState(false);
@@ -99,6 +107,7 @@ export function TrialBalanceAnalysisPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const [isCalculatingFromSystem, setIsCalculatingFromSystem] = useState(false);
+  const [isFixingCogs, setIsFixingCogs] = useState(false);
   
   // حقول إدخال يدوية لحساب الزكاة بدقة
   const [manualCapital, setManualCapital] = useState<number | null>(null);
@@ -121,6 +130,62 @@ export function TrialBalanceAnalysisPage() {
   
   // وضع التعديل اليدوي للقوائم المالية
   const [editMode, setEditMode] = useState(false);
+  
+  // حساب صافي الربح من تقرير الأرباح (المبيعات - المصاريف)
+  const profitReportData = useMemo(() => {
+    const filteredSales = filterByFiscalYear(sales, 'sale_date');
+    const filteredExpenses = filterByFiscalYear(expenses, 'expense_date');
+    
+    // الربح الإجمالي من جدول المبيعات
+    const totalGrossProfit = filteredSales.reduce((sum, sale) => sum + Number(sale.profit || 0), 0);
+    
+    // مصاريف السيارات المباعة
+    const soldCarIds = filteredSales.map(s => s.car_id);
+    const carExpenses = filteredExpenses
+      .filter(exp => exp.car_id && soldCarIds.includes(exp.car_id))
+      .reduce((sum, exp) => sum + Number(exp.amount), 0);
+    
+    // المصاريف العامة (غير مرتبطة بسيارات)
+    const generalExpenses = filteredExpenses
+      .filter(exp => !exp.car_id)
+      .reduce((sum, exp) => sum + Number(exp.amount), 0);
+    
+    // صافي الربح حسب تقرير الأرباح
+    const netProfit = totalGrossProfit - carExpenses - generalExpenses;
+    
+    return {
+      totalGrossProfit,
+      carExpenses,
+      generalExpenses,
+      netProfit,
+    };
+  }, [sales, expenses, filterByFiscalYear]);
+  
+  // إصلاح القيود الناقصة
+  const handleFixMissingCogs = async () => {
+    if (!companyId) return;
+    
+    setIsFixingCogs(true);
+    try {
+      const { data: result, error } = await supabase.rpc('fix_missing_cogs_entries');
+      
+      if (error) throw error;
+      
+      const fixedCount = result?.filter((r: any) => r.fixed).length || 0;
+      if (fixedCount > 0) {
+        toast.success(`تم إصلاح ${fixedCount} قيد محاسبي`);
+        // إعادة حساب من النظام
+        handleCalculateFromSystem();
+      } else {
+        toast.info('جميع القيود صحيحة، لا يوجد ما يحتاج إصلاح');
+      }
+    } catch (error) {
+      console.error('Error fixing COGS:', error);
+      toast.error('فشل إصلاح القيود - تأكد من الصلاحيات');
+    } finally {
+      setIsFixingCogs(false);
+    }
+  };
 
   // حساب من بيانات النظام
   const handleCalculateFromSystem = async () => {
@@ -2350,6 +2415,128 @@ export function TrialBalanceAnalysisPage() {
                 </tr>
               </tbody>
             </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* قسم تسوية الأرباح - مقارنة بين القيود وتقرير الأرباح */}
+      <Card className="border-2 border-amber-200 dark:border-amber-800">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calculator className="w-5 h-5" />
+              تسوية صافي الربح (مقارنة المصادر)
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleFixMissingCogs}
+              disabled={isFixingCogs}
+              className="gap-2"
+            >
+              <Wrench className="w-4 h-4" />
+              {isFixingCogs ? 'جاري الإصلاح...' : 'إصلاح القيود الناقصة'}
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* الربح من القيود المحاسبية */}
+            <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <FileSpreadsheet className="w-4 h-4" />
+                صافي الربح من القيود المحاسبية
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>إجمالي الإيرادات (حساب 41xx)</span>
+                  <span className="font-medium">{formatCurrency(totalRevenue)}</span>
+                </div>
+                <div className="flex justify-between text-destructive">
+                  <span>(-) تكلفة المبيعات (حساب 5101)</span>
+                  <span>({formatCurrency(costOfSales)})</span>
+                </div>
+                <div className="flex justify-between border-t pt-1">
+                  <span>مجمل الربح</span>
+                  <span className="font-medium">{formatCurrency(grossProfit)}</span>
+                </div>
+                <div className="flex justify-between text-destructive">
+                  <span>(-) المصاريف التشغيلية</span>
+                  <span>({formatCurrency(totalExpenses)})</span>
+                </div>
+                <div className="flex justify-between border-t-2 pt-2 font-bold text-lg">
+                  <span>صافي الربح</span>
+                  <span className={netIncome >= 0 ? 'text-green-600' : 'text-destructive'}>
+                    {formatCurrency(netIncome)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* الربح من تقرير الأرباح */}
+            <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                صافي الربح من تقرير الأرباح (المبيعات)
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>إجمالي الربح (سعر البيع - سعر الشراء)</span>
+                  <span className="font-medium">{formatCurrency(profitReportData.totalGrossProfit)}</span>
+                </div>
+                <div className="flex justify-between text-orange-600">
+                  <span>(-) مصاريف السيارات المباعة</span>
+                  <span>({formatCurrency(profitReportData.carExpenses)})</span>
+                </div>
+                <div className="flex justify-between text-destructive">
+                  <span>(-) المصاريف العامة</span>
+                  <span>({formatCurrency(profitReportData.generalExpenses)})</span>
+                </div>
+                <div className="flex justify-between border-t-2 pt-2 font-bold text-lg">
+                  <span>صافي الربح</span>
+                  <span className={profitReportData.netProfit >= 0 ? 'text-green-600' : 'text-destructive'}>
+                    {formatCurrency(profitReportData.netProfit)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* نتيجة المقارنة */}
+          <div className="mt-4 p-4 rounded-lg border-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {Math.abs(netIncome - profitReportData.netProfit) < 1 ? (
+                  <>
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <span className="font-semibold text-green-600">الأرقام متطابقة ✓</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    <span className="font-semibold text-amber-600">يوجد فرق بين المصدرين</span>
+                  </>
+                )}
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">الفرق</p>
+                <p className={`text-xl font-bold ${Math.abs(netIncome - profitReportData.netProfit) < 1 ? 'text-green-600' : 'text-amber-600'}`}>
+                  {formatCurrency(netIncome - profitReportData.netProfit)}
+                </p>
+              </div>
+            </div>
+            
+            {Math.abs(netIncome - profitReportData.netProfit) >= 1 && (
+              <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200">
+                <p className="text-sm font-medium mb-2">الأسباب المحتملة للفرق:</p>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• قيود مبيعات ناقصة لتكلفة البضاعة المباعة (COGS) - اضغط "إصلاح القيود"</li>
+                  <li>• الرواتب المُسجلة في المحاسبة وغير مشمولة في تقرير الأرباح</li>
+                  <li>• المصاريف المقدمة (الإيجار) المُستحقة في الفترة</li>
+                  <li>• قيود تسوية يدوية أو إهلاك أصول</li>
+                </ul>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
