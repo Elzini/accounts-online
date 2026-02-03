@@ -14,6 +14,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { TrialBalancePreviewDialog } from './TrialBalancePreviewDialog';
 import { getSystemTrialBalance } from '@/services/systemFinancialData';
+import { TrialBalanceFormulaEditor } from './trial-balance/TrialBalanceFormulaEditor';
 
 interface TrialBalanceData {
   companyName: string;
@@ -2009,6 +2010,21 @@ export function TrialBalanceAnalysisPage() {
               </>
             )}
           </Button>
+          <TrialBalanceFormulaEditor 
+            currentValues={{
+              total_sales: totalRevenue,
+              gross_profit_from_sales: grossProfit,
+              car_expenses: 0,
+              payroll_total: 0,
+              rent_expenses: 0,
+              general_expenses: totalExpenses,
+              capital: totalEquity,
+              fixed_assets_net: totalFixedAssets,
+              net_profit: netIncome,
+              zakat_base: zakatBase,
+              zakat_provision: zakatDue,
+            }}
+          />
           <Button onClick={() => setShowPreview(true)} variant="outline" className="gap-2">
             <Eye className="w-4 h-4" />
             معاينة
