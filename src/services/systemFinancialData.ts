@@ -268,12 +268,6 @@ export async function getSystemFinancialStatements(
   
   // نسبة الزكاة 2.5%
   const zakatRate = 0.025;
-  const zakat = Math.max(0, profitBeforeZakat * zakatRate);
-  const netProfit = profitBeforeZakat - zakat;
-
-  // حساب صافي حقوق الملكية
-  const totalEquityFromAccounts = equity.reduce((sum, e) => sum + e.amount, 0);
-  const totalEquity = totalEquityFromAccounts + netProfit;
 
   // ===== بناء الإيضاحات =====
   // إيضاح النقد والبنوك
@@ -305,36 +299,62 @@ export async function getSystemFinancialStatements(
 
   // إيضاح رأس المال
   const capitalAccount = equityAccounts.find(a => a.code.startsWith('31') || a.name.includes('رأس المال'));
+  const capitalValue = capitalAccount ? getBalance(capitalAccount) : 0;
   const capitalNote = capitalAccount ? {
     description: 'رأس مال الشركة',
-    partners: [{ name: 'رأس المال', sharesCount: 1, shareValue: getBalance(capitalAccount), totalValue: getBalance(capitalAccount) }],
+    partners: [{ name: 'رأس المال', sharesCount: 1, shareValue: capitalValue, totalValue: capitalValue }],
     totalShares: 1,
-    totalValue: getBalance(capitalAccount),
+    totalValue: capitalValue,
   } : undefined;
 
-  // إيضاح الزكاة
+  // ===== حساب الزكاة - طريقة صافي الأصول (متوافق مع تحليل ميزان المراجعة) =====
+  // البحث عن حسابات الإيجار المدفوع مقدماً
+  const prepaidRentAccounts = assetAccounts.filter(a => 
+    a.name.includes('إيجار مدفوع') || a.name.includes('ايجار مدفوع') || 
+    a.name.includes('إيجار مقدم') || a.name.includes('ايجار مقدم')
+  );
+  const prepaidRent = prepaidRentAccounts.reduce((sum, a) => sum + getBalance(a), 0);
+  const prepaidRentLongTerm = prepaidRent * (11/12); // الجزء طويل الأجل (11 شهر من 12)
+
+  // حساب حقوق الملكية من الحسابات
+  const totalEquityFromAccounts = equity.reduce((sum, e) => sum + e.amount, 0);
+
+  // الوعاء الزكوي = رأس المال + صافي الربح (قبل الزكاة) - الأصول الثابتة - الإيجار المدفوع مقدماً طويل الأجل
+  const zakatBase = totalEquityFromAccounts + profitBeforeZakat - totalNonCurrentAssets - prepaidRentLongTerm;
+  
+  // الزكاة المستحقة = الوعاء الزكوي × 2.5%
+  const zakat = zakatBase > 0 ? zakatBase * zakatRate : 0;
+  const netProfit = profitBeforeZakat - zakat;
+
+  // حساب صافي حقوق الملكية
+  const totalEquity = totalEquityFromAccounts + netProfit;
+
+  // إيضاح الزكاة - طريقة صافي الأصول
+  // الوعاء = حقوق الملكية + صافي الربح - الأصول الثابتة - الإيجار المدفوع مقدماً طويل الأجل
+  const totalDeductions = totalNonCurrentAssets + prepaidRentLongTerm;
   const zakatNote = {
     profitBeforeZakat,
     adjustmentsOnNetIncome: 0,
     adjustedNetProfit: profitBeforeZakat,
-    zakatOnAdjustedProfit: zakat,
-    capital: capitalAccount ? getBalance(capitalAccount) : 0,
+    zakatOnAdjustedProfit: profitBeforeZakat * zakatRate,
+    capital: capitalValue,
     partnersCurrentAccount: 0,
     statutoryReserve: 0,
     employeeBenefitsLiabilities: 0,
-    zakatBaseSubtotal: totalEquity,
+    zakatBaseSubtotal: totalEquityFromAccounts + profitBeforeZakat, // رأس المال + صافي الربح
     fixedAssetsNet: totalNonCurrentAssets,
     intangibleAssetsNet: 0,
+    prepaidRentLongTerm, // الإيجار المدفوع مقدماً طويل الأجل (11/12)
     other: 0,
-    totalDeductions: totalNonCurrentAssets,
-    zakatBase: Math.max(0, totalEquity - totalNonCurrentAssets),
-    zakatOnBase: Math.max(0, totalEquity - totalNonCurrentAssets) * zakatRate,
+    totalDeductions, // الأصول الثابتة + الإيجار المدفوع مقدماً
+    zakatBase: Math.max(0, zakatBase), // الوعاء الزكوي الفعلي
+    zakatOnBase: zakat,
     totalZakatProvision: zakat,
     openingBalance: 0,
     provisionForYear: zakat,
     paidDuringYear: 0,
     closingBalance: zakat,
-    zakatStatus: 'تم احتساب مخصص الزكاة',
+    zakatStatus: 'تم احتساب مخصص الزكاة بطريقة صافي الأصول',
   };
 
   // ===== قائمة التدفقات النقدية =====
