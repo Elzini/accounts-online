@@ -819,6 +819,13 @@ export type Database = {
             referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cars_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       coa_templates: {
@@ -2912,6 +2919,13 @@ export type Database = {
             referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       journal_entries: {
@@ -3837,6 +3851,13 @@ export type Database = {
             referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "project_costs_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       projects: {
@@ -4041,6 +4062,13 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_batches_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -5042,6 +5070,53 @@ export type Database = {
         }
         Relationships: []
       }
+      suppliers_safe: {
+        Row: {
+          address: string | null
+          company_id: string | null
+          created_at: string | null
+          id: string | null
+          id_number: string | null
+          name: string | null
+          notes: string | null
+          phone: string | null
+          registration_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: never
+          company_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          id_number?: never
+          name?: string | null
+          notes?: string | null
+          phone?: never
+          registration_number?: never
+          updated_at?: string | null
+        }
+        Update: {
+          address?: never
+          company_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          id_number?: never
+          name?: string | null
+          notes?: string | null
+          phone?: never
+          registration_number?: never
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       apply_default_settings_to_company: {
@@ -5138,6 +5213,20 @@ export type Database = {
             }
             Returns: boolean
           }
+      insert_audit_log: {
+        Args: {
+          _action: string
+          _company_id: string
+          _entity_id: string
+          _entity_type: string
+          _ip_address?: string
+          _new_data?: Json
+          _old_data?: Json
+          _user_agent?: string
+          _user_id: string
+        }
+        Returns: string
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       log_audit_event: {
