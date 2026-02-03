@@ -39,6 +39,7 @@ import {
   FixedAssetsNoteView,
   CreditorsNoteView,
 } from './notes/OtherNotesViews';
+import { FinancialStatementsFormulaEditor } from './FinancialStatementsFormulaEditor';
 
 export function ComprehensiveFinancialStatementsPage() {
   const { company, companyId } = useCompany();
@@ -320,6 +321,24 @@ export function ComprehensiveFinancialStatementsPage() {
                   <CardDescription>{data.companyType}</CardDescription>
                 </div>
                 <div className="flex gap-2">
+                  <FinancialStatementsFormulaEditor
+                    currentValues={{
+                      total_sales: data.incomeStatement.revenue,
+                      gross_profit_from_sales: data.incomeStatement.grossProfit,
+                      general_expenses: data.incomeStatement.generalAndAdminExpenses,
+                      capital: data.balanceSheet.totalEquity,
+                      fixed_assets_net: data.balanceSheet.totalNonCurrentAssets,
+                      net_profit: data.incomeStatement.netProfit,
+                      zakat_base: data.notes.zakat?.zakatBase || 0,
+                      zakat_provision: data.notes.zakat?.totalZakatProvision || data.incomeStatement.zakat,
+                      cash_and_banks: data.balanceSheet.totalCurrentAssets,
+                      car_inventory: data.balanceSheet.totalCurrentAssets,
+                      accounts_receivable: data.balanceSheet.totalCurrentAssets,
+                      accounts_payable: data.balanceSheet.totalCurrentLiabilities,
+                      vat_payable: data.balanceSheet.totalCurrentLiabilities,
+                      retained_earnings: data.balanceSheet.totalEquity,
+                    }}
+                  />
                   <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                     <Upload className="w-4 h-4 mr-2" />
                     ملف جديد
