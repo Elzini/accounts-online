@@ -1,6 +1,6 @@
 // صفحة القوائم المالية الشاملة - مطابق لتصدير مداد
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,7 +11,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { 
   FileSpreadsheet, Download, Upload, Printer, FileText,
   Building2, Calculator, TrendingUp, Scale, Wallet, BarChart3,
-  Loader2, Database, BookOpen, FileCheck, Users, Package
+  Loader2, Database, BookOpen, FileCheck, Users, Package,
+  AlertTriangle, CheckCircle2, Wrench
 } from 'lucide-react';
 import { readExcelFile, ExcelWorkbook } from '@/lib/excelUtils';
 import { toast } from 'sonner';
@@ -20,6 +21,10 @@ import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { getSystemFinancialStatements } from '@/services/systemFinancialData';
+import { useSales } from '@/hooks/useDatabase';
+import { useExpenses } from '@/hooks/useExpenses';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
+import { supabase } from '@/integrations/supabase/client';
 
 import { ComprehensiveFinancialData, emptyFinancialData } from './types';
 import parseMedadExcel from './utils/medadParser';
@@ -44,15 +49,86 @@ import { FinancialStatementsFormulaEditor } from './FinancialStatementsFormulaEd
 export function ComprehensiveFinancialStatementsPage() {
   const { company, companyId } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
+  const { filterByFiscalYear } = useFiscalYearFilter();
+  
+  // جلب بيانات المبيعات والمصاريف لمقارنة الأرباح
+  const { data: sales = [] } = useSales();
+  const { data: expenses = [] } = useExpenses();
+  
   const [data, setData] = useState<ComprehensiveFinancialData>(emptyFinancialData);
   const [isLoading, setIsLoading] = useState(false);
   const [dataSource, setDataSource] = useState<'none' | 'excel' | 'system'>('none');
   const [fileName, setFileName] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [isFixingCogs, setIsFixingCogs] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { printReport } = usePrintReport();
   const { exportToExcel } = useExcelExport();
+  
+  // حساب صافي الربح من تقرير الأرباح (المبيعات - المصاريف)
+  const profitReportData = useMemo(() => {
+    const filteredSales = filterByFiscalYear(sales, 'sale_date');
+    const filteredExpenses = filterByFiscalYear(expenses, 'expense_date');
+    
+    // الربح الإجمالي من جدول المبيعات
+    const totalGrossProfit = filteredSales.reduce((sum, sale) => sum + Number(sale.profit || 0), 0);
+    
+    // مصاريف السيارات المباعة
+    const soldCarIds = filteredSales.map(s => s.car_id);
+    const carExpenses = filteredExpenses
+      .filter(exp => exp.car_id && soldCarIds.includes(exp.car_id))
+      .reduce((sum, exp) => sum + Number(exp.amount), 0);
+    
+    // المصاريف العامة (غير مرتبطة بسيارات)
+    const generalExpenses = filteredExpenses
+      .filter(exp => !exp.car_id)
+      .reduce((sum, exp) => sum + Number(exp.amount), 0);
+    
+    // صافي الربح حسب تقرير الأرباح
+    const netProfit = totalGrossProfit - carExpenses - generalExpenses;
+    
+    return {
+      totalGrossProfit,
+      carExpenses,
+      generalExpenses,
+      netProfit,
+    };
+  }, [sales, expenses, filterByFiscalYear]);
+  
+  // إصلاح القيود الناقصة
+  const handleFixMissingCogs = async () => {
+    if (!companyId) return;
+    
+    setIsFixingCogs(true);
+    try {
+      const { data: result, error } = await supabase.rpc('fix_missing_cogs_entries');
+      
+      if (error) throw error;
+      
+      const fixedCount = result?.filter((r: any) => r.fixed).length || 0;
+      if (fixedCount > 0) {
+        toast.success(`تم إصلاح ${fixedCount} قيد محاسبي`);
+        // إعادة حساب من النظام
+        handleCalculateFromSystem();
+      } else {
+        toast.info('جميع القيود صحيحة، لا يوجد ما يحتاج إصلاح');
+      }
+    } catch (error) {
+      console.error('Error fixing COGS:', error);
+      toast.error('فشل إصلاح القيود - تأكد من الصلاحيات');
+    } finally {
+      setIsFixingCogs(false);
+    }
+  };
+  
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('ar-SA', {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
 
   // حساب من بيانات النظام
   const handleCalculateFromSystem = async () => {
@@ -492,6 +568,59 @@ export function ComprehensiveFinancialStatementsPage() {
                       previousReportDate={data.previousReportDate}
                     />
                   </ScrollArea>
+                </CardContent>
+              </Card>
+              
+              {/* قسم تسوية الأرباح */}
+              <Card className="mt-4 border-2 border-amber-200 dark:border-amber-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Calculator className="w-5 h-5" />
+                      تسوية صافي الربح (مقارنة المصادر)
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleFixMissingCogs}
+                      disabled={isFixingCogs}
+                      className="gap-2"
+                    >
+                      <Wrench className="w-4 h-4" />
+                      {isFixingCogs ? 'جاري الإصلاح...' : 'إصلاح القيود'}
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <h4 className="font-semibold mb-2">من القيود المحاسبية</h4>
+                      <p className={`text-2xl font-bold ${data.incomeStatement.netProfit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+                        {formatCurrency(data.incomeStatement.netProfit)} ر.س
+                      </p>
+                    </div>
+                    <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+                      <h4 className="font-semibold mb-2">من تقرير الأرباح (المبيعات)</h4>
+                      <p className={`text-2xl font-bold ${profitReportData.netProfit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+                        {formatCurrency(profitReportData.netProfit)} ر.س
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between p-3 rounded-lg border-2">
+                    <div className="flex items-center gap-2">
+                      {Math.abs(data.incomeStatement.netProfit - profitReportData.netProfit) < 1 ? (
+                        <>
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          <span className="font-semibold text-green-600">الأرقام متطابقة ✓</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="w-5 h-5 text-amber-600" />
+                          <span className="text-amber-600">فرق: {formatCurrency(data.incomeStatement.netProfit - profitReportData.netProfit)} ر.س</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

@@ -5106,6 +5106,15 @@ export type Database = {
         Args: { encryption_key: string; plain_text: string }
         Returns: string
       }
+      fix_missing_cogs_entries: {
+        Args: never
+        Returns: {
+          fixed: boolean
+          message: string
+          sale_id: string
+          sale_number: number
+        }[]
+      }
       get_car_expenses: { Args: { p_car_id: string }; Returns: number }
       get_current_company_id: { Args: never; Returns: string }
       get_next_invoice_number: {
