@@ -136,6 +136,34 @@ export function TrialBalanceAnalysisPage() {
       
       const systemData = await getSystemTrialBalance(companyId, startDate, endDate);
       
+      // === جلب بيانات الربح الفعلي من جدول المبيعات ===
+      let salesQuery = supabase
+        .from('sales')
+        .select('sale_price, profit, car:cars!inner(purchase_price, company_id)')
+        .eq('car.company_id', companyId);
+
+      if (startDate) {
+        salesQuery = salesQuery.gte('sale_date', startDate);
+      }
+      if (endDate) {
+        salesQuery = salesQuery.lte('sale_date', endDate);
+      }
+
+      const { data: salesData } = await salesQuery;
+      
+      // حساب الأرباح الفعلية من المبيعات
+      let actualSalesRevenue = 0;
+      let actualCostOfSales = 0;
+      let actualGrossProfit = 0;
+      
+      if (salesData) {
+        salesData.forEach((sale: any) => {
+          actualSalesRevenue += Number(sale.sale_price) || 0;
+          actualCostOfSales += Number(sale.car?.purchase_price) || 0;
+          actualGrossProfit += Number(sale.profit) || 0;
+        });
+      }
+
       // تحويل البيانات إلى تنسيق TrialBalanceData
       const result: TrialBalanceData = {
         companyName: company?.name || '',
@@ -186,6 +214,14 @@ export function TrialBalanceAnalysisPage() {
             break;
         }
       });
+
+      // استخدام بيانات المبيعات الفعلية إذا كانت متوفرة (أكثر دقة)
+      if (actualSalesRevenue > 0) {
+        // استبدال الإيرادات بالقيم الفعلية
+        result.revenue = { 'إيرادات المبيعات': actualSalesRevenue };
+        // استبدال تكلفة المبيعات بالقيمة الفعلية
+        result.purchases = actualCostOfSales;
+      }
 
       // بناء بيانات ميزان المراجعة الشامل
       const rawAccounts: AccountData[] = systemData.accounts.map(acc => ({
