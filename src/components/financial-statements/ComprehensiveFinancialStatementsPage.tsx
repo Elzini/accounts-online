@@ -18,6 +18,8 @@ import { toast } from 'sonner';
 import { useCompany } from '@/contexts/CompanyContext';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { getSystemFinancialStatements } from '@/services/systemFinancialData';
 
 import { ComprehensiveFinancialData, emptyFinancialData } from './types';
 import parseMedadExcel from './utils/medadParser';
@@ -39,7 +41,8 @@ import {
 } from './notes/OtherNotesViews';
 
 export function ComprehensiveFinancialStatementsPage() {
-  const { company } = useCompany();
+  const { company, companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
   const [data, setData] = useState<ComprehensiveFinancialData>(emptyFinancialData);
   const [isLoading, setIsLoading] = useState(false);
   const [dataSource, setDataSource] = useState<'none' | 'excel' | 'system'>('none');
@@ -49,6 +52,39 @@ export function ComprehensiveFinancialStatementsPage() {
   
   const { printReport } = usePrintReport();
   const { exportToExcel } = useExcelExport();
+
+  // حساب من بيانات النظام
+  const handleCalculateFromSystem = async () => {
+    if (!companyId) {
+      toast.error('يرجى اختيار الشركة أولاً');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const startDate = selectedFiscalYear?.start_date;
+      const endDate = selectedFiscalYear?.end_date;
+      
+      const systemData = await getSystemFinancialStatements(
+        companyId,
+        company?.name || 'الشركة',
+        startDate,
+        endDate
+      );
+
+      setData(systemData);
+      setDataSource('system');
+      setFileName(null);
+      setActiveTab('balance-sheet');
+      
+      toast.success('تم حساب القوائم المالية من بيانات النظام بنجاح');
+    } catch (error) {
+      console.error('Error calculating from system:', error);
+      toast.error('فشل حساب القوائم المالية من النظام');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // رفع ملف Excel من مداد
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -193,23 +229,67 @@ export function ComprehensiveFinancialStatementsPage() {
       {!hasData && (
         <Card className="border-dashed border-2">
           <CardContent className="py-12">
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-6">
               <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                <Upload className="w-8 h-8 text-primary" />
+                <Calculator className="w-8 h-8 text-primary" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">استيراد القوائم المالية من مداد</h3>
-                <p className="text-muted-foreground">قم برفع ملف Excel المصدّر من نظام مداد ERP</p>
+                <h3 className="text-lg font-semibold">إنشاء القوائم المالية</h3>
+                <p className="text-muted-foreground">اختر مصدر البيانات لإنشاء القوائم المالية الشاملة</p>
               </div>
-              <div className="flex justify-center gap-3">
-                <Button onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
-                  {isLoading ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> جاري التحميل...</>
-                  ) : (
-                    <><Upload className="w-4 h-4 mr-2" /> رفع ملف Excel</>
-                  )}
-                </Button>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg mx-auto">
+                {/* حساب من النظام */}
+                <Card className="p-4 hover:border-primary cursor-pointer transition-colors" onClick={handleCalculateFromSystem}>
+                  <div className="text-center space-y-2">
+                    <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                      <Database className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h4 className="font-semibold">حساب من النظام</h4>
+                    <p className="text-xs text-muted-foreground">
+                      احسب القوائم المالية تلقائياً من قيود اليومية المسجلة في النظام
+                    </p>
+                    <Button 
+                      className="w-full" 
+                      variant="outline" 
+                      disabled={isLoading}
+                      onClick={(e) => { e.stopPropagation(); handleCalculateFromSystem(); }}
+                    >
+                      {isLoading ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> جاري الحساب...</>
+                      ) : (
+                        <><Database className="w-4 h-4 mr-2" /> حساب من النظام</>
+                      )}
+                    </Button>
+                  </div>
+                </Card>
+
+                {/* استيراد من Excel */}
+                <Card className="p-4 hover:border-primary cursor-pointer transition-colors" onClick={() => fileInputRef.current?.click()}>
+                  <div className="text-center space-y-2">
+                    <div className="mx-auto w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                      <Upload className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <h4 className="font-semibold">استيراد من مداد</h4>
+                    <p className="text-xs text-muted-foreground">
+                      رفع ملف Excel المصدّر من نظام مداد ERP
+                    </p>
+                    <Button 
+                      className="w-full" 
+                      variant="outline" 
+                      disabled={isLoading}
+                      onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                    >
+                      {isLoading ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> جاري التحميل...</>
+                      ) : (
+                        <><Upload className="w-4 h-4 mr-2" /> رفع ملف Excel</>
+                      )}
+                    </Button>
+                  </div>
+                </Card>
               </div>
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -217,9 +297,12 @@ export function ComprehensiveFinancialStatementsPage() {
                 className="hidden"
                 onChange={handleFileUpload}
               />
-              <p className="text-xs text-muted-foreground">
-                يدعم ملفات Excel المحتوية على: قائمة المركز المالي، قائمة الدخل، التغيرات في حقوق الملكية، التدفق النقدي، والإيضاحات
-              </p>
+              
+              {selectedFiscalYear && (
+                <p className="text-sm text-muted-foreground">
+                  السنة المالية المحددة: <span className="font-semibold">{selectedFiscalYear.name}</span>
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
