@@ -3,15 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator, Upload, X, FileUp, Save, Trash2, FolderOpen, FileText, Eye, Sparkles, Image } from 'lucide-react';
+import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Building2, Calculator, Upload, X, FileUp, Save, Trash2, FolderOpen, FileText, Eye, Sparkles, Image, Database, Loader2 } from 'lucide-react';
 import { read, utils } from '@/lib/excelUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { TrialBalancePreviewDialog } from './TrialBalancePreviewDialog';
+import { getSystemTrialBalance } from '@/services/systemFinancialData';
 
 interface TrialBalanceData {
   companyName: string;
@@ -77,8 +79,9 @@ interface SavedImport {
 }
 
 export function TrialBalanceAnalysisPage() {
-  const { companyId } = useCompany();
+  const { companyId, company } = useCompany();
   const { user } = useAuth();
+  const { selectedFiscalYear } = useFiscalYear();
   
   const [data, setData] = useState<TrialBalanceData>(emptyData);
   const [isExporting, setIsExporting] = useState(false);
@@ -94,6 +97,7 @@ export function TrialBalanceAnalysisPage() {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
+  const [isCalculatingFromSystem, setIsCalculatingFromSystem] = useState(false);
   
   // حقول إدخال يدوية لحساب الزكاة بدقة
   const [manualCapital, setManualCapital] = useState<number | null>(null);
@@ -116,6 +120,102 @@ export function TrialBalanceAnalysisPage() {
   
   // وضع التعديل اليدوي للقوائم المالية
   const [editMode, setEditMode] = useState(false);
+
+  // حساب من بيانات النظام
+  const handleCalculateFromSystem = async () => {
+    if (!companyId) {
+      toast.error('يرجى اختيار الشركة أولاً');
+      return;
+    }
+
+    setIsCalculatingFromSystem(true);
+    try {
+      const startDate = selectedFiscalYear?.start_date;
+      const endDate = selectedFiscalYear?.end_date;
+      
+      const systemData = await getSystemTrialBalance(companyId, startDate, endDate);
+      
+      // تحويل البيانات إلى تنسيق TrialBalanceData
+      const result: TrialBalanceData = {
+        companyName: company?.name || '',
+        vatNumber: '',
+        period: { 
+          from: startDate || '', 
+          to: endDate || '' 
+        },
+        fixedAssets: {},
+        currentAssets: {},
+        liabilities: {},
+        equity: {},
+        revenue: {},
+        expenses: {},
+        purchases: 0,
+      };
+
+      // تحويل الحسابات إلى التصنيفات المناسبة
+      systemData.accounts.forEach(acc => {
+        const balance = acc.closingDebit - acc.closingCredit;
+        const absBalance = Math.abs(balance);
+        if (absBalance === 0) return;
+
+        // تصنيف الحسابات بناءً على النوع
+        switch (acc.type) {
+          case 'assets':
+            if (acc.code.startsWith('11') || acc.code.startsWith('12') || acc.code.startsWith('13')) {
+              result.currentAssets[acc.name] = balance > 0 ? balance : 0;
+            } else {
+              result.fixedAssets[acc.name] = balance > 0 ? balance : 0;
+            }
+            break;
+          case 'liabilities':
+            result.liabilities[acc.name] = balance < 0 ? Math.abs(balance) : balance;
+            break;
+          case 'equity':
+            result.equity[acc.name] = balance < 0 ? Math.abs(balance) : balance;
+            break;
+          case 'revenue':
+            result.revenue[acc.name] = balance < 0 ? Math.abs(balance) : balance;
+            break;
+          case 'expenses':
+            if (acc.code.startsWith('51') || acc.name.includes('تكلفة') || acc.name.includes('مشتريات')) {
+              result.purchases += balance > 0 ? balance : 0;
+            } else {
+              result.expenses[acc.name] = balance > 0 ? balance : 0;
+            }
+            break;
+        }
+      });
+
+      // بناء بيانات ميزان المراجعة الشامل
+      const rawAccounts: AccountData[] = systemData.accounts.map(acc => ({
+        code: acc.code,
+        name: acc.name,
+        openingDebit: acc.openingDebit,
+        openingCredit: acc.openingCredit,
+        movementDebit: acc.movementDebit,
+        movementCredit: acc.movementCredit,
+        closingDebit: acc.closingDebit,
+        closingCredit: acc.closingCredit,
+        category: categorizeAccountByCode(acc.code, acc.name),
+      }));
+
+      setData(result);
+      setReconciliationData({
+        originalTotalDebit: systemData.totals.closingDebit,
+        originalTotalCredit: systemData.totals.closingCredit,
+        excludedAccounts: [],
+        rawAccounts,
+      });
+      setFileName('بيانات النظام');
+      
+      toast.success(`تم حساب ميزان المراجعة من النظام (${systemData.accounts.length} حساب)`);
+    } catch (error) {
+      console.error('Error calculating from system:', error);
+      toast.error('فشل حساب ميزان المراجعة من النظام');
+    } finally {
+      setIsCalculatingFromSystem(false);
+    }
+  };
 
   // جلب الملفات المحفوظة
   useEffect(() => {
@@ -1495,12 +1595,33 @@ export function TrialBalanceAnalysisPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Upload className="w-5 h-5" />
-            رفع ميزان المراجعة
+            <Calculator className="w-5 h-5" />
+            تحليل ميزان المراجعة
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* حساب من النظام */}
+            <div
+              className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer bg-gradient-to-br from-green-500/5 to-transparent"
+              onClick={handleCalculateFromSystem}
+            >
+              {isCalculatingFromSystem ? (
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                  <p className="text-muted-foreground">جاري الحساب من النظام...</p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <Database className="w-10 h-10 text-green-600 dark:text-green-400" />
+                  <div>
+                    <p className="font-medium text-green-600 dark:text-green-400">حساب من النظام</p>
+                    <p className="text-xs text-muted-foreground">من قيود اليومية المسجلة</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* رفع ملف Excel */}
             <div
               className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
@@ -1563,11 +1684,18 @@ export function TrialBalanceAnalysisPage() {
             </div>
           </div>
 
-          {/* الملف المرفوع */}
+          {/* المصدر المحدد */}
           {fileName && (
             <div className="mt-4 flex items-center justify-center gap-3 p-3 bg-muted/50 rounded-lg">
-              <FileSpreadsheet className="w-6 h-6 text-primary" />
+              {fileName === 'بيانات النظام' ? (
+                <Database className="w-6 h-6 text-green-600" />
+              ) : (
+                <FileSpreadsheet className="w-6 h-6 text-primary" />
+              )}
               <span className="font-medium">{fileName}</span>
+              {selectedFiscalYear && fileName === 'بيانات النظام' && (
+                <span className="text-xs text-muted-foreground">({selectedFiscalYear.name})</span>
+              )}
               <Button variant="ghost" size="sm" onClick={clearFile}>
                 <X className="w-4 h-4" />
               </Button>
