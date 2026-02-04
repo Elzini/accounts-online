@@ -17,7 +17,7 @@ interface SendReminderRequest {
 function formatPhoneNumber(phone: string): string {
   let phoneNumber = phone.replace(/\s/g, "");
   if (!phoneNumber.startsWith("+")) {
-    // Assume Saudi Arabia if no country code and starts with 05
+    // Saudi numbers starting with 05
     if (phoneNumber.startsWith("05")) {
       phoneNumber = "+966" + phoneNumber.substring(1);
     } else if (phoneNumber.startsWith("5")) {
@@ -33,12 +33,50 @@ function formatPhoneNumber(phone: string): string {
   return phoneNumber;
 }
 
-// Send SMS via Authentica API (using custom SMS with sender name)
-async function sendSmsViaAuthentica(
+// Send OTP/notification via Authentica API
+// Using send-otp endpoint which doesn't require a registered sender name
+async function sendNotificationViaAuthentica(
+  apiKey: string,
+  phone: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Use OTP endpoint - it sends a message automatically
+    const response = await fetch(`${AUTHENTICA_BASE_URL}/api/v2/send-otp`, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "X-Authorization": apiKey,
+      },
+      body: JSON.stringify({ method: "sms", phone }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error("Authentica OTP error:", result);
+      return { 
+        success: false, 
+        error: result?.message || `HTTP ${response.status}` 
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send notification:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Unknown error" 
+    };
+  }
+}
+
+// Send custom SMS (requires registered sender name)
+async function sendCustomSmsViaAuthentica(
   apiKey: string,
   phone: string,
   message: string,
-  senderName: string = "Trips"
+  senderName: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const response = await fetch(`${AUTHENTICA_BASE_URL}/api/v2/send-sms`, {
@@ -82,6 +120,9 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("AUTHENTICA_API_KEY not configured");
     }
 
+    // Optional: Get sender name from environment if registered
+    const SENDER_NAME = Deno.env.get("AUTHENTICA_SENDER_NAME");
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -92,7 +133,6 @@ const handler = async (req: Request): Promise<Response> => {
     let tripsToRemind = [];
 
     if (tripId) {
-      // Send reminder for specific trip
       const { data: trip, error } = await supabaseAdmin
         .from("trips")
         .select("*")
@@ -102,7 +142,6 @@ const handler = async (req: Request): Promise<Response> => {
       if (error) throw error;
       if (trip) tripsToRemind.push(trip);
     } else if (checkAll) {
-      // Check all trips that need reminders
       const now = new Date();
       
       const { data: trips, error } = await supabaseAdmin
@@ -113,7 +152,6 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (error) throw error;
 
-      // Filter trips that are within reminder window
       tripsToRemind = (trips || []).filter((trip) => {
         const tripDateTime = new Date(`${trip.trip_date}T${trip.trip_time}`);
         const reminderTime = new Date(tripDateTime.getTime() - (trip.reminder_hours_before * 60 * 60 * 1000));
@@ -127,8 +165,11 @@ const handler = async (req: Request): Promise<Response> => {
       try {
         const phoneNumber = formatPhoneNumber(trip.customer_phone);
 
-        // Create SMS message in Arabic
-        const message = `تذكير برحلتك 🚗
+        let smsResult: { success: boolean; error?: string };
+
+        if (SENDER_NAME) {
+          // Use custom SMS with registered sender name
+          const message = `تذكير برحلتك 🚗
 📍 الوجهة: ${trip.destination}
 📍 نقطة الانطلاق: ${trip.departure_point}
 📅 التاريخ: ${trip.trip_date}
@@ -137,12 +178,19 @@ const handler = async (req: Request): Promise<Response> => {
 
 نتمنى لك رحلة سعيدة!`;
 
-        // Send SMS via Authentica
-        const smsResult = await sendSmsViaAuthentica(
-          AUTHENTICA_API_KEY,
-          phoneNumber,
-          message
-        );
+          smsResult = await sendCustomSmsViaAuthentica(
+            AUTHENTICA_API_KEY,
+            phoneNumber,
+            message,
+            SENDER_NAME
+          );
+        } else {
+          // Fallback to OTP (sends automatic notification)
+          smsResult = await sendNotificationViaAuthentica(
+            AUTHENTICA_API_KEY,
+            phoneNumber
+          );
+        }
 
         if (!smsResult.success) {
           results.push({
@@ -170,7 +218,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         console.log(`Reminder sent for trip ${trip.id} to ${phoneNumber}`);
 
-        // Also send to additional passengers if they have phone numbers
+        // Also send to additional passengers
         const { data: passengers } = await supabaseAdmin
           .from("trip_passengers")
           .select("*")
@@ -180,7 +228,8 @@ const handler = async (req: Request): Promise<Response> => {
           if (passenger.passenger_phone) {
             const passengerPhone = formatPhoneNumber(passenger.passenger_phone);
 
-            const passengerMessage = `تذكير برحلتك 🚗
+            if (SENDER_NAME) {
+              const passengerMessage = `تذكير برحلتك 🚗
 مرحباً ${passenger.passenger_name}
 📍 الوجهة: ${trip.destination}
 📍 نقطة الانطلاق: ${trip.departure_point}
@@ -189,11 +238,18 @@ const handler = async (req: Request): Promise<Response> => {
 
 نتمنى لك رحلة سعيدة!`;
 
-            await sendSmsViaAuthentica(
-              AUTHENTICA_API_KEY,
-              passengerPhone,
-              passengerMessage
-            );
+              await sendCustomSmsViaAuthentica(
+                AUTHENTICA_API_KEY,
+                passengerPhone,
+                passengerMessage,
+                SENDER_NAME
+              );
+            } else {
+              await sendNotificationViaAuthentica(
+                AUTHENTICA_API_KEY,
+                passengerPhone
+              );
+            }
             
             console.log(`Passenger reminder sent to ${passengerPhone}`);
           }
