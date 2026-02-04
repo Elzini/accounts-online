@@ -19,21 +19,21 @@ import { toast } from 'sonner';
 
 export function useCustody() {
   const companyId = useCompanyId();
-  const { selectedFiscalYear, isWithinFiscalYear } = useFiscalYearFilter();
+  const { selectedFiscalYear, filterByFiscalYear } = useFiscalYearFilter();
   const queryClient = useQueryClient();
 
   // Fetch all custodies
-  const { data: custodies = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['custodies', companyId, selectedFiscalYear?.id],
+  const { data: allCustodies = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['custodies', companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const allCustodies = await fetchCustodies(companyId);
-      // Strict date filtering: show only items whose date falls within selected fiscal year range
-      if (selectedFiscalYear?.id) return allCustodies.filter((c) => isWithinFiscalYear(c.custody_date));
-      return allCustodies;
+      return await fetchCustodies(companyId);
     },
     enabled: !!companyId,
   });
+
+  // Apply strict date filtering client-side (outside queryFn to avoid closure issues)
+  const custodies = filterByFiscalYear(allCustodies, 'custody_date');
 
   // Add custody mutation
   const addCustodyMutation = useMutation({
