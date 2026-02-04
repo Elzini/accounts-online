@@ -6,8 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const AUTHENTICA_BASE_URL = "https://api.authentica.sa";
-
 interface SendReminderRequest {
   tripId?: string;
   checkAll?: boolean;
@@ -33,75 +31,48 @@ function formatPhoneNumber(phone: string): string {
   return phoneNumber;
 }
 
-// Send OTP/notification via Authentica API
-// Using send-otp endpoint which doesn't require a registered sender name
-async function sendNotificationViaAuthentica(
+// Send SMS via Infobip API
+async function sendSmsViaInfobip(
   apiKey: string,
-  phone: string
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    // Use OTP endpoint - it sends a message automatically
-    const response = await fetch(`${AUTHENTICA_BASE_URL}/api/v2/send-otp`, {
-      method: "POST",
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "X-Authorization": apiKey,
-      },
-      body: JSON.stringify({ method: "sms", phone }),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error("Authentica OTP error:", result);
-      return { 
-        success: false, 
-        error: result?.message || `HTTP ${response.status}` 
-      };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to send notification:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Unknown error" 
-    };
-  }
-}
-
-// Send custom SMS (requires registered sender name)
-async function sendCustomSmsViaAuthentica(
-  apiKey: string,
+  baseUrl: string,
   phone: string,
   message: string,
-  senderName: string
+  from?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const response = await fetch(`${AUTHENTICA_BASE_URL}/api/v2/send-sms`, {
+    const body = {
+      messages: [
+        {
+          destinations: [{ to: phone }],
+          from: from || "InfoSMS",
+          text: message,
+        },
+      ],
+    };
+
+    const response = await fetch(`${baseUrl}/sms/2/text/advanced`, {
       method: "POST",
       headers: {
         "Accept": "application/json",
         "Content-Type": "application/json",
-        "X-Authorization": apiKey,
+        "Authorization": `App ${apiKey}`,
       },
-      body: JSON.stringify({ phone, message, sender_name: senderName }),
+      body: JSON.stringify(body),
     });
 
     const result = await response.json();
 
     if (!response.ok) {
-      console.error("Authentica SMS error:", result);
+      console.error("Infobip SMS error:", result);
       return { 
         success: false, 
-        error: result?.message || `HTTP ${response.status}` 
+        error: result?.requestError?.serviceException?.text || `HTTP ${response.status}` 
       };
     }
 
     return { success: true };
   } catch (error) {
-    console.error("Failed to send SMS:", error);
+    console.error("Failed to send SMS via Infobip:", error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Unknown error" 
@@ -115,13 +86,18 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const AUTHENTICA_API_KEY = Deno.env.get("AUTHENTICA_API_KEY");
-    if (!AUTHENTICA_API_KEY) {
-      throw new Error("AUTHENTICA_API_KEY not configured");
+    const INFOBIP_API_KEY = Deno.env.get("INFOBIP_API_KEY");
+    if (!INFOBIP_API_KEY) {
+      throw new Error("INFOBIP_API_KEY not configured");
     }
 
-    // Optional: Get sender name from environment if registered
-    const SENDER_NAME = Deno.env.get("AUTHENTICA_SENDER_NAME");
+    const INFOBIP_BASE_URL = Deno.env.get("INFOBIP_BASE_URL");
+    if (!INFOBIP_BASE_URL) {
+      throw new Error("INFOBIP_BASE_URL not configured");
+    }
+
+    // Optional: Get sender name from environment
+    const SENDER_NAME = Deno.env.get("INFOBIP_SENDER_NAME");
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -165,11 +141,7 @@ const handler = async (req: Request): Promise<Response> => {
       try {
         const phoneNumber = formatPhoneNumber(trip.customer_phone);
 
-        let smsResult: { success: boolean; error?: string };
-
-        if (SENDER_NAME) {
-          // Use custom SMS with registered sender name
-          const message = `تذكير برحلتك 🚗
+        const message = `تذكير برحلتك 🚗
 📍 الوجهة: ${trip.destination}
 📍 نقطة الانطلاق: ${trip.departure_point}
 📅 التاريخ: ${trip.trip_date}
@@ -178,19 +150,13 @@ const handler = async (req: Request): Promise<Response> => {
 
 نتمنى لك رحلة سعيدة!`;
 
-          smsResult = await sendCustomSmsViaAuthentica(
-            AUTHENTICA_API_KEY,
-            phoneNumber,
-            message,
-            SENDER_NAME
-          );
-        } else {
-          // Fallback to OTP (sends automatic notification)
-          smsResult = await sendNotificationViaAuthentica(
-            AUTHENTICA_API_KEY,
-            phoneNumber
-          );
-        }
+        const smsResult = await sendSmsViaInfobip(
+          INFOBIP_API_KEY,
+          INFOBIP_BASE_URL,
+          phoneNumber,
+          message,
+          SENDER_NAME
+        );
 
         if (!smsResult.success) {
           results.push({
@@ -228,8 +194,7 @@ const handler = async (req: Request): Promise<Response> => {
           if (passenger.passenger_phone) {
             const passengerPhone = formatPhoneNumber(passenger.passenger_phone);
 
-            if (SENDER_NAME) {
-              const passengerMessage = `تذكير برحلتك 🚗
+            const passengerMessage = `تذكير برحلتك 🚗
 مرحباً ${passenger.passenger_name}
 📍 الوجهة: ${trip.destination}
 📍 نقطة الانطلاق: ${trip.departure_point}
@@ -238,18 +203,13 @@ const handler = async (req: Request): Promise<Response> => {
 
 نتمنى لك رحلة سعيدة!`;
 
-              await sendCustomSmsViaAuthentica(
-                AUTHENTICA_API_KEY,
-                passengerPhone,
-                passengerMessage,
-                SENDER_NAME
-              );
-            } else {
-              await sendNotificationViaAuthentica(
-                AUTHENTICA_API_KEY,
-                passengerPhone
-              );
-            }
+            await sendSmsViaInfobip(
+              INFOBIP_API_KEY,
+              INFOBIP_BASE_URL,
+              passengerPhone,
+              passengerMessage,
+              SENDER_NAME
+            );
             
             console.log(`Passenger reminder sent to ${passengerPhone}`);
           }

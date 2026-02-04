@@ -4882,6 +4882,7 @@ export type Database = {
           is_enabled: boolean | null
           phone_number: string | null
           secret_encrypted: string
+          sms_pin_id: string | null
           two_fa_type: string | null
           updated_at: string
           user_id: string
@@ -4894,6 +4895,7 @@ export type Database = {
           is_enabled?: boolean | null
           phone_number?: string | null
           secret_encrypted: string
+          sms_pin_id?: string | null
           two_fa_type?: string | null
           updated_at?: string
           user_id: string
@@ -4906,6 +4908,7 @@ export type Database = {
           is_enabled?: boolean | null
           phone_number?: string | null
           secret_encrypted?: string
+          sms_pin_id?: string | null
           two_fa_type?: string | null
           updated_at?: string
           user_id?: string
