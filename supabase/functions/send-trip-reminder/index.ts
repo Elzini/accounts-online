@@ -149,12 +149,14 @@ const handler = async (req: Request): Promise<Response> => {
       try {
         const phoneNumber = formatPhoneNumber(trip.customer_phone);
 
+        const notesText = trip.notes ? `\n📝 ملاحظات: ${trip.notes}` : '';
+        
         const message = `تذكير برحلتك 🚗
 📍 الوجهة: ${trip.destination}
 📍 نقطة الانطلاق: ${trip.departure_point}
 📅 التاريخ: ${trip.trip_date}
 ⏰ الوقت: ${trip.trip_time}
-💰 السعر: ${trip.price} ريال
+💰 السعر: ${trip.price} ريال${notesText}
 
 نتمنى لك رحلة سعيدة!`;
 
