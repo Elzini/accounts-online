@@ -1,10 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Loader2, Printer, FileDown, FileSpreadsheet, Wallet, Building2, Users, CreditCard, Search, Package, TrendingUp, TrendingDown, Landmark, Check, ChevronsUpDown } from 'lucide-react';
+import { Loader2, Printer, FileDown, FileSpreadsheet, Wallet, Building2, Users, CreditCard, Package, TrendingUp, TrendingDown, Landmark, Check, ChevronsUpDown, ArrowLeft, X, Calendar } from 'lucide-react';
 import { useAccounts, useGeneralLedger } from '@/hooks/useAccounting';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { usePdfExport } from '@/hooks/usePdfExport';
@@ -112,14 +111,19 @@ export function AccountMovementReport() {
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(value);
   };
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('ar-SA');
+  };
+
+  const formatInputDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   // Calculate totals and running balance
@@ -213,255 +217,309 @@ export function AccountMovementReport() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wallet className="h-5 w-5" />
-            تقرير حركة الحسابات
-          </CardTitle>
-          <CardDescription>
-            عرض حركة جميع الحسابات مع الرصيد الحالي
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>اختر الحساب</Label>
-              <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={open}
-                    className="w-full justify-between h-10"
-                  >
-                    {selectedAccount ? (
-                      <div className="flex items-center gap-2 truncate">
-                        {getAccountIcon(selectedAccount.type, selectedAccount.code)}
-                        <span className="text-muted-foreground">{selectedAccount.code}</span>
-                        <span className="truncate">{selectedAccount.name}</span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">ابحث واختر حساب...</span>
-                    )}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[400px] p-0 bg-popover border shadow-lg z-50" align="start">
-                  <Command>
-                    <CommandInput 
-                      placeholder="ابحث برقم أو اسم الحساب..." 
-                      value={searchQuery}
-                      onValueChange={setSearchQuery}
-                      className="h-10"
-                    />
-                    <CommandList>
-                      <CommandEmpty>لا توجد نتائج</CommandEmpty>
-                      <ScrollArea className="h-[300px]">
-                        {Object.entries(groupedAccounts).map(([type, accts]) => (
-                          accts.length > 0 && (
-                            <CommandGroup key={type} heading={getTypeLabel(type)}>
-                              {accts.map((account) => (
-                                <CommandItem
-                                  key={account.id}
-                                  value={`${account.code} ${account.name}`}
-                                  onSelect={() => {
-                                    setSelectedAccountId(account.id);
-                                    setOpen(false);
-                                    setSearchQuery('');
-                                  }}
-                                  className="cursor-pointer"
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      selectedAccountId === account.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  <div className="flex items-center gap-2 flex-1">
-                                    {getAccountIcon(account.type, account.code)}
-                                    <span className="text-muted-foreground font-mono text-sm">{account.code}</span>
-                                    <span className="truncate">{account.name}</span>
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          )
-                        ))}
-                      </ScrollArea>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+      {/* Green Header Section */}
+      <div className="bg-gradient-to-l from-emerald-600 to-emerald-500 rounded-xl p-6 text-white">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          {/* Title Section */}
+          <div className="flex items-center gap-4">
+            <div className="bg-white/20 rounded-full p-3">
+              <Wallet className="h-8 w-8" />
             </div>
-            <div className="space-y-2">
-              <Label>من تاريخ</Label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                dir="ltr"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>إلى تاريخ</Label>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                dir="ltr"
-              />
+            <div>
+              <h1 className="text-2xl font-bold">تقرير حركة الحسابات</h1>
+              <p className="text-emerald-100 text-sm mt-1">
+                عرض حركة جميع الحسابات مع الرصيد الحالي
+              </p>
             </div>
           </div>
 
-          {/* Quick Account Selection */}
-          <div className="flex flex-wrap gap-2">
-            <span className="text-sm text-muted-foreground self-center ml-2">اختصارات:</span>
-            {quickAccounts.slice(0, 6).map((account) => (
+          {/* Filter Controls */}
+          <div className="bg-white rounded-xl p-3 flex flex-wrap items-center gap-3 text-foreground shadow-lg">
+            {/* Print & Export Buttons */}
+            <div className="flex items-center gap-1 border-l pl-3">
               <Button
-                key={account.id}
-                variant={selectedAccountId === account.id ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedAccountId(account.id)}
-                className="flex items-center gap-2"
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                onClick={handlePrint}
+                disabled={!selectedAccountId || processedData.entries.length === 0}
               >
-                {getAccountIcon(account.type, account.code)}
-                {account.name}
+                <Printer className="h-4 w-4" />
               </Button>
-            ))}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                    disabled={!selectedAccountId || processedData.entries.length === 0}
+                  >
+                    <FileDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handlePdfExport}>
+                    <FileDown className="h-4 w-4 ml-2" />
+                    تصدير PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExcelExport}>
+                    <FileSpreadsheet className="h-4 w-4 ml-2" />
+                    تصدير Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Date Range */}
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="h-9 w-36 text-sm border-emerald-200 focus:border-emerald-400 pl-8"
+                  dir="ltr"
+                />
+                {endDate && (
+                  <button
+                    onClick={() => setEndDate('')}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+              <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+              <div className="relative">
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="h-9 w-36 text-sm border-emerald-200 focus:border-emerald-400 pl-8"
+                  dir="ltr"
+                />
+                {startDate && (
+                  <button
+                    onClick={() => setStartDate('')}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Account Selector */}
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-48 justify-between h-9 border-emerald-200 hover:border-emerald-400"
+                >
+                  {selectedAccount ? (
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="text-muted-foreground text-xs">{selectedAccount.code}</span>
+                      <span className="truncate text-sm">{selectedAccount.name}</span>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">اختر حساب...</span>
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[400px] p-0 bg-popover border shadow-lg z-50" align="start">
+                <Command>
+                  <CommandInput 
+                    placeholder="ابحث برقم أو اسم الحساب..." 
+                    value={searchQuery}
+                    onValueChange={setSearchQuery}
+                    className="h-10"
+                  />
+                  <CommandList>
+                    <CommandEmpty>لا توجد نتائج</CommandEmpty>
+                    <ScrollArea className="h-[300px]">
+                      {Object.entries(groupedAccounts).map(([type, accts]) => (
+                        accts.length > 0 && (
+                          <CommandGroup key={type} heading={getTypeLabel(type)}>
+                            {accts.map((account) => (
+                              <CommandItem
+                                key={account.id}
+                                value={`${account.code} ${account.name}`}
+                                onSelect={() => {
+                                  setSelectedAccountId(account.id);
+                                  setOpen(false);
+                                  setSearchQuery('');
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedAccountId === account.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <div className="flex items-center gap-2 flex-1">
+                                  {getAccountIcon(account.type, account.code)}
+                                  <span className="text-muted-foreground font-mono text-sm">{account.code}</span>
+                                  <span className="truncate">{account.name}</span>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        )
+                      ))}
+                    </ScrollArea>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Account Selection */}
+      <div className="flex flex-wrap gap-2">
+        <span className="text-sm text-muted-foreground self-center ml-2">اختصارات:</span>
+        {quickAccounts.slice(0, 6).map((account) => (
+          <Button
+            key={account.id}
+            variant={selectedAccountId === account.id ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedAccountId(account.id)}
+            className={cn(
+              "flex items-center gap-2",
+              selectedAccountId === account.id && "bg-emerald-600 hover:bg-emerald-700"
+            )}
+          >
+            {getAccountIcon(account.type, account.code)}
+            {account.name}
+          </Button>
+        ))}
+      </div>
+
+      {selectedAccountId && (
+        <>
+          {/* Summary Cards - Bank Statement Style */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 rounded-xl overflow-hidden border shadow-sm">
+            {/* Opening Balance */}
+            <div className="bg-white p-4 border-l">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
+                <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                الرصيد الافتتاحي
+              </div>
+              <p className="text-2xl font-bold text-foreground">{formatCurrency(processedData.openingBalance)}</p>
+            </div>
+            
+            {/* Total Debit (like deposits) */}
+            <div className="bg-emerald-50 p-4 border-l">
+              <div className="flex items-center gap-2 text-emerald-600 text-sm mb-2">
+                <TrendingDown className="h-4 w-4" />
+                إجمالي المدين
+              </div>
+              <p className="text-2xl font-bold text-emerald-600">{formatCurrency(processedData.totalDebit)}</p>
+            </div>
+            
+            {/* Total Credit (like withdrawals) */}
+            <div className="bg-rose-50 p-4 border-l">
+              <div className="flex items-center gap-2 text-rose-600 text-sm mb-2">
+                <TrendingUp className="h-4 w-4" />
+                إجمالي الدائن
+              </div>
+              <p className="text-2xl font-bold text-rose-600">{formatCurrency(processedData.totalCredit)}</p>
+            </div>
+            
+            {/* Closing Balance */}
+            <div className={cn(
+              "p-4",
+              processedData.closingBalance >= 0 ? "bg-emerald-600" : "bg-amber-500"
+            )}>
+              <div className="text-white/80 text-sm mb-2">الرصيد الختامي</div>
+              <p className="text-2xl font-bold text-white">{formatCurrency(processedData.closingBalance)}</p>
+            </div>
           </div>
 
-          {selectedAccountId && (
-            <>
-              {/* Summary Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card className="bg-muted/50">
-                  <CardContent className="p-4 text-center">
-                    <p className="text-sm text-muted-foreground">الرصيد الافتتاحي</p>
-                    <p className="text-xl font-bold">{formatCurrency(processedData.openingBalance)}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-green-500/10 border-green-500/20">
-                  <CardContent className="p-4 text-center">
-                    <p className="text-sm text-muted-foreground">إجمالي المدين</p>
-                    <p className="text-xl font-bold text-green-600">{formatCurrency(processedData.totalDebit)}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-red-500/10 border-red-500/20">
-                  <CardContent className="p-4 text-center">
-                    <p className="text-sm text-muted-foreground">إجمالي الدائن</p>
-                    <p className="text-xl font-bold text-red-600">{formatCurrency(processedData.totalCredit)}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-primary/10 border-primary/20">
-                  <CardContent className="p-4 text-center">
-                    <p className="text-sm text-muted-foreground">الرصيد الحالي</p>
-                    <p className="text-xl font-bold text-primary">{formatCurrency(processedData.closingBalance)}</p>
-                  </CardContent>
-                </Card>
-              </div>
+          {/* Transactions Table */}
+          {ledgerLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+            </div>
+          ) : (
+            <div className="border rounded-xl overflow-hidden shadow-sm">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-700 hover:bg-slate-700">
+                    <TableHead className="text-right text-white font-medium">التاريخ</TableHead>
+                    <TableHead className="text-right text-white font-medium">البيان / الوصف</TableHead>
+                    <TableHead className="text-right text-emerald-300 font-medium">مدين</TableHead>
+                    <TableHead className="text-right text-rose-300 font-medium">دائن</TableHead>
+                    <TableHead className="text-right text-white font-medium">الرصيد</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {/* Opening Balance Row */}
+                  <TableRow className="bg-muted/30">
+                    <TableCell className="text-muted-foreground">-</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-amber-400"></span>
+                        <span className="font-medium">رصيد افتتاحي (Balance Forward)</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">-</TableCell>
+                    <TableCell className="text-muted-foreground">-</TableCell>
+                    <TableCell className="font-medium">{formatCurrency(processedData.openingBalance)}</TableCell>
+                  </TableRow>
 
-              {/* Export Actions */}
-              <div className="flex justify-end">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" disabled={processedData.entries.length === 0}>
-                      <FileDown className="h-4 w-4 ml-2" />
-                      تصدير التقرير
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handlePrint}>
-                      <Printer className="h-4 w-4 ml-2" />
-                      طباعة
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handlePdfExport}>
-                      <FileDown className="h-4 w-4 ml-2" />
-                      تصدير PDF
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleExcelExport}>
-                      <FileSpreadsheet className="h-4 w-4 ml-2" />
-                      تصدير Excel
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Transactions Table */}
-              {ledgerLoading ? (
-                <div className="flex items-center justify-center h-32">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : (
-                <div className="border rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead className="text-right">التاريخ</TableHead>
-                        <TableHead className="text-right">رقم القيد</TableHead>
-                        <TableHead className="text-right">البيان</TableHead>
-                        <TableHead className="text-right">مدين</TableHead>
-                        <TableHead className="text-right">دائن</TableHead>
-                        <TableHead className="text-right">الرصيد</TableHead>
+                  {processedData.entries.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        لا توجد حركات لهذا الحساب في الفترة المحددة
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    processedData.entries.map((entry: any, index: number) => (
+                      <TableRow key={index} className="hover:bg-muted/50">
+                        <TableCell className="text-muted-foreground">{formatDate(entry.entry_date)}</TableCell>
+                        <TableCell>
+                          <span className="text-muted-foreground text-xs ml-2">#{entry.entry_number}</span>
+                          {entry.description}
+                        </TableCell>
+                        <TableCell className={entry.debit > 0 ? 'text-emerald-600 font-medium' : 'text-muted-foreground'}>
+                          {entry.debit > 0 ? formatCurrency(entry.debit) : '-'}
+                        </TableCell>
+                        <TableCell className={entry.credit > 0 ? 'text-rose-600 font-medium' : 'text-muted-foreground'}>
+                          {entry.credit > 0 ? formatCurrency(entry.credit) : '-'}
+                        </TableCell>
+                        <TableCell className="font-medium">{formatCurrency(entry.balance)}</TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {/* Opening Balance Row */}
-                      <TableRow className="bg-muted/30 font-medium">
-                        <TableCell>-</TableCell>
-                        <TableCell>-</TableCell>
-                        <TableCell>رصيد افتتاحي</TableCell>
-                        <TableCell>-</TableCell>
-                        <TableCell>-</TableCell>
-                        <TableCell>{formatCurrency(processedData.openingBalance)}</TableCell>
-                      </TableRow>
+                    ))
+                  )}
 
-                      {processedData.entries.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                            لا توجد حركات لهذا الحساب في الفترة المحددة
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        processedData.entries.map((entry: any, index: number) => (
-                          <TableRow key={index}>
-                            <TableCell>{formatDate(entry.entry_date)}</TableCell>
-                            <TableCell>{entry.entry_number}</TableCell>
-                            <TableCell>{entry.description}</TableCell>
-                            <TableCell className={entry.debit > 0 ? 'text-green-600 font-medium' : ''}>
-                              {entry.debit > 0 ? formatCurrency(entry.debit) : '-'}
-                            </TableCell>
-                            <TableCell className={entry.credit > 0 ? 'text-red-600 font-medium' : ''}>
-                              {entry.credit > 0 ? formatCurrency(entry.credit) : '-'}
-                            </TableCell>
-                            <TableCell className="font-medium">{formatCurrency(entry.balance)}</TableCell>
-                          </TableRow>
-                        ))
-                      )}
-
-                      {/* Closing Balance Row */}
-                      <TableRow className="bg-primary/10 font-bold">
-                        <TableCell colSpan={3}>الرصيد الختامي</TableCell>
-                        <TableCell className="text-green-600">{formatCurrency(processedData.totalDebit)}</TableCell>
-                        <TableCell className="text-red-600">{formatCurrency(processedData.totalCredit)}</TableCell>
-                        <TableCell className="text-primary">{formatCurrency(processedData.closingBalance)}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </>
-          )}
-
-          {!selectedAccountId && (
-            <div className="text-center py-12 text-muted-foreground">
-              <Wallet className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>اختر حساباً لعرض حركاته</p>
+                  {/* Totals Row */}
+                  <TableRow className="bg-amber-50 font-bold border-t-2 border-amber-200">
+                    <TableCell colSpan={2} className="text-right">الإجماليات</TableCell>
+                    <TableCell className="text-emerald-600">{formatCurrency(processedData.totalDebit)}</TableCell>
+                    <TableCell className="text-rose-600">{formatCurrency(processedData.totalCredit)}</TableCell>
+                    <TableCell className={processedData.closingBalance >= 0 ? "text-emerald-600" : "text-rose-600"}>
+                      {formatCurrency(processedData.closingBalance)}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </>
+      )}
+
+      {!selectedAccountId && (
+        <div className="text-center py-16 text-muted-foreground bg-muted/30 rounded-xl border border-dashed">
+          <Wallet className="h-16 w-16 mx-auto mb-4 opacity-30" />
+          <p className="text-lg">اختر حساباً لعرض حركاته</p>
+          <p className="text-sm mt-2">استخدم القائمة أعلاه أو الاختصارات السريعة</p>
+        </div>
+      )}
     </div>
   );
 }
