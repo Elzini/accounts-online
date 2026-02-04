@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -18,7 +19,8 @@ import {
 } from '@/components/ui/select';
 import { useCreateTrip, useUpdateTrip } from '@/hooks/useTrips';
 import { Trip } from '@/services/trips';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Bell, BellOff } from 'lucide-react';
+import { format, subHours, parseISO } from 'date-fns';
 
 interface TripFormDialogProps {
   open: boolean;
@@ -31,6 +33,8 @@ interface PassengerInput {
   passenger_phone: string;
   notes: string;
 }
+
+type ReminderMode = 'hours_before' | 'custom_datetime';
 
 const TripFormDialog: React.FC<TripFormDialogProps> = ({
   open,
@@ -46,6 +50,7 @@ const TripFormDialog: React.FC<TripFormDialogProps> = ({
     trip_time: string;
     price: number;
     reminder_hours_before: number;
+    reminder_enabled: boolean;
     status: 'scheduled' | 'completed' | 'cancelled';
     notes: string;
   }>({
@@ -57,14 +62,35 @@ const TripFormDialog: React.FC<TripFormDialogProps> = ({
     trip_time: '',
     price: 0,
     reminder_hours_before: 24,
+    reminder_enabled: true,
     status: 'scheduled',
     notes: '',
   });
 
+  const [reminderMode, setReminderMode] = useState<ReminderMode>('hours_before');
+  const [customReminderDate, setCustomReminderDate] = useState('');
+  const [customReminderTime, setCustomReminderTime] = useState('');
   const [passengers, setPassengers] = useState<PassengerInput[]>([]);
 
   const createTrip = useCreateTrip();
   const updateTrip = useUpdateTrip();
+
+  // Calculate reminder datetime based on mode
+  const calculatedReminderDatetime = useMemo(() => {
+    if (!formData.trip_date || !formData.trip_time) return null;
+    
+    if (reminderMode === 'custom_datetime') {
+      if (customReminderDate && customReminderTime) {
+        return `${customReminderDate}T${customReminderTime}`;
+      }
+      return null;
+    }
+    
+    // Calculate from hours before
+    const tripDatetime = new Date(`${formData.trip_date}T${formData.trip_time}`);
+    const reminderDatetime = subHours(tripDatetime, formData.reminder_hours_before);
+    return format(reminderDatetime, "yyyy-MM-dd'T'HH:mm");
+  }, [formData.trip_date, formData.trip_time, formData.reminder_hours_before, reminderMode, customReminderDate, customReminderTime]);
 
   useEffect(() => {
     if (trip) {
@@ -77,9 +103,23 @@ const TripFormDialog: React.FC<TripFormDialogProps> = ({
         trip_time: trip.trip_time,
         price: trip.price || 0,
         reminder_hours_before: trip.reminder_hours_before || 24,
+        reminder_enabled: trip.reminder_enabled ?? true,
         status: trip.status as 'scheduled' | 'completed' | 'cancelled',
         notes: trip.notes || '',
       });
+      
+      // Check if custom reminder datetime was set
+      if (trip.reminder_datetime) {
+        const reminderDt = parseISO(trip.reminder_datetime);
+        setCustomReminderDate(format(reminderDt, 'yyyy-MM-dd'));
+        setCustomReminderTime(format(reminderDt, 'HH:mm'));
+        setReminderMode('custom_datetime');
+      } else {
+        setReminderMode('hours_before');
+        setCustomReminderDate('');
+        setCustomReminderTime('');
+      }
+      
       setPassengers([]);
     } else {
       setFormData({
@@ -91,9 +131,13 @@ const TripFormDialog: React.FC<TripFormDialogProps> = ({
         trip_time: '',
         price: 0,
         reminder_hours_before: 24,
+        reminder_enabled: true,
         status: 'scheduled',
         notes: '',
       });
+      setReminderMode('hours_before');
+      setCustomReminderDate('');
+      setCustomReminderTime('');
       setPassengers([]);
     }
   }, [trip, open]);
@@ -101,14 +145,21 @@ const TripFormDialog: React.FC<TripFormDialogProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const submitData = {
+      ...formData,
+      reminder_datetime: reminderMode === 'custom_datetime' && customReminderDate && customReminderTime
+        ? `${customReminderDate}T${customReminderTime}:00`
+        : null,
+    };
+
     if (trip) {
       await updateTrip.mutateAsync({
         tripId: trip.id,
-        updates: formData,
+        updates: submitData,
       });
     } else {
       await createTrip.mutateAsync({
-        ...formData,
+        ...submitData,
         passengers: passengers.filter(p => p.passenger_name.trim()),
       });
     }
@@ -215,27 +266,6 @@ const TripFormDialog: React.FC<TripFormDialogProps> = ({
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="reminder_hours_before">إرسال التذكير قبل (ساعة)</Label>
-              <Select
-                value={formData.reminder_hours_before.toString()}
-                onValueChange={(value) => setFormData({ ...formData, reminder_hours_before: parseInt(value) })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">ساعة واحدة</SelectItem>
-                  <SelectItem value="2">ساعتين</SelectItem>
-                  <SelectItem value="6">6 ساعات</SelectItem>
-                  <SelectItem value="12">12 ساعة</SelectItem>
-                  <SelectItem value="24">24 ساعة (يوم)</SelectItem>
-                  <SelectItem value="48">48 ساعة (يومين)</SelectItem>
-                  <SelectItem value="72">72 ساعة (3 أيام)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             {trip && (
               <div className="space-y-2">
                 <Label htmlFor="status">حالة الرحلة</Label>
@@ -254,6 +284,105 @@ const TripFormDialog: React.FC<TripFormDialogProps> = ({
                     <SelectItem value="cancelled">ملغية</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+          </div>
+
+          {/* Reminder Settings Section */}
+          <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {formData.reminder_enabled ? (
+                  <Bell className="h-5 w-5 text-primary" />
+                ) : (
+                  <BellOff className="h-5 w-5 text-muted-foreground" />
+                )}
+                <Label className="text-base font-semibold">إعدادات التذكير</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="reminder_enabled" className="text-sm text-muted-foreground">
+                  {formData.reminder_enabled ? 'مفعّل' : 'معطّل'}
+                </Label>
+                <Switch
+                  id="reminder_enabled"
+                  checked={formData.reminder_enabled}
+                  onCheckedChange={(checked) => setFormData({ ...formData, reminder_enabled: checked })}
+                />
+              </div>
+            </div>
+
+            {formData.reminder_enabled && (
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={reminderMode === 'hours_before' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setReminderMode('hours_before')}
+                  >
+                    قبل الرحلة بـ
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={reminderMode === 'custom_datetime' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setReminderMode('custom_datetime')}
+                  >
+                    تاريخ ووقت محدد
+                  </Button>
+                </div>
+
+                {reminderMode === 'hours_before' ? (
+                  <div className="space-y-2">
+                    <Label>إرسال التذكير قبل الرحلة بـ</Label>
+                    <Select
+                      value={formData.reminder_hours_before.toString()}
+                      onValueChange={(value) => setFormData({ ...formData, reminder_hours_before: parseInt(value) })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">ساعة واحدة</SelectItem>
+                        <SelectItem value="2">ساعتين</SelectItem>
+                        <SelectItem value="3">3 ساعات</SelectItem>
+                        <SelectItem value="6">6 ساعات</SelectItem>
+                        <SelectItem value="12">12 ساعة</SelectItem>
+                        <SelectItem value="24">24 ساعة (يوم)</SelectItem>
+                        <SelectItem value="48">48 ساعة (يومين)</SelectItem>
+                        <SelectItem value="72">72 ساعة (3 أيام)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="custom_reminder_date">تاريخ التذكير</Label>
+                      <Input
+                        id="custom_reminder_date"
+                        type="date"
+                        value={customReminderDate}
+                        onChange={(e) => setCustomReminderDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="custom_reminder_time">وقت التذكير</Label>
+                      <Input
+                        id="custom_reminder_time"
+                        type="time"
+                        value={customReminderTime}
+                        onChange={(e) => setCustomReminderTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {calculatedReminderDatetime && (
+                  <div className="text-sm text-muted-foreground bg-background p-2 rounded border">
+                    <span className="font-medium">موعد إرسال التذكير: </span>
+                    {format(new Date(calculatedReminderDatetime), 'dd/MM/yyyy الساعة HH:mm')}
+                  </div>
+                )}
               </div>
             )}
           </div>
