@@ -2908,6 +2908,13 @@ export type Database = {
             referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       invoices: {
@@ -3889,6 +3896,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "project_billings_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "project_billings_journal_entry_id_fkey"
             columns: ["journal_entry_id"]
             isOneToOne: false
@@ -4572,6 +4586,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices_safe"
             referencedColumns: ["id"]
           },
           {
@@ -5348,6 +5369,171 @@ export type Database = {
         }
         Relationships: []
       }
+      invoices_safe: {
+        Row: {
+          amount_paid: number | null
+          company_id: string | null
+          created_at: string | null
+          created_by: string | null
+          customer_address: string | null
+          customer_id: string | null
+          customer_name: string | null
+          customer_vat_number: string | null
+          discount_amount: number | null
+          due_date: string | null
+          fiscal_year_id: string | null
+          id: string | null
+          internal_notes: string | null
+          invoice_date: string | null
+          invoice_number: string | null
+          invoice_type: string | null
+          journal_entry_id: string | null
+          notes: string | null
+          payment_method: string | null
+          payment_status: string | null
+          sale_id: string | null
+          status: string | null
+          subtotal: number | null
+          supplier_id: string | null
+          taxable_amount: number | null
+          total: number | null
+          updated_at: string | null
+          vat_amount: number | null
+          vat_rate: number | null
+          zatca_invoice_hash: string | null
+          zatca_qr: string | null
+          zatca_status: string | null
+          zatca_uuid: string | null
+        }
+        Insert: {
+          amount_paid?: number | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_address?: never
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_vat_number?: never
+          discount_amount?: number | null
+          due_date?: string | null
+          fiscal_year_id?: string | null
+          id?: string | null
+          internal_notes?: string | null
+          invoice_date?: string | null
+          invoice_number?: string | null
+          invoice_type?: string | null
+          journal_entry_id?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          sale_id?: string | null
+          status?: string | null
+          subtotal?: number | null
+          supplier_id?: string | null
+          taxable_amount?: number | null
+          total?: number | null
+          updated_at?: string | null
+          vat_amount?: number | null
+          vat_rate?: number | null
+          zatca_invoice_hash?: string | null
+          zatca_qr?: string | null
+          zatca_status?: string | null
+          zatca_uuid?: string | null
+        }
+        Update: {
+          amount_paid?: number | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_address?: never
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_vat_number?: never
+          discount_amount?: number | null
+          due_date?: string | null
+          fiscal_year_id?: string | null
+          id?: string | null
+          internal_notes?: string | null
+          invoice_date?: string | null
+          invoice_number?: string | null
+          invoice_type?: string | null
+          journal_entry_id?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          sale_id?: string | null
+          status?: string | null
+          subtotal?: number | null
+          supplier_id?: string | null
+          taxable_amount?: number | null
+          total?: number | null
+          updated_at?: string | null
+          vat_amount?: number | null
+          vat_rate?: number | null
+          zatca_invoice_hash?: string | null
+          zatca_qr?: string | null
+          zatca_status?: string | null
+          zatca_uuid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_fiscal_year_id_fkey"
+            columns: ["fiscal_year_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers_safe: {
         Row: {
           address: string | null
@@ -5484,6 +5670,7 @@ export type Database = {
         | { Args: never; Returns: string }
         | { Args: { _user_id: string }; Returns: string }
       get_user_company_id_safe: { Args: { uid: string }; Returns: string }
+      has_admin_or_super_admin: { Args: never; Returns: boolean }
       has_company_admin_role: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
