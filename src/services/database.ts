@@ -114,14 +114,30 @@ export async function deleteCustomer(id: string) {
 }
 
 // Suppliers
+// Use suppliers_safe view for read operations to mask sensitive data (phone, id_number, registration_number)
+// The view shows only last 4 digits for non-admin users
 export async function fetchSuppliers() {
   const { data, error } = await supabase
-    .from('suppliers')
+    .from('suppliers_safe')
     .select('*')
     .order('created_at', { ascending: false });
   
   if (error) throw error;
-  return data;
+  // Map the masked fields back to expected field names for UI compatibility
+  return data?.map(supplier => ({
+    id: supplier.id,
+    company_id: supplier.company_id,
+    name: supplier.name,
+    phone: supplier.phone_masked,
+    address: supplier.address,
+    notes: supplier.notes,
+    id_number: supplier.id_number_masked,
+    registration_number: supplier.registration_number_masked,
+    created_at: supplier.created_at,
+    updated_at: supplier.updated_at,
+    // Not exposed in safe view - provide null for type compatibility
+    registration_number_encrypted: null as string | null,
+  })) || [];
 }
 
 export async function addSupplier(supplier: SupplierInsert) {

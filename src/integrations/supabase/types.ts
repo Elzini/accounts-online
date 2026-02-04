@@ -5219,7 +5219,7 @@ export type Database = {
       }
       suppliers_safe: {
         Row: {
-          address_masked: string | null
+          address: string | null
           company_id: string | null
           created_at: string | null
           id: string | null
@@ -5231,7 +5231,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          address_masked?: never
+          address?: string | null
           company_id?: string | null
           created_at?: string | null
           id?: string | null
@@ -5243,7 +5243,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          address_masked?: never
+          address?: string | null
           company_id?: string | null
           created_at?: string | null
           id?: string | null
@@ -5388,6 +5388,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      mask_phone: { Args: { phone: string }; Returns: string }
       process_prepaid_expense_amortizations: { Args: never; Returns: number }
       rbac_check: { Args: { required_permission: string }; Returns: boolean }
       regenerate_journal_entries: {
