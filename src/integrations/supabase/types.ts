@@ -1167,6 +1167,153 @@ export type Database = {
           },
         ]
       }
+      custodies: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          custody_amount: number
+          custody_date: string
+          custody_name: string
+          custody_number: number
+          employee_id: string | null
+          fiscal_year_id: string | null
+          id: string
+          notes: string | null
+          settlement_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          custody_amount?: number
+          custody_date?: string
+          custody_name: string
+          custody_number?: number
+          employee_id?: string | null
+          fiscal_year_id?: string | null
+          id?: string
+          notes?: string | null
+          settlement_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          custody_amount?: number
+          custody_date?: string
+          custody_name?: string
+          custody_number?: number
+          employee_id?: string | null
+          fiscal_year_id?: string | null
+          id?: string
+          notes?: string | null
+          settlement_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custodies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custodies_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custodies_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custodies_fiscal_year_id_fkey"
+            columns: ["fiscal_year_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_years"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custody_transactions: {
+        Row: {
+          account_id: string | null
+          amount: number
+          analysis_category: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          custody_id: string
+          description: string
+          id: string
+          notes: string | null
+          transaction_date: string
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number
+          analysis_category?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          custody_id: string
+          description: string
+          id?: string
+          notes?: string | null
+          transaction_date?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          analysis_category?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          custody_id?: string
+          description?: string
+          id?: string
+          notes?: string | null
+          transaction_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_transactions_custody_id_fkey"
+            columns: ["custody_id"]
+            isOneToOne: false
+            referencedRelation: "custodies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_reports: {
         Row: {
           columns: Json

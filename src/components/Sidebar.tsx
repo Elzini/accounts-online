@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -66,7 +66,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'progress-billings': Receipt,
   'materials': Package,
   'subcontractors': Users,
-  'equipment': Wrench
+  'equipment': Wrench,
+  // Custody
+  'custody': HandCoins
 };
 
 export function Sidebar({
@@ -219,6 +221,10 @@ export function Sidebar({
     id: 'banking' as ActivePage,
     label: settings?.banking_title || 'إدارة البنوك',
     icon: Scale
+  }, {
+    id: 'custody' as ActivePage,
+    label: 'إدارة العهد',
+    icon: HandCoins
   }];
   const reportItems = [{
     id: 'inventory-report' as ActivePage,
