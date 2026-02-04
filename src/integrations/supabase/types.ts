@@ -4752,6 +4752,122 @@ export type Database = {
           },
         ]
       }
+      trip_passengers: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          passenger_name: string
+          passenger_phone: string | null
+          trip_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          passenger_name: string
+          passenger_phone?: string | null
+          trip_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          passenger_name?: string
+          passenger_phone?: string | null
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_passengers_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trips: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          customer_name: string
+          customer_phone: string
+          departure_point: string
+          destination: string
+          fiscal_year_id: string | null
+          id: string
+          notes: string | null
+          price: number | null
+          reminder_hours_before: number | null
+          reminder_sent: boolean | null
+          reminder_sent_at: string | null
+          status: string | null
+          trip_date: string
+          trip_number: number
+          trip_time: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          customer_name: string
+          customer_phone: string
+          departure_point: string
+          destination: string
+          fiscal_year_id?: string | null
+          id?: string
+          notes?: string | null
+          price?: number | null
+          reminder_hours_before?: number | null
+          reminder_sent?: boolean | null
+          reminder_sent_at?: string | null
+          status?: string | null
+          trip_date: string
+          trip_number?: number
+          trip_time: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          customer_name?: string
+          customer_phone?: string
+          departure_point?: string
+          destination?: string
+          fiscal_year_id?: string | null
+          id?: string
+          notes?: string | null
+          price?: number | null
+          reminder_hours_before?: number | null
+          reminder_sent?: boolean | null
+          reminder_sent_at?: string | null
+          status?: string | null
+          trip_date?: string
+          trip_number?: number
+          trip_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trips_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trips_fiscal_year_id_fkey"
+            columns: ["fiscal_year_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_years"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_2fa: {
         Row: {
           backup_codes: string[] | null
