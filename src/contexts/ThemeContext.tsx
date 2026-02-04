@@ -15,8 +15,8 @@ interface ThemeContextType {
 }
 
 const defaultTheme: ThemeSettings = {
-  primaryColor: '#8b5cf6',
-  sidebarColor: '#4c1d95',
+  primaryColor: '#3b82f6',
+  sidebarColor: '#1e293b',
   fontFamily: 'Cairo',
   fontSize: '16',
 };
