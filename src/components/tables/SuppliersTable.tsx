@@ -76,12 +76,12 @@ export function SuppliersTable({ setActivePage }: SuppliersTableProps) {
               <div className="space-y-1">
                 <MobileCardRow 
                   label="الرقم الضريبي" 
-                  value={<span dir="ltr">{supplier.registration_number || '-'}</span>}
+                  value={<span dir="ltr" className="font-mono">{supplier.registration_number || '-'}</span>}
                   icon={<IdCard className="w-3.5 h-3.5" />}
                 />
                 <MobileCardRow 
                   label="الهاتف" 
-                  value={<span dir="ltr">{supplier.phone}</span>}
+                  value={<span dir="ltr" className="font-mono">{supplier.phone}</span>}
                   icon={<Phone className="w-3.5 h-3.5" />}
                 />
                 <MobileCardRow 
