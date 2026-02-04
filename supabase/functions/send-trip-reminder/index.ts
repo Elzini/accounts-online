@@ -6,9 +6,69 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const AUTHENTICA_BASE_URL = "https://api.authentica.sa";
+
 interface SendReminderRequest {
   tripId?: string;
   checkAll?: boolean;
+}
+
+// Format phone number to E.164 format
+function formatPhoneNumber(phone: string): string {
+  let phoneNumber = phone.replace(/\s/g, "");
+  if (!phoneNumber.startsWith("+")) {
+    // Assume Saudi Arabia if no country code and starts with 05
+    if (phoneNumber.startsWith("05")) {
+      phoneNumber = "+966" + phoneNumber.substring(1);
+    } else if (phoneNumber.startsWith("5")) {
+      phoneNumber = "+966" + phoneNumber;
+    } else if (phoneNumber.startsWith("0")) {
+      // Egypt numbers starting with 0
+      phoneNumber = "+20" + phoneNumber.substring(1);
+    } else {
+      // Default to Saudi Arabia
+      phoneNumber = "+966" + phoneNumber;
+    }
+  }
+  return phoneNumber;
+}
+
+// Send SMS via Authentica API (using custom SMS with sender name)
+async function sendSmsViaAuthentica(
+  apiKey: string,
+  phone: string,
+  message: string,
+  senderName: string = "Trips"
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`${AUTHENTICA_BASE_URL}/api/v2/send-sms`, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "X-Authorization": apiKey,
+      },
+      body: JSON.stringify({ phone, message, sender_name: senderName }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error("Authentica SMS error:", result);
+      return { 
+        success: false, 
+        error: result?.message || `HTTP ${response.status}` 
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send SMS:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Unknown error" 
+    };
+  }
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -17,12 +77,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const TWILIO_PHONE_NUMBER = Deno.env.get("TWILIO_PHONE_NUMBER");
-
-    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
-      throw new Error("Twilio credentials not configured");
+    const AUTHENTICA_API_KEY = Deno.env.get("AUTHENTICA_API_KEY");
+    if (!AUTHENTICA_API_KEY) {
+      throw new Error("AUTHENTICA_API_KEY not configured");
     }
 
     const supabaseAdmin = createClient(
@@ -68,16 +125,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     for (const trip of tripsToRemind) {
       try {
-        // Format phone number (ensure it starts with +)
-        let phoneNumber = trip.customer_phone.replace(/\s/g, "");
-        if (!phoneNumber.startsWith("+")) {
-          // Assume Saudi Arabia if no country code
-          if (phoneNumber.startsWith("0")) {
-            phoneNumber = "+966" + phoneNumber.substring(1);
-          } else {
-            phoneNumber = "+966" + phoneNumber;
-          }
-        }
+        const phoneNumber = formatPhoneNumber(trip.customer_phone);
 
         // Create SMS message in Arabic
         const message = `تذكير برحلتك 🚗
@@ -89,31 +137,18 @@ const handler = async (req: Request): Promise<Response> => {
 
 نتمنى لك رحلة سعيدة!`;
 
-        // Send SMS via Twilio
-        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
-        
-        const formData = new URLSearchParams();
-        formData.append("To", phoneNumber);
-        formData.append("From", TWILIO_PHONE_NUMBER);
-        formData.append("Body", message);
+        // Send SMS via Authentica
+        const smsResult = await sendSmsViaAuthentica(
+          AUTHENTICA_API_KEY,
+          phoneNumber,
+          message
+        );
 
-        const twilioResponse = await fetch(twilioUrl, {
-          method: "POST",
-          headers: {
-            "Authorization": "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: formData.toString(),
-        });
-
-        const twilioResult = await twilioResponse.json();
-
-        if (!twilioResponse.ok) {
-          console.error("Twilio error:", twilioResult);
+        if (!smsResult.success) {
           results.push({
             tripId: trip.id,
             success: false,
-            error: twilioResult.message || "Failed to send SMS",
+            error: smsResult.error,
           });
           continue;
         }
@@ -130,7 +165,7 @@ const handler = async (req: Request): Promise<Response> => {
         results.push({
           tripId: trip.id,
           success: true,
-          messageSid: twilioResult.sid,
+          phone: phoneNumber,
         });
 
         console.log(`Reminder sent for trip ${trip.id} to ${phoneNumber}`);
@@ -143,14 +178,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         for (const passenger of passengers || []) {
           if (passenger.passenger_phone) {
-            let passengerPhone = passenger.passenger_phone.replace(/\s/g, "");
-            if (!passengerPhone.startsWith("+")) {
-              if (passengerPhone.startsWith("0")) {
-                passengerPhone = "+966" + passengerPhone.substring(1);
-              } else {
-                passengerPhone = "+966" + passengerPhone;
-              }
-            }
+            const passengerPhone = formatPhoneNumber(passenger.passenger_phone);
 
             const passengerMessage = `تذكير برحلتك 🚗
 مرحباً ${passenger.passenger_name}
@@ -161,19 +189,13 @@ const handler = async (req: Request): Promise<Response> => {
 
 نتمنى لك رحلة سعيدة!`;
 
-            const passengerFormData = new URLSearchParams();
-            passengerFormData.append("To", passengerPhone);
-            passengerFormData.append("From", TWILIO_PHONE_NUMBER);
-            passengerFormData.append("Body", passengerMessage);
-
-            await fetch(twilioUrl, {
-              method: "POST",
-              headers: {
-                "Authorization": "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
-                "Content-Type": "application/x-www-form-urlencoded",
-              },
-              body: passengerFormData.toString(),
-            });
+            await sendSmsViaAuthentica(
+              AUTHENTICA_API_KEY,
+              passengerPhone,
+              passengerMessage
+            );
+            
+            console.log(`Passenger reminder sent to ${passengerPhone}`);
           }
         }
 

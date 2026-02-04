@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shield, ShieldCheck, ShieldOff, Copy, Check, Loader2 } from 'lucide-react';
+import { Shield, ShieldCheck, ShieldOff, Copy, Check, Loader2, Smartphone, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,29 +7,46 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { QRCodeSVG } from 'qrcode.react';
-import { use2FAStatus, useSetup2FA, useVerify2FA, useDisable2FA } from '@/hooks/use2FA';
+import { 
+  use2FAStatus, 
+  useSetup2FA, 
+  useVerify2FA, 
+  useDisable2FA,
+  useSetupSms2FA,
+  useVerifySms2FA,
+} from '@/hooks/use2FA';
 import { toast } from 'sonner';
 
 export function TwoFactorSetup() {
-  const { data: isEnabled, isLoading: statusLoading } = use2FAStatus();
+  const { data: statusData, isLoading: statusLoading } = use2FAStatus();
   const setupMutation = useSetup2FA();
   const verifyMutation = useVerify2FA();
   const disableMutation = useDisable2FA();
+  const setupSmsMutation = useSetupSms2FA();
+  const verifySmsMutation = useVerifySms2FA();
 
   const [setupDialogOpen, setSetupDialogOpen] = useState(false);
   const [disableDialogOpen, setDisableDialogOpen] = useState(false);
+  const [setupMethod, setSetupMethod] = useState<'totp' | 'sms'>('totp');
   const [setupData, setSetupData] = useState<{
     secret?: string;
     otpauthUrl?: string;
     backupCodes?: string[];
   } | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [disableCode, setDisableCode] = useState('');
   const [copiedSecret, setCopiedSecret] = useState(false);
   const [showBackupCodes, setShowBackupCodes] = useState(false);
+  const [smsStep, setSmsStep] = useState<'phone' | 'verify'>('phone');
 
-  const handleSetup = async () => {
+  const isEnabled = statusData?.isEnabled || false;
+  const twoFaType = statusData?.twoFaType;
+  const maskedPhone = statusData?.phoneNumber;
+
+  const handleSetupTotp = async () => {
     const result = await setupMutation.mutateAsync();
     if (result.success) {
       setSetupData({
@@ -37,11 +54,32 @@ export function TwoFactorSetup() {
         otpauthUrl: result.otpauthUrl,
         backupCodes: result.backupCodes,
       });
+      setSetupMethod('totp');
       setSetupDialogOpen(true);
     }
   };
 
-  const handleVerify = async () => {
+  const handleSetupSms = () => {
+    setSetupMethod('sms');
+    setSmsStep('phone');
+    setPhoneNumber('');
+    setVerificationCode('');
+    setSetupDialogOpen(true);
+  };
+
+  const handleSendSmsOtp = async () => {
+    if (!phoneNumber || phoneNumber.length < 9) {
+      toast.error('يرجى إدخال رقم هاتف صحيح');
+      return;
+    }
+
+    const result = await setupSmsMutation.mutateAsync(phoneNumber);
+    if (result.success) {
+      setSmsStep('verify');
+    }
+  };
+
+  const handleVerifyTotp = async () => {
     if (!verificationCode || verificationCode.length !== 6) {
       toast.error('يرجى إدخال رمز مكون من 6 أرقام');
       return;
@@ -53,9 +91,21 @@ export function TwoFactorSetup() {
     }
   };
 
+  const handleVerifySms = async () => {
+    if (!verificationCode || verificationCode.length < 4) {
+      toast.error('يرجى إدخال رمز التحقق');
+      return;
+    }
+
+    const result = await verifySmsMutation.mutateAsync(verificationCode);
+    if (result.success && result.isValid) {
+      closeSetupDialog();
+    }
+  };
+
   const handleDisable = async () => {
-    if (!disableCode || disableCode.length !== 6) {
-      toast.error('يرجى إدخال رمز مكون من 6 أرقام');
+    if (!disableCode || disableCode.length < 4) {
+      toast.error('يرجى إدخال رمز التحقق');
       return;
     }
 
@@ -79,7 +129,9 @@ export function TwoFactorSetup() {
     setSetupDialogOpen(false);
     setSetupData(null);
     setVerificationCode('');
+    setPhoneNumber('');
     setShowBackupCodes(false);
+    setSmsStep('phone');
   };
 
   if (statusLoading) {
@@ -106,18 +158,36 @@ export function TwoFactorSetup() {
                 </CardDescription>
               </div>
             </div>
-            <Badge variant={isEnabled ? 'default' : 'secondary'}>
-              {isEnabled ? 'مفعل' : 'غير مفعل'}
-            </Badge>
+            <div className="flex items-center gap-2">
+              {isEnabled && twoFaType === 'sms' && (
+                <Badge variant="outline" className="gap-1">
+                  <MessageSquare className="w-3 h-3" />
+                  SMS
+                </Badge>
+              )}
+              {isEnabled && twoFaType === 'totp' && (
+                <Badge variant="outline" className="gap-1">
+                  <Smartphone className="w-3 h-3" />
+                  تطبيق
+                </Badge>
+              )}
+              <Badge variant={isEnabled ? 'default' : 'secondary'}>
+                {isEnabled ? 'مفعل' : 'غير مفعل'}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {isEnabled
-                ? 'حسابك محمي بالمصادقة الثنائية. ستحتاج لإدخال رمز من تطبيق المصادقة عند تسجيل الدخول.'
-                : 'قم بتفعيل المصادقة الثنائية لحماية حسابك من الوصول غير المصرح به.'}
-            </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">
+                {isEnabled
+                  ? twoFaType === 'sms'
+                    ? `حسابك محمي بالمصادقة الثنائية عبر SMS (${maskedPhone})`
+                    : 'حسابك محمي بالمصادقة الثنائية عبر التطبيق. ستحتاج لإدخال رمز من تطبيق المصادقة عند تسجيل الدخول.'
+                  : 'قم بتفعيل المصادقة الثنائية لحماية حسابك من الوصول غير المصرح به.'}
+              </p>
+            </div>
             {isEnabled ? (
               <Button
                 variant="destructive"
@@ -127,14 +197,28 @@ export function TwoFactorSetup() {
                 تعطيل
               </Button>
             ) : (
-              <Button onClick={handleSetup} disabled={setupMutation.isPending}>
-                {setupMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                ) : (
-                  <ShieldCheck className="w-4 h-4 ml-2" />
-                )}
-                تفعيل
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={handleSetupSms} 
+                  disabled={setupSmsMutation.isPending}
+                >
+                  {setupSmsMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                  ) : (
+                    <MessageSquare className="w-4 h-4 ml-2" />
+                  )}
+                  SMS
+                </Button>
+                <Button onClick={handleSetupTotp} disabled={setupMutation.isPending}>
+                  {setupMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                  ) : (
+                    <Smartphone className="w-4 h-4 ml-2" />
+                  )}
+                  تطبيق
+                </Button>
+              </div>
             )}
           </div>
         </CardContent>
@@ -144,15 +228,56 @@ export function TwoFactorSetup() {
       <Dialog open={setupDialogOpen} onOpenChange={setSetupDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>إعداد المصادقة الثنائية</DialogTitle>
+            <DialogTitle>
+              {setupMethod === 'sms' ? 'إعداد المصادقة عبر SMS' : 'إعداد المصادقة الثنائية'}
+            </DialogTitle>
             <DialogDescription>
-              {showBackupCodes
+              {setupMethod === 'sms'
+                ? smsStep === 'phone'
+                  ? 'أدخل رقم هاتفك لتلقي رموز التحقق'
+                  : 'أدخل رمز التحقق المرسل إلى هاتفك'
+                : showBackupCodes
                 ? 'احتفظ بالرموز الاحتياطية في مكان آمن'
                 : 'امسح رمز QR باستخدام تطبيق المصادقة (Google Authenticator, Authy, إلخ)'}
             </DialogDescription>
           </DialogHeader>
 
-          {!showBackupCodes ? (
+          {setupMethod === 'sms' ? (
+            // SMS Setup
+            <div className="space-y-4">
+              {smsStep === 'phone' ? (
+                <div className="space-y-2">
+                  <Label>رقم الهاتف</Label>
+                  <Input
+                    type="tel"
+                    placeholder="05XXXXXXXX"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="text-center text-lg"
+                    dir="ltr"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    سيتم إرسال رمز التحقق عبر SMS إلى هذا الرقم
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label>رمز التحقق</Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    placeholder="0000"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                    className="text-center text-2xl tracking-widest"
+                  />
+                </div>
+              )}
+            </div>
+          ) : !showBackupCodes ? (
+            // TOTP Setup
             <div className="space-y-4">
               {setupData?.otpauthUrl && (
                 <div className="flex justify-center p-4 bg-white rounded-lg">
@@ -193,6 +318,7 @@ export function TwoFactorSetup() {
               </div>
             </div>
           ) : (
+            // Backup Codes
             <div className="space-y-4">
               <Alert>
                 <AlertDescription>
@@ -201,7 +327,7 @@ export function TwoFactorSetup() {
                 </AlertDescription>
               </Alert>
 
-                <div className="grid grid-cols-2 gap-2 p-4 bg-muted rounded-lg font-mono text-sm">
+              <div className="grid grid-cols-2 gap-2 p-4 bg-muted rounded-lg font-mono text-sm">
                 {setupData?.backupCodes?.map((code, index) => (
                   <div key={index} className="p-2 bg-background rounded text-center">
                     {code}
@@ -226,13 +352,45 @@ export function TwoFactorSetup() {
           )}
 
           <DialogFooter>
-            {!showBackupCodes ? (
+            {setupMethod === 'sms' ? (
+              smsStep === 'phone' ? (
+                <>
+                  <Button variant="outline" onClick={closeSetupDialog}>
+                    إلغاء
+                  </Button>
+                  <Button
+                    onClick={handleSendSmsOtp}
+                    disabled={setupSmsMutation.isPending || phoneNumber.length < 9}
+                  >
+                    {setupSmsMutation.isPending && (
+                      <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                    )}
+                    إرسال الرمز
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => setSmsStep('phone')}>
+                    رجوع
+                  </Button>
+                  <Button
+                    onClick={handleVerifySms}
+                    disabled={verifySmsMutation.isPending || verificationCode.length < 4}
+                  >
+                    {verifySmsMutation.isPending && (
+                      <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                    )}
+                    تفعيل
+                  </Button>
+                </>
+              )
+            ) : !showBackupCodes ? (
               <>
                 <Button variant="outline" onClick={closeSetupDialog}>
                   إلغاء
                 </Button>
                 <Button
-                  onClick={handleVerify}
+                  onClick={handleVerifyTotp}
                   disabled={verifyMutation.isPending || verificationCode.length !== 6}
                 >
                   {verifyMutation.isPending && (
@@ -256,7 +414,9 @@ export function TwoFactorSetup() {
           <DialogHeader>
             <DialogTitle>تعطيل المصادقة الثنائية</DialogTitle>
             <DialogDescription>
-              أدخل رمز التحقق من تطبيق المصادقة لتأكيد تعطيل الميزة
+              {twoFaType === 'sms'
+                ? 'أدخل رمز التحقق المرسل إلى هاتفك لتأكيد تعطيل الميزة'
+                : 'أدخل رمز التحقق من تطبيق المصادقة لتأكيد تعطيل الميزة'}
             </DialogDescription>
           </DialogHeader>
 
@@ -289,7 +449,7 @@ export function TwoFactorSetup() {
             <Button
               variant="destructive"
               onClick={handleDisable}
-              disabled={disableMutation.isPending || disableCode.length !== 6}
+              disabled={disableMutation.isPending || disableCode.length < 4}
             >
               {disableMutation.isPending && (
                 <Loader2 className="w-4 h-4 ml-2 animate-spin" />

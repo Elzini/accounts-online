@@ -4880,7 +4880,9 @@ export type Database = {
           created_at: string
           id: string
           is_enabled: boolean | null
+          phone_number: string | null
           secret_encrypted: string
+          two_fa_type: string | null
           updated_at: string
           user_id: string
           verified_at: string | null
@@ -4890,7 +4892,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_enabled?: boolean | null
+          phone_number?: string | null
           secret_encrypted: string
+          two_fa_type?: string | null
           updated_at?: string
           user_id: string
           verified_at?: string | null
@@ -4900,7 +4904,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_enabled?: boolean | null
+          phone_number?: string | null
           secret_encrypted?: string
+          two_fa_type?: string | null
           updated_at?: string
           user_id?: string
           verified_at?: string | null
