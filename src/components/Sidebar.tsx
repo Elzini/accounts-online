@@ -277,6 +277,11 @@ export function Sidebar({
     label: settings?.partner_report_title || 'تقرير المعرض الشريك',
     icon: Building2,
     permission: 'reports' as const
+  }, {
+    id: 'account-movement' as ActivePage,
+    label: 'تقرير حركة الحسابات',
+    icon: ClipboardList,
+    permission: 'reports' as const
   }];
   const accountingItems = [{
     id: 'fiscal-years' as ActivePage,
