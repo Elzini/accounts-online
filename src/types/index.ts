@@ -113,4 +113,6 @@ export type ActivePage =
   // Custody module
   | 'custody'
   // Trips module
-  | 'trips';
+  | 'trips'
+  // Account Movement Report
+  | 'account-movement';

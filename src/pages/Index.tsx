@@ -53,6 +53,7 @@ import { VATReturnReportPage } from '@/components/accounting/VATReturnReportPage
 import { EmployeesPage } from '@/components/payroll/EmployeesPage';
 import { PayrollPage } from '@/components/payroll/PayrollPage';
 import { AccountStatementReport } from '@/components/reports/AccountStatementReport';
+import { AccountMovementReport } from '@/components/reports/AccountMovementReport';
 import { ControlCenterPage } from '@/components/control-center/ControlCenterPage';
 import { FixedAssetsPage } from '@/components/assets/FixedAssetsPage';
 import { MedadImportPage } from '@/components/import/MedadImportPage';
@@ -167,6 +168,8 @@ const Index = () => {
       case 'custody': return <CustodyPage />;
       // Trips module
       case 'trips': return <TripsPage />;
+      // Account Movement Report
+      case 'account-movement': return <AccountMovementReport />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };
