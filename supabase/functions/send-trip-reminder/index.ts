@@ -91,10 +91,18 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("INFOBIP_API_KEY not configured");
     }
 
-    const INFOBIP_BASE_URL = Deno.env.get("INFOBIP_BASE_URL");
+    let INFOBIP_BASE_URL = Deno.env.get("INFOBIP_BASE_URL");
     if (!INFOBIP_BASE_URL) {
       throw new Error("INFOBIP_BASE_URL not configured");
     }
+    
+    // Ensure URL has protocol
+    if (!INFOBIP_BASE_URL.startsWith("http://") && !INFOBIP_BASE_URL.startsWith("https://")) {
+      INFOBIP_BASE_URL = `https://${INFOBIP_BASE_URL}`;
+    }
+    
+    // Remove trailing slash if present
+    INFOBIP_BASE_URL = INFOBIP_BASE_URL.replace(/\/+$/, "");
 
     // Optional: Get sender name from environment
     const SENDER_NAME = Deno.env.get("INFOBIP_SENDER_NAME");
