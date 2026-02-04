@@ -83,21 +83,29 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
   }, [custody, form]);
 
   const onSubmit = (values: FormValues) => {
-    const data = {
-      custody_name: values.custody_name,
-      custody_amount: values.custody_amount,
-      custody_date: values.custody_date,
-      employee_id: values.employee_id && values.employee_id !== '__none__' ? values.employee_id : null,
-      notes: values.notes || null,
-      status: 'active' as const,
-      settlement_date: null,
-      created_by: null,
-      fiscal_year_id: null,
-    };
-
     if (custody) {
-      updateCustody({ id: custody.id, updates: data });
+      // When updating, only update the editable fields - preserve fiscal_year_id
+      const updates = {
+        custody_name: values.custody_name,
+        custody_amount: values.custody_amount,
+        custody_date: values.custody_date,
+        employee_id: values.employee_id && values.employee_id !== '__none__' ? values.employee_id : null,
+        notes: values.notes || null,
+      };
+      updateCustody({ id: custody.id, updates });
     } else {
+      // When adding, let the hook handle fiscal_year_id
+      const data = {
+        custody_name: values.custody_name,
+        custody_amount: values.custody_amount,
+        custody_date: values.custody_date,
+        employee_id: values.employee_id && values.employee_id !== '__none__' ? values.employee_id : null,
+        notes: values.notes || null,
+        status: 'active' as const,
+        settlement_date: null,
+        created_by: null,
+        fiscal_year_id: null,
+      };
       addCustody(data);
     }
     onOpenChange(false);
