@@ -12,44 +12,44 @@ interface StatCardProps {
 
 const colorConfig = {
   primary: {
-    bg: 'bg-gradient-to-br from-purple-500 to-purple-600',
-    text: 'text-white',
-    iconBg: 'bg-white/20',
+    border: 'border-t-purple-500',
+    iconBg: 'bg-gradient-to-br from-purple-400 to-purple-600',
+    lightBg: 'from-purple-50/50 to-white',
   },
   success: {
-    bg: 'bg-gradient-to-br from-emerald-400 to-teal-500',
-    text: 'text-white',
-    iconBg: 'bg-white/20',
+    border: 'border-t-emerald-500',
+    iconBg: 'bg-gradient-to-br from-emerald-400 to-teal-500',
+    lightBg: 'from-emerald-50/50 to-white',
   },
   warning: {
-    bg: 'bg-gradient-to-br from-amber-400 to-orange-500',
-    text: 'text-white',
-    iconBg: 'bg-white/20',
+    border: 'border-t-orange-500',
+    iconBg: 'bg-gradient-to-br from-orange-400 to-amber-500',
+    lightBg: 'from-orange-50/50 to-white',
   },
   danger: {
-    bg: 'bg-gradient-to-br from-rose-400 to-red-500',
-    text: 'text-white',
-    iconBg: 'bg-white/20',
+    border: 'border-t-rose-500',
+    iconBg: 'bg-gradient-to-br from-rose-400 to-red-500',
+    lightBg: 'from-rose-50/50 to-white',
   },
   info: {
-    bg: 'bg-gradient-to-br from-sky-400 to-blue-500',
-    text: 'text-white',
-    iconBg: 'bg-white/20',
+    border: 'border-t-blue-500',
+    iconBg: 'bg-gradient-to-br from-blue-400 to-indigo-500',
+    lightBg: 'from-blue-50/50 to-white',
   },
   accent: {
-    bg: 'bg-gradient-to-br from-orange-400 to-amber-500',
-    text: 'text-white',
-    iconBg: 'bg-white/20',
+    border: 'border-t-amber-500',
+    iconBg: 'bg-gradient-to-br from-amber-400 to-orange-500',
+    lightBg: 'from-amber-50/50 to-white',
   },
   cyan: {
-    bg: 'bg-gradient-to-br from-cyan-400 to-teal-500',
-    text: 'text-white',
-    iconBg: 'bg-white/20',
+    border: 'border-t-cyan-500',
+    iconBg: 'bg-gradient-to-br from-cyan-400 to-teal-500',
+    lightBg: 'from-cyan-50/50 to-white',
   },
   pink: {
-    bg: 'bg-gradient-to-br from-pink-400 to-rose-500',
-    text: 'text-white',
-    iconBg: 'bg-white/20',
+    border: 'border-t-pink-500',
+    iconBg: 'bg-gradient-to-br from-pink-400 to-rose-500',
+    lightBg: 'from-pink-50/50 to-white',
   },
 };
 
@@ -59,9 +59,12 @@ export function StatCard({ title, value, icon: Icon, gradient, subtitle, onClick
   return (
     <div 
       className={cn(
-        "rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 shadow-lg hover-lift animate-fade-in transition-all duration-300",
-        colors.bg,
-        onClick && "cursor-pointer hover:shadow-xl hover:scale-[1.02]"
+        "rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 shadow-sm hover-lift animate-fade-in transition-all duration-300",
+        "bg-gradient-to-br border border-border/30",
+        colors.lightBg,
+        "border-t-[5px]",
+        colors.border,
+        onClick && "cursor-pointer hover:shadow-lg hover:scale-[1.02]"
       )}
       onClick={onClick}
       role={onClick ? "button" : undefined}
@@ -70,23 +73,23 @@ export function StatCard({ title, value, icon: Icon, gradient, subtitle, onClick
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className={cn("text-xs sm:text-sm font-medium mb-1 truncate opacity-90", colors.text)}>
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 truncate">
             {title}
           </p>
-          <p className={cn("text-2xl sm:text-3xl md:text-4xl font-bold truncate", colors.text)}>
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground truncate">
             {value}
           </p>
           {subtitle && (
-            <p className={cn("text-[11px] sm:text-xs mt-1.5 truncate opacity-80", colors.text)}>
+            <p className="text-[11px] sm:text-xs text-muted-foreground mt-1.5 truncate">
               {subtitle}
             </p>
           )}
         </div>
         <div className={cn(
-          "w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center shrink-0",
+          "w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center shrink-0 shadow-lg",
           colors.iconBg
         )}>
-          <Icon className={cn("w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8", colors.text)} />
+          <Icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
         </div>
       </div>
     </div>
