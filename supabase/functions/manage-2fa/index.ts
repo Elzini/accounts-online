@@ -2,15 +2,17 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import * as OTPAuth from "https://esm.sh/otpauth@9.2.2";
 
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const AUTHENTICA_BASE_URL = "https://api.authentica.sa";
+
 interface RequestBody {
-  action: 'setup' | 'verify' | 'disable' | 'check' | 'verify-login';
+  action: 'setup' | 'verify' | 'disable' | 'check' | 'verify-login' | 'setup-sms' | 'verify-sms' | 'verify-login-sms';
   token?: string;
+  phone?: string;
 }
 
 // AES-256-GCM Encryption utilities
@@ -20,7 +22,6 @@ async function getEncryptionKey(): Promise<CryptoKey> {
     throw new Error("Encryption key not configured");
   }
   
-  // Derive a proper 256-bit key from the secret using PBKDF2
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(keyString),
@@ -32,7 +33,7 @@ async function getEncryptionKey(): Promise<CryptoKey> {
   return await crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt: new TextEncoder().encode("2fa-salt-v1"), // Static salt for deterministic key derivation
+      salt: new TextEncoder().encode("2fa-salt-v1"),
       iterations: 100000,
       hash: "SHA-256"
     },
@@ -45,7 +46,7 @@ async function getEncryptionKey(): Promise<CryptoKey> {
 
 async function encryptSecret(plaintext: string): Promise<string> {
   const key = await getEncryptionKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV for AES-GCM
+  const iv = crypto.getRandomValues(new Uint8Array(12));
   
   const encrypted = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv },
@@ -53,25 +54,20 @@ async function encryptSecret(plaintext: string): Promise<string> {
     new TextEncoder().encode(plaintext)
   );
   
-  // Combine IV + encrypted data and encode as base64
   const combined = new Uint8Array(iv.length + encrypted.byteLength);
   combined.set(iv, 0);
   combined.set(new Uint8Array(encrypted), iv.length);
   
-  // Prefix with "enc:" to identify encrypted values
   return "enc:" + btoa(String.fromCharCode(...combined));
 }
 
 async function decryptSecret(ciphertext: string): Promise<string> {
-  // Handle legacy base64-encoded secrets (not encrypted)
   if (!ciphertext.startsWith("enc:")) {
-    // Legacy format - just base64 decode
     return atob(ciphertext);
   }
   
-  // New encrypted format
   const key = await getEncryptionKey();
-  const base64Data = ciphertext.slice(4); // Remove "enc:" prefix
+  const base64Data = ciphertext.slice(4);
   const combined = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
   
   const iv = combined.slice(0, 12);
@@ -92,6 +88,87 @@ async function encryptBackupCode(code: string): Promise<string> {
 
 async function decryptBackupCode(encrypted: string): Promise<string> {
   return await decryptSecret(encrypted);
+}
+
+// Format phone number to E.164
+function formatPhoneNumber(phone: string): string {
+  let phoneNumber = phone.replace(/\s/g, "");
+  if (!phoneNumber.startsWith("+")) {
+    if (phoneNumber.startsWith("05")) {
+      phoneNumber = "+966" + phoneNumber.substring(1);
+    } else if (phoneNumber.startsWith("5")) {
+      phoneNumber = "+966" + phoneNumber;
+    } else if (phoneNumber.startsWith("0")) {
+      phoneNumber = "+20" + phoneNumber.substring(1);
+    } else {
+      phoneNumber = "+966" + phoneNumber;
+    }
+  }
+  return phoneNumber;
+}
+
+// Send OTP via Authentica
+async function sendOtpViaAuthentica(phone: string): Promise<{ success: boolean; error?: string }> {
+  const apiKey = Deno.env.get("AUTHENTICA_API_KEY");
+  if (!apiKey) {
+    return { success: false, error: "AUTHENTICA_API_KEY not configured" };
+  }
+
+  try {
+    const response = await fetch(`${AUTHENTICA_BASE_URL}/api/v2/send-otp`, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "X-Authorization": apiKey,
+      },
+      body: JSON.stringify({ method: "sms", phone }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error("Authentica send-otp error:", result);
+      return { success: false, error: result?.message || `HTTP ${response.status}` };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send OTP:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
+// Verify OTP via Authentica
+async function verifyOtpViaAuthentica(phone: string, otp: string): Promise<{ success: boolean; verified?: boolean; error?: string }> {
+  const apiKey = Deno.env.get("AUTHENTICA_API_KEY");
+  if (!apiKey) {
+    return { success: false, error: "AUTHENTICA_API_KEY not configured" };
+  }
+
+  try {
+    const response = await fetch(`${AUTHENTICA_BASE_URL}/api/v2/verify-otp`, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "X-Authorization": apiKey,
+      },
+      body: JSON.stringify({ phone, otp }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error("Authentica verify-otp error:", result);
+      return { success: false, error: result?.message || `HTTP ${response.status}` };
+    }
+
+    return { success: true, verified: result?.verified === true };
+  } catch (error) {
+    console.error("Failed to verify OTP:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
 }
 
 serve(async (req) => {
@@ -118,14 +195,13 @@ serve(async (req) => {
       throw new Error("المستخدم غير مصادق");
     }
 
-    const { action, token }: RequestBody = await req.json();
+    const { action, token, phone }: RequestBody = await req.json();
 
-    // Admin client for sensitive operations
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
     switch (action) {
+      // ===================== TOTP App-based 2FA =====================
       case 'setup': {
-        // Generate new secret
         const totp = new OTPAuth.TOTP({
           issuer: "Elzini System",
           label: user.email || user.id,
@@ -138,7 +214,6 @@ serve(async (req) => {
         const secret = totp.secret.base32;
         const otpauthUrl = totp.toString();
 
-        // Generate backup codes
         const backupCodes: string[] = [];
         for (let i = 0; i < 10; i++) {
           const code = Array.from({ length: 8 }, () => 
@@ -147,10 +222,7 @@ serve(async (req) => {
           backupCodes.push(code);
         }
 
-        // Encrypt the secret using AES-256-GCM
         const encryptedSecret = await encryptSecret(secret);
-        
-        // Encrypt backup codes
         const encryptedBackupCodes = await Promise.all(
           backupCodes.map(code => encryptBackupCode(code))
         );
@@ -162,6 +234,7 @@ serve(async (req) => {
             secret_encrypted: encryptedSecret,
             is_enabled: false,
             backup_codes: encryptedBackupCodes,
+            two_fa_type: 'totp',
           }, { onConflict: 'user_id' });
 
         return new Response(
@@ -180,7 +253,6 @@ serve(async (req) => {
           throw new Error("الرمز مطلوب");
         }
 
-        // Get the stored secret
         const { data: twoFaData } = await adminClient
           .from('user_2fa')
           .select('secret_encrypted')
@@ -191,7 +263,6 @@ serve(async (req) => {
           throw new Error("لم يتم إعداد المصادقة الثنائية");
         }
 
-        // Decrypt the secret (handles both legacy and new format)
         const secret = await decryptSecret(twoFaData.secret_encrypted);
 
         const totp = new OTPAuth.TOTP({
@@ -207,12 +278,12 @@ serve(async (req) => {
         const isValid = delta !== null;
 
         if (isValid) {
-          // Enable 2FA
           await adminClient
             .from('user_2fa')
             .update({
               is_enabled: true,
               verified_at: new Date().toISOString(),
+              two_fa_type: 'totp',
             })
             .eq('user_id', user.id);
         }
@@ -228,10 +299,9 @@ serve(async (req) => {
           throw new Error("الرمز مطلوب");
         }
 
-        // Get the stored secret
         const { data: twoFaData } = await adminClient
           .from('user_2fa')
-          .select('secret_encrypted, backup_codes')
+          .select('secret_encrypted, backup_codes, two_fa_type')
           .eq('user_id', user.id)
           .eq('is_enabled', true)
           .single();
@@ -240,7 +310,6 @@ serve(async (req) => {
           throw new Error("المصادقة الثنائية غير مفعلة");
         }
 
-        // Decrypt the secret (handles both legacy and new format)
         const secret = await decryptSecret(twoFaData.secret_encrypted);
         const totp = new OTPAuth.TOTP({
           issuer: "Elzini System",
@@ -253,16 +322,14 @@ serve(async (req) => {
 
         let isValid = totp.validate({ token, window: 1 }) !== null;
 
-        // If TOTP fails, try backup codes
+        // Try backup codes if TOTP fails
         if (!isValid && twoFaData.backup_codes) {
           const tokenUpper = token.toUpperCase();
           
-          // Decrypt and check each backup code
           for (let i = 0; i < twoFaData.backup_codes.length; i++) {
             const decryptedCode = await decryptBackupCode(twoFaData.backup_codes[i]);
             if (decryptedCode === tokenUpper) {
               isValid = true;
-              // Remove used backup code
               const newBackupCodes = [...twoFaData.backup_codes];
               newBackupCodes.splice(i, 1);
               
@@ -286,10 +353,9 @@ serve(async (req) => {
           throw new Error("الرمز مطلوب للتعطيل");
         }
 
-        // Verify token before disabling
         const { data: twoFaData } = await adminClient
           .from('user_2fa')
-          .select('secret_encrypted')
+          .select('secret_encrypted, two_fa_type, phone_number')
           .eq('user_id', user.id)
           .single();
 
@@ -297,24 +363,30 @@ serve(async (req) => {
           throw new Error("المصادقة الثنائية غير مفعلة");
         }
 
-        // Decrypt the secret (handles both legacy and new format)
-        const secret = await decryptSecret(twoFaData.secret_encrypted);
-        const totp = new OTPAuth.TOTP({
-          issuer: "Elzini System",
-          label: user.email || user.id,
-          algorithm: "SHA1",
-          digits: 6,
-          period: 30,
-          secret: OTPAuth.Secret.fromBase32(secret),
-        });
+        let isValid = false;
 
-        const isValid = totp.validate({ token, window: 1 }) !== null;
+        if (twoFaData.two_fa_type === 'sms' && twoFaData.phone_number) {
+          // Verify via Authentica SMS OTP
+          const verifyResult = await verifyOtpViaAuthentica(twoFaData.phone_number, token);
+          isValid = verifyResult.verified === true;
+        } else {
+          // Verify via TOTP
+          const secret = await decryptSecret(twoFaData.secret_encrypted);
+          const totp = new OTPAuth.TOTP({
+            issuer: "Elzini System",
+            label: user.email || user.id,
+            algorithm: "SHA1",
+            digits: 6,
+            period: 30,
+            secret: OTPAuth.Secret.fromBase32(secret),
+          });
+          isValid = totp.validate({ token, window: 1 }) !== null;
+        }
 
         if (!isValid) {
           throw new Error("الرمز غير صحيح");
         }
 
-        // Delete 2FA record
         await adminClient
           .from('user_2fa')
           .delete()
@@ -329,7 +401,7 @@ serve(async (req) => {
       case 'check': {
         const { data: twoFaData } = await supabase
           .from('user_2fa')
-          .select('is_enabled')
+          .select('is_enabled, two_fa_type, phone_number')
           .eq('user_id', user.id)
           .single();
 
@@ -337,7 +409,114 @@ serve(async (req) => {
           JSON.stringify({
             success: true,
             isEnabled: twoFaData?.is_enabled || false,
+            twoFaType: twoFaData?.two_fa_type || null,
+            phoneNumber: twoFaData?.phone_number ? twoFaData.phone_number.replace(/(\+\d{3})\d+(\d{4})/, '$1****$2') : null,
           }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // ===================== SMS-based 2FA (Authentica) =====================
+      case 'setup-sms': {
+        if (!phone) {
+          throw new Error("رقم الهاتف مطلوب");
+        }
+
+        const formattedPhone = formatPhoneNumber(phone);
+
+        // Send OTP via Authentica
+        const sendResult = await sendOtpViaAuthentica(formattedPhone);
+        if (!sendResult.success) {
+          throw new Error(sendResult.error || "فشل في إرسال رمز التحقق");
+        }
+
+        // Store phone number temporarily (not enabled yet)
+        await adminClient
+          .from('user_2fa')
+          .upsert({
+            user_id: user.id,
+            phone_number: formattedPhone,
+            is_enabled: false,
+            two_fa_type: 'sms',
+          }, { onConflict: 'user_id' });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "تم إرسال رمز التحقق إلى رقم الهاتف",
+            maskedPhone: formattedPhone.replace(/(\+\d{3})\d+(\d{4})/, '$1****$2'),
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      case 'verify-sms': {
+        if (!token) {
+          throw new Error("رمز التحقق مطلوب");
+        }
+
+        const { data: twoFaData } = await adminClient
+          .from('user_2fa')
+          .select('phone_number')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!twoFaData?.phone_number) {
+          throw new Error("لم يتم إعداد رقم الهاتف");
+        }
+
+        // Verify OTP via Authentica
+        const verifyResult = await verifyOtpViaAuthentica(twoFaData.phone_number, token);
+        
+        if (!verifyResult.success) {
+          throw new Error(verifyResult.error || "فشل في التحقق من الرمز");
+        }
+
+        const isValid = verifyResult.verified === true;
+
+        if (isValid) {
+          await adminClient
+            .from('user_2fa')
+            .update({
+              is_enabled: true,
+              verified_at: new Date().toISOString(),
+              two_fa_type: 'sms',
+            })
+            .eq('user_id', user.id);
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, isValid }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      case 'verify-login-sms': {
+        if (!token) {
+          throw new Error("رمز التحقق مطلوب");
+        }
+
+        const { data: twoFaData } = await adminClient
+          .from('user_2fa')
+          .select('phone_number')
+          .eq('user_id', user.id)
+          .eq('is_enabled', true)
+          .eq('two_fa_type', 'sms')
+          .single();
+
+        if (!twoFaData?.phone_number) {
+          throw new Error("المصادقة الثنائية عبر SMS غير مفعلة");
+        }
+
+        // Verify OTP via Authentica
+        const verifyResult = await verifyOtpViaAuthentica(twoFaData.phone_number, token);
+        
+        if (!verifyResult.success) {
+          throw new Error(verifyResult.error || "فشل في التحقق من الرمز");
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, isValid: verifyResult.verified === true }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }

@@ -6,20 +6,29 @@ import {
   verifyLogin2FA,
   disable2FA,
   check2FAStatus,
+  setupSms2FA,
+  verifySms2FA,
+  verifyLoginSms2FA,
+  TwoFACheckResponse,
 } from '@/services/twoFactorAuth';
 
 export function use2FAStatus() {
   return useQuery({
     queryKey: ['2fa-status'],
-    queryFn: async () => {
+    queryFn: async (): Promise<TwoFACheckResponse & { isEnabled: boolean }> => {
       const result = await check2FAStatus();
       if (!result.success) {
         throw new Error(result.error);
       }
-      return result.isEnabled || false;
+      return {
+        ...result,
+        isEnabled: result.isEnabled || false,
+      };
     },
   });
 }
+
+// ============== TOTP (App-based) 2FA ==============
 
 export function useSetup2FA() {
   const queryClient = useQueryClient();
@@ -82,6 +91,55 @@ export function useDisable2FA() {
     },
     onError: (error: Error) => {
       toast.error(`فشل التعطيل: ${error.message}`);
+    },
+  });
+}
+
+// ============== SMS-based 2FA (Authentica) ==============
+
+export function useSetupSms2FA() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (phone: string) => setupSms2FA(phone),
+    onSuccess: (data) => {
+      if (data.success) {
+        queryClient.invalidateQueries({ queryKey: ['2fa-status'] });
+        toast.success(data.message || 'تم إرسال رمز التحقق');
+      } else {
+        toast.error(data.error || 'فشل في إرسال رمز التحقق');
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`فشل في إرسال رمز التحقق: ${error.message}`);
+    },
+  });
+}
+
+export function useVerifySms2FA() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (token: string) => verifySms2FA(token),
+    onSuccess: (data) => {
+      if (data.success && data.isValid) {
+        queryClient.invalidateQueries({ queryKey: ['2fa-status'] });
+        toast.success('تم تفعيل المصادقة الثنائية عبر SMS بنجاح');
+      } else if (!data.isValid) {
+        toast.error('الرمز غير صحيح');
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`فشل التحقق: ${error.message}`);
+    },
+  });
+}
+
+export function useVerifyLoginSms2FA() {
+  return useMutation({
+    mutationFn: (token: string) => verifyLoginSms2FA(token),
+    onError: (error: Error) => {
+      toast.error(`فشل التحقق: ${error.message}`);
     },
   });
 }
