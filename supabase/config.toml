@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.manage-financing-key]
 verify_jwt = false
+
+[functions.send-trip-reminder]
+verify_jwt = false

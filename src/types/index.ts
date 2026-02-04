@@ -111,4 +111,6 @@ export type ActivePage =
   | 'equipment'
   | 'materials'
   // Custody module
-  | 'custody';
+  | 'custody'
+  // Trips module
+  | 'trips';

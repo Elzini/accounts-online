@@ -58,6 +58,7 @@ import { FixedAssetsPage } from '@/components/assets/FixedAssetsPage';
 import { MedadImportPage } from '@/components/import/MedadImportPage';
 import { ProjectsPage, ContractsPage, ProgressBillingsPage } from '@/components/construction';
 import { CustodyPage } from '@/components/custody';
+import { TripsPage } from '@/components/trips';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
@@ -164,6 +165,8 @@ const Index = () => {
       case 'progress-billings': return <ProgressBillingsPage />;
       // Custody module
       case 'custody': return <CustodyPage />;
+      // Trips module
+      case 'trips': return <TripsPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };
