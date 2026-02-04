@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { Plus, Trash2, FileDown, Printer, CheckCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Trash2, FileDown, Printer, CheckCircle, Eye } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -33,10 +33,7 @@ import { useCustodyDetails, useCustody } from '@/hooks/useCustody';
 import { calculateCustodySummary } from '@/services/custody';
 import { formatNumber } from '@/components/financial-statements/utils/numberFormatting';
 import { useCustodyExport } from './useCustodyExport';
-import { CustodyPrintContent } from './CustodyPrintContent';
-import { useReactToPrint } from 'react-to-print';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { CustodyPrintPreviewDialog } from './CustodyPrintPreviewDialog';
 
 const transactionSchema = z.object({
   transaction_date: z.string().min(1, 'التاريخ مطلوب'),
@@ -58,7 +55,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
   const { settleCustody, isSettling } = useCustody();
   const { exportToExcel } = useCustodyExport();
   const [showForm, setShowForm] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
@@ -117,31 +114,8 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
     }
   };
 
-  const handleExportPdf = async () => {
-    if (!printRef.current) return;
-    
-    try {
-      const canvas = await html2canvas(printRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: 'a4',
-      });
-      
-      const imgWidth = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      pdf.save(`تصفية_العهدة_${custody.custody_number}.pdf`);
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-    }
+  const handleOpenPrintPreview = () => {
+    setShowPrintPreview(true);
   };
 
   const handleExportExcel = () => {
@@ -157,9 +131,9 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
           <DialogTitle className="flex items-center justify-between">
             <span>تصفية العهدة - {custody.custody_name}</span>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleExportPdf}>
-                <Printer className="h-4 w-4 ml-1" />
-                PDF
+              <Button variant="outline" size="sm" onClick={handleOpenPrintPreview}>
+                <Eye className="h-4 w-4 ml-1" />
+                معاينة PDF
               </Button>
               <Button variant="outline" size="sm" onClick={handleExportExcel}>
                 <FileDown className="h-4 w-4 ml-1" />
@@ -356,12 +330,15 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
             </Button>
           )}
         </div>
-
-        {/* Hidden print content */}
-        <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-          <CustodyPrintContent ref={printRef} custody={custody} summary={summary} />
-        </div>
       </DialogContent>
+
+      {/* Print Preview Dialog */}
+      <CustodyPrintPreviewDialog
+        open={showPrintPreview}
+        onOpenChange={setShowPrintPreview}
+        custody={custody}
+        summary={summary}
+      />
     </Dialog>
   );
 }
