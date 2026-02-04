@@ -87,7 +87,7 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
       custody_name: values.custody_name,
       custody_amount: values.custody_amount,
       custody_date: values.custody_date,
-      employee_id: values.employee_id || null,
+      employee_id: values.employee_id && values.employee_id !== '__none__' ? values.employee_id : null,
       notes: values.notes || null,
       status: 'active' as const,
       settlement_date: null,
@@ -167,7 +167,7 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">بدون تحديد</SelectItem>
+                      <SelectItem value="__none__">بدون تحديد</SelectItem>
                       {employees.map((emp) => (
                         <SelectItem key={emp.id} value={emp.id}>
                           {emp.name}
