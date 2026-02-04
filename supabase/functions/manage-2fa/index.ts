@@ -7,13 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const AUTHENTICA_BASE_URL = "https://api.authentica.sa";
-
 interface RequestBody {
   action: 'setup' | 'verify' | 'disable' | 'check' | 'verify-login' | 'setup-sms' | 'verify-sms' | 'verify-login-sms';
   token?: string;
   phone?: string;
+  pinId?: string;
 }
+
+// Store PIN IDs for SMS verification
+const pinIdStore = new Map<string, string>();
 
 // AES-256-GCM Encryption utilities
 async function getEncryptionKey(): Promise<CryptoKey> {
@@ -107,66 +109,88 @@ function formatPhoneNumber(phone: string): string {
   return phoneNumber;
 }
 
-// Send OTP via Authentica
-async function sendOtpViaAuthentica(phone: string): Promise<{ success: boolean; error?: string }> {
-  const apiKey = Deno.env.get("AUTHENTICA_API_KEY");
+// Send OTP via Infobip
+async function sendOtpViaInfobip(phone: string): Promise<{ success: boolean; pinId?: string; error?: string }> {
+  const apiKey = Deno.env.get("INFOBIP_API_KEY");
+  const baseUrl = Deno.env.get("INFOBIP_BASE_URL");
+  
   if (!apiKey) {
-    return { success: false, error: "AUTHENTICA_API_KEY not configured" };
+    return { success: false, error: "INFOBIP_API_KEY not configured" };
+  }
+  if (!baseUrl) {
+    return { success: false, error: "INFOBIP_BASE_URL not configured" };
   }
 
   try {
-    const response = await fetch(`${AUTHENTICA_BASE_URL}/api/v2/send-otp`, {
+    const body = {
+      applicationId: "default",
+      messageId: "default",
+      from: "InfoSMS",
+      to: phone,
+      messageText: "رمز التحقق الخاص بك هو: {{pin}}",
+      pinType: "NUMERIC",
+      pinLength: 6,
+    };
+
+    const response = await fetch(`${baseUrl}/2fa/2/pin`, {
       method: "POST",
       headers: {
         "Accept": "application/json",
         "Content-Type": "application/json",
-        "X-Authorization": apiKey,
+        "Authorization": `App ${apiKey}`,
       },
-      body: JSON.stringify({ method: "sms", phone }),
+      body: JSON.stringify(body),
     });
 
     const result = await response.json();
 
     if (!response.ok) {
-      console.error("Authentica send-otp error:", result);
-      return { success: false, error: result?.message || `HTTP ${response.status}` };
+      console.error("Infobip send-otp error:", result);
+      const errorText = result?.requestError?.serviceException?.text || `HTTP ${response.status}`;
+      return { success: false, error: errorText };
     }
 
-    return { success: true };
+    return { success: true, pinId: result.pinId };
   } catch (error) {
-    console.error("Failed to send OTP:", error);
+    console.error("Failed to send OTP via Infobip:", error);
     return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
 
-// Verify OTP via Authentica
-async function verifyOtpViaAuthentica(phone: string, otp: string): Promise<{ success: boolean; verified?: boolean; error?: string }> {
-  const apiKey = Deno.env.get("AUTHENTICA_API_KEY");
+// Verify OTP via Infobip
+async function verifyOtpViaInfobip(pinId: string, otp: string): Promise<{ success: boolean; verified?: boolean; error?: string }> {
+  const apiKey = Deno.env.get("INFOBIP_API_KEY");
+  const baseUrl = Deno.env.get("INFOBIP_BASE_URL");
+  
   if (!apiKey) {
-    return { success: false, error: "AUTHENTICA_API_KEY not configured" };
+    return { success: false, error: "INFOBIP_API_KEY not configured" };
+  }
+  if (!baseUrl) {
+    return { success: false, error: "INFOBIP_BASE_URL not configured" };
   }
 
   try {
-    const response = await fetch(`${AUTHENTICA_BASE_URL}/api/v2/verify-otp`, {
+    const response = await fetch(`${baseUrl}/2fa/2/pin/${pinId}/verify`, {
       method: "POST",
       headers: {
         "Accept": "application/json",
         "Content-Type": "application/json",
-        "X-Authorization": apiKey,
+        "Authorization": `App ${apiKey}`,
       },
-      body: JSON.stringify({ phone, otp }),
+      body: JSON.stringify({ pin: otp }),
     });
 
     const result = await response.json();
 
     if (!response.ok) {
-      console.error("Authentica verify-otp error:", result);
-      return { success: false, error: result?.message || `HTTP ${response.status}` };
+      console.error("Infobip verify-otp error:", result);
+      const errorText = result?.requestError?.serviceException?.text || `HTTP ${response.status}`;
+      return { success: false, error: errorText };
     }
 
-    return { success: true, verified: result?.verified === true };
+    return { success: true, verified: result.verified === true };
   } catch (error) {
-    console.error("Failed to verify OTP:", error);
+    console.error("Failed to verify OTP via Infobip:", error);
     return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
@@ -195,7 +219,7 @@ serve(async (req) => {
       throw new Error("المستخدم غير مصادق");
     }
 
-    const { action, token, phone }: RequestBody = await req.json();
+    const { action, token, phone, pinId: providedPinId }: RequestBody = await req.json();
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -355,7 +379,7 @@ serve(async (req) => {
 
         const { data: twoFaData } = await adminClient
           .from('user_2fa')
-          .select('secret_encrypted, two_fa_type, phone_number')
+          .select('secret_encrypted, two_fa_type, phone_number, sms_pin_id')
           .eq('user_id', user.id)
           .single();
 
@@ -365,9 +389,9 @@ serve(async (req) => {
 
         let isValid = false;
 
-        if (twoFaData.two_fa_type === 'sms' && twoFaData.phone_number) {
-          // Verify via Authentica SMS OTP
-          const verifyResult = await verifyOtpViaAuthentica(twoFaData.phone_number, token);
+        if (twoFaData.two_fa_type === 'sms' && twoFaData.sms_pin_id) {
+          // Verify via Infobip SMS OTP
+          const verifyResult = await verifyOtpViaInfobip(twoFaData.sms_pin_id, token);
           isValid = verifyResult.verified === true;
         } else {
           // Verify via TOTP
@@ -416,7 +440,7 @@ serve(async (req) => {
         );
       }
 
-      // ===================== SMS-based 2FA (Authentica) =====================
+      // ===================== SMS-based 2FA (Infobip) =====================
       case 'setup-sms': {
         if (!phone) {
           throw new Error("رقم الهاتف مطلوب");
@@ -424,18 +448,19 @@ serve(async (req) => {
 
         const formattedPhone = formatPhoneNumber(phone);
 
-        // Send OTP via Authentica
-        const sendResult = await sendOtpViaAuthentica(formattedPhone);
+        // Send OTP via Infobip
+        const sendResult = await sendOtpViaInfobip(formattedPhone);
         if (!sendResult.success) {
           throw new Error(sendResult.error || "فشل في إرسال رمز التحقق");
         }
 
-        // Store phone number temporarily (not enabled yet)
+        // Store phone number and pinId temporarily (not enabled yet)
         await adminClient
           .from('user_2fa')
           .upsert({
             user_id: user.id,
             phone_number: formattedPhone,
+            sms_pin_id: sendResult.pinId,
             is_enabled: false,
             two_fa_type: 'sms',
           }, { onConflict: 'user_id' });
@@ -445,6 +470,7 @@ serve(async (req) => {
             success: true,
             message: "تم إرسال رمز التحقق إلى رقم الهاتف",
             maskedPhone: formattedPhone.replace(/(\+\d{3})\d+(\d{4})/, '$1****$2'),
+            pinId: sendResult.pinId,
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
@@ -457,16 +483,16 @@ serve(async (req) => {
 
         const { data: twoFaData } = await adminClient
           .from('user_2fa')
-          .select('phone_number')
+          .select('phone_number, sms_pin_id')
           .eq('user_id', user.id)
           .single();
 
-        if (!twoFaData?.phone_number) {
+        if (!twoFaData?.phone_number || !twoFaData?.sms_pin_id) {
           throw new Error("لم يتم إعداد رقم الهاتف");
         }
 
-        // Verify OTP via Authentica
-        const verifyResult = await verifyOtpViaAuthentica(twoFaData.phone_number, token);
+        // Verify OTP via Infobip
+        const verifyResult = await verifyOtpViaInfobip(twoFaData.sms_pin_id, token);
         
         if (!verifyResult.success) {
           throw new Error(verifyResult.error || "فشل في التحقق من الرمز");
@@ -481,6 +507,7 @@ serve(async (req) => {
               is_enabled: true,
               verified_at: new Date().toISOString(),
               two_fa_type: 'sms',
+              sms_pin_id: null, // Clear after verification
             })
             .eq('user_id', user.id);
         }
@@ -498,7 +525,7 @@ serve(async (req) => {
 
         const { data: twoFaData } = await adminClient
           .from('user_2fa')
-          .select('phone_number')
+          .select('phone_number, sms_pin_id')
           .eq('user_id', user.id)
           .eq('is_enabled', true)
           .eq('two_fa_type', 'sms')
@@ -508,12 +535,46 @@ serve(async (req) => {
           throw new Error("المصادقة الثنائية عبر SMS غير مفعلة");
         }
 
-        // Verify OTP via Authentica
-        const verifyResult = await verifyOtpViaAuthentica(twoFaData.phone_number, token);
+        // First, send a new OTP if no pinId exists
+        let pinId = twoFaData.sms_pin_id || providedPinId;
+        
+        if (!pinId) {
+          // Send new OTP for login verification
+          const sendResult = await sendOtpViaInfobip(twoFaData.phone_number);
+          if (!sendResult.success) {
+            throw new Error(sendResult.error || "فشل في إرسال رمز التحقق");
+          }
+          pinId = sendResult.pinId;
+          
+          // Store the new pinId
+          await adminClient
+            .from('user_2fa')
+            .update({ sms_pin_id: pinId })
+            .eq('user_id', user.id);
+          
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              needsOtp: true, 
+              message: "تم إرسال رمز التحقق",
+              pinId,
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Verify OTP via Infobip
+        const verifyResult = await verifyOtpViaInfobip(pinId, token);
         
         if (!verifyResult.success) {
           throw new Error(verifyResult.error || "فشل في التحقق من الرمز");
         }
+
+        // Clear pinId after successful verification
+        await adminClient
+          .from('user_2fa')
+          .update({ sms_pin_id: null })
+          .eq('user_id', user.id);
 
         return new Response(
           JSON.stringify({ success: true, isValid: verifyResult.verified === true }),
