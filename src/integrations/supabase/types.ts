@@ -5467,6 +5467,7 @@ export type Database = {
       }
       get_car_expenses: { Args: { p_car_id: string }; Returns: number }
       get_current_company_id: { Args: never; Returns: string }
+      get_my_company_id: { Args: never; Returns: string }
       get_next_invoice_number: {
         Args: { _company_id: string; _invoice_type: string }
         Returns: string
@@ -5508,7 +5509,9 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
-      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_super_admin:
+        | { Args: never; Returns: boolean }
+        | { Args: { _user_id: string }; Returns: boolean }
       log_audit_event: {
         Args: {
           p_action: string
