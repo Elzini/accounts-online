@@ -94,7 +94,8 @@ const handler = async (req: Request): Promise<Response> => {
         
         const formData = new URLSearchParams();
         formData.append("To", phoneNumber);
-        formData.append("From", TWILIO_PHONE_NUMBER);
+        // Use Alphanumeric Sender ID instead of phone number for Saudi Arabia
+        formData.append("From", "Trips");
         formData.append("Body", message);
 
         const twilioResponse = await fetch(twilioUrl, {
@@ -163,7 +164,8 @@ const handler = async (req: Request): Promise<Response> => {
 
             const passengerFormData = new URLSearchParams();
             passengerFormData.append("To", passengerPhone);
-            passengerFormData.append("From", TWILIO_PHONE_NUMBER);
+            // Use Alphanumeric Sender ID for passengers too
+            passengerFormData.append("From", "Trips");
             passengerFormData.append("Body", passengerMessage);
 
             await fetch(twilioUrl, {
