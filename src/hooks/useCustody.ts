@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from './useCompanyId';
-import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import {
   fetchCustodies,
   fetchCustodyWithTransactions,
@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 
 export function useCustody() {
   const companyId = useCompanyId();
-  const { selectedFiscalYear } = useFiscalYear();
+  const { selectedFiscalYear, isWithinFiscalYear } = useFiscalYearFilter();
   const queryClient = useQueryClient();
 
   // Fetch all custodies
@@ -28,10 +28,8 @@ export function useCustody() {
     queryFn: async () => {
       if (!companyId) return [];
       const allCustodies = await fetchCustodies(companyId);
-      // Filter by fiscal year if selected
-      if (selectedFiscalYear?.id) {
-        return allCustodies.filter(c => c.fiscal_year_id === selectedFiscalYear.id);
-      }
+      // Strict date filtering: show only items whose date falls within selected fiscal year range
+      if (selectedFiscalYear?.id) return allCustodies.filter((c) => isWithinFiscalYear(c.custody_date));
       return allCustodies;
     },
     enabled: !!companyId,
