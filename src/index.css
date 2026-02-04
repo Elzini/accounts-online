@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 250 25% 20%;
 
-    --primary: 215 19.3182% 34.5098%;
+    --primary: 262 83% 58%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 260 30% 96%;
@@ -45,14 +45,14 @@
 
     --radius: 0.75rem;
 
-    --sidebar-background: 225 35% 15%;
-    --sidebar-foreground: 220 20% 90%;
-    --sidebar-primary: 250 70% 60%;
+    --sidebar-background: 262 60% 30%;
+    --sidebar-foreground: 260 20% 98%;
+    --sidebar-primary: 262 83% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 225 35% 22%;
-    --sidebar-accent-foreground: 220 20% 95%;
-    --sidebar-border: 225 30% 20%;
-    --sidebar-ring: 250 70% 60%;
+    --sidebar-accent: 262 50% 40%;
+    --sidebar-accent-foreground: 260 20% 98%;
+    --sidebar-border: 262 40% 35%;
+    --sidebar-ring: 262 83% 65%;
 
     /* Custom gradients - Purple theme */
     --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(280 70% 55%) 100%);
@@ -109,14 +109,14 @@
     --input: 262 20% 22%;
     --ring: 262 83% 65%;
 
-    --sidebar-background: 225 40% 10%;
-    --sidebar-foreground: 220 20% 90%;
-    --sidebar-primary: 250 70% 60%;
+    --sidebar-background: 262 40% 8%;
+    --sidebar-foreground: 260 20% 90%;
+    --sidebar-primary: 262 83% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 225 35% 18%;
-    --sidebar-accent-foreground: 220 20% 95%;
-    --sidebar-border: 225 30% 15%;
-    --sidebar-ring: 250 70% 60%;
+    --sidebar-accent: 262 35% 15%;
+    --sidebar-accent-foreground: 260 20% 90%;
+    --sidebar-border: 262 25% 15%;
+    --sidebar-ring: 262 83% 65%;
   }
 }
 
