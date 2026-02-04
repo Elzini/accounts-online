@@ -109,4 +109,6 @@ export type ActivePage =
   | 'project-costs'
   | 'subcontractors'
   | 'equipment'
-  | 'materials';
+  | 'materials'
+  // Custody module
+  | 'custody';
