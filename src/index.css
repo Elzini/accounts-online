@@ -45,14 +45,14 @@
 
     --radius: 0.75rem;
 
-    --sidebar-background: 262 60% 30%;
-    --sidebar-foreground: 260 20% 98%;
-    --sidebar-primary: 262 83% 65%;
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 262 50% 40%;
-    --sidebar-accent-foreground: 260 20% 98%;
-    --sidebar-border: 262 40% 35%;
-    --sidebar-ring: 262 83% 65%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 217 91% 60%;
 
     /* Custom gradients - Purple theme */
     --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(280 70% 55%) 100%);
