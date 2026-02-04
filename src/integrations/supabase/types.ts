@@ -5467,6 +5467,7 @@ export type Database = {
       get_user_company_id:
         | { Args: never; Returns: string }
         | { Args: { _user_id: string }; Returns: string }
+      get_user_company_id_safe: { Args: { uid: string }; Returns: string }
       has_permission:
         | { Args: { _permission: string }; Returns: boolean }
         | {
