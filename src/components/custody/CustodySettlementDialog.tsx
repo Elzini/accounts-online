@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Plus, Trash2, FileDown, Printer, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,6 +33,10 @@ import { useCustodyDetails, useCustody } from '@/hooks/useCustody';
 import { calculateCustodySummary } from '@/services/custody';
 import { formatNumber } from '@/components/financial-statements/utils/numberFormatting';
 import { useCustodyExport } from './useCustodyExport';
+import { CustodyPrintContent } from './CustodyPrintContent';
+import { useReactToPrint } from 'react-to-print';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const transactionSchema = z.object({
   transaction_date: z.string().min(1, 'التاريخ مطلوب'),
@@ -52,8 +56,9 @@ interface CustodySettlementDialogProps {
 export function CustodySettlementDialog({ open, onOpenChange, custodyId }: CustodySettlementDialogProps) {
   const { custody, isLoading, addTransaction, deleteTransaction, isAddingTransaction } = useCustodyDetails(custodyId);
   const { settleCustody, isSettling } = useCustody();
-  const { exportToPdf, exportToExcel } = useCustodyExport();
+  const { exportToExcel } = useCustodyExport();
   const [showForm, setShowForm] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
@@ -112,8 +117,31 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
     }
   };
 
-  const handleExportPdf = () => {
-    exportToPdf(custody, summary);
+  const handleExportPdf = async () => {
+    if (!printRef.current) return;
+    
+    try {
+      const canvas = await html2canvas(printRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+      });
+      
+      const imgWidth = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`تصفية_العهدة_${custody.custody_number}.pdf`);
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+    }
   };
 
   const handleExportExcel = () => {
@@ -327,6 +355,11 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
               تصفية العهدة
             </Button>
           )}
+        </div>
+
+        {/* Hidden print content */}
+        <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+          <CustodyPrintContent ref={printRef} custody={custody} summary={summary} />
         </div>
       </DialogContent>
     </Dialog>
