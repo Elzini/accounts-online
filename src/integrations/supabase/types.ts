@@ -4800,6 +4800,8 @@ export type Database = {
           id: string
           notes: string | null
           price: number | null
+          reminder_datetime: string | null
+          reminder_enabled: boolean | null
           reminder_hours_before: number | null
           reminder_sent: boolean | null
           reminder_sent_at: string | null
@@ -4821,6 +4823,8 @@ export type Database = {
           id?: string
           notes?: string | null
           price?: number | null
+          reminder_datetime?: string | null
+          reminder_enabled?: boolean | null
           reminder_hours_before?: number | null
           reminder_sent?: boolean | null
           reminder_sent_at?: string | null
@@ -4842,6 +4846,8 @@ export type Database = {
           id?: string
           notes?: string | null
           price?: number | null
+          reminder_datetime?: string | null
+          reminder_enabled?: boolean | null
           reminder_hours_before?: number | null
           reminder_sent?: boolean | null
           reminder_sent_at?: string | null

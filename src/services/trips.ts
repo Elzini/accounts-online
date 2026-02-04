@@ -13,6 +13,8 @@ export interface Trip {
   trip_time: string;
   price: number;
   reminder_hours_before: number;
+  reminder_datetime?: string;
+  reminder_enabled: boolean;
   reminder_sent: boolean;
   reminder_sent_at?: string;
   status: 'scheduled' | 'completed' | 'cancelled';
@@ -42,6 +44,8 @@ export interface CreateTripData {
   trip_time: string;
   price?: number;
   reminder_hours_before?: number;
+  reminder_datetime?: string;
+  reminder_enabled?: boolean;
   notes?: string;
   passengers?: Omit<TripPassenger, 'id' | 'trip_id' | 'created_at'>[];
 }
