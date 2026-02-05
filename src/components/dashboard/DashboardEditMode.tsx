@@ -14,9 +14,9 @@ export interface WidgetConfig {
 
 export const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'welcome', label: 'بطاقة الترحيب', visible: true, order: 0 },
-  { id: 'quickAccess', label: 'الوصول السريع', visible: true, order: 1 },
-  { id: 'recentInvoices', label: 'أحدث الفواتير', visible: true, order: 2 },
-  { id: 'statCards', label: 'بطاقات الإحصائيات', visible: true, order: 3 },
+  { id: 'statCards', label: 'بطاقات الإحصائيات', visible: true, order: 1 },
+  { id: 'quickAccess', label: 'الوصول السريع', visible: true, order: 2 },
+  { id: 'recentInvoices', label: 'أحدث الفواتير', visible: true, order: 3 },
   { id: 'charts', label: 'الرسوم البيانية', visible: true, order: 4 },
   { id: 'analytics', label: 'التحليلات المتقدمة', visible: true, order: 5 },
 ];
