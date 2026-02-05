@@ -199,7 +199,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
 
   // Helper to get card config by id
   const getCardConfig = useCallback((id: string) => {
-    return cardConfigs.find(c => c.id === id) || { visible: true, size: 'medium' as const, bgColor: '', fontSize: 100 };
+    return cardConfigs.find(c => c.id === id) || { visible: true, size: 'medium' as const, bgColor: '', fontSize: 100, height: undefined, enable3D: false };
   }, [cardConfigs]);
 
   // Get visible cards sorted by order
@@ -672,6 +672,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 size: cfg.size,
                 bgColor: cfg.bgColor,
                 fontSize: cfg.fontSize,
+                height: cfg.height,
+                enable3D: cfg.enable3D,
               };
 
               switch (cardId) {
@@ -777,6 +779,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   size={getCardConfig('allTimePurchases').size}
                   bgColor={getCardConfig('allTimePurchases').bgColor}
                   fontSize={getCardConfig('allTimePurchases').fontSize}
+                  height={getCardConfig('allTimePurchases').height}
+                  enable3D={getCardConfig('allTimePurchases').enable3D}
                   showAsWords={showAmountAsWords}
                 />
               )}
@@ -791,6 +795,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   size={getCardConfig('allTimeSales').size}
                   bgColor={getCardConfig('allTimeSales').bgColor}
                   fontSize={getCardConfig('allTimeSales').fontSize}
+                  height={getCardConfig('allTimeSales').height}
+                  enable3D={getCardConfig('allTimeSales').enable3D}
                   showAsWords={showAmountAsWords}
                 />
               )}
@@ -862,6 +868,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                     size={getCardConfig('activeInstallments').size}
                     bgColor={getCardConfig('activeInstallments').bgColor}
                     fontSize={getCardConfig('activeInstallments').fontSize}
+                    height={getCardConfig('activeInstallments').height}
+                    enable3D={getCardConfig('activeInstallments').enable3D}
                   />
                 )}
                 {getCardConfig('overdueInstallments').visible && (
@@ -875,6 +883,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                     size={getCardConfig('overdueInstallments').size}
                     bgColor={getCardConfig('overdueInstallments').bgColor}
                     fontSize={getCardConfig('overdueInstallments').fontSize}
+                    height={getCardConfig('overdueInstallments').height}
+                    enable3D={getCardConfig('overdueInstallments').enable3D}
                   />
                 )}
                 {getCardConfig('upcomingInstallments').visible && (
@@ -888,6 +898,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                     size={getCardConfig('upcomingInstallments').size}
                     bgColor={getCardConfig('upcomingInstallments').bgColor}
                     fontSize={getCardConfig('upcomingInstallments').fontSize}
+                    height={getCardConfig('upcomingInstallments').height}
+                    enable3D={getCardConfig('upcomingInstallments').enable3D}
                   />
                 )}
                 {getCardConfig('totalDue').visible && (
@@ -901,6 +913,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                     size={getCardConfig('totalDue').size}
                     bgColor={getCardConfig('totalDue').bgColor}
                     fontSize={getCardConfig('totalDue').fontSize}
+                    height={getCardConfig('totalDue').height}
+                    enable3D={getCardConfig('totalDue').enable3D}
                   />
                 )}
                 

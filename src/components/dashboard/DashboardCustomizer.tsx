@@ -28,6 +28,8 @@ import {
   ArrowUpDown,
   ChevronUp,
   ChevronDown,
+  Ruler,
+  Box,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDashboardConfig, useSaveDashboardConfig } from '@/hooks/useSystemControl';
@@ -43,6 +45,8 @@ export interface CardConfig {
   size: 'small' | 'medium' | 'large';
   bgColor?: string;
   fontSize?: number; // percentage 80-120
+  height?: number; // ارتفاع البطاقة بالبكسل
+  enable3D?: boolean; // تفعيل التأثير ثلاثي الأبعاد
 }
 
 // Default stat cards
@@ -422,6 +426,40 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                   />
                 </div>
 
+                {/* Card Height */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm flex items-center gap-2">
+                      <Ruler className="w-4 h-4" />
+                      ارتفاع البطاقة
+                    </Label>
+                    <span className="text-sm text-muted-foreground">
+                      {selected.height ? `${selected.height}px` : 'تلقائي'}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[selected.height || 0]}
+                    onValueChange={([value]) => updateCard(selected.id, { height: value === 0 ? undefined : value })}
+                    min={0}
+                    max={200}
+                    step={10}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">0 = ارتفاع تلقائي</p>
+                </div>
+
+                {/* 3D Effect */}
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm flex items-center gap-2">
+                    <Box className="w-4 h-4" />
+                    تأثير ثلاثي الأبعاد
+                  </Label>
+                  <Switch
+                    checked={selected.enable3D || false}
+                    onCheckedChange={(checked) => updateCard(selected.id, { enable3D: checked })}
+                  />
+                </div>
+
                 {/* Visibility */}
                 <div className="flex items-center justify-between">
                   <Label className="text-sm">إظهار البطاقة</Label>
@@ -436,13 +474,20 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                   <Label className="text-sm mb-2 block">معاينة</Label>
                   <div
                     className={cn(
-                      'rounded-xl p-4 border shadow-sm transition-all',
+                      'rounded-xl p-4 border transition-all',
                       selected.size === 'small' && 'text-xs',
                       selected.size === 'large' && 'text-lg'
                     )}
                     style={{
                       backgroundColor: selected.bgColor || 'hsl(var(--card))',
                       fontSize: `${(selected.fontSize || 100) / 100}em`,
+                      height: selected.height ? `${selected.height}px` : undefined,
+                      transform: selected.enable3D 
+                        ? 'perspective(1000px) rotateX(-3deg) rotateY(3deg)'
+                        : undefined,
+                      boxShadow: selected.enable3D 
+                        ? '-4px 8px 25px rgba(0,0,0,0.2), -2px 3px 8px rgba(0,0,0,0.1)'
+                        : undefined,
                     }}
                   >
                     <p className="text-muted-foreground text-[0.75em] mb-1">{selected.label}</p>
