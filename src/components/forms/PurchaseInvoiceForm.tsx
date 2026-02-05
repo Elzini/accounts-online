@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
-import { useSuppliers, useAddPurchaseBatch, useCars, useUpdateCar, useDeleteCar } from '@/hooks/useDatabase';
+import { useSuppliers, useAddPurchaseBatch, useCars, useUpdateCar, useDeleteCar, usePurchaseBatches } from '@/hooks/useDatabase';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { PurchaseInvoiceDialog } from '@/components/invoices/PurchaseInvoiceDialog';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -70,13 +70,29 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const { data: taxSettings } = useTaxSettings();
   const { data: accounts = [] } = useAccounts();
   const { data: existingCars = [] } = useCars();
+  const { data: purchaseBatches = [] } = usePurchaseBatches();
   const { company } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
   const addPurchaseBatch = useAddPurchaseBatch();
   const updateCar = useUpdateCar();
   const deleteCar = useDeleteCar();
 
-  // Filter purchases by fiscal year
+  // Filter purchase batches by fiscal year
+  const fiscalYearFilteredBatches = useMemo(() => {
+    if (!selectedFiscalYear) return purchaseBatches;
+    
+    const fyStart = new Date(selectedFiscalYear.start_date);
+    fyStart.setHours(0, 0, 0, 0);
+    const fyEnd = new Date(selectedFiscalYear.end_date);
+    fyEnd.setHours(23, 59, 59, 999);
+    
+    return purchaseBatches.filter(batch => {
+      const purchaseDate = new Date(batch.purchase_date);
+      return purchaseDate >= fyStart && purchaseDate <= fyEnd;
+    });
+  }, [purchaseBatches, selectedFiscalYear]);
+
+  // Also keep filtered cars for other uses
   const fiscalYearFilteredCars = useMemo(() => {
     if (!selectedFiscalYear) return existingCars;
     
@@ -91,13 +107,10 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     });
   }, [existingCars, selectedFiscalYear]);
 
-  // Generate next invoice number
+  // Generate next invoice number based on batches
   const nextInvoiceNumber = useMemo(() => {
-    const maxInventory = existingCars.reduce((max, car) => 
-      Math.max(max, car.inventory_number), 0
-    );
-    return maxInventory + 1;
-  }, [existingCars]);
+    return purchaseBatches.length + 1;
+  }, [purchaseBatches]);
 
   const [invoiceData, setInvoiceData] = useState({
     invoice_number: '',
@@ -127,7 +140,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('amount');
   const [currentInvoiceIndex, setCurrentInvoiceIndex] = useState(0);
   const [isViewingExisting, setIsViewingExisting] = useState(false);
-  const [currentCarId, setCurrentCarId] = useState<string | null>(null);
+  const [currentBatchId, setCurrentBatchId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
 
@@ -294,7 +307,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     setDiscount(0);
     setSavedBatchData(null);
     setIsViewingExisting(false);
-    setCurrentCarId(null);
+    setCurrentBatchId(null);
   };
 
   const handleCloseInvoice = (open: boolean) => {
@@ -304,11 +317,11 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     }
   };
 
-  // Navigation functions - use fiscal year filtered data
+  // Navigation functions - use fiscal year filtered batches (not individual cars)
   const handleFirstPurchase = () => {
-    if (fiscalYearFilteredCars.length > 0) {
+    if (fiscalYearFilteredBatches.length > 0) {
       setCurrentInvoiceIndex(0);
-      loadCarData(fiscalYearFilteredCars[0]);
+      loadBatchData(fiscalYearFilteredBatches[0]);
     }
   };
 
@@ -316,70 +329,81 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     if (currentInvoiceIndex > 0) {
       const newIndex = currentInvoiceIndex - 1;
       setCurrentInvoiceIndex(newIndex);
-      loadCarData(fiscalYearFilteredCars[newIndex]);
+      loadBatchData(fiscalYearFilteredBatches[newIndex]);
     }
   };
 
   const handleNextPurchase = () => {
-    if (currentInvoiceIndex < fiscalYearFilteredCars.length - 1) {
+    if (currentInvoiceIndex < fiscalYearFilteredBatches.length - 1) {
       const newIndex = currentInvoiceIndex + 1;
       setCurrentInvoiceIndex(newIndex);
-      loadCarData(fiscalYearFilteredCars[newIndex]);
+      loadBatchData(fiscalYearFilteredBatches[newIndex]);
     }
   };
 
   const handleLastPurchase = () => {
-    if (fiscalYearFilteredCars.length > 0) {
-      const lastIndex = fiscalYearFilteredCars.length - 1;
+    if (fiscalYearFilteredBatches.length > 0) {
+      const lastIndex = fiscalYearFilteredBatches.length - 1;
       setCurrentInvoiceIndex(lastIndex);
-      loadCarData(fiscalYearFilteredCars[lastIndex]);
+      loadBatchData(fiscalYearFilteredBatches[lastIndex]);
     }
   };
 
-  const loadCarData = (car: any) => {
+  const loadBatchData = (batch: any) => {
     setIsViewingExisting(true);
-    setCurrentCarId(car.id);
+    setCurrentBatchId(batch.id);
     
     // When loading existing data, the stored price is the BASE price (without tax)
-    // So we need to set price_includes_tax to false to avoid double-dividing
     setInvoiceData({
-      invoice_number: String(car.inventory_number || ''),
-      supplier_id: car.supplier_id || '',
-      purchase_date: car.purchase_date,
-      due_date: car.purchase_date,
-      payment_account_id: car.payment_account_id || '',
+      invoice_number: String(currentInvoiceIndex + 1),
+      supplier_id: batch.supplier_id || '',
+      purchase_date: batch.purchase_date,
+      due_date: batch.purchase_date,
+      payment_account_id: batch.payment_account_id || '',
       warehouse: 'الرئيسي',
-      notes: '',
+      notes: batch.notes || '',
       price_includes_tax: false, // Stored price is BASE price, not inclusive
     });
 
-    setCars([{
-      id: crypto.randomUUID(),
-      chassis_number: car.chassis_number,
-      name: car.name,
-      model: car.model || '',
-      color: car.color || '',
-      purchase_price: String(car.purchase_price),
-      quantity: 1,
-      unit: 'سيارة',
-    }]);
+    // Load all cars in this batch
+    const batchCars = batch.cars || [];
+    if (batchCars.length > 0) {
+      setCars(batchCars.map((car: any) => ({
+        id: crypto.randomUUID(),
+        chassis_number: car.chassis_number,
+        name: car.name,
+        model: car.model || '',
+        color: car.color || '',
+        purchase_price: String(car.purchase_price),
+        quantity: 1,
+        unit: 'سيارة',
+      })));
+    } else {
+      setCars([createEmptyCar()]);
+    }
   };
 
-  // Handle delete purchase
+  // Handle delete purchase batch
   const handleDeletePurchase = async () => {
-    if (!currentCarId) return;
+    if (!currentBatchId) return;
     
-    const car = existingCars.find(c => c.id === currentCarId);
-    if (!car) return;
+    const batch = purchaseBatches.find(b => b.id === currentBatchId);
+    if (!batch) return;
     
-    // Can't delete sold cars
-    if (car.status === 'sold') {
-      toast.error('لا يمكن حذف سيارة مباعة');
+    // Check if any car in this batch is sold
+    const batchCars = batch.cars || [];
+    const hasSoldCars = batchCars.some((car: any) => car.status === 'sold');
+    
+    if (hasSoldCars) {
+      toast.error('لا يمكن حذف فاتورة تحتوي على سيارات مباعة');
       return;
     }
     
     try {
-      await deleteCar.mutateAsync(currentCarId);
+      // Delete all cars in the batch
+      for (const car of batchCars) {
+        await deleteCar.mutateAsync(car.id);
+      }
       toast.success('تم حذف فاتورة الشراء بنجاح');
       setDeleteDialogOpen(false);
       handleNewInvoice();
@@ -390,20 +414,26 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
   // Handle reverse purchase (same as delete for purchases)
   const handleReversePurchase = async () => {
-    if (!currentCarId) return;
+    if (!currentBatchId) return;
     
-    const car = existingCars.find(c => c.id === currentCarId);
-    if (!car) return;
+    const batch = purchaseBatches.find(b => b.id === currentBatchId);
+    if (!batch) return;
     
-    // Can't reverse sold cars
-    if (car.status === 'sold') {
-      toast.error('لا يمكن إرجاع فاتورة سيارة مباعة');
+    // Check if any car in this batch is sold
+    const batchCars = batch.cars || [];
+    const hasSoldCars = batchCars.some((car: any) => car.status === 'sold');
+    
+    if (hasSoldCars) {
+      toast.error('لا يمكن إرجاع فاتورة تحتوي على سيارات مباعة');
       return;
     }
     
     try {
-      await deleteCar.mutateAsync(currentCarId);
-      toast.success('تم إرجاع فاتورة الشراء بنجاح وحذف السيارة من المخزون');
+      // Delete all cars in the batch
+      for (const car of batchCars) {
+        await deleteCar.mutateAsync(car.id);
+      }
+      toast.success('تم إرجاع فاتورة الشراء بنجاح وحذف السيارات من المخزون');
       setReverseDialogOpen(false);
       handleNewInvoice();
     } catch (error) {
@@ -411,31 +441,42 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     }
   };
 
-  // Handle update purchase
+  // Handle update purchase - update all cars in the batch
   const handleUpdatePurchase = async () => {
-    if (!currentCarId) return;
+    if (!currentBatchId) return;
 
-    const carData = cars[0];
-    if (!carData || !carData.chassis_number || !carData.name || !carData.purchase_price) {
+    const batch = purchaseBatches.find(b => b.id === currentBatchId);
+    if (!batch) return;
+    
+    const batchCars = batch.cars || [];
+
+    // For now, just show a message. In a full implementation, we would update each car
+    if (cars.length === 0 || !cars[0].chassis_number || !cars[0].name) {
       toast.error('الرجاء ملء جميع الحقول المطلوبة');
       return;
     }
 
     try {
-      await updateCar.mutateAsync({
-        id: currentCarId,
-        car: {
-          name: carData.name,
-          model: carData.model || null,
-          chassis_number: carData.chassis_number,
-          color: carData.color || null,
-          purchase_price: parseFloat(carData.purchase_price),
-          purchase_date: invoiceData.purchase_date,
-          payment_account_id: invoiceData.payment_account_id || null,
-          supplier_id: invoiceData.supplier_id || null,
-        }
-      });
-      toast.success('تم تحديث بيانات الشراء بنجاح');
+      // Update each car in the batch
+      for (let i = 0; i < cars.length && i < batchCars.length; i++) {
+        const carData = cars[i];
+        const existingCar = batchCars[i];
+        
+        await updateCar.mutateAsync({
+          id: existingCar.id,
+          car: {
+            name: carData.name,
+            model: carData.model || null,
+            chassis_number: carData.chassis_number,
+            color: carData.color || null,
+            purchase_price: parseFloat(carData.purchase_price),
+            purchase_date: invoiceData.purchase_date,
+            payment_account_id: invoiceData.payment_account_id || null,
+            supplier_id: invoiceData.supplier_id || null,
+          }
+        });
+      }
+      toast.success('تم تحديث بيانات الفاتورة بنجاح');
     } catch (error) {
       toast.error('حدث خطأ أثناء تحديث البيانات');
     }
@@ -443,13 +484,13 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
   // Handle print existing invoice
   const handlePrintExisting = () => {
-    if (!currentCarId) return;
+    if (!currentBatchId) return;
     
-    const car = existingCars.find(c => c.id === currentCarId);
-    if (!car) return;
+    const batch = purchaseBatches.find(b => b.id === currentBatchId);
+    if (!batch) return;
 
     setSavedBatchData({
-      batch: { id: car.id },
+      batch: { id: batch.id },
       supplier: selectedSupplier,
       cars: cars,
     });
@@ -514,21 +555,25 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               suppliers={suppliers}
               onSelectResult={(result) => {
                 if (result.type === 'invoice' || result.type === 'car') {
-                  // Load the car/purchase
+                  // Find the batch that contains this car
                   const car = result.data;
-                  const carIndex = fiscalYearFilteredCars.findIndex(c => c.id === car.id);
-                  if (carIndex >= 0) {
-                    setCurrentInvoiceIndex(carIndex);
-                    loadCarData(fiscalYearFilteredCars[carIndex]);
+                  const batchIndex = fiscalYearFilteredBatches.findIndex(b => 
+                    b.cars?.some((c: any) => c.id === car.id)
+                  );
+                  if (batchIndex >= 0) {
+                    setCurrentInvoiceIndex(batchIndex);
+                    loadBatchData(fiscalYearFilteredBatches[batchIndex]);
                   }
                 } else if (result.type === 'supplier') {
-                  // Load first purchase of this supplier or set supplier for new invoice
-                  const supplierPurchases = result.data.purchases;
-                  if (supplierPurchases && supplierPurchases.length > 0) {
-                    const carIndex = fiscalYearFilteredCars.findIndex(c => c.id === supplierPurchases[0].id);
-                    if (carIndex >= 0) {
-                      setCurrentInvoiceIndex(carIndex);
-                      loadCarData(fiscalYearFilteredCars[carIndex]);
+                  // Load first batch of this supplier or set supplier for new invoice
+                  const supplierBatches = fiscalYearFilteredBatches.filter(b => 
+                    b.supplier_id === result.id
+                  );
+                  if (supplierBatches.length > 0) {
+                    const batchIndex = fiscalYearFilteredBatches.findIndex(b => b.id === supplierBatches[0].id);
+                    if (batchIndex >= 0) {
+                      setCurrentInvoiceIndex(batchIndex);
+                      loadBatchData(fiscalYearFilteredBatches[batchIndex]);
                     }
                   } else {
                     setInvoiceData(prev => ({ ...prev, supplier_id: result.id }));
@@ -894,7 +939,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   size="icon" 
                   className="h-8 w-8 rounded-none"
                   onClick={handleNextPurchase}
-                  disabled={currentInvoiceIndex >= fiscalYearFilteredCars.length - 1}
+                  disabled={currentInvoiceIndex >= fiscalYearFilteredBatches.length - 1}
                   title="الفاتورة التالية"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -904,14 +949,14 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   size="icon" 
                   className="h-8 w-8 rounded-none"
                   onClick={handleLastPurchase}
-                  disabled={fiscalYearFilteredCars.length === 0}
+                  disabled={fiscalYearFilteredBatches.length === 0}
                   title="آخر فاتورة"
                 >
                   <ChevronRight className="w-4 h-4" />
                   <ChevronRight className="w-4 h-4 -mr-2" />
                 </Button>
                 <span className="px-3 text-sm bg-muted min-w-[50px] text-center">
-                  {fiscalYearFilteredCars.length > 0 ? currentInvoiceIndex + 1 : 0} / {fiscalYearFilteredCars.length}
+                  {fiscalYearFilteredBatches.length > 0 ? currentInvoiceIndex + 1 : 0} / {fiscalYearFilteredBatches.length}
                 </span>
                 <Button 
                   variant="ghost" 
@@ -928,7 +973,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   size="icon" 
                   className="h-8 w-8 rounded-none"
                   onClick={handleFirstPurchase}
-                  disabled={fiscalYearFilteredCars.length === 0}
+                  disabled={fiscalYearFilteredBatches.length === 0}
                   title="أول فاتورة"
                 >
                   <ChevronLeft className="w-4 h-4" />
