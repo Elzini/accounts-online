@@ -97,7 +97,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailData, setDetailData] = useState<StatDetailData | null>(null);
   const [amountDisplayMode, setAmountDisplayMode] = useState<AmountDisplayMode>('total');
-  const [showAmountAsWords, setShowAmountAsWords] = useState(true); // عرض الأرقام بالكلمات
+  const showAmountAsWords = true; // عرض الأرقام بالكلمات دائماً
   
   // Dashboard customization
   const { data: dashboardConfig } = useDashboardConfig();
@@ -632,19 +632,6 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 <AmountDisplaySelector value={amountDisplayMode} onChange={setAmountDisplayMode} />
               </div>
               
-              {/* Toggle Words Display */}
-              <button
-                onClick={() => setShowAmountAsWords(!showAmountAsWords)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                  showAmountAsWords 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                )}
-                title={showAmountAsWords ? "عرض كأرقام" : "عرض كتابةً"}
-              >
-                {showAmountAsWords ? "كتابةً" : "أرقام"}
-              </button>
             </div>
           </div>
 
