@@ -17,8 +17,10 @@ export function usePublicFiscalYears() {
   return useQuery({
     queryKey: ['public-fiscal-years'],
     queryFn: async (): Promise<PublicFiscalYear[]> => {
+      // Use the secure public view instead of the main table
+      // This view only exposes minimal fields and filters by status
       const { data, error } = await supabase
-        .from('fiscal_years')
+        .from('fiscal_years_public')
         .select('id, name, start_date, end_date, is_current')
         .order('start_date', { ascending: false });
 
