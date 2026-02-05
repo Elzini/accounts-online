@@ -876,21 +876,27 @@ export async function fetchStats(fiscalYearId?: string | null) {
   };
 }
 
-// All-time stats (across all fiscal years)
+// All-time stats (across all fiscal years) - amounts include 15% VAT
 export async function fetchAllTimeStats() {
+  const VAT_RATE = 1.15;
+  
   // Total purchases across all years
   const { data: carsData } = await supabase
     .from('cars')
     .select('purchase_price');
   
-  const allTimePurchases = carsData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
+  // Base amount (stored without tax), multiply by 1.15 for inclusive amount
+  const allTimePurchasesBase = carsData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
+  const allTimePurchases = allTimePurchasesBase * VAT_RATE;
   
   // Total sales across all years
   const { data: salesData } = await supabase
     .from('sales')
     .select('sale_price, profit');
   
-  const allTimeSales = salesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
+  // Base amount (stored without tax), multiply by 1.15 for inclusive amount
+  const allTimeSalesBase = salesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
+  const allTimeSales = allTimeSalesBase * VAT_RATE;
   const allTimeSalesCount = salesData?.length || 0;
   const allTimeProfit = salesData?.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0) || 0;
   
