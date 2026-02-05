@@ -206,9 +206,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--shadow-default', shadowValues[settings.shadowIntensity] || shadowValues.medium);
     }
 
-    // Apply hover effect class to body for global access
-    if (settings.hoverEffect) {
+    // Apply hover effect to body for global access
+    if (settings.hoverEffect && settings.hoverEffect !== 'none') {
       document.body.setAttribute('data-hover-effect', settings.hoverEffect);
+    } else {
+      document.body.removeAttribute('data-hover-effect');
     }
   };
 
