@@ -5292,32 +5292,32 @@ export type Database = {
           company_id: string | null
           created_at: string | null
           id: string | null
-          id_number_masked: string | null
+          id_number: string | null
           name: string | null
           phone: string | null
-          registration_number_masked: string | null
+          registration_number: string | null
           updated_at: string | null
         }
         Insert: {
-          address?: string | null
+          address?: never
           company_id?: string | null
           created_at?: string | null
           id?: string | null
-          id_number_masked?: never
+          id_number?: never
           name?: string | null
-          phone?: string | null
-          registration_number_masked?: never
+          phone?: never
+          registration_number?: string | null
           updated_at?: string | null
         }
         Update: {
-          address?: string | null
+          address?: never
           company_id?: string | null
           created_at?: string | null
           id?: string | null
-          id_number_masked?: never
+          id_number?: never
           name?: string | null
-          phone?: string | null
-          registration_number_masked?: never
+          phone?: never
+          registration_number?: string | null
           updated_at?: string | null
         }
         Relationships: [

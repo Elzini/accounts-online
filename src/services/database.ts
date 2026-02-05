@@ -68,11 +68,9 @@ export async function fetchCustomers() {
     .order('created_at', { ascending: false });
   
   if (error) throw error;
-  // Map the masked fields back to expected field names for UI compatibility
+  // The view now uses the same field names, just return the data directly
   return data?.map(customer => ({
     ...customer,
-    id_number: customer.id_number_masked,
-    registration_number: customer.registration_number_masked,
     // Not exposed in safe view - provide null for type compatibility
     id_number_encrypted: null as string | null,
   })) || [];
