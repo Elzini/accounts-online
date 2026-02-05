@@ -488,4 +488,181 @@
   .theme-transition {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   }
+
+  /* ========== Interactive Hover Effects ========== */
+  
+  /* Lift Effect */
+  [data-hover-effect="lift"] .hover-effect-target,
+  .hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  [data-hover-effect="lift"] .hover-effect-target:hover,
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Scale Effect */
+  [data-hover-effect="scale"] .hover-effect-target,
+  .hover-scale {
+    transition: transform 0.3s ease;
+  }
+  [data-hover-effect="scale"] .hover-effect-target:hover,
+  .hover-scale:hover {
+    transform: scale(1.05);
+  }
+
+  /* Glow Effect */
+  [data-hover-effect="glow"] .hover-effect-target,
+  .hover-glow {
+    transition: box-shadow 0.3s ease;
+  }
+  [data-hover-effect="glow"] .hover-effect-target:hover,
+  .hover-glow:hover {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.5), 0 0 40px hsl(var(--primary) / 0.3);
+  }
+
+  /* Bounce Effect */
+  [data-hover-effect="bounce"] .hover-effect-target,
+  .hover-bounce {
+    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  [data-hover-effect="bounce"] .hover-effect-target:hover,
+  .hover-bounce:hover {
+    transform: translateY(-6px) scale(1.02);
+  }
+
+  /* Rotate Effect */
+  [data-hover-effect="rotate"] .hover-effect-target,
+  .hover-rotate {
+    transition: transform 0.3s ease;
+  }
+  [data-hover-effect="rotate"] .hover-effect-target:hover,
+  .hover-rotate:hover {
+    transform: rotate(-2deg) scale(1.02);
+  }
+
+  /* Border Highlight Effect */
+  [data-hover-effect="border"] .hover-effect-target,
+  .hover-border {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  [data-hover-effect="border"] .hover-effect-target:hover,
+  .hover-border:hover {
+    border-color: hsl(var(--primary));
+    box-shadow: inset 0 0 0 2px hsl(var(--primary) / 0.3);
+  }
+
+  /* Shimmer Effect */
+  .hover-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .hover-shimmer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+    transition: left 0.5s ease;
+    pointer-events: none;
+  }
+  .hover-shimmer:hover::before {
+    left: 100%;
+  }
+
+  /* Pulse Effect */
+  .hover-pulse {
+    transition: transform 0.3s ease;
+  }
+  .hover-pulse:hover {
+    animation: pulse-animation 0.6s ease-in-out infinite;
+  }
+  @keyframes pulse-animation {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+  }
+
+  /* Tilt 3D Effect */
+  .hover-tilt {
+    transition: transform 0.3s ease;
+    transform-style: preserve-3d;
+  }
+  .hover-tilt:hover {
+    transform: perspective(1000px) rotateX(5deg) rotateY(-5deg) scale(1.02);
+  }
+
+  /* Slide Up Content Effect */
+  .hover-slide-up {
+    transition: transform 0.3s ease;
+  }
+  .hover-slide-up:hover {
+    transform: translateY(-8px);
+  }
+  .hover-slide-up:hover .slide-content {
+    transform: translateY(-5px);
+    opacity: 1;
+  }
+
+  /* Color Shift Effect */
+  .hover-color-shift {
+    transition: filter 0.3s ease, transform 0.3s ease;
+  }
+  .hover-color-shift:hover {
+    filter: hue-rotate(15deg) brightness(1.1);
+    transform: scale(1.02);
+  }
+
+  /* Gradient Border Effect */
+  .hover-gradient-border {
+    position: relative;
+    background-clip: padding-box;
+    transition: transform 0.3s ease;
+  }
+  .hover-gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: xor;
+    -webkit-mask-composite: xor;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .hover-gradient-border:hover::before {
+    opacity: 1;
+  }
+  .hover-gradient-border:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Disable animations when user prefers reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* No animations class */
+  .no-animations *,
+  .no-animations *::before,
+  .no-animations *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

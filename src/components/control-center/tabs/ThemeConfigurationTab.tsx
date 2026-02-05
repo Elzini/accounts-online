@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Palette, Save, RotateCcw, Sparkles, MousePointer, Zap, Moon, Sun, Layers } from 'lucide-react';
+import { Palette, Save, RotateCcw, Sparkles, MousePointer, Zap, Layers, Check } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMenuConfiguration, useSaveMenuConfiguration } from '@/hooks/useSystemControl';
 import { toast } from 'sonner';
+import { themePresets } from '@/components/themes/ThemePresets';
 
 const FONT_FAMILIES = [
   { value: 'Cairo', label: 'Cairo (الافتراضي)' },
@@ -43,89 +44,28 @@ const SIDEBAR_COLORS = [
   { value: '#7c2d12', label: 'برتقالي داكن' },
 ];
 
-// Pre-made themes
-const THEME_PRESETS = [
-  {
-    id: 'ocean',
-    name: 'المحيط',
-    icon: '🌊',
-    primaryColor: '#0ea5e9',
-    sidebarColor: '#0c4a6e',
-    description: 'ألوان زرقاء هادئة',
-  },
-  {
-    id: 'forest',
-    name: 'الغابة',
-    icon: '🌲',
-    primaryColor: '#22c55e',
-    sidebarColor: '#14532d',
-    description: 'ألوان خضراء طبيعية',
-  },
-  {
-    id: 'sunset',
-    name: 'الغروب',
-    icon: '🌅',
-    primaryColor: '#f97316',
-    sidebarColor: '#7c2d12',
-    description: 'ألوان دافئة',
-  },
-  {
-    id: 'royal',
-    name: 'ملكي',
-    icon: '👑',
-    primaryColor: '#8b5cf6',
-    sidebarColor: '#1e1b4b',
-    description: 'ألوان بنفسجية فاخرة',
-  },
-  {
-    id: 'midnight',
-    name: 'منتصف الليل',
-    icon: '🌙',
-    primaryColor: '#6366f1',
-    sidebarColor: '#0f172a',
-    description: 'ألوان ليلية داكنة',
-  },
-  {
-    id: 'rose',
-    name: 'الورد',
-    icon: '🌸',
-    primaryColor: '#ec4899',
-    sidebarColor: '#831843',
-    description: 'ألوان وردية أنيقة',
-  },
-  {
-    id: 'emerald',
-    name: 'الزمرد',
-    icon: '💎',
-    primaryColor: '#10b981',
-    sidebarColor: '#064e3b',
-    description: 'ألوان زمردية راقية',
-  },
-  {
-    id: 'amber',
-    name: 'العنبر',
-    icon: '✨',
-    primaryColor: '#f59e0b',
-    sidebarColor: '#78350f',
-    description: 'ألوان ذهبية دافئة',
-  },
-];
-
-// Hover effects options
+// Hover effects options - EXPANDED with more interactive effects
 const HOVER_EFFECTS = [
-  { value: 'none', label: 'بدون تأثير', description: 'لا يوجد تأثير عند التحويم' },
-  { value: 'lift', label: 'رفع', description: 'رفع العنصر للأعلى', className: 'hover-lift' },
-  { value: 'scale', label: 'تكبير', description: 'تكبير العنصر قليلاً', className: 'hover-scale' },
-  { value: 'glow', label: 'توهج', description: 'إضافة توهج حول العنصر', className: 'hover-glow' },
-  { value: 'bounce', label: 'ارتداد', description: 'تأثير ارتداد ممتع', className: 'hover-bounce' },
-  { value: 'rotate', label: 'دوران', description: 'دوران خفيف عند التحويم', className: 'hover-rotate' },
-  { value: 'border', label: 'إطار', description: 'إبراز الإطار', className: 'card-hover' },
+  { value: 'none', label: 'بدون تأثير', description: 'لا يوجد تأثير عند التحويم', icon: '⭕' },
+  { value: 'lift', label: 'رفع عند التحويم', description: 'رفع العنصر للأعلى مع ظل', icon: '⬆️' },
+  { value: 'scale', label: 'تكبير عند التحويم', description: 'تكبير العنصر قليلاً', icon: '🔍' },
+  { value: 'glow', label: 'توهج عند التحويم', description: 'إضافة توهج ملون حول العنصر', icon: '✨' },
+  { value: 'bounce', label: 'ارتداد عند التحويم', description: 'تأثير ارتداد حيوي', icon: '🏀' },
+  { value: 'rotate', label: 'دوران عند التحويم', description: 'دوران خفيف مع تكبير', icon: '🔄' },
+  { value: 'border', label: 'إطار متوهج', description: 'إبراز الإطار باللون الأساسي', icon: '🔲' },
+  { value: 'shimmer', label: 'بريق متحرك', description: 'تأثير بريق يمر على العنصر', icon: '💫' },
+  { value: 'pulse', label: 'نبض مستمر', description: 'تأثير نبض عند التحويم', icon: '💓' },
+  { value: 'tilt', label: 'ميل ثلاثي الأبعاد', description: 'ميل العنصر بمنظور 3D', icon: '📐' },
+  { value: 'slide-up', label: 'انزلاق للأعلى', description: 'انزلاق العنصر للأعلى', icon: '⏫' },
+  { value: 'color-shift', label: 'تغير الألوان', description: 'تحول في درجة اللون', icon: '🌈' },
+  { value: 'gradient-border', label: 'إطار متدرج', description: 'إطار بتدرج لوني جميل', icon: '🖼️' },
 ];
 
 // Animation speeds
 const ANIMATION_SPEEDS = [
-  { value: 'fast', label: 'سريع', duration: '150ms' },
-  { value: 'normal', label: 'عادي', duration: '300ms' },
+  { value: 'fast', label: 'سريع جداً', duration: '100ms' },
+  { value: 'normal', label: 'سريع', duration: '200ms' },
+  { value: 'medium', label: 'متوسط', duration: '300ms' },
   { value: 'slow', label: 'بطيء', duration: '500ms' },
 ];
 
@@ -174,11 +114,11 @@ export function ThemeConfigurationTab() {
     setHasChanges(true);
   };
 
-  const applyPreset = (preset: typeof THEME_PRESETS[0]) => {
+  const applyPreset = (preset: typeof themePresets[0]) => {
     setThemeSettings(prev => ({
       ...prev,
-      primaryColor: preset.primaryColor,
-      sidebarColor: preset.sidebarColor,
+      primaryColor: preset.colors.primary,
+      sidebarColor: preset.colors.sidebar,
     }));
     setHasChanges(true);
     toast.success(`تم تطبيق ثيم "${preset.name}"`);
@@ -310,33 +250,40 @@ export function ThemeConfigurationTab() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Presets Tab */}
           <TabsContent value="presets" className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {THEME_PRESETS.map((preset) => (
+              {themePresets.map((preset) => (
                 <button
                   key={preset.id}
                   onClick={() => applyPreset(preset)}
                   className={`relative group p-4 rounded-xl border-2 transition-all duration-300 hover:scale-105 ${
-                    themeSettings.primaryColor === preset.primaryColor && themeSettings.sidebarColor === preset.sidebarColor
+                    themeSettings.primaryColor === preset.colors.primary && themeSettings.sidebarColor === preset.colors.sidebar
                       ? 'border-primary ring-2 ring-primary/30'
                       : 'border-border hover:border-primary/50'
                   }`}
                 >
                   <div 
-                    className="w-full h-20 rounded-lg mb-3 flex items-end overflow-hidden"
-                    style={{ backgroundColor: preset.sidebarColor }}
-                  >
-                    <div 
-                      className="w-full h-8 rounded-t-lg"
-                      style={{ backgroundColor: preset.primaryColor }}
-                    />
-                  </div>
+                    className="w-full h-24 rounded-lg mb-3 overflow-hidden"
+                    style={{ background: preset.preview.gradient }}
+                  />
                   <div className="text-center">
-                    <span className="text-2xl mb-1 block">{preset.icon}</span>
                     <h4 className="font-semibold">{preset.name}</h4>
                     <p className="text-xs text-muted-foreground">{preset.description}</p>
+                    <div className="flex justify-center gap-1 mt-2">
+                      {Object.values(preset.colors).slice(0, 4).map((color, idx) => (
+                        <span
+                          key={idx}
+                          className="w-4 h-4 rounded-full border border-white/20"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
                   </div>
+                  {themeSettings.primaryColor === preset.colors.primary && themeSettings.sidebarColor === preset.colors.sidebar && (
+                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground rounded-full p-1">
+                      <Check className="w-3 h-3" />
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
@@ -432,18 +379,19 @@ export function ThemeConfigurationTab() {
                     <MousePointer className="w-4 h-4" />
                     تأثير التحويم
                   </Label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {HOVER_EFFECTS.map((effect) => (
                       <button
                         key={effect.value}
                         onClick={() => handleChange('hoverEffect', effect.value)}
-                        className={`p-4 rounded-xl border-2 transition-all text-right ${
+                        className={`p-4 rounded-xl border-2 transition-all text-right hover-${effect.value} ${
                           themeSettings.hoverEffect === effect.value
                             ? 'border-primary bg-primary/10'
                             : 'border-border hover:border-primary/50'
-                        } ${effect.className || ''}`}
+                        }`}
                       >
-                        <h4 className="font-semibold">{effect.label}</h4>
+                        <span className="text-xl mb-2 block">{effect.icon}</span>
+                        <h4 className="font-semibold text-sm">{effect.label}</h4>
                         <p className="text-xs text-muted-foreground">{effect.description}</p>
                       </button>
                     ))}
