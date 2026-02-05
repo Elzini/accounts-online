@@ -657,7 +657,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
     }
   }
 
-  // Available cars count - filter by purchase_date within fiscal year
+  // Build all queries (without awaiting yet)
   let availableCarsQuery = supabase
     .from('cars')
     .select('*', { count: 'exact', head: true })
@@ -669,9 +669,6 @@ export async function fetchStats(fiscalYearId?: string | null) {
       .lte('purchase_date', fiscalYearEnd);
   }
 
-  const { count: availableCars } = await availableCarsQuery;
-
-  // Today's sales (within fiscal year based on sale_date)
   let todaySalesQuery = supabase
     .from('sales')
     .select('*', { count: 'exact', head: true })
@@ -682,10 +679,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
       .gte('sale_date', fiscalYearStart)
       .lte('sale_date', fiscalYearEnd);
   }
-  
-  const { count: todaySales } = await todaySalesQuery;
 
-  // Sales data with fiscal year filter based on sale_date
   let salesQuery = supabase
     .from('sales')
     .select('profit, car_id, sale_date, sale_price');
@@ -695,12 +689,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
       .gte('sale_date', fiscalYearStart)
       .lte('sale_date', fiscalYearEnd);
   }
-  
-  const { data: salesData } = await salesQuery;
-  
-  const totalGrossProfit = salesData?.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0) || 0;
 
-  // Get expenses with fiscal year filter based on expense_date
   let expensesQuery = supabase
     .from('expenses')
     .select('amount, car_id, expense_date, payment_method');
@@ -710,9 +699,71 @@ export async function fetchStats(fiscalYearId?: string | null) {
       .gte('expense_date', fiscalYearStart)
       .lte('expense_date', fiscalYearEnd);
   }
+
+  let payrollQuery = supabase
+    .from('payroll_records')
+    .select('month, year, total_base_salaries, total_allowances, total_bonuses, total_overtime, total_absences')
+    .eq('status', 'approved');
+
+  let prepaidAmortQuery = supabase
+    .from('prepaid_expense_amortizations')
+    .select(`
+      amount,
+      amortization_date,
+      status,
+      prepaid_expense:prepaid_expenses(company_id, status)
+    `)
+    .lte('amortization_date', toDateOnly(now));
   
-  const { data: expensesData } = await expensesQuery;
+  if (fiscalYearStart && fiscalYearEnd) {
+    prepaidAmortQuery = prepaidAmortQuery
+      .gte('amortization_date', fiscalYearStart)
+      .lte('amortization_date', fiscalYearEnd);
+  }
+
+  let purchasesQuery = supabase
+    .from('cars')
+    .select('purchase_price');
   
+  if (fiscalYearId) {
+    if (fiscalYearStart && fiscalYearEnd) {
+      purchasesQuery = purchasesQuery.or(
+        `fiscal_year_id.eq.${fiscalYearId},and(fiscal_year_id.is.null,purchase_date.gte.${fiscalYearStart},purchase_date.lte.${fiscalYearEnd})`
+      );
+    } else {
+      purchasesQuery = purchasesQuery.eq('fiscal_year_id', fiscalYearId);
+    }
+  }
+
+  // Execute ALL queries in parallel for maximum performance
+  const [
+    availableCarsResult,
+    todaySalesResult,
+    salesResult,
+    expensesResult,
+    payrollResult,
+    prepaidAmortResult,
+    purchasesResult
+  ] = await Promise.all([
+    availableCarsQuery,
+    todaySalesQuery,
+    salesQuery,
+    expensesQuery,
+    payrollQuery,
+    prepaidAmortQuery,
+    purchasesQuery
+  ]);
+
+  const availableCars = availableCarsResult.count;
+  const todaySales = todaySalesResult.count;
+  const salesData = salesResult.data;
+  const expensesData = expensesResult.data;
+  const allPayrollData = payrollResult.data;
+  const prepaidAmortData = prepaidAmortResult.data;
+  const purchasesData = purchasesResult.data;
+  
+  const totalGrossProfit = salesData?.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0) || 0;
+
   // Calculate car-specific expenses (linked to sold cars)
   const soldCarIds = salesData?.map(s => s.car_id) || [];
   const carExpenses = expensesData?.filter(exp => exp.car_id && soldCarIds.includes(exp.car_id))
@@ -726,24 +777,12 @@ export async function fetchStats(fiscalYearId?: string | null) {
   const otherOperatingExpenses = expensesData?.filter(exp => !exp.car_id && exp.payment_method !== 'prepaid')
     .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0) || 0;
   
-  // Get approved payroll expenses (salaries are administrative expenses)
-  // Actual salary expense = Gross salary - Absences
-  // Advances are NOT deducted because they were already paid out earlier
-  let payrollQuery = supabase
-    .from('payroll_records')
-    .select('month, year, total_base_salaries, total_allowances, total_bonuses, total_overtime, total_absences')
-    .eq('status', 'approved');
-  
-  const { data: allPayrollData } = await payrollQuery;
-  
   // Filter payroll by fiscal year using month/year fields instead of created_at
   let payrollData = allPayrollData;
   if (fiscalYearStart && fiscalYearEnd) {
-    // IMPORTANT: use local date parsing to avoid excluding boundary months (e.g., month 1) بسبب فرق التوقيت.
     const fyStartDate = parseLocalISODate(fiscalYearStart, false);
     const fyEndDate = parseLocalISODate(fiscalYearEnd, true);
     payrollData = allPayrollData?.filter(p => {
-      // Build a date from payroll month/year (first day of month)
       const payrollDate = new Date(Number(p.year), Number(p.month) - 1, 1);
       payrollDate.setHours(0, 0, 0, 0);
       return payrollDate >= fyStartDate && payrollDate <= fyEndDate;
@@ -759,25 +798,6 @@ export async function fetchStats(fiscalYearId?: string | null) {
     const absences = Number(p.total_absences) || 0;
     return sum + base + allowances + bonuses + overtime - absences;
   }, 0) || 0;
-  
-  // Get due prepaid expense amortizations (rent, etc.) - include pending ones that are due
-  let prepaidAmortQuery = supabase
-    .from('prepaid_expense_amortizations')
-    .select(`
-      amount,
-      amortization_date,
-      status,
-      prepaid_expense:prepaid_expenses(company_id, status)
-    `)
-    .lte('amortization_date', toDateOnly(now)); // Due up to today
-  
-  if (fiscalYearStart && fiscalYearEnd) {
-    prepaidAmortQuery = prepaidAmortQuery
-      .gte('amortization_date', fiscalYearStart)
-      .lte('amortization_date', fiscalYearEnd);
-  }
-  
-  const { data: prepaidAmortData } = await prepaidAmortQuery;
   
   // Calculate pending (unprocessed) prepaid amortizations that are due
   const pendingPrepaidExpenses = prepaidAmortData?.filter(a => {
@@ -797,7 +817,6 @@ export async function fetchStats(fiscalYearId?: string | null) {
   // Month sales count (within current month and fiscal year)
   let monthSalesCount = 0;
   if (fiscalYearStart && fiscalYearEnd) {
-    // Use current month boundaries strictly (not comparing with fiscal year)
     monthSalesCount = salesData?.filter(sale => {
       const saleDate = sale.sale_date;
       return saleDate >= startOfMonth && saleDate <= endOfMonth;
@@ -806,24 +825,6 @@ export async function fetchStats(fiscalYearId?: string | null) {
     monthSalesCount = salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth).length || 0;
   }
 
-  // Total purchases (sum of all car purchase prices within fiscal year based on purchase_date)
-  let purchasesQuery = supabase
-    .from('cars')
-    .select('purchase_price');
-  
-  if (fiscalYearId) {
-    if (fiscalYearStart && fiscalYearEnd) {
-      // (fiscal_year_id = fiscalYearId) OR (fiscal_year_id is null AND purchase_date within FY)
-      purchasesQuery = purchasesQuery.or(
-        `fiscal_year_id.eq.${fiscalYearId},and(fiscal_year_id.is.null,purchase_date.gte.${fiscalYearStart},purchase_date.lte.${fiscalYearEnd})`
-      );
-    } else {
-      purchasesQuery = purchasesQuery.eq('fiscal_year_id', fiscalYearId);
-    }
-  }
-  
-  const { data: purchasesData } = await purchasesQuery;
-  
   // Total purchases - prices are already VAT-inclusive
   const totalPurchases = purchasesData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
 
