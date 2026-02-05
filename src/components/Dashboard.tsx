@@ -478,6 +478,13 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         <TabsContent value="overview" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
           {/* Quick Access Section */}
           <QuickAccessSection setActivePage={setActivePage} />
+          
+          {/* Amount Display Mode Selector */}
+          <div className="flex items-center justify-end gap-2 p-3 bg-card rounded-lg border border-border">
+            <span className="text-sm text-muted-foreground hidden sm:block">عرض المبالغ:</span>
+            <AmountDisplaySelector value={amountDisplayMode} onChange={setAmountDisplayMode} />
+          </div>
+          
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
             <StatCard
