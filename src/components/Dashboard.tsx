@@ -12,10 +12,12 @@ import { useCarTransfers, usePartnerDealerships } from '@/hooks/useTransfers';
 import { useInstallmentSales } from '@/hooks/useInstallments';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid } from 'recharts';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { useDashboardConfig } from '@/hooks/useSystemControl';
+import { CardConfig, DEFAULT_STAT_CARDS } from './dashboard/DashboardCustomizer';
 
 // Advanced Dashboard Components
 import { TrendCard } from './dashboard/TrendCard';
@@ -87,6 +89,50 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailData, setDetailData] = useState<StatDetailData | null>(null);
   const [amountDisplayMode, setAmountDisplayMode] = useState<AmountDisplayMode>('total');
+  
+  // Dashboard customization
+  const { data: dashboardConfig } = useDashboardConfig();
+  const [cardConfigs, setCardConfigs] = useState<CardConfig[]>(DEFAULT_STAT_CARDS);
+  
+  // Load card configs from saved dashboard config
+  useEffect(() => {
+    if (dashboardConfig?.stat_cards && dashboardConfig.stat_cards.length > 0) {
+      const savedIds = new Set(dashboardConfig.stat_cards.map((c: any) => c.id));
+      const mergedCards = [
+        ...dashboardConfig.stat_cards.map((c: any) => ({
+          id: c.id,
+          type: c.type || 'stat',
+          label: c.label,
+          visible: c.visible ?? true,
+          order: c.order ?? 0,
+          size: c.size || 'medium',
+          bgColor: c.bgColor || '',
+          fontSize: c.fontSize || 100,
+        })),
+        ...DEFAULT_STAT_CARDS.filter(dc => !savedIds.has(dc.id)).map((dc, i) => ({
+          ...dc,
+          order: dashboardConfig.stat_cards.length + i,
+          fontSize: 100,
+          bgColor: '',
+        })),
+      ].sort((a, b) => a.order - b.order);
+      setCardConfigs(mergedCards);
+    }
+  }, [dashboardConfig]);
+
+  const handleCardsConfigChange = useCallback((cards: CardConfig[]) => {
+    setCardConfigs(cards);
+  }, []);
+
+  // Helper to get card config by id
+  const getCardConfig = useCallback((id: string) => {
+    return cardConfigs.find(c => c.id === id) || { visible: true, size: 'medium' as const, bgColor: '', fontSize: 100 };
+  }, [cardConfigs]);
+
+  // Get visible cards sorted by order
+  const visibleCardIds = useMemo(() => {
+    return cardConfigs.filter(c => c.visible).sort((a, b) => a.order - b.order).map(c => c.id);
+  }, [cardConfigs]);
 
   const canSales = permissions.admin || permissions.sales;
   const canPurchases = permissions.admin || permissions.purchases;
@@ -483,7 +529,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         <TabsContent value="overview" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
           {/* Top Toolbar with Users & Notifications */}
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <CustomizeInterfaceButton setActivePage={setActivePage} />
+            <CustomizeInterfaceButton setActivePage={setActivePage} onCardsConfigChange={handleCardsConfigChange} />
             
             <div className="flex items-center gap-3">
               {/* Online Users Popover */}
@@ -504,77 +550,130 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           {/* Quick Access Section */}
           <QuickAccessSection setActivePage={setActivePage} />
           
-          {/* Stats Grid */}
+          {/* Stats Grid - Dynamic based on config */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-            <StatCard
-              title="السيارات المتاحة"
-              value={stats.availableCars}
-              icon={Car}
-              gradient="primary"
-              subtitle="سيارة في المخزون"
-              onClick={() => showStatDetail('availableCars')}
-            />
-            <StatCard
-              title="إجمالي المشتريات"
-              value={formatCurrencyWithMode(stats.totalPurchases)}
-              icon={ShoppingCart}
-              gradient="danger"
-              subtitle={getCurrencySubtitle()}
-              onClick={() => showStatDetail('totalPurchases')}
-            />
-            <StatCard
-              title="مبيعات الشهر"
-              value={formatCurrencyWithMode(stats.monthSalesAmount)}
-              icon={TrendingUp}
-              gradient="success"
-              subtitle={getCurrencySubtitle()}
-              onClick={() => showStatDetail('monthSales')}
-            />
-            <StatCard
-              title="إجمالي الأرباح"
-              value={formatCurrencyWithMode(stats.totalProfit)}
-              icon={DollarSign}
-              gradient="warning"
-              subtitle={getCurrencySubtitle()}
-              onClick={() => showStatDetail('totalProfit')}
-            />
-            <StatCard
-              title="مبيعات اليوم"
-              value={stats.todaySales}
-              icon={ShoppingCart}
-              gradient="primary"
-              subtitle="عملية بيع"
-              onClick={() => showStatDetail('todaySales')}
-            />
-            <StatCard
-              title="عدد مبيعات الشهر"
-              value={stats.monthSales}
-              icon={TrendingUp}
-              gradient="success"
-              subtitle="عملية بيع"
-              onClick={() => showStatDetail('monthSalesCount')}
-            />
+            {visibleCardIds.slice(0, 6).map(cardId => {
+              const cfg = getCardConfig(cardId);
+              const cardProps = {
+                size: cfg.size,
+                bgColor: cfg.bgColor,
+                fontSize: cfg.fontSize,
+              };
+
+              switch (cardId) {
+                case 'availableCars':
+                  return (
+                    <StatCard
+                      key={cardId}
+                      title="السيارات المتاحة"
+                      value={stats.availableCars}
+                      icon={Car}
+                      gradient="primary"
+                      subtitle="سيارة في المخزون"
+                      onClick={() => showStatDetail('availableCars')}
+                      {...cardProps}
+                    />
+                  );
+                case 'totalPurchases':
+                  return (
+                    <StatCard
+                      key={cardId}
+                      title="إجمالي المشتريات"
+                      value={formatCurrencyWithMode(stats.totalPurchases)}
+                      icon={ShoppingCart}
+                      gradient="danger"
+                      subtitle={getCurrencySubtitle()}
+                      onClick={() => showStatDetail('totalPurchases')}
+                      {...cardProps}
+                    />
+                  );
+                case 'monthSales':
+                  return (
+                    <StatCard
+                      key={cardId}
+                      title="مبيعات الشهر"
+                      value={formatCurrencyWithMode(stats.monthSalesAmount)}
+                      icon={TrendingUp}
+                      gradient="success"
+                      subtitle={getCurrencySubtitle()}
+                      onClick={() => showStatDetail('monthSales')}
+                      {...cardProps}
+                    />
+                  );
+                case 'totalProfit':
+                  return (
+                    <StatCard
+                      key={cardId}
+                      title="إجمالي الأرباح"
+                      value={formatCurrencyWithMode(stats.totalProfit)}
+                      icon={DollarSign}
+                      gradient="warning"
+                      subtitle={getCurrencySubtitle()}
+                      onClick={() => showStatDetail('totalProfit')}
+                      {...cardProps}
+                    />
+                  );
+                case 'todaySales':
+                  return (
+                    <StatCard
+                      key={cardId}
+                      title="مبيعات اليوم"
+                      value={stats.todaySales}
+                      icon={ShoppingCart}
+                      gradient="primary"
+                      subtitle="عملية بيع"
+                      onClick={() => showStatDetail('todaySales')}
+                      {...cardProps}
+                    />
+                  );
+                case 'monthSalesCount':
+                  return (
+                    <StatCard
+                      key={cardId}
+                      title="عدد مبيعات الشهر"
+                      value={stats.monthSales}
+                      icon={TrendingUp}
+                      gradient="success"
+                      subtitle="عملية بيع"
+                      onClick={() => showStatDetail('monthSalesCount')}
+                      {...cardProps}
+                    />
+                  );
+                default:
+                  return null;
+              }
+            })}
           </div>
 
-          {/* All-Time Company Stats */}
+          {/* All-Time Company Stats - Dynamic */}
           {allTimeStats && (
             <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-              <StatCard
-                title="إجمالي مشتريات الشركة (كل السنين)"
-                value={formatCurrencyWithMode(allTimeStats.allTimePurchases)}
-                icon={Building2}
-                gradient="danger"
-                subtitle={`${allTimeStats.totalCarsCount} سيارة - ${getDisplayModeLabel(amountDisplayMode)}`}
-                onClick={() => showStatDetail('allTimePurchases')}
-              />
-              <StatCard
-                title="إجمالي مبيعات الشركة (كل السنين)"
-                value={formatCurrencyWithMode(allTimeStats.allTimeSales)}
-                icon={TrendingUp}
-                gradient="success"
-                subtitle={`${allTimeStats.allTimeSalesCount} عملية بيع - ${getDisplayModeLabel(amountDisplayMode)}`}
-                onClick={() => showStatDetail('allTimeSales')}
-              />
+              {getCardConfig('allTimePurchases').visible && (
+                <StatCard
+                  title="إجمالي مشتريات الشركة (كل السنين)"
+                  value={formatCurrencyWithMode(allTimeStats.allTimePurchases)}
+                  icon={Building2}
+                  gradient="danger"
+                  subtitle={`${allTimeStats.totalCarsCount} سيارة - ${getDisplayModeLabel(amountDisplayMode)}`}
+                  onClick={() => showStatDetail('allTimePurchases')}
+                  size={getCardConfig('allTimePurchases').size}
+                  bgColor={getCardConfig('allTimePurchases').bgColor}
+                  fontSize={getCardConfig('allTimePurchases').fontSize}
+                />
+              )}
+              {getCardConfig('allTimeSales').visible && (
+                <StatCard
+                  title="إجمالي مبيعات الشركة (كل السنين)"
+                  value={formatCurrencyWithMode(allTimeStats.allTimeSales)}
+                  icon={TrendingUp}
+                  gradient="success"
+                  subtitle={`${allTimeStats.allTimeSalesCount} عملية بيع - ${getDisplayModeLabel(amountDisplayMode)}`}
+                  onClick={() => showStatDetail('allTimeSales')}
+                  size={getCardConfig('allTimeSales').size}
+                  bgColor={getCardConfig('allTimeSales').bgColor}
+                  fontSize={getCardConfig('allTimeSales').fontSize}
+                />
+              )}
             </div>
           )}
 
@@ -632,38 +731,58 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             
             return (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-                <StatCard
-                  title="عقود التقسيط النشطة"
-                  value={activeInstallments.length}
-                  icon={CreditCard}
-                  gradient="primary"
-                  subtitle="عقد نشط"
-                  onClick={() => setActivePage('installments')}
-                />
-                <StatCard
-                  title="الأقساط المتأخرة"
-                  value={overdueCount}
-                  icon={AlertTriangle}
-                  gradient="danger"
-                  subtitle={`${new Intl.NumberFormat('ar-SA').format(overdueAmount)} ر.س`}
-                  onClick={() => setActivePage('installments')}
-                />
-                <StatCard
-                  title="أقساط الشهر الحالي"
-                  value={upcomingThisMonth}
-                  icon={Calendar}
-                  gradient="warning"
-                  subtitle="قسط مستحق"
-                  onClick={() => setActivePage('installments')}
-                />
-                <StatCard
-                  title="إجمالي المستحق"
-                  value={`${new Intl.NumberFormat('ar-SA').format(totalDueAmount)} ر.س`}
-                  icon={DollarSign}
-                  gradient="success"
-                  subtitle="ريال سعودي"
-                  onClick={() => setActivePage('installments')}
-                />
+                {getCardConfig('activeInstallments').visible && (
+                  <StatCard
+                    title="عقود التقسيط النشطة"
+                    value={activeInstallments.length}
+                    icon={CreditCard}
+                    gradient="primary"
+                    subtitle="عقد نشط"
+                    onClick={() => setActivePage('installments')}
+                    size={getCardConfig('activeInstallments').size}
+                    bgColor={getCardConfig('activeInstallments').bgColor}
+                    fontSize={getCardConfig('activeInstallments').fontSize}
+                  />
+                )}
+                {getCardConfig('overdueInstallments').visible && (
+                  <StatCard
+                    title="الأقساط المتأخرة"
+                    value={overdueCount}
+                    icon={AlertTriangle}
+                    gradient="danger"
+                    subtitle={`${new Intl.NumberFormat('ar-SA').format(overdueAmount)} ر.س`}
+                    onClick={() => setActivePage('installments')}
+                    size={getCardConfig('overdueInstallments').size}
+                    bgColor={getCardConfig('overdueInstallments').bgColor}
+                    fontSize={getCardConfig('overdueInstallments').fontSize}
+                  />
+                )}
+                {getCardConfig('upcomingInstallments').visible && (
+                  <StatCard
+                    title="أقساط الشهر الحالي"
+                    value={upcomingThisMonth}
+                    icon={Calendar}
+                    gradient="warning"
+                    subtitle="قسط مستحق"
+                    onClick={() => setActivePage('installments')}
+                    size={getCardConfig('upcomingInstallments').size}
+                    bgColor={getCardConfig('upcomingInstallments').bgColor}
+                    fontSize={getCardConfig('upcomingInstallments').fontSize}
+                  />
+                )}
+                {getCardConfig('totalDue').visible && (
+                  <StatCard
+                    title="إجمالي المستحق"
+                    value={`${new Intl.NumberFormat('ar-SA').format(totalDueAmount)} ر.س`}
+                    icon={DollarSign}
+                    gradient="success"
+                    subtitle="ريال سعودي"
+                    onClick={() => setActivePage('installments')}
+                    size={getCardConfig('totalDue').size}
+                    bgColor={getCardConfig('totalDue').bgColor}
+                    fontSize={getCardConfig('totalDue').fontSize}
+                  />
+                )}
                 
                 {/* Customer Installment Info Card */}
                 {nextPaymentInfo && (
