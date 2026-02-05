@@ -673,14 +673,15 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               <TableHeader>
                 <TableRow className="bg-muted/50">
                   <TableHead className="text-right text-xs w-10">#</TableHead>
-                  <TableHead className="text-right text-xs min-w-[200px]">البيان</TableHead>
-                  <TableHead className="text-right text-xs min-w-[120px]">الصنف</TableHead>
-                  <TableHead className="text-right text-xs min-w-[150px]">رقم الهيكل</TableHead>
-                  <TableHead className="text-center text-xs w-20">الكمية</TableHead>
+                  <TableHead className="text-right text-xs min-w-[150px]">البيان</TableHead>
+                  <TableHead className="text-right text-xs min-w-[100px]">الموديل</TableHead>
+                  <TableHead className="text-right text-xs min-w-[80px]">اللون</TableHead>
+                  <TableHead className="text-right text-xs min-w-[120px]">رقم الهيكل</TableHead>
+                  <TableHead className="text-center text-xs w-16">الكمية</TableHead>
                   <TableHead className="text-center text-xs w-20">الوحدة</TableHead>
                   <TableHead className="text-center text-xs w-24">السعر</TableHead>
                   <TableHead className="text-center text-xs w-24">المجموع</TableHead>
-                  <TableHead className="text-center text-xs w-20">VAT</TableHead>
+                  <TableHead className="text-center text-xs w-16">VAT</TableHead>
                   <TableHead className="text-center text-xs w-24">المجموع الكلي</TableHead>
                   <TableHead className="text-center text-xs w-10"></TableHead>
                 </TableRow>
@@ -698,10 +699,20 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                       />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Car className="w-4 h-4" />
-                        سيارة
-                      </div>
+                      <Input
+                        value={cars[index].model}
+                        onChange={(e) => handleCarChange(car.id, 'model', e.target.value)}
+                        placeholder="الموديل"
+                        className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={cars[index].color}
+                        onChange={(e) => handleCarChange(car.id, 'color', e.target.value)}
+                        placeholder="اللون"
+                        className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
+                      />
                     </TableCell>
                     <TableCell>
                       <Input
@@ -718,7 +729,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                         min={1}
                         value={cars[index].quantity}
                         onChange={(e) => handleCarChange(car.id, 'quantity', parseInt(e.target.value) || 1)}
-                        className="h-8 text-sm text-center border-0 bg-transparent focus-visible:ring-1"
+                        className="h-8 text-sm text-center border-0 bg-transparent focus-visible:ring-1 w-16"
                       />
                     </TableCell>
                     <TableCell className="text-center text-sm">سيارة</TableCell>
