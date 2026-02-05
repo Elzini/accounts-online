@@ -118,24 +118,28 @@ export function StatCard({
     <div
       ref={cardRef}
       className={cn(
-        'bg-card rounded-lg sm:rounded-xl md:rounded-2xl shadow-sm border border-border animate-fade-in',
+        'bg-card rounded-lg sm:rounded-xl md:rounded-2xl border border-border animate-fade-in',
         sizeClasses[size],
         onClick && 'cursor-pointer hover:border-primary/50',
-        enable3D ? 'transition-none' : 'hover-lift transition-colors'
+        !enable3D && 'hover-lift shadow-sm transition-colors'
       )}
       style={{
         backgroundColor: bgColor || undefined,
         height: height ? `${height}px` : undefined,
         minHeight: height ? `${height}px` : undefined,
-        perspective: enable3D ? '1000px' : undefined,
         transform: enable3D 
-          ? `perspective(1000px) rotateX(${transform.rotateX}deg) rotateY(${transform.rotateY}deg) scale(${transform.rotateX !== 0 || transform.rotateY !== 0 ? 1.02 : 1})`
+          ? `perspective(1000px) rotateX(${transform.rotateX - 3}deg) rotateY(${transform.rotateY + 3}deg) scale(${transform.rotateX !== 0 || transform.rotateY !== 0 ? 1.03 : 1})`
           : undefined,
         transformStyle: enable3D ? 'preserve-3d' : undefined,
-        transition: enable3D ? 'transform 0.1s ease-out' : undefined,
-        boxShadow: enable3D && (transform.rotateX !== 0 || transform.rotateY !== 0)
-          ? `${-transform.rotateY * 2}px ${transform.rotateX * 2}px 20px rgba(0,0,0,0.15)`
+        transition: enable3D ? 'transform 0.15s ease-out, box-shadow 0.15s ease-out' : undefined,
+        boxShadow: enable3D 
+          ? `${-transform.rotateY * 1.5 - 4}px ${transform.rotateX * 1.5 + 8}px 25px rgba(0,0,0,0.2), 
+             ${-transform.rotateY * 0.5 - 2}px ${transform.rotateX * 0.5 + 3}px 8px rgba(0,0,0,0.1),
+             inset 0 1px 0 rgba(255,255,255,0.1)`
           : undefined,
+        background: enable3D 
+          ? `linear-gradient(145deg, ${bgColor || 'hsl(var(--card))'} 0%, ${bgColor ? bgColor : 'hsl(var(--card))'} 100%)`
+          : bgColor || undefined,
       }}
       onClick={onClick}
       onMouseMove={handleMouseMove}
