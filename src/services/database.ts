@@ -625,8 +625,11 @@ export async function fetchStats(fiscalYearId?: string | null) {
   const VAT_RATE = 1.15; // 15% VAT
   const now = new Date();
   const today = toDateOnly(now);
-  const startOfMonth = toDateOnly(new Date(now.getFullYear(), now.getMonth(), 1));
-  const endOfMonth = toDateOnly(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+  // Current month boundaries (1st day to last day of current month)
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const startOfMonth = toDateOnly(currentMonthStart);
+  const endOfMonth = toDateOnly(currentMonthEnd);
 
   // Parse YYYY-MM-DD as a *local* date (avoid timezone shifting from Date("YYYY-MM-DD") which is UTC).
   const parseLocalISODate = (iso: string, endOfDay = false) => {
@@ -794,12 +797,10 @@ export async function fetchStats(fiscalYearId?: string | null) {
   // Month sales count (within current month and fiscal year)
   let monthSalesCount = 0;
   if (fiscalYearStart && fiscalYearEnd) {
-    // Ensure we only count sales within the fiscal year AND current month
+    // Use current month boundaries strictly (not comparing with fiscal year)
     monthSalesCount = salesData?.filter(sale => {
       const saleDate = sale.sale_date;
-      const rangeStart = startOfMonth > fiscalYearStart ? startOfMonth : fiscalYearStart;
-      const rangeEnd = endOfMonth < fiscalYearEnd ? endOfMonth : fiscalYearEnd;
-      return saleDate >= rangeStart && saleDate <= rangeEnd;
+      return saleDate >= startOfMonth && saleDate <= endOfMonth;
     }).length || 0;
   } else {
     monthSalesCount = salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth).length || 0;
@@ -830,12 +831,12 @@ export async function fetchStats(fiscalYearId?: string | null) {
   // Month sales amount (sum of sale prices this month within fiscal year) - including VAT
   let monthSalesAmountBase = 0;
   if (fiscalYearStart && fiscalYearEnd) {
-    monthSalesAmountBase = salesData?.filter(sale => {
+    const monthSalesFiltered = salesData?.filter(sale => {
       const saleDate = sale.sale_date;
-      const rangeStart = startOfMonth > fiscalYearStart ? startOfMonth : fiscalYearStart;
-      const rangeEnd = endOfMonth < fiscalYearEnd ? endOfMonth : fiscalYearEnd;
-      return saleDate >= rangeStart && saleDate <= rangeEnd;
-    }).reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
+      // Use current month boundaries strictly
+      return saleDate >= startOfMonth && saleDate <= endOfMonth;
+    }) || [];
+    monthSalesAmountBase = monthSalesFiltered.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0);
   } else {
     monthSalesAmountBase = salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth)
       .reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
@@ -845,15 +846,11 @@ export async function fetchStats(fiscalYearId?: string | null) {
   // Count cars for purchases breakdown
   const purchasesCount = purchasesData?.length || 0;
 
-  // Month sales breakdown
-  const monthSalesData = fiscalYearStart && fiscalYearEnd
-    ? salesData?.filter(sale => {
-        const saleDate = sale.sale_date;
-        const rangeStart = startOfMonth > fiscalYearStart ? startOfMonth : fiscalYearStart;
-        const rangeEnd = endOfMonth < fiscalYearEnd ? endOfMonth : fiscalYearEnd;
-        return saleDate >= rangeStart && saleDate <= rangeEnd;
-      }) || []
-    : salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth) || [];
+  // Month sales breakdown - use strict month boundaries
+  const monthSalesData = salesData?.filter(sale => {
+    const saleDate = sale.sale_date;
+    return saleDate >= startOfMonth && saleDate <= endOfMonth;
+  }) || [];
 
   const monthSalesProfit = monthSalesData.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0);
 
