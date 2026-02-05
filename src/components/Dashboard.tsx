@@ -29,6 +29,9 @@ import { AmountDisplaySelector, AmountDisplayMode, calculateDisplayAmount, getDi
 import { WelcomeHeader } from './dashboard/WelcomeHeader';
 import { QuickAccessSection } from './dashboard/QuickAccessSection';
 import { RecentInvoicesCard } from './dashboard/RecentInvoicesCard';
+import { OnlineUsersCard } from './dashboard/OnlineUsersCard';
+import { PaymentRemindersCard } from './dashboard/PaymentRemindersCard';
+import { CustomizeInterfaceButton } from './dashboard/CustomizeInterfaceButton';
 
 interface DashboardProps {
   stats: {
@@ -476,14 +479,17 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
+          {/* Customize Interface Button */}
+          <div className="flex items-center justify-between">
+            <CustomizeInterfaceButton setActivePage={setActivePage} />
+            <div className="flex items-center gap-2 p-2 bg-card rounded-lg border border-border">
+              <span className="text-sm text-muted-foreground hidden sm:block">عرض المبالغ:</span>
+              <AmountDisplaySelector value={amountDisplayMode} onChange={setAmountDisplayMode} />
+            </div>
+          </div>
+
           {/* Quick Access Section */}
           <QuickAccessSection setActivePage={setActivePage} />
-          
-          {/* Amount Display Mode Selector */}
-          <div className="flex items-center justify-end gap-2 p-3 bg-card rounded-lg border border-border">
-            <span className="text-sm text-muted-foreground hidden sm:block">عرض المبالغ:</span>
-            <AmountDisplaySelector value={amountDisplayMode} onChange={setAmountDisplayMode} />
-          </div>
           
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
@@ -884,6 +890,12 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 </ChartContainer>
               )}
             </div>
+          </div>
+
+          {/* Online Users & Payment Reminders */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+            <OnlineUsersCard />
+            <PaymentRemindersCard setActivePage={setActivePage} />
           </div>
 
           {/* Quick Actions */}
