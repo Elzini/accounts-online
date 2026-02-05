@@ -115,8 +115,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--accent', variations.light);
       
       // Also update sidebar primary
-      root.style.setProperty('--sidebar-primary', variations.light);
-      root.style.setProperty('--sidebar-ring', variations.light);
+      root.style.setProperty('--sidebar-primary', primaryHsl);
+      root.style.setProperty('--sidebar-ring', primaryHsl);
     }
     
     // Apply sidebar color
@@ -127,6 +127,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--sidebar-background', sidebarHsl);
       root.style.setProperty('--sidebar-accent', sidebarVariations.light);
       root.style.setProperty('--sidebar-border', sidebarVariations.dark);
+      root.style.setProperty('--sidebar-foreground', '210 40% 98%');
+      root.style.setProperty('--sidebar-accent-foreground', '210 40% 98%');
     }
     
     // Apply font family
