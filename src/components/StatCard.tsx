@@ -1,6 +1,7 @@
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { numberToArabicWordsShort } from '@/lib/numberToArabicWords';
+import { useState, useRef } from 'react';
 
 interface StatCardProps {
   title: string;
@@ -14,6 +15,8 @@ interface StatCardProps {
   bgColor?: string;
   fontSize?: number; // percentage 80-130
   showAsWords?: boolean; // عرض الرقم بالكلمات العربية
+  height?: number; // ارتفاع البطاقة بالبكسل
+  enable3D?: boolean; // تفعيل التأثير ثلاثي الأبعاد
 }
 
 const gradientClasses = {
@@ -58,8 +61,12 @@ export function StatCard({
   bgColor,
   fontSize = 100,
   showAsWords = false,
+  height,
+  enable3D = false,
 }: StatCardProps) {
   const fontScale = fontSize / 100;
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [transform, setTransform] = useState({ rotateX: 0, rotateY: 0 });
 
   // الحصول على الكلمات العربية للرقم
   const getArabicWords = () => {
@@ -84,23 +91,61 @@ export function StatCard({
   
   const arabicWords = getArabicWords();
 
+  // معالجة حركة الماوس للتأثير ثلاثي الأبعاد
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!enable3D || !cardRef.current) return;
+    
+    const card = cardRef.current;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    const rotateX = ((y - centerY) / centerY) * -10;
+    const rotateY = ((x - centerX) / centerX) * 10;
+    
+    setTransform({ rotateX, rotateY });
+  };
+
+  const handleMouseLeave = () => {
+    if (enable3D) {
+      setTransform({ rotateX: 0, rotateY: 0 });
+    }
+  };
+
   return (
     <div
+      ref={cardRef}
       className={cn(
-        'bg-card rounded-lg sm:rounded-xl md:rounded-2xl shadow-sm border border-border hover-lift animate-fade-in',
+        'bg-card rounded-lg sm:rounded-xl md:rounded-2xl shadow-sm border border-border animate-fade-in',
         sizeClasses[size],
-        onClick && 'cursor-pointer hover:border-primary/50 transition-colors'
+        onClick && 'cursor-pointer hover:border-primary/50',
+        enable3D ? 'transition-none' : 'hover-lift transition-colors'
       )}
       style={{
         backgroundColor: bgColor || undefined,
+        height: height ? `${height}px` : undefined,
+        minHeight: height ? `${height}px` : undefined,
+        perspective: enable3D ? '1000px' : undefined,
+        transform: enable3D 
+          ? `perspective(1000px) rotateX(${transform.rotateX}deg) rotateY(${transform.rotateY}deg) scale(${transform.rotateX !== 0 || transform.rotateY !== 0 ? 1.02 : 1})`
+          : undefined,
+        transformStyle: enable3D ? 'preserve-3d' : undefined,
+        transition: enable3D ? 'transform 0.1s ease-out' : undefined,
+        boxShadow: enable3D && (transform.rotateX !== 0 || transform.rotateY !== 0)
+          ? `${-transform.rotateY * 2}px ${transform.rotateX * 2}px 20px rgba(0,0,0,0.15)`
+          : undefined,
       }}
       onClick={onClick}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? e => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
     >
-      <div className="flex items-start justify-between gap-2 sm:gap-2.5">
-        <div className="flex-1 min-w-0">
+      <div className="flex items-start justify-between gap-2 sm:gap-2.5 h-full">
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
           <p
             className="font-medium text-muted-foreground mb-0.5 truncate"
             style={{ fontSize: `${0.65 * fontScale}rem` }}
@@ -140,6 +185,9 @@ export function StatCard({
             iconSizeClasses[size],
             gradientClasses[gradient]
           )}
+          style={{
+            transform: enable3D ? 'translateZ(20px)' : undefined,
+          }}
         >
           <Icon className={cn('text-white', iconInnerClasses[size])} />
         </div>
