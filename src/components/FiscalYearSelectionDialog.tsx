@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Check } from 'lucide-react';
 import {
   Dialog,
@@ -17,19 +17,29 @@ import { ar } from 'date-fns/locale';
 interface FiscalYearSelectionDialogProps {
   open: boolean;
   fiscalYears: FiscalYear[];
+  currentSelectedId?: string;
   onSelect: (fiscalYear: FiscalYear) => void;
 }
 
 export function FiscalYearSelectionDialog({
   open,
   fiscalYears,
+  currentSelectedId,
   onSelect,
 }: FiscalYearSelectionDialogProps) {
   const [selectedId, setSelectedId] = useState<string>(() => {
-    // Default to current year or first one
+    // Default to current selection, then current year, then first one
+    if (currentSelectedId) return currentSelectedId;
     const currentYear = fiscalYears.find(fy => fy.is_current);
     return currentYear?.id || fiscalYears[0]?.id || '';
   });
+
+  // Update selection when currentSelectedId changes
+  useEffect(() => {
+    if (currentSelectedId) {
+      setSelectedId(currentSelectedId);
+    }
+  }, [currentSelectedId]);
 
   const handleConfirm = () => {
     const selected = fiscalYears.find(fy => fy.id === selectedId);
