@@ -62,11 +62,27 @@ export function StatCard({
   const fontScale = fontSize / 100;
 
   // تحويل القيمة إلى كلمات عربية إذا كانت رقمية ومطلوب العرض بالكلمات
-  const displayValue = showAsWords && typeof value === 'number' 
-    ? numberToArabicWordsShort(value) + ' ريال'
-    : showAsWords && typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^\d.-]/g, '')))
-    ? numberToArabicWordsShort(parseFloat(value.replace(/[^\d.-]/g, ''))) + ' ريال'
-    : value;
+  const getDisplayValue = () => {
+    if (!showAsWords) return value;
+    
+    if (typeof value === 'number') {
+      return numberToArabicWordsShort(value) + ' ريال';
+    }
+    
+    if (typeof value === 'string') {
+      // إزالة الفواصل والرموز واستخراج الرقم
+      const cleanedValue = value.replace(/,/g, '').replace(/[^\d.-]/g, '');
+      const numericValue = parseFloat(cleanedValue);
+      
+      if (!isNaN(numericValue) && numericValue !== 0) {
+        return numberToArabicWordsShort(numericValue) + ' ريال';
+      }
+    }
+    
+    return value;
+  };
+  
+  const displayValue = getDisplayValue();
 
   return (
     <div
