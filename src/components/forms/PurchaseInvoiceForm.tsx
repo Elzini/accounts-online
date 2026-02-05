@@ -340,6 +340,8 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     setIsViewingExisting(true);
     setCurrentCarId(car.id);
     
+    // When loading existing data, the stored price is the BASE price (without tax)
+    // So we need to set price_includes_tax to false to avoid double-dividing
     setInvoiceData({
       invoice_number: String(car.inventory_number || ''),
       supplier_id: car.supplier_id || '',
@@ -348,7 +350,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       payment_account_id: car.payment_account_id || '',
       warehouse: 'الرئيسي',
       notes: '',
-      price_includes_tax: true,
+      price_includes_tax: false, // Stored price is BASE price, not inclusive
     });
 
     setCars([{
