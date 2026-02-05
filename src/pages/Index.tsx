@@ -61,6 +61,7 @@ import { MedadImportPage } from '@/components/import/MedadImportPage';
 import { ProjectsPage, ContractsPage, ProgressBillingsPage } from '@/components/construction';
 import { CustodyPage } from '@/components/custody';
 import { TripsPage } from '@/components/trips';
+import { ThemeSettingsPage } from '@/components/themes/ThemeSettingsPage';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
@@ -162,6 +163,8 @@ const Index = () => {
       case 'trips': return <TripsPage />;
       // Account Movement Report
       case 'account-movement': return <AccountMovementReport />;
+      // Theme settings
+      case 'theme-settings': return <ThemeSettingsPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };

@@ -115,4 +115,6 @@ export type ActivePage =
   // Trips module
   | 'trips'
   // Account Movement Report
-  | 'account-movement';
+  | 'account-movement'
+  // Theme settings
+  | 'theme-settings';

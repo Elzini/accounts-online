@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -70,7 +70,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   // Custody
   'custody': HandCoins,
   // Trips
-  'trips': MapPin
+  'trips': MapPin,
+  // Theme settings
+  'theme-settings': Palette
 };
 
 export function Sidebar({
@@ -507,6 +509,10 @@ export function Sidebar({
         id: 'app-settings' as ActivePage,
         label: settings?.app_settings_title || 'إعدادات النظام',
         icon: Settings
+      }, {
+        id: 'theme-settings' as ActivePage,
+        label: 'إعدادات المظهر',
+        icon: Palette
       }, {
         id: 'audit-logs' as ActivePage,
         label: settings?.audit_logs_title || 'سجل التدقيق',
