@@ -32,6 +32,8 @@ import { RecentInvoicesCard } from './dashboard/RecentInvoicesCard';
 import { OnlineUsersCard } from './dashboard/OnlineUsersCard';
 import { PaymentRemindersCard } from './dashboard/PaymentRemindersCard';
 import { CustomizeInterfaceButton } from './dashboard/CustomizeInterfaceButton';
+import { OnlineUsersPopover } from './dashboard/OnlineUsersPopover';
+import { PaymentRemindersPopover } from './dashboard/PaymentRemindersPopover';
 
 interface DashboardProps {
   stats: {
@@ -479,12 +481,23 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
-          {/* Customize Interface Button */}
-          <div className="flex items-center justify-between">
+          {/* Top Toolbar with Users & Notifications */}
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <CustomizeInterfaceButton setActivePage={setActivePage} />
-            <div className="flex items-center gap-2 p-2 bg-card rounded-lg border border-border">
-              <span className="text-sm text-muted-foreground hidden sm:block">عرض المبالغ:</span>
-              <AmountDisplaySelector value={amountDisplayMode} onChange={setAmountDisplayMode} />
+            
+            <div className="flex items-center gap-3">
+              {/* Online Users Popover */}
+              <OnlineUsersPopover />
+              
+              {/* Payment Notifications Popover */}
+              <PaymentRemindersPopover setActivePage={setActivePage} />
+              
+              <div className="h-6 w-px bg-border hidden sm:block" />
+              
+              <div className="flex items-center gap-2 p-2 bg-card rounded-lg border border-border">
+                <span className="text-sm text-muted-foreground hidden sm:block">عرض المبالغ:</span>
+                <AmountDisplaySelector value={amountDisplayMode} onChange={setAmountDisplayMode} />
+              </div>
             </div>
           </div>
 
