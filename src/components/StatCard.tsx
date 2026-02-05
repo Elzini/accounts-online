@@ -1,5 +1,6 @@
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { numberToArabicWordsShort } from '@/lib/numberToArabicWords';
 
 interface StatCardProps {
   title: string;
@@ -12,6 +13,7 @@ interface StatCardProps {
   size?: 'small' | 'medium' | 'large';
   bgColor?: string;
   fontSize?: number; // percentage 80-130
+  showAsWords?: boolean; // عرض الرقم بالكلمات العربية
 }
 
 const gradientClasses = {
@@ -55,8 +57,16 @@ export function StatCard({
   size = 'medium',
   bgColor,
   fontSize = 100,
+  showAsWords = false,
 }: StatCardProps) {
   const fontScale = fontSize / 100;
+
+  // تحويل القيمة إلى كلمات عربية إذا كانت رقمية ومطلوب العرض بالكلمات
+  const displayValue = showAsWords && typeof value === 'number' 
+    ? numberToArabicWordsShort(value) + ' ريال'
+    : showAsWords && typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^\d.-]/g, '')))
+    ? numberToArabicWordsShort(parseFloat(value.replace(/[^\d.-]/g, ''))) + ' ريال'
+    : value;
 
   return (
     <div
@@ -82,10 +92,14 @@ export function StatCard({
             {title}
           </p>
           <p
-            className={cn('font-bold text-card-foreground truncate', valueSizeClasses[size])}
-            style={{ fontSize: `${1.5 * fontScale}rem` }}
+            className={cn(
+              'font-bold text-card-foreground',
+              showAsWords ? 'text-sm sm:text-base md:text-lg leading-tight' : valueSizeClasses[size]
+            )}
+            style={{ fontSize: showAsWords ? undefined : `${1.5 * fontScale}rem` }}
+            title={typeof value === 'string' ? value : String(value)}
           >
-            {value}
+            {displayValue}
           </p>
           {subtitle && (
             <p

@@ -97,6 +97,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailData, setDetailData] = useState<StatDetailData | null>(null);
   const [amountDisplayMode, setAmountDisplayMode] = useState<AmountDisplayMode>('total');
+  const [showAmountAsWords, setShowAmountAsWords] = useState(true); // عرض الأرقام بالكلمات
   
   // Dashboard customization
   const { data: dashboardConfig } = useDashboardConfig();
@@ -630,6 +631,20 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 <span className="text-sm text-muted-foreground hidden sm:block">عرض المبالغ:</span>
                 <AmountDisplaySelector value={amountDisplayMode} onChange={setAmountDisplayMode} />
               </div>
+              
+              {/* Toggle Words Display */}
+              <button
+                onClick={() => setShowAmountAsWords(!showAmountAsWords)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                  showAmountAsWords 
+                    ? "bg-primary text-primary-foreground" 
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
+                title={showAmountAsWords ? "عرض كأرقام" : "عرض كتابةً"}
+              >
+                {showAmountAsWords ? "كتابةً" : "أرقام"}
+              </button>
             </div>
           </div>
 
@@ -696,6 +711,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                       gradient="danger"
                       subtitle={getCurrencySubtitle()}
                       onClick={() => showStatDetail('totalPurchases')}
+                      showAsWords={showAmountAsWords}
                       {...cardProps}
                     />
                   );
@@ -709,6 +725,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                       gradient="success"
                       subtitle={getCurrencySubtitle()}
                       onClick={() => showStatDetail('monthSales')}
+                      showAsWords={showAmountAsWords}
                       {...cardProps}
                     />
                   );
@@ -722,6 +739,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                       gradient="warning"
                       subtitle={getCurrencySubtitle()}
                       onClick={() => showStatDetail('totalProfit')}
+                      showAsWords={showAmountAsWords}
                       {...cardProps}
                     />
                   );
@@ -772,6 +790,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   size={getCardConfig('allTimePurchases').size}
                   bgColor={getCardConfig('allTimePurchases').bgColor}
                   fontSize={getCardConfig('allTimePurchases').fontSize}
+                  showAsWords={showAmountAsWords}
                 />
               )}
               {getCardConfig('allTimeSales').visible && (
@@ -785,6 +804,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   size={getCardConfig('allTimeSales').size}
                   bgColor={getCardConfig('allTimeSales').bgColor}
                   fontSize={getCardConfig('allTimeSales').fontSize}
+                  showAsWords={showAmountAsWords}
                 />
               )}
             </div>
