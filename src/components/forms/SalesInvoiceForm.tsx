@@ -64,6 +64,7 @@ interface SelectedCarItem {
   purchase_price: number;
   car_name: string;
   model: string;
+  color: string;
   chassis_number: string;
   quantity: number;
   pendingTransfer?: CarTransfer | null;
@@ -180,6 +181,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       purchase_price: Number(car.purchase_price),
       car_name: car.name,
       model: car.model || '',
+      color: car.color || '',
       chassis_number: car.chassis_number,
       quantity: 1,
       pendingTransfer,
@@ -466,6 +468,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             purchase_price: Number(car.purchase_price),
             car_name: car.name,
             model: car.model || '',
+            color: car.color || '',
             chassis_number: car.chassis_number,
             quantity: 1,
             pendingTransfer: null,
@@ -487,6 +490,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           purchase_price: Number(car.purchase_price),
           car_name: car.name,
           model: car.model || '',
+          color: car.color || '',
           chassis_number: car.chassis_number,
           quantity: 1,
           pendingTransfer: null,
@@ -947,15 +951,16 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               <TableHeader>
                 <TableRow className="bg-muted/50">
                   <TableHead className="text-right text-xs w-10">#</TableHead>
-                  <TableHead className="text-right text-xs min-w-[200px]">البيان</TableHead>
-                  <TableHead className="text-right text-xs min-w-[120px]">الصنف</TableHead>
-                  <TableHead className="text-right text-xs min-w-[150px]">رقم الهيكل</TableHead>
-                  <TableHead className="text-center text-xs w-20">الكمية</TableHead>
+                  <TableHead className="text-right text-xs min-w-[150px]">البيان</TableHead>
+                  <TableHead className="text-right text-xs min-w-[100px]">الموديل</TableHead>
+                  <TableHead className="text-right text-xs min-w-[80px]">اللون</TableHead>
+                  <TableHead className="text-right text-xs min-w-[120px]">رقم الهيكل</TableHead>
+                  <TableHead className="text-center text-xs w-16">الكمية</TableHead>
                   <TableHead className="text-center text-xs w-20">الوحدة</TableHead>
                   <TableHead className="text-center text-xs w-24">السعر</TableHead>
                   <TableHead className="text-center text-xs w-24">المجموع</TableHead>
-                  <TableHead className="text-center text-xs w-20">VAT %</TableHead>
-                  <TableHead className="text-center text-xs w-24">المجموع</TableHead>
+                  <TableHead className="text-center text-xs w-16">VAT %</TableHead>
+                  <TableHead className="text-center text-xs w-24">المجموع الكلي</TableHead>
                   <TableHead className="text-center text-xs w-10"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -966,13 +971,13 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                     <TableRow key={car.id} className="hover:bg-muted/30">
                       <TableCell className="text-center text-sm">{index + 1}</TableCell>
                       <TableCell className="text-sm font-medium">
-                        {car.car_name} {car.model}
+                        {car.car_name}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Car className="w-4 h-4" />
-                          سيارة
-                        </div>
+                      <TableCell className="text-sm">
+                        {car.model || '-'}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {car.color || '-'}
                       </TableCell>
                       <TableCell className="text-sm font-mono" dir="ltr">
                         {car.chassis_number}
