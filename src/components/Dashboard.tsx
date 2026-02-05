@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivePage } from '@/types';
-import { useMonthlyChartData, useStats, useSales, useCars } from '@/hooks/useDatabase';
+import { useMonthlyChartData, useStats, useSales, useCars, useAllTimeStats } from '@/hooks/useDatabase';
 import { useAdvancedAnalytics } from '@/hooks/useAnalytics';
 import { useAppSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
@@ -72,6 +72,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const { data: installmentSales = [] } = useInstallmentSales();
   const { data: allSales = [] } = useSales();
   const { data: allCars = [] } = useCars();
+  const { data: allTimeStats } = useAllTimeStats();
   const { selectedFiscalYear } = useFiscalYear();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -471,6 +472,26 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               onClick={() => showStatDetail('monthSalesCount')}
             />
           </div>
+
+          {/* All-Time Company Stats */}
+          {allTimeStats && (
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
+              <StatCard
+                title="إجمالي مشتريات الشركة (كل السنين)"
+                value={formatCurrency(allTimeStats.allTimePurchases)}
+                icon={Building2}
+                gradient="danger"
+                subtitle={`${allTimeStats.totalCarsCount} سيارة`}
+              />
+              <StatCard
+                title="إجمالي مبيعات الشركة (كل السنين)"
+                value={formatCurrency(allTimeStats.allTimeSales)}
+                icon={TrendingUp}
+                gradient="success"
+                subtitle={`${allTimeStats.allTimeSalesCount} عملية بيع`}
+              />
+            </div>
+          )}
 
           {/* Installments Stats Cards - Right below main stats */}
           {(() => {
