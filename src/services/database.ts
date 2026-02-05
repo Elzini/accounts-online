@@ -824,24 +824,22 @@ export async function fetchStats(fiscalYearId?: string | null) {
   
   const { data: purchasesData } = await purchasesQuery;
   
-  // Total purchases including VAT
-  const totalPurchasesBase = purchasesData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
-  const totalPurchases = totalPurchasesBase * VAT_RATE;
+  // Total purchases - prices are already VAT-inclusive
+  const totalPurchases = purchasesData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
 
-  // Month sales amount (sum of sale prices this month within fiscal year) - including VAT
-  let monthSalesAmountBase = 0;
+  // Month sales amount (sum of sale prices this month within fiscal year) - prices are already VAT-inclusive
+  let monthSalesAmount = 0;
   if (fiscalYearStart && fiscalYearEnd) {
     const monthSalesFiltered = salesData?.filter(sale => {
       const saleDate = sale.sale_date;
       // Use current month boundaries strictly
       return saleDate >= startOfMonth && saleDate <= endOfMonth;
     }) || [];
-    monthSalesAmountBase = monthSalesFiltered.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0);
+    monthSalesAmount = monthSalesFiltered.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0);
   } else {
-    monthSalesAmountBase = salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth)
+    monthSalesAmount = salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth)
       .reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
   }
-  const monthSalesAmount = monthSalesAmountBase * VAT_RATE;
 
   // Count cars for purchases breakdown
   const purchasesCount = purchasesData?.length || 0;
@@ -873,7 +871,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
     purchasesCount,
     monthSalesProfit,
     totalSalesCount: salesData?.length || 0,
-    totalSalesAmount: (salesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0) * VAT_RATE,
+    totalSalesAmount: salesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0,
   };
 }
 
@@ -886,18 +884,16 @@ export async function fetchAllTimeStats() {
     .from('cars')
     .select('purchase_price');
   
-  // Base amount (stored without tax), multiply by 1.15 for inclusive amount
-  const allTimePurchasesBase = carsData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
-  const allTimePurchases = allTimePurchasesBase * VAT_RATE;
+  // Prices are already VAT-inclusive
+  const allTimePurchases = carsData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
   
   // Total sales across all years
   const { data: salesData } = await supabase
     .from('sales')
     .select('sale_price, profit');
   
-  // Base amount (stored without tax), multiply by 1.15 for inclusive amount
-  const allTimeSalesBase = salesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
-  const allTimeSales = allTimeSalesBase * VAT_RATE;
+  // Prices are already VAT-inclusive
+  const allTimeSales = salesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
   const allTimeSalesCount = salesData?.length || 0;
   const allTimeProfit = salesData?.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0) || 0;
   
