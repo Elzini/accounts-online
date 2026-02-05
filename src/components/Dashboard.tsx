@@ -243,9 +243,19 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     let data: StatDetailData;
     
     const now = new Date();
-    const today = now.toISOString().split('T')[0];
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    // Use local date formatting to avoid timezone issues
+    const formatLocalDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    const today = formatLocalDate(now);
+    const startOfMonthDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const startOfMonth = formatLocalDate(startOfMonthDate);
+    const endOfMonth = formatLocalDate(endOfMonthDate);
     
     switch (type) {
       case 'availableCars': {
