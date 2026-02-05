@@ -26,6 +26,9 @@ import { PerformanceMetrics } from './dashboard/PerformanceMetrics';
 import { RecentActivityCard } from './dashboard/RecentActivityCard';
 import { StatCardDetailDialog, StatDetailData, CarDetailItem } from './dashboard/StatCardDetailDialog';
 import { AmountDisplaySelector, AmountDisplayMode, calculateDisplayAmount, getDisplayModeLabel } from './dashboard/AmountDisplaySelector';
+import { WelcomeHeader } from './dashboard/WelcomeHeader';
+import { QuickAccessSection } from './dashboard/QuickAccessSection';
+import { RecentInvoicesCard } from './dashboard/RecentInvoicesCard';
 
 interface DashboardProps {
   stats: {
@@ -450,28 +453,13 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{settings?.dashboard_title || 'لوحة التحكم'}</h1>
-          <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-0.5 sm:mt-1">
-            {settings?.welcome_message || 'مرحباً بك في منصة إدارة المعارض للسيارات'}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
-          <AmountDisplaySelector value={amountDisplayMode} onChange={setAmountDisplayMode} />
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">تحديث</span>
-          </Button>
-        </div>
-      </div>
+      {/* Welcome Header */}
+      <WelcomeHeader
+        amountDisplayMode={amountDisplayMode}
+        onAmountDisplayModeChange={setAmountDisplayMode}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+      />
 
       {/* Dashboard Tabs */}
       <Tabs defaultValue="overview" className="w-full">
@@ -488,6 +476,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
+          {/* Quick Access Section */}
+          <QuickAccessSection setActivePage={setActivePage} />
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
             <StatCard
@@ -1009,6 +999,9 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               </div>
             </div>
           </div>
+
+          {/* Recent Invoices */}
+          <RecentInvoicesCard setActivePage={setActivePage} />
         </TabsContent>
 
         {/* Advanced Analytics Tab */}
