@@ -1405,6 +1405,7 @@ export type Database = {
           id: string
           id_number: string | null
           id_number_encrypted: string | null
+          managed_by: string | null
           name: string
           phone: string
           registration_number: string | null
@@ -1417,6 +1418,7 @@ export type Database = {
           id?: string
           id_number?: string | null
           id_number_encrypted?: string | null
+          managed_by?: string | null
           name: string
           phone: string
           registration_number?: string | null
@@ -1429,6 +1431,7 @@ export type Database = {
           id?: string
           id_number?: string | null
           id_number_encrypted?: string | null
+          managed_by?: string | null
           name?: string
           phone?: string
           registration_number?: string | null
@@ -5293,6 +5296,7 @@ export type Database = {
           created_at: string | null
           id: string | null
           id_number: string | null
+          managed_by: string | null
           name: string | null
           phone: string | null
           registration_number: string | null
@@ -5304,6 +5308,7 @@ export type Database = {
           created_at?: string | null
           id?: string | null
           id_number?: never
+          managed_by?: string | null
           name?: string | null
           phone?: never
           registration_number?: string | null
@@ -5315,6 +5320,7 @@ export type Database = {
           created_at?: string | null
           id?: string | null
           id_number?: never
+          managed_by?: string | null
           name?: string | null
           phone?: never
           registration_number?: string | null
