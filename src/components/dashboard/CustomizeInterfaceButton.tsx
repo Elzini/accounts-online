@@ -57,13 +57,13 @@ export function CustomizeInterfaceButton({ setActivePage, onCardsConfigChange }:
             </div>
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => setActivePage('control-center')}
+            onClick={() => setActivePage('theme-settings')}
             className="gap-2 cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-warning" />
             <div>
               <p className="font-medium">التأثيرات المتقدمة</p>
-              <p className="text-xs text-muted-foreground">مركز التحكم الشامل</p>
+              <p className="text-xs text-muted-foreground">الحركات والتأثيرات التفاعلية</p>
             </div>
           </DropdownMenuItem>
         </DropdownMenuContent>
