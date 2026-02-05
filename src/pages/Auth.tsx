@@ -1,14 +1,18 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Shield, Building2, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, Shield, Building2, ArrowLeft, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
 import { usePublicAuthSettings } from '@/hooks/usePublicAuthSettings';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
 type AuthMode = 'company' | 'super_admin';
 
@@ -16,11 +20,21 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedFiscalYearId, setSelectedFiscalYearId] = useState<string>('');
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const { fiscalYears, setSelectedFiscalYear, isLoading: isFiscalYearLoading } = useFiscalYear();
 
   // Fetch settings from secure edge function
   const { settings: globalSettings, loading: settingsLoading } = usePublicAuthSettings();
+
+  // Auto-select current fiscal year or first one
+  useEffect(() => {
+    if (fiscalYears.length > 0 && !selectedFiscalYearId) {
+      const currentYear = fiscalYears.find(fy => fy.is_current);
+      setSelectedFiscalYearId(currentYear?.id || fiscalYears[0]?.id || '');
+    }
+  }, [fiscalYears, selectedFiscalYearId]);
 
   const headerGradient = useMemo(
     () => `linear-gradient(135deg, ${globalSettings.login_header_gradient_start}, ${globalSettings.login_header_gradient_end})`,
@@ -30,6 +44,10 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const pageTitle = mode === 'super_admin' ? 'تسجيل دخول مدير النظام' : globalSettings.login_title;
   const pageSubtitle = mode === 'super_admin' ? 'هذه الصفحة مخصصة فقط لحساب السوبر أدمن' : globalSettings.login_subtitle;
   const primaryButtonText = mode === 'super_admin' ? 'دخول مدير النظام' : globalSettings.login_button_text;
+
+  const formatDate = (dateStr: string) => {
+    return format(new Date(dateStr), 'dd MMM yyyy', { locale: ar });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +60,12 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
     if (password.length < 6) {
       toast.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+      return;
+    }
+
+    // Validate fiscal year selection if multiple years exist (only for company mode)
+    if (mode === 'company' && fiscalYears.length > 1 && !selectedFiscalYearId) {
+      toast.error('يرجى اختيار السنة المالية');
       return;
     }
 
@@ -81,6 +105,14 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         return;
       }
 
+      // Set selected fiscal year before navigating (for company mode)
+      if (mode === 'company' && selectedFiscalYearId) {
+        const selectedYear = fiscalYears.find(fy => fy.id === selectedFiscalYearId);
+        if (selectedYear) {
+          setSelectedFiscalYear(selectedYear);
+        }
+      }
+
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/', { replace: true });
     } catch {
@@ -89,6 +121,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       setLoading(false);
     }
   };
+
+  const showFiscalYearSelector = mode === 'company' && fiscalYears.length > 1;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: globalSettings.login_bg_color }}>
@@ -151,6 +185,42 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                 />
               </div>
             </div>
+
+            {/* Fiscal Year Selector */}
+            {showFiscalYearSelector && (
+              <div className="space-y-2">
+                <Label htmlFor="fiscal-year">السنة المالية</Label>
+                <div className="relative">
+                  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10 pointer-events-none" />
+                  <Select
+                    value={selectedFiscalYearId}
+                    onValueChange={setSelectedFiscalYearId}
+                    disabled={isFiscalYearLoading}
+                  >
+                    <SelectTrigger className="h-12 pr-10 text-right">
+                      <SelectValue placeholder="اختر السنة المالية" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border z-50">
+                      {fiscalYears.map((fy) => (
+                        <SelectItem key={fy.id} value={fy.id}>
+                          <div className="flex items-center justify-between w-full gap-3">
+                            <span>{fy.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(fy.start_date)} - {formatDate(fy.end_date)}
+                            </span>
+                            {fy.is_current && (
+                              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                الحالية
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
 
             <Button type="submit" className="w-full h-12 hover:opacity-90" style={{ background: headerGradient }} disabled={loading}>
               {loading ? 'جاري التحميل...' : primaryButtonText}
