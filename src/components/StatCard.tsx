@@ -61,28 +61,28 @@ export function StatCard({
 }: StatCardProps) {
   const fontScale = fontSize / 100;
 
-  // تحويل القيمة إلى كلمات عربية إذا كانت رقمية ومطلوب العرض بالكلمات
-  const getDisplayValue = () => {
-    if (!showAsWords) return value;
+  // الحصول على الكلمات العربية للرقم
+  const getArabicWords = () => {
+    if (!showAsWords) return null;
+    
+    let numericValue: number | null = null;
     
     if (typeof value === 'number') {
-      return numberToArabicWordsShort(value) + ' ريال';
-    }
-    
-    if (typeof value === 'string') {
+      numericValue = value;
+    } else if (typeof value === 'string') {
       // إزالة الفواصل والرموز واستخراج الرقم
       const cleanedValue = value.replace(/,/g, '').replace(/[^\d.-]/g, '');
-      const numericValue = parseFloat(cleanedValue);
-      
-      if (!isNaN(numericValue) && numericValue !== 0) {
-        return numberToArabicWordsShort(numericValue) + ' ريال';
-      }
+      numericValue = parseFloat(cleanedValue);
     }
     
-    return value;
+    if (numericValue !== null && !isNaN(numericValue) && numericValue !== 0) {
+      return numberToArabicWordsShort(numericValue) + ' ريال';
+    }
+    
+    return null;
   };
   
-  const displayValue = getDisplayValue();
+  const arabicWords = getArabicWords();
 
   return (
     <div
@@ -110,13 +110,21 @@ export function StatCard({
           <p
             className={cn(
               'font-bold text-card-foreground',
-              showAsWords ? 'text-sm sm:text-base md:text-lg leading-tight' : valueSizeClasses[size]
+              valueSizeClasses[size]
             )}
-            style={{ fontSize: showAsWords ? undefined : `${1.5 * fontScale}rem` }}
+            style={{ fontSize: `${1.5 * fontScale}rem` }}
             title={typeof value === 'string' ? value : String(value)}
           >
-            {displayValue}
+            {value}
           </p>
+          {arabicWords && (
+            <p
+              className="text-xs sm:text-sm text-muted-foreground mt-0.5 leading-tight"
+              style={{ fontSize: `${0.7 * fontScale}rem` }}
+            >
+              {arabicWords}
+            </p>
+          )}
           {subtitle && (
             <p
               className="text-muted-foreground mt-0.5 sm:mt-1 truncate"
