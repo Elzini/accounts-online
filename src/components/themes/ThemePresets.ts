@@ -17,6 +17,7 @@ export interface ThemePreset {
 }
 
 export const themePresets: ThemePreset[] = [
+  // الثيمات الأصلية
   {
     id: 'royal-blue',
     name: 'أزرق ملكي',
@@ -143,6 +144,135 @@ export const themePresets: ThemePreset[] = [
     },
     preview: {
       gradient: 'linear-gradient(135deg, #64748b 0%, #1e293b 100%)',
+    },
+  },
+  // ===== ثيمات جديدة =====
+  {
+    id: 'midnight-indigo',
+    name: 'نيلي منتصف الليل',
+    nameEn: 'Midnight Indigo',
+    description: 'ثيم ليلي غامض وأنيق',
+    colors: {
+      primary: '#6366f1',
+      sidebar: '#1e1b4b',
+      accent: '#818cf8',
+      success: '#22c55e',
+      warning: '#f59e0b',
+    },
+    preview: {
+      gradient: 'linear-gradient(135deg, #6366f1 0%, #1e1b4b 100%)',
+    },
+  },
+  {
+    id: 'cherry-red',
+    name: 'أحمر كرزي',
+    nameEn: 'Cherry Red',
+    description: 'ثيم جريء ومميز',
+    colors: {
+      primary: '#ef4444',
+      sidebar: '#7f1d1d',
+      accent: '#f87171',
+      success: '#10b981',
+      warning: '#fbbf24',
+    },
+    preview: {
+      gradient: 'linear-gradient(135deg, #ef4444 0%, #7f1d1d 100%)',
+    },
+  },
+  {
+    id: 'forest-sage',
+    name: 'أخضر حكيم',
+    nameEn: 'Forest Sage',
+    description: 'ثيم طبيعي هادئ',
+    colors: {
+      primary: '#84cc16',
+      sidebar: '#365314',
+      accent: '#a3e635',
+      success: '#22c55e',
+      warning: '#eab308',
+    },
+    preview: {
+      gradient: 'linear-gradient(135deg, #84cc16 0%, #365314 100%)',
+    },
+  },
+  {
+    id: 'sky-cyan',
+    name: 'سماوي صافي',
+    nameEn: 'Sky Cyan',
+    description: 'ثيم منعش كالسماء',
+    colors: {
+      primary: '#06b6d4',
+      sidebar: '#164e63',
+      accent: '#22d3ee',
+      success: '#10b981',
+      warning: '#f59e0b',
+    },
+    preview: {
+      gradient: 'linear-gradient(135deg, #06b6d4 0%, #164e63 100%)',
+    },
+  },
+  {
+    id: 'lavender-dream',
+    name: 'لافندر حالم',
+    nameEn: 'Lavender Dream',
+    description: 'ثيم رومانسي ناعم',
+    colors: {
+      primary: '#a855f7',
+      sidebar: '#581c87',
+      accent: '#c084fc',
+      success: '#22c55e',
+      warning: '#fbbf24',
+    },
+    preview: {
+      gradient: 'linear-gradient(135deg, #a855f7 0%, #581c87 100%)',
+    },
+  },
+  {
+    id: 'coral-sunset',
+    name: 'مرجاني غروب',
+    nameEn: 'Coral Sunset',
+    description: 'ثيم دافئ رومانسي',
+    colors: {
+      primary: '#fb7185',
+      sidebar: '#9f1239',
+      accent: '#fda4af',
+      success: '#10b981',
+      warning: '#f59e0b',
+    },
+    preview: {
+      gradient: 'linear-gradient(135deg, #fb7185 0%, #9f1239 100%)',
+    },
+  },
+  {
+    id: 'mocha-brown',
+    name: 'بني موكا',
+    nameEn: 'Mocha Brown',
+    description: 'ثيم دافئ كلاسيكي',
+    colors: {
+      primary: '#a16207',
+      sidebar: '#422006',
+      accent: '#ca8a04',
+      success: '#22c55e',
+      warning: '#fbbf24',
+    },
+    preview: {
+      gradient: 'linear-gradient(135deg, #a16207 0%, #422006 100%)',
+    },
+  },
+  {
+    id: 'arctic-frost',
+    name: 'جليد قطبي',
+    nameEn: 'Arctic Frost',
+    description: 'ثيم بارد ومنعش',
+    colors: {
+      primary: '#38bdf8',
+      sidebar: '#0c4a6e',
+      accent: '#7dd3fc',
+      success: '#22c55e',
+      warning: '#f59e0b',
+    },
+    preview: {
+      gradient: 'linear-gradient(135deg, #38bdf8 0%, #0c4a6e 100%)',
     },
   },
 ];
