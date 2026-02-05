@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
 import { usePublicAuthSettings } from '@/hooks/usePublicAuthSettings';
+import { usePublicFiscalYears } from '@/hooks/usePublicFiscalYears';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -23,7 +24,10 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const [selectedFiscalYearId, setSelectedFiscalYearId] = useState<string>('');
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const { fiscalYears, setSelectedFiscalYear, isLoading: isFiscalYearLoading } = useFiscalYear();
+  const { setSelectedFiscalYear } = useFiscalYear();
+  
+  // Use public fiscal years hook (works without authentication)
+  const { data: fiscalYears = [], isLoading: isFiscalYearLoading } = usePublicFiscalYears();
 
   // Fetch settings from secure edge function
   const { settings: globalSettings, loading: settingsLoading } = usePublicAuthSettings();
@@ -109,7 +113,19 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       if (mode === 'company' && selectedFiscalYearId) {
         const selectedYear = fiscalYears.find(fy => fy.id === selectedFiscalYearId);
         if (selectedYear) {
-          setSelectedFiscalYear(selectedYear);
+          // Convert PublicFiscalYear to FiscalYear format for context
+          setSelectedFiscalYear({
+            ...selectedYear,
+            company_id: '',
+            status: 'open',
+            opening_balance_entry_id: null,
+            closing_balance_entry_id: null,
+            created_at: '',
+            updated_at: '',
+            notes: null,
+            closed_at: null,
+            closed_by: null,
+          });
         }
       }
 
