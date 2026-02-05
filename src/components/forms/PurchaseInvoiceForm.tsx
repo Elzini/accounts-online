@@ -77,18 +77,28 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const updateCar = useUpdateCar();
   const deleteCar = useDeleteCar();
 
-  // Filter purchase batches by fiscal year
+  // Filter purchase batches by fiscal year and sort from oldest to newest
   const fiscalYearFilteredBatches = useMemo(() => {
-    if (!selectedFiscalYear) return purchaseBatches;
+    let filtered = purchaseBatches;
     
-    const fyStart = new Date(selectedFiscalYear.start_date);
-    fyStart.setHours(0, 0, 0, 0);
-    const fyEnd = new Date(selectedFiscalYear.end_date);
-    fyEnd.setHours(23, 59, 59, 999);
+    if (selectedFiscalYear) {
+      const fyStart = new Date(selectedFiscalYear.start_date);
+      fyStart.setHours(0, 0, 0, 0);
+      const fyEnd = new Date(selectedFiscalYear.end_date);
+      fyEnd.setHours(23, 59, 59, 999);
+      
+      filtered = purchaseBatches.filter(batch => {
+        const purchaseDate = new Date(batch.purchase_date);
+        return purchaseDate >= fyStart && purchaseDate <= fyEnd;
+      });
+    }
     
-    return purchaseBatches.filter(batch => {
-      const purchaseDate = new Date(batch.purchase_date);
-      return purchaseDate >= fyStart && purchaseDate <= fyEnd;
+    // Sort by purchase_date (ascending) - oldest first, then by created_at
+    return [...filtered].sort((a, b) => {
+      const dateA = new Date(a.purchase_date).getTime();
+      const dateB = new Date(b.purchase_date).getTime();
+      if (dateA !== dateB) return dateA - dateB;
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
   }, [purchaseBatches, selectedFiscalYear]);
 
