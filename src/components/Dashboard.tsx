@@ -299,12 +299,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       }
       
       case 'monthSales': {
-        console.log('Month filter debug:', { startOfMonth, endOfMonth, today });
-        const monthSales = fiscalYearSales.filter(s => {
-          const isInMonth = s.sale_date >= startOfMonth && s.sale_date <= endOfMonth;
-          console.log('Sale date check:', { saleDate: s.sale_date, startOfMonth, endOfMonth, isInMonth });
-          return isInMonth;
-        });
+        const monthSales = fiscalYearSales.filter(s => s.sale_date >= startOfMonth && s.sale_date <= endOfMonth);
         data = {
           title: 'مبيعات الشهر',
           value: formatCurrency(stats.monthSalesAmount),
