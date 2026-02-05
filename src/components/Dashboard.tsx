@@ -13,10 +13,11 @@ import { useInstallmentSales } from '@/hooks/useInstallments';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid } from 'recharts';
 import { useMemo, useState, useEffect, useCallback } from 'react';
+import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
-import { useDashboardConfig } from '@/hooks/useSystemControl';
+import { useDashboardConfig, useSaveDashboardConfig } from '@/hooks/useSystemControl';
 import { CardConfig, DEFAULT_STAT_CARDS } from './dashboard/DashboardCustomizer';
 
 // Advanced Dashboard Components
@@ -36,6 +37,13 @@ import { PaymentRemindersCard } from './dashboard/PaymentRemindersCard';
 import { CustomizeInterfaceButton } from './dashboard/CustomizeInterfaceButton';
 import { OnlineUsersPopover } from './dashboard/OnlineUsersPopover';
 import { PaymentRemindersPopover } from './dashboard/PaymentRemindersPopover';
+import { 
+  DashboardEditToolbar, 
+  EditableWidgetWrapper, 
+  useWidgetDragDrop, 
+  WidgetConfig, 
+  DEFAULT_WIDGETS 
+} from './dashboard/DashboardEditMode';
 
 interface DashboardProps {
   stats: {
@@ -92,7 +100,23 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   
   // Dashboard customization
   const { data: dashboardConfig } = useDashboardConfig();
+  const saveDashboardConfig = useSaveDashboardConfig();
   const [cardConfigs, setCardConfigs] = useState<CardConfig[]>(DEFAULT_STAT_CARDS);
+  
+  // Widget-level edit mode
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [widgetConfigs, setWidgetConfigs] = useState<WidgetConfig[]>(DEFAULT_WIDGETS);
+  
+  // Widget drag and drop
+  const {
+    draggedId,
+    dragOverId,
+    handleDragStart,
+    handleDragEnd,
+    handleDragOver,
+    handleDrop,
+    removeWidget,
+  } = useWidgetDragDrop(widgetConfigs, setWidgetConfigs);
   
   // Load card configs from saved dashboard config
   useEffect(() => {
@@ -123,6 +147,54 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const handleCardsConfigChange = useCallback((cards: CardConfig[]) => {
     setCardConfigs(cards);
   }, []);
+
+  // Load widget configs from saved dashboard config
+  useEffect(() => {
+    if (dashboardConfig?.layout_settings?.widgets) {
+      setWidgetConfigs(dashboardConfig.layout_settings.widgets);
+    }
+  }, [dashboardConfig]);
+
+  // Enter edit mode
+  const enterEditMode = useCallback(() => {
+    setIsEditMode(true);
+  }, []);
+
+  // Save widget config
+  const saveWidgetConfig = useCallback(async (widgets: WidgetConfig[]) => {
+    try {
+      await saveDashboardConfig.mutateAsync({
+        layout_settings: { widgets } as any,
+      });
+      setIsEditMode(false);
+      toast.success('تم حفظ ترتيب لوحة التحكم');
+    } catch (error) {
+      console.error('Error saving widget config:', error);
+      toast.error('حدث خطأ أثناء الحفظ');
+    }
+  }, [saveDashboardConfig]);
+
+  // Cancel edit mode
+  const cancelEditMode = useCallback(() => {
+    // Reset to saved config
+    if (dashboardConfig?.layout_settings?.widgets) {
+      setWidgetConfigs(dashboardConfig.layout_settings.widgets);
+    } else {
+      setWidgetConfigs(DEFAULT_WIDGETS);
+    }
+    setIsEditMode(false);
+  }, [dashboardConfig]);
+
+  // Check if widget is visible
+  const isWidgetVisible = useCallback((id: string) => {
+    const widget = widgetConfigs.find(w => w.id === id);
+    return widget?.visible ?? true;
+  }, [widgetConfigs]);
+
+  // Get sorted widgets
+  const sortedWidgets = useMemo(() => {
+    return [...widgetConfigs].sort((a, b) => a.order - b.order).filter(w => w.visible);
+  }, [widgetConfigs]);
 
   // Helper to get card config by id
   const getCardConfig = useCallback((id: string) => {
@@ -526,10 +598,24 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
+        <TabsContent value="overview" className={cn("mt-4 sm:mt-6 space-y-4 sm:space-y-6", isEditMode && "pt-28")}>
+          {/* Edit Mode Toolbar */}
+          <DashboardEditToolbar
+            isEditMode={isEditMode}
+            onSave={saveWidgetConfig}
+            onCancel={cancelEditMode}
+            widgets={widgetConfigs}
+            onWidgetsChange={setWidgetConfigs}
+          />
+
           {/* Top Toolbar with Users & Notifications */}
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <CustomizeInterfaceButton setActivePage={setActivePage} onCardsConfigChange={handleCardsConfigChange} />
+            <CustomizeInterfaceButton 
+              setActivePage={setActivePage} 
+              onCardsConfigChange={handleCardsConfigChange}
+              onEnterEditMode={enterEditMode}
+              isEditMode={isEditMode}
+            />
             
             <div className="flex items-center gap-3">
               {/* Online Users Popover */}
@@ -547,9 +633,35 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             </div>
           </div>
 
-          {/* Quick Access Section */}
-          <QuickAccessSection setActivePage={setActivePage} />
+          {/* Quick Access Section - Editable */}
+          <EditableWidgetWrapper
+            id="quickAccess"
+            isEditMode={isEditMode}
+            visible={isWidgetVisible('quickAccess')}
+            onRemove={removeWidget}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            isDragging={draggedId === 'quickAccess'}
+            isDragOver={dragOverId === 'quickAccess'}
+          >
+            <QuickAccessSection setActivePage={setActivePage} />
+          </EditableWidgetWrapper>
           
+          {/* Stats Grid - Editable */}
+          <EditableWidgetWrapper
+            id="statCards"
+            isEditMode={isEditMode}
+            visible={isWidgetVisible('statCards')}
+            onRemove={removeWidget}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            isDragging={draggedId === 'statCards'}
+            isDragOver={dragOverId === 'statCards'}
+          >
           {/* Stats Grid - Dynamic based on config */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
             {visibleCardIds.slice(0, 6).map(cardId => {
@@ -644,6 +756,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               }
             })}
           </div>
+          </EditableWidgetWrapper>
 
           {/* All-Time Company Stats - Dynamic */}
           {allTimeStats && (

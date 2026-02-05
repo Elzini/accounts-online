@@ -554,12 +554,20 @@ export interface AnalyticsComponentConfig {
   size: 'half' | 'full';
 }
 
+export interface WidgetConfig {
+  id: string;
+  label: string;
+  visible: boolean;
+  order: number;
+}
+
 export interface LayoutSettings {
   cardsPerRow?: number;
   cardSpacing?: number;
   showOverviewTab?: boolean;
   showAnalyticsTab?: boolean;
   defaultTab?: 'overview' | 'analytics';
+  widgets?: WidgetConfig[];
 }
 
 // Fetch dashboard configuration
