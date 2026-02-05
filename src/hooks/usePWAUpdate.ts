@@ -12,6 +12,8 @@ interface ServiceWorkerRegistration {
 export function usePWAUpdate() {
   const [needRefresh, setNeedRefresh] = useState(false);
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
+  const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -59,6 +61,33 @@ export function usePWAUpdate() {
     });
   }, [registration]);
 
+  // Manual check for updates
+  const checkForUpdates = useCallback(async () => {
+    if (!('serviceWorker' in navigator)) {
+      return { hasUpdate: false, error: 'Service Worker not supported' };
+    }
+
+    setIsChecking(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.update();
+      setLastChecked(new Date());
+      
+      // Check if there's a waiting worker
+      if (reg.waiting) {
+        setNeedRefresh(true);
+        return { hasUpdate: true };
+      }
+      
+      return { hasUpdate: false };
+    } catch (error) {
+      console.error('Error checking for updates:', error);
+      return { hasUpdate: false, error };
+    } finally {
+      setIsChecking(false);
+    }
+  }, []);
+
   const updateServiceWorker = useCallback(() => {
     if (registration?.waiting) {
       registration.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -73,5 +102,8 @@ export function usePWAUpdate() {
     needRefresh,
     updateServiceWorker,
     dismissUpdate,
+    checkForUpdates,
+    isChecking,
+    lastChecked,
   };
 }

@@ -6,6 +6,7 @@ import { MobileSidebar, MobileSidebarRef } from '@/components/MobileSidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Dashboard } from '@/components/Dashboard';
 import { PWAInstallButton } from '@/components/PWAInstallButton';
+import { CheckUpdateButton } from '@/components/pwa/CheckUpdateButton';
 import { CustomerForm } from '@/components/forms/CustomerForm';
 import { SupplierForm } from '@/components/forms/SupplierForm';
 import { BatchPurchaseForm } from '@/components/forms/BatchPurchaseForm';
@@ -210,6 +211,7 @@ const Index = () => {
                 )}
               </div>
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <CheckUpdateButton />
                 <PWAInstallButton />
                 {permissions.super_admin && (
                   <Button
