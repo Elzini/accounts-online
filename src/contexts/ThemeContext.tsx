@@ -7,6 +7,12 @@ interface ThemeSettings {
   sidebarColor: string;
   fontFamily: string;
   fontSize: string;
+  hoverEffect?: string;
+  animationSpeed?: string;
+  enableAnimations?: boolean;
+  cardStyle?: string;
+  borderRadius?: string;
+  shadowIntensity?: string;
 }
 
 interface ThemeContextType {
@@ -19,6 +25,18 @@ const defaultTheme: ThemeSettings = {
   sidebarColor: '#1e293b',
   fontFamily: 'Cairo',
   fontSize: '16',
+  hoverEffect: 'lift',
+  animationSpeed: 'normal',
+  enableAnimations: true,
+  cardStyle: 'default',
+  borderRadius: '12',
+  shadowIntensity: 'medium',
+};
+
+const ANIMATION_SPEEDS: Record<string, string> = {
+  fast: '150ms',
+  normal: '300ms',
+  slow: '500ms',
 };
 
 const ThemeContext = createContext<ThemeContextType>({
@@ -157,6 +175,40 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (settings.fontSize) {
       root.style.setProperty('--font-size-base', `${settings.fontSize}px`);
       root.style.fontSize = `${settings.fontSize}px`;
+    }
+
+    // Apply border radius
+    if (settings.borderRadius) {
+      root.style.setProperty('--radius', `${settings.borderRadius}px`);
+    }
+
+    // Apply animation speed
+    if (settings.animationSpeed) {
+      const duration = ANIMATION_SPEEDS[settings.animationSpeed] || '300ms';
+      root.style.setProperty('--animation-duration', duration);
+    }
+
+    // Toggle animations
+    if (settings.enableAnimations === false) {
+      document.body.classList.add('no-animations');
+    } else {
+      document.body.classList.remove('no-animations');
+    }
+
+    // Apply shadow intensity
+    if (settings.shadowIntensity) {
+      const shadowValues: Record<string, string> = {
+        none: '0 0 0 0 transparent',
+        light: '0 2px 4px -1px rgb(0 0 0 / 0.06)',
+        medium: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+        strong: '0 10px 15px -3px rgb(0 0 0 / 0.15), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+      };
+      root.style.setProperty('--shadow-default', shadowValues[settings.shadowIntensity] || shadowValues.medium);
+    }
+
+    // Apply hover effect class to body for global access
+    if (settings.hoverEffect) {
+      document.body.setAttribute('data-hover-effect', settings.hoverEffect);
     }
   };
 
