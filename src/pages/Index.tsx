@@ -78,18 +78,22 @@ const Index = () => {
   
   // Show fiscal year selection dialog if multiple years exist and none selected
   const [showFiscalYearDialog, setShowFiscalYearDialog] = useState(false);
+  // Track if user has made a fiscal year selection this session
+  const [hasSelectedThisSession, setHasSelectedThisSession] = useState(false);
   
   useEffect(() => {
-    // Show fiscal year selection ONLY if there are multiple years AND none is selected yet
-    if (!isFiscalYearLoading && fiscalYears.length > 1 && !selectedFiscalYear) {
+    // Show fiscal year selection if there are multiple years AND 
+    // (none is selected OR user hasn't made a selection this session yet)
+    if (!isFiscalYearLoading && fiscalYears.length > 1 && !hasSelectedThisSession) {
       setShowFiscalYearDialog(true);
     } else {
       setShowFiscalYearDialog(false);
     }
-  }, [fiscalYears, selectedFiscalYear, isFiscalYearLoading]);
+  }, [fiscalYears, hasSelectedThisSession, isFiscalYearLoading]);
 
   const handleFiscalYearSelect = (fy: typeof fiscalYears[0]) => {
     setSelectedFiscalYear(fy);
+    setHasSelectedThisSession(true);
     setShowFiscalYearDialog(false);
   };
 
@@ -186,6 +190,7 @@ const Index = () => {
       <FiscalYearSelectionDialog
         open={showFiscalYearDialog}
         fiscalYears={fiscalYears}
+        currentSelectedId={selectedFiscalYear?.id}
         onSelect={handleFiscalYearSelect}
       />
       
