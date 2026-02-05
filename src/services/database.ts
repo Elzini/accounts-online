@@ -876,6 +876,33 @@ export async function fetchStats(fiscalYearId?: string | null) {
   };
 }
 
+// All-time stats (across all fiscal years)
+export async function fetchAllTimeStats() {
+  // Total purchases across all years
+  const { data: carsData } = await supabase
+    .from('cars')
+    .select('purchase_price');
+  
+  const allTimePurchases = carsData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
+  
+  // Total sales across all years
+  const { data: salesData } = await supabase
+    .from('sales')
+    .select('sale_price, profit');
+  
+  const allTimeSales = salesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
+  const allTimeSalesCount = salesData?.length || 0;
+  const allTimeProfit = salesData?.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0) || 0;
+  
+  return {
+    allTimePurchases,
+    allTimeSales,
+    allTimeSalesCount,
+    allTimeProfit,
+    totalCarsCount: carsData?.length || 0,
+  };
+}
+
 // Monthly chart data
 export async function fetchMonthlyChartData(fiscalYearId?: string) {
   // Get fiscal year dates if provided

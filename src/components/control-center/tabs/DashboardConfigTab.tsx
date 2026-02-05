@@ -35,6 +35,8 @@ const STAT_CARD_TYPES = [
   { id: 'suppliers_count', label: 'عدد الموردين', icon: '🚚', category: 'suppliers' },
   { id: 'incoming_transfers', label: 'التحويلات الواردة', icon: '⬇️', category: 'transfers' },
   { id: 'outgoing_transfers', label: 'التحويلات الصادرة', icon: '⬆️', category: 'transfers' },
+  { id: 'all_time_purchases', label: 'إجمالي مشتريات الشركة (كل السنين)', icon: '🏢', category: 'all_time' },
+  { id: 'all_time_sales', label: 'إجمالي مبيعات الشركة (كل السنين)', icon: '🌐', category: 'all_time' },
 ];
 
 // Analytics components available

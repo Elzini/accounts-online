@@ -303,6 +303,17 @@ export function useStats() {
   });
 }
 
+// All-time stats hook (across all fiscal years)
+export function useAllTimeStats() {
+  const { companyId } = useCompany();
+  
+  return useQuery({
+    queryKey: ['all-time-stats', companyId],
+    queryFn: () => db.fetchAllTimeStats(),
+    enabled: !!companyId,
+  });
+}
+
 // Monthly chart data hook
 export function useMonthlyChartData() {
   const { companyId } = useCompany();
