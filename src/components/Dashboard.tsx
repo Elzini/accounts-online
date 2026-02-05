@@ -25,6 +25,7 @@ import { TopPerformersCard } from './dashboard/TopPerformersCard';
 import { PerformanceMetrics } from './dashboard/PerformanceMetrics';
 import { RecentActivityCard } from './dashboard/RecentActivityCard';
 import { StatCardDetailDialog, StatDetailData, CarDetailItem } from './dashboard/StatCardDetailDialog';
+import { AmountDisplaySelector, AmountDisplayMode, calculateDisplayAmount, getDisplayModeLabel } from './dashboard/AmountDisplaySelector';
 
 interface DashboardProps {
   stats: {
@@ -77,6 +78,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailData, setDetailData] = useState<StatDetailData | null>(null);
+  const [amountDisplayMode, setAmountDisplayMode] = useState<AmountDisplayMode>('total');
 
   const canSales = permissions.admin || permissions.sales;
   const canPurchases = permissions.admin || permissions.purchases;
@@ -158,6 +160,17 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       currency: 'SAR',
       minimumFractionDigits: 0,
     }).format(value);
+  };
+
+  // Format currency with display mode applied
+  const formatCurrencyWithMode = (value: number) => {
+    const displayValue = calculateDisplayAmount(value, amountDisplayMode);
+    return formatCurrency(displayValue);
+  };
+
+  // Get subtitle with mode indicator
+  const getCurrencySubtitle = () => {
+    return `ريال سعودي (${getDisplayModeLabel(amountDisplayMode)})`;
   };
 
   const formatChartValue = (value: number) => {
@@ -438,23 +451,26 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{settings?.dashboard_title || 'لوحة التحكم'}</h1>
           <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-0.5 sm:mt-1">
             {settings?.welcome_message || 'مرحباً بك في منصة إدارة المعارض للسيارات'}
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">تحديث</span>
-        </Button>
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
+          <AmountDisplaySelector value={amountDisplayMode} onChange={setAmountDisplayMode} />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">تحديث</span>
+          </Button>
+        </div>
       </div>
 
       {/* Dashboard Tabs */}
@@ -484,26 +500,26 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             />
             <StatCard
               title="إجمالي المشتريات"
-              value={formatCurrency(stats.totalPurchases)}
+              value={formatCurrencyWithMode(stats.totalPurchases)}
               icon={ShoppingCart}
               gradient="danger"
-              subtitle="ريال سعودي"
+              subtitle={getCurrencySubtitle()}
               onClick={() => showStatDetail('totalPurchases')}
             />
             <StatCard
               title="مبيعات الشهر"
-              value={formatCurrency(stats.monthSalesAmount)}
+              value={formatCurrencyWithMode(stats.monthSalesAmount)}
               icon={TrendingUp}
               gradient="success"
-              subtitle="ريال سعودي"
+              subtitle={getCurrencySubtitle()}
               onClick={() => showStatDetail('monthSales')}
             />
             <StatCard
               title="إجمالي الأرباح"
-              value={formatCurrency(stats.totalProfit)}
+              value={formatCurrencyWithMode(stats.totalProfit)}
               icon={DollarSign}
               gradient="warning"
-              subtitle="ريال سعودي"
+              subtitle={getCurrencySubtitle()}
               onClick={() => showStatDetail('totalProfit')}
             />
             <StatCard
@@ -529,18 +545,18 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
               <StatCard
                 title="إجمالي مشتريات الشركة (كل السنين)"
-                value={formatCurrency(allTimeStats.allTimePurchases)}
+                value={formatCurrencyWithMode(allTimeStats.allTimePurchases)}
                 icon={Building2}
                 gradient="danger"
-                subtitle={`${allTimeStats.totalCarsCount} سيارة`}
+                subtitle={`${allTimeStats.totalCarsCount} سيارة - ${getDisplayModeLabel(amountDisplayMode)}`}
                 onClick={() => showStatDetail('allTimePurchases')}
               />
               <StatCard
                 title="إجمالي مبيعات الشركة (كل السنين)"
-                value={formatCurrency(allTimeStats.allTimeSales)}
+                value={formatCurrencyWithMode(allTimeStats.allTimeSales)}
                 icon={TrendingUp}
                 gradient="success"
-                subtitle={`${allTimeStats.allTimeSalesCount} عملية بيع`}
+                subtitle={`${allTimeStats.allTimeSalesCount} عملية بيع - ${getDisplayModeLabel(amountDisplayMode)}`}
                 onClick={() => showStatDetail('allTimeSales')}
               />
             </div>
