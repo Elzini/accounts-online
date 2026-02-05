@@ -63,8 +63,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       return;
     }
 
-    // Validate fiscal year selection if multiple years exist (only for company mode)
-    if (mode === 'company' && fiscalYears.length > 1 && !selectedFiscalYearId) {
+    // Validate fiscal year selection (always required for company mode)
+    if (mode === 'company' && fiscalYears.length > 0 && !selectedFiscalYearId) {
       toast.error('يرجى اختيار السنة المالية');
       return;
     }
@@ -122,7 +122,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     }
   };
 
-  const showFiscalYearSelector = mode === 'company' && fiscalYears.length > 1;
+  // Always show fiscal year selector in company mode (even if just one year)
+  const showFiscalYearSelector = mode === 'company' && fiscalYears.length > 0;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: globalSettings.login_bg_color }}>
