@@ -146,22 +146,29 @@ export function ThemeConfigurationTab() {
 
   const applyThemeToDocument = (settings: ExtendedThemeSettings) => {
     const root = document.documentElement;
-    
+
     // Apply primary color
     root.style.setProperty('--primary', hexToHsl(settings.primaryColor));
     root.style.setProperty('--ring', hexToHsl(settings.primaryColor));
     root.style.setProperty('--sidebar-primary', hexToHsl(settings.primaryColor));
-    
+
     // Apply sidebar color
     root.style.setProperty('--sidebar-background', hexToHsl(settings.sidebarColor));
-    
+
     // Apply border radius
     root.style.setProperty('--radius', `${settings.borderRadius}px`);
-    
+
     // Apply animation speed
     const duration = ANIMATION_SPEEDS.find(s => s.value === settings.animationSpeed)?.duration || '300ms';
     root.style.setProperty('--animation-duration', duration);
-    
+
+    // Apply global hover effect selector
+    if (settings.hoverEffect && settings.hoverEffect !== 'none') {
+      document.body.setAttribute('data-hover-effect', settings.hoverEffect);
+    } else {
+      document.body.removeAttribute('data-hover-effect');
+    }
+
     // Toggle animations
     if (!settings.enableAnimations) {
       document.body.classList.add('no-animations');
@@ -169,6 +176,12 @@ export function ThemeConfigurationTab() {
       document.body.classList.remove('no-animations');
     }
   };
+
+  useEffect(() => {
+    // Live preview (applies even قبل الحفظ) - الحفظ فقط لتثبيت الإعدادات في قاعدة البيانات
+    applyThemeToDocument(themeSettings);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [themeSettings]);
 
   const hexToHsl = (hex: string): string => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
