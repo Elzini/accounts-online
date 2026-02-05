@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { LogOut, Building2, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
@@ -76,24 +76,11 @@ const Index = () => {
   const { fiscalYears, selectedFiscalYear, setSelectedFiscalYear, isLoading: isFiscalYearLoading } = useFiscalYear();
   const mobileSidebarRef = useRef<MobileSidebarRef>(null);
   
-  // Show fiscal year selection dialog if multiple years exist and none selected
+  // Fiscal year dialog for changing selection (optional, accessible from header badge)
   const [showFiscalYearDialog, setShowFiscalYearDialog] = useState(false);
-  // Track if user has made a fiscal year selection this session
-  const [hasSelectedThisSession, setHasSelectedThisSession] = useState(false);
-  
-  useEffect(() => {
-    // Show fiscal year selection if there are multiple years AND 
-    // (none is selected OR user hasn't made a selection this session yet)
-    if (!isFiscalYearLoading && fiscalYears.length > 1 && !hasSelectedThisSession) {
-      setShowFiscalYearDialog(true);
-    } else {
-      setShowFiscalYearDialog(false);
-    }
-  }, [fiscalYears, hasSelectedThisSession, isFiscalYearLoading]);
 
   const handleFiscalYearSelect = (fy: typeof fiscalYears[0]) => {
     setSelectedFiscalYear(fy);
-    setHasSelectedThisSession(true);
     setShowFiscalYearDialog(false);
   };
 
