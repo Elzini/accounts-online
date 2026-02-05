@@ -451,7 +451,7 @@ export function Sidebar({
         </CollapsibleContent>
       </Collapsible>;
   };
-  return <aside className="w-[280px] sm:w-64 min-h-screen max-h-[100dvh] gradient-dark text-sidebar-foreground flex flex-col shrink-0">
+  return <aside className="w-[280px] sm:w-64 min-h-screen max-h-[100dvh] bg-sidebar text-sidebar-foreground flex flex-col shrink-0">
       {/* Logo */}
       <div className="p-4 sm:p-5 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
