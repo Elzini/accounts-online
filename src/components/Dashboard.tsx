@@ -239,7 +239,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   };
 
   // Handler to show stat detail dialog
-  const showStatDetail = (type: 'availableCars' | 'totalPurchases' | 'monthSales' | 'totalProfit' | 'todaySales' | 'monthSalesCount') => {
+  const showStatDetail = (type: 'availableCars' | 'totalPurchases' | 'monthSales' | 'totalProfit' | 'todaySales' | 'monthSalesCount' | 'allTimePurchases' | 'allTimeSales') => {
     let data: StatDetailData;
     
     const now = new Date();
@@ -375,6 +375,47 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         break;
       }
       
+      case 'allTimePurchases': {
+        data = {
+          title: 'إجمالي مشتريات الشركة (كل السنين)',
+          value: formatCurrency(allTimeStats?.allTimePurchases || 0),
+          subtitle: 'ريال سعودي',
+          breakdown: [
+            { label: 'عدد السيارات المشتراة', value: allTimeStats?.totalCarsCount || 0 },
+            { label: 'إجمالي قيمة المشتريات', value: allTimeStats?.allTimePurchases || 0, type: 'total' },
+          ],
+          formula: 'مجموع أسعار شراء جميع السيارات في جميع السنوات المالية',
+          notes: [
+            'يشمل جميع السنوات المالية',
+            'القيمة تمثل إجمالي رأس المال المستثمر تاريخياً',
+          ],
+          showCarsTable: true,
+          cars: buildPurchaseCarDetails(allCars),
+        };
+        break;
+      }
+      
+      case 'allTimeSales': {
+        data = {
+          title: 'إجمالي مبيعات الشركة (كل السنين)',
+          value: formatCurrency(allTimeStats?.allTimeSales || 0),
+          subtitle: 'ريال سعودي',
+          breakdown: [
+            { label: 'عدد عمليات البيع', value: allTimeStats?.allTimeSalesCount || 0 },
+            { label: 'إجمالي قيمة المبيعات', value: allTimeStats?.allTimeSales || 0, type: 'add' },
+            { label: 'إجمالي الأرباح', value: allTimeStats?.allTimeProfit || 0, type: 'total' },
+          ],
+          formula: 'مجموع أسعار البيع لجميع المبيعات في جميع السنوات المالية',
+          notes: [
+            'يشمل جميع السنوات المالية',
+            'يعكس حجم النشاط التجاري الإجمالي للشركة',
+          ],
+          showCarsTable: true,
+          cars: buildSalesCarDetails(allSales),
+        };
+        break;
+      }
+      
       default:
         return;
     }
@@ -482,6 +523,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 icon={Building2}
                 gradient="danger"
                 subtitle={`${allTimeStats.totalCarsCount} سيارة`}
+                onClick={() => showStatDetail('allTimePurchases')}
               />
               <StatCard
                 title="إجمالي مبيعات الشركة (كل السنين)"
@@ -489,6 +531,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 icon={TrendingUp}
                 gradient="success"
                 subtitle={`${allTimeStats.allTimeSalesCount} عملية بيع`}
+                onClick={() => showStatDetail('allTimeSales')}
               />
             </div>
           )}
