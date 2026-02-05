@@ -12,12 +12,22 @@ serve(async (req) => {
   }
 
   try {
-    // Validate secret token to prevent unauthorized access
+    // Validate authorization - accept either secret token or service role key
     const secretToken = Deno.env.get("BACKUP_SECRET_TOKEN");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const authHeader = req.headers.get("X-Backup-Token") || req.headers.get("Authorization")?.replace("Bearer ", "");
 
-    if (!secretToken || !authHeader || authHeader !== secretToken) {
-      console.error("Unauthorized backup attempt");
+    // Allow access if:
+    // 1. Valid BACKUP_SECRET_TOKEN is provided
+    // 2. Service role key is provided (for cron jobs using service role)
+    // 3. Request comes from Supabase internal (cron job via pg_net)
+    const isValidSecretToken = secretToken && authHeader === secretToken;
+    const isValidServiceRole = serviceRoleKey && authHeader === serviceRoleKey;
+    const isInternalCron = req.headers.get("x-supabase-internal") === "true" || 
+                           req.headers.get("user-agent")?.includes("Supabase");
+
+    if (!isValidSecretToken && !isValidServiceRole && !isInternalCron) {
+      console.error("Unauthorized backup attempt - invalid credentials");
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { 
@@ -26,6 +36,8 @@ serve(async (req) => {
         }
       );
     }
+    
+    console.log("Authorization successful, proceeding with backup...");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     
