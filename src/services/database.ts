@@ -622,6 +622,7 @@ export async function reverseSale(saleId: string) {
 
 // Stats
 export async function fetchStats(fiscalYearId?: string | null) {
+  const VAT_RATE = 1.15; // 15% VAT
   const now = new Date();
   const today = toDateOnly(now);
   const startOfMonth = toDateOnly(new Date(now.getFullYear(), now.getMonth(), 1));
@@ -822,21 +823,24 @@ export async function fetchStats(fiscalYearId?: string | null) {
   
   const { data: purchasesData } = await purchasesQuery;
   
-  const totalPurchases = purchasesData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
+  // Total purchases including VAT
+  const totalPurchasesBase = purchasesData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
+  const totalPurchases = totalPurchasesBase * VAT_RATE;
 
-  // Month sales amount (sum of sale prices this month within fiscal year)
-  let monthSalesAmount = 0;
+  // Month sales amount (sum of sale prices this month within fiscal year) - including VAT
+  let monthSalesAmountBase = 0;
   if (fiscalYearStart && fiscalYearEnd) {
-    monthSalesAmount = salesData?.filter(sale => {
+    monthSalesAmountBase = salesData?.filter(sale => {
       const saleDate = sale.sale_date;
       const rangeStart = startOfMonth > fiscalYearStart ? startOfMonth : fiscalYearStart;
       const rangeEnd = endOfMonth < fiscalYearEnd ? endOfMonth : fiscalYearEnd;
       return saleDate >= rangeStart && saleDate <= rangeEnd;
     }).reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
   } else {
-    monthSalesAmount = salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth)
+    monthSalesAmountBase = salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth)
       .reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
   }
+  const monthSalesAmount = monthSalesAmountBase * VAT_RATE;
 
   // Count cars for purchases breakdown
   const purchasesCount = purchasesData?.length || 0;
@@ -872,7 +876,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
     purchasesCount,
     monthSalesProfit,
     totalSalesCount: salesData?.length || 0,
-    totalSalesAmount: salesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0,
+    totalSalesAmount: (salesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0) * VAT_RATE,
   };
 }
 
