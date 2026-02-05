@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -87,6 +87,11 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
   const [cards, setCards] = useState<CardConfig[]>(DEFAULT_STAT_CARDS);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  
+  // Drag and drop state
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const dragNode = useRef<HTMLDivElement | null>(null);
 
   // Load saved config
   useEffect(() => {
@@ -141,6 +146,69 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
     setHasChanges(true);
   }, []);
 
+  // Drag and drop handlers
+  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, id: string) => {
+    setDraggedId(id);
+    dragNode.current = e.currentTarget as HTMLDivElement;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+    
+    // Add drag styling after a tiny delay to avoid immediate visual issues
+    setTimeout(() => {
+      if (dragNode.current) {
+        dragNode.current.classList.add('opacity-50');
+      }
+    }, 0);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    if (dragNode.current) {
+      dragNode.current.classList.remove('opacity-50');
+    }
+    setDraggedId(null);
+    setDragOverId(null);
+    dragNode.current = null;
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>, id: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (id !== draggedId) {
+      setDragOverId(id);
+    }
+  }, [draggedId]);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverId(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>, targetId: string) => {
+    e.preventDefault();
+    
+    if (!draggedId || draggedId === targetId) {
+      setDragOverId(null);
+      return;
+    }
+
+    setCards(prev => {
+      const sorted = [...prev].sort((a, b) => a.order - b.order);
+      const draggedIndex = sorted.findIndex(c => c.id === draggedId);
+      const targetIndex = sorted.findIndex(c => c.id === targetId);
+      
+      if (draggedIndex === -1 || targetIndex === -1) return prev;
+      
+      // Remove dragged item and insert at target position
+      const [draggedItem] = sorted.splice(draggedIndex, 1);
+      sorted.splice(targetIndex, 0, draggedItem);
+      
+      // Reassign orders
+      return sorted.map((card, i) => ({ ...card, order: i }));
+    });
+    
+    setHasChanges(true);
+    setDragOverId(null);
+  }, [draggedId]);
+
   const handleSave = async () => {
     try {
       await saveConfig.mutateAsync({
@@ -182,47 +250,61 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
           {/* Cards List */}
           <div className="flex flex-col gap-2">
             <Label className="text-sm font-medium flex items-center gap-2">
-              <ArrowUpDown className="w-4 h-4" />
-              ترتيب البطاقات
+              <GripVertical className="w-4 h-4" />
+              ترتيب البطاقات (اسحب للترتيب)
             </Label>
             <ScrollArea className="flex-1 border rounded-lg p-2 max-h-[400px]">
               <div className="space-y-2">
                 {sortedCards.map((card, index) => (
                   <div
                     key={card.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, card.id)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={(e) => handleDragOver(e, card.id)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, card.id)}
                     className={cn(
-                      'flex items-center gap-2 p-3 rounded-lg border transition-all cursor-pointer',
+                      'flex items-center gap-2 p-3 rounded-lg border transition-all cursor-grab active:cursor-grabbing select-none',
                       selectedCard === card.id
                         ? 'border-primary bg-primary/5 ring-1 ring-primary'
                         : 'border-border hover:border-primary/50',
-                      !card.visible && 'opacity-50'
+                      !card.visible && 'opacity-50',
+                      draggedId === card.id && 'opacity-50 scale-95',
+                      dragOverId === card.id && draggedId !== card.id && 'border-primary border-2 bg-primary/10 scale-[1.02]'
                     )}
                     onClick={() => setSelectedCard(card.id)}
                   >
-                    <div className="flex flex-col gap-1">
+                    {/* Drag Handle */}
+                    <div className="flex items-center text-muted-foreground hover:text-foreground transition-colors">
+                      <GripVertical className="w-5 h-5" />
+                    </div>
+
+                    {/* Arrow buttons for accessibility */}
+                    <div className="flex flex-col gap-0.5">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6"
+                        className="h-5 w-5"
                         onClick={e => {
                           e.stopPropagation();
                           moveCard(card.id, 'up');
                         }}
                         disabled={index === 0}
                       >
-                        <ChevronUp className="w-4 h-4" />
+                        <ChevronUp className="w-3 h-3" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6"
+                        className="h-5 w-5"
                         onClick={e => {
                           e.stopPropagation();
                           moveCard(card.id, 'down');
                         }}
                         disabled={index === sortedCards.length - 1}
                       >
-                        <ChevronDown className="w-4 h-4" />
+                        <ChevronDown className="w-3 h-3" />
                       </Button>
                     </div>
 
