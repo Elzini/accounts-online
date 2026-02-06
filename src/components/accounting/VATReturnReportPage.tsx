@@ -589,7 +589,7 @@ export function VATReturnReportPage() {
 
       {/* Footer */}
       <div className="hidden print:block text-center text-sm text-muted-foreground mt-8 pt-4 border-t">
-        <p>تم إنشاء هذا التقرير بواسطة نظام إدارة المعارض</p>
+        <p>تم إنشاء هذا التقرير بواسطة Elzini SaaS</p>
         <p>تاريخ الطباعة: {format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ar })}</p>
       </div>
     </div>

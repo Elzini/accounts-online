@@ -77,7 +77,7 @@ const Install = () => {
           <div className="mx-auto w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
             <Smartphone className="w-10 h-10 text-primary" />
           </div>
-          <CardTitle className="text-2xl">نظام إدارة معارض السيارات</CardTitle>
+          <CardTitle className="text-2xl">Elzini SaaS</CardTitle>
           <CardDescription>
             ثبّت التطبيق على جهازك للوصول السريع والعمل بدون إنترنت
           </CardDescription>

@@ -375,7 +375,7 @@ export function DefaultCompanySettings() {
                   <Input
                     value={appName}
                     onChange={(e) => setAppName(e.target.value)}
-                    placeholder="منصة إدارة المعارض"
+                    placeholder="Elzini SaaS"
                   />
                 </div>
                 <div className="space-y-2">
