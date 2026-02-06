@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Shield, Building2, ArrowLeft, Calendar } from 'lucide-react';
+import { Mail, Lock, Shield, Building2, ArrowLeft, Calendar, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,35 +10,34 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
 import { usePublicAuthSettings } from '@/hooks/usePublicAuthSettings';
-import { usePublicFiscalYears } from '@/hooks/usePublicFiscalYears';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
 type AuthMode = 'company' | 'super_admin';
 
+interface CompanyFiscalYear {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  is_current: boolean;
+}
+
 export function AuthPage({ mode }: { mode: AuthMode }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fetchingFiscalYears, setFetchingFiscalYears] = useState(false);
+  const [fiscalYears, setFiscalYears] = useState<CompanyFiscalYear[]>([]);
   const [selectedFiscalYearId, setSelectedFiscalYearId] = useState<string>('');
+  const [emailConfirmed, setEmailConfirmed] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { setSelectedFiscalYear } = useFiscalYear();
-  
-  // Use public fiscal years hook (works without authentication)
-  const { data: fiscalYears = [], isLoading: isFiscalYearLoading } = usePublicFiscalYears();
 
   // Fetch settings from secure edge function
   const { settings: globalSettings, loading: settingsLoading } = usePublicAuthSettings();
-
-  // Auto-select current fiscal year or first one
-  useEffect(() => {
-    if (fiscalYears.length > 0 && !selectedFiscalYearId) {
-      const currentYear = fiscalYears.find(fy => fy.is_current);
-      setSelectedFiscalYearId(currentYear?.id || fiscalYears[0]?.id || '');
-    }
-  }, [fiscalYears, selectedFiscalYearId]);
 
   const headerGradient = useMemo(
     () => `linear-gradient(135deg, ${globalSettings.login_header_gradient_start}, ${globalSettings.login_header_gradient_end})`,
@@ -53,10 +52,67 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     return format(new Date(dateStr), 'dd MMM yyyy', { locale: ar });
   };
 
+  // Reset fiscal years when email changes
+  useEffect(() => {
+    if (emailConfirmed) {
+      setEmailConfirmed(false);
+      setFiscalYears([]);
+      setSelectedFiscalYearId('');
+    }
+  }, [email]);
+
+  const fetchFiscalYearsForEmail = useCallback(async () => {
+    if (!email || mode !== 'company') return;
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('يرجى إدخال بريد إلكتروني صحيح');
+      return;
+    }
+
+    setFetchingFiscalYears(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-company-fiscal-years', {
+        body: { email: email.trim() },
+      });
+
+      if (error) {
+        console.error('Error fetching fiscal years:', error);
+        toast.error('حدث خطأ أثناء جلب السنوات المالية');
+        return;
+      }
+
+      const years = data?.fiscal_years || [];
+      setFiscalYears(years);
+      setEmailConfirmed(true);
+
+      if (years.length > 0) {
+        const currentYear = years.find((fy: CompanyFiscalYear) => fy.is_current);
+        setSelectedFiscalYearId(currentYear?.id || years[0]?.id || '');
+      } else {
+        // No fiscal years found - could mean email doesn't exist or no fiscal years
+        // Don't reveal which one - just allow login attempt
+        setSelectedFiscalYearId('');
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      toast.error('حدث خطأ غير متوقع');
+    } finally {
+      setFetchingFiscalYears(false);
+    }
+  }, [email, mode]);
+
+  const handleEmailKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && mode === 'company' && !emailConfirmed) {
+      e.preventDefault();
+      fetchFiscalYearsForEmail();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate fields before submitting
     if (!email || !password) {
       toast.error('يرجى إدخال البريد الإلكتروني وكلمة المرور');
       return;
@@ -67,7 +123,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       return;
     }
 
-    // Validate fiscal year selection (always required for company mode)
+    // For company mode, require fiscal year selection if years are available
     if (mode === 'company' && fiscalYears.length > 0 && !selectedFiscalYearId) {
       toast.error('يرجى اختيار السنة المالية');
       return;
@@ -88,7 +144,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         return;
       }
 
-      // Super admin gate (separate login flow)
+      // Super admin gate
       if (mode === 'super_admin' && data?.user) {
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
@@ -98,7 +154,6 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           .single();
 
         if (roleError || !roleData) {
-          // Ensure we don't keep a non-super-admin logged in on the super-admin entry
           await supabase.auth.signOut();
           toast.error('هذا الحساب ليس لديه صلاحية مدير النظام');
           return;
@@ -109,11 +164,10 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         return;
       }
 
-      // Set selected fiscal year before navigating (for company mode)
+      // Set selected fiscal year before navigating
       if (mode === 'company' && selectedFiscalYearId) {
         const selectedYear = fiscalYears.find(fy => fy.id === selectedFiscalYearId);
         if (selectedYear) {
-          // Convert PublicFiscalYear to FiscalYear format for context
           setSelectedFiscalYear({
             ...selectedYear,
             company_id: '',
@@ -138,8 +192,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     }
   };
 
-  // Always show fiscal year selector in company mode (even if just one year)
-  const showFiscalYearSelector = mode === 'company' && fiscalYears.length > 0;
+  // In company mode, show password & fiscal year only after email is confirmed
+  const showPasswordAndFiscalYear = mode === 'super_admin' || emailConfirmed;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: globalSettings.login_bg_color }}>
@@ -168,6 +222,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
               <h2 className="text-xl font-bold text-foreground">{primaryButtonText}</h2>
             </div>
 
+            {/* Email Field - Always visible */}
             <div className="space-y-2">
               <Label htmlFor="email">البريد الإلكتروني</Label>
               <div className="relative">
@@ -177,6 +232,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={handleEmailKeyDown}
                   placeholder="أدخل البريد الإلكتروني"
                   className="h-12 pr-10"
                   dir="ltr"
@@ -185,65 +241,95 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">كلمة المرور</Label>
-              <div className="relative">
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="أدخل كلمة المرور"
-                  className="h-12 pr-10"
-                  dir="ltr"
-                  required
-                  minLength={6}
-                />
-              </div>
-            </div>
-
-            {/* Fiscal Year Selector */}
-            {showFiscalYearSelector && (
-              <div className="space-y-2">
-                <Label htmlFor="fiscal-year">السنة المالية</Label>
-                <div className="relative">
-                  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10 pointer-events-none" />
-                  <Select
-                    value={selectedFiscalYearId}
-                    onValueChange={setSelectedFiscalYearId}
-                    disabled={isFiscalYearLoading}
-                  >
-                    <SelectTrigger className="h-12 pr-10 text-right">
-                      <SelectValue placeholder="اختر السنة المالية" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border z-50">
-                      {fiscalYears.map((fy) => (
-                        <SelectItem key={fy.id} value={fy.id}>
-                          <div className="flex items-center justify-between w-full gap-3">
-                            <span>{fy.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {formatDate(fy.start_date)} - {formatDate(fy.end_date)}
-                            </span>
-                            {fy.is_current && (
-                              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                                الحالية
-                              </span>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+            {/* Fetch Fiscal Years Button - Only in company mode before confirmation */}
+            {mode === 'company' && !emailConfirmed && (
+              <Button
+                type="button"
+                onClick={fetchFiscalYearsForEmail}
+                className="w-full h-12 hover:opacity-90"
+                style={{ background: headerGradient }}
+                disabled={fetchingFiscalYears || !email}
+              >
+                {fetchingFiscalYears ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    جاري التحقق...
+                  </span>
+                ) : (
+                  'التالي'
+                )}
+              </Button>
             )}
 
-            <Button type="submit" className="w-full h-12 hover:opacity-90" style={{ background: headerGradient }} disabled={loading}>
-              {loading ? 'جاري التحميل...' : primaryButtonText}
-            </Button>
+            {/* Password & Fiscal Year - Show after email confirmation */}
+            {showPasswordAndFiscalYear && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="password">كلمة المرور</Label>
+                  <div className="relative">
+                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="أدخل كلمة المرور"
+                      className="h-12 pr-10"
+                      dir="ltr"
+                      required
+                      minLength={6}
+                      autoFocus
+                    />
+                  </div>
+                </div>
 
-            {/* Separate entry points */}
+                {/* Fiscal Year Selector - Only in company mode with available years */}
+                {mode === 'company' && fiscalYears.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fiscal-year">السنة المالية</Label>
+                    <div className="relative">
+                      <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10 pointer-events-none" />
+                      <Select
+                        value={selectedFiscalYearId}
+                        onValueChange={setSelectedFiscalYearId}
+                      >
+                        <SelectTrigger className="h-12 pr-10 text-right">
+                          <SelectValue placeholder="اختر السنة المالية" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border z-50">
+                          {fiscalYears.map((fy) => (
+                            <SelectItem key={fy.id} value={fy.id}>
+                              <div className="flex items-center justify-between w-full gap-3">
+                                <span>{fy.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatDate(fy.start_date)} - {formatDate(fy.end_date)}
+                                </span>
+                                {fy.is_current && (
+                                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                    الحالية
+                                  </span>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full h-12 hover:opacity-90"
+                  style={{ background: headerGradient }}
+                  disabled={loading}
+                >
+                  {loading ? 'جاري التحميل...' : primaryButtonText}
+                </Button>
+              </>
+            )}
+
+            {/* Navigation Links */}
             <div className="flex items-center justify-between gap-3 text-sm">
               {mode === 'company' ? (
                 <Link to="/auth/super-admin" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
