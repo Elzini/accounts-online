@@ -21,6 +21,7 @@ import {
 import { SOURCE_TABLES, TABLE_FIELDS, CustomReport, ReportColumn, ReportFilter, ReportSorting } from '@/services/systemControl';
 import { toast } from 'sonner';
 import { CustomReportPreviewDialog } from '@/components/reports/CustomReportPreviewDialog';
+import { BuiltInReportsConfig } from './BuiltInReportsConfig';
 
 export function CustomReportsTab() {
   const { data: reports = [], isLoading } = useCustomReports();
@@ -184,7 +185,11 @@ export function CustomReportsTab() {
   }
 
   return (
-    <>
+    <div className="space-y-6">
+      {/* Built-in Reports Configuration */}
+      <BuiltInReportsConfig />
+
+      {/* Custom Reports */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -378,6 +383,6 @@ export function CustomReportsTab() {
         onOpenChange={setPreviewDialogOpen}
         report={previewReport}
       />
-    </>
+    </div>
   );
 }
