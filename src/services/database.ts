@@ -822,8 +822,10 @@ export async function fetchStats(fiscalYearId?: string | null) {
     monthSalesCount = salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth).length || 0;
   }
 
-  // Total purchases - prices are already VAT-inclusive
-  const totalPurchases = purchasesData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
+  // Total purchases - prices are stored as base amounts (without VAT)
+  // Multiply by 1.15 to get VAT-inclusive totals
+  const totalPurchasesBase = purchasesData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
+  const totalPurchases = Math.round(totalPurchasesBase * 1.15);
 
   // Month sales amount - store as RAW amount from DB (no VAT pre-processing)
   // calculateDisplayAmount() in the UI handles VAT display modes
@@ -878,7 +880,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
   };
 }
 
-// All-time stats (across all fiscal years) - amounts include 15% VAT
+// All-time stats (across all fiscal years)
 export async function fetchAllTimeStats() {
   
   // Total purchases across all years
@@ -886,15 +888,16 @@ export async function fetchAllTimeStats() {
     .from('cars')
     .select('purchase_price');
   
-  // Prices are already VAT-inclusive
-  const allTimePurchases = carsData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
+  // Purchase prices are stored as base amounts (without VAT)
+  // Multiply by 1.15 to get VAT-inclusive totals
+  const allTimePurchasesBase = carsData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
+  const allTimePurchases = Math.round(allTimePurchasesBase * 1.15);
   
   // Total sales across all years
   const { data: salesData } = await supabase
     .from('sales')
     .select('sale_price, profit');
   
-  // Prices are already VAT-inclusive
   const allTimeSales = salesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
   const allTimeSalesCount = salesData?.length || 0;
   const allTimeProfit = salesData?.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0) || 0;
