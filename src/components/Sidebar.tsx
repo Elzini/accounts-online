@@ -106,7 +106,7 @@ export function Sidebar({
     switch (companyType) {
       case 'construction': return 'نظام إدارة المقاولات';
       case 'general_trading': return 'نظام إدارة التجارة';
-      default: return 'منصة إدارة المعارض';
+      default: return 'Elzini SaaS';
     }
   };
   
