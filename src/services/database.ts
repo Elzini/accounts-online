@@ -620,7 +620,6 @@ export async function reverseSale(saleId: string) {
 
 // Stats
 export async function fetchStats(fiscalYearId?: string | null) {
-  const VAT_RATE = 1.15; // 15% VAT
   const now = new Date();
   const today = toDateOnly(now);
   // Current month boundaries (1st day to last day of current month)
@@ -826,30 +825,23 @@ export async function fetchStats(fiscalYearId?: string | null) {
   // Total purchases - prices are already VAT-inclusive
   const totalPurchases = purchasesData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
 
-  // Month sales amount (sum of sale prices this month within fiscal year) - store as BASE (before VAT)
-  // NOTE: Sale price values here are VAT-inclusive (15%), so we convert them back to base.
-  // This is needed because calculateDisplayAmount() in the UI adds VAT back for 'total' mode.
-  const VAT_MULTIPLIER = VAT_RATE;
-
+  // Month sales amount - store as RAW amount from DB (no VAT pre-processing)
+  // calculateDisplayAmount() in the UI handles VAT display modes
   let monthSalesAmount = 0;
   if (fiscalYearStart && fiscalYearEnd) {
     const monthSalesFiltered = salesData?.filter(sale => {
       const saleDate = sale.sale_date;
-      // Use current month boundaries strictly
       return saleDate >= startOfMonth && saleDate <= endOfMonth;
     }) || [];
 
-    const vatInclusiveTotal = monthSalesFiltered.reduce(
+    monthSalesAmount = monthSalesFiltered.reduce(
       (sum, sale) => sum + (Number(sale.sale_price) || 0),
       0,
     );
-    monthSalesAmount = vatInclusiveTotal / VAT_MULTIPLIER;
   } else {
-    const vatInclusiveTotal =
+    monthSalesAmount =
       salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth)
         .reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
-
-    monthSalesAmount = vatInclusiveTotal / VAT_MULTIPLIER;
   }
 
   // Count cars for purchases breakdown
@@ -888,7 +880,6 @@ export async function fetchStats(fiscalYearId?: string | null) {
 
 // All-time stats (across all fiscal years) - amounts include 15% VAT
 export async function fetchAllTimeStats() {
-  const VAT_RATE = 1.15;
   
   // Total purchases across all years
   const { data: carsData } = await supabase

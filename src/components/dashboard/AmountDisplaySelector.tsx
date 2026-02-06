@@ -27,21 +27,21 @@ export function AmountDisplaySelector({ value, onChange }: AmountDisplaySelector
 }
 
 // Utility function to calculate amounts based on display mode
-// Note: Stored amounts in the database are the BASE amount (before VAT)
+// Note: Stored amounts are the ACTUAL sale/purchase prices (VAT-inclusive)
 export function calculateDisplayAmount(storedAmount: number, mode: AmountDisplayMode): number {
-  const VAT_RATE = 0.15;
+  const VAT_DIVISOR = 1.15;
   
   switch (mode) {
     case 'base':
-      // Return as-is (stored amount is already the base)
-      return storedAmount;
+      // Extract base amount (remove VAT)
+      return storedAmount / VAT_DIVISOR;
     case 'vat':
-      // Calculate VAT from base amount
-      return storedAmount * VAT_RATE;
+      // Calculate VAT portion only
+      return storedAmount - (storedAmount / VAT_DIVISOR);
     case 'total':
     default:
-      // Calculate total including VAT
-      return storedAmount * (1 + VAT_RATE);
+      // Return as-is (stored amount is already VAT-inclusive)
+      return storedAmount;
   }
 }
 
