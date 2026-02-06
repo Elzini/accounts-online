@@ -826,10 +826,10 @@ export async function fetchStats(fiscalYearId?: string | null) {
   // Total purchases - prices are already VAT-inclusive
   const totalPurchases = purchasesData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
 
-  // Month sales amount (sum of sale prices this month within fiscal year) - store as BASE (before VAT)
-  // NOTE: Sale price values here are VAT-inclusive (15%), so we convert them back to base.
-  // `VAT_RATE` is already defined at the top of fetchStats as the multiplier (1.15).
-  const VAT_MULTIPLIER = VAT_RATE;
+  // Month sales amount (sum of sale prices this month within fiscal year)
+  // NOTE: Store the actual VAT-inclusive sale prices as entered.
+  // The display mode (base/vat/total) is applied at the UI level via AmountDisplaySelector.
+  // Previously this divided by VAT_MULTIPLIER which caused incorrect totals in detail views.
 
   let monthSalesAmount = 0;
   if (fiscalYearStart && fiscalYearEnd) {
@@ -839,17 +839,14 @@ export async function fetchStats(fiscalYearId?: string | null) {
       return saleDate >= startOfMonth && saleDate <= endOfMonth;
     }) || [];
 
-    const vatInclusiveTotal = monthSalesFiltered.reduce(
+    monthSalesAmount = monthSalesFiltered.reduce(
       (sum, sale) => sum + (Number(sale.sale_price) || 0),
       0,
     );
-    monthSalesAmount = vatInclusiveTotal / VAT_MULTIPLIER;
   } else {
-    const vatInclusiveTotal =
+    monthSalesAmount =
       salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth)
         .reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
-
-    monthSalesAmount = vatInclusiveTotal / VAT_MULTIPLIER;
   }
 
   // Count cars for purchases breakdown
