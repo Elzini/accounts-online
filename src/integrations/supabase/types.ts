@@ -5525,7 +5525,7 @@ export type Database = {
           due_date?: string | null
           fiscal_year_id?: string | null
           id?: string | null
-          internal_notes?: string | null
+          internal_notes?: never
           invoice_date?: string | null
           invoice_number?: string | null
           invoice_type?: string | null
@@ -5560,7 +5560,7 @@ export type Database = {
           due_date?: string | null
           fiscal_year_id?: string | null
           id?: string | null
-          internal_notes?: string | null
+          internal_notes?: never
           invoice_date?: string | null
           invoice_number?: string | null
           invoice_type?: string | null
