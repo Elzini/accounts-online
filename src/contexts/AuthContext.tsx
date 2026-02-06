@@ -66,6 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    const SESSION_ACTIVE_KEY = 'app_session_active';
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -75,6 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Fetch permissions when user logs in
         if (session?.user) {
+          // Mark session as active in this browser tab/window
+          sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
           setTimeout(() => {
             fetchPermissions(session.user.id);
           }, 0);
@@ -92,12 +96,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      // Force re-login on fresh browser/tab open:
+      // If there's a persisted session but no sessionStorage flag,
+      // it means the user opened a new browser window/tab — sign them out.
+      const isSessionActive = sessionStorage.getItem(SESSION_ACTIVE_KEY);
+      if (session && !isSessionActive) {
+        await supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
 
       if (session?.user) {
+        sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
         fetchPermissions(session.user.id);
       }
     });

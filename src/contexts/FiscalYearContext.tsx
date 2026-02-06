@@ -43,8 +43,17 @@ export function FiscalYearProvider({ children }: { children: ReactNode }) {
   };
 
   // Load from localStorage on mount when fiscalYears are available
+  // BUT only if the browser session is still active (not a fresh open)
   useEffect(() => {
     if (!companyId || fiscalYears.length === 0 || hasLoadedFromStorage) return;
+
+    const isSessionActive = sessionStorage.getItem('app_session_active');
+    
+    // If this is a fresh browser open, don't restore cached fiscal year
+    if (!isSessionActive) {
+      setHasLoadedFromStorage(true);
+      return;
+    }
 
     const stored = localStorage.getItem(`${FISCAL_YEAR_STORAGE_KEY}_${companyId}`);
     if (stored) {
@@ -82,12 +91,8 @@ export function FiscalYearProvider({ children }: { children: ReactNode }) {
     }
   }, [fiscalYears, selectedFiscalYear]);
 
-  // Only auto-select if there's exactly ONE fiscal year and nothing is selected
-  useEffect(() => {
-    if (!selectedFiscalYear && fiscalYears.length === 1 && hasLoadedFromStorage) {
-      setSelectedFiscalYear(fiscalYears[0]);
-    }
-  }, [fiscalYears, selectedFiscalYear, hasLoadedFromStorage]);
+  // DO NOT auto-select fiscal year — user must always choose explicitly
+  // This ensures every session starts with a deliberate fiscal year selection
 
   const isLoading = isLoadingYears || isLoadingCurrent;
 

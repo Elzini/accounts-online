@@ -78,8 +78,11 @@ const Index = () => {
   const { fiscalYears, selectedFiscalYear, setSelectedFiscalYear, isLoading: isFiscalYearLoading } = useFiscalYear();
   const mobileSidebarRef = useRef<MobileSidebarRef>(null);
   
-  // Fiscal year dialog for changing selection (optional, accessible from header badge)
+  // Fiscal year dialog for changing selection (accessible from header badge)
   const [showFiscalYearDialog, setShowFiscalYearDialog] = useState(false);
+
+  // Mandatory fiscal year gate: if fiscal years exist but none is selected, force selection
+  const mustSelectFiscalYear = !isFiscalYearLoading && fiscalYears.length > 0 && !selectedFiscalYear;
 
   const handleFiscalYearSelect = (fy: typeof fiscalYears[0]) => {
     setSelectedFiscalYear(fy);
@@ -177,9 +180,9 @@ const Index = () => {
 
   return (
     <>
-      {/* Fiscal Year Selection Dialog */}
+      {/* Mandatory Fiscal Year Selection Dialog - blocks access until selected */}
       <FiscalYearSelectionDialog
-        open={showFiscalYearDialog}
+        open={mustSelectFiscalYear || showFiscalYearDialog}
         fiscalYears={fiscalYears}
         currentSelectedId={selectedFiscalYear?.id}
         onSelect={handleFiscalYearSelect}
