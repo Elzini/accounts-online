@@ -22,6 +22,7 @@ interface CompanyFiscalYear {
   start_date: string;
   end_date: string;
   is_current: boolean;
+  status: string;
 }
 
 export function AuthPage({ mode }: { mode: AuthMode }) {
@@ -32,6 +33,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const [fiscalYears, setFiscalYears] = useState<CompanyFiscalYear[]>([]);
   const [selectedFiscalYearId, setSelectedFiscalYearId] = useState<string>('');
   const [emailConfirmed, setEmailConfirmed] = useState(false);
+  const [companyName, setCompanyName] = useState<string | null>(null);
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { setSelectedFiscalYear } = useFiscalYear();
@@ -58,6 +60,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       setEmailConfirmed(false);
       setFiscalYears([]);
       setSelectedFiscalYearId('');
+      setCompanyName(null);
     }
   }, [email]);
 
@@ -84,15 +87,15 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       }
 
       const years = data?.fiscal_years || [];
+      const fetchedCompanyName = data?.company_name || null;
       setFiscalYears(years);
+      setCompanyName(fetchedCompanyName);
       setEmailConfirmed(true);
 
       if (years.length > 0) {
         const currentYear = years.find((fy: CompanyFiscalYear) => fy.is_current);
         setSelectedFiscalYearId(currentYear?.id || years[0]?.id || '');
       } else {
-        // No fiscal years found - could mean email doesn't exist or no fiscal years
-        // Don't reveal which one - just allow login attempt
         setSelectedFiscalYearId('');
       }
     } catch (err) {
@@ -264,6 +267,14 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             {/* Password & Fiscal Year - Show after email confirmation */}
             {showPasswordAndFiscalYear && (
               <>
+                {/* Company Name Display */}
+                {mode === 'company' && companyName && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-center">
+                    <p className="text-xs text-muted-foreground">الشركة</p>
+                    <p className="text-base font-bold text-foreground">{companyName}</p>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="password">كلمة المرور</Label>
                   <div className="relative">
@@ -307,6 +318,11 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                                 {fy.is_current && (
                                   <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                                     الحالية
+                                  </span>
+                                )}
+                                {fy.status === 'closed' && (
+                                  <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">
+                                    مغلقة
                                   </span>
                                 )}
                               </div>
