@@ -440,14 +440,17 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       
       case 'monthSales': {
         const monthSales = fiscalYearSales.filter(s => s.sale_date >= startOfMonth && s.sale_date <= endOfMonth);
+        // Calculate actual totals from sales data for the detail breakdown
+        const actualMonthSalesTotal = monthSales.reduce((sum, s) => sum + (Number(s.sale_price) || 0), 0);
+        const actualMonthProfit = monthSales.reduce((sum, s) => sum + (Number(s.profit) || 0), 0);
         data = {
           title: 'مبيعات الشهر',
-          value: formatCurrency(stats.monthSalesAmount),
+          value: formatCurrency(actualMonthSalesTotal),
           subtitle: 'ريال سعودي',
           breakdown: [
             { label: 'عدد عمليات البيع هذا الشهر', value: stats.monthSales },
-            { label: 'إجمالي قيمة المبيعات', value: stats.monthSalesAmount, type: 'add' },
-            { label: 'أرباح مبيعات الشهر', value: stats.monthSalesProfit || 0, type: 'total' },
+            { label: 'إجمالي قيمة المبيعات', value: actualMonthSalesTotal, type: 'add' },
+            { label: 'أرباح مبيعات الشهر', value: actualMonthProfit, type: 'total' },
           ],
           formula: 'مجموع أسعار البيع للمبيعات خلال الشهر الحالي',
           notes: [
@@ -507,13 +510,14 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       
       case 'monthSalesCount': {
         const monthSales = fiscalYearSales.filter(s => s.sale_date >= startOfMonth && s.sale_date <= endOfMonth);
+        const monthSalesActualTotal = monthSales.reduce((sum, s) => sum + (Number(s.sale_price) || 0), 0);
         data = {
           title: 'عدد مبيعات الشهر',
           value: stats.monthSales,
           subtitle: 'عملية بيع',
           breakdown: [
             { label: 'عدد عمليات البيع هذا الشهر', value: stats.monthSales, type: 'total' },
-            { label: 'إجمالي قيمة المبيعات', value: stats.monthSalesAmount },
+            { label: 'إجمالي قيمة المبيعات', value: monthSalesActualTotal },
           ],
           formula: 'عدد عمليات البيع خلال الشهر الحالي',
           notes: [
@@ -546,14 +550,16 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       }
       
       case 'allTimeSales': {
+        const allTimeSalesActualTotal = allSales.reduce((sum, s) => sum + (Number(s.sale_price) || 0), 0);
+        const allTimeProfitActual = allSales.reduce((sum, s) => sum + (Number(s.profit) || 0), 0);
         data = {
           title: 'إجمالي مبيعات الشركة (كل السنين)',
-          value: formatCurrency(allTimeStats?.allTimeSales || 0),
+          value: formatCurrency(allTimeSalesActualTotal),
           subtitle: 'ريال سعودي',
           breakdown: [
             { label: 'عدد عمليات البيع', value: allTimeStats?.allTimeSalesCount || 0 },
-            { label: 'إجمالي قيمة المبيعات', value: allTimeStats?.allTimeSales || 0, type: 'add' },
-            { label: 'إجمالي الأرباح', value: allTimeStats?.allTimeProfit || 0, type: 'total' },
+            { label: 'إجمالي قيمة المبيعات', value: allTimeSalesActualTotal, type: 'add' },
+            { label: 'إجمالي الأرباح', value: allTimeProfitActual, type: 'total' },
           ],
           formula: 'مجموع أسعار البيع لجميع المبيعات في جميع السنوات المالية',
           notes: [
