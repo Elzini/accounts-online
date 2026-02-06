@@ -44,6 +44,7 @@ import {
   WidgetConfig, 
   DEFAULT_WIDGETS 
 } from './dashboard/DashboardEditMode';
+import { useCardFormulas, buildFormulaVariables, evaluateFormula } from '@/hooks/useCardFormulas';
 
 interface DashboardProps {
   stats: {
@@ -98,6 +99,20 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const [detailData, setDetailData] = useState<StatDetailData | null>(null);
   const [amountDisplayMode, setAmountDisplayMode] = useState<AmountDisplayMode>('total');
   const showAmountAsWords = true; // عرض الأرقام بالكلمات دائماً
+  
+  // Custom card formulas
+  const { getFormula } = useCardFormulas();
+  const formulaVariables = useMemo(() => buildFormulaVariables(stats), [stats]);
+  
+  // Compute card value using custom formula if available
+  const getCardValue = useCallback((cardId: string, defaultValue: number): number => {
+    const formulaConfig = getFormula(cardId);
+    if (!formulaConfig || !formulaConfig.isCustom) return defaultValue;
+    const { result, error } = evaluateFormula(formulaConfig.formula, formulaVariables);
+    if (error) return defaultValue;
+    // Apply VAT if configured
+    return formulaConfig.includeVAT ? result * 1.15 : result;
+  }, [getFormula, formulaVariables]);
   
   // Dashboard customization
   const { data: dashboardConfig } = useDashboardConfig();
@@ -688,7 +703,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                     <StatCard
                       key={cardId}
                       title="السيارات المتاحة"
-                      value={stats.availableCars}
+                      value={getCardValue('availableCars', stats.availableCars)}
                       icon={Car}
                       gradient="primary"
                       subtitle="سيارة في المخزون"
@@ -701,7 +716,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                     <StatCard
                       key={cardId}
                       title="إجمالي المشتريات"
-                      value={formatCurrencyWithMode(stats.totalPurchases)}
+                      value={formatCurrencyWithMode(getCardValue('totalPurchases', stats.totalPurchases))}
                       icon={ShoppingCart}
                       gradient="danger"
                       subtitle={getCurrencySubtitle()}
@@ -715,7 +730,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                     <StatCard
                       key={cardId}
                       title="مبيعات الشهر"
-                      value={formatCurrencyWithMode(stats.monthSalesAmount)}
+                      value={formatCurrencyWithMode(getCardValue('monthSales', stats.monthSalesAmount))}
                       icon={TrendingUp}
                       gradient="success"
                       subtitle={getCurrencySubtitle()}
@@ -729,7 +744,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                     <StatCard
                       key={cardId}
                       title="إجمالي الأرباح"
-                      value={formatCurrencyWithMode(stats.totalProfit)}
+                      value={formatCurrencyWithMode(getCardValue('totalProfit', stats.totalProfit))}
                       icon={DollarSign}
                       gradient="warning"
                       subtitle={getCurrencySubtitle()}
@@ -743,7 +758,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                     <StatCard
                       key={cardId}
                       title="مبيعات اليوم"
-                      value={stats.todaySales}
+                      value={getCardValue('todaySales', stats.todaySales)}
                       icon={ShoppingCart}
                       gradient="primary"
                       subtitle="عملية بيع"
@@ -756,7 +771,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                     <StatCard
                       key={cardId}
                       title="عدد مبيعات الشهر"
-                      value={stats.monthSales}
+                      value={getCardValue('monthSalesCount', stats.monthSales)}
                       icon={TrendingUp}
                       gradient="success"
                       subtitle="عملية بيع"

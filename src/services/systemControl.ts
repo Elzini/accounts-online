@@ -568,6 +568,7 @@ export interface LayoutSettings {
   showAnalyticsTab?: boolean;
   defaultTab?: 'overview' | 'analytics';
   widgets?: WidgetConfig[];
+  card_formulas?: any[];
 }
 
 // Fetch dashboard configuration

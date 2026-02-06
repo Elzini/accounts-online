@@ -8,7 +8,8 @@ import {
   Calculator,
   GitBranch,
   LayoutGrid,
-  FunctionSquare
+  FunctionSquare,
+  Code2
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +21,7 @@ import { MenuConfigurationTab } from './tabs/MenuConfigurationTab';
 import { ThemeConfigurationTab } from './tabs/ThemeConfigurationTab';
 import { DashboardConfigTab } from './tabs/DashboardConfigTab';
 import { FormulaBuilderTab } from './tabs/FormulaBuilderTab';
+import { CardFormulasTab } from './tabs/CardFormulasTab';
 
 export function ControlCenterPage() {
   return (
@@ -36,10 +38,14 @@ export function ControlCenterPage() {
       </div>
 
       <Tabs defaultValue="formula-builder" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 lg:w-auto lg:inline-grid overflow-x-auto">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9 lg:w-auto lg:inline-grid overflow-x-auto">
           <TabsTrigger value="formula-builder" className="flex items-center gap-2">
             <FunctionSquare className="w-4 h-4" />
             <span className="hidden sm:inline">محرر المعادلات</span>
+          </TabsTrigger>
+          <TabsTrigger value="card-formulas" className="flex items-center gap-2">
+            <Code2 className="w-4 h-4" />
+            <span className="hidden sm:inline">معادلات البطاقات</span>
           </TabsTrigger>
           <TabsTrigger value="dashboard-config" className="flex items-center gap-2">
             <LayoutGrid className="w-4 h-4" />
@@ -73,6 +79,10 @@ export function ControlCenterPage() {
 
         <TabsContent value="formula-builder" className="mt-6">
           <FormulaBuilderTab />
+        </TabsContent>
+
+        <TabsContent value="card-formulas" className="mt-6">
+          <CardFormulasTab />
         </TabsContent>
 
         <TabsContent value="dashboard-config" className="mt-6">
