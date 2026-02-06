@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
 
     if (!email || typeof email !== 'string') {
       return new Response(
-        JSON.stringify({ fiscal_years: [] }),
+        JSON.stringify({ fiscal_years: [], company_name: null }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     if (userError) {
       console.error('Error listing users:', userError);
       return new Response(
-        JSON.stringify({ fiscal_years: [] }),
+        JSON.stringify({ fiscal_years: [], company_name: null }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     if (!user) {
       // Don't reveal if email exists or not - return empty
       return new Response(
-        JSON.stringify({ fiscal_years: [] }),
+        JSON.stringify({ fiscal_years: [], company_name: null }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -54,35 +54,44 @@ Deno.serve(async (req) => {
 
     if (profileError || !profile?.company_id) {
       return new Response(
-        JSON.stringify({ fiscal_years: [] }),
+        JSON.stringify({ fiscal_years: [], company_name: null }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get fiscal years for this company (only open ones)
+    // Get company name
+    const { data: company } = await supabaseAdmin
+      .from('companies')
+      .select('name')
+      .eq('id', profile.company_id)
+      .single();
+
+    // Get ALL fiscal years for this company (open and closed)
     const { data: fiscalYears, error: fyError } = await supabaseAdmin
       .from('fiscal_years')
-      .select('id, name, start_date, end_date, is_current')
+      .select('id, name, start_date, end_date, is_current, status')
       .eq('company_id', profile.company_id)
-      .eq('status', 'open')
       .order('start_date', { ascending: false });
 
     if (fyError) {
       console.error('Error fetching fiscal years:', fyError);
       return new Response(
-        JSON.stringify({ fiscal_years: [] }),
+        JSON.stringify({ fiscal_years: [], company_name: company?.name || null }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     return new Response(
-      JSON.stringify({ fiscal_years: fiscalYears || [] }),
+      JSON.stringify({
+        fiscal_years: fiscalYears || [],
+        company_name: company?.name || null,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error:', error);
     return new Response(
-      JSON.stringify({ fiscal_years: [] }),
+      JSON.stringify({ fiscal_years: [], company_name: null }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
