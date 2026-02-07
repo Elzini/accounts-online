@@ -2,6 +2,7 @@
 
 export { ComprehensiveFinancialStatementsPage } from './ComprehensiveFinancialStatementsPage';
 export { TrialBalanceImportManager } from './TrialBalanceImportManager';
+export { ScenarioValidationDashboard } from './ScenarioValidationDashboard';
 export * from './types';
 export * from './utils/numberFormatting';
 export * from './utils/medadParser';

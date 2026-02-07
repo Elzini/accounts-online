@@ -1,18 +1,18 @@
-// مكون استيراد ميزان المراجعة مع ربط الحسابات
-import { useState, useRef } from 'react';
+// مكون استيراد ميزان المراجعة مع ربط الحسابات ومحرك السيناريوهات
+import { useState, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table';
 import {
   Upload, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle,
-  Loader2, ArrowRight, RefreshCw, FileCheck, Edit3, Zap, FileText
+  Loader2, ArrowRight, RefreshCw, FileCheck, Edit3, Zap, Plus,
+  Shield, Activity
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -23,7 +23,13 @@ import {
   parseTrialBalanceFile,
   generateFinancialStatementsFromTB,
 } from '@/services/trialBalanceImport';
+import {
+  runScenarioEngine,
+  generateMissingAccounts,
+  ScenarioSummary,
+} from '@/services/trialBalanceScenarioEngine';
 import { ComprehensiveFinancialData } from './types';
+import { ScenarioValidationDashboard } from './ScenarioValidationDashboard';
 
 interface TrialBalanceImportManagerProps {
   companyName: string;
@@ -38,7 +44,16 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
   const [isLoading, setIsLoading] = useState(false);
   const [importedData, setImportedData] = useState<ImportedTrialBalance | null>(null);
   const [rows, setRows] = useState<TrialBalanceRow[]>([]);
+  const [scenarioSummary, setScenarioSummary] = useState<ScenarioSummary | null>(null);
+  const [showScenarios, setShowScenarios] = useState(false);
+  const [missingAccountsAdded, setMissingAccountsAdded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const runValidation = useCallback((currentRows: TrialBalanceRow[]) => {
+    const summary = runScenarioEngine(currentRows);
+    setScenarioSummary(summary);
+    return summary;
+  }, []);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -49,8 +64,14 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
       const result = await parseTrialBalanceFile(file);
       setImportedData(result);
       setRows(result.rows);
+      setMissingAccountsAdded(false);
+      
+      // تشغيل محرك السيناريوهات تلقائياً
+      const summary = runValidation(result.rows);
+      setShowScenarios(true);
+      
       setStep('mapping');
-      toast.success(`تم تحليل ${result.rows.length} حساب من الملف`);
+      toast.success(`تم تحليل ${result.rows.length} حساب | ${summary.totalScenariosTested}+ سيناريو`);
     } catch (error: any) {
       toast.error(error.message || 'فشل تحليل الملف');
     } finally {
@@ -60,7 +81,27 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
   };
 
   const handleMappingChange = (index: number, newType: AccountMappingType) => {
-    setRows(prev => prev.map((r, i) => i === index ? { ...r, mappedType: newType, isAutoMapped: false } : r));
+    setRows(prev => {
+      const updated = prev.map((r, i) => i === index ? { ...r, mappedType: newType, isAutoMapped: false } : r);
+      // إعادة تشغيل السيناريوهات بعد التعديل
+      runValidation(updated);
+      return updated;
+    });
+  };
+
+  const handleAddMissingAccounts = () => {
+    const missing = generateMissingAccounts(rows);
+    if (missing.length === 0) {
+      toast.info('جميع التصنيفات الأساسية موجودة');
+      return;
+    }
+    setRows(prev => {
+      const updated = [...prev, ...missing];
+      runValidation(updated);
+      return updated;
+    });
+    setMissingAccountsAdded(true);
+    toast.success(`تم إضافة ${missing.length} حساب مفقود بقيمة صفر`);
   };
 
   const handleGenerateStatements = () => {
@@ -79,6 +120,9 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
     setStep('upload');
     setImportedData(null);
     setRows([]);
+    setScenarioSummary(null);
+    setShowScenarios(false);
+    setMissingAccountsAdded(false);
   };
 
   const formatNumber = (n: number) => new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
@@ -105,6 +149,10 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
               <h3 className="text-lg font-bold">استيراد ميزان المراجعة</h3>
               <p className="text-sm text-muted-foreground">
                 ارفع ملف Excel أو CSV يحتوي على ميزان المراجعة لتوليد القوائم المالية تلقائياً
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                <Shield className="w-3 h-3 inline ml-1" />
+                يتم فحص البيانات عبر محرك سيناريوهات ديناميكي شامل
               </p>
             </div>
             <div className="flex flex-col items-center gap-3">
@@ -144,9 +192,32 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
                 </CardTitle>
                 <CardDescription>تحقق من تصنيف الحسابات وعدّل حسب الحاجة قبل توليد القوائم</CardDescription>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button variant="outline" size="sm" onClick={handleReset}>
                   <RefreshCw className="w-4 h-4 ml-1" /> إعادة
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleAddMissingAccounts}
+                  disabled={missingAccountsAdded}
+                  className="gap-1"
+                >
+                  <Plus className="w-4 h-4" /> إضافة المفقودة
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowScenarios(!showScenarios)}
+                  className="gap-1"
+                >
+                  <Shield className="w-4 h-4" />
+                  {showScenarios ? 'إخفاء الفحص' : 'عرض الفحص'}
+                  {scenarioSummary && (
+                    <Badge variant={scenarioSummary.overallScore >= 80 ? 'default' : 'destructive'} className="mr-1 text-xs">
+                      {scenarioSummary.overallScore}
+                    </Badge>
+                  )}
                 </Button>
                 <Button size="sm" onClick={handleGenerateStatements} className="gap-1">
                   <Zap className="w-4 h-4" /> توليد القوائم
@@ -160,20 +231,34 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
                 <p className="text-2xl font-bold">{mappingStats.total}</p>
                 <p className="text-xs text-muted-foreground">إجمالي الحسابات</p>
               </div>
-              <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <div className="text-center p-2 bg-muted/50 rounded-lg">
                 <p className="text-2xl font-bold text-green-600">{mappingStats.autoMapped}</p>
                 <p className="text-xs text-muted-foreground">ربط تلقائي</p>
               </div>
-              <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className="text-center p-2 bg-muted/50 rounded-lg">
                 <p className="text-2xl font-bold text-blue-600">{mappingStats.mapped}</p>
                 <p className="text-xs text-muted-foreground">مصنف</p>
               </div>
-              <div className="text-center p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+              <div className="text-center p-2 bg-muted/50 rounded-lg">
                 <p className="text-2xl font-bold text-amber-600">{mappingStats.unmapped}</p>
                 <p className="text-xs text-muted-foreground">غير مصنف</p>
               </div>
             </div>
             <Progress value={progressPercent} className="h-2" />
+            
+            {/* Scenario score bar */}
+            {scenarioSummary && (
+              <div className="mt-3 flex items-center gap-3 p-2 bg-muted/30 rounded-lg text-sm">
+                <Activity className="w-4 h-4 text-primary shrink-0" />
+                <span className="text-muted-foreground">
+                  نتيجة الفحص: <strong className={scenarioSummary.overallScore >= 80 ? 'text-green-600' : scenarioSummary.overallScore >= 50 ? 'text-amber-600' : 'text-destructive'}>{scenarioSummary.overallScore}/100</strong>
+                </span>
+                <span className="text-muted-foreground">|</span>
+                <span className="text-muted-foreground">{scenarioSummary.totalScenariosTested.toLocaleString('ar-SA')}+ سيناريو</span>
+                {scenarioSummary.critical > 0 && <Badge variant="destructive" className="text-xs">{scenarioSummary.critical} حرج</Badge>}
+                {scenarioSummary.errors > 0 && <Badge variant="destructive" className="text-xs">{scenarioSummary.errors} خطأ</Badge>}
+              </div>
+            )}
             
             {/* Validation messages */}
             {importedData.validation.errors.length > 0 && (
@@ -207,6 +292,11 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
             </div>
           </CardContent>
         </Card>
+
+        {/* Scenario Validation Dashboard */}
+        {showScenarios && scenarioSummary && (
+          <ScenarioValidationDashboard summary={scenarioSummary} />
+        )}
 
         {/* Accounts Table */}
         <Card>
@@ -285,6 +375,11 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
             <p className="text-sm text-muted-foreground">
               تم تحليل {rows.length} حساب وتوليد جميع القوائم المالية
             </p>
+            {scenarioSummary && (
+              <p className="text-xs text-muted-foreground">
+                نتيجة الفحص: {scenarioSummary.overallScore}/100 | {scenarioSummary.totalScenariosTested.toLocaleString('ar-SA')}+ سيناريو
+              </p>
+            )}
             <Button variant="outline" size="sm" onClick={handleReset} className="gap-1">
               <RefreshCw className="w-4 h-4" /> استيراد ميزان جديد
             </Button>
