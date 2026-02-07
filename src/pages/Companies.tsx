@@ -63,6 +63,17 @@ import { AllUsersManagement } from '@/components/super-admin/AllUsersManagement'
 import { CompanyAccountingSettings } from '@/components/super-admin/CompanyAccountingSettings';
 import { CompaniesReport } from '@/components/super-admin/CompaniesReport';
 import { DefaultCompanySettings } from '@/components/super-admin/DefaultCompanySettings';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import';
+
+const ACTIVITY_TYPE_LABELS: Record<CompanyActivityType, string> = {
+  car_dealership: 'معرض سيارات',
+  construction: 'نظام المقاولات',
+  general_trading: 'التجارة العامة',
+  restaurant: 'مطاعم وكافيهات',
+  export_import: 'الاستيراد والتصدير',
+};
 
 interface Company {
   id: string;
@@ -135,6 +146,7 @@ export default function Companies() {
     phone: '',
     address: '',
     is_active: true,
+    company_type: 'car_dealership' as CompanyActivityType,
   });
 
   // Fetch companies
@@ -189,6 +201,7 @@ export default function Companies() {
           phone: data.phone || null,
           address: data.address || null,
           is_active: data.is_active,
+          company_type: data.company_type,
         })
         .select()
         .single();
@@ -264,6 +277,7 @@ export default function Companies() {
       phone: '',
       address: '',
       is_active: true,
+      company_type: 'car_dealership',
     });
   };
 
@@ -274,6 +288,7 @@ export default function Companies() {
       phone: company.phone || '',
       address: company.address || '',
       is_active: company.is_active,
+      company_type: ((company as any).company_type || 'car_dealership') as CompanyActivityType,
     });
     setEditDialogOpen(true);
   };
@@ -460,14 +475,15 @@ export default function Companies() {
               <TableHeader>
                 <TableRow className="bg-muted/50">
                   <TableHead className="text-right font-bold">#</TableHead>
-                  <TableHead className="text-right font-bold">اسم الشركة</TableHead>
-                  <TableHead className="text-right font-bold">الهاتف</TableHead>
-                  <TableHead className="text-center font-bold">المستخدمين</TableHead>
-                  <TableHead className="text-center font-bold">السيارات</TableHead>
-                  <TableHead className="text-center font-bold">المبيعات</TableHead>
-                  <TableHead className="text-center font-bold">الحالة</TableHead>
-                  <TableHead className="text-right font-bold">تاريخ الإنشاء</TableHead>
-                  <TableHead className="text-center font-bold">إجراءات</TableHead>
+                   <TableHead className="text-right font-bold">اسم الشركة</TableHead>
+                   <TableHead className="text-right font-bold">نوع النشاط</TableHead>
+                   <TableHead className="text-right font-bold">الهاتف</TableHead>
+                   <TableHead className="text-center font-bold">المستخدمين</TableHead>
+                   <TableHead className="text-center font-bold">السيارات</TableHead>
+                   <TableHead className="text-center font-bold">المبيعات</TableHead>
+                   <TableHead className="text-center font-bold">الحالة</TableHead>
+                   <TableHead className="text-right font-bold">تاريخ الإنشاء</TableHead>
+                   <TableHead className="text-center font-bold">إجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -481,6 +497,11 @@ export default function Companies() {
                           <Building2 className="w-4 h-4 text-primary" />
                           <span className="font-semibold">{company.name}</span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {ACTIVITY_TYPE_LABELS[((company as any).company_type || 'car_dealership') as CompanyActivityType]}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         {company.phone ? (
@@ -622,6 +643,22 @@ export default function Companies() {
               />
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="company_type">نوع النشاط *</Label>
+              <Select
+                value={formData.company_type}
+                onValueChange={(value) => setFormData({ ...formData, company_type: value as CompanyActivityType })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر نوع النشاط" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(ACTIVITY_TYPE_LABELS).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="phone">الهاتف</Label>
               <Input
                 id="phone"
@@ -680,6 +717,24 @@ export default function Companies() {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="أدخل اسم الشركة"
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-company_type">نوع النشاط</Label>
+              <Select
+                value={formData.company_type}
+                onValueChange={(value) => setFormData({ ...formData, company_type: value as CompanyActivityType })}
+                disabled
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="نوع النشاط" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(ACTIVITY_TYPE_LABELS).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">لا يمكن تغيير نوع النشاط بعد الإنشاء</p>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-phone">الهاتف</Label>
@@ -760,6 +815,12 @@ export default function Companies() {
                 <div>
                   <Label className="text-muted-foreground text-sm">اسم الشركة</Label>
                   <p className="font-semibold text-lg">{selectedCompany.name}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-sm">نوع النشاط</Label>
+                  <p className="font-medium">
+                    {ACTIVITY_TYPE_LABELS[((selectedCompany as any).company_type || 'car_dealership') as CompanyActivityType]}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground text-sm">الحالة</Label>
