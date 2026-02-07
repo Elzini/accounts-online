@@ -67,32 +67,105 @@ const AUTO_MAPPING_RULES: { prefix: string; type: AccountMappingType; label: str
   { prefix: '6', type: 'expenses', label: 'مصروفات' },
 ];
 
-// ربط الحساب تلقائياً حسب الرمز
+// قواعد الربط بالاسم العربي - مرتبة من الأكثر تحديداً إلى الأعم
+const NAME_MAPPING_RULES: { keywords: string[]; type: AccountMappingType }[] = [
+  // === أصول متداولة (Current Assets) ===
+  { keywords: ['نقد', 'صندوق', 'كاش', 'خزينة', 'cash'], type: 'current_assets' },
+  { keywords: ['بنك', 'مصرف', 'bank', 'حساب جاري'], type: 'current_assets' },
+  { keywords: ['عملاء', 'ذمم مدينة', 'مدينون', 'حسابات مدينة', 'receivable'], type: 'current_assets' },
+  { keywords: ['مخزون', 'بضاعة', 'بضائع', 'مواد', 'inventory', 'stock'], type: 'current_assets' },
+  { keywords: ['مصاريف مدفوعة مقدما', 'مصروفات مقدمة', 'دفعات مقدمة', 'prepaid'], type: 'current_assets' },
+  { keywords: ['أوراق قبض', 'شيكات محصلة', 'كمبيالات'], type: 'current_assets' },
+  { keywords: ['أصول متداولة', 'الأصول المتداولة', 'current assets'], type: 'current_assets' },
+
+  // === أصول غير متداولة (Non-Current Assets) ===
+  { keywords: ['أصول ثابتة', 'الأصول الثابتة', 'صافي الأصول الثابتة', 'fixed assets'], type: 'non_current_assets' },
+  { keywords: ['أثاث', 'الأثاث', 'مفروشات', 'تجهيزات', 'furniture'], type: 'non_current_assets' },
+  { keywords: ['معدات', 'آلات', 'الات', 'اجهزه', 'أجهزة', 'ماكينات', 'equipment', 'machinery'], type: 'non_current_assets' },
+  { keywords: ['سيارات', 'مركبات', 'وسائل نقل', 'vehicles'], type: 'non_current_assets' },
+  { keywords: ['عقارات', 'مباني', 'أراضي', 'ارض', 'buildings', 'land'], type: 'non_current_assets' },
+  { keywords: ['استهلاك', 'إهلاك', 'اهلاك', 'مجمع الاستهلاك', 'مجمع الإهلاك', 'depreciation'], type: 'non_current_assets' },
+  { keywords: ['استثمارات طويلة', 'استثمارات', 'investments'], type: 'non_current_assets' },
+  { keywords: ['أصول غير متداولة', 'الأصول غير المتداولة', 'non-current'], type: 'non_current_assets' },
+  { keywords: ['شهرة', 'goodwill', 'أصول غير ملموسة', 'برامج', 'حقوق'], type: 'non_current_assets' },
+
+  // === مطلوبات متداولة (Current Liabilities) ===
+  { keywords: ['موردين', 'موردون', 'دائنون', 'ذمم دائنة', 'حسابات دائنة', 'payable'], type: 'current_liabilities' },
+  { keywords: ['أوراق دفع', 'شيكات مستحقة'], type: 'current_liabilities' },
+  { keywords: ['ضريبة القيمة المضافة', 'ضريبة مستحقة', 'vat', 'زكاة مستحقة'], type: 'current_liabilities' },
+  { keywords: ['رواتب مستحقة', 'أجور مستحقة', 'مستحقات الموظفين'], type: 'current_liabilities' },
+  { keywords: ['مصاريف مستحقة', 'مصروفات مستحقة', 'التزامات متداولة', 'accrued'], type: 'current_liabilities' },
+  { keywords: ['إيرادات مقدمة', 'إيرادات مؤجلة', 'دفعات مقدمة من عملاء', 'unearned'], type: 'current_liabilities' },
+  { keywords: ['قروض قصيرة', 'تسهيلات بنكية', 'سحب على المكشوف'], type: 'current_liabilities' },
+  { keywords: ['مطلوبات متداولة', 'المطلوبات المتداولة', 'خصوم متداولة', 'current liabilities'], type: 'current_liabilities' },
+
+  // === مطلوبات غير متداولة (Non-Current Liabilities) ===
+  { keywords: ['قروض طويلة', 'قروض بنكية طويلة', 'تمويل طويل', 'long-term'], type: 'non_current_liabilities' },
+  { keywords: ['مكافأة نهاية الخدمة', 'مكافآت نهاية', 'end of service'], type: 'non_current_liabilities' },
+  { keywords: ['مطلوبات غير متداولة', 'المطلوبات غير المتداولة', 'خصوم غير متداولة'], type: 'non_current_liabilities' },
+
+  // === حقوق ملكية (Equity) ===
+  { keywords: ['رأس المال', 'رأسمال', 'رأس مال', 'capital'], type: 'equity' },
+  { keywords: ['احتياطي', 'الاحتياطي', 'reserve'], type: 'equity' },
+  { keywords: ['أرباح محتجزة', 'أرباح مبقاة', 'أرباح مرحلة', 'retained'], type: 'equity' },
+  { keywords: ['جاري الشريك', 'جاري المالك', 'حساب المالك', 'جاري صاحب', 'مسحوبات'], type: 'equity' },
+  { keywords: ['حقوق ملكية', 'حقوق المساهمين', 'حقوق الملاك', 'equity'], type: 'equity' },
+  { keywords: ['أرباح العام', 'صافي الربح', 'صافي الخسارة', 'نتيجة النشاط', 'net income'], type: 'equity' },
+
+  // === إيرادات (Revenue) ===
+  { keywords: ['إيراد', 'ايراد', 'إيرادات', 'ايرادات', 'revenue', 'income'], type: 'revenue' },
+  { keywords: ['مبيعات', 'المبيعات', 'sales'], type: 'revenue' },
+  { keywords: ['خدمات', 'أتعاب', 'عمولات مكتسبة'], type: 'revenue' },
+  { keywords: ['إيرادات أخرى', 'دخل آخر', 'other income'], type: 'revenue' },
+
+  // === تكلفة الإيرادات (COGS) ===
+  { keywords: ['تكلفة المبيعات', 'تكلفة البضاعة', 'تكلفة الإيرادات', 'تكلفة البضائع', 'cost of goods', 'cogs'], type: 'cogs' },
+  { keywords: ['تكاليف مباشرة', 'مواد مباشرة', 'أجور مباشرة'], type: 'cogs' },
+
+  // === مصروفات (Expenses) ===
+  { keywords: ['مصروف', 'مصاريف', 'مصروفات', 'نفقات', 'expense'], type: 'expenses' },
+  { keywords: ['رواتب', 'أجور', 'salaries', 'wages'], type: 'expenses' },
+  { keywords: ['إيجار', 'ايجار', 'rent'], type: 'expenses' },
+  { keywords: ['كهرباء', 'ماء', 'هاتف', 'اتصالات', 'utilities'], type: 'expenses' },
+  { keywords: ['صيانة', 'إصلاح', 'maintenance'], type: 'expenses' },
+  { keywords: ['تأمين', 'insurance'], type: 'expenses' },
+  { keywords: ['دعاية', 'إعلان', 'تسويق', 'marketing'], type: 'expenses' },
+  { keywords: ['مصاريف إدارية', 'مصاريف عمومية', 'مصاريف تشغيلية', 'operating'], type: 'expenses' },
+  { keywords: ['فوائد', 'عمولات بنكية', 'مصاريف بنكية', 'interest'], type: 'expenses' },
+  { keywords: ['ضيافة', 'سفر', 'انتقالات', 'بدلات'], type: 'expenses' },
+];
+
+// ربط الحساب تلقائياً حسب الرمز ثم الاسم
 export function autoMapAccount(code: string, name: string): AccountMappingType {
   const cleanCode = code.trim();
   
-  // ربط بالاسم إذا لم يتم الربط بالرمز
-  const nameLower = name.toLowerCase();
-  
-  for (const rule of AUTO_MAPPING_RULES) {
-    if (cleanCode.startsWith(rule.prefix)) {
-      return rule.type;
+  // 1) ربط بالرمز (الأكواد الرقمية فقط)
+  if (/^\d/.test(cleanCode)) {
+    for (const rule of AUTO_MAPPING_RULES) {
+      if (cleanCode.startsWith(rule.prefix)) {
+        return rule.type;
+      }
     }
   }
   
-  // محاولة الربط بالاسم
-  if (nameLower.includes('نقد') || nameLower.includes('صندوق') || nameLower.includes('بنك')) return 'current_assets';
-  if (nameLower.includes('مخزون') || nameLower.includes('بضاعة')) return 'current_assets';
-  if (nameLower.includes('عملاء') || nameLower.includes('ذمم مدينة')) return 'current_assets';
-  if (nameLower.includes('أصول ثابتة') || nameLower.includes('معدات') || nameLower.includes('آلات')) return 'non_current_assets';
-  if (nameLower.includes('موردين') || nameLower.includes('دائنون') || nameLower.includes('ذمم دائنة')) return 'current_liabilities';
-  if (nameLower.includes('قروض طويلة')) return 'non_current_liabilities';
-  if (nameLower.includes('رأس المال') || nameLower.includes('رأسمال')) return 'equity';
-  if (nameLower.includes('احتياطي')) return 'equity';
-  if (nameLower.includes('أرباح محتجزة')) return 'equity';
-  if (nameLower.includes('إيراد') || nameLower.includes('مبيعات')) return 'revenue';
-  if (nameLower.includes('تكلفة المبيعات') || nameLower.includes('تكلفة البضاعة')) return 'cogs';
-  if (nameLower.includes('مصروف') || nameLower.includes('إيجار') || nameLower.includes('رواتب')) return 'expenses';
+  // 2) ربط بالاسم - بحث شامل
+  const nameNormalized = name.trim();
+  
+  for (const rule of NAME_MAPPING_RULES) {
+    for (const keyword of rule.keywords) {
+      if (nameNormalized.includes(keyword)) {
+        return rule.type;
+      }
+    }
+  }
+
+  // 3) محاولة أخيرة: الكلمة الجذرية "أصول" بدون تحديد نوع
+  if (nameNormalized === 'الأصول' || nameNormalized === 'أصول') {
+    return 'current_assets'; // عنوان عام للأصول - نصنفه كأصول متداولة كافتراض
+  }
+  if (nameNormalized === 'الخصوم' || nameNormalized === 'المطلوبات' || nameNormalized === 'الالتزامات') {
+    return 'current_liabilities';
+  }
   
   return 'unmapped';
 }
