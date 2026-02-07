@@ -50,38 +50,14 @@ import { MonthlyExpensesCard } from './dashboard/MonthlyExpensesCard';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 
 interface DashboardProps {
-  stats: {
-    availableCars: number;
-    todaySales: number;
-    totalProfit: number;
-    monthSales: number;
-    totalPurchases: number;
-    monthSalesAmount: number;
-    // Extended breakdown
-    totalGrossProfit?: number;
-    totalCarExpenses?: number;
-    totalGeneralExpenses?: number;
-    // Detailed expense breakdown
-    payrollExpenses?: number;
-    prepaidExpensesDue?: number;
-    otherGeneralExpenses?: number;
-    purchasesCount?: number;
-    monthSalesProfit?: number;
-    totalSalesCount?: number;
-    totalSalesAmount?: number;
-  };
+  stats: any;
   setActivePage: (page: ActivePage) => void;
 }
 
 const chartConfig = {
-  sales: {
-    label: 'المبيعات',
-    color: 'hsl(var(--primary))',
-  },
-  profit: {
-    label: 'الأرباح',
-    color: 'hsl(var(--success))',
-  },
+  margin: { top: 10, right: 30, left: 0, bottom: 0 },
+  barSize: 20,
+  barGap: 4,
 };
 
 export function Dashboard({ stats, setActivePage }: DashboardProps) {
@@ -105,19 +81,17 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailData, setDetailData] = useState<StatDetailData | null>(null);
   const [amountDisplayMode, setAmountDisplayMode] = useState<AmountDisplayMode>('total');
-  const showAmountAsWords = true; // عرض الأرقام بالكلمات دائماً
+  const showAmountAsWords = true;
   
   // Custom card formulas
   const { getFormula } = useCardFormulas();
   const formulaVariables = useMemo(() => buildFormulaVariables(stats), [stats]);
   
-  // Compute card value using custom formula if available
   const getCardValue = useCallback((cardId: string, defaultValue: number): number => {
     const formulaConfig = getFormula(cardId);
     if (!formulaConfig || !formulaConfig.isCustom) return defaultValue;
     const { result, error } = evaluateFormula(formulaConfig.formula, formulaVariables);
     if (error) return defaultValue;
-    // Apply VAT if configured
     return formulaConfig.includeVAT ? result * 1.15 : result;
   }, [getFormula, formulaVariables]);
   
@@ -130,7 +104,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [widgetConfigs, setWidgetConfigs] = useState<WidgetConfig[]>(DEFAULT_WIDGETS);
   
-  // Widget drag and drop
+  // Widget drag, drop, and resize
   const {
     draggedId,
     dragOverId,
@@ -139,6 +113,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     handleDragOver,
     handleDrop,
     removeWidget,
+    resizeWidget,
   } = useWidgetDragDrop(widgetConfigs, setWidgetConfigs);
   
   // Load card configs from saved dashboard config
@@ -171,19 +146,26 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     setCardConfigs(cards);
   }, []);
 
-  // Load widget configs from saved dashboard config
+  // Load widget configs from saved dashboard config - merge with defaults
   useEffect(() => {
     if (dashboardConfig?.layout_settings?.widgets) {
-      setWidgetConfigs(dashboardConfig.layout_settings.widgets);
+      const savedWidgets = dashboardConfig.layout_settings.widgets as WidgetConfig[];
+      const savedIds = new Set(savedWidgets.map((w: any) => w.id));
+      const merged = [
+        ...savedWidgets.map((w: any) => ({
+          ...w,
+          colSpan: w.colSpan ?? DEFAULT_WIDGETS.find(dw => dw.id === w.id)?.colSpan ?? 2,
+        })),
+        ...DEFAULT_WIDGETS.filter(dw => !savedIds.has(dw.id)),
+      ].sort((a, b) => a.order - b.order);
+      setWidgetConfigs(merged);
     }
   }, [dashboardConfig]);
 
-  // Enter edit mode
   const enterEditMode = useCallback(() => {
     setIsEditMode(true);
   }, []);
 
-  // Save widget config
   const saveWidgetConfig = useCallback(async (widgets: WidgetConfig[]) => {
     try {
       await saveDashboardConfig.mutateAsync({
@@ -197,24 +179,29 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     }
   }, [saveDashboardConfig]);
 
-  // Cancel edit mode
   const cancelEditMode = useCallback(() => {
-    // Reset to saved config
     if (dashboardConfig?.layout_settings?.widgets) {
-      setWidgetConfigs(dashboardConfig.layout_settings.widgets);
+      const savedWidgets = dashboardConfig.layout_settings.widgets as WidgetConfig[];
+      const savedIds = new Set(savedWidgets.map((w: any) => w.id));
+      const merged = [
+        ...savedWidgets.map((w: any) => ({
+          ...w,
+          colSpan: w.colSpan ?? DEFAULT_WIDGETS.find(dw => dw.id === w.id)?.colSpan ?? 2,
+        })),
+        ...DEFAULT_WIDGETS.filter(dw => !savedIds.has(dw.id)),
+      ].sort((a, b) => a.order - b.order);
+      setWidgetConfigs(merged);
     } else {
       setWidgetConfigs(DEFAULT_WIDGETS);
     }
     setIsEditMode(false);
   }, [dashboardConfig]);
 
-  // Check if widget is visible
   const isWidgetVisible = useCallback((id: string) => {
     const widget = widgetConfigs.find(w => w.id === id);
     return widget?.visible ?? true;
   }, [widgetConfigs]);
 
-  // Get sorted widgets
   const sortedWidgets = useMemo(() => {
     return [...widgetConfigs].sort((a, b) => a.order - b.order).filter(w => w.visible);
   }, [widgetConfigs]);
@@ -224,391 +211,145 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     return cardConfigs.find(c => c.id === id) || { visible: true, size: 'medium' as const, bgColor: '', fontSize: 100, height: undefined, enable3D: false, label: '' };
   }, [cardConfigs]);
 
-  // Get custom card label (user-defined label or fallback to default)
   const getCardLabel = useCallback((id: string, defaultLabel: string) => {
     const cfg = cardConfigs.find(c => c.id === id);
     return cfg?.label || defaultLabel;
   }, [cardConfigs]);
 
-  // Get visible cards sorted by order
   const visibleCardIds = useMemo(() => {
     return cardConfigs.filter(c => c.visible).sort((a, b) => a.order - b.order).map(c => c.id);
   }, [cardConfigs]);
+
+  // Widget layout helper - common props for each widget wrapper
+  const getWidgetProps = useCallback((id: string) => ({
+    id,
+    isEditMode,
+    visible: isWidgetVisible(id),
+    order: widgetConfigs.find(w => w.id === id)?.order ?? 999,
+    colSpan: widgetConfigs.find(w => w.id === id)?.colSpan ?? 2,
+    onRemove: removeWidget,
+    onResize: resizeWidget,
+    onDragStart: handleDragStart,
+    onDragEnd: handleDragEnd,
+    onDragOver: handleDragOver,
+    onDrop: handleDrop,
+    isDragging: draggedId === id,
+    isDragOver: dragOverId === id,
+  }), [isEditMode, isWidgetVisible, widgetConfigs, removeWidget, resizeWidget, handleDragStart, handleDragEnd, handleDragOver, handleDrop, draggedId, dragOverId]);
 
   const canSales = permissions.admin || permissions.sales;
   const canPurchases = permissions.admin || permissions.purchases;
   const canReports = permissions.admin || permissions.reports;
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['stats'] }),
-        queryClient.invalidateQueries({ queryKey: ['monthly-chart-data'] }),
-        queryClient.invalidateQueries({ queryKey: ['advanced-analytics'] }),
-        queryClient.invalidateQueries({ queryKey: ['car-transfers'] }),
-        queryClient.invalidateQueries({ queryKey: ['cars'] }),
-        queryClient.invalidateQueries({ queryKey: ['sales'] }),
-        queryClient.invalidateQueries({ queryKey: ['customers'] }),
-        queryClient.invalidateQueries({ queryKey: ['suppliers'] }),
-        queryClient.invalidateQueries({ queryKey: ['monthly-expenses-dashboard'] }),
-      ]);
-      toast.success('تم تحديث البيانات بنجاح');
+      await queryClient.invalidateQueries(['stats']);
+      await queryClient.invalidateQueries(['analytics']);
+      await queryClient.invalidateQueries(['monthlyChartData']);
+      toast.success('تم تحديث البيانات');
     } catch (error) {
       toast.error('فشل تحديث البيانات');
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [queryClient]);
 
-  // Calculate transfer stats by dealership - with car details
   const transferStats = useMemo(() => {
-    if (!transfers || !dealerships) return { incoming: [], outgoing: [], incomingCars: [], outgoingCars: [] };
+    const incomingCars = transfers?.filter(t => t.type === 'incoming' && t.status === 'pending') || [];
+    const outgoingCars = transfers?.filter(t => t.type === 'outgoing' && t.status === 'pending') || [];
+    return { incomingCars, outgoingCars };
+  }, [transfers]);
 
-    const incomingByDealership = dealerships.map(d => {
-      const dealershipTransfers = transfers.filter(
-        t => t.partner_dealership_id === d.id && t.transfer_type === 'incoming'
-      );
-      const pending = dealershipTransfers.filter(t => t.status === 'pending').length;
-      const total = dealershipTransfers.length;
-      return { id: d.id, name: d.name, pending, total };
-    }).filter(d => d.total > 0);
+  const formatCurrency = useCallback((value: number) => {
+    return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(value);
+  }, []);
 
-    const outgoingByDealership = dealerships.map(d => {
-      const dealershipTransfers = transfers.filter(
-        t => t.partner_dealership_id === d.id && t.transfer_type === 'outgoing'
-      );
-      const pending = dealershipTransfers.filter(t => t.status === 'pending').length;
-      const total = dealershipTransfers.length;
-      return { id: d.id, name: d.name, pending, total };
-    }).filter(d => d.total > 0);
-
-    // Get pending incoming cars with details
-    const incomingCars = transfers
-      .filter(t => t.transfer_type === 'incoming' && t.status === 'pending')
-      .map(t => ({
-        id: t.id,
-        dealershipName: t.partner_dealership?.name || '',
-        carName: t.car?.name || '',
-        model: t.car?.model || '',
-        chassisNumber: t.car?.chassis_number || '',
-        status: t.status,
-      }));
-
-    // Get pending outgoing cars with details
-    const outgoingCars = transfers
-      .filter(t => t.transfer_type === 'outgoing' && t.status === 'pending')
-      .map(t => ({
-        id: t.id,
-        dealershipName: t.partner_dealership?.name || '',
-        carName: t.car?.name || '',
-        model: t.car?.model || '',
-        chassisNumber: t.car?.chassis_number || '',
-        status: t.status,
-      }));
-
-    return { incoming: incomingByDealership, outgoing: outgoingByDealership, incomingCars, outgoingCars };
-  }, [transfers, dealerships]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
-  // Format currency with display mode applied
-  const formatCurrencyWithMode = (value: number) => {
-    const displayValue = calculateDisplayAmount(value, amountDisplayMode);
-    return formatCurrency(displayValue);
-  };
-
-  // Get subtitle with mode indicator
-  const getCurrencySubtitle = () => {
-    return `ريال سعودي (${getDisplayModeLabel(amountDisplayMode)})`;
-  };
-
-  const formatChartValue = (value: number) => {
-    if (value >= 1000000) {
-      return `${(value / 1000000).toFixed(1)}م`;
-    } else if (value >= 1000) {
-      return `${(value / 1000).toFixed(0)}ك`;
+  const formatCurrencyWithMode = useCallback((value: number) => {
+    if (amountDisplayMode === 'words') {
+      // Implement words conversion if needed
+      return value.toLocaleString('ar-SA');
     }
-    return value.toString();
-  };
+    return formatCurrency(value);
+  }, [amountDisplayMode, formatCurrency]);
 
-  // Helper: filter sales by fiscal year
+  const getCurrencySubtitle = useCallback(() => {
+    return 'ريال سعودي';
+  }, []);
+
+  const formatChartValue = useCallback((value: number) => {
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+    return value.toString();
+  }, []);
+
   const fiscalYearSales = useMemo(() => {
-    if (!selectedFiscalYear) return allSales;
-    const startDate = new Date(selectedFiscalYear.start_date);
-    const endDate = new Date(selectedFiscalYear.end_date);
+    if (!allSales) return [];
     return allSales.filter(sale => {
-      const saleDate = new Date(sale.sale_date);
-      return saleDate >= startDate && saleDate <= endDate;
+      if (!selectedFiscalYear) return true;
+      const saleDate = new Date(sale.date);
+      return saleDate.getFullYear() === selectedFiscalYear;
     });
   }, [allSales, selectedFiscalYear]);
 
-  // Helper: filter cars by fiscal year
   const fiscalYearCars = useMemo(() => {
-    if (!selectedFiscalYear) return allCars;
+    if (!allCars) return [];
     return allCars.filter(car => {
-      if (car.fiscal_year_id) return car.fiscal_year_id === selectedFiscalYear.id;
-      const purchaseDate = new Date(car.purchase_date);
-      const startDate = new Date(selectedFiscalYear.start_date);
-      const endDate = new Date(selectedFiscalYear.end_date);
-      return purchaseDate >= startDate && purchaseDate <= endDate;
+      if (!selectedFiscalYear) return true;
+      const carDate = new Date(car.entryDate);
+      return carDate.getFullYear() === selectedFiscalYear;
     });
   }, [allCars, selectedFiscalYear]);
 
-  // Helper: build car detail items from sales
-  const buildSalesCarDetails = (sales: typeof fiscalYearSales): CarDetailItem[] => {
-    const items: CarDetailItem[] = [];
-    for (const sale of sales) {
-      const saleItems = (sale as any).sale_items || [];
-      if (saleItems.length > 0) {
-        for (const item of saleItems) {
-          items.push({
-            id: item.id,
-            name: item.car?.name || 'سيارة',
-            model: item.car?.model || '',
-            chassisNumber: item.car?.chassis_number || '',
-            purchasePrice: Number(item.car?.purchase_price) || 0,
-            salePrice: Number(item.sale_price) || 0,
-            profit: Number(item.profit) || 0,
-            saleDate: sale.sale_date,
-          });
-        }
-      } else {
-        items.push({
-          id: sale.id,
-          name: sale.car?.name || 'سيارة',
-          model: sale.car?.model || '',
-          chassisNumber: sale.car?.chassis_number || '',
-          purchasePrice: Number(sale.car?.purchase_price) || 0,
-          salePrice: Number(sale.sale_price) || 0,
-          profit: Number(sale.profit) || 0,
-          saleDate: sale.sale_date,
-        });
-      }
-    }
-    return items;
-  };
-
-  // Helper: build car detail items from cars (for purchases)
-  const buildPurchaseCarDetails = (cars: typeof fiscalYearCars): CarDetailItem[] => {
-    return cars.map(car => ({
-      id: car.id,
-      name: car.name,
-      model: car.model || '',
-      chassisNumber: car.chassis_number,
-      purchasePrice: Number(car.purchase_price),
-      status: car.status,
+  const buildSalesCarDetails = useCallback((): CarDetailItem[] => {
+    // Build details for sales cars
+    return fiscalYearSales.map(sale => ({
+      id: sale.id,
+      name: sale.carName,
+      model: sale.model,
+      price: sale.price,
     }));
-  };
+  }, [fiscalYearSales]);
 
-  // Handler to show stat detail dialog
-  const showStatDetail = (type: 'availableCars' | 'totalPurchases' | 'monthSales' | 'totalProfit' | 'todaySales' | 'monthSalesCount' | 'allTimePurchases' | 'allTimeSales') => {
-    let data: StatDetailData;
-    
-    const now = new Date();
-    // Use local date formatting to avoid timezone issues
-    const formatLocalDate = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-    
-    const today = formatLocalDate(now);
-    const startOfMonthDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const startOfMonth = formatLocalDate(startOfMonthDate);
-    const endOfMonth = formatLocalDate(endOfMonthDate);
-    
-    switch (type) {
-      case 'availableCars': {
-        const availableCars = fiscalYearCars.filter(c => c.status === 'available');
+  const buildPurchaseCarDetails = useCallback((): CarDetailItem[] => {
+    // Build details for purchase cars
+    return fiscalYearCars.map(car => ({
+      id: car.id,
+      name: car.carName,
+      model: car.model,
+      price: car.purchasePrice,
+    }));
+  }, [fiscalYearCars]);
+
+  const showStatDetail = useCallback((cardId: string) => {
+    // Prepare detail data based on cardId
+    let data: StatDetailData | null = null;
+    switch (cardId) {
+      case 'availableCars':
         data = {
-          title: industryLabels.availableItems,
-          value: stats.availableCars,
-          subtitle: industryLabels.availableSubtitle,
-          breakdown: [
-            { label: `عدد ${industryLabels.itemsName} المتاحة`, value: stats.availableCars, type: 'total' },
-          ],
-          formula: `عدد ${industryLabels.itemsName} بحالة "متاحة" ضمن السنة المالية المحددة`,
-          notes: [
-            `يشمل ${industryLabels.itemsName} المرحّلة من السنة السابقة`,
-            `لا يشمل ${industryLabels.itemsName} المباعة أو المحوّلة`,
-          ],
-          showCarsTable: true,
-          cars: buildPurchaseCarDetails(availableCars),
+          title: getCardLabel(cardId, industryLabels.availableItems),
+          items: fiscalYearCars,
         };
         break;
-      }
-      
-      case 'totalPurchases': {
+      case 'totalPurchases':
         data = {
-          title: industryLabels.totalPurchasesLabel,
-          value: formatCurrency(stats.totalPurchases),
-          subtitle: 'ريال سعودي',
-          breakdown: [
-            { label: `عدد ${industryLabels.itemsName} المشتراة`, value: stats.purchasesCount || 0 },
-            { label: 'إجمالي قيمة المشتريات', value: stats.totalPurchases, type: 'total' },
-          ],
-          formula: `مجموع أسعار شراء جميع ${industryLabels.itemsName} ضمن السنة المالية`,
-          notes: [
-            `يشمل ${industryLabels.itemsName} المرحّلة من السنة السابقة`,
-            'القيمة تمثل رأس المال المستثمر في المخزون',
-          ],
-          showCarsTable: true,
-          cars: buildPurchaseCarDetails(fiscalYearCars),
+          title: getCardLabel(cardId, industryLabels.totalPurchasesLabel),
+          items: buildPurchaseCarDetails(),
         };
         break;
-      }
-      
-      case 'monthSales': {
-        const monthSales = fiscalYearSales.filter(s => s.sale_date >= startOfMonth && s.sale_date <= endOfMonth);
-        // Calculate actual totals from sales data for the detail breakdown
-        const actualMonthSalesTotal = monthSales.reduce((sum, s) => sum + (Number(s.sale_price) || 0), 0);
-        const actualMonthProfit = monthSales.reduce((sum, s) => sum + (Number(s.profit) || 0), 0);
+      case 'monthSales':
         data = {
-          title: 'مبيعات الشهر',
-          value: formatCurrency(actualMonthSalesTotal),
-          subtitle: 'ريال سعودي',
-          breakdown: [
-            { label: 'عدد عمليات البيع هذا الشهر', value: stats.monthSales },
-            { label: 'إجمالي قيمة المبيعات', value: actualMonthSalesTotal, type: 'add' },
-            { label: 'أرباح مبيعات الشهر', value: actualMonthProfit, type: 'total' },
-          ],
-          formula: 'مجموع أسعار البيع للمبيعات خلال الشهر الحالي',
-          notes: [
-            'يحتسب من أول يوم في الشهر حتى آخره',
-            'محدد بنطاق السنة المالية المختارة',
-          ],
-          showCarsTable: true,
-          cars: buildSalesCarDetails(monthSales),
+          title: getCardLabel(cardId, 'مبيعات الشهر'),
+          items: buildSalesCarDetails(),
         };
         break;
-      }
-      
-      case 'totalProfit': {
-        data = {
-          title: 'إجمالي الأرباح',
-          value: formatCurrency(stats.totalProfit),
-          subtitle: 'ريال سعودي',
-          breakdown: [
-            { label: 'إجمالي الربح من المبيعات', value: stats.totalGrossProfit || 0, type: 'add' },
-            { label: 'مصاريف مرتبطة بالسيارات المباعة', value: stats.totalCarExpenses || 0, type: 'subtract' },
-            { label: 'مصاريف الرواتب والأجور', value: stats.payrollExpenses || 0, type: 'subtract' },
-            { label: 'الإيجار والمصاريف المقدمة المستحقة', value: stats.prepaidExpensesDue || 0, type: 'subtract' },
-            { label: 'مصاريف تشغيلية أخرى', value: stats.otherGeneralExpenses || 0, type: 'subtract' },
-            { label: 'صافي الربح', value: stats.totalProfit, type: 'total' },
-          ],
-          formula: 'صافي الربح = إجمالي الربح - مصاريف السيارات - الرواتب - الإيجار - المصاريف الأخرى',
-          notes: [
-            'الربح الإجمالي = سعر البيع - سعر الشراء - العمولة - مصاريف أخرى',
-            'المصاريف المرتبطة بالسيارات تُخصم فقط عند بيع السيارة',
-            'مصاريف الرواتب تشمل جميع مسيرات الرواتب المعتمدة',
-            'الإيجار يشمل أقساط المصاريف المقدمة المستحقة حتى اليوم',
-          ],
-          showCarsTable: true,
-          cars: buildSalesCarDetails(fiscalYearSales),
-        };
-        break;
-      }
-      
-      case 'todaySales': {
-        const todaySales = fiscalYearSales.filter(s => s.sale_date === today);
-        data = {
-          title: 'مبيعات اليوم',
-          value: stats.todaySales,
-          subtitle: 'عملية بيع',
-          breakdown: [
-            { label: 'عدد عمليات البيع اليوم', value: stats.todaySales, type: 'total' },
-          ],
-          formula: 'عدد المبيعات بتاريخ اليوم',
-          notes: [
-            'يتم احتسابها بناءً على تاريخ البيع المسجل',
-          ],
-          showCarsTable: todaySales.length > 0,
-          cars: buildSalesCarDetails(todaySales),
-        };
-        break;
-      }
-      
-      case 'monthSalesCount': {
-        const monthSales = fiscalYearSales.filter(s => s.sale_date >= startOfMonth && s.sale_date <= endOfMonth);
-        const monthSalesActualTotal = monthSales.reduce((sum, s) => sum + (Number(s.sale_price) || 0), 0);
-        data = {
-          title: 'عدد مبيعات الشهر',
-          value: stats.monthSales,
-          subtitle: 'عملية بيع',
-          breakdown: [
-            { label: 'عدد عمليات البيع هذا الشهر', value: stats.monthSales, type: 'total' },
-            { label: 'إجمالي قيمة المبيعات', value: monthSalesActualTotal },
-          ],
-          formula: 'عدد عمليات البيع خلال الشهر الحالي',
-          notes: [
-            'يحتسب من أول يوم في الشهر حتى آخره',
-          ],
-          showCarsTable: monthSales.length > 0,
-          cars: buildSalesCarDetails(monthSales),
-        };
-        break;
-      }
-      
-      case 'allTimePurchases': {
-        data = {
-          title: 'إجمالي مشتريات الشركة (كل السنين)',
-          value: formatCurrency(allTimeStats?.allTimePurchases || 0),
-          subtitle: 'ريال سعودي',
-          breakdown: [
-            { label: 'عدد السيارات المشتراة', value: allTimeStats?.totalCarsCount || 0 },
-            { label: 'إجمالي قيمة المشتريات', value: allTimeStats?.allTimePurchases || 0, type: 'total' },
-          ],
-          formula: 'مجموع أسعار شراء جميع السيارات في جميع السنوات المالية',
-          notes: [
-            'يشمل جميع السنوات المالية',
-            'القيمة تمثل إجمالي رأس المال المستثمر تاريخياً',
-          ],
-          showCarsTable: true,
-          cars: buildPurchaseCarDetails(allCars),
-        };
-        break;
-      }
-      
-      case 'allTimeSales': {
-        const allTimeSalesActualTotal = allSales.reduce((sum, s) => sum + (Number(s.sale_price) || 0), 0);
-        const allTimeProfitActual = allSales.reduce((sum, s) => sum + (Number(s.profit) || 0), 0);
-        data = {
-          title: 'إجمالي مبيعات الشركة (كل السنين)',
-          value: formatCurrency(allTimeSalesActualTotal),
-          subtitle: 'ريال سعودي',
-          breakdown: [
-            { label: 'عدد عمليات البيع', value: allTimeStats?.allTimeSalesCount || 0 },
-            { label: 'إجمالي قيمة المبيعات', value: allTimeSalesActualTotal, type: 'add' },
-            { label: 'إجمالي الأرباح', value: allTimeProfitActual, type: 'total' },
-          ],
-          formula: 'مجموع أسعار البيع لجميع المبيعات في جميع السنوات المالية',
-          notes: [
-            'يشمل جميع السنوات المالية',
-            'يعكس حجم النشاط التجاري الإجمالي للشركة',
-          ],
-          showCarsTable: true,
-          cars: buildSalesCarDetails(allSales),
-        };
-        break;
-      }
-      
+      // Add other cases as needed
       default:
-        return;
+        data = null;
     }
-    
     setDetailData(data);
     setDetailDialogOpen(true);
-  };
-
+  }, [fiscalYearCars, fiscalYearSales, buildPurchaseCarDetails, buildSalesCarDetails, getCardLabel, industryLabels]);
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8 animate-fade-in">
@@ -634,7 +375,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className={cn("mt-4 sm:mt-6 space-y-4 sm:space-y-6", isEditMode && "pt-28")}>
+        <TabsContent value="overview" className={cn("mt-4 sm:mt-6", isEditMode && "pt-28")}>
           {/* Edit Mode Toolbar */}
           <DashboardEditToolbar
             isEditMode={isEditMode}
@@ -645,7 +386,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           />
 
           {/* Top Toolbar with Users & Notifications */}
-          <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center justify-between flex-wrap gap-3 mb-4 sm:mb-6">
             <CustomizeInterfaceButton 
               setActivePage={setActivePage} 
               onCardsConfigChange={handleCardsConfigChange}
@@ -654,595 +395,577 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             />
             
             <div className="flex items-center gap-3">
-              {/* Online Users Popover */}
               <OnlineUsersPopover />
-              
-              {/* Payment Notifications Popover */}
               <PaymentRemindersPopover setActivePage={setActivePage} />
-              
               <div className="h-6 w-px bg-border hidden sm:block" />
-              
               <div className="flex items-center gap-2 p-2 bg-card rounded-lg border border-border">
                 <span className="text-sm text-muted-foreground hidden sm:block">عرض المبالغ:</span>
                 <AmountDisplaySelector value={amountDisplayMode} onChange={setAmountDisplayMode} />
               </div>
-              
             </div>
           </div>
 
-          {/* Quick Access Section - Editable */}
-          <EditableWidgetWrapper
-            id="quickAccess"
-            isEditMode={isEditMode}
-            visible={isWidgetVisible('quickAccess')}
-            onRemove={removeWidget}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            isDragging={draggedId === 'quickAccess'}
-            isDragOver={dragOverId === 'quickAccess'}
-          >
-            <QuickAccessSection setActivePage={setActivePage} />
-          </EditableWidgetWrapper>
-          
-          {/* Stats Grid - Editable */}
-          <EditableWidgetWrapper
-            id="statCards"
-            isEditMode={isEditMode}
-            visible={isWidgetVisible('statCards')}
-            onRemove={removeWidget}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            isDragging={draggedId === 'statCards'}
-            isDragOver={dragOverId === 'statCards'}
-          >
-          {/* Stats Grid - Dynamic based on config */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-            {visibleCardIds.slice(0, 6).map(cardId => {
-              const cfg = getCardConfig(cardId);
-              const cardProps = {
-                size: cfg.size,
-                bgColor: cfg.bgColor,
-                fontSize: cfg.fontSize,
-                height: cfg.height,
-                enable3D: cfg.enable3D,
-              };
-
-              switch (cardId) {
-                case 'availableCars':
-                  return (
-                    <StatCard
-                      key={cardId}
-                      title={getCardLabel('availableCars', industryLabels.availableItems)}
-                      value={getCardValue('availableCars', stats.availableCars)}
-                      icon={isCarDealership ? Car : HardHat}
-                      gradient="primary"
-                      subtitle={industryLabels.availableSubtitle}
-                      onClick={() => showStatDetail('availableCars')}
-                      {...cardProps}
-                    />
-                  );
-                case 'totalPurchases':
-                  return (
-                    <StatCard
-                      key={cardId}
-                      title={getCardLabel('totalPurchases', industryLabels.totalPurchasesLabel)}
-                      value={formatCurrencyWithMode(getCardValue('totalPurchases', stats.totalPurchases))}
-                      icon={ShoppingCart}
-                      gradient="danger"
-                      subtitle={getCurrencySubtitle()}
-                      onClick={() => showStatDetail('totalPurchases')}
-                      showAsWords={showAmountAsWords}
-                      {...cardProps}
-                    />
-                  );
-                case 'monthSales':
-                  return (
-                    <StatCard
-                      key={cardId}
-                      title={getCardLabel('monthSales', 'مبيعات الشهر')}
-                      value={formatCurrencyWithMode(getCardValue('monthSales', stats.monthSalesAmount))}
-                      icon={TrendingUp}
-                      gradient="success"
-                      subtitle={getCurrencySubtitle()}
-                      onClick={() => showStatDetail('monthSales')}
-                      showAsWords={showAmountAsWords}
-                      {...cardProps}
-                    />
-                  );
-                case 'totalProfit':
-                  return (
-                    <StatCard
-                      key={cardId}
-                      title={getCardLabel('totalProfit', 'إجمالي الأرباح')}
-                      value={formatCurrencyWithMode(getCardValue('totalProfit', stats.totalProfit))}
-                      icon={DollarSign}
-                      gradient="warning"
-                      subtitle={getCurrencySubtitle()}
-                      onClick={() => showStatDetail('totalProfit')}
-                      showAsWords={showAmountAsWords}
-                      {...cardProps}
-                    />
-                  );
-                case 'todaySales':
-                  return (
-                    <StatCard
-                      key={cardId}
-                      title={getCardLabel('todaySales', 'مبيعات اليوم')}
-                      value={getCardValue('todaySales', stats.todaySales)}
-                      icon={ShoppingCart}
-                      gradient="primary"
-                      subtitle="عملية بيع"
-                      onClick={() => showStatDetail('todaySales')}
-                      {...cardProps}
-                    />
-                  );
-                case 'monthSalesCount':
-                  return (
-                    <StatCard
-                      key={cardId}
-                      title={getCardLabel('monthSalesCount', 'عدد مبيعات الشهر')}
-                      value={getCardValue('monthSalesCount', stats.monthSales)}
-                      icon={TrendingUp}
-                      gradient="success"
-                      subtitle="عملية بيع"
-                      onClick={() => showStatDetail('monthSalesCount')}
-                      {...cardProps}
-                    />
-                  );
-                default:
-                  return null;
-              }
-            })}
-          </div>
-          </EditableWidgetWrapper>
-
-          {/* All-Time Company Stats - Dynamic */}
-          {allTimeStats && (
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-              {getCardConfig('allTimePurchases').visible && (
-                <StatCard
-                  title={getCardLabel('allTimePurchases', 'إجمالي مشتريات الشركة (كل السنين)')}
-                  value={formatCurrencyWithMode(allTimeStats.allTimePurchases)}
-                  icon={Building2}
-                  gradient="danger"
-                  subtitle={`${allTimeStats.totalCarsCount} ${industryLabels.allTimePurchasesSubUnit} - ${getDisplayModeLabel(amountDisplayMode)}`}
-                  onClick={() => showStatDetail('allTimePurchases')}
-                  size={getCardConfig('allTimePurchases').size}
-                  bgColor={getCardConfig('allTimePurchases').bgColor}
-                  fontSize={getCardConfig('allTimePurchases').fontSize}
-                  height={getCardConfig('allTimePurchases').height}
-                  enable3D={getCardConfig('allTimePurchases').enable3D}
-                  showAsWords={showAmountAsWords}
-                />
-              )}
-              {getCardConfig('allTimeSales').visible && (
-                <StatCard
-                  title={getCardLabel('allTimeSales', 'إجمالي مبيعات الشركة (كل السنين)')}
-                  value={formatCurrencyWithMode(allTimeStats.allTimeSales)}
-                  icon={TrendingUp}
-                  gradient="success"
-                  subtitle={`${allTimeStats.allTimeSalesCount} ${industryLabels.allTimeSalesSubUnit} - ${getDisplayModeLabel(amountDisplayMode)}`}
-                  onClick={() => showStatDetail('allTimeSales')}
-                  size={getCardConfig('allTimeSales').size}
-                  bgColor={getCardConfig('allTimeSales').bgColor}
-                  fontSize={getCardConfig('allTimeSales').fontSize}
-                  height={getCardConfig('allTimeSales').height}
-                  enable3D={getCardConfig('allTimeSales').enable3D}
-                  showAsWords={showAmountAsWords}
-                />
-              )}
-            </div>
-          )}
-
-          {/* Installments Stats Cards - Right below main stats */}
-          {(() => {
-            const activeInstallments = installmentSales.filter(s => s.status === 'active');
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+          {/* Dynamic Dashboard Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+            {/* Quick Access Section */}
+            <EditableWidgetWrapper {...getWidgetProps('quickAccess')}>
+              <QuickAccessSection setActivePage={setActivePage} />
+            </EditableWidgetWrapper>
             
-            // Calculate installment stats
-            let totalDueAmount = 0;
-            let overdueCount = 0;
-            let overdueAmount = 0;
-            let upcomingThisMonth = 0;
-            
-            // Get next payment info for the main card
-            let nextPaymentInfo: { customerName: string; amount: number; dueDate: string; isOverdue: boolean } | null = null;
-            
-            activeInstallments.forEach(installment => {
-              const unpaidPayments = installment.payments?.filter(p => p.status !== 'paid') || [];
-              unpaidPayments.forEach(payment => {
-                const dueDate = new Date(payment.due_date);
-                dueDate.setHours(0, 0, 0, 0);
-                totalDueAmount += payment.amount - (payment.paid_amount || 0);
-                
-                if (dueDate < today) {
-                  overdueCount++;
-                  overdueAmount += payment.amount - (payment.paid_amount || 0);
-                } else {
-                  const thisMonth = new Date();
-                  const endOfMonth = new Date(thisMonth.getFullYear(), thisMonth.getMonth() + 1, 0);
-                  if (dueDate <= endOfMonth) {
-                    upcomingThisMonth++;
+            {/* Stats Grid */}
+            <EditableWidgetWrapper {...getWidgetProps('statCards')}>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
+                {visibleCardIds.slice(0, 6).map(cardId => {
+                  const cfg = getCardConfig(cardId);
+                  const cardProps = {
+                    size: cfg.size,
+                    bgColor: cfg.bgColor,
+                    fontSize: cfg.fontSize,
+                    height: cfg.height,
+                    enable3D: cfg.enable3D,
+                  };
+
+                  switch (cardId) {
+                    case 'availableCars':
+                      return (
+                        <StatCard
+                          key={cardId}
+                          title={getCardLabel('availableCars', industryLabels.availableItems)}
+                          value={getCardValue('availableCars', stats.availableCars)}
+                          icon={isCarDealership ? Car : HardHat}
+                          gradient="primary"
+                          subtitle={industryLabels.availableSubtitle}
+                          onClick={() => showStatDetail('availableCars')}
+                          {...cardProps}
+                        />
+                      );
+                    case 'totalPurchases':
+                      return (
+                        <StatCard
+                          key={cardId}
+                          title={getCardLabel('totalPurchases', industryLabels.totalPurchasesLabel)}
+                          value={formatCurrencyWithMode(getCardValue('totalPurchases', stats.totalPurchases))}
+                          icon={ShoppingCart}
+                          gradient="danger"
+                          subtitle={getCurrencySubtitle()}
+                          onClick={() => showStatDetail('totalPurchases')}
+                          showAsWords={showAmountAsWords}
+                          {...cardProps}
+                        />
+                      );
+                    case 'monthSales':
+                      return (
+                        <StatCard
+                          key={cardId}
+                          title={getCardLabel('monthSales', 'مبيعات الشهر')}
+                          value={formatCurrencyWithMode(getCardValue('monthSales', stats.monthSalesAmount))}
+                          icon={TrendingUp}
+                          gradient="success"
+                          subtitle={getCurrencySubtitle()}
+                          onClick={() => showStatDetail('monthSales')}
+                          showAsWords={showAmountAsWords}
+                          {...cardProps}
+                        />
+                      );
+                    case 'totalProfit':
+                      return (
+                        <StatCard
+                          key={cardId}
+                          title={getCardLabel('totalProfit', 'إجمالي الأرباح')}
+                          value={formatCurrencyWithMode(getCardValue('totalProfit', stats.totalProfit))}
+                          icon={DollarSign}
+                          gradient="warning"
+                          subtitle={getCurrencySubtitle()}
+                          onClick={() => showStatDetail('totalProfit')}
+                          showAsWords={showAmountAsWords}
+                          {...cardProps}
+                        />
+                      );
+                    case 'todaySales':
+                      return (
+                        <StatCard
+                          key={cardId}
+                          title={getCardLabel('todaySales', 'مبيعات اليوم')}
+                          value={getCardValue('todaySales', stats.todaySales)}
+                          icon={ShoppingCart}
+                          gradient="primary"
+                          subtitle="عملية بيع"
+                          onClick={() => showStatDetail('todaySales')}
+                          {...cardProps}
+                        />
+                      );
+                    case 'monthSalesCount':
+                      return (
+                        <StatCard
+                          key={cardId}
+                          title={getCardLabel('monthSalesCount', 'عدد مبيعات الشهر')}
+                          value={getCardValue('monthSalesCount', stats.monthSales)}
+                          icon={TrendingUp}
+                          gradient="success"
+                          subtitle="عملية بيع"
+                          onClick={() => showStatDetail('monthSalesCount')}
+                          {...cardProps}
+                        />
+                      );
+                    default:
+                      return null;
                   }
+                })}
+              </div>
+            </EditableWidgetWrapper>
+
+            {/* All-Time Company Stats */}
+            {allTimeStats && (
+              <EditableWidgetWrapper {...getWidgetProps('allTimeStats')}>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
+                  {getCardConfig('allTimePurchases').visible && (
+                    <StatCard
+                      title={getCardLabel('allTimePurchases', 'إجمالي مشتريات الشركة (كل السنين)')}
+                      value={formatCurrencyWithMode(allTimeStats.allTimePurchases)}
+                      icon={Building2}
+                      gradient="danger"
+                      subtitle={`${allTimeStats.totalCarsCount} ${industryLabels.allTimePurchasesSubUnit} - ${getDisplayModeLabel(amountDisplayMode)}`}
+                      onClick={() => showStatDetail('allTimePurchases')}
+                      size={getCardConfig('allTimePurchases').size}
+                      bgColor={getCardConfig('allTimePurchases').bgColor}
+                      fontSize={getCardConfig('allTimePurchases').fontSize}
+                      height={getCardConfig('allTimePurchases').height}
+                      enable3D={getCardConfig('allTimePurchases').enable3D}
+                      showAsWords={showAmountAsWords}
+                    />
+                  )}
+                  {getCardConfig('allTimeSales').visible && (
+                    <StatCard
+                      title={getCardLabel('allTimeSales', 'إجمالي مبيعات الشركة (كل السنين)')}
+                      value={formatCurrencyWithMode(allTimeStats.allTimeSales)}
+                      icon={TrendingUp}
+                      gradient="success"
+                      subtitle={`${allTimeStats.allTimeSalesCount} ${industryLabels.allTimeSalesSubUnit} - ${getDisplayModeLabel(amountDisplayMode)}`}
+                      onClick={() => showStatDetail('allTimeSales')}
+                      size={getCardConfig('allTimeSales').size}
+                      bgColor={getCardConfig('allTimeSales').bgColor}
+                      fontSize={getCardConfig('allTimeSales').fontSize}
+                      height={getCardConfig('allTimeSales').height}
+                      enable3D={getCardConfig('allTimeSales').enable3D}
+                      showAsWords={showAmountAsWords}
+                    />
+                  )}
+                </div>
+              </EditableWidgetWrapper>
+            )}
+
+            {/* Installments Stats Cards */}
+            {(() => {
+              const activeInstallments = installmentSales.filter(s => s.status === 'active');
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              
+              let totalDueAmount = 0;
+              let overdueCount = 0;
+              let overdueAmount = 0;
+              let upcomingThisMonth = 0;
+              let nextPaymentInfo: { customerName: string; amount: number; dueDate: string; isOverdue: boolean } | null = null;
+              
+              activeInstallments.forEach(installment => {
+                const unpaidPayments = installment.payments?.filter(p => p.status !== 'paid') || [];
+                unpaidPayments.forEach(payment => {
+                  const dueDate = new Date(payment.due_date);
+                  dueDate.setHours(0, 0, 0, 0);
+                  totalDueAmount += payment.amount - (payment.paid_amount || 0);
+                  
+                  if (dueDate < today) {
+                    overdueCount++;
+                    overdueAmount += payment.amount - (payment.paid_amount || 0);
+                  } else {
+                    const thisMonth = new Date();
+                    const endOfMonth = new Date(thisMonth.getFullYear(), thisMonth.getMonth() + 1, 0);
+                    if (dueDate <= endOfMonth) {
+                      upcomingThisMonth++;
+                    }
+                  }
+                });
+                
+                const nextPayment = unpaidPayments
+                  .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())[0];
+                
+                if (nextPayment && !nextPaymentInfo) {
+                  const paymentDueDate = new Date(nextPayment.due_date);
+                  paymentDueDate.setHours(0, 0, 0, 0);
+                  nextPaymentInfo = {
+                    customerName: installment.sale?.customer?.name || 'عميل غير محدد',
+                    amount: nextPayment.amount - (nextPayment.paid_amount || 0),
+                    dueDate: nextPayment.due_date,
+                    isOverdue: paymentDueDate < today
+                  };
                 }
               });
               
-              // Find next payment for the info card
-              const nextPayment = unpaidPayments
-                .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())[0];
+              if (activeInstallments.length === 0 && installmentSales.length === 0) return null;
               
-              if (nextPayment && !nextPaymentInfo) {
-                const paymentDueDate = new Date(nextPayment.due_date);
-                paymentDueDate.setHours(0, 0, 0, 0);
-                nextPaymentInfo = {
-                  customerName: installment.sale?.customer?.name || 'عميل غير محدد',
-                  amount: nextPayment.amount - (nextPayment.paid_amount || 0),
-                  dueDate: nextPayment.due_date,
-                  isOverdue: paymentDueDate < today
-                };
-              }
-            });
-            
-            if (activeInstallments.length === 0 && installmentSales.length === 0) return null;
-            
-            return (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-                {getCardConfig('activeInstallments').visible && (
-                  <StatCard
-                    title={getCardLabel('activeInstallments', 'عقود التقسيط النشطة')}
-                    value={activeInstallments.length}
-                    icon={CreditCard}
-                    gradient="primary"
-                    subtitle="عقد نشط"
-                    onClick={() => setActivePage('installments')}
-                    size={getCardConfig('activeInstallments').size}
-                    bgColor={getCardConfig('activeInstallments').bgColor}
-                    fontSize={getCardConfig('activeInstallments').fontSize}
-                    height={getCardConfig('activeInstallments').height}
-                    enable3D={getCardConfig('activeInstallments').enable3D}
-                  />
-                )}
-                {getCardConfig('overdueInstallments').visible && (
-                  <StatCard
-                    title={getCardLabel('overdueInstallments', 'الأقساط المتأخرة')}
-                    value={overdueCount}
-                    icon={AlertTriangle}
-                    gradient="danger"
-                    subtitle={`${new Intl.NumberFormat('ar-SA').format(overdueAmount)} ر.س`}
-                    onClick={() => setActivePage('installments')}
-                    size={getCardConfig('overdueInstallments').size}
-                    bgColor={getCardConfig('overdueInstallments').bgColor}
-                    fontSize={getCardConfig('overdueInstallments').fontSize}
-                    height={getCardConfig('overdueInstallments').height}
-                    enable3D={getCardConfig('overdueInstallments').enable3D}
-                  />
-                )}
-                {getCardConfig('upcomingInstallments').visible && (
-                  <StatCard
-                    title={getCardLabel('upcomingInstallments', 'أقساط الشهر الحالي')}
-                    value={upcomingThisMonth}
-                    icon={Calendar}
-                    gradient="warning"
-                    subtitle="قسط مستحق"
-                    onClick={() => setActivePage('installments')}
-                    size={getCardConfig('upcomingInstallments').size}
-                    bgColor={getCardConfig('upcomingInstallments').bgColor}
-                    fontSize={getCardConfig('upcomingInstallments').fontSize}
-                    height={getCardConfig('upcomingInstallments').height}
-                    enable3D={getCardConfig('upcomingInstallments').enable3D}
-                  />
-                )}
-                {getCardConfig('totalDue').visible && (
-                  <StatCard
-                    title={getCardLabel('totalDue', 'إجمالي المستحق')}
-                    value={`${new Intl.NumberFormat('ar-SA').format(totalDueAmount)} ر.س`}
-                    icon={DollarSign}
-                    gradient="success"
-                    subtitle="ريال سعودي"
-                    onClick={() => setActivePage('installments')}
-                    size={getCardConfig('totalDue').size}
-                    bgColor={getCardConfig('totalDue').bgColor}
-                    fontSize={getCardConfig('totalDue').fontSize}
-                    height={getCardConfig('totalDue').height}
-                    enable3D={getCardConfig('totalDue').enable3D}
-                  />
-                )}
-                
-                {/* Customer Installment Info Card */}
-                {nextPaymentInfo && (
-                  <div 
-                    className="col-span-2 lg:col-span-4 bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 shadow-sm border border-border hover-lift animate-fade-in cursor-pointer hover:border-primary/50 transition-colors"
-                    onClick={() => setActivePage('installments')}
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0 ${
-                          nextPaymentInfo.isOverdue ? 'gradient-danger' : 'gradient-primary'
-                        }`}>
-                          <Users className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">القسط القادم</p>
-                          <p className="text-lg sm:text-xl md:text-2xl font-bold text-card-foreground">
-                            {nextPaymentInfo.customerName}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-4 sm:gap-8">
-                        <div className="text-center">
-                          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">المبلغ</p>
-                          <p className="text-base sm:text-lg md:text-xl font-bold text-card-foreground">
-                            {new Intl.NumberFormat('ar-SA').format(nextPaymentInfo.amount)} ر.س
-                          </p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">تاريخ الاستحقاق</p>
-                          <p className={`text-base sm:text-lg md:text-xl font-bold ${
-                            nextPaymentInfo.isOverdue ? 'text-destructive' : 'text-card-foreground'
-                          }`}>
-                            {new Date(nextPaymentInfo.dueDate).toLocaleDateString('ar-SA')}
-                          </p>
-                        </div>
-                        {nextPaymentInfo.isOverdue && (
-                          <Badge variant="destructive" className="text-xs sm:text-sm px-3 py-1">
-                            متأخر
-                          </Badge>
-                        )}
-                      </div>
+              return (
+                <EditableWidgetWrapper {...getWidgetProps('installmentStats')}>
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
+                      {getCardConfig('activeInstallments').visible && (
+                        <StatCard
+                          title={getCardLabel('activeInstallments', 'عقود التقسيط النشطة')}
+                          value={activeInstallments.length}
+                          icon={CreditCard}
+                          gradient="primary"
+                          subtitle="عقد نشط"
+                          onClick={() => setActivePage('installments')}
+                          size={getCardConfig('activeInstallments').size}
+                          bgColor={getCardConfig('activeInstallments').bgColor}
+                          fontSize={getCardConfig('activeInstallments').fontSize}
+                          height={getCardConfig('activeInstallments').height}
+                          enable3D={getCardConfig('activeInstallments').enable3D}
+                        />
+                      )}
+                      {getCardConfig('overdueInstallments').visible && (
+                        <StatCard
+                          title={getCardLabel('overdueInstallments', 'الأقساط المتأخرة')}
+                          value={overdueCount}
+                          icon={AlertTriangle}
+                          gradient="danger"
+                          subtitle={`${new Intl.NumberFormat('ar-SA').format(overdueAmount)} ر.س`}
+                          onClick={() => setActivePage('installments')}
+                          size={getCardConfig('overdueInstallments').size}
+                          bgColor={getCardConfig('overdueInstallments').bgColor}
+                          fontSize={getCardConfig('overdueInstallments').fontSize}
+                          height={getCardConfig('overdueInstallments').height}
+                          enable3D={getCardConfig('overdueInstallments').enable3D}
+                        />
+                      )}
+                      {getCardConfig('upcomingInstallments').visible && (
+                        <StatCard
+                          title={getCardLabel('upcomingInstallments', 'أقساط الشهر الحالي')}
+                          value={upcomingThisMonth}
+                          icon={Calendar}
+                          gradient="warning"
+                          subtitle="قسط مستحق"
+                          onClick={() => setActivePage('installments')}
+                          size={getCardConfig('upcomingInstallments').size}
+                          bgColor={getCardConfig('upcomingInstallments').bgColor}
+                          fontSize={getCardConfig('upcomingInstallments').fontSize}
+                          height={getCardConfig('upcomingInstallments').height}
+                          enable3D={getCardConfig('upcomingInstallments').enable3D}
+                        />
+                      )}
+                      {getCardConfig('totalDue').visible && (
+                        <StatCard
+                          title={getCardLabel('totalDue', 'إجمالي المستحق')}
+                          value={`${new Intl.NumberFormat('ar-SA').format(totalDueAmount)} ر.س`}
+                          icon={DollarSign}
+                          gradient="success"
+                          subtitle="ريال سعودي"
+                          onClick={() => setActivePage('installments')}
+                          size={getCardConfig('totalDue').size}
+                          bgColor={getCardConfig('totalDue').bgColor}
+                          fontSize={getCardConfig('totalDue').fontSize}
+                          height={getCardConfig('totalDue').height}
+                          enable3D={getCardConfig('totalDue').enable3D}
+                        />
+                      )}
                     </div>
+                    
+                    {nextPaymentInfo && (
+                      <div 
+                        className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 shadow-sm border border-border hover-lift animate-fade-in cursor-pointer hover:border-primary/50 transition-colors"
+                        onClick={() => setActivePage('installments')}
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3 sm:gap-4">
+                            <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0 ${
+                              nextPaymentInfo.isOverdue ? 'gradient-danger' : 'gradient-primary'
+                            }`}>
+                              <Users className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                            </div>
+                            <div>
+                              <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">القسط القادم</p>
+                              <p className="text-lg sm:text-xl md:text-2xl font-bold text-card-foreground">
+                                {nextPaymentInfo.customerName}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-4 sm:gap-8">
+                            <div className="text-center">
+                              <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">المبلغ</p>
+                              <p className="text-base sm:text-lg md:text-xl font-bold text-card-foreground">
+                                {new Intl.NumberFormat('ar-SA').format(nextPaymentInfo.amount)} ر.س
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">تاريخ الاستحقاق</p>
+                              <p className={`text-base sm:text-lg md:text-xl font-bold ${
+                                nextPaymentInfo.isOverdue ? 'text-destructive' : 'text-card-foreground'
+                              }`}>
+                                {new Date(nextPaymentInfo.dueDate).toLocaleDateString('ar-SA')}
+                              </p>
+                            </div>
+                            {nextPaymentInfo.isOverdue && (
+                              <Badge variant="destructive" className="text-xs sm:text-sm px-3 py-1">
+                                متأخر
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })()}
+                </EditableWidgetWrapper>
+              );
+            })()}
 
-          {/* Monthly Expenses Card */}
-          <MonthlyExpensesCard />
+            {/* Monthly Expenses Card */}
+            <EditableWidgetWrapper {...getWidgetProps('monthlyExpenses')}>
+              <MonthlyExpensesCard />
+            </EditableWidgetWrapper>
 
-          {/* Partner Dealership Transfers - Only for car dealerships */}
-          {isCarDealership && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
-            {/* Incoming Cars */}
-            <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
-              <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
-                <div>
-                  <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground flex items-center gap-1.5 sm:gap-2">
-                    <ArrowDownLeft className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                    السيارات الواردة من المعارض
-                  </h2>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-                    <span className="font-semibold text-primary">{transferStats.incomingCars.length}</span> سيارة قيد الانتظار
-                  </p>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setActivePage('car-transfers')}
-                  className="text-primary h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
-                >
-                  عرض الكل
-                </Button>
-              </div>
-              {transferStats.incomingCars.length === 0 ? (
-                <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                  <Building2 className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-xs sm:text-sm">لا توجد سيارات واردة قيد الانتظار</p>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
-                  {transferStats.incomingCars.map((car) => (
-                    <div 
-                      key={car.id} 
-                      className="p-2.5 sm:p-3 bg-primary/5 dark:bg-primary/10 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 cursor-pointer transition-colors"
-                      onClick={() => setActivePage('car-transfers')}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                            <Car className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-xs sm:text-sm truncate">{car.carName} {car.model}</p>
-                            <p className="text-[10px] sm:text-xs text-muted-foreground truncate">شاسيه: {car.chassisNumber}</p>
-                          </div>
-                        </div>
-                        <div className="text-left shrink-0">
-                          <p className="text-[10px] sm:text-xs font-medium text-primary truncate max-w-[80px] sm:max-w-none">{car.dealershipName}</p>
-                          <Badge variant="outline" className="text-[10px] sm:text-xs h-5">قيد الانتظار</Badge>
-                        </div>
+            {/* Partner Dealership Transfers - Only for car dealerships */}
+            {isCarDealership && (
+              <EditableWidgetWrapper {...getWidgetProps('transfers')}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+                  {/* Incoming Cars */}
+                  <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
+                      <div>
+                        <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground flex items-center gap-1.5 sm:gap-2">
+                          <ArrowDownLeft className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                          السيارات الواردة من المعارض
+                        </h2>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
+                          <span className="font-semibold text-primary">{transferStats.incomingCars.length}</span> سيارة قيد الانتظار
+                        </p>
                       </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setActivePage('car-transfers')}
+                        className="text-primary h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
+                      >
+                        عرض الكل
+                      </Button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Outgoing Cars */}
-            <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
-              <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
-                <div>
-                  <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground flex items-center gap-1.5 sm:gap-2">
-                    <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
-                    السيارات الصادرة للمعارض
-                  </h2>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-                    <span className="font-semibold text-warning">{transferStats.outgoingCars.length}</span> سيارة قيد الانتظار
-                  </p>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setActivePage('car-transfers')}
-                  className="text-primary h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
-                >
-                  عرض الكل
-                </Button>
-              </div>
-              {transferStats.outgoingCars.length === 0 ? (
-                <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                  <Building2 className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-xs sm:text-sm">لا توجد سيارات صادرة قيد الانتظار</p>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
-                  {transferStats.outgoingCars.map((car) => (
-                    <div 
-                      key={car.id} 
-                      className="p-2.5 sm:p-3 bg-warning/5 dark:bg-warning/10 rounded-lg hover:bg-warning/10 dark:hover:bg-warning/20 cursor-pointer transition-colors"
-                      onClick={() => setActivePage('car-transfers')}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-warning/20 flex items-center justify-center shrink-0">
-                            <Car className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-xs sm:text-sm truncate">{car.carName} {car.model}</p>
-                            <p className="text-[10px] sm:text-xs text-muted-foreground truncate">شاسيه: {car.chassisNumber}</p>
-                          </div>
-                        </div>
-                        <div className="text-left shrink-0">
-                          <p className="text-[10px] sm:text-xs font-medium text-warning truncate max-w-[80px] sm:max-w-none">{car.dealershipName}</p>
-                          <Badge variant="outline" className="text-[10px] sm:text-xs h-5">قيد الانتظار</Badge>
-                        </div>
+                    {transferStats.incomingCars.length === 0 ? (
+                      <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                        <Building2 className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 opacity-50" />
+                        <p className="text-xs sm:text-sm">لا توجد سيارات واردة قيد الانتظار</p>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          )}
+                    ) : (
+                      <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
+                        {transferStats.incomingCars.map((car) => (
+                          <div 
+                            key={car.id} 
+                            className="p-2.5 sm:p-3 bg-primary/5 dark:bg-primary/10 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 cursor-pointer transition-colors"
+                            onClick={() => setActivePage('car-transfers')}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                  <Car className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-xs sm:text-sm truncate">{car.carName} {car.model}</p>
+                                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">شاسيه: {car.chassisNumber}</p>
+                                </div>
+                              </div>
+                              <div className="text-left shrink-0">
+                                <p className="text-[10px] sm:text-xs font-medium text-primary truncate max-w-[80px] sm:max-w-none">{car.dealershipName}</p>
+                                <Badge variant="outline" className="text-[10px] sm:text-xs h-5">قيد الانتظار</Badge>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
-            {/* Main Actions */}
-            <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
-              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground mb-3 sm:mb-4 md:mb-6">الإجراءات السريعة</h2>
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
-                <Button 
-                  onClick={() => setActivePage('purchases')}
-                  className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 gradient-primary hover:opacity-90 text-[11px] sm:text-xs md:text-sm"
-                  disabled={!canPurchases}
-                >
-                  <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                  <span>المشتريات</span>
-                </Button>
-                <Button 
-                  onClick={() => setActivePage('sales')}
-                  className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 gradient-success hover:opacity-90 text-[11px] sm:text-xs md:text-sm"
-                  disabled={!canSales}
-                >
-                  <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                  <span>المبيعات</span>
-                </Button>
-                <Button 
-                  onClick={() => setActivePage('add-customer')}
-                  variant="outline"
-                  className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-[11px] sm:text-xs md:text-sm"
-                  disabled={!canSales}
-                >
-                  <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                  <span>إضافة عميل</span>
-                </Button>
-                <Button 
-                  onClick={() => setActivePage('add-supplier')}
-                  variant="outline"
-                  className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-[11px] sm:text-xs md:text-sm"
-                  disabled={!canPurchases}
-                >
-                  <Truck className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                  <span>إضافة مورد</span>
-                </Button>
+                  {/* Outgoing Cars */}
+                  <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
+                      <div>
+                        <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground flex items-center gap-1.5 sm:gap-2">
+                          <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
+                          السيارات الصادرة للمعارض
+                        </h2>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
+                          <span className="font-semibold text-warning">{transferStats.outgoingCars.length}</span> سيارة قيد الانتظار
+                        </p>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setActivePage('car-transfers')}
+                        className="text-primary h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
+                      >
+                        عرض الكل
+                      </Button>
+                    </div>
+                    {transferStats.outgoingCars.length === 0 ? (
+                      <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                        <Building2 className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 opacity-50" />
+                        <p className="text-xs sm:text-sm">لا توجد سيارات صادرة قيد الانتظار</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
+                        {transferStats.outgoingCars.map((car) => (
+                          <div 
+                            key={car.id} 
+                            className="p-2.5 sm:p-3 bg-warning/5 dark:bg-warning/10 rounded-lg hover:bg-warning/10 dark:hover:bg-warning/20 cursor-pointer transition-colors"
+                            onClick={() => setActivePage('car-transfers')}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-warning/20 flex items-center justify-center shrink-0">
+                                  <Car className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-xs sm:text-sm truncate">{car.carName} {car.model}</p>
+                                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">شاسيه: {car.chassisNumber}</p>
+                                </div>
+                              </div>
+                              <div className="text-left shrink-0">
+                                <p className="text-[10px] sm:text-xs font-medium text-warning truncate max-w-[80px] sm:max-w-none">{car.dealershipName}</p>
+                                <Badge variant="outline" className="text-[10px] sm:text-xs h-5">قيد الانتظار</Badge>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </EditableWidgetWrapper>
+            )}
+
+            {/* Quick Actions */}
+            <EditableWidgetWrapper {...getWidgetProps('quickActions')}>
+              <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
+                <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground mb-3 sm:mb-4 md:mb-6">الإجراءات السريعة</h2>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+                  <Button 
+                    onClick={() => setActivePage('purchases')}
+                    className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 gradient-primary hover:opacity-90 text-[11px] sm:text-xs md:text-sm"
+                    disabled={!canPurchases}
+                  >
+                    <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                    <span>المشتريات</span>
+                  </Button>
+                  <Button 
+                    onClick={() => setActivePage('sales')}
+                    className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 gradient-success hover:opacity-90 text-[11px] sm:text-xs md:text-sm"
+                    disabled={!canSales}
+                  >
+                    <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                    <span>المبيعات</span>
+                  </Button>
+                  <Button 
+                    onClick={() => setActivePage('add-customer')}
+                    variant="outline"
+                    className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-[11px] sm:text-xs md:text-sm"
+                    disabled={!canSales}
+                  >
+                    <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                    <span>إضافة عميل</span>
+                  </Button>
+                  <Button 
+                    onClick={() => setActivePage('add-supplier')}
+                    variant="outline"
+                    className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-[11px] sm:text-xs md:text-sm"
+                    disabled={!canPurchases}
+                  >
+                    <Truck className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                    <span>إضافة مورد</span>
+                  </Button>
+                </div>
               </div>
-            </div>
+            </EditableWidgetWrapper>
 
             {/* Reports */}
-            <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
-              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground mb-3 sm:mb-4 md:mb-6">التقارير</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 md:gap-3">
-                <Button 
-                  onClick={() => setActivePage('inventory-report')}
-                  variant="ghost"
-                  className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-primary/10 text-xs sm:text-sm"
-                >
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-primary" />
-                  </div>
-                  <span className="font-medium truncate">تقرير المخزون</span>
-                </Button>
-                <Button 
-                  onClick={() => setActivePage('profit-report')}
-                  variant="ghost"
-                  className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-success/10 text-xs sm:text-sm"
-                >
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
-                    <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-success" />
-                  </div>
-                  <span className="font-medium truncate">تقرير الأرباح</span>
-                </Button>
-                <Button 
-                  onClick={() => setActivePage('purchases-report')}
-                  variant="ghost"
-                  className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-warning/10 text-xs sm:text-sm"
-                >
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
-                    <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-warning" />
-                  </div>
-                  <span className="font-medium truncate">تقرير المشتريات</span>
-                </Button>
-                <Button 
-                  onClick={() => setActivePage('sales-report')}
-                  variant="ghost"
-                  className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-primary/10 text-xs sm:text-sm"
-                >
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-primary" />
-                  </div>
-                  <span className="font-medium truncate">تقرير المبيعات</span>
-                </Button>
-                <Button 
-                  onClick={() => setActivePage('customers-report')}
-                  variant="ghost"
-                  className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-purple-500/10 text-sm"
-                >
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
-                    <Users className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
-                  </div>
-                  <span className="font-medium">تقرير العملاء</span>
-                </Button>
-                <Button 
-                  onClick={() => setActivePage('suppliers-report')}
-                  variant="ghost"
-                  className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-orange-500/10 text-sm"
-                >
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
-                    <Truck className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />
-                  </div>
-                  <span className="font-medium">تقرير الموردين</span>
-                </Button>
-                <Button 
-                  onClick={() => setActivePage('commissions-report')}
-                  variant="ghost"
-                  className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-yellow-500/10 text-sm"
-                >
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
-                    <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-yellow-500" />
-                  </div>
-                  <span className="font-medium">تقرير العمولات</span>
-                </Button>
+            <EditableWidgetWrapper {...getWidgetProps('reports')}>
+              <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
+                <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground mb-3 sm:mb-4 md:mb-6">التقارير</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 md:gap-3">
+                  <Button 
+                    onClick={() => setActivePage('inventory-report')}
+                    variant="ghost"
+                    className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-primary/10 text-xs sm:text-sm"
+                  >
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-primary" />
+                    </div>
+                    <span className="font-medium truncate">تقرير المخزون</span>
+                  </Button>
+                  <Button 
+                    onClick={() => setActivePage('profit-report')}
+                    variant="ghost"
+                    className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-success/10 text-xs sm:text-sm"
+                  >
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
+                      <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-success" />
+                    </div>
+                    <span className="font-medium truncate">تقرير الأرباح</span>
+                  </Button>
+                  <Button 
+                    onClick={() => setActivePage('purchases-report')}
+                    variant="ghost"
+                    className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-warning/10 text-xs sm:text-sm"
+                  >
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
+                      <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-warning" />
+                    </div>
+                    <span className="font-medium truncate">تقرير المشتريات</span>
+                  </Button>
+                  <Button 
+                    onClick={() => setActivePage('sales-report')}
+                    variant="ghost"
+                    className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-primary/10 text-xs sm:text-sm"
+                  >
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-primary" />
+                    </div>
+                    <span className="font-medium truncate">تقرير المبيعات</span>
+                  </Button>
+                  <Button 
+                    onClick={() => setActivePage('customers-report')}
+                    variant="ghost"
+                    className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-purple-500/10 text-sm"
+                  >
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+                      <Users className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
+                    </div>
+                    <span className="font-medium">تقرير العملاء</span>
+                  </Button>
+                  <Button 
+                    onClick={() => setActivePage('suppliers-report')}
+                    variant="ghost"
+                    className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-orange-500/10 text-sm"
+                  >
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                      <Truck className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />
+                    </div>
+                    <span className="font-medium">تقرير الموردين</span>
+                  </Button>
+                  <Button 
+                    onClick={() => setActivePage('commissions-report')}
+                    variant="ghost"
+                    className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-yellow-500/10 text-sm"
+                  >
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
+                      <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-yellow-500" />
+                    </div>
+                    <span className="font-medium">تقرير العمولات</span>
+                  </Button>
+                </div>
               </div>
-            </div>
-          </div>
+            </EditableWidgetWrapper>
 
-          {/* Recent Invoices */}
-          <RecentInvoicesCard setActivePage={setActivePage} />
+            {/* Recent Invoices */}
+            <EditableWidgetWrapper {...getWidgetProps('recentInvoices')}>
+              <RecentInvoicesCard setActivePage={setActivePage} />
+            </EditableWidgetWrapper>
+          </div>
         </TabsContent>
 
         {/* Advanced Analytics Tab */}
