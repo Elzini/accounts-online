@@ -1,4 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
+import {
+  AuditFixAction,
+  createFixUnbalancedEntries,
+  createFixLinesTotalsMismatch,
+  createFixOrphanedSaleEntries,
+  createFixMissingTaxSettings,
+  createFixMissingCOA,
+  createFixNegativeAmounts,
+  createFixDuplicateEntries,
+} from './auditFixActions';
 
 export interface AuditCheckResult {
   id: string;
@@ -8,6 +18,7 @@ export interface AuditCheckResult {
   message: string;
   details?: string[];
   severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
+  fixActions?: AuditFixAction[];
 }
 
 // ===== Category 1: Database & Core Tables =====
@@ -28,6 +39,9 @@ export async function checkCoreTables(companyId: string): Promise<AuditCheckResu
     status: accErr ? 'fail' : (accountsCount && accountsCount > 0 ? 'pass' : 'warning'),
     message: accErr ? 'خطأ في الوصول لجدول الحسابات' : (accountsCount && accountsCount > 0 ? `تم العثور على ${accountsCount} حساب` : 'لا توجد حسابات - يجب إنشاء شجرة الحسابات'),
     severity: accErr ? 'critical' : (accountsCount && accountsCount > 0 ? 'info' : 'high'),
+    fixActions: (!accErr && (!accountsCount || accountsCount === 0)) ? [
+      createFixMissingCOA(companyId, 'car_dealership'),
+    ] : undefined,
   });
 
   // Check journal entries table
@@ -74,6 +88,9 @@ export async function checkCoreTables(companyId: string): Promise<AuditCheckResu
     status: taxErr ? 'fail' : (taxData ? 'pass' : 'warning'),
     message: taxErr ? 'خطأ في إعدادات الضريبة' : (taxData ? `الضريبة: ${taxData.tax_rate}%` : 'لم يتم تعيين إعدادات الضريبة'),
     severity: taxErr ? 'high' : (taxData ? 'info' : 'medium'),
+    fixActions: (!taxErr && !taxData) ? [
+      createFixMissingTaxSettings(companyId),
+    ] : undefined,
   });
 
   // Check users/profiles
@@ -130,6 +147,9 @@ export async function checkJournalEntryBalance(companyId: string): Promise<Audit
         : (openingEntries && openingEntries.length > 0 ? `${openingEntries.length} قيد افتتاحي متوازن` : 'لا توجد قيود افتتاحية'),
       details: unbalancedOpening.map(e => `قيد #${e.entry_number}: مدين=${e.total_debit} ≠ دائن=${e.total_credit}`),
       severity: unbalancedOpening.length > 0 ? 'critical' : 'info',
+      fixActions: unbalancedOpening.length > 0 ? [
+        createFixUnbalancedEntries(companyId, unbalancedOpening.map(e => e.id)),
+      ] : undefined,
     });
   }
 
@@ -164,24 +184,31 @@ export async function checkJournalEntryBalance(companyId: string): Promise<Audit
         : `✓ جميع القيود متوازنة (${(allEntries || []).length} قيد)`,
       details: unbalanced.slice(0, 20).map(e => `قيد #${e.entry_number} (${e.entry_date}): مدين=${e.total_debit} ≠ دائن=${e.total_credit} | ${e.description || ''}`),
       severity: unbalanced.length > 0 ? 'critical' : 'info',
+      fixActions: unbalanced.length > 0 ? [
+        createFixUnbalancedEntries(companyId, unbalanced.map(e => e.id)),
+      ] : undefined,
     });
   }
 
   // Check for duplicate entries (same date, same amounts, same description)
   if (allEntries && allEntries.length > 0) {
     const duplicates: string[] = [];
-    const seen = new Map<string, number[]>();
+    const duplicateEntryIds: string[] = [];
+    const seen = new Map<string, { numbers: number[]; ids: string[] }>();
 
     for (const entry of allEntries) {
       const key = `${entry.entry_date}_${entry.total_debit}_${entry.total_credit}_${entry.description || ''}`;
-      const existing = seen.get(key) || [];
-      existing.push(entry.entry_number);
+      const existing = seen.get(key) || { numbers: [], ids: [] };
+      existing.numbers.push(entry.entry_number);
+      existing.ids.push(entry.id);
       seen.set(key, existing);
     }
 
-    for (const [, numbers] of seen) {
-      if (numbers.length > 1) {
-        duplicates.push(`قيود مكررة: #${numbers.join(', #')}`);
+    for (const [, group] of seen) {
+      if (group.numbers.length > 1) {
+        duplicates.push(`قيود مكررة: #${group.numbers.join(', #')}`);
+        // Keep first, mark rest as duplicates
+        duplicateEntryIds.push(...group.ids.slice(1));
       }
     }
 
@@ -195,6 +222,9 @@ export async function checkJournalEntryBalance(companyId: string): Promise<Audit
         : 'لا توجد قيود مكررة',
       details: duplicates.slice(0, 10),
       severity: duplicates.length > 0 ? 'medium' : 'info',
+      fixActions: duplicateEntryIds.length > 0 ? [
+        createFixDuplicateEntries(companyId, duplicateEntryIds),
+      ] : undefined,
     });
   }
 
@@ -206,6 +236,7 @@ export async function checkJournalEntryBalance(companyId: string): Promise<Audit
 
   if (!ewlErr && entriesWithLines && entriesWithLines.length > 0) {
     const mismatchDetails: string[] = [];
+    const mismatchIds: string[] = [];
     // Check a batch of entries
     const sampleEntries = entriesWithLines.slice(0, 100);
 
@@ -224,6 +255,7 @@ export async function checkJournalEntryBalance(companyId: string): Promise<Audit
           mismatchDetails.push(
             `قيد #${entry.entry_number}: مجموع السطور (${linesDebit}/${linesCredit}) ≠ إجمالي القيد (${entry.total_debit}/${entry.total_credit})`
           );
+          mismatchIds.push(entry.id);
         }
       }
     }
@@ -238,6 +270,9 @@ export async function checkJournalEntryBalance(companyId: string): Promise<Audit
         : `تم فحص ${sampleEntries.length} قيد - جميعها متطابقة`,
       details: mismatchDetails.slice(0, 10),
       severity: mismatchDetails.length > 0 ? 'high' : 'info',
+      fixActions: mismatchIds.length > 0 ? [
+        createFixLinesTotalsMismatch(companyId, mismatchIds),
+      ] : undefined,
     });
   }
 
@@ -494,6 +529,9 @@ export async function checkEdgeCases(companyId: string): Promise<AuditCheckResul
       `قيد #${l.journal_entry?.entry_number}: مدين=${l.debit}, دائن=${l.credit}`
     ),
     severity: negativeLines && negativeLines.length > 0 ? 'medium' : 'info',
+    fixActions: negativeLines && negativeLines.length > 0 ? [
+      createFixNegativeAmounts(companyId, negativeLines.map((l: any) => l.id)),
+    ] : undefined,
   });
 
   // Check for very large amounts (> 10 million)
@@ -536,6 +574,7 @@ export async function checkEdgeCases(companyId: string): Promise<AuditCheckResul
 
   if (saleEntries && saleEntries.length > 0) {
     const orphanedSaleEntries: string[] = [];
+    const orphanedEntryIds: string[] = [];
 
     for (const entry of saleEntries.slice(0, 50)) {
       const { data: sale } = await supabase
@@ -546,6 +585,7 @@ export async function checkEdgeCases(companyId: string): Promise<AuditCheckResul
 
       if (!sale) {
         orphanedSaleEntries.push(`قيد #${entry.entry_number} مرتبط بعملية بيع محذوفة`);
+        orphanedEntryIds.push(entry.id);
       }
     }
 
@@ -559,6 +599,9 @@ export async function checkEdgeCases(companyId: string): Promise<AuditCheckResul
         : '✓ جميع القيود مرتبطة بفواتير صحيحة',
       details: orphanedSaleEntries.slice(0, 10),
       severity: orphanedSaleEntries.length > 0 ? 'high' : 'info',
+      fixActions: orphanedEntryIds.length > 0 ? [
+        createFixOrphanedSaleEntries(companyId, orphanedEntryIds),
+      ] : undefined,
     });
   }
 
