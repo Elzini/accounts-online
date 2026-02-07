@@ -242,17 +242,43 @@ function findColumnIndex(headerRow: any[], possibleNames: string[]): number {
       }
     }
   }
-  // Second pass: includes match
+  // Second pass: cell includes keyword (but cell must be short like a header, not a data cell)
   for (let i = 0; i < headerRow.length; i++) {
     const cellVal = String(headerRow[i] ?? '').trim();
-    if (!cellVal) continue;
+    if (!cellVal || cellVal.length > 30) continue; // skip long values (likely data, not headers)
     for (const name of possibleNames) {
-      if (cellVal.includes(name) || name.includes(cellVal)) {
+      if (cellVal.includes(name)) {
+        return i;
+      }
+    }
+  }
+  // Third pass: keyword includes cell (only for very short cell values that are clearly abbreviations)
+  for (let i = 0; i < headerRow.length; i++) {
+    const cellVal = String(headerRow[i] ?? '').trim();
+    if (!cellVal || cellVal.length > 5 || cellVal.length < 1) continue; // only very short abbreviations like "م", "ر"
+    for (const name of possibleNames) {
+      if (name.includes(cellVal) && name.length <= 10) {
         return i;
       }
     }
   }
   return -1;
+}
+
+// التحقق من أن الصف يبدو كصف عناوين وليس صف بيانات
+function isLikelyHeaderRow(rowStr: string[]): boolean {
+  const nonEmptyCells = rowStr.filter(c => c && c.trim().length > 0);
+  if (nonEmptyCells.length < 2) return false;
+  
+  // صفوف العناوين تتميز بأن خلاياها قصيرة (أقل من 30 حرف عادة)
+  const longCells = nonEmptyCells.filter(c => c.length > 30);
+  if (longCells.length > nonEmptyCells.length * 0.3) return false;
+  
+  // صفوف البيانات تحتوي على أرقام مالية كثيرة
+  const numericCells = nonEmptyCells.filter(c => /^[\d,.\-()]+$/.test(c.replace(/\s/g, '')));
+  if (numericCells.length > nonEmptyCells.length * 0.5) return false;
+  
+  return true;
 }
 
 // البحث عن آخر عمود مدين/دائن (الصافي) في حالة وجود أعمدة مكررة
@@ -440,6 +466,9 @@ function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
     
     const rowStr = row.map((c: any) => String(c ?? '').trim());
     
+    // تخطي الصفوف التي تبدو كصفوف بيانات وليست عناوين
+    if (!isLikelyHeaderRow(rowStr)) continue;
+    
     // البحث عن عمود الاسم - هذا هو المؤشر الأساسي لصف العناوين
     const nameCol = findColumnIndex(rowStr, TB_COLUMN_MAPPINGS.name);
     if (nameCol === -1) continue;
@@ -482,6 +511,13 @@ function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
       : (rowIdx > 0 ? rawData[rowIdx - 1]?.map((c: any) => String(c ?? '').trim()) : undefined);
     
     const { debitCol, creditCol } = resolveDebitCreditColumns(debitIndices, creditIndices, parentRowData);
+    
+    // === Sanity check: تأكد أن الأعمدة المكتشفة منطقية ===
+    const maxReasonableCol = 20; // ميزان المراجعة لا يتجاوز عادة 20 عمود
+    if (nameCol > maxReasonableCol || debitCol > maxReasonableCol || creditCol > maxReasonableCol) {
+      console.log(`📊 Skipping row ${rowIdx}: column indices too high (name=${nameCol}, debit=${debitCol}, credit=${creditCol})`);
+      continue;
+    }
     
     const dataStartRow = subHeaderRowIdx + 1;
     

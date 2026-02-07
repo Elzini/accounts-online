@@ -54,6 +54,26 @@ export const utils = {
 };
 
 // Read an Excel file and return parsed workbook data (xlsx-compatible interface)
+// Extract primitive value from an ExcelJS cell
+function getCellPrimitiveValue(cell: any): any {
+  let value = cell.value;
+  
+  // Handle different cell types
+  if (value && typeof value === 'object') {
+    if ('richText' in value) {
+      value = (value as { richText: { text: string }[] }).richText.map((rt: any) => rt.text).join('');
+    } else if ('result' in value) {
+      // Formula result
+      value = (value as { result: any }).result;
+    } else if ('text' in value) {
+      // Hyperlink
+      value = (value as { text: string }).text;
+    }
+  }
+  
+  return value;
+}
+
 export async function readExcelFile(arrayBuffer: ArrayBuffer): Promise<ExcelWorkbook> {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(arrayBuffer);
@@ -70,26 +90,67 @@ export async function readExcelFile(arrayBuffer: ArrayBuffer): Promise<ExcelWork
     const jsonData: any[] = [];
     let headers: string[] = [];
     
-    worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    // Determine the actual max column count from the worksheet
+    const wsColCount = worksheet.columnCount || 20;
+    
+    // Collect merged cell ranges for proper value propagation
+    const mergedRanges: { top: number; left: number; bottom: number; right: number; value: any }[] = [];
+    try {
+      // ExcelJS stores merges in the worksheet model
+      const merges = (worksheet as any).model?.merges || (worksheet as any)._merges || [];
+      for (const mergeRange of merges) {
+        // mergeRange can be a string like "A1:B2" or an object
+        const rangeStr = typeof mergeRange === 'string' ? mergeRange : (mergeRange?.range || mergeRange?.model || String(mergeRange));
+        if (typeof rangeStr === 'string' && rangeStr.includes(':')) {
+          const parts = rangeStr.split(':');
+          const topLeft = worksheet.getCell(parts[0]);
+          const bottomRight = worksheet.getCell(parts[1]);
+          const masterValue = getCellPrimitiveValue(topLeft);
+          mergedRanges.push({
+            top: Number(topLeft.row),
+            left: Number(topLeft.col),
+            bottom: Number(bottomRight.row),
+            right: Number(bottomRight.col),
+            value: masterValue,
+          });
+        }
+      }
+    } catch (e) {
+      console.log('📊 Could not read merged cell info:', e);
+    }
+    
+    // Helper to find merged value for a given cell position
+    function getMergedValue(rowNum: number, colNum: number): any | undefined {
+      for (const range of mergedRanges) {
+        if (rowNum >= range.top && rowNum <= range.bottom && colNum >= range.left && colNum <= range.right) {
+          return range.value;
+        }
+      }
+      return undefined;
+    }
+    
+    // Track which Excel row numbers we've seen (to handle includeEmpty: false)
+    let lastRowNumber = 0;
+    
+    worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+      // Only process up to a reasonable limit
+      if (rowNumber > 5000) return;
+      lastRowNumber = rowNumber;
+      
       const rowData: any[] = [];
       
-      // Determine the max column to iterate
-      const colCount = row.cellCount || worksheet.columnCount || 20;
+      // Use the worksheet column count to ensure we read ALL columns
+      const colCount = Math.max(row.cellCount || 0, wsColCount);
       
       for (let colNumber = 1; colNumber <= colCount; colNumber++) {
         const cell = row.getCell(colNumber);
-        let value = cell.value;
+        let value = getCellPrimitiveValue(cell);
         
-        // Handle different cell types
-        if (value && typeof value === 'object') {
-          if ('richText' in value) {
-            value = (value as { richText: { text: string }[] }).richText.map(rt => rt.text).join('');
-          } else if ('result' in value) {
-            // Formula result
-            value = (value as { result: any }).result;
-          } else if ('text' in value) {
-            // Hyperlink
-            value = (value as { text: string }).text;
+        // If cell value is empty/null, check if it's part of a merged range
+        if (value === '' || value === null || value === undefined) {
+          const mergedVal = getMergedValue(rowNumber, colNumber);
+          if (mergedVal !== undefined) {
+            value = mergedVal;
           }
         }
         
