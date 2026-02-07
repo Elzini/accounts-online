@@ -10,6 +10,11 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  build: {
+    rollupOptions: {
+      external: ['electron', 'better-sqlite3', '@electron/rebuild'],
+    },
+  },
   plugins: [
     react(),
     mode === "development" && componentTagger(),
