@@ -149,7 +149,7 @@ export function EditableWidgetWrapper({
 
   if (!visible) return null;
 
-  const colSpanClass = colSpan === 1 ? 'lg:col-span-1' : 'col-span-1 lg:col-span-2';
+  const colSpanClass = colSpan === 1 ? 'col-span-1' : 'col-span-2 lg:col-span-2';
 
   if (!isEditMode) {
     return (
