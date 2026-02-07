@@ -3,6 +3,8 @@
 export { ComprehensiveFinancialStatementsPage } from './ComprehensiveFinancialStatementsPage';
 export { TrialBalanceImportManager } from './TrialBalanceImportManager';
 export { ScenarioValidationDashboard } from './ScenarioValidationDashboard';
+export { AuditTrailPanel } from './AuditTrailPanel';
+export { BranchCurrencyBar, BranchSelector, CurrencySelector } from './BranchCurrencySelector';
 export * from './types';
 export * from './utils/numberFormatting';
 export * from './utils/medadParser';

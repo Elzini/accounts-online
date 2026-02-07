@@ -1,6 +1,6 @@
 // صفحة القوائم المالية الشاملة - مطابق لتصدير مداد
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,7 +12,7 @@ import {
   FileSpreadsheet, Download, Upload, Printer, FileText,
   Building2, Calculator, TrendingUp, Scale, Wallet, BarChart3,
   Loader2, Database, BookOpen, FileCheck, Users, Package,
-  AlertTriangle, CheckCircle2, Wrench, FileUp
+  AlertTriangle, CheckCircle2, Wrench, FileUp, ClipboardList
 } from 'lucide-react';
 import { readExcelFile, ExcelWorkbook } from '@/lib/excelUtils';
 import { toast } from 'sonner';
@@ -46,13 +46,15 @@ import {
 } from './notes/OtherNotesViews';
 import { FinancialStatementsFormulaEditor } from './FinancialStatementsFormulaEditor';
 import { TrialBalanceImportManager } from './TrialBalanceImportManager';
+import { AuditTrailPanel } from './AuditTrailPanel';
+import { BranchCurrencyBar, Branch, SUPPORTED_CURRENCIES, convertAmount } from './BranchCurrencySelector';
+import { createAuditLog, AuditLogEntry } from '@/services/importAuditLog';
 
 export function ComprehensiveFinancialStatementsPage() {
   const { company, companyId } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
   const { filterByFiscalYear } = useFiscalYearFilter();
   
-  // جلب بيانات المبيعات والمصاريف لمقارنة الأرباح
   const { data: sales = [] } = useSales();
   const { data: expenses = [] } = useExpenses();
   
@@ -63,55 +65,90 @@ export function ComprehensiveFinancialStatementsPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [isFixingCogs, setIsFixingCogs] = useState(false);
   const [showTBImport, setShowTBImport] = useState(false);
+  const [showAuditTrail, setShowAuditTrail] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // === سجل التدقيق ===
+  const [auditLog] = useState(() => createAuditLog());
+  const [auditEntries, setAuditEntries] = useState<AuditLogEntry[]>([]);
+  
+  const addAuditEntry = useCallback((action: Parameters<typeof auditLog.addEntry>[0], details: string, metadata?: Record<string, any>) => {
+    auditLog.addEntry(action, details, metadata);
+    setAuditEntries([...auditLog.getEntries()]);
+  }, [auditLog]);
+  
+  // === الفروع ===
+  const [selectedBranch, setSelectedBranch] = useState('all');
+  const [branches] = useState<Branch[]>([]);
+  
+  const handleBranchChange = useCallback((branchId: string) => {
+    setSelectedBranch(branchId);
+    const branchName = branchId === 'all' ? 'جميع الفروع' : branchId === 'main' ? 'الفرع الرئيسي' : branchId;
+    addAuditEntry('branch_selected', `تم تحديد: ${branchName}`);
+  }, [addAuditEntry]);
+  
+  // === العملات ===
+  const [selectedCurrency, setSelectedCurrency] = useState('SAR');
+  const [customRate, setCustomRate] = useState<number | undefined>(undefined);
+  
+  const currentCurrency = useMemo(() => {
+    const found = SUPPORTED_CURRENCIES.find(c => c.code === selectedCurrency);
+    if (found && customRate !== undefined) {
+      return { ...found, rate: customRate };
+    }
+    return found || SUPPORTED_CURRENCIES[0];
+  }, [selectedCurrency, customRate]);
+  
+  const handleCurrencyChange = useCallback((code: string) => {
+    setSelectedCurrency(code);
+    setCustomRate(undefined);
+    const curr = SUPPORTED_CURRENCIES.find(c => c.code === code);
+    addAuditEntry('currency_changed', `تم التغيير إلى: ${curr?.nameAr || code}`);
+  }, [addAuditEntry]);
+  
+  // تحويل مبلغ للعملة المحددة
+  const cv = useCallback((amount: number) => {
+    if (currentCurrency.code === 'SAR') return amount;
+    return convertAmount(amount, currentCurrency);
+  }, [currentCurrency]);
+  
+  const currencySymbol = currentCurrency.symbol;
   
   const { printReport } = usePrintReport();
   const { exportToExcel } = useExcelExport();
   
-  // حساب صافي الربح من تقرير الأرباح (المبيعات - المصاريف)
+  // حساب صافي الربح من تقرير الأرباح
   const profitReportData = useMemo(() => {
     const filteredSales = filterByFiscalYear(sales, 'sale_date');
     const filteredExpenses = filterByFiscalYear(expenses, 'expense_date');
     
-    // الربح الإجمالي من جدول المبيعات
     const totalGrossProfit = filteredSales.reduce((sum, sale) => sum + Number(sale.profit || 0), 0);
     
-    // مصاريف السيارات المباعة
     const soldCarIds = filteredSales.map(s => s.car_id);
     const carExpenses = filteredExpenses
       .filter(exp => exp.car_id && soldCarIds.includes(exp.car_id))
       .reduce((sum, exp) => sum + Number(exp.amount), 0);
     
-    // المصاريف العامة (غير مرتبطة بسيارات)
     const generalExpenses = filteredExpenses
       .filter(exp => !exp.car_id)
       .reduce((sum, exp) => sum + Number(exp.amount), 0);
     
-    // صافي الربح حسب تقرير الأرباح
     const netProfit = totalGrossProfit - carExpenses - generalExpenses;
     
-    return {
-      totalGrossProfit,
-      carExpenses,
-      generalExpenses,
-      netProfit,
-    };
+    return { totalGrossProfit, carExpenses, generalExpenses, netProfit };
   }, [sales, expenses, filterByFiscalYear]);
   
-  // إصلاح القيود الناقصة
   const handleFixMissingCogs = async () => {
     if (!companyId) return;
     
     setIsFixingCogs(true);
     try {
       const { data: result, error } = await supabase.rpc('fix_missing_cogs_entries');
-      
       if (error) throw error;
       
       const fixedCount = result?.filter((r: any) => r.fixed).length || 0;
       if (fixedCount > 0) {
         toast.success(`تم إصلاح ${fixedCount} قيد محاسبي`);
-        // إعادة حساب من النظام
         handleCalculateFromSystem();
       } else {
         toast.info('جميع القيود صحيحة، لا يوجد ما يحتاج إصلاح');
@@ -129,7 +166,7 @@ export function ComprehensiveFinancialStatementsPage() {
       style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(amount);
+    }).format(cv(amount));
   };
 
   // حساب من بيانات النظام
@@ -140,6 +177,7 @@ export function ComprehensiveFinancialStatementsPage() {
     }
 
     setIsLoading(true);
+    addAuditEntry('system_calculation', 'بدء حساب القوائم المالية من بيانات النظام');
     try {
       const startDate = selectedFiscalYear?.start_date;
       const endDate = selectedFiscalYear?.end_date;
@@ -155,6 +193,10 @@ export function ComprehensiveFinancialStatementsPage() {
       setDataSource('system');
       setFileName(null);
       setActiveTab('balance-sheet');
+      addAuditEntry('statements_generated', 'تم توليد القوائم المالية من بيانات النظام بنجاح', {
+        totalAssets: systemData.balanceSheet.totalAssets,
+        netProfit: systemData.incomeStatement.netProfit,
+      });
       
       toast.success('تم حساب القوائم المالية من بيانات النظام بنجاح');
     } catch (error) {
@@ -171,16 +213,14 @@ export function ComprehensiveFinancialStatementsPage() {
     if (!file) return;
 
     setIsLoading(true);
+    addAuditEntry('medad_import', `رفع ملف مداد: ${file.name}`);
     
     try {
       const arrayBuffer = await file.arrayBuffer();
       const workbook = await readExcelFile(arrayBuffer);
       
-      console.log('📊 Medad Excel Sheets:', workbook.SheetNames);
-      
       const parsedData = parseMedadExcel(workbook);
 
-      // إذا لم نستخرج أي أرقام فعلية، لا نعرض تقرير فارغ (0) بشكل مضلل
       const isEffectivelyEmpty =
         (parsedData.balanceSheet?.totalAssets || 0) === 0 &&
         (parsedData.balanceSheet?.totalLiabilitiesAndEquity || 0) === 0 &&
@@ -189,17 +229,15 @@ export function ComprehensiveFinancialStatementsPage() {
         (parsedData.incomeStatement?.generalAndAdminExpenses || 0) === 0;
 
       if (isEffectivelyEmpty) {
-        console.warn('⚠️ Parsed data is empty – likely column/header mismatch in trial balance sheet');
         setData(emptyFinancialData);
         setFileName(null);
         setDataSource('none');
         setActiveTab('overview');
-        toast.error('تم رفع الملف لكن لم يتم التعرف على أعمدة ميزان المراجعة. جرّب إعادة تصدير الملف من مداد أو ارسل لقطة من أعلى الجدول (عناوين الأعمدة).');
+        toast.error('تم رفع الملف لكن لم يتم التعرف على أعمدة ميزان المراجعة.');
         setIsLoading(false);
         return;
       }
       
-      // إضافة اسم الشركة من إعدادات النظام إذا لم يتم العثور عليه
       if (!parsedData.companyName && company?.name) {
         parsedData.companyName = company.name;
       }
@@ -208,6 +246,9 @@ export function ComprehensiveFinancialStatementsPage() {
       setFileName(file.name);
       setDataSource('excel');
       setActiveTab('balance-sheet');
+      addAuditEntry('statements_generated', `تم استيراد القوائم المالية من مداد: ${file.name}`, {
+        sheets: workbook.SheetNames.length,
+      });
       
       toast.success(`تم استيراد القوائم المالية بنجاح (${workbook.SheetNames.length} صفحة)`);
     } catch (error) {
@@ -217,42 +258,40 @@ export function ComprehensiveFinancialStatementsPage() {
       setIsLoading(false);
     }
     
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  // مسح البيانات
   const handleClear = () => {
     setData(emptyFinancialData);
     setDataSource('none');
     setFileName(null);
     setActiveTab('overview');
     setShowTBImport(false);
+    addAuditEntry('data_cleared', 'تم مسح جميع البيانات');
     toast.info('تم مسح البيانات');
   };
 
-  // معالجة بيانات ميزان المراجعة المستورد
   const handleTBDataGenerated = (generatedData: ComprehensiveFinancialData, source: string) => {
     setData(generatedData);
     setDataSource('trial-balance');
     setFileName(source);
     setActiveTab('balance-sheet');
     setShowTBImport(false);
+    addAuditEntry('statements_generated', `تم توليد القوائم من ميزان المراجعة: ${source}`);
   };
 
-  // تصدير القوائم المالية كـ PDF
   const handleExportPDF = () => {
     if (!hasData) {
       toast.error('لا توجد بيانات للتصدير');
       return;
     }
     printFinancialStatementsPDF(data);
+    addAuditEntry('export_pdf', 'تم تصدير القوائم المالية كـ PDF');
     toast.success('جاري فتح نافذة الطباعة...');
   };
 
-  // تصدير القوائم
   const ExportDropdown = ({ onExport }: { onExport: (type: 'print' | 'excel' | 'pdf') => void }) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -278,15 +317,14 @@ export function ComprehensiveFinancialStatementsPage() {
     </DropdownMenu>
   );
 
-  // معالجة التصدير
   const handleExport = (type: 'print' | 'excel' | 'pdf') => {
     if (type === 'pdf') {
       handleExportPDF();
     } else if (type === 'print') {
-      handleExportPDF(); // نفس وظيفة PDF للطباعة
+      handleExportPDF();
     } else if (type === 'excel') {
+      addAuditEntry('export_excel', 'تم طلب تصدير Excel');
       toast.info('جاري تصدير Excel...');
-      // يمكن إضافة تصدير Excel لاحقاً
     }
   };
 
@@ -302,6 +340,18 @@ export function ComprehensiveFinancialStatementsPage() {
         </div>
         
         <div className="flex items-center gap-2">
+          <Button 
+            variant={showAuditTrail ? 'default' : 'outline'} 
+            size="sm" 
+            onClick={() => setShowAuditTrail(!showAuditTrail)}
+            className="gap-1"
+          >
+            <ClipboardList className="w-4 h-4" />
+            سجل التدقيق
+            {auditEntries.length > 0 && (
+              <Badge variant="secondary" className="text-[10px] px-1 mr-1">{auditEntries.length}</Badge>
+            )}
+          </Button>
           {hasData && (
             <Badge variant={dataSource === 'excel' ? 'default' : dataSource === 'trial-balance' ? 'outline' : 'secondary'} className="gap-1">
               {dataSource === 'excel' ? (
@@ -315,6 +365,28 @@ export function ComprehensiveFinancialStatementsPage() {
           )}
         </div>
       </div>
+
+      {/* شريط الفرع والعملة */}
+      <BranchCurrencyBar
+        branches={branches}
+        selectedBranch={selectedBranch}
+        onBranchChange={handleBranchChange}
+        selectedCurrency={selectedCurrency}
+        onCurrencyChange={handleCurrencyChange}
+        customRate={customRate}
+        onCustomRateChange={setCustomRate}
+      />
+
+      {/* سجل التدقيق */}
+      {showAuditTrail && (
+        <AuditTrailPanel 
+          entries={auditEntries} 
+          onClear={() => {
+            auditLog.clear();
+            setAuditEntries([]);
+          }} 
+        />
+      )}
 
       {/* منطقة استيراد الملف */}
       {!hasData && !showTBImport && (
@@ -435,6 +507,7 @@ export function ComprehensiveFinancialStatementsPage() {
             companyName={company?.name || 'الشركة'}
             reportDate={selectedFiscalYear?.end_date || new Date().toISOString().split('T')[0]}
             onDataGenerated={handleTBDataGenerated}
+            onAuditLog={addAuditEntry}
           />
         </div>
       )}
@@ -448,7 +521,12 @@ export function ComprehensiveFinancialStatementsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-xl">{data.companyName || company?.name || 'الشركة'}</CardTitle>
-                  <CardDescription>{data.companyType}</CardDescription>
+                  <CardDescription>
+                    {data.companyType}
+                    {selectedCurrency !== 'SAR' && (
+                      <span className="mr-2 text-primary">• العملة: {currentCurrency.nameAr} ({currentCurrency.symbol})</span>
+                    )}
+                  </CardDescription>
                 </div>
                 <div className="flex gap-2">
                   <FinancialStatementsFormulaEditor
@@ -484,24 +562,24 @@ export function ComprehensiveFinancialStatementsPage() {
                 <div className="text-center p-3 bg-muted/50 rounded-lg">
                   <Scale className="w-6 h-6 mx-auto text-primary mb-1" />
                   <p className="text-xs text-muted-foreground">إجمالي الموجودات</p>
-                  <p className="font-bold">{data.balanceSheet.totalAssets.toLocaleString()} ر.س</p>
+                  <p className="font-bold">{formatCurrency(data.balanceSheet.totalAssets)} {currencySymbol}</p>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg">
                   <TrendingUp className="w-6 h-6 mx-auto text-primary mb-1" />
                   <p className="text-xs text-muted-foreground">الإيرادات</p>
-                  <p className="font-bold">{data.incomeStatement.revenue.toLocaleString()} ر.س</p>
+                  <p className="font-bold">{formatCurrency(data.incomeStatement.revenue)} {currencySymbol}</p>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg">
                   <Wallet className="w-6 h-6 mx-auto text-primary mb-1" />
                   <p className="text-xs text-muted-foreground">صافي الربح</p>
                   <p className={`font-bold ${data.incomeStatement.netProfit < 0 ? 'text-destructive' : ''}`}>
-                    {data.incomeStatement.netProfit.toLocaleString()} ر.س
+                    {formatCurrency(data.incomeStatement.netProfit)} {currencySymbol}
                   </p>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg">
                   <Calculator className="w-6 h-6 mx-auto text-primary mb-1" />
                   <p className="text-xs text-muted-foreground">مخصص الزكاة</p>
-                  <p className="font-bold">{(data.notes.zakat?.totalZakatProvision || data.incomeStatement.zakat).toLocaleString()} ر.س</p>
+                  <p className="font-bold">{formatCurrency(data.notes.zakat?.totalZakatProvision || data.incomeStatement.zakat)} {currencySymbol}</p>
                 </div>
               </div>
             </CardContent>
@@ -650,13 +728,13 @@ export function ComprehensiveFinancialStatementsPage() {
                     <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
                       <h4 className="font-semibold mb-2">من القيود المحاسبية</h4>
                       <p className={`text-2xl font-bold ${data.incomeStatement.netProfit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
-                        {formatCurrency(data.incomeStatement.netProfit)} ر.س
+                        {formatCurrency(data.incomeStatement.netProfit)} {currencySymbol}
                       </p>
                     </div>
                     <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
                       <h4 className="font-semibold mb-2">من تقرير الأرباح (المبيعات)</h4>
                       <p className={`text-2xl font-bold ${profitReportData.netProfit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
-                        {formatCurrency(profitReportData.netProfit)} ر.س
+                        {formatCurrency(profitReportData.netProfit)} {currencySymbol}
                       </p>
                     </div>
                   </div>
@@ -670,7 +748,7 @@ export function ComprehensiveFinancialStatementsPage() {
                       ) : (
                         <>
                           <AlertTriangle className="w-5 h-5 text-amber-600" />
-                          <span className="text-amber-600">فرق: {formatCurrency(data.incomeStatement.netProfit - profitReportData.netProfit)} ر.س</span>
+                          <span className="text-amber-600">فرق: {formatCurrency(data.incomeStatement.netProfit - profitReportData.netProfit)} {currencySymbol}</span>
                         </>
                       )}
                     </div>
@@ -733,7 +811,6 @@ export function ComprehensiveFinancialStatementsPage() {
                 <CardContent>
                   <ScrollArea className="h-[700px]">
                     <div className="space-y-8">
-                      {/* إيضاح السياسات المحاسبية */}
                       {data.notes.accountingPolicies && (
                         <>
                           <AccountingPoliciesNoteView 
@@ -744,7 +821,6 @@ export function ComprehensiveFinancialStatementsPage() {
                         </>
                       )}
 
-                      {/* إيضاح النقد والبنوك */}
                       {data.notes.cashAndBank && (
                         <>
                           <CashAndBankNoteView 
@@ -756,7 +832,6 @@ export function ComprehensiveFinancialStatementsPage() {
                         </>
                       )}
 
-                      {/* إيضاح ممتلكات ومعدات */}
                       {data.notes.fixedAssets && (
                         <>
                           <FixedAssetsNoteView 
@@ -768,7 +843,6 @@ export function ComprehensiveFinancialStatementsPage() {
                         </>
                       )}
 
-                      {/* إيضاح الدائنون */}
                       {data.notes.creditors && (
                         <>
                           <CreditorsNoteView 
@@ -780,7 +854,6 @@ export function ComprehensiveFinancialStatementsPage() {
                         </>
                       )}
 
-                      {/* إيضاح الزكاة */}
                       {data.notes.zakat && (
                         <>
                           <ZakatNoteView 
@@ -792,7 +865,6 @@ export function ComprehensiveFinancialStatementsPage() {
                         </>
                       )}
 
-                      {/* إيضاح منافع الموظفين */}
                       {data.notes.employeeBenefits && (
                         <>
                           <EmployeeBenefitsNoteView 
@@ -804,7 +876,6 @@ export function ComprehensiveFinancialStatementsPage() {
                         </>
                       )}
 
-                      {/* إيضاح رأس المال */}
                       {data.notes.capital && (
                         <>
                           <CapitalNoteView 
@@ -815,7 +886,6 @@ export function ComprehensiveFinancialStatementsPage() {
                         </>
                       )}
 
-                      {/* إيضاح تكلفة الإيرادات */}
                       {data.notes.costOfRevenue && (
                         <>
                           <CostOfRevenueNoteView 
@@ -827,7 +897,6 @@ export function ComprehensiveFinancialStatementsPage() {
                         </>
                       )}
 
-                      {/* إيضاح المصاريف الإدارية */}
                       {data.notes.generalAndAdminExpenses && (
                         <>
                           <GeneralExpensesNoteView 
@@ -839,7 +908,6 @@ export function ComprehensiveFinancialStatementsPage() {
                         </>
                       )}
 
-                      {/* إيضاح الأحداث بعد نهاية الفترة */}
                       <div className="space-y-4" dir="rtl">
                         <h3 className="text-lg font-bold">16- الأحداث بعد نهاية الفترة المالية</h3>
                         <p className="text-sm text-muted-foreground">
@@ -848,7 +916,6 @@ export function ComprehensiveFinancialStatementsPage() {
                         </p>
                       </div>
 
-                      {/* ملاحظة إذا لم توجد إيضاحات */}
                       {!data.notes.zakat && !data.notes.costOfRevenue && !data.notes.generalAndAdminExpenses && (
                         <div className="text-center py-8 text-muted-foreground">
                           <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
