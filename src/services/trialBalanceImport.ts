@@ -354,6 +354,78 @@ function findCodeColumnFromData(rawData: any[][], dataStartRow: number, excludeC
   return bestCol;
 }
 
+// بحث عن أعمدة المدين والدائن في صف معين
+function findDebitCreditInRow(rowStr: string[]): { debitIndices: number[]; creditIndices: number[] } {
+  const debitIndices: number[] = [];
+  const creditIndices: number[] = [];
+  
+  for (let i = 0; i < rowStr.length; i++) {
+    const cell = rowStr[i];
+    if (!cell) continue;
+    
+    for (const name of TB_COLUMN_MAPPINGS.debit) {
+      if (cell === name || cell.includes(name)) {
+        debitIndices.push(i);
+        break;
+      }
+    }
+    for (const name of TB_COLUMN_MAPPINGS.credit) {
+      if (cell === name || cell.includes(name)) {
+        creditIndices.push(i);
+        break;
+      }
+    }
+  }
+  
+  return { debitIndices, creditIndices };
+}
+
+// تحديد أي أعمدة مدين/دائن نستخدم بناءً على عددها وموقع الصافي
+function resolveDebitCreditColumns(
+  debitIndices: number[],
+  creditIndices: number[],
+  parentRow?: string[]
+): { debitCol: number; creditCol: number } {
+  let debitCol: number;
+  let creditCol: number;
+  
+  if (debitIndices.length >= 3 && creditIndices.length >= 3) {
+    debitCol = debitIndices[debitIndices.length - 1];
+    creditCol = creditIndices[creditIndices.length - 1];
+  } else if (debitIndices.length === 2 && creditIndices.length === 2) {
+    debitCol = debitIndices[1];
+    creditCol = creditIndices[1];
+  } else {
+    debitCol = debitIndices[0];
+    creditCol = creditIndices[0];
+  }
+  
+  // التحقق من وجود صف عناوين أعلى (مدمج) لتحديد أعمدة الصافي بدقة
+  if (parentRow) {
+    let closingStartCol = -1;
+    for (let i = 0; i < parentRow.length; i++) {
+      const cell = parentRow[i];
+      if (!cell) continue;
+      for (const kw of TB_PARENT_HEADERS.closing) {
+        if (cell.includes(kw)) {
+          closingStartCol = i;
+          break;
+        }
+      }
+      if (closingStartCol !== -1) break;
+    }
+    
+    if (closingStartCol !== -1) {
+      const subDebit = debitIndices.find(i => i >= closingStartCol);
+      const subCredit = creditIndices.find(i => i >= closingStartCol);
+      if (subDebit !== undefined) debitCol = subDebit;
+      if (subCredit !== undefined) creditCol = subCredit;
+    }
+  }
+  
+  return { debitCol, creditCol };
+}
+
 function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
   const maxScanRows = Math.min(15, rawData.length);
   
@@ -375,24 +447,28 @@ function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
     // البحث عن عمود الرمز من العناوين
     let codeCol = findColumnIndex(rowStr, TB_COLUMN_MAPPINGS.code);
     
-    // البحث عن أعمدة المدين والدائن
-    const debitIndices: number[] = [];
-    const creditIndices: number[] = [];
+    // البحث عن أعمدة المدين والدائن في الصف الحالي
+    let { debitIndices, creditIndices } = findDebitCreditInRow(rowStr);
     
-    for (let i = 0; i < rowStr.length; i++) {
-      const cell = rowStr[i];
-      if (!cell) continue;
-      
-      for (const name of TB_COLUMN_MAPPINGS.debit) {
-        if (cell === name || cell.includes(name)) {
-          debitIndices.push(i);
-          break;
-        }
-      }
-      for (const name of TB_COLUMN_MAPPINGS.credit) {
-        if (cell === name || cell.includes(name)) {
-          creditIndices.push(i);
-          break;
+    // === المعالجة الجديدة: إذا لم نجد مدين/دائن في نفس الصف ===
+    // يحدث هذا عندما يكون هناك صفين عناوين (merged headers):
+    // الصف الأول: م | اسم الحساب | الرصيد السابق (merged) | الحركة (merged) | الصافي (merged)
+    // الصف الثاني: (فارغ) | (فارغ) | مدين | دائن | مدين | دائن | المدين | الدائن
+    let subHeaderRowIdx = rowIdx;
+    if (debitIndices.length === 0 || creditIndices.length === 0) {
+      // البحث في الصف التالي عن أعمدة المدين والدائن
+      const nextRowIdx = rowIdx + 1;
+      if (nextRowIdx < rawData.length) {
+        const nextRow = rawData[nextRowIdx];
+        if (nextRow) {
+          const nextRowStr = nextRow.map((c: any) => String(c ?? '').trim());
+          const nextResult = findDebitCreditInRow(nextRowStr);
+          if (nextResult.debitIndices.length > 0 && nextResult.creditIndices.length > 0) {
+            console.log(`📊 Found debit/credit sub-headers in next row ${nextRowIdx}`);
+            debitIndices = nextResult.debitIndices;
+            creditIndices = nextResult.creditIndices;
+            subHeaderRowIdx = nextRowIdx;
+          }
         }
       }
     }
@@ -400,47 +476,14 @@ function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
     if (debitIndices.length === 0 || creditIndices.length === 0) continue;
     
     // تحديد أي أعمدة مدين/دائن نستخدم
-    let debitCol: number;
-    let creditCol: number;
+    // استخدام الصف الذي يحتوي على العناوين المدمجة (الأعلى) كصف أب
+    const parentRowData = subHeaderRowIdx > 0 
+      ? rawData[subHeaderRowIdx - 1]?.map((c: any) => String(c ?? '').trim())
+      : (rowIdx > 0 ? rawData[rowIdx - 1]?.map((c: any) => String(c ?? '').trim()) : undefined);
     
-    if (debitIndices.length >= 3 && creditIndices.length >= 3) {
-      debitCol = debitIndices[debitIndices.length - 1];
-      creditCol = creditIndices[creditIndices.length - 1];
-    } else if (debitIndices.length === 2 && creditIndices.length === 2) {
-      debitCol = debitIndices[1];
-      creditCol = creditIndices[1];
-    } else {
-      debitCol = debitIndices[0];
-      creditCol = creditIndices[0];
-    }
+    const { debitCol, creditCol } = resolveDebitCreditColumns(debitIndices, creditIndices, parentRowData);
     
-    // التحقق من وجود صف عناوين أعلى (مدمج)
-    if (rowIdx > 0) {
-      const parentRow = rawData[rowIdx - 1]?.map((c: any) => String(c ?? '').trim());
-      if (parentRow) {
-        let closingStartCol = -1;
-        for (let i = 0; i < parentRow.length; i++) {
-          const cell = parentRow[i];
-          if (!cell) continue;
-          for (const kw of TB_PARENT_HEADERS.closing) {
-            if (cell.includes(kw)) {
-              closingStartCol = i;
-              break;
-            }
-          }
-          if (closingStartCol !== -1) break;
-        }
-        
-        if (closingStartCol !== -1) {
-          const subDebit = debitIndices.find(i => i >= closingStartCol);
-          const subCredit = creditIndices.find(i => i >= closingStartCol);
-          if (subDebit !== undefined) debitCol = subDebit;
-          if (subCredit !== undefined) creditCol = subCredit;
-        }
-      }
-    }
-    
-    const dataStartRow = rowIdx + 1;
+    const dataStartRow = subHeaderRowIdx + 1;
     
     // === التحقق الذكي: هل عمود الأكواد يحتوي فعلاً على أرقام حسابات؟ ===
     const resolvedCodeCol = codeCol !== -1 ? codeCol : 0;
@@ -457,7 +500,7 @@ function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
       if (codeCol === -1) codeCol = 0;
     }
     
-    console.log(`📊 TB Column Detection: row=${rowIdx}, code=${codeCol}, name=${nameCol}, debit=${debitCol}, credit=${creditCol}, debitCols=${debitIndices}, creditCols=${creditIndices}`);
+    console.log(`📊 TB Column Detection: row=${rowIdx}, subRow=${subHeaderRowIdx}, code=${codeCol}, name=${nameCol}, debit=${debitCol}, credit=${creditCol}, debitCols=${debitIndices}, creditCols=${creditIndices}`);
     
     return {
       codeCol: codeCol !== -1 ? codeCol : -1,
