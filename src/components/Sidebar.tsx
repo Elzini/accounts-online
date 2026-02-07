@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -72,7 +72,16 @@ const ICON_MAP: Record<string, LucideIcon> = {
   // Trips
   'trips': MapPin,
   // Theme settings
-  'theme-settings': Palette
+  'theme-settings': Palette,
+  // Restaurant
+  'menu-management': UtensilsCrossed,
+  'restaurant-orders': Coffee,
+  'kitchen-display': ChefHat,
+  'table-management': LayoutDashboard,
+  // Export/Import
+  'shipments': Ship,
+  'letters-of-credit': FileBox,
+  'customs-clearance': Globe
 };
 
 export function Sidebar({
@@ -106,6 +115,8 @@ export function Sidebar({
     switch (companyType) {
       case 'construction': return 'نظام إدارة المقاولات';
       case 'general_trading': return 'نظام إدارة التجارة';
+      case 'restaurant': return 'نظام إدارة المطاعم';
+      case 'export_import': return 'نظام التصدير والاستيراد';
       default: return 'Elzini SaaS';
     }
   };
@@ -115,6 +126,8 @@ export function Sidebar({
     switch (companyType) {
       case 'construction': return 'للمشاريع والعقود';
       case 'general_trading': return 'للتجارة العامة';
+      case 'restaurant': return 'للمطاعم والكافيهات';
+      case 'export_import': return 'للتصدير والاستيراد';
       default: return 'لتجارة السيارات';
     }
   };
@@ -154,7 +167,86 @@ export function Sidebar({
     permission: 'purchases' as const
   }];
 
-  // Default menu structure (car dealership)
+  // Restaurant-specific menu items
+  const restaurantMenuItems = [{
+    id: 'dashboard' as ActivePage,
+    label: 'الرئيسية',
+    icon: LayoutDashboard
+  }, {
+    id: 'menu-management' as ActivePage,
+    label: 'إدارة القائمة',
+    icon: UtensilsCrossed,
+    permission: 'purchases' as const
+  }, {
+    id: 'restaurant-orders' as ActivePage,
+    label: 'الطلبات',
+    icon: Coffee,
+    permission: 'sales' as const
+  }, {
+    id: 'kitchen-display' as ActivePage,
+    label: 'شاشة المطبخ',
+    icon: ChefHat,
+    permission: 'sales' as const
+  }, {
+    id: 'table-management' as ActivePage,
+    label: 'إدارة الطاولات',
+    icon: LayoutDashboard,
+    permission: 'sales' as const
+  }, {
+    id: 'customers' as ActivePage,
+    label: 'العملاء',
+    icon: Users,
+    permission: 'sales' as const
+  }, {
+    id: 'suppliers' as ActivePage,
+    label: 'الموردين',
+    icon: Truck,
+    permission: 'purchases' as const
+  }];
+
+  // Export/Import-specific menu items
+  const exportImportMenuItems = [{
+    id: 'dashboard' as ActivePage,
+    label: 'الرئيسية',
+    icon: LayoutDashboard
+  }, {
+    id: 'shipments' as ActivePage,
+    label: 'الشحنات',
+    icon: Ship,
+    permission: 'purchases' as const
+  }, {
+    id: 'letters-of-credit' as ActivePage,
+    label: 'خطابات الاعتماد',
+    icon: FileBox,
+    permission: 'purchases' as const
+  }, {
+    id: 'customs-clearance' as ActivePage,
+    label: 'التخليص الجمركي',
+    icon: Globe,
+    permission: 'purchases' as const
+  }, {
+    id: 'customers' as ActivePage,
+    label: 'العملاء',
+    icon: Users,
+    permission: 'sales' as const
+  }, {
+    id: 'suppliers' as ActivePage,
+    label: 'الموردين',
+    icon: Truck,
+    permission: 'purchases' as const
+  }, {
+    id: 'purchases' as ActivePage,
+    label: 'الواردات',
+    icon: ShoppingCart,
+    permission: 'purchases' as const
+  }, {
+    id: 'sales' as ActivePage,
+    label: 'الصادرات',
+    icon: DollarSign,
+    permission: 'sales' as const
+  }];
+
+  // Default menu structure (car dealership / general trading)
   const defaultMenuItems = [{
     id: 'dashboard' as ActivePage,
     label: settings?.dashboard_title || 'الرئيسية',
@@ -469,7 +561,10 @@ export function Sidebar({
       <nav className="flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto">
         {/* Main Section - Changes based on company type */}
         {renderCollapsibleSection('main', 'القائمة الرئيسية', 
-          companyType === 'construction' ? constructionMenuItems : defaultMenuItems
+          companyType === 'construction' ? constructionMenuItems :
+          companyType === 'restaurant' ? restaurantMenuItems :
+          companyType === 'export_import' ? exportImportMenuItems :
+          defaultMenuItems
         )}
 
         {/* Transfers - Only for car dealership */}
@@ -533,6 +628,8 @@ export function Sidebar({
         <p className="text-[10px] sm:text-xs text-center text-sidebar-foreground/50">
           {companyType === 'construction' ? 'نظام إدارة المقاولات' : 
            companyType === 'general_trading' ? 'نظام إدارة التجارة' : 
+           companyType === 'restaurant' ? 'نظام إدارة المطاعم' :
+           companyType === 'export_import' ? 'نظام إدارة التصدير والاستيراد' :
            'نظام إدارة المعرض'} © 2026
         </p>
       </div>
