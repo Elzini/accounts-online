@@ -697,10 +697,16 @@ export async function fetchStats(fiscalYearId?: string | null) {
       .lte('expense_date', fiscalYearEnd);
   }
 
+  const companyId = await getCurrentCompanyId();
+
   let payrollQuery = supabase
     .from('payroll_records')
     .select('month, year, total_base_salaries, total_allowances, total_bonuses, total_overtime, total_absences')
     .eq('status', 'approved');
+
+  if (companyId) {
+    payrollQuery = payrollQuery.eq('company_id', companyId);
+  }
 
   let prepaidAmortQuery = supabase
     .from('prepaid_expense_amortizations')
@@ -708,9 +714,13 @@ export async function fetchStats(fiscalYearId?: string | null) {
       amount,
       amortization_date,
       status,
-      prepaid_expense:prepaid_expenses(company_id, status)
+      prepaid_expense:prepaid_expenses!inner(company_id, status)
     `)
     .lte('amortization_date', toDateOnly(now));
+
+  if (companyId) {
+    prepaidAmortQuery = prepaidAmortQuery.eq('prepaid_expense.company_id', companyId);
+  }
   
   if (fiscalYearStart && fiscalYearEnd) {
     prepaidAmortQuery = prepaidAmortQuery
