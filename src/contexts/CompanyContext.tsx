@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 
-export type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading';
+export type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import';
 
 export interface Company {
   id: string;

@@ -38,7 +38,7 @@ export function useIndustryMenu() {
 
 // Get localized menu labels based on company type
 export function getIndustryLabels(companyType: CompanyActivityType) {
-  const labels = {
+  const labels: Record<CompanyActivityType, any> = {
     car_dealership: {
       purchases: 'المشتريات',
       sales: 'المبيعات',
@@ -65,6 +65,24 @@ export function getIndustryLabels(companyType: CompanyActivityType) {
       salesDescription: 'إضافة فاتورة مبيعات',
       itemName: 'المنتج',
       itemsName: 'المنتجات',
+    },
+    restaurant: {
+      purchases: 'المشتريات',
+      sales: 'المبيعات',
+      inventory: 'المخزون',
+      purchasesDescription: 'إضافة طلب توريد',
+      salesDescription: 'إضافة فاتورة مبيعات',
+      itemName: 'الصنف',
+      itemsName: 'الأصناف',
+    },
+    export_import: {
+      purchases: 'الواردات',
+      sales: 'الصادرات',
+      inventory: 'المخزون',
+      purchasesDescription: 'إضافة شحنة واردة',
+      salesDescription: 'إضافة شحنة صادرة',
+      itemName: 'الشحنة',
+      itemsName: 'الشحنات',
     },
   };
 

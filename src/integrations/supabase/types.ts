@@ -3311,6 +3311,71 @@ export type Database = {
           },
         ]
       }
+      letters_of_credit: {
+        Row: {
+          amount: number
+          beneficiary_bank: string | null
+          beneficiary_name: string | null
+          company_id: string
+          created_at: string
+          currency: string
+          expiry_date: string | null
+          id: string
+          issue_date: string | null
+          issuing_bank: string | null
+          lc_number: string
+          notes: string | null
+          shipment_id: string | null
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          beneficiary_bank?: string | null
+          beneficiary_name?: string | null
+          company_id: string
+          created_at?: string
+          currency?: string
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_bank?: string | null
+          lc_number: string
+          notes?: string | null
+          shipment_id?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          beneficiary_bank?: string | null
+          beneficiary_name?: string | null
+          company_id?: string
+          created_at?: string
+          currency?: string
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_bank?: string | null
+          lc_number?: string
+          notes?: string | null
+          shipment_id?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "letters_of_credit_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_configuration: {
         Row: {
           company_id: string
@@ -4430,6 +4495,168 @@ export type Database = {
           },
         ]
       }
+      restaurant_menu_items: {
+        Row: {
+          category: string
+          company_id: string
+          cost: number
+          created_at: string
+          description: string | null
+          id: string
+          is_available: boolean
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          company_id: string
+          cost?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_available?: boolean
+          name: string
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          company_id?: string
+          cost?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_available?: boolean
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      restaurant_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          menu_item_id: string
+          notes: string | null
+          order_id: string
+          quantity: number
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          menu_item_id: string
+          notes?: string | null
+          order_id: string
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          menu_item_id?: string
+          notes?: string | null
+          order_id?: string
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_order_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_orders: {
+        Row: {
+          company_id: string
+          created_at: string
+          customer_name: string | null
+          id: string
+          notes: string | null
+          order_number: number
+          order_type: string
+          status: string
+          table_number: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          notes?: string | null
+          order_number?: number
+          order_type?: string
+          status?: string
+          table_number?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          notes?: string | null
+          order_number?: number
+          order_type?: string
+          status?: string
+          table_number?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      restaurant_tables: {
+        Row: {
+          capacity: number
+          company_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          status: string
+          table_number: string
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number
+          company_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          table_number: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          company_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          table_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sale_items: {
         Row: {
           car_id: string
@@ -4575,6 +4802,131 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shipment_items: {
+        Row: {
+          created_at: string
+          hs_code: string | null
+          id: string
+          notes: string | null
+          product_name: string
+          quantity: number
+          shipment_id: string
+          total_price: number
+          unit_price: number
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string
+          hs_code?: string | null
+          id?: string
+          notes?: string | null
+          product_name: string
+          quantity?: number
+          shipment_id: string
+          total_price?: number
+          unit_price?: number
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string
+          hs_code?: string | null
+          id?: string
+          notes?: string | null
+          product_name?: string
+          quantity?: number
+          shipment_id?: string
+          total_price?: number
+          unit_price?: number
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipment_items_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shipments: {
+        Row: {
+          arrival_date: string | null
+          bill_of_lading: string | null
+          clearance_fees: number | null
+          company_id: string
+          container_number: string | null
+          created_at: string
+          currency: string
+          customer_name: string | null
+          customs_fees: number | null
+          departure_date: string | null
+          destination_country: string | null
+          id: string
+          insurance_cost: number | null
+          notes: string | null
+          origin_country: string | null
+          shipment_number: number
+          shipment_type: string
+          shipping_cost: number | null
+          shipping_method: string | null
+          status: string
+          supplier_name: string | null
+          total_value: number
+          updated_at: string
+        }
+        Insert: {
+          arrival_date?: string | null
+          bill_of_lading?: string | null
+          clearance_fees?: number | null
+          company_id: string
+          container_number?: string | null
+          created_at?: string
+          currency?: string
+          customer_name?: string | null
+          customs_fees?: number | null
+          departure_date?: string | null
+          destination_country?: string | null
+          id?: string
+          insurance_cost?: number | null
+          notes?: string | null
+          origin_country?: string | null
+          shipment_number?: number
+          shipment_type?: string
+          shipping_cost?: number | null
+          shipping_method?: string | null
+          status?: string
+          supplier_name?: string | null
+          total_value?: number
+          updated_at?: string
+        }
+        Update: {
+          arrival_date?: string | null
+          bill_of_lading?: string | null
+          clearance_fees?: number | null
+          company_id?: string
+          container_number?: string | null
+          created_at?: string
+          currency?: string
+          customer_name?: string | null
+          customs_fees?: number | null
+          departure_date?: string | null
+          destination_country?: string | null
+          id?: string
+          insurance_cost?: number | null
+          notes?: string | null
+          origin_country?: string | null
+          shipment_number?: number
+          shipment_type?: string
+          shipping_cost?: number | null
+          shipping_method?: string | null
+          status?: string
+          supplier_name?: string | null
+          total_value?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       stock_movements: {
         Row: {
@@ -5876,6 +6228,8 @@ export type Database = {
         | "car_dealership"
         | "construction"
         | "general_trading"
+        | "restaurant"
+        | "export_import"
       transfer_status: "pending" | "sold" | "returned"
       transfer_type: "outgoing" | "incoming"
       user_permission:
@@ -6016,6 +6370,8 @@ export const Constants = {
         "car_dealership",
         "construction",
         "general_trading",
+        "restaurant",
+        "export_import",
       ],
       transfer_status: ["pending", "sold", "returned"],
       transfer_type: ["outgoing", "incoming"],
