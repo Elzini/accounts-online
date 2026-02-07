@@ -1,7 +1,6 @@
-import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, FileText, Users, ArrowDownLeft, ArrowUpRight, Building2, BarChart3, RefreshCw, CreditCard, Calendar, AlertTriangle, HardHat } from 'lucide-react';
+import { Car, ShoppingCart, DollarSign, TrendingUp, Package, BarChart3, RefreshCw, HardHat, Building2 } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivePage } from '@/types';
 import { useMonthlyChartData, useStats, useSales, useCars, useAllTimeStats } from '@/hooks/useDatabase';
@@ -11,8 +10,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
 import { useCarTransfers, usePartnerDealerships } from '@/hooks/useTransfers';
 import { useInstallmentSales } from '@/hooks/useInstallments';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid } from 'recharts';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
@@ -21,7 +18,7 @@ import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useDashboardConfig, useSaveDashboardConfig } from '@/hooks/useSystemControl';
 import { CardConfig, DEFAULT_STAT_CARDS } from './dashboard/DashboardCustomizer';
 
-// Advanced Dashboard Components
+// Dashboard Components
 import { TrendCard } from './dashboard/TrendCard';
 import { InventoryPieChart } from './dashboard/InventoryPieChart';
 import { RevenueAreaChart } from './dashboard/RevenueAreaChart';
@@ -33,8 +30,6 @@ import { AmountDisplaySelector, AmountDisplayMode, calculateDisplayAmount, getDi
 import { WelcomeHeader } from './dashboard/WelcomeHeader';
 import { QuickAccessSection } from './dashboard/QuickAccessSection';
 import { RecentInvoicesCard } from './dashboard/RecentInvoicesCard';
-import { OnlineUsersCard } from './dashboard/OnlineUsersCard';
-import { PaymentRemindersCard } from './dashboard/PaymentRemindersCard';
 import { CustomizeInterfaceButton } from './dashboard/CustomizeInterfaceButton';
 import { OnlineUsersPopover } from './dashboard/OnlineUsersPopover';
 import { PaymentRemindersPopover } from './dashboard/PaymentRemindersPopover';
@@ -48,17 +43,16 @@ import {
 import { useCardFormulas, buildFormulaVariables, evaluateFormula } from '@/hooks/useCardFormulas';
 import { MonthlyExpensesCard } from './dashboard/MonthlyExpensesCard';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
+import { useInstallmentStats, ActiveInstallmentsCard, OverdueInstallmentsCard, UpcomingInstallmentsCard, TotalDueCard, NextPaymentCard } from './dashboard/widgets/InstallmentsWidget';
+import { TransfersWidget } from './dashboard/widgets/TransfersWidget';
+import { QuickActionsWidget } from './dashboard/widgets/QuickActionsWidget';
+import { ReportsWidget } from './dashboard/widgets/ReportsWidget';
 
 interface DashboardProps {
   stats: any;
   setActivePage: (page: ActivePage) => void;
 }
 
-const chartConfig = {
-  margin: { top: 10, right: 30, left: 0, bottom: 0 },
-  barSize: 20,
-  barGap: 4,
-};
 
 export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const queryClient = useQueryClient();
@@ -255,11 +249,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     }
   }, [queryClient]);
 
-  const transferStats = useMemo(() => {
-    const incomingCars = transfers?.filter(t => t.transfer_type === 'incoming' && t.status === 'pending') || [];
-    const outgoingCars = transfers?.filter(t => t.transfer_type === 'outgoing' && t.status === 'pending') || [];
-    return { incomingCars, outgoingCars };
-  }, [transfers]);
+  // Installment stats  
+  const installmentStats = useInstallmentStats(installmentSales);
 
   const formatCurrency = useCallback((value: number) => {
     return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(value);
@@ -420,566 +411,258 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             </div>
           </div>
 
-          {/* Dynamic Dashboard Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
-            {/* Quick Access Section */}
-            <EditableWidgetWrapper {...getWidgetProps('quickAccess')}>
-              <QuickAccessSection setActivePage={setActivePage} />
-            </EditableWidgetWrapper>
-            
-            {/* Stats Grid */}
-            <EditableWidgetWrapper {...getWidgetProps('statCards')}>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-                {visibleCardIds.slice(0, 6).map(cardId => {
-                  const cfg = getCardConfig(cardId);
-                  const cardProps = {
-                    size: cfg.size,
-                    bgColor: cfg.bgColor,
-                    fontSize: cfg.fontSize,
-                    height: cfg.height,
-                    enable3D: cfg.enable3D,
-                  };
-
-                  switch (cardId) {
-                    case 'availableCars':
-                      return (
-                        <StatCard
-                          key={cardId}
-                          title={getCardLabel('availableCars', industryLabels.availableItems)}
-                          value={getCardValue('availableCars', stats.availableCars)}
-                          icon={isCarDealership ? Car : HardHat}
-                          gradient="primary"
-                          subtitle={industryLabels.availableSubtitle}
-                          onClick={() => showStatDetail('availableCars')}
-                          {...cardProps}
-                        />
-                      );
-                    case 'totalPurchases':
-                      return (
-                        <StatCard
-                          key={cardId}
-                          title={getCardLabel('totalPurchases', industryLabels.totalPurchasesLabel)}
-                          value={formatCurrencyWithMode(getCardValue('totalPurchases', stats.totalPurchases))}
-                          icon={ShoppingCart}
-                          gradient="danger"
-                          subtitle={getCurrencySubtitle()}
-                          onClick={() => showStatDetail('totalPurchases')}
-                          showAsWords={showAmountAsWords}
-                          {...cardProps}
-                        />
-                      );
-                    case 'monthSales':
-                      return (
-                        <StatCard
-                          key={cardId}
-                          title={getCardLabel('monthSales', 'مبيعات الشهر')}
-                          value={formatCurrencyWithMode(getCardValue('monthSales', stats.monthSalesAmount))}
-                          icon={TrendingUp}
-                          gradient="success"
-                          subtitle={getCurrencySubtitle()}
-                          onClick={() => showStatDetail('monthSales')}
-                          showAsWords={showAmountAsWords}
-                          {...cardProps}
-                        />
-                      );
-                    case 'totalProfit':
-                      return (
-                        <StatCard
-                          key={cardId}
-                          title={getCardLabel('totalProfit', 'إجمالي الأرباح')}
-                          value={formatCurrencyWithMode(getCardValue('totalProfit', stats.totalProfit))}
-                          icon={DollarSign}
-                          gradient="warning"
-                          subtitle={getCurrencySubtitle()}
-                          onClick={() => showStatDetail('totalProfit')}
-                          showAsWords={showAmountAsWords}
-                          {...cardProps}
-                        />
-                      );
-                    case 'todaySales':
-                      return (
-                        <StatCard
-                          key={cardId}
-                          title={getCardLabel('todaySales', 'مبيعات اليوم')}
-                          value={getCardValue('todaySales', stats.todaySales)}
-                          icon={ShoppingCart}
-                          gradient="primary"
-                          subtitle="عملية بيع"
-                          onClick={() => showStatDetail('todaySales')}
-                          {...cardProps}
-                        />
-                      );
-                    case 'monthSalesCount':
-                      return (
-                        <StatCard
-                          key={cardId}
-                          title={getCardLabel('monthSalesCount', 'عدد مبيعات الشهر')}
-                          value={getCardValue('monthSalesCount', stats.monthSales)}
-                          icon={TrendingUp}
-                          gradient="success"
-                          subtitle="عملية بيع"
-                          onClick={() => showStatDetail('monthSalesCount')}
-                          {...cardProps}
-                        />
-                      );
-                    default:
-                      return null;
-                  }
-                })}
-              </div>
-            </EditableWidgetWrapper>
-
-            {/* All-Time Company Stats */}
-            {allTimeStats && (
-              <EditableWidgetWrapper {...getWidgetProps('allTimeStats')}>
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-                  {getCardConfig('allTimePurchases').visible && (
-                    <StatCard
-                      title={getCardLabel('allTimePurchases', 'إجمالي مشتريات الشركة (كل السنين)')}
-                      value={formatCurrencyWithMode(allTimeStats.allTimePurchases)}
-                      icon={Building2}
-                      gradient="danger"
-                      subtitle={`${allTimeStats.totalCarsCount} ${industryLabels.allTimePurchasesSubUnit} - ${getDisplayModeLabel(amountDisplayMode)}`}
-                      onClick={() => showStatDetail('allTimePurchases')}
-                      size={getCardConfig('allTimePurchases').size}
-                      bgColor={getCardConfig('allTimePurchases').bgColor}
-                      fontSize={getCardConfig('allTimePurchases').fontSize}
-                      height={getCardConfig('allTimePurchases').height}
-                      enable3D={getCardConfig('allTimePurchases').enable3D}
-                      showAsWords={showAmountAsWords}
-                    />
-                  )}
-                  {getCardConfig('allTimeSales').visible && (
-                    <StatCard
-                      title={getCardLabel('allTimeSales', 'إجمالي مبيعات الشركة (كل السنين)')}
-                      value={formatCurrencyWithMode(allTimeStats.allTimeSales)}
-                      icon={TrendingUp}
-                      gradient="success"
-                      subtitle={`${allTimeStats.allTimeSalesCount} ${industryLabels.allTimeSalesSubUnit} - ${getDisplayModeLabel(amountDisplayMode)}`}
-                      onClick={() => showStatDetail('allTimeSales')}
-                      size={getCardConfig('allTimeSales').size}
-                      bgColor={getCardConfig('allTimeSales').bgColor}
-                      fontSize={getCardConfig('allTimeSales').fontSize}
-                      height={getCardConfig('allTimeSales').height}
-                      enable3D={getCardConfig('allTimeSales').enable3D}
-                      showAsWords={showAmountAsWords}
-                    />
-                  )}
-                </div>
-              </EditableWidgetWrapper>
-            )}
-
-            {/* Installments Stats Cards */}
-            {(() => {
-              const activeInstallments = installmentSales.filter(s => s.status === 'active');
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
+          {/* Dynamic Dashboard Grid - rendered in sorted order */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+            {sortedWidgets.map(widget => {
+              const props = getWidgetProps(widget.id);
               
-              let totalDueAmount = 0;
-              let overdueCount = 0;
-              let overdueAmount = 0;
-              let upcomingThisMonth = 0;
-              let nextPaymentInfo: { customerName: string; amount: number; dueDate: string; isOverdue: boolean } | null = null;
-              
-              activeInstallments.forEach(installment => {
-                const unpaidPayments = installment.payments?.filter(p => p.status !== 'paid') || [];
-                unpaidPayments.forEach(payment => {
-                  const dueDate = new Date(payment.due_date);
-                  dueDate.setHours(0, 0, 0, 0);
-                  totalDueAmount += payment.amount - (payment.paid_amount || 0);
-                  
-                  if (dueDate < today) {
-                    overdueCount++;
-                    overdueAmount += payment.amount - (payment.paid_amount || 0);
-                  } else {
-                    const thisMonth = new Date();
-                    const endOfMonth = new Date(thisMonth.getFullYear(), thisMonth.getMonth() + 1, 0);
-                    if (dueDate <= endOfMonth) {
-                      upcomingThisMonth++;
-                    }
-                  }
-                });
+              switch (widget.id) {
+                case 'quickAccess':
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <QuickAccessSection setActivePage={setActivePage} />
+                    </EditableWidgetWrapper>
+                  );
                 
-                const nextPayment = unpaidPayments
-                  .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())[0];
+                case 'availableCars':
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <StatCard
+                        title={getCardLabel('availableCars', industryLabels.availableItems)}
+                        value={getCardValue('availableCars', stats.availableCars)}
+                        icon={isCarDealership ? Car : HardHat}
+                        gradient="primary"
+                        subtitle={industryLabels.availableSubtitle}
+                        onClick={() => showStatDetail('availableCars')}
+                        size={getCardConfig('availableCars').size}
+                        bgColor={getCardConfig('availableCars').bgColor}
+                        fontSize={getCardConfig('availableCars').fontSize}
+                        height={getCardConfig('availableCars').height}
+                        enable3D={getCardConfig('availableCars').enable3D}
+                      />
+                    </EditableWidgetWrapper>
+                  );
                 
-                if (nextPayment && !nextPaymentInfo) {
-                  const paymentDueDate = new Date(nextPayment.due_date);
-                  paymentDueDate.setHours(0, 0, 0, 0);
-                  nextPaymentInfo = {
-                    customerName: installment.sale?.customer?.name || 'عميل غير محدد',
-                    amount: nextPayment.amount - (nextPayment.paid_amount || 0),
-                    dueDate: nextPayment.due_date,
-                    isOverdue: paymentDueDate < today
-                  };
-                }
-              });
-              
-              if (activeInstallments.length === 0 && installmentSales.length === 0) return null;
-              
-              return (
-                <EditableWidgetWrapper {...getWidgetProps('installmentStats')}>
-                  <div className="space-y-3 sm:space-y-4">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-                      {getCardConfig('activeInstallments').visible && (
-                        <StatCard
-                          title={getCardLabel('activeInstallments', 'عقود التقسيط النشطة')}
-                          value={activeInstallments.length}
-                          icon={CreditCard}
-                          gradient="primary"
-                          subtitle="عقد نشط"
-                          onClick={() => setActivePage('installments')}
-                          size={getCardConfig('activeInstallments').size}
-                          bgColor={getCardConfig('activeInstallments').bgColor}
-                          fontSize={getCardConfig('activeInstallments').fontSize}
-                          height={getCardConfig('activeInstallments').height}
-                          enable3D={getCardConfig('activeInstallments').enable3D}
-                        />
-                      )}
-                      {getCardConfig('overdueInstallments').visible && (
-                        <StatCard
-                          title={getCardLabel('overdueInstallments', 'الأقساط المتأخرة')}
-                          value={overdueCount}
-                          icon={AlertTriangle}
-                          gradient="danger"
-                          subtitle={`${new Intl.NumberFormat('ar-SA').format(overdueAmount)} ر.س`}
-                          onClick={() => setActivePage('installments')}
-                          size={getCardConfig('overdueInstallments').size}
-                          bgColor={getCardConfig('overdueInstallments').bgColor}
-                          fontSize={getCardConfig('overdueInstallments').fontSize}
-                          height={getCardConfig('overdueInstallments').height}
-                          enable3D={getCardConfig('overdueInstallments').enable3D}
-                        />
-                      )}
-                      {getCardConfig('upcomingInstallments').visible && (
-                        <StatCard
-                          title={getCardLabel('upcomingInstallments', 'أقساط الشهر الحالي')}
-                          value={upcomingThisMonth}
-                          icon={Calendar}
-                          gradient="warning"
-                          subtitle="قسط مستحق"
-                          onClick={() => setActivePage('installments')}
-                          size={getCardConfig('upcomingInstallments').size}
-                          bgColor={getCardConfig('upcomingInstallments').bgColor}
-                          fontSize={getCardConfig('upcomingInstallments').fontSize}
-                          height={getCardConfig('upcomingInstallments').height}
-                          enable3D={getCardConfig('upcomingInstallments').enable3D}
-                        />
-                      )}
-                      {getCardConfig('totalDue').visible && (
-                        <StatCard
-                          title={getCardLabel('totalDue', 'إجمالي المستحق')}
-                          value={`${new Intl.NumberFormat('ar-SA').format(totalDueAmount)} ر.س`}
-                          icon={DollarSign}
-                          gradient="success"
-                          subtitle="ريال سعودي"
-                          onClick={() => setActivePage('installments')}
-                          size={getCardConfig('totalDue').size}
-                          bgColor={getCardConfig('totalDue').bgColor}
-                          fontSize={getCardConfig('totalDue').fontSize}
-                          height={getCardConfig('totalDue').height}
-                          enable3D={getCardConfig('totalDue').enable3D}
-                        />
-                      )}
-                    </div>
-                    
-                    {nextPaymentInfo && (
-                      <div 
-                        className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 shadow-sm border border-border hover-lift animate-fade-in cursor-pointer hover:border-primary/50 transition-colors"
-                        onClick={() => setActivePage('installments')}
-                      >
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-3 sm:gap-4">
-                            <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0 ${
-                              nextPaymentInfo.isOverdue ? 'gradient-danger' : 'gradient-primary'
-                            }`}>
-                              <Users className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                            </div>
-                            <div>
-                              <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">القسط القادم</p>
-                              <p className="text-lg sm:text-xl md:text-2xl font-bold text-card-foreground">
-                                {nextPaymentInfo.customerName}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-4 sm:gap-8">
-                            <div className="text-center">
-                              <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">المبلغ</p>
-                              <p className="text-base sm:text-lg md:text-xl font-bold text-card-foreground">
-                                {new Intl.NumberFormat('ar-SA').format(nextPaymentInfo.amount)} ر.س
-                              </p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">تاريخ الاستحقاق</p>
-                              <p className={`text-base sm:text-lg md:text-xl font-bold ${
-                                nextPaymentInfo.isOverdue ? 'text-destructive' : 'text-card-foreground'
-                              }`}>
-                                {new Date(nextPaymentInfo.dueDate).toLocaleDateString('ar-SA')}
-                              </p>
-                            </div>
-                            {nextPaymentInfo.isOverdue && (
-                              <Badge variant="destructive" className="text-xs sm:text-sm px-3 py-1">
-                                متأخر
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </EditableWidgetWrapper>
-              );
-            })()}
-
-            {/* Monthly Expenses Card */}
-            <EditableWidgetWrapper {...getWidgetProps('monthlyExpenses')}>
-              <MonthlyExpensesCard />
-            </EditableWidgetWrapper>
-
-            {/* Partner Dealership Transfers - Only for car dealerships */}
-            {isCarDealership && (
-              <EditableWidgetWrapper {...getWidgetProps('transfers')}>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
-                  {/* Incoming Cars */}
-                  <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
-                    <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
-                      <div>
-                        <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground flex items-center gap-1.5 sm:gap-2">
-                          <ArrowDownLeft className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                          السيارات الواردة من المعارض
-                        </h2>
-                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-                          <span className="font-semibold text-primary">{transferStats.incomingCars.length}</span> سيارة قيد الانتظار
-                        </p>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setActivePage('car-transfers')}
-                        className="text-primary h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
-                      >
-                        عرض الكل
-                      </Button>
-                    </div>
-                    {transferStats.incomingCars.length === 0 ? (
-                      <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                        <Building2 className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-xs sm:text-sm">لا توجد سيارات واردة قيد الانتظار</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
-                        {transferStats.incomingCars.map((car) => (
-                          <div 
-                            key={car.id} 
-                            className="p-2.5 sm:p-3 bg-primary/5 dark:bg-primary/10 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 cursor-pointer transition-colors"
-                            onClick={() => setActivePage('car-transfers')}
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                                  <Car className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="font-semibold text-xs sm:text-sm truncate">{car.car?.name} {car.car?.model}</p>
-                                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">شاسيه: {car.car?.chassis_number}</p>
-                                </div>
-                              </div>
-                              <div className="text-left shrink-0">
-                                <p className="text-[10px] sm:text-xs font-medium text-primary truncate max-w-[80px] sm:max-w-none">{car.partner_dealership?.name}</p>
-                                <Badge variant="outline" className="text-[10px] sm:text-xs h-5">قيد الانتظار</Badge>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Outgoing Cars */}
-                  <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
-                    <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
-                      <div>
-                        <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground flex items-center gap-1.5 sm:gap-2">
-                          <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
-                          السيارات الصادرة للمعارض
-                        </h2>
-                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-                          <span className="font-semibold text-warning">{transferStats.outgoingCars.length}</span> سيارة قيد الانتظار
-                        </p>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setActivePage('car-transfers')}
-                        className="text-primary h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
-                      >
-                        عرض الكل
-                      </Button>
-                    </div>
-                    {transferStats.outgoingCars.length === 0 ? (
-                      <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                        <Building2 className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-xs sm:text-sm">لا توجد سيارات صادرة قيد الانتظار</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
-                        {transferStats.outgoingCars.map((car) => (
-                          <div 
-                            key={car.id} 
-                            className="p-2.5 sm:p-3 bg-warning/5 dark:bg-warning/10 rounded-lg hover:bg-warning/10 dark:hover:bg-warning/20 cursor-pointer transition-colors"
-                            onClick={() => setActivePage('car-transfers')}
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-warning/20 flex items-center justify-center shrink-0">
-                                  <Car className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="font-semibold text-xs sm:text-sm truncate">{car.car?.name} {car.car?.model}</p>
-                                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">شاسيه: {car.car?.chassis_number}</p>
-                                </div>
-                              </div>
-                              <div className="text-left shrink-0">
-                                <p className="text-[10px] sm:text-xs font-medium text-warning truncate max-w-[80px] sm:max-w-none">{car.partner_dealership?.name}</p>
-                                <Badge variant="outline" className="text-[10px] sm:text-xs h-5">قيد الانتظار</Badge>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </EditableWidgetWrapper>
-            )}
-
-            {/* Quick Actions */}
-            <EditableWidgetWrapper {...getWidgetProps('quickActions')}>
-              <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
-                <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground mb-3 sm:mb-4 md:mb-6">الإجراءات السريعة</h2>
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
-                  <Button 
-                    onClick={() => setActivePage('purchases')}
-                    className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 gradient-primary hover:opacity-90 text-[11px] sm:text-xs md:text-sm"
-                    disabled={!canPurchases}
-                  >
-                    <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                    <span>المشتريات</span>
-                  </Button>
-                  <Button 
-                    onClick={() => setActivePage('sales')}
-                    className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 gradient-success hover:opacity-90 text-[11px] sm:text-xs md:text-sm"
-                    disabled={!canSales}
-                  >
-                    <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                    <span>المبيعات</span>
-                  </Button>
-                  <Button 
-                    onClick={() => setActivePage('add-customer')}
-                    variant="outline"
-                    className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-[11px] sm:text-xs md:text-sm"
-                    disabled={!canSales}
-                  >
-                    <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                    <span>إضافة عميل</span>
-                  </Button>
-                  <Button 
-                    onClick={() => setActivePage('add-supplier')}
-                    variant="outline"
-                    className="h-auto py-2.5 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 border-2 hover:bg-primary hover:text-primary-foreground text-[11px] sm:text-xs md:text-sm"
-                    disabled={!canPurchases}
-                  >
-                    <Truck className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                    <span>إضافة مورد</span>
-                  </Button>
-                </div>
-              </div>
-            </EditableWidgetWrapper>
-
-            {/* Reports */}
-            <EditableWidgetWrapper {...getWidgetProps('reports')}>
-              <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
-                <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground mb-3 sm:mb-4 md:mb-6">التقارير</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 md:gap-3">
-                  <Button 
-                    onClick={() => setActivePage('inventory-report')}
-                    variant="ghost"
-                    className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-primary/10 text-xs sm:text-sm"
-                  >
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-primary" />
-                    </div>
-                    <span className="font-medium truncate">تقرير المخزون</span>
-                  </Button>
-                  <Button 
-                    onClick={() => setActivePage('profit-report')}
-                    variant="ghost"
-                    className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-success/10 text-xs sm:text-sm"
-                  >
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
-                      <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-success" />
-                    </div>
-                    <span className="font-medium truncate">تقرير الأرباح</span>
-                  </Button>
-                  <Button 
-                    onClick={() => setActivePage('purchases-report')}
-                    variant="ghost"
-                    className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-warning/10 text-xs sm:text-sm"
-                  >
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
-                      <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-warning" />
-                    </div>
-                    <span className="font-medium truncate">تقرير المشتريات</span>
-                  </Button>
-                  <Button 
-                    onClick={() => setActivePage('sales-report')}
-                    variant="ghost"
-                    className="w-full justify-start gap-2 md:gap-3 h-9 sm:h-10 md:h-12 hover:bg-primary/10 text-xs sm:text-sm"
-                  >
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-primary" />
-                    </div>
-                    <span className="font-medium truncate">تقرير المبيعات</span>
-                  </Button>
-                  <Button 
-                    onClick={() => setActivePage('customers-report')}
-                    variant="ghost"
-                    className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-purple-500/10 text-sm"
-                  >
-                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
-                      <Users className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
-                    </div>
-                    <span className="font-medium">تقرير العملاء</span>
-                  </Button>
-                  <Button 
-                    onClick={() => setActivePage('suppliers-report')}
-                    variant="ghost"
-                    className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-orange-500/10 text-sm"
-                  >
-                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
-                      <Truck className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />
-                    </div>
-                    <span className="font-medium">تقرير الموردين</span>
-                  </Button>
-                  <Button 
-                    onClick={() => setActivePage('commissions-report')}
-                    variant="ghost"
-                    className="w-full justify-start gap-2 md:gap-3 h-10 md:h-12 hover:bg-yellow-500/10 text-sm"
-                  >
-                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
-                      <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-yellow-500" />
-                    </div>
-                    <span className="font-medium">تقرير العمولات</span>
-                  </Button>
-                </div>
-              </div>
-            </EditableWidgetWrapper>
-
-            {/* Recent Invoices */}
-            <EditableWidgetWrapper {...getWidgetProps('recentInvoices')}>
-              <RecentInvoicesCard setActivePage={setActivePage} />
-            </EditableWidgetWrapper>
+                case 'totalPurchases':
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <StatCard
+                        title={getCardLabel('totalPurchases', industryLabels.totalPurchasesLabel)}
+                        value={formatCurrencyWithMode(getCardValue('totalPurchases', stats.totalPurchases))}
+                        icon={ShoppingCart}
+                        gradient="danger"
+                        subtitle={getCurrencySubtitle()}
+                        onClick={() => showStatDetail('totalPurchases')}
+                        showAsWords={showAmountAsWords}
+                        size={getCardConfig('totalPurchases').size}
+                        bgColor={getCardConfig('totalPurchases').bgColor}
+                        fontSize={getCardConfig('totalPurchases').fontSize}
+                        height={getCardConfig('totalPurchases').height}
+                        enable3D={getCardConfig('totalPurchases').enable3D}
+                      />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'monthSales':
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <StatCard
+                        title={getCardLabel('monthSales', 'مبيعات الشهر')}
+                        value={formatCurrencyWithMode(getCardValue('monthSales', stats.monthSalesAmount))}
+                        icon={TrendingUp}
+                        gradient="success"
+                        subtitle={getCurrencySubtitle()}
+                        onClick={() => showStatDetail('monthSales')}
+                        showAsWords={showAmountAsWords}
+                        size={getCardConfig('monthSales').size}
+                        bgColor={getCardConfig('monthSales').bgColor}
+                        fontSize={getCardConfig('monthSales').fontSize}
+                        height={getCardConfig('monthSales').height}
+                        enable3D={getCardConfig('monthSales').enable3D}
+                      />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'totalProfit':
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <StatCard
+                        title={getCardLabel('totalProfit', 'إجمالي الأرباح')}
+                        value={formatCurrencyWithMode(getCardValue('totalProfit', stats.totalProfit))}
+                        icon={DollarSign}
+                        gradient="warning"
+                        subtitle={getCurrencySubtitle()}
+                        onClick={() => showStatDetail('totalProfit')}
+                        showAsWords={showAmountAsWords}
+                        size={getCardConfig('totalProfit').size}
+                        bgColor={getCardConfig('totalProfit').bgColor}
+                        fontSize={getCardConfig('totalProfit').fontSize}
+                        height={getCardConfig('totalProfit').height}
+                        enable3D={getCardConfig('totalProfit').enable3D}
+                      />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'todaySales':
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <StatCard
+                        title={getCardLabel('todaySales', 'مبيعات اليوم')}
+                        value={getCardValue('todaySales', stats.todaySales)}
+                        icon={ShoppingCart}
+                        gradient="primary"
+                        subtitle="عملية بيع"
+                        onClick={() => showStatDetail('todaySales')}
+                        size={getCardConfig('todaySales').size}
+                        bgColor={getCardConfig('todaySales').bgColor}
+                        fontSize={getCardConfig('todaySales').fontSize}
+                        height={getCardConfig('todaySales').height}
+                        enable3D={getCardConfig('todaySales').enable3D}
+                      />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'monthSalesCount':
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <StatCard
+                        title={getCardLabel('monthSalesCount', 'عدد مبيعات الشهر')}
+                        value={getCardValue('monthSalesCount', stats.monthSales)}
+                        icon={TrendingUp}
+                        gradient="success"
+                        subtitle="عملية بيع"
+                        onClick={() => showStatDetail('monthSalesCount')}
+                        size={getCardConfig('monthSalesCount').size}
+                        bgColor={getCardConfig('monthSalesCount').bgColor}
+                        fontSize={getCardConfig('monthSalesCount').fontSize}
+                        height={getCardConfig('monthSalesCount').height}
+                        enable3D={getCardConfig('monthSalesCount').enable3D}
+                      />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'allTimePurchases':
+                  if (!allTimeStats) return null;
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <StatCard
+                        title={getCardLabel('allTimePurchases', 'إجمالي مشتريات الشركة')}
+                        value={formatCurrencyWithMode(allTimeStats.allTimePurchases)}
+                        icon={Building2}
+                        gradient="danger"
+                        subtitle={`${allTimeStats.totalCarsCount} ${industryLabels.allTimePurchasesSubUnit} - ${getDisplayModeLabel(amountDisplayMode)}`}
+                        onClick={() => showStatDetail('allTimePurchases')}
+                        showAsWords={showAmountAsWords}
+                        size={getCardConfig('allTimePurchases').size}
+                        bgColor={getCardConfig('allTimePurchases').bgColor}
+                        fontSize={getCardConfig('allTimePurchases').fontSize}
+                        height={getCardConfig('allTimePurchases').height}
+                        enable3D={getCardConfig('allTimePurchases').enable3D}
+                      />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'allTimeSales':
+                  if (!allTimeStats) return null;
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <StatCard
+                        title={getCardLabel('allTimeSales', 'إجمالي مبيعات الشركة')}
+                        value={formatCurrencyWithMode(allTimeStats.allTimeSales)}
+                        icon={TrendingUp}
+                        gradient="success"
+                        subtitle={`${allTimeStats.allTimeSalesCount} ${industryLabels.allTimeSalesSubUnit} - ${getDisplayModeLabel(amountDisplayMode)}`}
+                        onClick={() => showStatDetail('allTimeSales')}
+                        showAsWords={showAmountAsWords}
+                        size={getCardConfig('allTimeSales').size}
+                        bgColor={getCardConfig('allTimeSales').bgColor}
+                        fontSize={getCardConfig('allTimeSales').fontSize}
+                        height={getCardConfig('allTimeSales').height}
+                        enable3D={getCardConfig('allTimeSales').enable3D}
+                      />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'activeInstallments':
+                  if (!installmentStats.hasData) return null;
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <ActiveInstallmentsCard stats={installmentStats} setActivePage={setActivePage} getCardLabel={getCardLabel} getCardConfig={getCardConfig} />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'overdueInstallments':
+                  if (!installmentStats.hasData) return null;
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <OverdueInstallmentsCard stats={installmentStats} setActivePage={setActivePage} getCardLabel={getCardLabel} getCardConfig={getCardConfig} />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'upcomingInstallments':
+                  if (!installmentStats.hasData) return null;
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <UpcomingInstallmentsCard stats={installmentStats} setActivePage={setActivePage} getCardLabel={getCardLabel} getCardConfig={getCardConfig} />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'totalDue':
+                  if (!installmentStats.hasData) return null;
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <TotalDueCard stats={installmentStats} setActivePage={setActivePage} getCardLabel={getCardLabel} getCardConfig={getCardConfig} />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'nextPayment':
+                  if (!installmentStats.hasData || !installmentStats.nextPaymentInfo) return null;
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <NextPaymentCard stats={installmentStats} setActivePage={setActivePage} />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'monthlyExpenses':
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <MonthlyExpensesCard />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'transfers':
+                  if (!isCarDealership) return null;
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <TransfersWidget transfers={transfers || []} setActivePage={setActivePage} />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'quickActions':
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <QuickActionsWidget setActivePage={setActivePage} canSales={canSales} canPurchases={canPurchases} />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'reports':
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <ReportsWidget setActivePage={setActivePage} />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'recentInvoices':
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <RecentInvoicesCard setActivePage={setActivePage} />
+                    </EditableWidgetWrapper>
+                  );
+                
+                default:
+                  return null;
+              }
+            })}
           </div>
         </TabsContent>
 

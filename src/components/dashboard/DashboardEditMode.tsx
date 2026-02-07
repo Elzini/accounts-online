@@ -14,14 +14,24 @@ export interface WidgetConfig {
 
 export const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'quickAccess', label: 'الوصول السريع', visible: true, order: 0, colSpan: 2 },
-  { id: 'statCards', label: 'بطاقات الإحصائيات', visible: true, order: 1, colSpan: 2 },
-  { id: 'allTimeStats', label: 'إجمالي الشركة', visible: true, order: 2, colSpan: 2 },
-  { id: 'installmentStats', label: 'بطاقات التقسيط', visible: true, order: 3, colSpan: 2 },
-  { id: 'monthlyExpenses', label: 'المصروفات الشهرية', visible: true, order: 4, colSpan: 2 },
-  { id: 'transfers', label: 'السيارات الوارد والصادر', visible: true, order: 5, colSpan: 2 },
-  { id: 'quickActions', label: 'الإجراءات السريعة', visible: true, order: 6, colSpan: 1 },
-  { id: 'reports', label: 'التقارير', visible: true, order: 7, colSpan: 1 },
-  { id: 'recentInvoices', label: 'أحدث الفواتير', visible: true, order: 8, colSpan: 2 },
+  { id: 'availableCars', label: 'السيارات المتاحة', visible: true, order: 1, colSpan: 1 },
+  { id: 'totalPurchases', label: 'إجمالي المشتريات', visible: true, order: 2, colSpan: 1 },
+  { id: 'monthSales', label: 'مبيعات الشهر', visible: true, order: 3, colSpan: 1 },
+  { id: 'totalProfit', label: 'إجمالي الأرباح', visible: true, order: 4, colSpan: 1 },
+  { id: 'todaySales', label: 'مبيعات اليوم', visible: true, order: 5, colSpan: 1 },
+  { id: 'monthSalesCount', label: 'عدد مبيعات الشهر', visible: true, order: 6, colSpan: 1 },
+  { id: 'allTimePurchases', label: 'إجمالي مشتريات الشركة', visible: true, order: 7, colSpan: 1 },
+  { id: 'allTimeSales', label: 'إجمالي مبيعات الشركة', visible: true, order: 8, colSpan: 1 },
+  { id: 'activeInstallments', label: 'عقود التقسيط النشطة', visible: true, order: 9, colSpan: 1 },
+  { id: 'overdueInstallments', label: 'الأقساط المتأخرة', visible: true, order: 10, colSpan: 1 },
+  { id: 'upcomingInstallments', label: 'أقساط الشهر الحالي', visible: true, order: 11, colSpan: 1 },
+  { id: 'totalDue', label: 'إجمالي المستحق', visible: true, order: 12, colSpan: 1 },
+  { id: 'nextPayment', label: 'القسط القادم', visible: true, order: 13, colSpan: 2 },
+  { id: 'monthlyExpenses', label: 'المصروفات الشهرية', visible: true, order: 14, colSpan: 2 },
+  { id: 'transfers', label: 'السيارات الوارد والصادر', visible: true, order: 15, colSpan: 2 },
+  { id: 'quickActions', label: 'الإجراءات السريعة', visible: true, order: 16, colSpan: 1 },
+  { id: 'reports', label: 'التقارير', visible: true, order: 17, colSpan: 1 },
+  { id: 'recentInvoices', label: 'أحدث الفواتير', visible: true, order: 18, colSpan: 2 },
 ];
 
 interface DashboardEditModeProps {
