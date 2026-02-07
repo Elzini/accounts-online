@@ -324,6 +324,8 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
                 <TableRow>
                   <TableHead className="text-right w-20">الرمز</TableHead>
                   <TableHead className="text-right">اسم الحساب</TableHead>
+                  <TableHead className="text-right w-24">حركة مدينة</TableHead>
+                  <TableHead className="text-right w-24">حركة دائنة</TableHead>
                   <TableHead className="text-right w-28">مدين</TableHead>
                   <TableHead className="text-right w-28">دائن</TableHead>
                   <TableHead className="text-right w-48">التصنيف</TableHead>
@@ -335,6 +337,8 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
                   <TableRow key={index} className={row.mappedType === 'unmapped' ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}>
                     <TableCell className="font-mono text-sm">{row.code}</TableCell>
                     <TableCell className="font-medium text-sm">{row.name}</TableCell>
+                    <TableCell className="text-sm tabular-nums text-muted-foreground">{row.movementDebit > 0 ? formatNumber(row.movementDebit) : '-'}</TableCell>
+                    <TableCell className="text-sm tabular-nums text-muted-foreground">{row.movementCredit > 0 ? formatNumber(row.movementCredit) : '-'}</TableCell>
                     <TableCell className="text-sm tabular-nums">{row.debit > 0 ? formatNumber(row.debit) : '-'}</TableCell>
                     <TableCell className="text-sm tabular-nums">{row.credit > 0 ? formatNumber(row.credit) : '-'}</TableCell>
                     <TableCell>

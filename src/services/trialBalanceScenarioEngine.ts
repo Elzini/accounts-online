@@ -655,6 +655,8 @@ export function generateMissingAccounts(rows: TrialBalanceRow[]): TrialBalanceRo
         name: def.name,
         debit: 0,
         credit: 0,
+        movementDebit: 0,
+        movementCredit: 0,
         mappedType: def.type,
         isAutoMapped: true,
         isValid: true,
