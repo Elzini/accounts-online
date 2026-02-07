@@ -131,8 +131,30 @@ export async function exportTrialBalanceTemplate(includeSamples: boolean = true)
   worksheet.getColumn(5).width = 20;
   worksheet.getColumn(6).width = 20;
 
+  // === دالة مساعدة: إيجاد نطاق الحسابات الفرعية لحساب رئيسي ===
+  function findChildRange(headerIdx: number): { firstRow: number; lastRow: number } | null {
+    const headerAccount = SAMPLE_ACCOUNTS[headerIdx];
+    const headerLevel = headerAccount.level || 0;
+    let firstChild = -1;
+    let lastChild = -1;
+
+    for (let i = headerIdx + 1; i < SAMPLE_ACCOUNTS.length; i++) {
+      const childLevel = SAMPLE_ACCOUNTS[i].level || 0;
+      // توقف إذا وصلنا لحساب بنفس المستوى أو أعلى
+      if (childLevel <= headerLevel) break;
+      // نجمع فقط الأبناء المباشرين (المستوى التالي مباشرة) الذين ليسوا رئيسيين
+      // أو الأبناء الرئيسيين (سيحتوون بدورهم على SUM)
+      if (firstChild === -1) firstChild = i;
+      lastChild = i;
+    }
+
+    if (firstChild === -1) return null;
+    return { firstRow: firstChild + 4, lastRow: lastChild + 4 }; // +4 لأن البيانات تبدأ من صف 4
+  }
+
   // === بيانات النموذج ===
   if (includeSamples) {
+    // المرحلة 1: كتابة البيانات الأساسية
     SAMPLE_ACCOUNTS.forEach((account, idx) => {
       const rowNum = idx + 4;
       const row = worksheet.getRow(rowNum);
@@ -158,8 +180,19 @@ export async function exportTrialBalanceTemplate(includeSamples: boolean = true)
       row.getCell(2).font = { size: 11, bold: !!isHeader };
       row.getCell(2).alignment = { horizontal: 'right', indent: indent };
 
-      // الحسابات الرئيسية لا تحتوي على أرقام
-      if (!isHeader) {
+      if (isHeader) {
+        // الحسابات الرئيسية: إضافة صيغة SUM لجمع الفروع التابعة لها
+        const childRange = findChildRange(idx);
+        if (childRange) {
+          for (let c = 3; c <= 6; c++) {
+            const colLetter = String.fromCharCode(64 + c);
+            row.getCell(c).value = { formula: `SUM(${colLetter}${childRange.firstRow}:${colLetter}${childRange.lastRow})` };
+            row.getCell(c).numFmt = '#,##0.00';
+            row.getCell(c).font = { bold: true, size: 11, color: { argb: 'FF1A365D' } };
+          }
+        }
+      } else {
+        // الحسابات الفرعية: القيم العادية
         row.getCell(3).value = account.movementDebit || null;
         row.getCell(3).numFmt = '#,##0.00';
         row.getCell(4).value = account.movementCredit || null;
