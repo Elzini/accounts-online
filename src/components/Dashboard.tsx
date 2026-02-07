@@ -146,13 +146,19 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     if (isEditMode) return; // Don't reset during editing
     if (dashboardConfig?.layout_settings?.widgets) {
       const savedWidgets = dashboardConfig.layout_settings.widgets as WidgetConfig[];
-      const savedIds = new Set(savedWidgets.map((w: any) => w.id));
+      // Only keep saved widgets that exist in DEFAULT_WIDGETS (filter out old/removed IDs)
+      const validDefaultIds = new Set(DEFAULT_WIDGETS.map(dw => dw.id));
+      const validSavedWidgets = savedWidgets.filter((w: any) => validDefaultIds.has(w.id));
+      const savedIds = new Set(validSavedWidgets.map((w: any) => w.id));
       const merged = [
-        ...savedWidgets.map((w: any) => ({
+        ...validSavedWidgets.map((w: any) => ({
           ...w,
           colSpan: w.colSpan ?? DEFAULT_WIDGETS.find(dw => dw.id === w.id)?.colSpan ?? 2,
         })),
-        ...DEFAULT_WIDGETS.filter(dw => !savedIds.has(dw.id)),
+        ...DEFAULT_WIDGETS.filter(dw => !savedIds.has(dw.id)).map((dw, i) => ({
+          ...dw,
+          order: validSavedWidgets.length + i,
+        })),
       ].sort((a, b) => a.order - b.order);
       setWidgetConfigs(merged);
     }
@@ -178,13 +184,18 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const cancelEditMode = useCallback(() => {
     if (dashboardConfig?.layout_settings?.widgets) {
       const savedWidgets = dashboardConfig.layout_settings.widgets as WidgetConfig[];
-      const savedIds = new Set(savedWidgets.map((w: any) => w.id));
+      const validDefaultIds = new Set(DEFAULT_WIDGETS.map(dw => dw.id));
+      const validSavedWidgets = savedWidgets.filter((w: any) => validDefaultIds.has(w.id));
+      const savedIds = new Set(validSavedWidgets.map((w: any) => w.id));
       const merged = [
-        ...savedWidgets.map((w: any) => ({
+        ...validSavedWidgets.map((w: any) => ({
           ...w,
           colSpan: w.colSpan ?? DEFAULT_WIDGETS.find(dw => dw.id === w.id)?.colSpan ?? 2,
         })),
-        ...DEFAULT_WIDGETS.filter(dw => !savedIds.has(dw.id)),
+        ...DEFAULT_WIDGETS.filter(dw => !savedIds.has(dw.id)).map((dw, i) => ({
+          ...dw,
+          order: validSavedWidgets.length + i,
+        })),
       ].sort((a, b) => a.order - b.order);
       setWidgetConfigs(merged);
     } else {
@@ -414,7 +425,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           </div>
 
           {/* Dynamic Dashboard Grid - rendered in sorted order */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
             {sortedWidgets.map(widget => {
               const props = getWidgetProps(widget.id);
               
