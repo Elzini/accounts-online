@@ -200,14 +200,35 @@ export const MAPPING_TYPE_LABELS: Record<AccountMappingType, string> = {
   unmapped: 'غير مصنف',
 };
 
+// تطبيع النص العربي: توحيد ة/ه، إ/أ/آ→ا، حذف التشكيل
+function normalizeArabic(text: string): string {
+  return text
+    .replace(/[\u064B-\u065F\u0670]/g, '') // حذف التشكيل
+    .replace(/ة/g, 'ه')                     // ة → ه
+    .replace(/[إأآ]/g, 'ا')                  // إ/أ/آ → ا
+    .trim();
+}
+
+// مطابقة نص مع قائمة أسماء محتملة مع تطبيع عربي
+function matchesArabicPattern(cellText: string, patterns: string[]): boolean {
+  const normalizedCell = normalizeArabic(cellText);
+  for (const pattern of patterns) {
+    const normalizedPattern = normalizeArabic(pattern);
+    if (normalizedCell === normalizedPattern || normalizedCell.includes(normalizedPattern)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // الأعمدة المحتملة لميزان المراجعة
 const TB_COLUMN_MAPPINGS = {
   code: ['رمز الحساب', 'الرمز', 'الكود', 'رقم الحساب', 'code', 'account_code', 'Code', 'رقم', 'الرقم', 'كود', 'رمز', 'م', 'ر', 'رقم حساب', 'Account Code', 'Account No', 'Acc Code', 'No'],
   name: ['اسم الحساب', 'الحساب', 'البيان', 'الوصف', 'name', 'account_name', 'Name', 'اسم', 'حساب', 'وصف', 'Account Name', 'Account', 'Description', 'بيان الحساب', 'اسم', 'المسمى'],
-  debit: ['مدين', 'مدين إجمالي', 'مجموع مدين', 'رصيد مدين', 'debit', 'Debit', 'المدين', 'مدين نهائي', 'Debit Balance', 'Dr', 'مدينة'],
-  credit: ['دائن', 'دائن إجمالي', 'مجموع دائن', 'رصيد دائن', 'credit', 'Credit', 'الدائن', 'دائن نهائي', 'Credit Balance', 'Cr', 'دائنة'],
-  movementDebit: ['حركة مدينة', 'حركة مدين', 'مدين الحركة', 'Movement Debit', 'Dr Movement'],
-  movementCredit: ['حركة دائنة', 'حركة دائن', 'دائن الحركة', 'Movement Credit', 'Cr Movement'],
+  debit: ['مدين', 'مدين إجمالي', 'مجموع مدين', 'رصيد مدين', 'debit', 'Debit', 'المدين', 'مدين نهائي', 'Debit Balance', 'Dr', 'مدينة', 'مدينه'],
+  credit: ['دائن', 'دائن إجمالي', 'مجموع دائن', 'رصيد دائن', 'credit', 'Credit', 'الدائن', 'دائن نهائي', 'Credit Balance', 'Cr', 'دائنة', 'دائنه'],
+  movementDebit: ['حركة مدينة', 'حركة مدين', 'مدين الحركة', 'حركه مدينه', 'حركه مدين', 'Movement Debit', 'Dr Movement'],
+  movementCredit: ['حركة دائنة', 'حركة دائن', 'دائن الحركة', 'حركه دائنه', 'حركه دائن', 'Movement Credit', 'Cr Movement'],
 };
 
 // الأعمدة المحتملة لعناوين الصفوف العلوية (الصف المدمج)
@@ -412,39 +433,25 @@ function findDebitCreditInRow(rowStr: string[]): { debitIndices: number[]; credi
     const cell = rowStr[i];
     if (!cell) continue;
     
-    // فحص أعمدة الحركة أولاً (أولوية أعلى لأنها أكثر تحديداً)
+    // فحص أعمدة الحركة أولاً باستخدام التطبيع العربي (أولوية أعلى)
     let isMovement = false;
-    for (const name of TB_COLUMN_MAPPINGS.movementDebit) {
-      if (cell === name || cell.includes(name)) {
-        movDebitIndices.push(i);
-        isMovement = true;
-        break;
-      }
+    if (matchesArabicPattern(cell, TB_COLUMN_MAPPINGS.movementDebit)) {
+      movDebitIndices.push(i);
+      isMovement = true;
     }
-    if (!isMovement) {
-      for (const name of TB_COLUMN_MAPPINGS.movementCredit) {
-        if (cell === name || cell.includes(name)) {
-          movCreditIndices.push(i);
-          isMovement = true;
-          break;
-        }
-      }
+    if (!isMovement && matchesArabicPattern(cell, TB_COLUMN_MAPPINGS.movementCredit)) {
+      movCreditIndices.push(i);
+      isMovement = true;
     }
     
     // إذا كان عمود حركة، لا نضيفه كعمود رصيد
     if (isMovement) continue;
     
-    for (const name of TB_COLUMN_MAPPINGS.debit) {
-      if (cell === name || cell.includes(name)) {
-        debitIndices.push(i);
-        break;
-      }
+    if (matchesArabicPattern(cell, TB_COLUMN_MAPPINGS.debit)) {
+      debitIndices.push(i);
     }
-    for (const name of TB_COLUMN_MAPPINGS.credit) {
-      if (cell === name || cell.includes(name)) {
-        creditIndices.push(i);
-        break;
-      }
+    if (matchesArabicPattern(cell, TB_COLUMN_MAPPINGS.credit)) {
+      creditIndices.push(i);
     }
   }
   
@@ -457,28 +464,20 @@ function resolveDebitCreditColumns(
   creditIndices: number[],
   parentRow?: string[]
 ): { debitCol: number; creditCol: number } {
-  let debitCol: number;
-  let creditCol: number;
+  // === القاعدة الأساسية: الرصيد النهائي دائماً في آخر (أيمن) الأعمدة ===
+  // بغض النظر عن عدد الأعمدة أو ترتيبها، نأخذ الأخير دائماً
+  let debitCol = debitIndices[debitIndices.length - 1];
+  let creditCol = creditIndices[creditIndices.length - 1];
   
-  if (debitIndices.length >= 3 && creditIndices.length >= 3) {
-    debitCol = debitIndices[debitIndices.length - 1];
-    creditCol = creditIndices[creditIndices.length - 1];
-  } else if (debitIndices.length === 2 && creditIndices.length === 2) {
-    debitCol = debitIndices[1];
-    creditCol = creditIndices[1];
-  } else {
-    debitCol = debitIndices[0];
-    creditCol = creditIndices[0];
-  }
-  
-  // التحقق من وجود صف عناوين أعلى (مدمج) لتحديد أعمدة الصافي بدقة
+  // التحقق من وجود صف عناوين أعلى (مدمج) لتحديد أعمدة الصافي بدقة أكبر
   if (parentRow) {
     let closingStartCol = -1;
     for (let i = 0; i < parentRow.length; i++) {
       const cell = parentRow[i];
       if (!cell) continue;
+      const normalizedCell = normalizeArabic(cell);
       for (const kw of TB_PARENT_HEADERS.closing) {
-        if (cell.includes(kw)) {
+        if (normalizedCell.includes(normalizeArabic(kw))) {
           closingStartCol = i;
           break;
         }
@@ -493,6 +492,8 @@ function resolveDebitCreditColumns(
       if (subCredit !== undefined) creditCol = subCredit;
     }
   }
+  
+  console.log(`📊 resolveDebitCreditColumns: debitIndices=${JSON.stringify(debitIndices)}, creditIndices=${JSON.stringify(creditIndices)} → debit=${debitCol}, credit=${creditCol}`);
   
   return { debitCol, creditCol };
 }
@@ -581,8 +582,9 @@ function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
       for (let i = 0; i < parentRowData.length; i++) {
         const cell = parentRowData[i];
         if (!cell) continue;
+        const normalizedCell = normalizeArabic(cell);
         for (const kw of TB_PARENT_HEADERS.movement) {
-          if (cell.includes(kw)) {
+          if (normalizedCell.includes(normalizeArabic(kw))) {
             const movDebit = debitIndices.find(idx => idx >= i && idx < debitCol);
             const movCredit = creditIndices.find(idx => idx >= i && idx < creditCol);
             if (movDebit !== undefined) movementDebitCol = movDebit;
