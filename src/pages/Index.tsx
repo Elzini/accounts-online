@@ -56,6 +56,7 @@ import { PayrollPage } from '@/components/payroll/PayrollPage';
 import { AccountStatementReport } from '@/components/reports/AccountStatementReport';
 import { AccountMovementReport } from '@/components/reports/AccountMovementReport';
 import { ControlCenterPage } from '@/components/control-center/ControlCenterPage';
+import { AccountingAuditPage } from '@/components/audit/AccountingAuditPage';
 import { FixedAssetsPage } from '@/components/assets/FixedAssetsPage';
 import { MedadImportPage } from '@/components/import/MedadImportPage';
 import { ProjectsPage, ContractsPage, ProgressBillingsPage } from '@/components/construction';
@@ -179,6 +180,8 @@ const Index = () => {
       case 'shipments': return <ShipmentsPage />;
       case 'letters-of-credit': return <LettersOfCreditPage />;
       case 'customs-clearance': return <CustomsClearancePage />;
+      // Accounting Audit
+      case 'accounting-audit': return <AccountingAuditPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };

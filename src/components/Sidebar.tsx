@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -81,7 +81,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   // Export/Import
   'shipments': Ship,
   'letters-of-credit': FileBox,
-  'customs-clearance': Globe
+  'customs-clearance': Globe,
+  'accounting-audit': ShieldCheck
 };
 
 export function Sidebar({
@@ -635,6 +636,10 @@ export function Sidebar({
         id: 'control-center' as ActivePage,
         label: 'مركز التحكم',
         icon: Settings2
+      }, {
+        id: 'accounting-audit' as ActivePage,
+        label: 'فحص النظام المحاسبي',
+        icon: ShieldCheck
       }], canManageUsers)}
       </nav>
 
