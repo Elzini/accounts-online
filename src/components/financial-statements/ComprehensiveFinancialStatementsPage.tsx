@@ -12,7 +12,7 @@ import {
   FileSpreadsheet, Download, Upload, Printer, FileText,
   Building2, Calculator, TrendingUp, Scale, Wallet, BarChart3,
   Loader2, Database, BookOpen, FileCheck, Users, Package,
-  AlertTriangle, CheckCircle2, Wrench
+  AlertTriangle, CheckCircle2, Wrench, FileUp
 } from 'lucide-react';
 import { readExcelFile, ExcelWorkbook } from '@/lib/excelUtils';
 import { toast } from 'sonner';
@@ -45,6 +45,7 @@ import {
   CreditorsNoteView,
 } from './notes/OtherNotesViews';
 import { FinancialStatementsFormulaEditor } from './FinancialStatementsFormulaEditor';
+import { TrialBalanceImportManager } from './TrialBalanceImportManager';
 
 export function ComprehensiveFinancialStatementsPage() {
   const { company, companyId } = useCompany();
@@ -57,10 +58,11 @@ export function ComprehensiveFinancialStatementsPage() {
   
   const [data, setData] = useState<ComprehensiveFinancialData>(emptyFinancialData);
   const [isLoading, setIsLoading] = useState(false);
-  const [dataSource, setDataSource] = useState<'none' | 'excel' | 'system'>('none');
+  const [dataSource, setDataSource] = useState<'none' | 'excel' | 'system' | 'trial-balance'>('none');
   const [fileName, setFileName] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [isFixingCogs, setIsFixingCogs] = useState(false);
+  const [showTBImport, setShowTBImport] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { printReport } = usePrintReport();
@@ -227,7 +229,17 @@ export function ComprehensiveFinancialStatementsPage() {
     setDataSource('none');
     setFileName(null);
     setActiveTab('overview');
+    setShowTBImport(false);
     toast.info('تم مسح البيانات');
+  };
+
+  // معالجة بيانات ميزان المراجعة المستورد
+  const handleTBDataGenerated = (generatedData: ComprehensiveFinancialData, source: string) => {
+    setData(generatedData);
+    setDataSource('trial-balance');
+    setFileName(source);
+    setActiveTab('balance-sheet');
+    setShowTBImport(false);
   };
 
   // تصدير القوائم المالية كـ PDF
@@ -291,9 +303,11 @@ export function ComprehensiveFinancialStatementsPage() {
         
         <div className="flex items-center gap-2">
           {hasData && (
-            <Badge variant={dataSource === 'excel' ? 'default' : 'secondary'} className="gap-1">
+            <Badge variant={dataSource === 'excel' ? 'default' : dataSource === 'trial-balance' ? 'outline' : 'secondary'} className="gap-1">
               {dataSource === 'excel' ? (
                 <><FileSpreadsheet className="w-3 h-3" /> {fileName}</>
+              ) : dataSource === 'trial-balance' ? (
+                <><FileUp className="w-3 h-3" /> ميزان: {fileName}</>
               ) : (
                 <><Database className="w-3 h-3" /> بيانات النظام</>
               )}
@@ -303,7 +317,7 @@ export function ComprehensiveFinancialStatementsPage() {
       </div>
 
       {/* منطقة استيراد الملف */}
-      {!hasData && (
+      {!hasData && !showTBImport && (
         <Card className="border-dashed border-2">
           <CardContent className="py-12">
             <div className="text-center space-y-6">
@@ -315,16 +329,16 @@ export function ComprehensiveFinancialStatementsPage() {
                 <p className="text-muted-foreground">اختر مصدر البيانات لإنشاء القوائم المالية الشاملة</p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
                 {/* حساب من النظام */}
                 <Card className="p-4 hover:border-primary cursor-pointer transition-colors" onClick={handleCalculateFromSystem}>
                   <div className="text-center space-y-2">
-                    <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                      <Database className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                      <Database className="w-6 h-6 text-primary" />
                     </div>
                     <h4 className="font-semibold">حساب من النظام</h4>
                     <p className="text-xs text-muted-foreground">
-                      احسب القوائم المالية تلقائياً من قيود اليومية المسجلة في النظام
+                      احسب القوائم المالية تلقائياً من قيود اليومية
                     </p>
                     <Button 
                       className="w-full" 
@@ -335,17 +349,37 @@ export function ComprehensiveFinancialStatementsPage() {
                       {isLoading ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> جاري الحساب...</>
                       ) : (
-                        <><Database className="w-4 h-4 mr-2" /> حساب من النظام</>
+                        <><Database className="w-4 h-4 mr-2" /> حساب تلقائي</>
                       )}
                     </Button>
                   </div>
                 </Card>
 
-                {/* استيراد من Excel */}
+                {/* استيراد ميزان المراجعة */}
+                <Card className="p-4 hover:border-primary cursor-pointer transition-colors border-primary/30" onClick={() => setShowTBImport(true)}>
+                  <div className="text-center space-y-2">
+                    <div className="mx-auto w-12 h-12 bg-accent rounded-full flex items-center justify-center">
+                      <FileUp className="w-6 h-6 text-accent-foreground" />
+                    </div>
+                    <h4 className="font-semibold">استيراد ميزان المراجعة</h4>
+                    <p className="text-xs text-muted-foreground">
+                      رفع ملف Excel/CSV مع ربط تلقائي للحسابات
+                    </p>
+                    <Button 
+                      className="w-full" 
+                      variant="default"
+                      onClick={(e) => { e.stopPropagation(); setShowTBImport(true); }}
+                    >
+                      <FileUp className="w-4 h-4 mr-2" /> استيراد ميزان
+                    </Button>
+                  </div>
+                </Card>
+
+                {/* استيراد من مداد Excel */}
                 <Card className="p-4 hover:border-primary cursor-pointer transition-colors" onClick={() => fileInputRef.current?.click()}>
                   <div className="text-center space-y-2">
-                    <div className="mx-auto w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                      <Upload className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                      <Upload className="w-6 h-6 text-muted-foreground" />
                     </div>
                     <h4 className="font-semibold">استيراد من مداد</h4>
                     <p className="text-xs text-muted-foreground">
@@ -360,7 +394,7 @@ export function ComprehensiveFinancialStatementsPage() {
                       {isLoading ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> جاري التحميل...</>
                       ) : (
-                        <><Upload className="w-4 h-4 mr-2" /> رفع ملف Excel</>
+                        <><Upload className="w-4 h-4 mr-2" /> رفع ملف مداد</>
                       )}
                     </Button>
                   </div>
@@ -383,6 +417,26 @@ export function ComprehensiveFinancialStatementsPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* واجهة استيراد ميزان المراجعة */}
+      {!hasData && showTBImport && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <FileUp className="w-5 h-5 text-primary" />
+              استيراد ميزان المراجعة
+            </h2>
+            <Button variant="ghost" size="sm" onClick={() => setShowTBImport(false)}>
+              العودة لخيارات المصادر
+            </Button>
+          </div>
+          <TrialBalanceImportManager
+            companyName={company?.name || 'الشركة'}
+            reportDate={selectedFiscalYear?.end_date || new Date().toISOString().split('T')[0]}
+            onDataGenerated={handleTBDataGenerated}
+          />
+        </div>
       )}
 
       {/* عرض البيانات */}

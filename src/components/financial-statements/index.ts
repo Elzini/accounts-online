@@ -1,6 +1,7 @@
 // تصدير المكونات الرئيسية
 
 export { ComprehensiveFinancialStatementsPage } from './ComprehensiveFinancialStatementsPage';
+export { TrialBalanceImportManager } from './TrialBalanceImportManager';
 export * from './types';
 export * from './utils/numberFormatting';
 export * from './utils/medadParser';
