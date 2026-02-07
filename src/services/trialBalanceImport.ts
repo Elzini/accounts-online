@@ -6,6 +6,8 @@ export interface TrialBalanceRow {
   name: string;
   debit: number;
   credit: number;
+  movementDebit: number;
+  movementCredit: number;
   mappedType: AccountMappingType;
   isAutoMapped: boolean;
   isValid: boolean;
@@ -189,6 +191,8 @@ const TB_COLUMN_MAPPINGS = {
   name: ['اسم الحساب', 'الحساب', 'البيان', 'الوصف', 'name', 'account_name', 'Name', 'اسم', 'حساب', 'وصف', 'Account Name', 'Account', 'Description', 'بيان الحساب', 'اسم', 'المسمى'],
   debit: ['مدين', 'مدين إجمالي', 'مجموع مدين', 'رصيد مدين', 'debit', 'Debit', 'المدين', 'مدين نهائي', 'Debit Balance', 'Dr', 'مدينة'],
   credit: ['دائن', 'دائن إجمالي', 'مجموع دائن', 'رصيد دائن', 'credit', 'Credit', 'الدائن', 'دائن نهائي', 'Credit Balance', 'Cr', 'دائنة'],
+  movementDebit: ['حركة مدينة', 'حركة مدين', 'مدين الحركة', 'Movement Debit', 'Dr Movement'],
+  movementCredit: ['حركة دائنة', 'حركة دائن', 'دائن الحركة', 'Movement Credit', 'Cr Movement'],
 };
 
 // الأعمدة المحتملة لعناوين الصفوف العلوية (الصف المدمج)
@@ -302,6 +306,8 @@ interface ColumnMapping {
   nameCol: number;
   debitCol: number;
   creditCol: number;
+  movementDebitCol: number;
+  movementCreditCol: number;
   headerRowIndex: number;
   dataStartRow: number;
 }
@@ -512,6 +518,38 @@ function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
     
     const { debitCol, creditCol } = resolveDebitCreditColumns(debitIndices, creditIndices, parentRowData);
     
+    // === البحث عن أعمدة الحركة ===
+    let movementDebitCol = -1;
+    let movementCreditCol = -1;
+    
+    // البحث في الصف الحالي أو الفرعي عن أعمدة الحركة
+    const searchRow = subHeaderRowIdx !== rowIdx ? rawData[subHeaderRowIdx]?.map((c: any) => String(c ?? '').trim()) : rowStr;
+    if (searchRow) {
+      movementDebitCol = findColumnIndex(searchRow, TB_COLUMN_MAPPINGS.movementDebit);
+      movementCreditCol = findColumnIndex(searchRow, TB_COLUMN_MAPPINGS.movementCredit);
+    }
+    
+    // إذا كان هناك عدة أعمدة مدين/دائن، الأولى قد تكون الحركة
+    if (movementDebitCol === -1 && debitIndices.length >= 2) {
+      // إذا كان لدينا أعمدة حركة في الصف الأب
+      if (parentRowData) {
+        for (let i = 0; i < parentRowData.length; i++) {
+          const cell = parentRowData[i];
+          if (!cell) continue;
+          for (const kw of TB_PARENT_HEADERS.movement) {
+            if (cell.includes(kw)) {
+              // الأعمدة تحت "الحركة" هي أعمدة الحركة
+              const movDebit = debitIndices.find(idx => idx >= i && idx < debitCol);
+              const movCredit = creditIndices.find(idx => idx >= i && idx < creditCol);
+              if (movDebit !== undefined) movementDebitCol = movDebit;
+              if (movCredit !== undefined) movementCreditCol = movCredit;
+              break;
+            }
+          }
+        }
+      }
+    }
+    
     // === Sanity check: تأكد أن الأعمدة المكتشفة منطقية ===
     const maxReasonableCol = 20; // ميزان المراجعة لا يتجاوز عادة 20 عمود
     if (nameCol > maxReasonableCol || debitCol > maxReasonableCol || creditCol > maxReasonableCol) {
@@ -536,13 +574,15 @@ function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
       if (codeCol === -1) codeCol = 0;
     }
     
-    console.log(`📊 TB Column Detection: row=${rowIdx}, subRow=${subHeaderRowIdx}, code=${codeCol}, name=${nameCol}, debit=${debitCol}, credit=${creditCol}, debitCols=${debitIndices}, creditCols=${creditIndices}`);
+    console.log(`📊 TB Column Detection: row=${rowIdx}, subRow=${subHeaderRowIdx}, code=${codeCol}, name=${nameCol}, debit=${debitCol}, credit=${creditCol}, movDebit=${movementDebitCol}, movCredit=${movementCreditCol}`);
     
     return {
       codeCol: codeCol !== -1 ? codeCol : -1,
       nameCol,
       debitCol,
       creditCol,
+      movementDebitCol,
+      movementCreditCol,
       headerRowIndex: rowIdx,
       dataStartRow,
     };
@@ -607,6 +647,8 @@ function autoDetectColumns(rawData: any[][]): ColumnMapping | null {
         nameCol,
         debitCol,
         creditCol,
+        movementDebitCol: numericCols.length >= 4 ? numericCols[numericCols.length - 4] ?? -1 : -1,
+        movementCreditCol: numericCols.length >= 4 ? numericCols[numericCols.length - 3] ?? -1 : -1,
         headerRowIndex,
         dataStartRow: startRow,
       };
@@ -646,6 +688,8 @@ export async function parseTrialBalanceFile(file: File): Promise<ImportedTrialBa
       
       const debit = parseNumber(findValue(rowObj, TB_COLUMN_MAPPINGS.debit));
       const credit = parseNumber(findValue(rowObj, TB_COLUMN_MAPPINGS.credit));
+      const movementDebit = parseNumber(findValue(rowObj, TB_COLUMN_MAPPINGS.movementDebit));
+      const movementCredit = parseNumber(findValue(rowObj, TB_COLUMN_MAPPINGS.movementCredit));
       const mappedType = autoMapAccount(code, name);
       
       rows.push({
@@ -653,6 +697,8 @@ export async function parseTrialBalanceFile(file: File): Promise<ImportedTrialBa
         name,
         debit,
         credit,
+        movementDebit,
+        movementCredit,
         mappedType,
         isAutoMapped: mappedType !== 'unmapped',
         isValid: true,
@@ -732,6 +778,10 @@ export async function parseTrialBalanceFile(file: File): Promise<ImportedTrialBa
         const debit = parseNumber(debitVal);
         const credit = parseNumber(creditVal);
         
+        // قراءة أعمدة الحركة إن وجدت
+        const movementDebit = colMapping.movementDebitCol !== -1 ? parseNumber(row[colMapping.movementDebitCol]) : 0;
+        const movementCredit = colMapping.movementCreditCol !== -1 ? parseNumber(row[colMapping.movementCreditCol]) : 0;
+        
         const mappedType = autoMapAccount(code || '0', name);
         
         rows.push({
@@ -739,6 +789,8 @@ export async function parseTrialBalanceFile(file: File): Promise<ImportedTrialBa
           name,
           debit,
           credit,
+          movementDebit,
+          movementCredit,
           mappedType,
           isAutoMapped: mappedType !== 'unmapped',
           isValid: true,
@@ -760,6 +812,8 @@ export async function parseTrialBalanceFile(file: File): Promise<ImportedTrialBa
         
         const debit = parseNumber(findValue(row, TB_COLUMN_MAPPINGS.debit));
         const credit = parseNumber(findValue(row, TB_COLUMN_MAPPINGS.credit));
+        const movementDebit = parseNumber(findValue(row, TB_COLUMN_MAPPINGS.movementDebit));
+        const movementCredit = parseNumber(findValue(row, TB_COLUMN_MAPPINGS.movementCredit));
         
         // تجاهل الإجماليات
         if (name.includes('إجمالي') || name.includes('المجموع')) continue;
@@ -771,6 +825,8 @@ export async function parseTrialBalanceFile(file: File): Promise<ImportedTrialBa
           name,
           debit,
           credit,
+          movementDebit,
+          movementCredit,
           mappedType,
           isAutoMapped: mappedType !== 'unmapped',
           isValid: true,
