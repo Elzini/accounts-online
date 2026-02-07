@@ -37,29 +37,44 @@ export interface ImportedTrialBalance {
 }
 
 // قواعد الربط التلقائي حسب رمز الحساب
+// الترتيب: 1=أصول، 2=خصوم وحقوق ملكية، 3=إيرادات، 4=مصروفات
 const AUTO_MAPPING_RULES: { prefix: string; type: AccountMappingType; label: string }[] = [
-  { prefix: '11', type: 'current_assets', label: 'أصول متداولة - نقد وبنوك' },
-  { prefix: '12', type: 'current_assets', label: 'أصول متداولة - ذمم مدينة' },
-  { prefix: '13', type: 'current_assets', label: 'أصول متداولة - مخزون' },
-  { prefix: '14', type: 'non_current_assets', label: 'أصول غير متداولة' },
-  { prefix: '15', type: 'non_current_assets', label: 'أصول غير متداولة - أصول ثابتة' },
+  // === 1 - الأصول ===
+  { prefix: '11', type: 'non_current_assets', label: 'أصول ثابتة (صافي الأصول الثابتة)' },
+  { prefix: '12', type: 'current_assets', label: 'أصول متداولة (بنوك، عهد)' },
+  { prefix: '13', type: 'current_assets', label: 'حسابات مدينة أخرى' },
+  { prefix: '14', type: 'current_assets', label: 'أصول متداولة أخرى' },
+  { prefix: '15', type: 'non_current_assets', label: 'أصول غير متداولة' },
   { prefix: '16', type: 'non_current_assets', label: 'أصول غير متداولة' },
-  { prefix: '17', type: 'non_current_assets', label: 'أصول غير متداولة - استثمارات' },
+  { prefix: '17', type: 'non_current_assets', label: 'استثمارات' },
   { prefix: '18', type: 'non_current_assets', label: 'أصول غير متداولة' },
   { prefix: '19', type: 'non_current_assets', label: 'أصول غير متداولة' },
   { prefix: '1', type: 'current_assets', label: 'أصول' },
-  { prefix: '21', type: 'current_liabilities', label: 'مطلوبات متداولة' },
-  { prefix: '22', type: 'current_liabilities', label: 'مطلوبات متداولة' },
-  { prefix: '23', type: 'non_current_liabilities', label: 'مطلوبات غير متداولة' },
-  { prefix: '24', type: 'non_current_liabilities', label: 'مطلوبات غير متداولة' },
-  { prefix: '2', type: 'current_liabilities', label: 'مطلوبات' },
-  { prefix: '31', type: 'equity', label: 'حقوق ملكية - رأس المال' },
-  { prefix: '32', type: 'equity', label: 'حقوق ملكية - احتياطي' },
-  { prefix: '33', type: 'equity', label: 'حقوق ملكية - أرباح محتجزة' },
-  { prefix: '3', type: 'equity', label: 'حقوق ملكية' },
-  { prefix: '41', type: 'revenue', label: 'إيرادات رئيسية' },
-  { prefix: '42', type: 'revenue', label: 'إيرادات أخرى' },
-  { prefix: '4', type: 'revenue', label: 'إيرادات' },
+
+  // === 2 - الخصوم وحقوق الملكية ===
+  { prefix: '21', type: 'current_liabilities', label: 'خصوم متداولة' },
+  { prefix: '22', type: 'current_liabilities', label: 'خصوم متداولة' },
+  { prefix: '23', type: 'current_liabilities', label: 'أرصدة دائنة أخرى' },
+  { prefix: '24', type: 'non_current_liabilities', label: 'خصوم غير متداولة' },
+  { prefix: '25', type: 'equity', label: 'حقوق الملكية ورأس المال' },
+  { prefix: '26', type: 'equity', label: 'حقوق ملكية' },
+  { prefix: '2', type: 'current_liabilities', label: 'خصوم' },
+
+  // === 3 - الإيرادات ===
+  { prefix: '31', type: 'revenue', label: 'المبيعات' },
+  { prefix: '32', type: 'revenue', label: 'إيرادات أخرى' },
+  { prefix: '3', type: 'revenue', label: 'إيرادات' },
+
+  // === 4 - المصروفات ===
+  { prefix: '41', type: 'expenses', label: 'المصاريف العمومية والإدارية' },
+  { prefix: '42', type: 'expenses', label: 'مصروفات أخرى' },
+  { prefix: '43', type: 'expenses', label: 'مصروفات' },
+  { prefix: '44', type: 'expenses', label: 'مصاريف التشغيل' },
+  { prefix: '45', type: 'cogs', label: 'المشتريات' },
+  { prefix: '46', type: 'expenses', label: 'مصروفات' },
+  { prefix: '4', type: 'expenses', label: 'مصروفات' },
+
+  // === دعم الترميز القديم (5xxx، 6xxx) ===
   { prefix: '51', type: 'cogs', label: 'تكلفة البضاعة المباعة' },
   { prefix: '52', type: 'expenses', label: 'مصروفات تشغيلية' },
   { prefix: '53', type: 'expenses', label: 'مصروفات إدارية' },

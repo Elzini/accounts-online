@@ -8,54 +8,72 @@ interface TemplateAccount {
   movementCredit: number;
   debit: number;
   credit: number;
+  isHeader?: boolean; // حساب رئيسي (عنوان)
+  level?: number; // مستوى المسافة البادئة
 }
 
-// نموذج حسابات افتراضية لتوضيح الهيكل
+// شجرة الحسابات حسب طلب المستخدم
+// 1=أصول، 2=خصوم وحقوق ملكية، 3=إيرادات، 4=مصروفات
 const SAMPLE_ACCOUNTS: TemplateAccount[] = [
-  // أصول متداولة (11xx - 13xx)
-  { code: '1101', name: 'الصندوق (النقدية)', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '1102', name: 'البنك - الحساب الجاري', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '1201', name: 'العملاء (ذمم مدينة)', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '1301', name: 'المخزون', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '1302', name: 'مصاريف مدفوعة مقدماً', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
+  // ============ الأصول (1) ============
+  { code: '1', name: 'الأصول', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 0 },
 
-  // أصول غير متداولة (14xx - 19xx)
-  { code: '1501', name: 'أثاث وتجهيزات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '1502', name: 'معدات وآلات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '1503', name: 'سيارات ومركبات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '1504', name: 'مباني وعقارات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '1590', name: 'مجمع الإهلاك', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
+  // صافي الأصول الثابتة (11)
+  { code: '11', name: 'صافي الأصول الثابتة', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 1 },
+  { code: '110', name: 'أصول ثابتة', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 2 },
+  { code: '1101', name: 'الأثاث', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 3 },
+  { code: '1105', name: 'اجهزه و الات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 3 },
 
-  // مطلوبات متداولة (21xx - 22xx)
-  { code: '2101', name: 'الموردون (ذمم دائنة)', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '2102', name: 'ضريبة القيمة المضافة المستحقة', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '2103', name: 'رواتب مستحقة', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '2104', name: 'مصروفات مستحقة', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
+  // الأصول المتداولة (12)
+  { code: '12', name: 'الأصول المتداولة', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 1 },
+  { code: '1204', name: 'البنوك', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 2 },
+  { code: '12042', name: 'مصرف الراجحي حساب رقم 4477553', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 3 },
+  { code: '1210', name: 'عهدة الموظفين', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 2 },
+  { code: '12102', name: 'عهده احمد', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 3 },
+  { code: '1216', name: 'اطراف ذات علاقه مؤسسة فلاح', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 2 },
 
-  // مطلوبات غير متداولة (23xx - 24xx)
-  { code: '2301', name: 'قروض طويلة الأجل', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '2302', name: 'مكافأة نهاية الخدمة', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
+  // حسابات مدينة أخرى (13)
+  { code: '13', name: 'حسابات مدينة أخرى', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 1 },
+  { code: '1306', name: 'إيجار مدفوع مقدما', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 2 },
 
-  // حقوق ملكية (31xx - 33xx)
-  { code: '3101', name: 'رأس المال', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '3201', name: 'الاحتياطي النظامي', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '3301', name: 'الأرباح المحتجزة (المرحّلة)', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
+  // ============ الخصوم (2) ============
+  { code: '2', name: 'الخصوم', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 0 },
 
-  // إيرادات (41xx - 42xx)
-  { code: '4101', name: 'إيرادات المبيعات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '4201', name: 'إيرادات أخرى', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
+  // أرصدة دائنة أخرى (23)
+  { code: '23', name: 'أرصدة دائنة أخرى', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 1 },
+  { code: '2302', name: 'رواتب مستحقة', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 2 },
+  { code: '2309', name: 'ضريبة القيمة المضافة', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 2 },
+  { code: '23091', name: 'ضريبة المدخلات - مشتريات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 3 },
+  { code: '23092', name: 'ضريبة المخرجات - مبيعات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 3 },
 
-  // تكلفة الإيرادات (51xx)
-  { code: '5101', name: 'تكلفة البضاعة المباعة', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
+  // حقوق الملكية ورأس المال (25)
+  { code: '25', name: 'حقوق الملكية ورأس المال', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 1 },
+  { code: '2502', name: 'جاري المالك', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 2 },
+  { code: '25021', name: 'جاري فلاح', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 3 },
 
-  // مصروفات (52xx - 55xx)
-  { code: '5201', name: 'رواتب وأجور', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '5202', name: 'إيجارات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '5203', name: 'كهرباء وماء واتصالات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '5204', name: 'صيانة وإصلاحات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '5301', name: 'مصاريف إدارية وعمومية', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '5401', name: 'مصاريف تسويق ودعاية', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
-  { code: '5501', name: 'مصاريف بنكية وفوائد', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0 },
+  // ============ الإيرادات (3) ============
+  { code: '3', name: 'الإيرادات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 0 },
+  { code: '31', name: 'المبيعات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 1 },
+  { code: '3112', name: 'المبيعات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 2 },
+
+  // ============ المصروفات (4) ============
+  { code: '4', name: 'المصروفات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 0 },
+
+  // المصاريف العمومية والإدارية (41)
+  { code: '41', name: 'المصاريف العمومية والإدارية', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 1 },
+  { code: '4101', name: 'الرواتب', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 2 },
+  { code: '4107', name: 'مصروفات اللوازم المكتبية', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 2 },
+  { code: '4108', name: 'مصروف ايجار', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 2 },
+  { code: '4115', name: 'متنوعة', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 2 },
+  { code: '4127', name: 'مصاريف ضيافة', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 2 },
+
+  // مصاريف التشغيل (44)
+  { code: '44', name: 'مصاريف التشغيل', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 1 },
+  { code: '440002', name: 'مصروفات النظافه', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 2 },
+
+  // المشتريات (45)
+  { code: '45', name: 'المشتريات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, isHeader: true, level: 1 },
+  { code: '4511', name: 'المشتريات', movementDebit: 0, movementCredit: 0, debit: 0, credit: 0, level: 2 },
 ];
 
 const COL_COUNT = 6;
@@ -81,7 +99,7 @@ export async function exportTrialBalanceTemplate(includeSamples: boolean = true)
   // === صف الملاحظات ===
   worksheet.mergeCells('A2:F2');
   const noteCell = worksheet.getCell('A2');
-  noteCell.value = '⚠ ضع الأرقام في الأعمدة المناسبة. أعمدة الحركة اختيارية - أعمدة الرصيد (مدين/دائن) مطلوبة. الصفوف أدناه نماذج يمكنك حذفها.';
+  noteCell.value = '⚠ ضع الأرقام في الأعمدة المناسبة. أعمدة الحركة اختيارية - أعمدة الرصيد (مدين/دائن) مطلوبة. الصفوف أدناه نماذج يمكنك تعديلها.';
   noteCell.font = { size: 10, color: { argb: 'FF7C3AED' }, italic: true };
   noteCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
   worksheet.getRow(2).height = 28;
@@ -106,12 +124,12 @@ export async function exportTrialBalanceTemplate(includeSamples: boolean = true)
   worksheet.getRow(3).height = 30;
 
   // === عرض الأعمدة ===
-  worksheet.getColumn(1).width = 18; // رمز الحساب
-  worksheet.getColumn(2).width = 40; // اسم الحساب
-  worksheet.getColumn(3).width = 20; // حركة مدينة
-  worksheet.getColumn(4).width = 20; // حركة دائنة
-  worksheet.getColumn(5).width = 20; // مدين
-  worksheet.getColumn(6).width = 20; // دائن
+  worksheet.getColumn(1).width = 18;
+  worksheet.getColumn(2).width = 45;
+  worksheet.getColumn(3).width = 20;
+  worksheet.getColumn(4).width = 20;
+  worksheet.getColumn(5).width = 20;
+  worksheet.getColumn(6).width = 20;
 
   // === بيانات النموذج ===
   if (includeSamples) {
@@ -119,42 +137,47 @@ export async function exportTrialBalanceTemplate(includeSamples: boolean = true)
       const rowNum = idx + 4;
       const row = worksheet.getRow(rowNum);
 
-      // تصنيف لوني حسب الرمز
+      // تصنيف لوني حسب الرمز الأول
       const prefix = account.code.charAt(0);
       let bgColor = 'FFFFFFFF';
-      if (prefix === '1') bgColor = 'FFF0FFF4'; // أخضر فاتح - أصول
-      if (prefix === '2') bgColor = 'FFFFF0F0'; // أحمر فاتح - مطلوبات
-      if (prefix === '3') bgColor = 'FFF0F0FF'; // أزرق فاتح - حقوق ملكية
-      if (prefix === '4') bgColor = 'FFFFFCE0'; // أصفر فاتح - إيرادات
-      if (prefix === '5') bgColor = 'FFFFF5F0'; // برتقالي فاتح - مصروفات
+      let headerBgColor = 'FFFFFFFF';
+      if (prefix === '1') { bgColor = 'FFF0FFF4'; headerBgColor = 'FFD1FAE5'; } // أخضر - أصول
+      if (prefix === '2') { bgColor = 'FFFFF0F0'; headerBgColor = 'FFFEE2E2'; } // أحمر - خصوم
+      if (prefix === '3') { bgColor = 'FFF0F0FF'; headerBgColor = 'FFE0E7FF'; } // أزرق - إيرادات
+      if (prefix === '4') { bgColor = 'FFFFF5F0'; headerBgColor = 'FFFED7AA'; } // برتقالي - مصروفات
+
+      const isHeader = account.isHeader;
+      const indent = account.level || 0;
+      const indentSpaces = '  '.repeat(indent);
 
       row.getCell(1).value = account.code;
-      row.getCell(1).font = { size: 11 };
+      row.getCell(1).font = { size: 11, bold: !!isHeader };
       row.getCell(1).alignment = { horizontal: 'center' };
 
-      row.getCell(2).value = account.name;
-      row.getCell(2).font = { size: 11 };
-      row.getCell(2).alignment = { horizontal: 'right' };
+      row.getCell(2).value = indentSpaces + account.name;
+      row.getCell(2).font = { size: 11, bold: !!isHeader };
+      row.getCell(2).alignment = { horizontal: 'right', indent: indent };
 
-      row.getCell(3).value = account.movementDebit || null;
-      row.getCell(3).numFmt = '#,##0.00';
-      row.getCell(3).alignment = { horizontal: 'center' };
+      // الحسابات الرئيسية لا تحتوي على أرقام
+      if (!isHeader) {
+        row.getCell(3).value = account.movementDebit || null;
+        row.getCell(3).numFmt = '#,##0.00';
+        row.getCell(4).value = account.movementCredit || null;
+        row.getCell(4).numFmt = '#,##0.00';
+        row.getCell(5).value = account.debit || null;
+        row.getCell(5).numFmt = '#,##0.00';
+        row.getCell(6).value = account.credit || null;
+        row.getCell(6).numFmt = '#,##0.00';
+      }
 
-      row.getCell(4).value = account.movementCredit || null;
-      row.getCell(4).numFmt = '#,##0.00';
-      row.getCell(4).alignment = { horizontal: 'center' };
-
-      row.getCell(5).value = account.debit || null;
-      row.getCell(5).numFmt = '#,##0.00';
-      row.getCell(5).alignment = { horizontal: 'center' };
-
-      row.getCell(6).value = account.credit || null;
-      row.getCell(6).numFmt = '#,##0.00';
-      row.getCell(6).alignment = { horizontal: 'center' };
+      for (let c = 3; c <= 6; c++) {
+        row.getCell(c).alignment = { horizontal: 'center' };
+      }
 
       // تلوين الصف
+      const rowBg = isHeader ? headerBgColor : bgColor;
       for (let c = 1; c <= COL_COUNT; c++) {
-        row.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
+        row.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowBg } };
         row.getCell(c).border = {
           top: { style: 'hair', color: { argb: 'FFD0D0D0' } },
           bottom: { style: 'hair', color: { argb: 'FFD0D0D0' } },
@@ -173,29 +196,13 @@ export async function exportTrialBalanceTemplate(includeSamples: boolean = true)
   totalRow.getCell(2).font = { bold: true, size: 12 };
   totalRow.getCell(2).alignment = { horizontal: 'center' };
 
-  // صيغة مجموع حركة مدينة
-  totalRow.getCell(3).value = { formula: `SUM(C4:C${totalRowNum - 1})` };
-  totalRow.getCell(3).numFmt = '#,##0.00';
-  totalRow.getCell(3).font = { bold: true, size: 12 };
-  totalRow.getCell(3).alignment = { horizontal: 'center' };
-
-  // صيغة مجموع حركة دائنة
-  totalRow.getCell(4).value = { formula: `SUM(D4:D${totalRowNum - 1})` };
-  totalRow.getCell(4).numFmt = '#,##0.00';
-  totalRow.getCell(4).font = { bold: true, size: 12 };
-  totalRow.getCell(4).alignment = { horizontal: 'center' };
-
-  // صيغة مجموع المدين
-  totalRow.getCell(5).value = { formula: `SUM(E4:E${totalRowNum - 1})` };
-  totalRow.getCell(5).numFmt = '#,##0.00';
-  totalRow.getCell(5).font = { bold: true, size: 12 };
-  totalRow.getCell(5).alignment = { horizontal: 'center' };
-
-  // صيغة مجموع الدائن
-  totalRow.getCell(6).value = { formula: `SUM(F4:F${totalRowNum - 1})` };
-  totalRow.getCell(6).numFmt = '#,##0.00';
-  totalRow.getCell(6).font = { bold: true, size: 12 };
-  totalRow.getCell(6).alignment = { horizontal: 'center' };
+  for (let c = 3; c <= 6; c++) {
+    const colLetter = String.fromCharCode(64 + c);
+    totalRow.getCell(c).value = { formula: `SUM(${colLetter}4:${colLetter}${totalRowNum - 1})` };
+    totalRow.getCell(c).numFmt = '#,##0.00';
+    totalRow.getCell(c).font = { bold: true, size: 12 };
+    totalRow.getCell(c).alignment = { horizontal: 'center' };
+  }
 
   for (let c = 1; c <= COL_COUNT; c++) {
     totalRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
@@ -218,26 +225,34 @@ export async function exportTrialBalanceTemplate(includeSamples: boolean = true)
   const instructions = [
     ['', 'تعليمات تعبئة ميزان المراجعة'],
     ['', ''],
-    ['1', 'عمود "رمز الحساب": ضع الرمز الرقمي للحساب (مثال: 1101, 2101, 4101)'],
-    ['2', 'عمود "اسم الحساب": ضع اسم الحساب بالعربية (مثال: الصندوق، العملاء)'],
+    ['1', 'عمود "رمز الحساب": ضع الرمز الرقمي للحساب (مثال: 1101, 2302, 4101)'],
+    ['2', 'عمود "اسم الحساب": ضع اسم الحساب بالعربية'],
     ['3', 'عمود "حركة مدينة": إجمالي الحركة المدينة خلال الفترة (اختياري)'],
     ['4', 'عمود "حركة دائنة": إجمالي الحركة الدائنة خلال الفترة (اختياري)'],
     ['5', 'عمود "مدين": الرصيد النهائي المدين للحساب (مطلوب)'],
     ['6', 'عمود "دائن": الرصيد النهائي الدائن للحساب (مطلوب)'],
     ['', ''],
     ['', 'قواعد ترميز الحسابات (التصنيف التلقائي):'],
-    ['', '1xxx = أصول (11xx نقد وبنوك، 12xx ذمم مدينة، 13xx مخزون، 15xx أصول ثابتة)'],
-    ['', '2xxx = مطلوبات (21xx متداولة، 23xx غير متداولة)'],
-    ['', '3xxx = حقوق ملكية (31xx رأس مال، 32xx احتياطي، 33xx أرباح محتجزة)'],
-    ['', '4xxx = إيرادات (41xx مبيعات، 42xx إيرادات أخرى)'],
-    ['', '5xxx = مصروفات (51xx تكلفة مبيعات، 52xx تشغيلية، 53xx إدارية)'],
+    ['', '1 = الأصول'],
+    ['', '  11 = صافي الأصول الثابتة (أصول غير متداولة)'],
+    ['', '  12 = الأصول المتداولة (بنوك، عهد، أطراف ذات علاقة)'],
+    ['', '  13 = حسابات مدينة أخرى (إيجار مدفوع مقدماً)'],
+    ['', '2 = الخصوم'],
+    ['', '  23 = أرصدة دائنة أخرى (رواتب مستحقة، ضريبة القيمة المضافة)'],
+    ['', '  25 = حقوق الملكية ورأس المال (جاري المالك)'],
+    ['', '3 = الإيرادات'],
+    ['', '  31 = المبيعات'],
+    ['', '4 = المصروفات'],
+    ['', '  41 = المصاريف العمومية والإدارية'],
+    ['', '  44 = مصاريف التشغيل'],
+    ['', '  45 = المشتريات'],
     ['', ''],
     ['', '⚠ تنبيهات مهمة:'],
     ['', '• يجب أن يكون مجموع المدين = مجموع الدائن (ميزان متوازن)'],
-    ['', '• لا تضع حسابات رئيسية (عناوين) تجمع حسابات فرعية، ضع الفرعية فقط'],
+    ['', '• ضع الحسابات الفرعية فقط (مثل 1101، 4101) مع أرقامها'],
+    ['', '• الحسابات الرئيسية (العناوين) موجودة كمرجع ولا تحتاج أرقام'],
     ['', '• يمكنك حذف النماذج وإضافة حساباتك الخاصة'],
     ['', '• أعمدة الحركة اختيارية - يمكنك تركها فارغة والاكتفاء بأعمدة الرصيد'],
-    ['', '• الأعمدة المطلوبة: رمز الحساب، اسم الحساب، مدين، دائن'],
   ];
 
   instructions.forEach((row, idx) => {
