@@ -401,14 +401,38 @@ function findCodeColumnFromData(rawData: any[][], dataStartRow: number, excludeC
   return bestCol;
 }
 
-// بحث عن أعمدة المدين والدائن في صف معين
-function findDebitCreditInRow(rowStr: string[]): { debitIndices: number[]; creditIndices: number[] } {
+// بحث عن أعمدة المدين والدائن في صف معين (مع استبعاد أعمدة الحركة)
+function findDebitCreditInRow(rowStr: string[]): { debitIndices: number[]; creditIndices: number[]; movDebitIndices: number[]; movCreditIndices: number[] } {
   const debitIndices: number[] = [];
   const creditIndices: number[] = [];
+  const movDebitIndices: number[] = [];
+  const movCreditIndices: number[] = [];
   
   for (let i = 0; i < rowStr.length; i++) {
     const cell = rowStr[i];
     if (!cell) continue;
+    
+    // فحص أعمدة الحركة أولاً (أولوية أعلى لأنها أكثر تحديداً)
+    let isMovement = false;
+    for (const name of TB_COLUMN_MAPPINGS.movementDebit) {
+      if (cell === name || cell.includes(name)) {
+        movDebitIndices.push(i);
+        isMovement = true;
+        break;
+      }
+    }
+    if (!isMovement) {
+      for (const name of TB_COLUMN_MAPPINGS.movementCredit) {
+        if (cell === name || cell.includes(name)) {
+          movCreditIndices.push(i);
+          isMovement = true;
+          break;
+        }
+      }
+    }
+    
+    // إذا كان عمود حركة، لا نضيفه كعمود رصيد
+    if (isMovement) continue;
     
     for (const name of TB_COLUMN_MAPPINGS.debit) {
       if (cell === name || cell.includes(name)) {
@@ -424,7 +448,7 @@ function findDebitCreditInRow(rowStr: string[]): { debitIndices: number[]; credi
     }
   }
   
-  return { debitIndices, creditIndices };
+  return { debitIndices, creditIndices, movDebitIndices, movCreditIndices };
 }
 
 // تحديد أي أعمدة مدين/دائن نستخدم بناءً على عددها وموقع الصافي
@@ -498,15 +522,11 @@ function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
     let codeCol = findColumnIndex(rowStr, TB_COLUMN_MAPPINGS.code);
     
     // البحث عن أعمدة المدين والدائن في الصف الحالي
-    let { debitIndices, creditIndices } = findDebitCreditInRow(rowStr);
+    let { debitIndices, creditIndices, movDebitIndices, movCreditIndices } = findDebitCreditInRow(rowStr);
     
     // === المعالجة الجديدة: إذا لم نجد مدين/دائن في نفس الصف ===
-    // يحدث هذا عندما يكون هناك صفين عناوين (merged headers):
-    // الصف الأول: م | اسم الحساب | الرصيد السابق (merged) | الحركة (merged) | الصافي (merged)
-    // الصف الثاني: (فارغ) | (فارغ) | مدين | دائن | مدين | دائن | المدين | الدائن
     let subHeaderRowIdx = rowIdx;
     if (debitIndices.length === 0 || creditIndices.length === 0) {
-      // البحث في الصف التالي عن أعمدة المدين والدائن
       const nextRowIdx = rowIdx + 1;
       if (nextRowIdx < rawData.length) {
         const nextRow = rawData[nextRowIdx];
@@ -517,6 +537,9 @@ function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
             console.log(`📊 Found debit/credit sub-headers in next row ${nextRowIdx}`);
             debitIndices = nextResult.debitIndices;
             creditIndices = nextResult.creditIndices;
+            // دمج أعمدة الحركة من الصف الفرعي أيضاً
+            if (nextResult.movDebitIndices.length > 0) movDebitIndices = nextResult.movDebitIndices;
+            if (nextResult.movCreditIndices.length > 0) movCreditIndices = nextResult.movCreditIndices;
             subHeaderRowIdx = nextRowIdx;
           }
         }
@@ -526,7 +549,6 @@ function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
     if (debitIndices.length === 0 || creditIndices.length === 0) continue;
     
     // تحديد أي أعمدة مدين/دائن نستخدم
-    // استخدام الصف الذي يحتوي على العناوين المدمجة (الأعلى) كصف أب
     const parentRowData = subHeaderRowIdx > 0 
       ? rawData[subHeaderRowIdx - 1]?.map((c: any) => String(c ?? '').trim())
       : (rowIdx > 0 ? rawData[rowIdx - 1]?.map((c: any) => String(c ?? '').trim()) : undefined);
@@ -537,33 +559,41 @@ function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
     let movementDebitCol = -1;
     let movementCreditCol = -1;
     
-    // البحث في الصف الحالي أو الفرعي عن أعمدة الحركة
-    const searchRow = subHeaderRowIdx !== rowIdx ? rawData[subHeaderRowIdx]?.map((c: any) => String(c ?? '').trim()) : rowStr;
-    if (searchRow) {
-      movementDebitCol = findColumnIndex(searchRow, TB_COLUMN_MAPPINGS.movementDebit);
-      movementCreditCol = findColumnIndex(searchRow, TB_COLUMN_MAPPINGS.movementCredit);
+    // أولاً: استخدام أعمدة الحركة المكتشفة من findDebitCreditInRow (الأدق)
+    if (movDebitIndices.length > 0) {
+      movementDebitCol = movDebitIndices[0];
+    }
+    if (movCreditIndices.length > 0) {
+      movementCreditCol = movCreditIndices[0];
     }
     
-    // إذا كان هناك عدة أعمدة مدين/دائن، الأولى قد تكون الحركة
-    if (movementDebitCol === -1 && debitIndices.length >= 2) {
-      // إذا كان لدينا أعمدة حركة في الصف الأب
-      if (parentRowData) {
-        for (let i = 0; i < parentRowData.length; i++) {
-          const cell = parentRowData[i];
-          if (!cell) continue;
-          for (const kw of TB_PARENT_HEADERS.movement) {
-            if (cell.includes(kw)) {
-              // الأعمدة تحت "الحركة" هي أعمدة الحركة
-              const movDebit = debitIndices.find(idx => idx >= i && idx < debitCol);
-              const movCredit = creditIndices.find(idx => idx >= i && idx < creditCol);
-              if (movDebit !== undefined) movementDebitCol = movDebit;
-              if (movCredit !== undefined) movementCreditCol = movCredit;
-              break;
-            }
+    // ثانياً: البحث بأسماء أعمدة الحركة المخصصة
+    if (movementDebitCol === -1 || movementCreditCol === -1) {
+      const searchRow = subHeaderRowIdx !== rowIdx ? rawData[subHeaderRowIdx]?.map((c: any) => String(c ?? '').trim()) : rowStr;
+      if (searchRow) {
+        if (movementDebitCol === -1) movementDebitCol = findColumnIndex(searchRow, TB_COLUMN_MAPPINGS.movementDebit);
+        if (movementCreditCol === -1) movementCreditCol = findColumnIndex(searchRow, TB_COLUMN_MAPPINGS.movementCredit);
+      }
+    }
+    
+    // ثالثاً: إذا كان لدينا أعمدة حركة في الصف الأب (merged headers)
+    if (movementDebitCol === -1 && parentRowData) {
+      for (let i = 0; i < parentRowData.length; i++) {
+        const cell = parentRowData[i];
+        if (!cell) continue;
+        for (const kw of TB_PARENT_HEADERS.movement) {
+          if (cell.includes(kw)) {
+            const movDebit = debitIndices.find(idx => idx >= i && idx < debitCol);
+            const movCredit = creditIndices.find(idx => idx >= i && idx < creditCol);
+            if (movDebit !== undefined) movementDebitCol = movDebit;
+            if (movCredit !== undefined) movementCreditCol = movCredit;
+            break;
           }
         }
       }
     }
+    
+    console.log(`📊 Final columns: debit=${debitCol}, credit=${creditCol}, movDebit=${movementDebitCol}, movCredit=${movementCreditCol}`);
     
     // === Sanity check: تأكد أن الأعمدة المكتشفة منطقية ===
     const maxReasonableCol = 20; // ميزان المراجعة لا يتجاوز عادة 20 عمود
