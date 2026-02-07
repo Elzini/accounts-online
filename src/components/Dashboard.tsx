@@ -46,6 +46,7 @@ import {
   DEFAULT_WIDGETS 
 } from './dashboard/DashboardEditMode';
 import { useCardFormulas, buildFormulaVariables, evaluateFormula } from '@/hooks/useCardFormulas';
+import { MonthlyExpensesCard } from './dashboard/MonthlyExpensesCard';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 
 interface DashboardProps {
@@ -244,6 +245,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         queryClient.invalidateQueries({ queryKey: ['sales'] }),
         queryClient.invalidateQueries({ queryKey: ['customers'] }),
         queryClient.invalidateQueries({ queryKey: ['suppliers'] }),
+        queryClient.invalidateQueries({ queryKey: ['monthly-expenses-dashboard'] }),
       ]);
       toast.success('تم تحديث البيانات بنجاح');
     } catch (error) {
@@ -993,6 +995,9 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               </div>
             );
           })()}
+
+          {/* Monthly Expenses Card */}
+          <MonthlyExpensesCard />
 
           {/* Partner Dealership Transfers - Only for car dealerships */}
           {isCarDealership && (
