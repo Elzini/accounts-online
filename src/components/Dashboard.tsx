@@ -221,7 +221,13 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
 
   // Helper to get card config by id
   const getCardConfig = useCallback((id: string) => {
-    return cardConfigs.find(c => c.id === id) || { visible: true, size: 'medium' as const, bgColor: '', fontSize: 100, height: undefined, enable3D: false };
+    return cardConfigs.find(c => c.id === id) || { visible: true, size: 'medium' as const, bgColor: '', fontSize: 100, height: undefined, enable3D: false, label: '' };
+  }, [cardConfigs]);
+
+  // Get custom card label (user-defined label or fallback to default)
+  const getCardLabel = useCallback((id: string, defaultLabel: string) => {
+    const cfg = cardConfigs.find(c => c.id === id);
+    return cfg?.label || defaultLabel;
   }, [cardConfigs]);
 
   // Get visible cards sorted by order
@@ -710,7 +716,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   return (
                     <StatCard
                       key={cardId}
-                      title={industryLabels.availableItems}
+                      title={getCardLabel('availableCars', industryLabels.availableItems)}
                       value={getCardValue('availableCars', stats.availableCars)}
                       icon={isCarDealership ? Car : HardHat}
                       gradient="primary"
@@ -723,7 +729,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   return (
                     <StatCard
                       key={cardId}
-                      title={industryLabels.totalPurchasesLabel}
+                      title={getCardLabel('totalPurchases', industryLabels.totalPurchasesLabel)}
                       value={formatCurrencyWithMode(getCardValue('totalPurchases', stats.totalPurchases))}
                       icon={ShoppingCart}
                       gradient="danger"
@@ -737,7 +743,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   return (
                     <StatCard
                       key={cardId}
-                      title="مبيعات الشهر"
+                      title={getCardLabel('monthSales', 'مبيعات الشهر')}
                       value={formatCurrencyWithMode(getCardValue('monthSales', stats.monthSalesAmount))}
                       icon={TrendingUp}
                       gradient="success"
@@ -751,7 +757,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   return (
                     <StatCard
                       key={cardId}
-                      title="إجمالي الأرباح"
+                      title={getCardLabel('totalProfit', 'إجمالي الأرباح')}
                       value={formatCurrencyWithMode(getCardValue('totalProfit', stats.totalProfit))}
                       icon={DollarSign}
                       gradient="warning"
@@ -765,7 +771,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   return (
                     <StatCard
                       key={cardId}
-                      title="مبيعات اليوم"
+                      title={getCardLabel('todaySales', 'مبيعات اليوم')}
                       value={getCardValue('todaySales', stats.todaySales)}
                       icon={ShoppingCart}
                       gradient="primary"
@@ -778,7 +784,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   return (
                     <StatCard
                       key={cardId}
-                      title="عدد مبيعات الشهر"
+                      title={getCardLabel('monthSalesCount', 'عدد مبيعات الشهر')}
                       value={getCardValue('monthSalesCount', stats.monthSales)}
                       icon={TrendingUp}
                       gradient="success"
@@ -799,7 +805,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
               {getCardConfig('allTimePurchases').visible && (
                 <StatCard
-                  title="إجمالي مشتريات الشركة (كل السنين)"
+                  title={getCardLabel('allTimePurchases', 'إجمالي مشتريات الشركة (كل السنين)')}
                   value={formatCurrencyWithMode(allTimeStats.allTimePurchases)}
                   icon={Building2}
                   gradient="danger"
@@ -815,7 +821,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               )}
               {getCardConfig('allTimeSales').visible && (
                 <StatCard
-                  title="إجمالي مبيعات الشركة (كل السنين)"
+                  title={getCardLabel('allTimeSales', 'إجمالي مبيعات الشركة (كل السنين)')}
                   value={formatCurrencyWithMode(allTimeStats.allTimeSales)}
                   icon={TrendingUp}
                   gradient="success"
@@ -888,7 +894,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
                 {getCardConfig('activeInstallments').visible && (
                   <StatCard
-                    title="عقود التقسيط النشطة"
+                    title={getCardLabel('activeInstallments', 'عقود التقسيط النشطة')}
                     value={activeInstallments.length}
                     icon={CreditCard}
                     gradient="primary"
@@ -903,7 +909,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 )}
                 {getCardConfig('overdueInstallments').visible && (
                   <StatCard
-                    title="الأقساط المتأخرة"
+                    title={getCardLabel('overdueInstallments', 'الأقساط المتأخرة')}
                     value={overdueCount}
                     icon={AlertTriangle}
                     gradient="danger"
@@ -918,7 +924,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 )}
                 {getCardConfig('upcomingInstallments').visible && (
                   <StatCard
-                    title="أقساط الشهر الحالي"
+                    title={getCardLabel('upcomingInstallments', 'أقساط الشهر الحالي')}
                     value={upcomingThisMonth}
                     icon={Calendar}
                     gradient="warning"
@@ -933,7 +939,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 )}
                 {getCardConfig('totalDue').visible && (
                   <StatCard
-                    title="إجمالي المستحق"
+                    title={getCardLabel('totalDue', 'إجمالي المستحق')}
                     value={`${new Intl.NumberFormat('ar-SA').format(totalDueAmount)} ر.س`}
                     icon={DollarSign}
                     gradient="success"

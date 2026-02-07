@@ -357,9 +357,37 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
 
             {selected ? (
               <div className="border rounded-lg p-4 space-y-5">
-                <div>
-                  <p className="font-semibold mb-1">{selected.label}</p>
-                  <p className="text-xs text-muted-foreground">تخصيص مظهر هذه البطاقة</p>
+                {/* Editable Card Name */}
+                <div className="space-y-2">
+                  <Label className="text-sm flex items-center gap-2">
+                    <Type className="w-4 h-4" />
+                    اسم البطاقة
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={selected.label}
+                      onChange={(e) => updateCard(selected.id, { label: e.target.value })}
+                      className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      dir="rtl"
+                      placeholder="اسم البطاقة"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 px-2 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        const defaultCard = DEFAULT_STAT_CARDS.find(c => c.id === selected.id);
+                        if (defaultCard) {
+                          updateCard(selected.id, { label: defaultCard.label });
+                        }
+                      }}
+                      title="استعادة الاسم الافتراضي"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">يمكنك تغيير اسم البطاقة كما تريد</p>
                 </div>
 
                 {/* Size */}
