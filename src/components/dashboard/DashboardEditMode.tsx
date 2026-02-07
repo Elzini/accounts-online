@@ -149,15 +149,11 @@ export function EditableWidgetWrapper({
 
   if (!visible) return null;
 
-  const gridStyle: React.CSSProperties = {
-    order: order ?? 0,
-  };
-
   const colSpanClass = colSpan === 1 ? 'lg:col-span-1' : 'col-span-1 lg:col-span-2';
 
   if (!isEditMode) {
     return (
-      <div className={cn(colSpanClass, className)} style={gridStyle}>
+      <div className={cn(colSpanClass, className)}>
         {children}
       </div>
     );
@@ -206,7 +202,6 @@ export function EditableWidgetWrapper({
         'cursor-grab active:cursor-grabbing',
         className
       )}
-      style={gridStyle}
     >
       {/* Top controls */}
       <div className="absolute -top-2 -right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
