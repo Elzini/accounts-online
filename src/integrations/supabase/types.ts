@@ -259,6 +259,7 @@ export type Database = {
       }
       backup_schedules: {
         Row: {
+          backup_hour: number
           company_id: string
           created_at: string
           frequency: string
@@ -270,6 +271,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          backup_hour?: number
           company_id: string
           created_at?: string
           frequency?: string
@@ -281,6 +283,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          backup_hour?: number
           company_id?: string
           created_at?: string
           frequency?: string
