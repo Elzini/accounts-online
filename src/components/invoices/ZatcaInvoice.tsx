@@ -51,6 +51,7 @@ interface InvoiceData {
   taxSettings?: TaxSettings | null;
   companyLogoUrl?: string | null;
   invoiceSettings?: InvoiceSettings | null;
+  uuid?: string;
 }
 
 interface ZatcaInvoiceProps {
@@ -78,6 +79,7 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
       taxSettings,
       companyLogoUrl,
       invoiceSettings,
+      uuid,
     } = data;
 
     // Invoice settings with defaults
@@ -208,6 +210,12 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                 <span>رقم الفاتورة: </span>
                 <span className="font-bold">{invoiceNumber}</span>
               </div>
+              {uuid && (
+                <div className="mt-1 bg-white/10 px-3 py-0.5 rounded text-xs" dir="ltr">
+                  <span className="opacity-75">UUID: </span>
+                  <span className="font-mono">{uuid.substring(0, 18)}...</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
