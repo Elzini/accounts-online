@@ -2,12 +2,13 @@ import { useRef, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ZatcaInvoice } from './ZatcaInvoice';
-import { Printer, Download, X, FileCode, Copy, Check } from 'lucide-react';
+import { Printer, Download, X, FileCode, FileJson, Copy, Check, Send } from 'lucide-react';
 import { TaxSettings } from '@/services/accounting';
 import { useReactToPrint } from 'react-to-print';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { generateZatcaXML, downloadXMLInvoice, generateInvoiceUUID, generateInvoiceHash, type ZatcaXMLInvoiceData } from '@/lib/zatcaXML';
+import { generateZatcaJSONString, downloadJSONInvoice } from '@/lib/zatcaJSON';
 import { toast } from 'sonner';
 
 interface InvoiceItem {
@@ -94,41 +95,42 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     }
   };
 
+  const buildInvoiceData = (): ZatcaXMLInvoiceData => {
+    const taxRate = data.taxSettings?.tax_rate || 15;
+    return {
+      uuid: invoiceUUID,
+      invoiceNumber: data.invoiceNumber,
+      invoiceDate: data.invoiceDate,
+      invoiceType: data.invoiceType,
+      invoiceTypeCode: '388',
+      sellerName: data.sellerName,
+      sellerTaxNumber: data.sellerTaxNumber || data.taxSettings?.tax_number || '',
+      sellerAddress: data.sellerAddress || data.taxSettings?.national_address || '',
+      sellerCommercialRegister: data.taxSettings?.commercial_register || '',
+      buyerName: data.buyerName,
+      buyerTaxNumber: data.buyerTaxNumber,
+      buyerIdNumber: data.buyerIdNumber,
+      buyerAddress: data.buyerAddress,
+      items: data.items.map(item => ({
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        taxRate: item.taxRate,
+        taxAmount: item.unitPrice * item.quantity * (item.taxRate / 100),
+        total: item.total,
+      })),
+      subtotal: data.subtotal,
+      taxAmount: data.taxAmount,
+      total: data.total,
+      taxRate,
+    };
+  };
+
   const handleExportXML = async () => {
     try {
-      const taxRate = data.taxSettings?.tax_rate || 15;
-      
-      const xmlData: ZatcaXMLInvoiceData = {
-        uuid: invoiceUUID,
-        invoiceNumber: data.invoiceNumber,
-        invoiceDate: data.invoiceDate,
-        invoiceType: data.invoiceType,
-        invoiceTypeCode: '388',
-        sellerName: data.sellerName,
-        sellerTaxNumber: data.sellerTaxNumber || data.taxSettings?.tax_number || '',
-        sellerAddress: data.sellerAddress || data.taxSettings?.national_address || '',
-        sellerCommercialRegister: data.taxSettings?.commercial_register || '',
-        buyerName: data.buyerName,
-        buyerTaxNumber: data.buyerTaxNumber,
-        buyerIdNumber: data.buyerIdNumber,
-        buyerAddress: data.buyerAddress,
-        items: data.items.map(item => ({
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          taxRate: item.taxRate,
-          taxAmount: item.unitPrice * item.quantity * (item.taxRate / 100),
-          total: item.total,
-        })),
-        subtotal: data.subtotal,
-        taxAmount: data.taxAmount,
-        total: data.total,
-        taxRate,
-      };
-
+      const xmlData = buildInvoiceData();
       const xmlContent = generateZatcaXML(xmlData);
       
-      // Generate hash for verification
       const hash = await generateInvoiceHash(xmlContent);
       console.log('Invoice Hash (SHA-256):', hash);
 
@@ -139,6 +141,21 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     } catch (error) {
       console.error('Error exporting XML:', error);
       toast.error('فشل تصدير الفاتورة بصيغة XML');
+    }
+  };
+
+  const handleExportJSON = async () => {
+    try {
+      const jsonData = buildInvoiceData();
+      const jsonContent = generateZatcaJSONString(jsonData);
+      
+      downloadJSONInvoice(jsonContent, `ZATCA_Invoice_${data.invoiceNumber}`);
+      toast.success('تم تصدير الفاتورة بصيغة JSON بنجاح', {
+        description: `UUID: ${invoiceUUID.substring(0, 8)}...`,
+      });
+    } catch (error) {
+      console.error('Error exporting JSON:', error);
+      toast.error('فشل تصدير الفاتورة بصيغة JSON');
     }
   };
 
@@ -158,7 +175,11 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
             <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={handleExportXML}>
                 <FileCode className="w-4 h-4 ml-2" />
-                تصدير XML
+                XML
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportJSON}>
+                <FileJson className="w-4 h-4 ml-2" />
+                JSON
               </Button>
               <Button variant="outline" size="sm" onClick={() => handlePrint()}>
                 <Printer className="w-4 h-4 ml-2" />
@@ -166,7 +187,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
               </Button>
               <Button variant="outline" size="sm" onClick={handleExportPDF}>
                 <Download className="w-4 h-4 ml-2" />
-                تصدير PDF
+                PDF
               </Button>
             </div>
           </DialogTitle>
