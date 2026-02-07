@@ -32,6 +32,32 @@ export default function Register() {
   // Fetch settings from secure edge function
   const { settings: globalSettings, loading: settingsLoading } = usePublicAuthSettings();
 
+  const getPasswordStrength = (pwd: string) => {
+    if (!pwd) return { level: 0, label: '', color: '' };
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (pwd.length >= 12) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+    if (score <= 1) return { level: 1, label: 'ضعيفة', color: 'bg-red-500' };
+    if (score <= 2) return { level: 2, label: 'متوسطة', color: 'bg-yellow-500' };
+    if (score <= 3) return { level: 3, label: 'جيدة', color: 'bg-blue-500' };
+    return { level: 4, label: 'قوية', color: 'bg-green-500' };
+  };
+
+  const translateAuthError = (message: string): string => {
+    if (message.includes('already registered')) return 'هذا البريد الإلكتروني مسجل مسبقاً';
+    if (message.includes('weak') || message.includes('easy to guess')) 
+      return 'كلمة المرور ضعيفة أو مكشوفة في قواعد بيانات الاختراقات. يرجى اختيار كلمة مرور أقوى تحتوي على أحرف كبيرة وصغيرة وأرقام ورموز';
+    if (message.includes('password') && message.includes('length'))
+      return 'كلمة المرور قصيرة جداً، يجب أن تكون 8 أحرف على الأقل';
+    if (message.includes('rate limit')) return 'تم تجاوز عدد المحاولات المسموح. يرجى المحاولة لاحقاً';
+    if (message.includes('invalid email')) return 'البريد الإلكتروني غير صالح';
+    return 'حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -40,15 +66,20 @@ export default function Register() {
       return;
     }
 
-    if (password.length < 6) {
-      toast.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+    if (password.length < 8) {
+      toast.error('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+      return;
+    }
+
+    const strength = getPasswordStrength(password);
+    if (strength.level < 2) {
+      toast.error('كلمة المرور ضعيفة جداً. أضف أحرف كبيرة وأرقام ورموز');
       return;
     }
 
     setLoading(true);
 
     try {
-      // Create user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -63,22 +94,14 @@ export default function Register() {
       });
 
       if (authError) {
-        if (authError.message.includes('already registered')) {
-          toast.error('هذا البريد الإلكتروني مسجل مسبقاً');
-        } else {
-          toast.error('حدث خطأ أثناء التسجيل: ' + authError.message);
-        }
+        toast.error(translateAuthError(authError.message));
         return;
       }
 
       if (authData.user) {
-        // Send welcome email via edge function
         try {
           await supabase.functions.invoke('send-welcome-email', {
-            body: {
-              email: email,
-              companyName: companyName
-            }
+            body: { email, companyName }
           });
         } catch (emailError) {
           console.log('Welcome email could not be sent:', emailError);
@@ -263,9 +286,33 @@ export default function Register() {
                   className="h-12 pr-10"
                   dir="ltr"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
+              {password && (
+                <div className="space-y-1.5">
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className={`h-1.5 flex-1 rounded-full transition-colors ${
+                          i <= getPasswordStrength(password).level
+                            ? getPasswordStrength(password).color
+                            : 'bg-muted'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground text-right">
+                    قوة كلمة المرور: <span className="font-medium">{getPasswordStrength(password).label}</span>
+                  </p>
+                  {getPasswordStrength(password).level < 3 && (
+                    <p className="text-xs text-muted-foreground text-right">
+                      💡 استخدم 8 أحرف على الأقل مع أحرف كبيرة وأرقام ورموز
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -281,7 +328,7 @@ export default function Register() {
                   className="h-12 pr-10"
                   dir="ltr"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
             </div>
