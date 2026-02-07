@@ -311,27 +311,69 @@ function looksLikeFinancialNumber(val: any): boolean {
   return /[\d]/.test(str);
 }
 
+// التحقق من أن عمود الأكواد يحتوي فعلاً على أرقام حسابات في البيانات
+function validateCodeColumn(rawData: any[][], codeCol: number, dataStartRow: number): boolean {
+  let validCount = 0;
+  const checkRows = Math.min(dataStartRow + 10, rawData.length);
+  for (let i = dataStartRow; i < checkRows; i++) {
+    const row = rawData[i];
+    if (!row) continue;
+    const val = String(row[codeCol] ?? '').trim();
+    if (val && looksLikeAccountCode(val)) validCount++;
+  }
+  return validCount >= 2;
+}
+
+// البحث عن عمود الأكواد الحقيقي من البيانات (ليس من العناوين)
+function findCodeColumnFromData(rawData: any[][], dataStartRow: number, excludeCols: number[]): number {
+  const checkRows = Math.min(dataStartRow + 15, rawData.length);
+  const maxCols = Math.max(...rawData.slice(dataStartRow, checkRows).map(r => r?.length ?? 0));
+  
+  let bestCol = -1;
+  let bestScore = 0;
+  
+  for (let col = 0; col < maxCols; col++) {
+    if (excludeCols.includes(col)) continue;
+    
+    let codeCount = 0;
+    let totalNonEmpty = 0;
+    
+    for (let row = dataStartRow; row < checkRows; row++) {
+      const val = String(rawData[row]?.[col] ?? '').trim();
+      if (!val) continue;
+      totalNonEmpty++;
+      if (looksLikeAccountCode(val)) codeCount++;
+    }
+    
+    if (codeCount > bestScore && codeCount >= 2) {
+      bestScore = codeCount;
+      bestCol = col;
+    }
+  }
+  
+  return bestCol;
+}
+
 function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
-  // البحث في أول 15 صفوف عن صف العناوين
   const maxScanRows = Math.min(15, rawData.length);
   
   console.log('📊 TB Parser: Scanning first rows for headers...');
-  for (let i = 0; i < Math.min(5, rawData.length); i++) {
-    console.log(`📊 Row ${i}:`, JSON.stringify(rawData[i]?.map(c => String(c ?? '').trim().substring(0, 30))));
+  for (let i = 0; i < Math.min(8, rawData.length); i++) {
+    console.log(`📊 Row ${i}:`, JSON.stringify(rawData[i]?.map((c: any) => String(c ?? '').trim().substring(0, 30))));
   }
   
   for (let rowIdx = 0; rowIdx < maxScanRows; rowIdx++) {
     const row = rawData[rowIdx];
     if (!row || row.length < 2) continue;
     
-    const rowStr = row.map(c => String(c ?? '').trim());
+    const rowStr = row.map((c: any) => String(c ?? '').trim());
     
     // البحث عن عمود الاسم - هذا هو المؤشر الأساسي لصف العناوين
     const nameCol = findColumnIndex(rowStr, TB_COLUMN_MAPPINGS.name);
     if (nameCol === -1) continue;
     
-    // البحث عن عمود الرمز
-    const codeCol = findColumnIndex(rowStr, TB_COLUMN_MAPPINGS.code);
+    // البحث عن عمود الرمز من العناوين
+    let codeCol = findColumnIndex(rowStr, TB_COLUMN_MAPPINGS.code);
     
     // البحث عن أعمدة المدين والدائن
     const debitIndices: number[] = [];
@@ -398,15 +440,32 @@ function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
       }
     }
     
+    const dataStartRow = rowIdx + 1;
+    
+    // === التحقق الذكي: هل عمود الأكواد يحتوي فعلاً على أرقام حسابات؟ ===
+    const resolvedCodeCol = codeCol !== -1 ? codeCol : 0;
+    if (!validateCodeColumn(rawData, resolvedCodeCol, dataStartRow)) {
+      console.log(`📊 Code column ${resolvedCodeCol} failed validation. Scanning data for real code column...`);
+      const realCodeCol = findCodeColumnFromData(rawData, dataStartRow, [nameCol, debitCol, creditCol]);
+      if (realCodeCol !== -1) {
+        codeCol = realCodeCol;
+        console.log(`📊 Found real code column at index ${realCodeCol}`);
+      } else {
+        console.log(`📊 Could not find code column from data, will use name-based mapping`);
+      }
+    } else {
+      if (codeCol === -1) codeCol = 0;
+    }
+    
     console.log(`📊 TB Column Detection: row=${rowIdx}, code=${codeCol}, name=${nameCol}, debit=${debitCol}, credit=${creditCol}, debitCols=${debitIndices}, creditCols=${creditIndices}`);
     
     return {
-      codeCol: codeCol !== -1 ? codeCol : 0,
+      codeCol: codeCol !== -1 ? codeCol : -1,
       nameCol,
       debitCol,
       creditCol,
       headerRowIndex: rowIdx,
-      dataStartRow: rowIdx + 1,
+      dataStartRow,
     };
   }
   
@@ -543,16 +602,35 @@ export async function parseTrialBalanceFile(file: File): Promise<ImportedTrialBa
     if (colMapping) {
       console.log('📊 Using smart column detection:', colMapping);
       
+      const hasCodeCol = colMapping.codeCol !== -1;
+      
       for (let i = colMapping.dataStartRow; i < rawData.length; i++) {
         const row = rawData[i];
         if (!row || row.length < 2) continue;
         
-        const codeVal = row[colMapping.codeCol];
+        // قراءة الكود - إذا لم يتم تحديد عمود الأكواد، نبحث في الصف عن رقم حساب
+        let code = '';
+        if (hasCodeCol) {
+          code = String(row[colMapping.codeCol] ?? '').trim();
+        }
+        
+        // إذا لم نجد كود من العمود المحدد، نبحث في جميع الأعمدة الأخرى
+        if (!code || !looksLikeAccountCode(code)) {
+          const excludeCols = [colMapping.nameCol, colMapping.debitCol, colMapping.creditCol];
+          for (let c = 0; c < row.length; c++) {
+            if (excludeCols.includes(c)) continue;
+            const val = String(row[c] ?? '').trim();
+            if (val && looksLikeAccountCode(val)) {
+              code = val;
+              break;
+            }
+          }
+        }
+        
         const nameVal = row[colMapping.nameCol];
         const debitVal = row[colMapping.debitCol];
         const creditVal = row[colMapping.creditCol];
         
-        const code = String(codeVal ?? '').trim();
         const name = String(nameVal ?? '').trim();
         
         // تجاهل الصفوف الفارغة تماماً
@@ -562,17 +640,14 @@ export async function parseTrialBalanceFile(file: File): Promise<ImportedTrialBa
         const skipKeywords = ['إجمالي', 'المجموع', 'الإجمالي', 'مجموع', 'total', 'Total', 'المجاميع'];
         if (skipKeywords.some(kw => name.includes(kw) || code.includes(kw))) continue;
         
-        // قبول الحساب إذا كان لديه كود يبدو كرقم حساب أو اسم حساب مع أرقام
         const hasValidCode = looksLikeAccountCode(code);
         const hasValidName = name.length >= 2;
         
-        // نقبل الصف إذا كان لديه كود حساب صالح أو اسم حساب مع قيم مالية
         if (!hasValidCode && !hasValidName) continue;
         if (!hasValidCode && hasValidName) {
-          // بدون كود - نتحقق إذا كان هناك قيم مالية
           const debit = parseNumber(debitVal);
           const credit = parseNumber(creditVal);
-          if (debit === 0 && credit === 0) continue; // بدون كود وبدون قيم = عنوان قسم
+          if (debit === 0 && credit === 0) continue;
         }
         
         const debit = parseNumber(debitVal);
