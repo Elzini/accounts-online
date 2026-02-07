@@ -62,6 +62,8 @@ import { ProjectsPage, ContractsPage, ProgressBillingsPage } from '@/components/
 import { CustodyPage } from '@/components/custody';
 import { TripsPage } from '@/components/trips';
 import { ThemeSettingsPage } from '@/components/themes/ThemeSettingsPage';
+import { MenuManagementPage, OrdersPage, KitchenPage, TablesPage } from '@/components/restaurant';
+import { ShipmentsPage, LettersOfCreditPage, CustomsClearancePage } from '@/components/export-import';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
@@ -168,6 +170,15 @@ const Index = () => {
       case 'account-movement': return <AccountMovementReport />;
       // Theme settings
       case 'theme-settings': return <ThemeSettingsPage />;
+      // Restaurant module
+      case 'menu-management': return <MenuManagementPage />;
+      case 'restaurant-orders': return <OrdersPage />;
+      case 'kitchen-display': return <KitchenPage />;
+      case 'table-management': return <TablesPage />;
+      // Export/Import module
+      case 'shipments': return <ShipmentsPage />;
+      case 'letters-of-credit': return <LettersOfCreditPage />;
+      case 'customs-clearance': return <CustomsClearancePage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };

@@ -117,4 +117,13 @@ export type ActivePage =
   // Account Movement Report
   | 'account-movement'
   // Theme settings
-  | 'theme-settings';
+  | 'theme-settings'
+  // Restaurant module
+  | 'menu-management'
+  | 'restaurant-orders'
+  | 'kitchen-display'
+  | 'table-management'
+  // Export/Import module
+  | 'shipments'
+  | 'letters-of-credit'
+  | 'customs-clearance';
