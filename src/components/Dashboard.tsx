@@ -244,9 +244,9 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries(['stats']);
-      await queryClient.invalidateQueries(['analytics']);
-      await queryClient.invalidateQueries(['monthlyChartData']);
+      await queryClient.invalidateQueries({ queryKey: ['stats'] });
+      await queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      await queryClient.invalidateQueries({ queryKey: ['monthlyChartData'] });
       toast.success('تم تحديث البيانات');
     } catch (error) {
       toast.error('فشل تحديث البيانات');
@@ -256,8 +256,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   }, [queryClient]);
 
   const transferStats = useMemo(() => {
-    const incomingCars = transfers?.filter(t => t.type === 'incoming' && t.status === 'pending') || [];
-    const outgoingCars = transfers?.filter(t => t.type === 'outgoing' && t.status === 'pending') || [];
+    const incomingCars = transfers?.filter(t => t.transfer_type === 'incoming' && t.status === 'pending') || [];
+    const outgoingCars = transfers?.filter(t => t.transfer_type === 'outgoing' && t.status === 'pending') || [];
     return { incomingCars, outgoingCars };
   }, [transfers]);
 
@@ -266,11 +266,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   }, []);
 
   const formatCurrencyWithMode = useCallback((value: number) => {
-    if (amountDisplayMode === 'words') {
-      // Implement words conversion if needed
-      return value.toLocaleString('ar-SA');
-    }
-    return formatCurrency(value);
+    const displayValue = calculateDisplayAmount(value, amountDisplayMode);
+    return formatCurrency(displayValue);
   }, [amountDisplayMode, formatCurrency]);
 
   const getCurrencySubtitle = useCallback(() => {
@@ -287,8 +284,10 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     if (!allSales) return [];
     return allSales.filter(sale => {
       if (!selectedFiscalYear) return true;
-      const saleDate = new Date(sale.date);
-      return saleDate.getFullYear() === selectedFiscalYear;
+      const saleDate = new Date(sale.sale_date);
+      const start = new Date(selectedFiscalYear.start_date);
+      const end = new Date(selectedFiscalYear.end_date);
+      return saleDate >= start && saleDate <= end;
     });
   }, [allSales, selectedFiscalYear]);
 
@@ -296,8 +295,10 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     if (!allCars) return [];
     return allCars.filter(car => {
       if (!selectedFiscalYear) return true;
-      const carDate = new Date(car.entryDate);
-      return carDate.getFullYear() === selectedFiscalYear;
+      const carDate = new Date(car.purchase_date);
+      const start = new Date(selectedFiscalYear.start_date);
+      const end = new Date(selectedFiscalYear.end_date);
+      return carDate >= start && carDate <= end;
     });
   }, [allCars, selectedFiscalYear]);
 
@@ -305,9 +306,12 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     // Build details for sales cars
     return fiscalYearSales.map(sale => ({
       id: sale.id,
-      name: sale.carName,
-      model: sale.model,
-      price: sale.price,
+      name: sale.car?.name || 'غير محدد',
+      model: sale.car?.model || '',
+      purchasePrice: sale.car?.purchase_price || 0,
+      salePrice: sale.sale_price,
+      profit: sale.profit,
+      saleDate: sale.sale_date,
     }));
   }, [fiscalYearSales]);
 
@@ -315,9 +319,11 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     // Build details for purchase cars
     return fiscalYearCars.map(car => ({
       id: car.id,
-      name: car.carName,
-      model: car.model,
-      price: car.purchasePrice,
+      name: car.name,
+      model: car.model || '',
+      purchasePrice: car.purchase_price,
+      chassisNumber: car.chassis_number,
+      status: car.status,
     }));
   }, [fiscalYearCars]);
 
@@ -328,19 +334,28 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       case 'availableCars':
         data = {
           title: getCardLabel(cardId, industryLabels.availableItems),
-          items: fiscalYearCars,
+          value: stats.availableCars,
+          breakdown: [],
+          cars: buildPurchaseCarDetails().filter(c => c.status === 'available'),
+          showCarsTable: true,
         };
         break;
       case 'totalPurchases':
         data = {
           title: getCardLabel(cardId, industryLabels.totalPurchasesLabel),
-          items: buildPurchaseCarDetails(),
+          value: formatCurrency(stats.totalPurchases),
+          breakdown: [],
+          cars: buildPurchaseCarDetails(),
+          showCarsTable: true,
         };
         break;
       case 'monthSales':
         data = {
           title: getCardLabel(cardId, 'مبيعات الشهر'),
-          items: buildSalesCarDetails(),
+          value: formatCurrency(stats.monthSalesAmount),
+          breakdown: [],
+          cars: buildSalesCarDetails(),
+          showCarsTable: true,
         };
         break;
       // Add other cases as needed
@@ -766,12 +781,12 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                                   <Car className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="font-semibold text-xs sm:text-sm truncate">{car.carName} {car.model}</p>
-                                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">شاسيه: {car.chassisNumber}</p>
+                                  <p className="font-semibold text-xs sm:text-sm truncate">{car.car?.name} {car.car?.model}</p>
+                                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">شاسيه: {car.car?.chassis_number}</p>
                                 </div>
                               </div>
                               <div className="text-left shrink-0">
-                                <p className="text-[10px] sm:text-xs font-medium text-primary truncate max-w-[80px] sm:max-w-none">{car.dealershipName}</p>
+                                <p className="text-[10px] sm:text-xs font-medium text-primary truncate max-w-[80px] sm:max-w-none">{car.partner_dealership?.name}</p>
                                 <Badge variant="outline" className="text-[10px] sm:text-xs h-5">قيد الانتظار</Badge>
                               </div>
                             </div>
@@ -821,12 +836,12 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                                   <Car className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="font-semibold text-xs sm:text-sm truncate">{car.carName} {car.model}</p>
-                                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">شاسيه: {car.chassisNumber}</p>
+                                  <p className="font-semibold text-xs sm:text-sm truncate">{car.car?.name} {car.car?.model}</p>
+                                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">شاسيه: {car.car?.chassis_number}</p>
                                 </div>
                               </div>
                               <div className="text-left shrink-0">
-                                <p className="text-[10px] sm:text-xs font-medium text-warning truncate max-w-[80px] sm:max-w-none">{car.dealershipName}</p>
+                                <p className="text-[10px] sm:text-xs font-medium text-warning truncate max-w-[80px] sm:max-w-none">{car.partner_dealership?.name}</p>
                                 <Badge variant="outline" className="text-[10px] sm:text-xs h-5">قيد الانتظار</Badge>
                               </div>
                             </div>
