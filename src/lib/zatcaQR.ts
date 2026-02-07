@@ -2,20 +2,31 @@
  * ZATCA TLV Encoding for QR Code
  * According to ZATCA e-invoicing requirements (Phase 1 & 2)
  * 
- * Tags:
+ * Phase 1 Tags (1-5):
  * 1 - Seller Name (UTF-8)
  * 2 - VAT Registration Number (15 digits starting with 3)
  * 3 - Invoice Date/Time (format: yyyy-MM-ddTHH:mm:ssZ)
  * 4 - Invoice Total with VAT (decimal with 2 places)
  * 5 - VAT Amount (decimal with 2 places)
+ * 
+ * Phase 2 Tags (6-9):
+ * 6 - Invoice Hash (SHA-256)
+ * 7 - ECDSA Signature
+ * 8 - ECDSA Public Key
+ * 9 - Certificate Signature
  */
 
-interface ZatcaQRData {
+export interface ZatcaQRData {
   sellerName: string;
   vatNumber: string;
   invoiceDateTime: string; // ISO 8601 format or Date string
   invoiceTotal: number;
   vatAmount: number;
+  // Phase 2 fields (optional)
+  invoiceHash?: string;       // Tag 6: SHA-256 hash of the invoice
+  ecdsaSignature?: string;    // Tag 7: ECDSA digital signature
+  ecdsaPublicKey?: string;    // Tag 8: ECDSA public key
+  certificateSignature?: string; // Tag 9: Certificate signature
 }
 
 /**
@@ -104,6 +115,7 @@ function validateVatNumber(vatNumber: string): boolean {
 /**
  * Generate ZATCA-compliant QR code data (Base64 encoded TLV)
  * Phase 1: Contains Tags 1-5
+ * Phase 2: Contains Tags 1-9 (when hash/signature data is provided)
  */
 export function generateZatcaQRData(data: ZatcaQRData): string {
   // Validate required fields
@@ -121,7 +133,7 @@ export function generateZatcaQRData(data: ZatcaQRData): string {
   // Format date/time
   const formattedDateTime = formatDateTimeForZatca(data.invoiceDateTime);
   
-  // Build TLV fields in order (Tags 1-5)
+  // Build TLV fields in order (Tags 1-5, mandatory)
   const fields = [
     encodeTLV(1, data.sellerName.trim()),
     encodeTLV(2, cleanVatNumber),
@@ -130,8 +142,37 @@ export function generateZatcaQRData(data: ZatcaQRData): string {
     encodeTLV(5, formatAmount(data.vatAmount)),
   ];
   
+  // Phase 2 Tags (6-9, optional)
+  if (data.invoiceHash) {
+    fields.push(encodeTLV(6, data.invoiceHash));
+  }
+  if (data.ecdsaSignature) {
+    fields.push(encodeTLV(7, data.ecdsaSignature));
+  }
+  if (data.ecdsaPublicKey) {
+    fields.push(encodeTLV(8, data.ecdsaPublicKey));
+  }
+  if (data.certificateSignature) {
+    fields.push(encodeTLV(9, data.certificateSignature));
+  }
+  
   const combined = combineTLV(fields);
   return uint8ArrayToBase64(combined);
+}
+
+/**
+ * Generate SHA-256 hash of invoice data for QR code Tag 6
+ */
+export async function generateInvoiceQRHash(invoiceData: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(invoiceData);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = new Uint8Array(hashBuffer);
+  let binary = '';
+  for (let i = 0; i < hashArray.length; i++) {
+    binary += String.fromCharCode(hashArray[i]);
+  }
+  return btoa(binary);
 }
 
 /**
