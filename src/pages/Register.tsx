@@ -10,12 +10,14 @@ import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
 import { usePublicAuthSettings } from '@/hooks/usePublicAuthSettings';
 
-type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading';
+type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import';
 
 const companyTypes: { value: CompanyActivityType; label: string; icon: React.ReactNode }[] = [
   { value: 'car_dealership', label: 'معرض سيارات', icon: <Car className="w-4 h-4" /> },
   { value: 'construction', label: 'مقاولات', icon: <HardHat className="w-4 h-4" /> },
   { value: 'general_trading', label: 'تجارة عامة', icon: <Package className="w-4 h-4" /> },
+  { value: 'restaurant', label: 'مطاعم وكافيهات', icon: <Package className="w-4 h-4" /> },
+  { value: 'export_import', label: 'تصدير واستيراد', icon: <Package className="w-4 h-4" /> },
 ];
 
 export default function Register() {
