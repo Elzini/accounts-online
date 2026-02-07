@@ -131,25 +131,24 @@ export async function exportTrialBalanceTemplate(includeSamples: boolean = true)
   worksheet.getColumn(5).width = 20;
   worksheet.getColumn(6).width = 20;
 
-  // === دالة مساعدة: إيجاد نطاق الحسابات الفرعية لحساب رئيسي ===
-  function findChildRange(headerIdx: number): { firstRow: number; lastRow: number } | null {
+  // === دالة مساعدة: إيجاد الأبناء المباشرين فقط (المستوى التالي مباشرة) ===
+  function findDirectChildrenRows(headerIdx: number): number[] {
     const headerAccount = SAMPLE_ACCOUNTS[headerIdx];
     const headerLevel = headerAccount.level || 0;
-    let firstChild = -1;
-    let lastChild = -1;
+    const directChildLevel = headerLevel + 1;
+    const childRows: number[] = [];
 
     for (let i = headerIdx + 1; i < SAMPLE_ACCOUNTS.length; i++) {
       const childLevel = SAMPLE_ACCOUNTS[i].level || 0;
-      // توقف إذا وصلنا لحساب بنفس المستوى أو أعلى
+      // توقف إذا وصلنا لحساب بنفس المستوى أو أعلى من الرئيسي
       if (childLevel <= headerLevel) break;
-      // نجمع فقط الأبناء المباشرين (المستوى التالي مباشرة) الذين ليسوا رئيسيين
-      // أو الأبناء الرئيسيين (سيحتوون بدورهم على SUM)
-      if (firstChild === -1) firstChild = i;
-      lastChild = i;
+      // نأخذ فقط الأبناء المباشرين (المستوى التالي مباشرة)
+      if (childLevel === directChildLevel) {
+        childRows.push(i + 4); // +4 لأن البيانات تبدأ من صف 4
+      }
     }
 
-    if (firstChild === -1) return null;
-    return { firstRow: firstChild + 4, lastRow: lastChild + 4 }; // +4 لأن البيانات تبدأ من صف 4
+    return childRows;
   }
 
   // === بيانات النموذج ===
@@ -181,12 +180,14 @@ export async function exportTrialBalanceTemplate(includeSamples: boolean = true)
       row.getCell(2).alignment = { horizontal: 'right', indent: indent };
 
       if (isHeader) {
-        // الحسابات الرئيسية: إضافة صيغة SUM لجمع الفروع التابعة لها
-        const childRange = findChildRange(idx);
-        if (childRange) {
+        // الحسابات الرئيسية: إضافة صيغة SUM لجمع الأبناء المباشرين فقط
+        const directChildRows = findDirectChildrenRows(idx);
+        if (directChildRows.length > 0) {
           for (let c = 3; c <= 6; c++) {
             const colLetter = String.fromCharCode(64 + c);
-            row.getCell(c).value = { formula: `SUM(${colLetter}${childRange.firstRow}:${colLetter}${childRange.lastRow})` };
+            // بناء صيغة تجمع الأبناء المباشرين فقط (لتجنب التكرار)
+            const cellRefs = directChildRows.map(r => `${colLetter}${r}`).join('+');
+            row.getCell(c).value = { formula: cellRefs };
             row.getCell(c).numFmt = '#,##0.00';
             row.getCell(c).font = { bold: true, size: 11, color: { argb: 'FF1A365D' } };
           }
@@ -221,7 +222,7 @@ export async function exportTrialBalanceTemplate(includeSamples: boolean = true)
     });
   }
 
-  // === صف المجموع ===
+  // === صف المجموع: يجمع فقط الحسابات الرئيسية (level 0) لتجنب التكرار ===
   const totalRowNum = SAMPLE_ACCOUNTS.length + 4;
   const totalRow = worksheet.getRow(totalRowNum);
   totalRow.getCell(1).value = '';
@@ -229,9 +230,20 @@ export async function exportTrialBalanceTemplate(includeSamples: boolean = true)
   totalRow.getCell(2).font = { bold: true, size: 12 };
   totalRow.getCell(2).alignment = { horizontal: 'center' };
 
+  // إيجاد صفوف المستوى الأعلى فقط (level 0)
+  const topLevelRows = SAMPLE_ACCOUNTS
+    .map((acc, idx) => ({ level: acc.level || 0, row: idx + 4 }))
+    .filter(item => item.level === 0)
+    .map(item => item.row);
+
   for (let c = 3; c <= 6; c++) {
     const colLetter = String.fromCharCode(64 + c);
-    totalRow.getCell(c).value = { formula: `SUM(${colLetter}4:${colLetter}${totalRowNum - 1})` };
+    if (topLevelRows.length > 0) {
+      const cellRefs = topLevelRows.map(r => `${colLetter}${r}`).join('+');
+      totalRow.getCell(c).value = { formula: cellRefs };
+    } else {
+      totalRow.getCell(c).value = { formula: `SUM(${colLetter}4:${colLetter}${totalRowNum - 1})` };
+    }
     totalRow.getCell(c).numFmt = '#,##0.00';
     totalRow.getCell(c).font = { bold: true, size: 12 };
     totalRow.getCell(c).alignment = { horizontal: 'center' };
