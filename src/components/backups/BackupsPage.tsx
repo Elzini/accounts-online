@@ -299,7 +299,7 @@ export function BackupsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-6 sm:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <div className="flex items-center justify-between sm:justify-start gap-4">
               <Label htmlFor="auto-backup">النسخ التلقائي</Label>
               <Switch
@@ -316,7 +316,7 @@ export function BackupsPage() {
               <Select
                 value={schedule?.frequency ?? 'daily'}
                 onValueChange={(value: 'daily' | 'weekly') =>
-                  updateSchedule.mutate({ frequency: value })
+                  updateSchedule.mutate({ ...schedule, frequency: value })
                 }
                 disabled={!schedule?.is_enabled}
               >
@@ -331,11 +331,33 @@ export function BackupsPage() {
             </div>
 
             <div className="space-y-2">
+              <Label>وقت النسخ</Label>
+              <Select
+                value={String(schedule?.backup_hour ?? 3)}
+                onValueChange={(value) =>
+                  updateSchedule.mutate({ ...schedule, backup_hour: parseInt(value) })
+                }
+                disabled={!schedule?.is_enabled}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <SelectItem key={i} value={String(i)}>
+                      {i === 0 ? '12:00 ص' : i < 12 ? `${i}:00 ص` : i === 12 ? '12:00 م' : `${i - 12}:00 م`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label>مدة الاحتفاظ</Label>
               <Select
                 value={String(schedule?.retention_days ?? 30)}
                 onValueChange={(value) =>
-                  updateSchedule.mutate({ retention_days: parseInt(value) })
+                  updateSchedule.mutate({ ...schedule, retention_days: parseInt(value) })
                 }
                 disabled={!schedule?.is_enabled}
               >

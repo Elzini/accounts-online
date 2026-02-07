@@ -26,6 +26,7 @@ export interface BackupSchedule {
   last_backup_at: string | null;
   next_backup_at: string | null;
   retention_days: number;
+  backup_hour: number;
   created_at: string;
   updated_at: string;
 }
@@ -289,8 +290,9 @@ export async function updateBackupSchedule(
   companyId: string, 
   schedule: Partial<BackupSchedule>
 ): Promise<BackupSchedule> {
+  const hour = schedule.backup_hour ?? 3;
   const nextBackupAt = schedule.is_enabled 
-    ? calculateNextBackup(schedule.frequency || 'daily')
+    ? calculateNextBackup(schedule.frequency || 'daily', hour)
     : null;
 
   const { data, error } = await supabase
@@ -300,6 +302,7 @@ export async function updateBackupSchedule(
       is_enabled: schedule.is_enabled ?? true,
       frequency: schedule.frequency ?? 'daily',
       retention_days: schedule.retention_days ?? 30,
+      backup_hour: hour,
       next_backup_at: nextBackupAt,
       updated_at: new Date().toISOString()
     }, { onConflict: 'company_id' })
@@ -310,15 +313,14 @@ export async function updateBackupSchedule(
   return data as unknown as BackupSchedule;
 }
 
-function calculateNextBackup(frequency: 'daily' | 'weekly'): string {
+function calculateNextBackup(frequency: 'daily' | 'weekly', hour: number = 3): string {
   const now = new Date();
   if (frequency === 'daily') {
     now.setDate(now.getDate() + 1);
-    now.setHours(3, 0, 0, 0); // 3 AM
   } else {
     now.setDate(now.getDate() + 7);
-    now.setHours(3, 0, 0, 0); // 3 AM
   }
+  now.setHours(hour, 0, 0, 0);
   return now.toISOString();
 }
 

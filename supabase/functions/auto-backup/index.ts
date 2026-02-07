@@ -111,7 +111,7 @@ serve(async (req) => {
         }
 
         // Calculate next backup time
-        const nextBackupAt = calculateNextBackup(schedule.frequency);
+        const nextBackupAt = calculateNextBackup(schedule.frequency, schedule.backup_hour ?? 3);
         console.log(`Next backup scheduled for: ${nextBackupAt}`);
 
         // Update schedule
@@ -244,15 +244,14 @@ function calculateRecordsCount(data: any): Record<string, number> {
   };
 }
 
-function calculateNextBackup(frequency: string): string {
+function calculateNextBackup(frequency: string, backupHour: number = 3): string {
   const now = new Date();
   if (frequency === "daily") {
     now.setDate(now.getDate() + 1);
-    now.setHours(3, 0, 0, 0); // 3 AM
   } else {
     now.setDate(now.getDate() + 7);
-    now.setHours(3, 0, 0, 0); // 3 AM
   }
+  now.setHours(backupHour, 0, 0, 0);
   return now.toISOString();
 }
 
