@@ -1,4 +1,4 @@
-import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, FileText, Users, ArrowDownLeft, ArrowUpRight, Building2, BarChart3, RefreshCw, CreditCard, Calendar, AlertTriangle } from 'lucide-react';
+import { Car, ShoppingCart, DollarSign, TrendingUp, UserPlus, Truck, Package, FileText, Users, ArrowDownLeft, ArrowUpRight, Building2, BarChart3, RefreshCw, CreditCard, Calendar, AlertTriangle, HardHat } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { useMonthlyChartData, useStats, useSales, useCars, useAllTimeStats } fro
 import { useAdvancedAnalytics } from '@/hooks/useAnalytics';
 import { useAppSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
 import { useCarTransfers, usePartnerDealerships } from '@/hooks/useTransfers';
 import { useInstallmentSales } from '@/hooks/useInstallments';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -45,6 +46,7 @@ import {
   DEFAULT_WIDGETS 
 } from './dashboard/DashboardEditMode';
 import { useCardFormulas, buildFormulaVariables, evaluateFormula } from '@/hooks/useCardFormulas';
+import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 
 interface DashboardProps {
   stats: {
@@ -87,6 +89,10 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const { data: analytics, isLoading: analyticsLoading } = useAdvancedAnalytics();
   const { data: settings } = useAppSettings();
   const { permissions } = useAuth();
+  const { company } = useCompany();
+  const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
+  const isCarDealership = companyType === 'car_dealership';
+  const industryLabels = useIndustryLabels();
   const { data: transfers } = useCarTransfers();
   const { data: dealerships } = usePartnerDealerships();
   const { data: installmentSales = [] } = useInstallmentSales();
@@ -416,16 +422,16 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       case 'availableCars': {
         const availableCars = fiscalYearCars.filter(c => c.status === 'available');
         data = {
-          title: 'السيارات المتاحة',
+          title: industryLabels.availableItems,
           value: stats.availableCars,
-          subtitle: 'سيارة في المخزون',
+          subtitle: industryLabels.availableSubtitle,
           breakdown: [
-            { label: 'عدد السيارات المتاحة للبيع', value: stats.availableCars, type: 'total' },
+            { label: `عدد ${industryLabels.itemsName} المتاحة`, value: stats.availableCars, type: 'total' },
           ],
-          formula: 'عدد السيارات بحالة "متاحة" ضمن السنة المالية المحددة',
+          formula: `عدد ${industryLabels.itemsName} بحالة "متاحة" ضمن السنة المالية المحددة`,
           notes: [
-            'يشمل السيارات المرحّلة من السنة السابقة',
-            'لا يشمل السيارات المباعة أو المحوّلة',
+            `يشمل ${industryLabels.itemsName} المرحّلة من السنة السابقة`,
+            `لا يشمل ${industryLabels.itemsName} المباعة أو المحوّلة`,
           ],
           showCarsTable: true,
           cars: buildPurchaseCarDetails(availableCars),
@@ -435,16 +441,16 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       
       case 'totalPurchases': {
         data = {
-          title: 'إجمالي المشتريات',
+          title: industryLabels.totalPurchasesLabel,
           value: formatCurrency(stats.totalPurchases),
           subtitle: 'ريال سعودي',
           breakdown: [
-            { label: 'عدد السيارات المشتراة', value: stats.purchasesCount || 0 },
+            { label: `عدد ${industryLabels.itemsName} المشتراة`, value: stats.purchasesCount || 0 },
             { label: 'إجمالي قيمة المشتريات', value: stats.totalPurchases, type: 'total' },
           ],
-          formula: 'مجموع أسعار شراء جميع السيارات ضمن السنة المالية',
+          formula: `مجموع أسعار شراء جميع ${industryLabels.itemsName} ضمن السنة المالية`,
           notes: [
-            'يشمل السيارات المرحّلة من السنة السابقة',
+            `يشمل ${industryLabels.itemsName} المرحّلة من السنة السابقة`,
             'القيمة تمثل رأس المال المستثمر في المخزون',
           ],
           showCarsTable: true,
@@ -702,11 +708,11 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   return (
                     <StatCard
                       key={cardId}
-                      title="السيارات المتاحة"
+                      title={industryLabels.availableItems}
                       value={getCardValue('availableCars', stats.availableCars)}
-                      icon={Car}
+                      icon={isCarDealership ? Car : HardHat}
                       gradient="primary"
-                      subtitle="سيارة في المخزون"
+                      subtitle={industryLabels.availableSubtitle}
                       onClick={() => showStatDetail('availableCars')}
                       {...cardProps}
                     />
@@ -715,7 +721,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   return (
                     <StatCard
                       key={cardId}
-                      title="إجمالي المشتريات"
+                      title={industryLabels.totalPurchasesLabel}
                       value={formatCurrencyWithMode(getCardValue('totalPurchases', stats.totalPurchases))}
                       icon={ShoppingCart}
                       gradient="danger"
@@ -795,7 +801,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   value={formatCurrencyWithMode(allTimeStats.allTimePurchases)}
                   icon={Building2}
                   gradient="danger"
-                  subtitle={`${allTimeStats.totalCarsCount} سيارة - ${getDisplayModeLabel(amountDisplayMode)}`}
+                  subtitle={`${allTimeStats.totalCarsCount} ${industryLabels.allTimePurchasesSubUnit} - ${getDisplayModeLabel(amountDisplayMode)}`}
                   onClick={() => showStatDetail('allTimePurchases')}
                   size={getCardConfig('allTimePurchases').size}
                   bgColor={getCardConfig('allTimePurchases').bgColor}
@@ -811,7 +817,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   value={formatCurrencyWithMode(allTimeStats.allTimeSales)}
                   icon={TrendingUp}
                   gradient="success"
-                  subtitle={`${allTimeStats.allTimeSalesCount} عملية بيع - ${getDisplayModeLabel(amountDisplayMode)}`}
+                  subtitle={`${allTimeStats.allTimeSalesCount} ${industryLabels.allTimeSalesSubUnit} - ${getDisplayModeLabel(amountDisplayMode)}`}
                   onClick={() => showStatDetail('allTimeSales')}
                   size={getCardConfig('allTimeSales').size}
                   bgColor={getCardConfig('allTimeSales').bgColor}
@@ -988,7 +994,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             );
           })()}
 
-          {/* Partner Dealership Transfers */}
+          {/* Partner Dealership Transfers - Only for car dealerships */}
+          {isCarDealership && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
             {/* Incoming Cars */}
             <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
@@ -1100,6 +1107,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               )}
             </div>
           </div>
+          )}
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
@@ -1295,17 +1303,19 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   <h3 className="text-lg font-bold text-card-foreground mb-4">ملخص الأداء</h3>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <span className="text-sm text-muted-foreground">إجمالي السيارات المتاحة</span>
+                      <span className="text-sm text-muted-foreground">إجمالي {industryLabels.itemsName} المتاحة</span>
                       <span className="font-bold text-primary">{analytics.inventoryByStatus.available}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <span className="text-sm text-muted-foreground">إجمالي السيارات المباعة</span>
+                      <span className="text-sm text-muted-foreground">إجمالي {industryLabels.itemsName} المباعة</span>
                       <span className="font-bold text-success">{analytics.inventoryByStatus.sold}</span>
                     </div>
+                    {isCarDealership && (
                     <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <span className="text-sm text-muted-foreground">السيارات المحولة</span>
+                      <span className="text-sm text-muted-foreground">{industryLabels.itemsName} المحولة</span>
                       <span className="font-bold text-warning">{analytics.inventoryByStatus.transferred}</span>
                     </div>
+                    )}
                     <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <span className="text-sm text-muted-foreground">عدد أفضل العملاء</span>
                       <span className="font-bold">{analytics.topCustomers.length}</span>
