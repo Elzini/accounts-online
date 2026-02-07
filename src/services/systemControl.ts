@@ -590,17 +590,29 @@ export async function fetchDashboardConfig(companyId: string): Promise<Dashboard
   };
 }
 
-// Save dashboard configuration
+// Save dashboard configuration (merges with existing config to avoid overwriting)
 export async function saveDashboardConfig(companyId: string, config: Partial<DashboardConfig>): Promise<void> {
+  // First fetch existing config to merge
+  let existing: DashboardConfig | null = null;
+  try {
+    existing = await fetchDashboardConfig(companyId);
+  } catch {
+    // ignore - will create new
+  }
+
+  const merged = {
+    company_id: companyId,
+    stat_cards: config.stat_cards ?? existing?.stat_cards ?? [],
+    analytics_settings: config.analytics_settings ?? existing?.analytics_settings ?? {},
+    layout_settings: config.layout_settings 
+      ? { ...(existing?.layout_settings || {}), ...config.layout_settings }
+      : existing?.layout_settings ?? {},
+    updated_at: new Date().toISOString(),
+  };
+
   const { error } = await supabase
     .from('dashboard_config' as any)
-    .upsert({
-      company_id: companyId,
-      stat_cards: config.stat_cards || [],
-      analytics_settings: config.analytics_settings || {},
-      layout_settings: config.layout_settings || {},
-      updated_at: new Date().toISOString(),
-    } as any, { onConflict: 'company_id' });
+    .upsert(merged as any, { onConflict: 'company_id' });
 
   if (error) throw error;
 }

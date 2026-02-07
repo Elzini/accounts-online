@@ -141,7 +141,9 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   }, []);
 
   // Load widget configs from saved dashboard config - merge with defaults
+  // Skip when in edit mode to prevent overwriting drag-and-drop changes
   useEffect(() => {
+    if (isEditMode) return; // Don't reset during editing
     if (dashboardConfig?.layout_settings?.widgets) {
       const savedWidgets = dashboardConfig.layout_settings.widgets as WidgetConfig[];
       const savedIds = new Set(savedWidgets.map((w: any) => w.id));
@@ -154,7 +156,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       ].sort((a, b) => a.order - b.order);
       setWidgetConfigs(merged);
     }
-  }, [dashboardConfig]);
+  }, [dashboardConfig, isEditMode]);
 
   const enterEditMode = useCallback(() => {
     setIsEditMode(true);
