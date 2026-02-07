@@ -126,4 +126,6 @@ export type ActivePage =
   // Export/Import module
   | 'shipments'
   | 'letters-of-credit'
-  | 'customs-clearance';
+  | 'customs-clearance'
+  // Accounting Audit
+  | 'accounting-audit';
