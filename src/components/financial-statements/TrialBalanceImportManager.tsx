@@ -13,7 +13,7 @@ import {
 import {
   Upload, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle,
   Loader2, ArrowRight, RefreshCw, FileCheck, Edit3, Zap, Plus,
-  Shield, Activity
+  Shield, Activity, Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -24,6 +24,7 @@ import {
   parseTrialBalanceFile,
   generateFinancialStatementsFromTB,
 } from '@/services/trialBalanceImport';
+import { exportTrialBalanceTemplate } from '@/services/trialBalanceTemplate';
 import {
   runScenarioEngine,
   generateMissingAccounts,
@@ -163,12 +164,22 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
               </p>
             </div>
             <div className="flex flex-col items-center gap-3">
-              <Button onClick={() => fileInputRef.current?.click()} disabled={isLoading} className="gap-2">
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
-                {isLoading ? 'جاري التحليل...' : 'اختيار ملف'}
-              </Button>
+              <div className="flex gap-3 flex-wrap justify-center">
+                <Button onClick={() => fileInputRef.current?.click()} disabled={isLoading} className="gap-2">
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+                  {isLoading ? 'جاري التحليل...' : 'اختيار ملف'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => exportTrialBalanceTemplate(true)} 
+                  className="gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  تحميل النموذج
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
-                يدعم: Excel (.xlsx, .xls) و CSV (.csv)
+                يدعم: Excel (.xlsx, .xls) و CSV (.csv) — حمّل النموذج لمعرفة التنسيق المطلوب
               </p>
             </div>
             <input
