@@ -753,14 +753,35 @@ export async function parseTrialBalanceFile(file: File): Promise<ImportedTrialBa
     warnings.push(`${unmappedRows.length} حساب غير مصنف تلقائياً - يرجى تصنيفها يدوياً`);
   }
   
-  // التحقق من توازن الميزان
-  const totalDebit = rows.reduce((sum, r) => sum + r.debit, 0);
-  const totalCredit = rows.reduce((sum, r) => sum + r.credit, 0);
+  // التحقق من توازن الميزان - نجمع فقط الحسابات الفرعية (leaf accounts)
+  // لأن الحسابات الرئيسية (parent accounts) تحتوي على مجموع حساباتها الفرعية
+  // وجمعها مع الفرعية يؤدي إلى حساب مزدوج (double counting)
+  const allCodes = rows.map(r => r.code.replace(/^AUTO-\d+$/, ''));
+  const leafRows = rows.filter(r => {
+    const code = r.code;
+    if (!code || /^AUTO-\d+$/.test(code)) return true; // حسابات بدون كود تعتبر فرعية
+    // الحساب رئيسي إذا كان كود حساب آخر يبدأ بنفس الكود وأطول منه
+    const isParent = allCodes.some(otherCode => 
+      otherCode !== code && 
+      otherCode.length > code.length && 
+      otherCode.startsWith(code)
+    );
+    return !isParent;
+  });
+  
+  const totalDebit = leafRows.reduce((sum, r) => sum + r.debit, 0);
+  const totalCredit = leafRows.reduce((sum, r) => sum + r.credit, 0);
   const difference = Math.abs(totalDebit - totalCredit);
   const isBalanced = difference < 0.01;
   
   if (!isBalanced) {
     errors.push(`ميزان المراجعة غير متوازن: الفرق = ${difference.toFixed(2)}`);
+  }
+  
+  // تحذير إذا تم استبعاد حسابات رئيسية
+  const parentCount = rows.length - leafRows.length;
+  if (parentCount > 0) {
+    warnings.push(`تم استبعاد ${parentCount} حساب رئيسي (عنوان) من حساب التوازن لتجنب الحساب المزدوج`);
   }
   
   const validation: TrialBalanceValidation = {
