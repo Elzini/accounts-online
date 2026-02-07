@@ -1,7 +1,9 @@
-import { ShoppingCart, Users, Package, Wallet, Boxes, FileText, CreditCard, UserPlus, Truck, ArrowLeftRight, FileCheck, TrendingUp, LucideIcon } from 'lucide-react';
+import { ShoppingCart, Users, Package, Wallet, Boxes, FileText, CreditCard, UserPlus, Truck, ArrowLeftRight, FileCheck, TrendingUp, LucideIcon, HardHat, Building2, Ship } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ActivePage } from '@/types';
+import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
+import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 
 interface QuickAccessCard {
   id: string;
@@ -11,68 +13,131 @@ interface QuickAccessCard {
   actions: { label: string; page: ActivePage }[];
 }
 
-const quickAccessCards: QuickAccessCard[] = [
-  {
-    id: 'sales',
-    title: 'المبيعات',
-    icon: ShoppingCart,
-    gradient: 'from-primary via-primary/90 to-primary/70',
-    actions: [
-      { label: 'فاتورة بيع جديدة', page: 'add-sale-invoice' },
-      { label: 'المبيعات', page: 'sales' },
-    ],
-  },
-  {
-    id: 'customers',
-    title: 'العملاء',
-    icon: Users,
-    gradient: 'from-blue-500 via-blue-400 to-cyan-400',
-    actions: [
-      { label: 'إضافة عميل', page: 'add-customer' },
-      { label: 'قائمة العملاء', page: 'customers' },
-      { label: 'الأقساط', page: 'installments' },
-    ],
-  },
-  {
-    id: 'purchases',
-    title: 'المشتريات',
-    icon: Truck,
-    gradient: 'from-orange-500 via-orange-400 to-amber-400',
-    actions: [
-      { label: 'فاتورة شراء', page: 'add-purchase-invoice' },
-      { label: 'المشتريات', page: 'purchases' },
-      { label: 'الموردين', page: 'suppliers' },
-    ],
-  },
-  {
-    id: 'treasury',
-    title: 'الخزينة',
-    icon: Wallet,
-    gradient: 'from-emerald-500 via-emerald-400 to-teal-400',
-    actions: [
-      { label: 'السندات', page: 'vouchers' },
-      { label: 'البنوك', page: 'banking' },
-      { label: 'المصروفات', page: 'expenses' },
-    ],
-  },
-  {
-    id: 'inventory',
-    title: 'المخزون',
-    icon: Package,
-    gradient: 'from-rose-500 via-pink-500 to-fuchsia-500',
-    actions: [
-      { label: 'السيارات المتاحة', page: 'purchases' },
-      { label: 'تقرير المخزون', page: 'inventory-report' },
-      { label: 'التحويلات', page: 'car-transfers' },
-    ],
-  },
-];
+function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnType<typeof useIndustryLabels>): QuickAccessCard[] {
+  const baseCards: QuickAccessCard[] = [
+    {
+      id: 'customers',
+      title: 'العملاء',
+      icon: Users,
+      gradient: 'from-blue-500 via-blue-400 to-cyan-400',
+      actions: [
+        { label: 'إضافة عميل', page: 'add-customer' },
+        { label: 'قائمة العملاء', page: 'customers' },
+        { label: 'الأقساط', page: 'installments' },
+      ],
+    },
+    {
+      id: 'treasury',
+      title: 'الخزينة',
+      icon: Wallet,
+      gradient: 'from-emerald-500 via-emerald-400 to-teal-400',
+      actions: [
+        { label: 'السندات', page: 'vouchers' },
+        { label: 'البنوك', page: 'banking' },
+        { label: 'المصروفات', page: 'expenses' },
+      ],
+    },
+  ];
+
+  switch (companyType) {
+    case 'construction':
+      return [
+        {
+          id: 'projects',
+          title: 'المشاريع',
+          icon: HardHat,
+          gradient: 'from-primary via-primary/90 to-primary/70',
+          actions: [
+            { label: 'المشاريع', page: 'projects' },
+            { label: 'العقود', page: 'contracts' },
+            { label: 'المستخلصات', page: 'progress-billings' },
+          ],
+        },
+        ...baseCards,
+        {
+          id: 'suppliers',
+          title: 'الموردين',
+          icon: Truck,
+          gradient: 'from-orange-500 via-orange-400 to-amber-400',
+          actions: [
+            { label: 'إضافة مورد', page: 'add-supplier' },
+            { label: 'قائمة الموردين', page: 'suppliers' },
+          ],
+        },
+      ];
+
+    case 'export_import':
+      return [
+        {
+          id: 'shipments',
+          title: 'الشحنات',
+          icon: Ship,
+          gradient: 'from-primary via-primary/90 to-primary/70',
+          actions: [
+            { label: 'الشحنات', page: 'shipments' },
+            { label: 'خطابات الاعتماد', page: 'letters-of-credit' },
+            { label: 'التخليص الجمركي', page: 'customs-clearance' },
+          ],
+        },
+        ...baseCards,
+        {
+          id: 'purchases',
+          title: 'الواردات',
+          icon: Truck,
+          gradient: 'from-orange-500 via-orange-400 to-amber-400',
+          actions: [
+            { label: 'فاتورة واردات', page: 'add-purchase-invoice' },
+            { label: 'الواردات', page: 'purchases' },
+            { label: 'الموردين', page: 'suppliers' },
+          ],
+        },
+      ];
+
+    default: // car_dealership, general_trading, restaurant
+      return [
+        {
+          id: 'sales',
+          title: 'المبيعات',
+          icon: ShoppingCart,
+          gradient: 'from-primary via-primary/90 to-primary/70',
+          actions: [
+            { label: 'فاتورة بيع جديدة', page: 'add-sale-invoice' },
+            { label: 'المبيعات', page: 'sales' },
+          ],
+        },
+        ...baseCards,
+        {
+          id: 'purchases',
+          title: 'المشتريات',
+          icon: Truck,
+          gradient: 'from-orange-500 via-orange-400 to-amber-400',
+          actions: [
+            { label: 'فاتورة شراء', page: 'add-purchase-invoice' },
+            { label: 'المشتريات', page: 'purchases' },
+            { label: 'الموردين', page: 'suppliers' },
+          ],
+        },
+        ...(companyType === 'car_dealership' ? [{
+          id: 'inventory',
+          title: labels.inventoryLabel,
+          icon: Package as LucideIcon,
+          gradient: 'from-rose-500 via-pink-500 to-fuchsia-500',
+          actions: labels.inventoryActions.map(a => ({ label: a.label, page: a.page as ActivePage })),
+        }] : []),
+      ];
+  }
+}
 
 interface QuickAccessSectionProps {
   setActivePage: (page: ActivePage) => void;
 }
 
 export function QuickAccessSection({ setActivePage }: QuickAccessSectionProps) {
+  const { company } = useCompany();
+  const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
+  const labels = useIndustryLabels();
+  const quickAccessCards = getQuickAccessCards(companyType, labels);
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Section Header */}
@@ -90,7 +155,10 @@ export function QuickAccessSection({ setActivePage }: QuickAccessSectionProps) {
       </div>
 
       {/* Quick Access Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      <div className={cn(
+        "grid gap-3 sm:gap-4",
+        quickAccessCards.length <= 4 ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-4" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+      )}>
         {quickAccessCards.map((card) => (
           <Card
             key={card.id}

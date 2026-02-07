@@ -326,57 +326,72 @@ export function Sidebar({
     label: 'إدارة الرحلات',
     icon: MapPin
   }];
-  const reportItems = [{
+  // Reports - filtered by company type
+  const allReportItems = [{
     id: 'inventory-report' as ActivePage,
     label: settings?.inventory_report_title || 'تقرير المخزون',
     icon: Package,
-    permission: 'reports' as const
+    permission: 'reports' as const,
+    types: ['car_dealership', 'general_trading', 'restaurant'] as string[],
   }, {
     id: 'profit-report' as ActivePage,
     label: settings?.profit_report_title || 'تقرير الأرباح',
     icon: TrendingUp,
-    permission: 'reports' as const
+    permission: 'reports' as const,
+    types: null, // all types
   }, {
     id: 'purchases-report' as ActivePage,
     label: settings?.purchases_report_title || 'تقرير المشتريات',
     icon: FileText,
-    permission: 'reports' as const
+    permission: 'reports' as const,
+    types: null,
   }, {
     id: 'sales-report' as ActivePage,
     label: settings?.sales_report_title || 'تقرير المبيعات',
     icon: DollarSign,
-    permission: 'reports' as const
+    permission: 'reports' as const,
+    types: null,
   }, {
     id: 'customers-report' as ActivePage,
     label: settings?.customers_report_title || 'تقرير العملاء',
     icon: Users,
-    permission: 'reports' as const
+    permission: 'reports' as const,
+    types: null,
   }, {
     id: 'suppliers-report' as ActivePage,
     label: settings?.suppliers_report_title || 'تقرير الموردين',
     icon: Truck,
-    permission: 'reports' as const
+    permission: 'reports' as const,
+    types: null,
   }, {
     id: 'commissions-report' as ActivePage,
     label: settings?.commissions_report_title || 'تقرير العمولات',
     icon: DollarSign,
-    permission: 'reports' as const
+    permission: 'reports' as const,
+    types: ['car_dealership', 'general_trading'] as string[],
   }, {
     id: 'transfers-report' as ActivePage,
     label: settings?.transfers_report_title || 'تقرير التحويلات',
     icon: ArrowLeftRight,
-    permission: 'reports' as const
+    permission: 'reports' as const,
+    types: ['car_dealership'] as string[],
   }, {
     id: 'partner-report' as ActivePage,
     label: settings?.partner_report_title || 'تقرير المعرض الشريك',
     icon: Building2,
-    permission: 'reports' as const
+    permission: 'reports' as const,
+    types: ['car_dealership'] as string[],
   }, {
     id: 'account-movement' as ActivePage,
     label: 'تقرير حركة الحسابات',
     icon: ClipboardList,
-    permission: 'reports' as const
+    permission: 'reports' as const,
+    types: null,
   }];
+  
+  const reportItems = allReportItems
+    .filter(item => !item.types || item.types.includes(companyType))
+    .map(({ types, ...rest }) => rest);
   const accountingItems = [{
     id: 'fiscal-years' as ActivePage,
     label: 'السنوات المالية',

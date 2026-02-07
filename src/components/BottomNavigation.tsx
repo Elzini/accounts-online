@@ -1,6 +1,7 @@
-import { LayoutDashboard, ShoppingCart, DollarSign, Users, FileText, Menu } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, DollarSign, Users, Menu, HardHat, Ship, UtensilsCrossed, LucideIcon } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
+import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
 
 interface BottomNavigationProps {
   activePage: ActivePage;
@@ -8,14 +9,50 @@ interface BottomNavigationProps {
   onMenuClick: () => void;
 }
 
-const navItems = [
-  { id: 'dashboard' as ActivePage, label: 'الرئيسية', icon: LayoutDashboard },
-  { id: 'purchases' as ActivePage, label: 'المشتريات', icon: ShoppingCart },
-  { id: 'sales' as ActivePage, label: 'المبيعات', icon: DollarSign },
-  { id: 'customers' as ActivePage, label: 'العملاء', icon: Users },
-];
+interface NavItem {
+  id: ActivePage;
+  label: string;
+  icon: LucideIcon;
+}
+
+function getNavItems(companyType: CompanyActivityType): NavItem[] {
+  switch (companyType) {
+    case 'construction':
+      return [
+        { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
+        { id: 'projects', label: 'المشاريع', icon: HardHat },
+        { id: 'contracts', label: 'العقود', icon: DollarSign },
+        { id: 'customers', label: 'العملاء', icon: Users },
+      ];
+    case 'export_import':
+      return [
+        { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
+        { id: 'shipments', label: 'الشحنات', icon: Ship },
+        { id: 'sales', label: 'الصادرات', icon: DollarSign },
+        { id: 'customers', label: 'العملاء', icon: Users },
+      ];
+    case 'restaurant':
+      return [
+        { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
+        { id: 'restaurant-orders', label: 'الطلبات', icon: UtensilsCrossed },
+        { id: 'sales', label: 'المبيعات', icon: DollarSign },
+        { id: 'customers', label: 'العملاء', icon: Users },
+      ];
+    default: // car_dealership, general_trading
+      return [
+        { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
+        { id: 'purchases', label: 'المشتريات', icon: ShoppingCart },
+        { id: 'sales', label: 'المبيعات', icon: DollarSign },
+        { id: 'customers', label: 'العملاء', icon: Users },
+      ];
+  }
+}
 
 export function BottomNavigation({ activePage, setActivePage, onMenuClick }: BottomNavigationProps) {
+  const { company } = useCompany();
+  const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
+  const navItems = getNavItems(companyType);
+
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-card/98 backdrop-blur-lg border-t-2 border-border/80 shadow-2xl safe-area-bottom">
       <div className="flex items-center justify-around px-2 py-2">
