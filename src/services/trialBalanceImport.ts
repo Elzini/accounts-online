@@ -112,10 +112,17 @@ export const MAPPING_TYPE_LABELS: Record<AccountMappingType, string> = {
 
 // الأعمدة المحتملة لميزان المراجعة
 const TB_COLUMN_MAPPINGS = {
-  code: ['رمز الحساب', 'الرمز', 'الكود', 'رقم الحساب', 'code', 'account_code', 'Code', 'رقم'],
+  code: ['رمز الحساب', 'الرمز', 'الكود', 'رقم الحساب', 'code', 'account_code', 'Code', 'رقم', 'الرقم'],
   name: ['اسم الحساب', 'الحساب', 'البيان', 'الوصف', 'name', 'account_name', 'Name', 'اسم'],
   debit: ['مدين', 'مدين إجمالي', 'مجموع مدين', 'رصيد مدين', 'debit', 'Debit', 'المدين', 'مدين نهائي'],
   credit: ['دائن', 'دائن إجمالي', 'مجموع دائن', 'رصيد دائن', 'credit', 'Credit', 'الدائن', 'دائن نهائي'],
+};
+
+// الأعمدة المحتملة لعناوين الصفوف العلوية (الصف المدمج)
+const TB_PARENT_HEADERS = {
+  closing: ['الصافي', 'الختامي', 'الرصيد النهائي', 'صافي', 'الرصيد الصافي', 'net', 'closing', 'balance'],
+  movement: ['الحركة', 'حركة', 'movement'],
+  opening: ['الرصيد السابق', 'رصيد سابق', 'الافتتاحي', 'opening'],
 };
 
 function findValue(row: any, possibleKeys: string[]): string | null {
@@ -127,10 +134,170 @@ function findValue(row: any, possibleKeys: string[]): string | null {
   return null;
 }
 
-function parseNumber(val: string | null): number {
-  if (!val) return 0;
-  const cleaned = val.replace(/[^\d.\-,]/g, '').replace(/,/g, '');
+function parseNumber(val: string | null | number): number {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === 'number') return val;
+  const cleaned = String(val).replace(/[^\d.\-,]/g, '').replace(/,/g, '');
   return parseFloat(cleaned) || 0;
+}
+
+// البحث عن فهرس عمود بناءً على الاسم
+function findColumnIndex(headerRow: any[], possibleNames: string[]): number {
+  for (let i = 0; i < headerRow.length; i++) {
+    const cellVal = String(headerRow[i] ?? '').trim();
+    if (!cellVal) continue;
+    for (const name of possibleNames) {
+      if (cellVal === name || cellVal.includes(name)) {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+
+// البحث عن آخر عمود مدين/دائن (الصافي) في حالة وجود أعمدة مكررة
+function findLastColumnIndex(headerRow: any[], possibleNames: string[]): number {
+  let lastIndex = -1;
+  for (let i = 0; i < headerRow.length; i++) {
+    const cellVal = String(headerRow[i] ?? '').trim();
+    if (!cellVal) continue;
+    for (const name of possibleNames) {
+      if (cellVal === name || cellVal.includes(name)) {
+        lastIndex = i;
+      }
+    }
+  }
+  return lastIndex;
+}
+
+// تحليل هيكل الأعمدة المعقد (أعمدة مدمجة متعددة الصفوف)
+interface ColumnMapping {
+  codeCol: number;
+  nameCol: number;
+  debitCol: number;
+  creditCol: number;
+  headerRowIndex: number;
+  dataStartRow: number;
+}
+
+function detectColumnMapping(rawData: any[][]): ColumnMapping | null {
+  // البحث في أول 10 صفوف عن صف العناوين
+  const maxScanRows = Math.min(10, rawData.length);
+  
+  for (let rowIdx = 0; rowIdx < maxScanRows; rowIdx++) {
+    const row = rawData[rowIdx];
+    if (!row || row.length < 3) continue;
+    
+    const rowStr = row.map(c => String(c ?? '').trim());
+    
+    // البحث عن عمود الاسم - هذا هو المؤشر الأساسي لصف العناوين
+    const nameCol = findColumnIndex(rowStr, TB_COLUMN_MAPPINGS.name);
+    if (nameCol === -1) continue;
+    
+    // البحث عن عمود الرمز
+    const codeCol = findColumnIndex(rowStr, TB_COLUMN_MAPPINGS.code);
+    
+    // البحث عن أعمدة المدين والدائن
+    // في حالة ميزان المراجعة متعدد الأعمدة، نأخذ آخر مدين/دائن (الصافي)
+    const debitIndices: number[] = [];
+    const creditIndices: number[] = [];
+    
+    for (let i = 0; i < rowStr.length; i++) {
+      const cell = rowStr[i];
+      if (!cell) continue;
+      
+      for (const name of TB_COLUMN_MAPPINGS.debit) {
+        if (cell === name || cell.includes(name)) {
+          debitIndices.push(i);
+          break;
+        }
+      }
+      for (const name of TB_COLUMN_MAPPINGS.credit) {
+        if (cell === name || cell.includes(name)) {
+          creditIndices.push(i);
+          break;
+        }
+      }
+    }
+    
+    if (debitIndices.length === 0 || creditIndices.length === 0) continue;
+    
+    // تحديد أي أعمدة مدين/دائن نستخدم
+    let debitCol: number;
+    let creditCol: number;
+    
+    if (debitIndices.length >= 3 && creditIndices.length >= 3) {
+      // 6 أعمدة: رصيد سابق + حركة + صافي → نأخذ آخر اثنين (الصافي)
+      debitCol = debitIndices[debitIndices.length - 1];
+      creditCol = creditIndices[creditIndices.length - 1];
+    } else if (debitIndices.length === 2 && creditIndices.length === 2) {
+      // 4 أعمدة → نأخذ آخر اثنين
+      debitCol = debitIndices[1];
+      creditCol = creditIndices[1];
+    } else {
+      // عمودين فقط → نأخذهم مباشرة
+      debitCol = debitIndices[0];
+      creditCol = creditIndices[0];
+    }
+    
+    // التحقق من وجود صف عناوين أعلى (مدمج) - الصف السابق
+    let hasParentHeaders = false;
+    if (rowIdx > 0) {
+      const prevRow = rawData[rowIdx - 1];
+      if (prevRow) {
+        const prevStr = prevRow.map(c => String(c ?? '').trim()).join(' ');
+        for (const keywords of Object.values(TB_PARENT_HEADERS)) {
+          for (const kw of keywords) {
+            if (prevStr.includes(kw)) {
+              hasParentHeaders = true;
+              break;
+            }
+          }
+          if (hasParentHeaders) break;
+        }
+      }
+    }
+    
+    // إذا وجدنا الصف الأب، نحتاج تحديد أعمدة الصافي بدقة
+    if (hasParentHeaders && rowIdx > 0) {
+      const parentRow = rawData[rowIdx - 1].map((c: any) => String(c ?? '').trim());
+      
+      // البحث عن موقع "الصافي" في الصف الأب
+      let closingStartCol = -1;
+      for (let i = 0; i < parentRow.length; i++) {
+        const cell = parentRow[i];
+        if (!cell) continue;
+        for (const kw of TB_PARENT_HEADERS.closing) {
+          if (cell.includes(kw)) {
+            closingStartCol = i;
+            break;
+          }
+        }
+        if (closingStartCol !== -1) break;
+      }
+      
+      // إذا وجدنا عنوان "الصافي"، نبحث عن مدين/دائن تحته
+      if (closingStartCol !== -1) {
+        const subDebit = debitIndices.find(i => i >= closingStartCol);
+        const subCredit = creditIndices.find(i => i >= closingStartCol);
+        if (subDebit !== undefined) debitCol = subDebit;
+        if (subCredit !== undefined) creditCol = subCredit;
+      }
+    }
+    
+    console.log(`📊 TB Column Detection: row=${rowIdx}, code=${codeCol}, name=${nameCol}, debit=${debitCol}, credit=${creditCol}, debitCols=${debitIndices}, creditCols=${creditIndices}`);
+    
+    return {
+      codeCol: codeCol !== -1 ? codeCol : 0,
+      nameCol,
+      debitCol,
+      creditCol,
+      headerRowIndex: rowIdx,
+      dataStartRow: rowIdx + 1,
+    };
+  }
+  
+  return null;
 }
 
 // تحليل ملف ميزان المراجعة (Excel أو CSV)
@@ -189,27 +356,85 @@ export async function parseTrialBalanceFile(file: File): Promise<ImportedTrialBa
       }
     }
     
-    const data = targetSheet.jsonData;
+    const rawData = targetSheet.data;
     
-    for (const row of data) {
-      const code = findValue(row, TB_COLUMN_MAPPINGS.code);
-      const name = findValue(row, TB_COLUMN_MAPPINGS.name);
+    // محاولة التحليل الذكي أولاً (للهياكل المعقدة مثل أعمدة مدمجة)
+    const colMapping = detectColumnMapping(rawData);
+    
+    if (colMapping) {
+      console.log('📊 Using smart column detection:', colMapping);
       
-      if (!code || !name) continue;
+      for (let i = colMapping.dataStartRow; i < rawData.length; i++) {
+        const row = rawData[i];
+        if (!row || row.length < 3) continue;
+        
+        const codeVal = row[colMapping.codeCol];
+        const nameVal = row[colMapping.nameCol];
+        const debitVal = row[colMapping.debitCol];
+        const creditVal = row[colMapping.creditCol];
+        
+        const code = String(codeVal ?? '').trim();
+        const name = String(nameVal ?? '').trim();
+        
+        // تجاهل صفوف العناوين والإجماليات والصفوف الفارغة
+        if (!code && !name) continue;
+        if (!code || isNaN(Number(code))) {
+          // قد يكون عنوان قسم - تجاهل
+          if (!name || name.includes('إجمالي') || name.includes('المجموع') || name.includes('الرقم')) continue;
+          // إذا كان هناك اسم بدون رقم، تجاهل إلا إذا كان حساب فعلي
+          continue;
+        }
+        
+        const debit = parseNumber(debitVal);
+        const credit = parseNumber(creditVal);
+        
+        // تجاهل الصفوف التي ليس فيها أي قيمة
+        if (debit === 0 && credit === 0) {
+          // تحقق من وجود قيم في أي عمود آخر
+          const hasAnyValue = row.some((cell: any, idx: number) => {
+            if (idx === colMapping.codeCol || idx === colMapping.nameCol) return false;
+            return parseNumber(cell) !== 0;
+          });
+          if (!hasAnyValue) continue;
+        }
+        
+        const mappedType = autoMapAccount(code, name);
+        
+        rows.push({
+          code,
+          name,
+          debit,
+          credit,
+          mappedType,
+          isAutoMapped: mappedType !== 'unmapped',
+          isValid: true,
+        });
+      }
+    } else {
+      // الطريقة التقليدية: استخدام jsonData (الصف الأول كعناوين)
+      console.log('📊 Falling back to jsonData parsing');
+      const data = targetSheet.jsonData;
       
-      const debit = parseNumber(findValue(row, TB_COLUMN_MAPPINGS.debit));
-      const credit = parseNumber(findValue(row, TB_COLUMN_MAPPINGS.credit));
-      const mappedType = autoMapAccount(code, name);
-      
-      rows.push({
-        code,
-        name,
-        debit,
-        credit,
-        mappedType,
-        isAutoMapped: mappedType !== 'unmapped',
-        isValid: true,
-      });
+      for (const row of data) {
+        const code = findValue(row, TB_COLUMN_MAPPINGS.code);
+        const name = findValue(row, TB_COLUMN_MAPPINGS.name);
+        
+        if (!code || !name) continue;
+        
+        const debit = parseNumber(findValue(row, TB_COLUMN_MAPPINGS.debit));
+        const credit = parseNumber(findValue(row, TB_COLUMN_MAPPINGS.credit));
+        const mappedType = autoMapAccount(code, name);
+        
+        rows.push({
+          code,
+          name,
+          debit,
+          credit,
+          mappedType,
+          isAutoMapped: mappedType !== 'unmapped',
+          isValid: true,
+        });
+      }
     }
   }
   
