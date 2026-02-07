@@ -12,22 +12,30 @@ serve(async (req) => {
   }
 
   try {
-    // Validate authorization - accept either secret token or service role key
-    const secretToken = Deno.env.get("BACKUP_SECRET_TOKEN");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const authHeader = req.headers.get("X-Backup-Token") || req.headers.get("Authorization")?.replace("Bearer ", "");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Allow access if:
-    // 1. Valid BACKUP_SECRET_TOKEN is provided
-    // 2. Service role key is provided (for cron jobs using service role)
-    // 3. Request comes from Supabase internal (cron job via pg_net)
+    // Validate authorization
+    const secretToken = Deno.env.get("BACKUP_SECRET_TOKEN");
+    const authHeader = req.headers.get("X-Backup-Token") || 
+                       req.headers.get("Authorization")?.replace("Bearer ", "");
+
     const isValidSecretToken = secretToken && authHeader === secretToken;
-    const isValidServiceRole = serviceRoleKey && authHeader === serviceRoleKey;
+    const isValidServiceRole = supabaseServiceKey && authHeader === supabaseServiceKey;
+    // pg_net requests from same Supabase project are trusted
     const isInternalCron = req.headers.get("x-supabase-internal") === "true" || 
-                           req.headers.get("user-agent")?.includes("Supabase");
+                           req.headers.get("user-agent")?.includes("Supabase") ||
+                           req.headers.get("user-agent")?.includes("pg_net");
+
+    console.log("Auth check - isValidSecretToken:", isValidSecretToken, 
+                "isValidServiceRole:", isValidServiceRole, 
+                "isInternalCron:", isInternalCron,
+                "user-agent:", req.headers.get("user-agent"),
+                "has auth header:", !!authHeader,
+                "has service key:", !!supabaseServiceKey);
 
     if (!isValidSecretToken && !isValidServiceRole && !isInternalCron) {
-      console.error("Unauthorized backup attempt - invalid credentials");
+      console.error("Unauthorized backup attempt - no valid credentials matched");
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { 
@@ -38,23 +46,32 @@ serve(async (req) => {
     }
     
     console.log("Authorization successful, proceeding with backup...");
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get all companies with enabled backup schedules that are due
+    const now = new Date().toISOString();
+    console.log("Current time:", now);
+
     const { data: schedules, error: schedulesError } = await supabase
       .from("backup_schedules")
       .select("*, companies(name)")
       .eq("is_enabled", true)
-      .lte("next_backup_at", new Date().toISOString());
+      .lte("next_backup_at", now);
 
     if (schedulesError) {
+      console.error("Error fetching schedules:", schedulesError);
       throw schedulesError;
     }
 
     console.log(`Found ${schedules?.length || 0} scheduled backups to process`);
+    if (schedules?.length) {
+      console.log("Schedules:", JSON.stringify(schedules.map(s => ({ 
+        id: s.id, 
+        company_id: s.company_id, 
+        next_backup_at: s.next_backup_at,
+        is_enabled: s.is_enabled 
+      }))));
+    }
 
     const results = [];
 
@@ -66,6 +83,8 @@ serve(async (req) => {
         const backupData = await fetchCompanyData(supabase, schedule.company_id);
         const recordsCount = calculateRecordsCount(backupData);
         const fileSize = new TextEncoder().encode(JSON.stringify(backupData)).length;
+
+        console.log(`Backup data size: ${fileSize} bytes, records:`, JSON.stringify(recordsCount));
 
         // Create backup record
         const backupName = `نسخة تلقائية - ${new Date().toLocaleDateString('ar-SA')}`;
@@ -87,14 +106,16 @@ serve(async (req) => {
           .single();
 
         if (backupError) {
+          console.error("Error creating backup record:", backupError);
           throw backupError;
         }
 
         // Calculate next backup time
         const nextBackupAt = calculateNextBackup(schedule.frequency);
+        console.log(`Next backup scheduled for: ${nextBackupAt}`);
 
         // Update schedule
-        await supabase
+        const { error: updateError } = await supabase
           .from("backup_schedules")
           .update({
             last_backup_at: new Date().toISOString(),
@@ -102,6 +123,10 @@ serve(async (req) => {
             updated_at: new Date().toISOString()
           })
           .eq("id", schedule.id);
+
+        if (updateError) {
+          console.error("Error updating schedule:", updateError);
+        }
 
         // Clean up old backups based on retention policy
         await cleanupOldBackups(supabase, schedule.company_id, schedule.retention_days);
@@ -112,7 +137,7 @@ serve(async (req) => {
           backup_id: backup.id
         });
 
-        console.log(`Backup completed for company: ${schedule.company_id}`);
+        console.log(`Backup completed successfully for company: ${schedule.company_id}`);
       } catch (error) {
         console.error(`Backup failed for company ${schedule.company_id}:`, error);
         results.push({
