@@ -1,5 +1,6 @@
 // مكون استيراد ميزان المراجعة مع ربط الحسابات ومحرك السيناريوهات
 import { useState, useRef, useCallback } from 'react';
+import type { AuditAction } from '@/services/importAuditLog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,11 +36,12 @@ interface TrialBalanceImportManagerProps {
   companyName: string;
   reportDate: string;
   onDataGenerated: (data: ComprehensiveFinancialData, source: string) => void;
+  onAuditLog?: (action: AuditAction, details: string, metadata?: Record<string, any>) => void;
 }
 
 type ImportStep = 'upload' | 'mapping' | 'review' | 'done';
 
-export function TrialBalanceImportManager({ companyName, reportDate, onDataGenerated }: TrialBalanceImportManagerProps) {
+export function TrialBalanceImportManager({ companyName, reportDate, onDataGenerated, onAuditLog }: TrialBalanceImportManagerProps) {
   const [step, setStep] = useState<ImportStep>('upload');
   const [isLoading, setIsLoading] = useState(false);
   const [importedData, setImportedData] = useState<ImportedTrialBalance | null>(null);
@@ -65,10 +67,13 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
       setImportedData(result);
       setRows(result.rows);
       setMissingAccountsAdded(false);
+      onAuditLog?.('file_uploaded', `رفع ملف: ${file.name}`);
+      onAuditLog?.('file_parsed', `تم تحليل ${result.rows.length} حساب من ${file.name}`);
       
       // تشغيل محرك السيناريوهات تلقائياً
       const summary = runValidation(result.rows);
       setShowScenarios(true);
+      onAuditLog?.('validation_run', `فحص ${summary.totalScenariosTested}+ سيناريو | النتيجة: ${summary.overallScore}/100`);
       
       setStep('mapping');
       toast.success(`تم تحليل ${result.rows.length} حساب | ${summary.totalScenariosTested}+ سيناريو`);
@@ -83,10 +88,10 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
   const handleMappingChange = (index: number, newType: AccountMappingType) => {
     setRows(prev => {
       const updated = prev.map((r, i) => i === index ? { ...r, mappedType: newType, isAutoMapped: false } : r);
-      // إعادة تشغيل السيناريوهات بعد التعديل
       runValidation(updated);
       return updated;
     });
+    onAuditLog?.('mapping_changed', `تعديل تصنيف الحساب رقم ${index + 1} إلى ${newType}`);
   };
 
   const handleAddMissingAccounts = () => {
@@ -102,6 +107,7 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
     });
     setMissingAccountsAdded(true);
     toast.success(`تم إضافة ${missing.length} حساب مفقود بقيمة صفر`);
+    onAuditLog?.('missing_accounts_added', `تم إضافة ${missing.length} حساب مفقود`);
   };
 
   const handleGenerateStatements = () => {
@@ -114,6 +120,7 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
     onDataGenerated(data as ComprehensiveFinancialData, importedData?.fileName || 'ملف مستورد');
     setStep('done');
     toast.success('تم توليد القوائم المالية بنجاح!');
+    onAuditLog?.('statements_generated', `تم توليد القوائم من ${importedData?.fileName || 'ملف مستورد'}`);
   };
 
   const handleReset = () => {
