@@ -195,6 +195,20 @@ export async function resolveCarriedCustodies(companyId: string, employeeId: str
 
 // Calculate custody summary
 export function calculateCustodySummary(custody: Custody) {
+  // For "carried" status: the custody_amount is the debt (company owes employee), not a fund
+  if (custody.status === 'carried') {
+    const totalSpent = custody.transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+    return {
+      custodyAmount: 0,
+      totalSpent,
+      remaining: 0,
+      returnedAmount: 0,
+      carriedBalance: Number(custody.custody_amount),
+      isOverspent: false,
+      isCarried: true,
+    };
+  }
+
   const totalSpent = custody.transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
   const remaining = Number(custody.custody_amount) - totalSpent;
   const returnedAmount = remaining > 0 ? remaining : 0;
@@ -206,6 +220,7 @@ export function calculateCustodySummary(custody: Custody) {
     remaining,
     returnedAmount,
     carriedBalance,
-    isOverspent: remaining < 0
+    isOverspent: remaining < 0,
+    isCarried: false,
   };
 }
