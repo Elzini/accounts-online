@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -82,7 +82,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'shipments': Ship,
   'letters-of-credit': FileBox,
   'customs-clearance': Globe,
-  'accounting-audit': ShieldCheck
+  'accounting-audit': ShieldCheck,
+  'tasks': ListTodo
 };
 
 export function Sidebar({
@@ -326,6 +327,10 @@ export function Sidebar({
     id: 'trips' as ActivePage,
     label: 'إدارة الرحلات',
     icon: MapPin
+  }, {
+    id: 'tasks' as ActivePage,
+    label: 'إدارة المهام',
+    icon: ListTodo
   }];
   // Reports - filtered by company type
   const allReportItems = [{

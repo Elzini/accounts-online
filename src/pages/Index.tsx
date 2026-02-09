@@ -65,6 +65,7 @@ import { TripsPage } from '@/components/trips';
 import { ThemeSettingsPage } from '@/components/themes/ThemeSettingsPage';
 import { MenuManagementPage, OrdersPage, KitchenPage, TablesPage } from '@/components/restaurant';
 import { ShipmentsPage, LettersOfCreditPage, CustomsClearancePage } from '@/components/export-import';
+import { TasksPage } from '@/components/tasks/TasksPage';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
@@ -182,6 +183,7 @@ const Index = () => {
       case 'customs-clearance': return <CustomsClearancePage />;
       // Accounting Audit
       case 'accounting-audit': return <AccountingAuditPage />;
+      case 'tasks': return <TasksPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };
