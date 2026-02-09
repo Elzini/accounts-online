@@ -159,7 +159,7 @@ export function EditableWidgetWrapper({
 
   if (!isEditMode) {
     return (
-      <div className={cn(colSpanClass, 'h-fit', className)}>
+      <div data-widget-id={id} className={cn(colSpanClass, 'h-fit', className)}>
         {children}
       </div>
     );
@@ -194,6 +194,7 @@ export function EditableWidgetWrapper({
 
   return (
     <div
+      data-widget-id={id}
       ref={containerRef}
       draggable
       onDragStart={(e) => onDragStart(e, id)}
@@ -349,20 +350,48 @@ export function useWidgetDragDrop(
     onWidgetsChange(sorted);
   }, [widgets, onWidgetsChange]);
 
+  const gridRef = useRef<HTMLDivElement | null>(null);
+
   const handleGridDrop = useCallback((e: React.DragEvent) => {
-    // Only handle if not dropped on a widget (grid background drop)
     const currentDraggedId = draggedIdRef.current;
     if (!currentDraggedId) return;
     e.preventDefault();
     
-    // Move dragged widget to end
     const currentWidgets = widgetsRef.current;
     const sorted = [...currentWidgets].sort((a, b) => a.order - b.order);
     const draggedIndex = sorted.findIndex(w => w.id === currentDraggedId);
     if (draggedIndex === -1) return;
+
+    // Find insertion position based on drop coordinates
+    const dropX = e.clientX;
+    const dropY = e.clientY;
+    const container = (e.currentTarget as HTMLElement);
+    const children = Array.from(container.children) as HTMLElement[];
     
+    let insertIndex = sorted.length; // default: end
+    for (let i = 0; i < children.length; i++) {
+      const rect = children[i].getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      // Find the first widget whose center is after the drop point
+      if (dropY < centerY || (dropY < rect.bottom && dropX < centerX)) {
+        // Map this DOM child back to its widget index in sorted array
+        const childId = children[i].getAttribute('data-widget-id');
+        const widgetIdx = sorted.findIndex(w => w.id === childId);
+        if (widgetIdx !== -1) {
+          insertIndex = widgetIdx;
+        } else {
+          insertIndex = i;
+        }
+        break;
+      }
+    }
+
     const [draggedItem] = sorted.splice(draggedIndex, 1);
-    sorted.push(draggedItem);
+    // Adjust insert index if dragged was before insert point
+    const adjustedIndex = draggedIndex < insertIndex ? insertIndex - 1 : insertIndex;
+    sorted.splice(Math.min(adjustedIndex, sorted.length), 0, draggedItem);
     
     onWidgetsChange(sorted.map((w, i) => ({ ...w, order: i })));
     setDragOverId(null);
