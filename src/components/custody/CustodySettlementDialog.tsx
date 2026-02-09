@@ -152,30 +152,44 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
 
         {/* Custody Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-sm text-muted-foreground">مبلغ العهدة</div>
-              <div className="text-xl font-bold text-primary">{formatNumber(summary.custodyAmount)} ر.س</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-sm text-muted-foreground">إجمالي المصروفات</div>
-              <div className="text-xl font-bold text-red-600">{formatNumber(summary.totalSpent)} ر.س</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-sm text-muted-foreground">المبلغ المردود</div>
-              <div className="text-xl font-bold text-green-600">{formatNumber(summary.returnedAmount)} ر.س</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-sm text-muted-foreground">الرصيد المرحل</div>
-              <div className="text-xl font-bold text-orange-600">{formatNumber(summary.carriedBalance)} ر.س</div>
-            </CardContent>
-          </Card>
+          {summary.isCarried ? (
+            <>
+              <Card className="col-span-2 md:col-span-4">
+                <CardContent className="pt-4 text-center">
+                  <div className="text-sm text-muted-foreground">رصيد مرحّل (مستحق للموظف)</div>
+                  <div className="text-2xl font-bold text-blue-600">{formatNumber(summary.carriedBalance)} ر.س</div>
+                  <div className="text-xs text-muted-foreground mt-1">سيتم خصمه تلقائياً من العهدة التالية</div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <>
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="text-sm text-muted-foreground">مبلغ العهدة</div>
+                  <div className="text-xl font-bold text-primary">{formatNumber(summary.custodyAmount)} ر.س</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="text-sm text-muted-foreground">إجمالي المصروفات</div>
+                  <div className="text-xl font-bold text-red-600">{formatNumber(summary.totalSpent)} ر.س</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="text-sm text-muted-foreground">المبلغ المردود</div>
+                  <div className="text-xl font-bold text-green-600">{formatNumber(summary.returnedAmount)} ر.س</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="text-sm text-muted-foreground">الرصيد المرحل</div>
+                  <div className="text-xl font-bold text-orange-600">{formatNumber(summary.carriedBalance)} ر.س</div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
 
         {/* Transactions Table */}
