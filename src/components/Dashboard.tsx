@@ -106,6 +106,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     handleDragEnd,
     handleDragOver,
     handleDrop,
+    handleGridDrop,
+    handleGridDragOver,
     removeWidget,
     resizeWidget,
     moveWidgetUp,
@@ -429,7 +431,11 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           </div>
 
           {/* Dynamic Dashboard Grid - rendered in sorted order */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 items-start">
+          <div 
+            className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 items-start"
+            onDrop={isEditMode ? handleGridDrop : undefined}
+            onDragOver={isEditMode ? handleGridDragOver : undefined}
+          >
             {sortedWidgets.map(widget => {
               const props = getWidgetProps(widget.id);
               
