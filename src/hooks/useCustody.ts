@@ -79,13 +79,42 @@ export function useCustody() {
     },
   });
 
-  // Settle custody mutation
+  // Settle custody mutation (with optional carry-forward)
   const settleCustodyMutation = useMutation({
-    mutationFn: ({ id, settlementDate }: { id: string; settlementDate: string }) =>
-      settleCustody(id, settlementDate),
-    onSuccess: () => {
+    mutationFn: async ({ id, settlementDate, carriedBalance, employeeId, employeeName }: { 
+      id: string; 
+      settlementDate: string;
+      carriedBalance?: number;
+      employeeId?: string | null;
+      employeeName?: string;
+    }) => {
+      const result = await settleCustody(id, settlementDate);
+      
+      // If there's a carried balance, create a new custody for the same employee
+      if (carriedBalance && carriedBalance > 0 && companyId) {
+        await addCustody({
+          company_id: companyId,
+          custody_name: `ترحيل عهدة - ${employeeName || 'غير محدد'}`,
+          custody_amount: carriedBalance,
+          custody_date: settlementDate,
+          status: 'active',
+          employee_id: employeeId || null,
+          fiscal_year_id: selectedFiscalYear?.id || null,
+          notes: `مرحّل من العهدة المصفاة بتاريخ ${settlementDate}`,
+          settlement_date: null,
+          created_by: null,
+        });
+      }
+      
+      return result;
+    },
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['custodies'] });
-      toast.success('تم تصفية العهدة بنجاح');
+      if (variables.carriedBalance && variables.carriedBalance > 0) {
+        toast.success(`تم تصفية العهدة وترحيل ${variables.carriedBalance} ر.س إلى عهدة جديدة`);
+      } else {
+        toast.success('تم تصفية العهدة بنجاح');
+      }
     },
     onError: (error: Error) => {
       toast.error(`خطأ في تصفية العهدة: ${error.message}`);
