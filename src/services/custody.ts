@@ -9,7 +9,7 @@ export interface Custody {
   custody_name: string;
   custody_amount: number;
   custody_date: string;
-  status: 'active' | 'settled' | 'partially_settled';
+  status: 'active' | 'settled' | 'partially_settled' | 'carried';
   settlement_date: string | null;
   notes: string | null;
   created_by: string | null;
@@ -166,6 +166,31 @@ export async function settleCustody(id: string, settlementDate: string): Promise
   
   if (error) throw error;
   return data as Custody;
+}
+
+// Get carried balance for an employee (from 'carried' status custodies)
+export async function getEmployeeCarriedBalance(companyId: string, employeeId: string): Promise<number> {
+  const { data, error } = await supabase
+    .from('custodies')
+    .select('custody_amount')
+    .eq('company_id', companyId)
+    .eq('employee_id', employeeId)
+    .eq('status', 'carried');
+  
+  if (error) throw error;
+  return (data || []).reduce((sum, c) => sum + Number(c.custody_amount), 0);
+}
+
+// Resolve carried custodies for an employee (mark as settled after deduction)
+export async function resolveCarriedCustodies(companyId: string, employeeId: string): Promise<void> {
+  const { error } = await supabase
+    .from('custodies')
+    .update({ status: 'settled', settlement_date: new Date().toISOString().split('T')[0] })
+    .eq('company_id', companyId)
+    .eq('employee_id', employeeId)
+    .eq('status', 'carried');
+  
+  if (error) throw error;
 }
 
 // Calculate custody summary

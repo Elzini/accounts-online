@@ -11,6 +11,8 @@ import {
   updateCustodyTransaction,
   deleteCustodyTransaction,
   settleCustody,
+  getEmployeeCarriedBalance,
+  resolveCarriedCustodies,
   CustodyInsert,
   CustodyTransactionInsert,
   Custody,
@@ -35,12 +37,32 @@ export function useCustody() {
   // Apply strict date filtering client-side (outside queryFn to avoid closure issues)
   const custodies = filterByFiscalYear(allCustodies, 'custody_date');
 
-  // Add custody mutation
+  // Add custody mutation (auto-deducts carried balance for employee)
   const addCustodyMutation = useMutation({
-    mutationFn: (data: Omit<CustodyInsert, 'company_id'>) => {
+    mutationFn: async (data: Omit<CustodyInsert, 'company_id'>) => {
       if (!companyId) throw new Error('Company ID is required');
+      
+      let deductedAmount = 0;
+      
+      // Check if employee has carried balance and deduct it
+      if (data.employee_id) {
+        const carriedBalance = await getEmployeeCarriedBalance(companyId, data.employee_id);
+        if (carriedBalance > 0) {
+          deductedAmount = carriedBalance;
+          // Resolve the carried custodies
+          await resolveCarriedCustodies(companyId, data.employee_id);
+        }
+      }
+      
+      const adjustedAmount = data.custody_amount - deductedAmount;
+      const notes = deductedAmount > 0
+        ? `${data.notes || ''}\nتم خصم ${deductedAmount} ر.س رصيد مرحّل من عهدة سابقة`.trim()
+        : data.notes;
+      
       return addCustody({
         ...data,
+        custody_amount: adjustedAmount > 0 ? adjustedAmount : data.custody_amount,
+        notes: deductedAmount > 0 ? notes : data.notes,
         company_id: companyId,
         fiscal_year_id: selectedFiscalYear?.id || null,
       });
@@ -79,7 +101,7 @@ export function useCustody() {
     },
   });
 
-  // Settle custody mutation (with optional carry-forward)
+  // Settle custody mutation (with optional carry-forward as 'carried' record)
   const settleCustodyMutation = useMutation({
     mutationFn: async ({ id, settlementDate, carriedBalance, employeeId, employeeName }: { 
       id: string; 
@@ -90,14 +112,14 @@ export function useCustody() {
     }) => {
       const result = await settleCustody(id, settlementDate);
       
-      // If there's a carried balance, create a new custody for the same employee
+      // If there's a carried balance, create a 'carried' record (not a new active custody)
       if (carriedBalance && carriedBalance > 0 && companyId) {
         await addCustody({
           company_id: companyId,
-          custody_name: `ترحيل عهدة - ${employeeName || 'غير محدد'}`,
+          custody_name: `رصيد مرحّل - ${employeeName || 'غير محدد'}`,
           custody_amount: carriedBalance,
           custody_date: settlementDate,
-          status: 'active',
+          status: 'carried',
           employee_id: employeeId || null,
           fiscal_year_id: selectedFiscalYear?.id || null,
           notes: `مرحّل من العهدة المصفاة بتاريخ ${settlementDate}`,
@@ -111,7 +133,7 @@ export function useCustody() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['custodies'] });
       if (variables.carriedBalance && variables.carriedBalance > 0) {
-        toast.success(`تم تصفية العهدة وترحيل ${variables.carriedBalance} ر.س إلى عهدة جديدة`);
+        toast.success(`تم تصفية العهدة وترحيل ${variables.carriedBalance} ر.س كرصيد مرحّل`);
       } else {
         toast.success('تم تصفية العهدة بنجاح');
       }

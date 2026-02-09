@@ -1,0 +1,2 @@
+ALTER TABLE custodies DROP CONSTRAINT IF EXISTS custodies_status_check;
+ALTER TABLE custodies ADD CONSTRAINT custodies_status_check CHECK (status IN ('active', 'settled', 'partially_settled', 'carried'));

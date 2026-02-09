@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -28,7 +28,11 @@ import {
 } from '@/components/ui/select';
 import { useCustody } from '@/hooks/useCustody';
 import { useEmployees } from '@/hooks/usePayroll';
-import { Custody } from '@/services/custody';
+import { Custody, getEmployeeCarriedBalance } from '@/services/custody';
+import { useCompanyId } from '@/hooks/useCompanyId';
+import { formatNumber } from '@/components/financial-statements/utils/numberFormatting';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const formSchema = z.object({
   custody_name: z.string().min(1, 'اسم العهدة مطلوب'),
@@ -49,7 +53,8 @@ interface CustodyFormDialogProps {
 export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDialogProps) {
   const { addCustody, updateCustody, isAdding, isUpdating } = useCustody();
   const { data: employees = [] } = useEmployees();
-  
+  const companyId = useCompanyId();
+  const [carriedBalance, setCarriedBalance] = useState(0);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -61,6 +66,16 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
       notes: '',
     },
   });
+
+  // Check carried balance when employee changes
+  const watchedEmployeeId = form.watch('employee_id');
+  useEffect(() => {
+    if (watchedEmployeeId && watchedEmployeeId !== '__none__' && companyId && !custody) {
+      getEmployeeCarriedBalance(companyId, watchedEmployeeId).then(setCarriedBalance);
+    } else {
+      setCarriedBalance(0);
+    }
+  }, [watchedEmployeeId, companyId, custody]);
 
   useEffect(() => {
     if (custody) {
@@ -187,6 +202,15 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
                 </FormItem>
               )}
             />
+
+            {carriedBalance > 0 && !custody && (
+              <Alert className="border-blue-300 bg-blue-50">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-700">
+                  هذا الموظف لديه رصيد مرحّل بقيمة <strong>{formatNumber(carriedBalance)} ر.س</strong>. سيتم خصمه تلقائياً من مبلغ العهدة الجديدة.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <FormField
               control={form.control}
