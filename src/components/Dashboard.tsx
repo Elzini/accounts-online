@@ -405,7 +405,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           />
 
           {/* Top Toolbar with Users & Notifications */}
-          <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-3 mb-3 sm:mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-3 sm:mb-4">
             <CustomizeInterfaceButton 
               setActivePage={setActivePage} 
               onCardsConfigChange={handleCardsConfigChange}
@@ -425,7 +425,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           </div>
 
           {/* Dynamic Dashboard Grid - rendered in sorted order */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
             {sortedWidgets.map(widget => {
               const props = getWidgetProps(widget.id);
               
@@ -688,7 +688,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           ) : analytics ? (
             <>
               {/* Trend Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
                 <TrendCard
                   title="مبيعات هذا الشهر"
                   value={formatCurrency(analytics.salesTrend.thisMonth)}

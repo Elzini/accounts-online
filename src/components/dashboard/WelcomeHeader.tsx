@@ -35,7 +35,7 @@ export function WelcomeHeader({
   const currentTime = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-l from-slate-900 via-slate-800 to-slate-900 p-3 sm:p-4 md:p-6">
+    <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-l from-slate-900 via-slate-800 to-slate-900 p-3 sm:p-4 md:p-6 min-w-0">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-40 sm:w-64 h-40 sm:h-64 bg-primary/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
       <div className="absolute bottom-0 right-0 w-32 sm:w-48 h-32 sm:h-48 bg-purple-500/20 rounded-full blur-3xl translate-x-1/4 translate-y-1/4" />
@@ -56,7 +56,7 @@ export function WelcomeHeader({
               <span className="hidden xs:inline">متصل الآن</span>
               <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500 animate-pulse" />
             </div>
-            <h1 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-bold text-white truncate">
+            <h1 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-bold text-white truncate">
               أهلاً, {userName} <greeting.icon className="inline-block w-4 h-4 sm:w-6 sm:h-6 text-amber-400" />
             </h1>
             <p className="text-white/70 text-[10px] sm:text-sm mt-0.5 sm:mt-1 truncate">

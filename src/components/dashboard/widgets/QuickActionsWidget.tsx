@@ -10,8 +10,8 @@ interface QuickActionsWidgetProps {
 
 export function QuickActionsWidget({ setActivePage, canSales, canPurchases }: QuickActionsWidgetProps) {
   return (
-    <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
-      <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground mb-3 sm:mb-4 md:mb-6">الإجراءات السريعة</h2>
+    <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 lg:p-6 shadow-sm border border-border">
+      <h2 className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-card-foreground mb-2 sm:mb-3 md:mb-4">الإجراءات السريعة</h2>
       <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
         <Button 
           onClick={() => setActivePage('purchases')}
