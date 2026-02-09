@@ -126,7 +126,7 @@ export function StatCard({
       style={{
         backgroundColor: bgColor || undefined,
         height: height ? `${height}px` : undefined,
-        minHeight: height ? `${height}px` : undefined,
+        minHeight: height ? `${height}px` : (size === 'small' ? '70px' : size === 'large' ? '100px' : '85px'),
         transform: enable3D 
           ? `perspective(1000px) rotateX(${transform.rotateX - 3}deg) rotateY(${transform.rotateY + 3}deg) scale(${transform.rotateX !== 0 || transform.rotateY !== 0 ? 1.03 : 1})`
           : undefined,
