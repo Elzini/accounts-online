@@ -182,41 +182,31 @@ export function NextPaymentCard({ stats, setActivePage }: {
       className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 shadow-sm border border-border hover-lift animate-fade-in cursor-pointer hover:border-primary/50 transition-colors"
       onClick={() => setActivePage('installments')}
     >
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0 ${
-            info.isOverdue ? 'gradient-danger' : 'gradient-primary'
-          }`}>
-            <Users className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-          </div>
-          <div>
-            <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">القسط القادم</p>
-            <p className="text-lg sm:text-xl md:text-2xl font-bold text-card-foreground">
-              {info.customerName}
-            </p>
-          </div>
+      <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-2 sm:mb-3">القسط القادم</p>
+      <div className="flex items-center gap-3 sm:gap-4">
+        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${
+          info.isOverdue ? 'gradient-danger' : 'gradient-primary'
+        }`}>
+          <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
         </div>
-        
-        <div className="flex items-center gap-4 sm:gap-8">
-          <div className="text-center">
-            <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">المبلغ</p>
-            <p className="text-base sm:text-lg md:text-xl font-bold text-card-foreground">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm sm:text-base md:text-lg font-bold text-card-foreground truncate">
+            {info.customerName}
+          </p>
+          <div className="flex items-center gap-3 sm:gap-4 mt-1 text-xs sm:text-sm text-muted-foreground">
+            <span className="font-semibold text-card-foreground">
               {new Intl.NumberFormat('ar-SA').format(info.amount)} ر.س
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">تاريخ الاستحقاق</p>
-            <p className={`text-base sm:text-lg md:text-xl font-bold ${
-              info.isOverdue ? 'text-destructive' : 'text-card-foreground'
-            }`}>
+            </span>
+            <span className="text-muted-foreground">•</span>
+            <span className={info.isOverdue ? 'text-destructive font-semibold' : ''}>
               {new Date(info.dueDate).toLocaleDateString('ar-SA')}
-            </p>
+            </span>
+            {info.isOverdue && (
+              <Badge variant="destructive" className="text-[10px] px-2 py-0.5">
+                متأخر
+              </Badge>
+            )}
           </div>
-          {info.isOverdue && (
-            <Badge variant="destructive" className="text-xs sm:text-sm px-3 py-1">
-              متأخر
-            </Badge>
-          )}
         </div>
       </div>
     </div>
