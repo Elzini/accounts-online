@@ -126,7 +126,7 @@ export function StatCard({
       style={{
         backgroundColor: bgColor || undefined,
         height: height ? `${height}px` : undefined,
-        minHeight: height ? `${height}px` : (size === 'small' ? '70px' : size === 'large' ? '100px' : '85px'),
+        minHeight: height ? `${height}px` : (size === 'small' ? '80px' : size === 'large' ? '110px' : '95px'),
         transform: enable3D 
           ? `perspective(1000px) rotateX(${transform.rotateX - 3}deg) rotateY(${transform.rotateY + 3}deg) scale(${transform.rotateX !== 0 || transform.rotateY !== 0 ? 1.03 : 1})`
           : undefined,
@@ -148,11 +148,11 @@ export function StatCard({
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? e => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
     >
-      <div className="flex items-start justify-between gap-2 sm:gap-2.5 h-full">
+      <div className="flex items-center justify-between gap-2 sm:gap-3 h-full">
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <p
-            className="font-medium text-muted-foreground mb-0.5 truncate"
-            style={{ fontSize: `clamp(0.55rem, ${0.5 * fontScale}vw + 0.3rem, ${0.65 * fontScale}rem)` }}
+            className="font-medium text-muted-foreground mb-1 truncate"
+            style={{ fontSize: `clamp(0.6rem, ${0.5 * fontScale}vw + 0.3rem, ${0.7 * fontScale}rem)` }}
           >
             {title}
           </p>
@@ -161,7 +161,7 @@ export function StatCard({
               'font-bold text-card-foreground whitespace-nowrap overflow-hidden text-ellipsis',
               valueSizeClasses[size]
             )}
-            style={{ fontSize: `clamp(0.6rem, ${0.85 * fontScale}vw + 0.35rem, ${1.3 * fontScale}rem)` }}
+            style={{ fontSize: `clamp(0.7rem, ${0.85 * fontScale}vw + 0.35rem, ${1.3 * fontScale}rem)` }}
             title={typeof value === 'string' ? value : String(value)}
           >
             {value}
