@@ -31,6 +31,8 @@ export function CustodyPage() {
         return <Badge variant="secondary" className="gap-1"><CheckCircle className="h-3 w-3" /> مصفاة</Badge>;
       case 'partially_settled':
         return <Badge variant="outline" className="gap-1 text-orange-600"><AlertCircle className="h-3 w-3" /> مصفاة جزئياً</Badge>;
+      case 'carried':
+        return <Badge variant="outline" className="gap-1 text-blue-600 border-blue-300 bg-blue-50"><Wallet className="h-3 w-3" /> رصيد مرحّل</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
