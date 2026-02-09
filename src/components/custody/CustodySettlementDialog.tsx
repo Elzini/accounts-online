@@ -106,10 +106,17 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
   };
 
   const handleSettle = () => {
-    if (confirm('هل أنت متأكد من تصفية هذه العهدة؟ لن يمكن التعديل عليها بعد التصفية.')) {
+    const confirmMsg = summary.carriedBalance > 0
+      ? `هل أنت متأكد من تصفية هذه العهدة؟ سيتم ترحيل مبلغ ${formatNumber(summary.carriedBalance)} ر.س إلى عهدة جديدة باسم ${custody.employee?.name || custody.custody_name}. لن يمكن التعديل عليها بعد التصفية.`
+      : 'هل أنت متأكد من تصفية هذه العهدة؟ لن يمكن التعديل عليها بعد التصفية.';
+    
+    if (confirm(confirmMsg)) {
       settleCustody({
         id: custodyId,
         settlementDate: new Date().toISOString().split('T')[0],
+        carriedBalance: summary.carriedBalance,
+        employeeId: custody.employee_id,
+        employeeName: custody.employee?.name || custody.custody_name,
       });
     }
   };
