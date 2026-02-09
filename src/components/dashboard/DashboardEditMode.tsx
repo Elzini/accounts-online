@@ -253,7 +253,7 @@ export function EditableWidgetWrapper({
         isDragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/30'
       )} />
 
-      <div className="relative">{children}</div>
+      <div className="relative select-none" style={{ pointerEvents: 'none' }}>{children}</div>
     </div>
   );
 }
@@ -265,14 +265,19 @@ export function useWidgetDragDrop(
 ) {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const draggedIdRef = useRef<string | null>(null);
+  const widgetsRef = useRef(widgets);
+  widgetsRef.current = widgets;
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
+    draggedIdRef.current = id;
     setDraggedId(id);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', id);
   }, []);
 
   const handleDragEnd = useCallback(() => {
+    draggedIdRef.current = null;
     setDraggedId(null);
     setDragOverId(null);
   }, []);
@@ -280,21 +285,24 @@ export function useWidgetDragDrop(
   const handleDragOver = useCallback((e: React.DragEvent, id: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    if (id !== draggedId) {
+    if (id !== draggedIdRef.current) {
       setDragOverId(id);
     }
-  }, [draggedId]);
+  }, []);
 
   const handleDrop = useCallback((e: React.DragEvent, targetId: string) => {
     e.preventDefault();
+    e.stopPropagation();
 
-    if (!draggedId || draggedId === targetId) {
+    const currentDraggedId = draggedIdRef.current;
+    if (!currentDraggedId || currentDraggedId === targetId) {
       setDragOverId(null);
       return;
     }
 
-    const sorted = [...widgets].sort((a, b) => a.order - b.order);
-    const draggedIndex = sorted.findIndex(w => w.id === draggedId);
+    const currentWidgets = widgetsRef.current;
+    const sorted = [...currentWidgets].sort((a, b) => a.order - b.order);
+    const draggedIndex = sorted.findIndex(w => w.id === currentDraggedId);
     const targetIndex = sorted.findIndex(w => w.id === targetId);
 
     if (draggedIndex === -1 || targetIndex === -1) {
@@ -307,7 +315,9 @@ export function useWidgetDragDrop(
 
     onWidgetsChange(sorted.map((w, i) => ({ ...w, order: i })));
     setDragOverId(null);
-  }, [draggedId, widgets, onWidgetsChange]);
+    draggedIdRef.current = null;
+    setDraggedId(null);
+  }, [onWidgetsChange]);
 
   const removeWidget = useCallback((id: string) => {
     onWidgetsChange(widgets.map(w => w.id === id ? { ...w, visible: false } : w));
