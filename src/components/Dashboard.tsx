@@ -382,14 +382,14 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
 
       {/* Dashboard Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="w-full max-w-md grid grid-cols-2 h-9 sm:h-10">
-          <TabsTrigger value="overview" className="gap-1.5 sm:gap-2 text-xs sm:text-sm">
-            <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <TabsList className="w-full max-w-xs sm:max-w-md grid grid-cols-2 h-8 sm:h-10">
+          <TabsTrigger value="overview" className="gap-1 sm:gap-2 text-[11px] sm:text-sm">
+            <Package className="w-3 h-3 sm:w-4 sm:h-4" />
             نظرة عامة
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="gap-1.5 sm:gap-2 text-xs sm:text-sm">
-            <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            التحليلات المتقدمة
+          <TabsTrigger value="analytics" className="gap-1 sm:gap-2 text-[11px] sm:text-sm">
+            <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
+            التحليلات
           </TabsTrigger>
         </TabsList>
 
@@ -405,7 +405,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           />
 
           {/* Top Toolbar with Users & Notifications */}
-          <div className="flex items-center justify-between flex-wrap gap-3 mb-4 sm:mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-3 mb-3 sm:mb-6">
             <CustomizeInterfaceButton 
               setActivePage={setActivePage} 
               onCardsConfigChange={handleCardsConfigChange}
@@ -413,12 +413,12 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               isEditMode={isEditMode}
             />
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end">
               <OnlineUsersPopover />
               <PaymentRemindersPopover setActivePage={setActivePage} />
               <div className="h-6 w-px bg-border hidden sm:block" />
-              <div className="flex items-center gap-2 p-2 bg-card rounded-lg border border-border">
-                <span className="text-sm text-muted-foreground hidden sm:block">عرض المبالغ:</span>
+              <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-card rounded-lg border border-border">
+                <span className="text-xs sm:text-sm text-muted-foreground hidden md:block">عرض المبالغ:</span>
                 <AmountDisplaySelector value={amountDisplayMode} onChange={setAmountDisplayMode} />
               </div>
             </div>
@@ -680,15 +680,15 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         </TabsContent>
 
         {/* Advanced Analytics Tab */}
-        <TabsContent value="analytics" className="mt-6 space-y-6">
+        <TabsContent value="analytics" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
           {analyticsLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : analytics ? (
             <>
               {/* Trend Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                 <TrendCard
                   title="مبيعات هذا الشهر"
                   value={formatCurrency(analytics.salesTrend.thisMonth)}
@@ -713,13 +713,13 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               </div>
 
               {/* Revenue Area Chart & Inventory Pie Chart */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                <div className="lg:col-span-2 bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-                  <h3 className="text-lg font-bold text-card-foreground mb-4">تحليل الإيرادات والأرباح</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+                <div className="lg:col-span-2 bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 card-shadow overflow-hidden">
+                  <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">تحليل الإيرادات والأرباح</h3>
                   <RevenueAreaChart data={analytics.revenueByMonth} />
                 </div>
-                <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
-                  <h3 className="text-lg font-bold text-card-foreground mb-4">توزيع المخزون</h3>
+                <div className="bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 card-shadow">
+                  <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">توزيع المخزون</h3>
                   <InventoryPieChart data={analytics.inventoryByStatus} />
                 </div>
               </div>

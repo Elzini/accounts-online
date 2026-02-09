@@ -141,15 +141,15 @@ export function QuickAccessSection({ setActivePage }: QuickAccessSectionProps) {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Section Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-l from-violet-600 via-purple-600 to-indigo-600 p-4 sm:p-6">
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-l from-violet-600 via-purple-600 to-indigo-600 p-3 sm:p-4 md:p-6">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjIiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPjwvZz48L3N2Zz4=')] opacity-30" />
-        <div className="relative flex items-center justify-end gap-4">
+        <div className="relative flex items-center justify-end gap-3 sm:gap-4">
           <div className="text-right">
-            <h2 className="text-xl sm:text-2xl font-bold text-white">الوصول السريع</h2>
-            <p className="text-white/80 text-sm">اختصارات للعمليات الشائعة</p>
+            <h2 className="text-base sm:text-xl md:text-2xl font-bold text-white">الوصول السريع</h2>
+            <p className="text-white/80 text-[10px] sm:text-sm">اختصارات للعمليات الشائعة</p>
           </div>
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-            <TrendingUp className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+            <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
           </div>
         </div>
       </div>
@@ -166,14 +166,14 @@ export function QuickAccessSection({ setActivePage }: QuickAccessSectionProps) {
           >
             {/* Gradient Header */}
             <div className={cn(
-              "relative h-14 sm:h-16 bg-gradient-to-l",
+              "relative h-12 sm:h-14 md:h-16 bg-gradient-to-l",
               card.gradient
             )}>
               <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-              <div className="absolute inset-0 flex items-center justify-end px-3 sm:px-4 gap-2 sm:gap-3">
-                <span className="text-white font-bold text-sm sm:text-base">{card.title}</span>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              <div className="absolute inset-0 flex items-center justify-end px-2 sm:px-3 md:px-4 gap-1.5 sm:gap-2 md:gap-3">
+                <span className="text-white font-bold text-xs sm:text-sm md:text-base truncate">{card.title}</span>
+                <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shrink-0">
+                  <card.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
                 </div>
               </div>
             </div>
