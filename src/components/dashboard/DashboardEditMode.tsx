@@ -64,22 +64,22 @@ export function DashboardEditToolbar({
   const sortedWidgets = [...widgets].sort((a, b) => a.order - b.order);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-primary/10 via-background to-primary/10 border-b shadow-lg animate-in slide-in-from-top-2 duration-300">
-      <div className="container mx-auto px-4 py-3">
-        <div className="text-center mb-3">
-          <p className="text-sm text-muted-foreground">
-            اسحب وأفلت الأقسام لترتيبها • اسحب الحافة أو اضغط أيقونة التحجيم لتغيير العرض
+    <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-primary/10 via-background to-primary/10 border-b shadow-lg animate-in slide-in-from-top-2 duration-300 max-h-[60vh] overflow-y-auto">
+      <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
+        <div className="text-center mb-2 sm:mb-3">
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            اسحب وأفلت الأقسام لترتيبها • اضغط أيقونة التحجيم لتغيير العرض
           </p>
         </div>
 
-        <div className="flex items-center justify-center gap-2 flex-wrap mb-3">
-          <span className="text-sm text-muted-foreground ml-2">الأقسام (اضغط للإظهار/الإخفاء)</span>
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap mb-2 sm:mb-3">
+          <span className="text-xs sm:text-sm text-muted-foreground ml-1 sm:ml-2 w-full text-center sm:w-auto">الأقسام (اضغط للإظهار/الإخفاء)</span>
           {sortedWidgets.map(widget => (
             <Badge
               key={widget.id}
               variant={widget.visible ? "default" : "outline"}
               className={cn(
-                "cursor-pointer transition-all px-3 py-1.5 text-sm",
+                "cursor-pointer transition-all px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-sm",
                 widget.visible 
                   ? "bg-primary hover:bg-primary/90" 
                   : "hover:bg-muted"
@@ -92,17 +92,17 @@ export function DashboardEditToolbar({
           ))}
         </div>
 
-        <div className="flex items-center justify-center gap-3">
-          <Button variant="outline" size="sm" onClick={onCancel} className="gap-2">
+        <div className="flex items-center justify-center gap-2 sm:gap-3">
+          <Button variant="outline" size="sm" onClick={onCancel} className="gap-1 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3">
             إلغاء
           </Button>
-          <Button variant="outline" size="sm" onClick={resetToDefault} className="gap-2">
-            <RotateCcw className="w-4 h-4" />
-            استعادة الافتراضي
+          <Button variant="outline" size="sm" onClick={resetToDefault} className="gap-1 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3">
+            <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">استعادة</span> الافتراضي
           </Button>
-          <Button size="sm" onClick={() => onSave(widgets)} className="gap-2 bg-primary hover:bg-primary/90">
-            <Save className="w-4 h-4" />
-            حفظ الترتيب
+          <Button size="sm" onClick={() => onSave(widgets)} className="gap-1 sm:gap-2 bg-primary hover:bg-primary/90 text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3">
+            <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            حفظ
           </Button>
         </div>
       </div>
@@ -149,7 +149,7 @@ export function EditableWidgetWrapper({
 
   if (!visible) return null;
 
-  const colSpanClass = colSpan === 1 ? 'col-span-1' : 'col-span-2 lg:col-span-2';
+  const colSpanClass = colSpan === 1 ? 'col-span-1' : 'col-span-1 sm:col-span-2 lg:col-span-2';
 
   if (!isEditMode) {
     return (
