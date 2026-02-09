@@ -45,9 +45,9 @@ const iconInnerClasses = {
 };
 
 const valueSizeClasses = {
-  small: 'text-lg sm:text-xl md:text-2xl',
-  medium: 'text-xl sm:text-2xl md:text-3xl lg:text-4xl',
-  large: 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl',
+  small: 'text-sm sm:text-base md:text-lg',
+  medium: 'text-base sm:text-lg md:text-xl lg:text-2xl',
+  large: 'text-lg sm:text-xl md:text-2xl lg:text-3xl',
 };
 
 export function StatCard({
@@ -152,16 +152,16 @@ export function StatCard({
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <p
             className="font-medium text-muted-foreground mb-0.5 truncate"
-            style={{ fontSize: `${0.65 * fontScale}rem` }}
+            style={{ fontSize: `clamp(0.55rem, ${0.5 * fontScale}vw + 0.3rem, ${0.65 * fontScale}rem)` }}
           >
             {title}
           </p>
           <p
             className={cn(
-              'font-bold text-card-foreground',
+              'font-bold text-card-foreground truncate',
               valueSizeClasses[size]
             )}
-            style={{ fontSize: `${1.5 * fontScale}rem` }}
+            style={{ fontSize: `clamp(0.75rem, ${1.2 * fontScale}vw + 0.5rem, ${1.5 * fontScale}rem)` }}
             title={typeof value === 'string' ? value : String(value)}
           >
             {value}
@@ -177,7 +177,7 @@ export function StatCard({
           {subtitle && (
             <p
               className="text-muted-foreground mt-0.5 sm:mt-1 truncate"
-              style={{ fontSize: `${0.625 * fontScale}rem` }}
+              style={{ fontSize: `clamp(0.5rem, ${0.4 * fontScale}vw + 0.25rem, ${0.625 * fontScale}rem)` }}
             >
               {subtitle}
             </p>
