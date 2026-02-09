@@ -158,10 +158,10 @@ export function StatCard({
           </p>
           <p
             className={cn(
-              'font-bold text-card-foreground truncate',
+              'font-bold text-card-foreground break-words leading-tight',
               valueSizeClasses[size]
             )}
-            style={{ fontSize: `clamp(0.75rem, ${1.2 * fontScale}vw + 0.5rem, ${1.5 * fontScale}rem)` }}
+            style={{ fontSize: `clamp(0.7rem, ${1 * fontScale}vw + 0.4rem, ${1.3 * fontScale}rem)` }}
             title={typeof value === 'string' ? value : String(value)}
           >
             {value}
