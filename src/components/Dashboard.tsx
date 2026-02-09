@@ -433,6 +433,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           {/* Dynamic Dashboard Grid - rendered in sorted order */}
           <div 
             className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 items-start"
+            style={{ gridAutoFlow: 'dense' }}
             onDrop={isEditMode ? handleGridDrop : undefined}
             onDragOver={isEditMode ? handleGridDragOver : undefined}
           >
