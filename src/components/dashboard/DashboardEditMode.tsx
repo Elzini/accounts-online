@@ -157,7 +157,7 @@ export function EditableWidgetWrapper({
 
   if (!isEditMode) {
     return (
-      <div className={cn(colSpanClass, className)}>
+      <div className={cn(colSpanClass, 'h-fit', className)}>
         {children}
       </div>
     );
