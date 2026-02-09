@@ -128,4 +128,6 @@ export type ActivePage =
   | 'letters-of-credit'
   | 'customs-clearance'
   // Accounting Audit
-  | 'accounting-audit';
+  | 'accounting-audit'
+  // Tasks
+  | 'tasks';
