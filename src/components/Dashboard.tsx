@@ -108,6 +108,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     handleDrop,
     removeWidget,
     resizeWidget,
+    moveWidgetUp,
+    moveWidgetDown,
   } = useWidgetDragDrop(widgetConfigs, setWidgetConfigs);
   
   // Load card configs from saved dashboard config
@@ -236,13 +238,15 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     colSpan: widgetConfigs.find(w => w.id === id)?.colSpan ?? 2,
     onRemove: removeWidget,
     onResize: resizeWidget,
+    onMoveUp: moveWidgetUp,
+    onMoveDown: moveWidgetDown,
     onDragStart: handleDragStart,
     onDragEnd: handleDragEnd,
     onDragOver: handleDragOver,
     onDrop: handleDrop,
     isDragging: draggedId === id,
     isDragOver: dragOverId === id,
-  }), [isEditMode, isWidgetVisible, widgetConfigs, removeWidget, resizeWidget, handleDragStart, handleDragEnd, handleDragOver, handleDrop, draggedId, dragOverId]);
+  }), [isEditMode, isWidgetVisible, widgetConfigs, removeWidget, resizeWidget, moveWidgetUp, moveWidgetDown, handleDragStart, handleDragEnd, handleDragOver, handleDrop, draggedId, dragOverId]);
 
   const canSales = permissions.admin || permissions.sales;
   const canPurchases = permissions.admin || permissions.purchases;
