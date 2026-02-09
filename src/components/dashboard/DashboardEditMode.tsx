@@ -347,6 +347,34 @@ export function useWidgetDragDrop(
     onWidgetsChange(sorted);
   }, [widgets, onWidgetsChange]);
 
+  const handleGridDrop = useCallback((e: React.DragEvent) => {
+    // Only handle if not dropped on a widget (grid background drop)
+    const currentDraggedId = draggedIdRef.current;
+    if (!currentDraggedId) return;
+    e.preventDefault();
+    
+    // Move dragged widget to end
+    const currentWidgets = widgetsRef.current;
+    const sorted = [...currentWidgets].sort((a, b) => a.order - b.order);
+    const draggedIndex = sorted.findIndex(w => w.id === currentDraggedId);
+    if (draggedIndex === -1) return;
+    
+    const [draggedItem] = sorted.splice(draggedIndex, 1);
+    sorted.push(draggedItem);
+    
+    onWidgetsChange(sorted.map((w, i) => ({ ...w, order: i })));
+    setDragOverId(null);
+    draggedIdRef.current = null;
+    setDraggedId(null);
+  }, [onWidgetsChange]);
+
+  const handleGridDragOver = useCallback((e: React.DragEvent) => {
+    if (draggedIdRef.current) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+  }, []);
+
   return {
     draggedId,
     dragOverId,
@@ -354,6 +382,8 @@ export function useWidgetDragDrop(
     handleDragEnd,
     handleDragOver,
     handleDrop,
+    handleGridDrop,
+    handleGridDragOver,
     removeWidget,
     resizeWidget,
     moveWidgetUp,
