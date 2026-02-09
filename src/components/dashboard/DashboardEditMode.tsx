@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { X, GripVertical, Save, RotateCcw, Check, Maximize2, Minimize2 } from 'lucide-react';
+import { X, GripVertical, Save, RotateCcw, Check, Maximize2, Minimize2, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -118,6 +118,8 @@ interface EditableWidgetWrapperProps {
   colSpan?: number;
   onRemove: (id: string) => void;
   onResize?: (id: string, colSpan: number) => void;
+  onMoveUp?: (id: string) => void;
+  onMoveDown?: (id: string) => void;
   onDragStart: (e: React.DragEvent, id: string) => void;
   onDragEnd: () => void;
   onDragOver: (e: React.DragEvent, id: string) => void;
@@ -136,6 +138,8 @@ export function EditableWidgetWrapper({
   colSpan = 2,
   onRemove,
   onResize,
+  onMoveUp,
+  onMoveDown,
   onDragStart,
   onDragEnd,
   onDragOver,
@@ -204,14 +208,28 @@ export function EditableWidgetWrapper({
       )}
     >
       {/* Top controls */}
-      <div className="absolute -top-2 -right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute -top-2 -right-2 z-10 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <button
           onClick={(e) => { e.stopPropagation(); onRemove(id); }}
           className="w-7 h-7 rounded-full bg-destructive text-destructive-foreground shadow-lg flex items-center justify-center hover:scale-110 transition-transform"
         >
           <X className="w-4 h-4" />
         </button>
-        <div className="w-7 h-7 rounded-full bg-muted text-muted-foreground shadow-lg flex items-center justify-center cursor-grab active:cursor-grabbing">
+        <button
+          onClick={(e) => { e.stopPropagation(); onMoveUp?.(id); }}
+          className="w-7 h-7 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-110 transition-transform"
+          title="تحريك لأعلى"
+        >
+          <ArrowUp className="w-4 h-4" />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onMoveDown?.(id); }}
+          className="w-7 h-7 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-110 transition-transform"
+          title="تحريك لأسفل"
+        >
+          <ArrowDown className="w-4 h-4" />
+        </button>
+        <div className="w-7 h-7 rounded-full bg-muted text-muted-foreground shadow-lg flex items-center justify-center cursor-grab active:cursor-grabbing hidden sm:flex">
           <GripVertical className="w-4 h-4" />
         </div>
       </div>
@@ -299,6 +317,26 @@ export function useWidgetDragDrop(
     onWidgetsChange(widgets.map(w => w.id === id ? { ...w, colSpan } : w));
   }, [widgets, onWidgetsChange]);
 
+  const moveWidgetUp = useCallback((id: string) => {
+    const sorted = [...widgets].sort((a, b) => a.order - b.order);
+    const index = sorted.findIndex(w => w.id === id);
+    if (index <= 0) return;
+    const temp = sorted[index].order;
+    sorted[index] = { ...sorted[index], order: sorted[index - 1].order };
+    sorted[index - 1] = { ...sorted[index - 1], order: temp };
+    onWidgetsChange(sorted);
+  }, [widgets, onWidgetsChange]);
+
+  const moveWidgetDown = useCallback((id: string) => {
+    const sorted = [...widgets].sort((a, b) => a.order - b.order);
+    const index = sorted.findIndex(w => w.id === id);
+    if (index === -1 || index >= sorted.length - 1) return;
+    const temp = sorted[index].order;
+    sorted[index] = { ...sorted[index], order: sorted[index + 1].order };
+    sorted[index + 1] = { ...sorted[index + 1], order: temp };
+    onWidgetsChange(sorted);
+  }, [widgets, onWidgetsChange]);
+
   return {
     draggedId,
     dragOverId,
@@ -308,5 +346,7 @@ export function useWidgetDragDrop(
     handleDrop,
     removeWidget,
     resizeWidget,
+    moveWidgetUp,
+    moveWidgetDown,
   };
 }
