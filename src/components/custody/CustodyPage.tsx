@@ -55,10 +55,14 @@ export function CustodyPage() {
 
   // Calculate summary stats
   const totalActiveCustodies = custodies.filter(c => c.status === 'active').length;
+  const carriedAmount = custodies
+    .filter(c => c.status === 'carried')
+    .reduce((sum, c) => sum + Number(c.custody_amount), 0);
   const totalActiveAmount = custodies
     .filter(c => c.status === 'active')
-    .reduce((sum, c) => sum + Number(c.custody_amount), 0);
+    .reduce((sum, c) => sum + Number(c.custody_amount), 0) - carriedAmount;
   const settledCount = custodies.filter(c => c.status === 'settled').length;
+  const carriedCount = custodies.filter(c => c.status === 'carried').length;
 
   return (
     <div className="container mx-auto py-6 space-y-6" dir="rtl">
@@ -78,7 +82,7 @@ export function CustodyPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">العهد النشطة</CardTitle>
@@ -92,7 +96,23 @@ export function CustodyPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">إجمالي المبالغ النشطة</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{formatNumber(totalActiveAmount)} ر.س</div>
+            <div className={`text-2xl font-bold ${totalActiveAmount < 0 ? 'text-destructive' : 'text-primary'}`}>
+              {formatNumber(totalActiveAmount)} ر.س
+            </div>
+            {carriedAmount > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">شامل خصم مرحّل {formatNumber(carriedAmount)} ر.س</p>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">رصيد مرحّل (دين للموظفين)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">
+              {carriedCount > 0 ? `-${formatNumber(carriedAmount)}` : '0'} ر.س
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{carriedCount} عهدة مرحّلة</p>
           </CardContent>
         </Card>
         <Card>

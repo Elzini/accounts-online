@@ -207,7 +207,17 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
               <Alert className="border-blue-300 bg-blue-50">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-700">
-                  هذا الموظف لديه رصيد مرحّل بقيمة <strong>{formatNumber(carriedBalance)} ر.س</strong>. سيتم خصمه تلقائياً من مبلغ العهدة الجديدة.
+                  <p>هذا الموظف لديه رصيد مرحّل (دين على الشركة) بقيمة <strong>{formatNumber(carriedBalance)} ر.س</strong>.</p>
+                  {form.watch('custody_amount') > 0 && carriedBalance >= form.watch('custody_amount') && (
+                    <p className="mt-1 text-destructive font-semibold">
+                      مبلغ العهدة ({formatNumber(form.watch('custody_amount'))}) أقل من المرحّل ({formatNumber(carriedBalance)}) → سيبقى دين {formatNumber(carriedBalance - form.watch('custody_amount'))} ر.س
+                    </p>
+                  )}
+                  {form.watch('custody_amount') > 0 && carriedBalance < form.watch('custody_amount') && (
+                    <p className="mt-1">
+                      سيتم خصم {formatNumber(carriedBalance)} ر.س → صافي العهدة الجديدة: <strong>{formatNumber(form.watch('custody_amount') - carriedBalance)} ر.س</strong>
+                    </p>
+                  )}
                 </AlertDescription>
               </Alert>
             )}
