@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { LogOut, Building2, Calendar } from 'lucide-react';
+import { LogOut, Building2, Calendar, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileSidebar, MobileSidebarRef } from '@/components/MobileSidebar';
@@ -69,18 +69,38 @@ import { TasksPage } from '@/components/tasks/TasksPage';
 import { AIChatWidget } from '@/components/chat/AIChatWidget';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ActivePage } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 const Index = () => {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
   const { data: stats } = useStats();
   const { signOut, user, permissions } = useAuth();
+  const { isSuperAdmin, viewAsCompanyId, setViewAsCompanyId, company: currentCompany } = useCompany();
   const { fiscalYears, selectedFiscalYear, setSelectedFiscalYear, isLoading: isFiscalYearLoading } = useFiscalYear();
+
+  // Fetch all companies for super admin selector
+  const { data: allCompanies = [] } = useQuery({
+    queryKey: ['all-companies-selector'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+    enabled: isSuperAdmin,
+  });
   const mobileSidebarRef = useRef<MobileSidebarRef>(null);
   
   // Fiscal year dialog for changing selection (accessible from header badge)
@@ -218,10 +238,34 @@ const Index = () => {
           {/* Top Header Bar */}
           <header className="sticky top-0 z-40 bg-background/98 backdrop-blur-lg border-b-2 border-border/80 shadow-md px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 safe-area-top">
             <div className="flex justify-between items-center gap-2">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
                 <p className="text-responsive-sm text-muted-foreground truncate">
                   مرحباً، <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
                 </p>
+                {/* Super Admin Company Selector */}
+                {isSuperAdmin && allCompanies.length > 0 && (
+                  <Select
+                    value={viewAsCompanyId || 'default'}
+                    onValueChange={(val) => setViewAsCompanyId(val === 'default' ? null : val)}
+                  >
+                    <SelectTrigger className="h-8 w-auto min-w-[140px] max-w-[220px] text-xs gap-1 border-primary/50 bg-primary/5">
+                      <Eye className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <SelectValue placeholder="عرض كشركة..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">شركتي الأصلية</SelectItem>
+                      {allCompanies.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {viewAsCompanyId && currentCompany && (
+                  <Badge variant="secondary" className="gap-1 shrink-0 bg-primary/10 text-primary">
+                    <Building2 className="w-3 h-3" />
+                    <span className="hidden sm:inline text-xs">{currentCompany.name}</span>
+                  </Badge>
+                )}
                 {selectedFiscalYear && fiscalYears.length > 1 && (
                   <Badge 
                     variant="outline" 
