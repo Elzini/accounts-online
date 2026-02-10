@@ -18,42 +18,49 @@ interface StatCardProps {
   enable3D?: boolean;
 }
 
-const gradientClasses = {
-  primary: 'gradient-primary',
-  success: 'gradient-success',
-  warning: 'gradient-warning',
-  danger: 'gradient-danger',
-};
-
-const iconBgClasses = {
-  primary: 'bg-primary/10 text-primary',
-  success: 'bg-success/10 text-success',
-  warning: 'bg-warning/10 text-warning',
-  danger: 'bg-destructive/10 text-destructive',
+const gradientStyles = {
+  primary: {
+    bg: 'linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(240 70% 60%) 50%, hsl(262 83% 58%) 100%)',
+    glow: 'hsl(221 83% 53% / 0.35)',
+    iconBg: 'rgba(255,255,255,0.18)',
+    accent: 'hsl(221 83% 70%)',
+  },
+  success: {
+    bg: 'linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(172 66% 45%) 50%, hsl(185 60% 50%) 100%)',
+    glow: 'hsl(160 84% 39% / 0.35)',
+    iconBg: 'rgba(255,255,255,0.18)',
+    accent: 'hsl(160 84% 60%)',
+  },
+  warning: {
+    bg: 'linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(28 85% 55%) 50%, hsl(15 80% 55%) 100%)',
+    glow: 'hsl(38 92% 50% / 0.35)',
+    iconBg: 'rgba(255,255,255,0.18)',
+    accent: 'hsl(38 92% 70%)',
+  },
+  danger: {
+    bg: 'linear-gradient(135deg, hsl(0 72% 51%) 0%, hsl(340 65% 55%) 50%, hsl(320 60% 55%) 100%)',
+    glow: 'hsl(0 72% 51% / 0.35)',
+    iconBg: 'rgba(255,255,255,0.18)',
+    accent: 'hsl(0 72% 70%)',
+  },
 };
 
 const sizeClasses = {
   small: 'p-3 sm:p-3.5',
-  medium: 'p-3.5 sm:p-4 md:p-5',
-  large: 'p-4 sm:p-5 md:p-6',
+  medium: 'p-4 sm:p-5',
+  large: 'p-5 sm:p-6',
 };
 
 const iconSizeClasses = {
-  small: 'w-9 h-9',
-  medium: 'w-11 h-11 sm:w-12 sm:h-12',
-  large: 'w-12 h-12 sm:w-14 sm:h-14',
+  small: 'w-10 h-10',
+  medium: 'w-12 h-12 sm:w-14 sm:h-14',
+  large: 'w-14 h-14 sm:w-16 sm:h-16',
 };
 
 const iconInnerClasses = {
-  small: 'w-4 h-4',
-  medium: 'w-5 h-5 sm:w-6 sm:h-6',
-  large: 'w-6 h-6 sm:w-7 sm:h-7',
-};
-
-const valueSizeClasses = {
-  small: 'text-base sm:text-lg',
-  medium: 'text-lg sm:text-xl md:text-2xl',
-  large: 'text-xl sm:text-2xl md:text-3xl',
+  small: 'w-5 h-5',
+  medium: 'w-6 h-6 sm:w-7 sm:h-7',
+  large: 'w-7 h-7 sm:w-8 sm:h-8',
 };
 
 export function StatCard({
@@ -72,7 +79,9 @@ export function StatCard({
 }: StatCardProps) {
   const fontScale = fontSize / 100;
   const cardRef = useRef<HTMLDivElement>(null);
-  const [transform, setTransform] = useState({ rotateX: 0, rotateY: 0 });
+  const [tilt, setTilt] = useState({ x: 0, y: 0, active: false });
+
+  const style = gradientStyles[gradient];
 
   const getArabicWords = () => {
     if (!showAsWords) return null;
@@ -88,50 +97,45 @@ export function StatCard({
     }
     return null;
   };
-  
+
   const arabicWords = getArabicWords();
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!enable3D || !cardRef.current) return;
-    const card = cardRef.current;
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    const rotateX = ((y - centerY) / centerY) * -10;
-    const rotateY = ((x - centerX) / centerX) * 10;
-    setTransform({ rotateX, rotateY });
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    const tiltX = (y - 0.5) * -15;
+    const tiltY = (x - 0.5) * 15;
+    setTilt({ x: tiltX, y: tiltY, active: true });
   };
 
   const handleMouseLeave = () => {
-    if (enable3D) {
-      setTransform({ rotateX: 0, rotateY: 0 });
-    }
+    setTilt({ x: 0, y: 0, active: false });
   };
 
   return (
     <div
       ref={cardRef}
       className={cn(
-        'bg-card rounded-xl sm:rounded-2xl border border-border/60 animate-fade-in group',
+        'relative overflow-hidden rounded-2xl animate-fade-in group cursor-pointer',
         sizeClasses[size],
-        onClick && 'cursor-pointer hover:border-primary/40',
-        !enable3D && 'hover-lift shadow-sm hover:shadow-md transition-all duration-300'
       )}
       style={{
-        backgroundColor: bgColor || undefined,
+        background: bgColor || style.bg,
         height: height ? `${height}px` : undefined,
-        minHeight: height ? `${height}px` : (size === 'small' ? '85px' : size === 'large' ? '120px' : '100px'),
-        transform: enable3D 
-          ? `perspective(1000px) rotateX(${transform.rotateX - 3}deg) rotateY(${transform.rotateY + 3}deg) scale(${transform.rotateX !== 0 || transform.rotateY !== 0 ? 1.03 : 1})`
-          : undefined,
-        transformStyle: enable3D ? 'preserve-3d' : undefined,
-        transition: enable3D ? 'transform 0.15s ease-out, box-shadow 0.15s ease-out' : undefined,
-        boxShadow: enable3D 
-          ? `${-transform.rotateY * 1.5 - 4}px ${transform.rotateX * 1.5 + 8}px 25px rgba(0,0,0,0.2), 
-             ${-transform.rotateY * 0.5 - 2}px ${transform.rotateX * 0.5 + 3}px 8px rgba(0,0,0,0.1)`
-          : undefined,
+        minHeight: height ? `${height}px` : (size === 'small' ? '90px' : size === 'large' ? '130px' : '110px'),
+        perspective: '1000px',
+        transform: tilt.active
+          ? `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale3d(1.03, 1.03, 1.03)`
+          : 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
+        transformStyle: 'preserve-3d',
+        transition: tilt.active
+          ? 'transform 0.1s ease-out'
+          : 'transform 0.4s cubic-bezier(0.23, 1, 0.32, 1)',
+        boxShadow: tilt.active
+          ? `0 20px 40px -10px ${style.glow}, 0 8px 20px -8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)`
+          : `0 8px 24px -6px ${style.glow}, 0 4px 12px -4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.1)`,
       }}
       onClick={onClick}
       onMouseMove={handleMouseMove}
@@ -140,27 +144,42 @@ export function StatCard({
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? e => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
     >
-      <div className="flex items-center justify-between gap-3 h-full">
+      {/* Glass overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10 pointer-events-none" />
+      
+      {/* Animated shine effect */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        style={{
+          background: tilt.active
+            ? `radial-gradient(circle at ${50 + tilt.y * 3}% ${50 + tilt.x * 3}%, rgba(255,255,255,0.2) 0%, transparent 60%)`
+            : 'none',
+        }}
+      />
+
+      {/* Decorative circles */}
+      <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/5 blur-sm" />
+      <div className="absolute -bottom-4 -right-4 w-20 h-20 rounded-full bg-white/5 blur-sm" />
+
+      {/* Content */}
+      <div className="relative flex items-center justify-between gap-3 h-full" style={{ transform: 'translateZ(10px)' }}>
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <p
-            className="font-medium text-muted-foreground mb-1.5 truncate"
-            style={{ fontSize: `clamp(0.65rem, ${0.5 * fontScale}vw + 0.3rem, ${0.75 * fontScale}rem)` }}
+            className="font-medium text-white/75 mb-1 truncate"
+            style={{ fontSize: `clamp(0.65rem, ${0.5 * fontScale}vw + 0.3rem, ${0.8 * fontScale}rem)` }}
           >
             {title}
           </p>
           <p
-            className={cn(
-              'font-bold text-card-foreground whitespace-nowrap overflow-hidden text-ellipsis tracking-tight',
-              valueSizeClasses[size]
-            )}
-            style={{ fontSize: `clamp(0.8rem, ${0.85 * fontScale}vw + 0.4rem, ${1.4 * fontScale}rem)` }}
+            className="font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis tracking-tight drop-shadow-sm"
+            style={{ fontSize: `clamp(1rem, ${1 * fontScale}vw + 0.5rem, ${1.6 * fontScale}rem)` }}
             title={typeof value === 'string' ? value : String(value)}
           >
             {value}
           </p>
           {arabicWords && (
             <p
-              className="text-xs text-muted-foreground mt-0.5 leading-tight"
+              className="text-white/50 mt-0.5 leading-tight text-xs"
               style={{ fontSize: `${0.7 * fontScale}rem` }}
             >
               {arabicWords}
@@ -168,24 +187,28 @@ export function StatCard({
           )}
           {subtitle && (
             <p
-              className="text-muted-foreground mt-1 truncate"
-              style={{ fontSize: `clamp(0.55rem, ${0.4 * fontScale}vw + 0.25rem, ${0.65 * fontScale}rem)` }}
+              className="text-white/60 mt-1 truncate"
+              style={{ fontSize: `clamp(0.55rem, ${0.4 * fontScale}vw + 0.25rem, ${0.7 * fontScale}rem)` }}
             >
               {subtitle}
             </p>
           )}
         </div>
+        
+        {/* Icon with glass background */}
         <div
           className={cn(
-            'rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110',
+            'rounded-2xl flex items-center justify-center shrink-0 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3',
             iconSizeClasses[size],
-            iconBgClasses[gradient]
           )}
           style={{
-            transform: enable3D ? 'translateZ(20px)' : undefined,
+            background: style.iconBg,
+            border: '1px solid rgba(255,255,255,0.12)',
+            transform: tilt.active ? 'translateZ(30px)' : 'translateZ(0px)',
+            transition: 'transform 0.3s ease',
           }}
         >
-          <Icon className={cn(iconInnerClasses[size])} />
+          <Icon className={cn(iconInnerClasses[size], 'text-white drop-shadow-sm')} />
         </div>
       </div>
     </div>
