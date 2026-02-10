@@ -66,6 +66,7 @@ import { ThemeSettingsPage } from '@/components/themes/ThemeSettingsPage';
 import { MenuManagementPage, OrdersPage, KitchenPage, TablesPage } from '@/components/restaurant';
 import { ShipmentsPage, LettersOfCreditPage, CustomsClearancePage } from '@/components/export-import';
 import { TasksPage } from '@/components/tasks/TasksPage';
+import { AIChatWidget } from '@/components/chat/AIChatWidget';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
@@ -273,6 +274,9 @@ const Index = () => {
           setActivePage={setActivePage} 
           onMenuClick={handleMenuClick}
         />
+
+        {/* AI Chat Widget */}
+        <AIChatWidget />
       </div>
     </>
   );
