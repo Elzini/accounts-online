@@ -24,6 +24,8 @@ interface CompanyContextType {
   isSuperAdmin: boolean;
   refreshCompany: () => Promise<void>;
   updateCompany: (updates: Partial<Company>) => Promise<void>;
+  viewAsCompanyId: string | null;
+  setViewAsCompanyId: (id: string | null) => void;
 }
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
@@ -36,6 +38,23 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [previousCompanyId, setPreviousCompanyId] = useState<string | null>(null);
+  const [viewAsCompanyId, setViewAsCompanyIdState] = useState<string | null>(null);
+  const [viewAsCompany, setViewAsCompany] = useState<Company | null>(null);
+
+  const setViewAsCompanyId = async (id: string | null) => {
+    setViewAsCompanyIdState(id);
+    queryClient.clear();
+    if (id) {
+      const { data } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('id', id)
+        .single();
+      setViewAsCompany(data);
+    } else {
+      setViewAsCompany(null);
+    }
+  };
 
   const fetchCompanyData = async () => {
     if (!user) {
@@ -127,8 +146,20 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     }
   }, [session, user]);
 
+  const effectiveCompanyId = viewAsCompanyId || companyId;
+  const effectiveCompany = viewAsCompanyId ? viewAsCompany : company;
+
   return (
-    <CompanyContext.Provider value={{ company, companyId, loading, isSuperAdmin, refreshCompany, updateCompany }}>
+    <CompanyContext.Provider value={{ 
+      company: effectiveCompany, 
+      companyId: effectiveCompanyId, 
+      loading, 
+      isSuperAdmin, 
+      refreshCompany, 
+      updateCompany,
+      viewAsCompanyId,
+      setViewAsCompanyId,
+    }}>
       {children}
     </CompanyContext.Provider>
   );
