@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getCompanyOverride } from '@/lib/companyOverride';
 
 export interface FixedAsset {
   id: string;
@@ -77,7 +78,6 @@ export interface CreateAssetInput {
 
 // Helper function to get current user's company_id
 async function getCurrentCompanyId(): Promise<string | null> {
-  const { getCompanyOverride } = await import('@/lib/companyOverride');
   const override = getCompanyOverride();
   if (override) return override;
 

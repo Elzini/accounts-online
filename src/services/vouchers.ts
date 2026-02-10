@@ -1,5 +1,19 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getCompanyOverride } from '@/lib/companyOverride';
 import { createJournalEntry } from './accounting';
+
+async function getCurrentCompanyId(): Promise<string | null> {
+  const override = getCompanyOverride();
+  if (override) return override;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_id')
+    .eq('user_id', user.id)
+    .single();
+  return profile?.company_id || null;
+}
 
 export interface Voucher {
   id: string;
@@ -21,25 +35,30 @@ export interface Voucher {
 export type VoucherInsert = Omit<Voucher, 'id' | 'voucher_number' | 'created_at' | 'updated_at' | 'journal_entry_id'>;
 
 export async function fetchVouchers(): Promise<Voucher[]> {
-  const { data, error } = await supabase
+  const companyId = await getCurrentCompanyId();
+  let query = supabase
     .from('vouchers')
     .select('*')
     .order('created_at', { ascending: false });
-  
+  if (companyId) query = query.eq('company_id', companyId);
+  const { data, error } = await query;
   if (error) throw error;
   return data as Voucher[];
 }
 
 export async function fetchVouchersByType(type: 'receipt' | 'payment'): Promise<Voucher[]> {
-  const { data, error } = await supabase
+  const companyId = await getCurrentCompanyId();
+  let query = supabase
     .from('vouchers')
     .select('*')
     .eq('voucher_type', type)
     .order('created_at', { ascending: false });
-  
+  if (companyId) query = query.eq('company_id', companyId);
+  const { data, error } = await query;
   if (error) throw error;
   return data as Voucher[];
 }
+
 
 // Helper to get default account IDs
 async function getDefaultAccounts(companyId: string) {
