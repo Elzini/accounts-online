@@ -124,6 +124,10 @@ export const defaultSettings: AppSettings = {
 
 // Helper function to get current user's company_id
 async function getCurrentCompanyId(): Promise<string | null> {
+  const { getCompanyOverride } = await import('@/lib/companyOverride');
+  const override = getCompanyOverride();
+  if (override) return override;
+
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   
