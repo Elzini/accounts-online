@@ -22,9 +22,9 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "logo.png"],
       manifest: {
-        name: "نظام إدارة معارض السيارات",
-        short_name: "معرض السيارات",
-        description: "نظام محاسبي متكامل لإدارة معارض السيارات",
+        name: "Elzini SaaS",
+        short_name: "Elzini SaaS",
+        description: "Elzini SaaS - نظام محاسبي سحابي متكامل",
         theme_color: "#1e40af",
         background_color: "#0f172a",
         display: "standalone",
