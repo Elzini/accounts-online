@@ -368,7 +368,24 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           showCarsTable: true,
         };
         break;
-      // Add other cases as needed
+      case 'totalProfit': {
+        const profitCars = buildSalesCarDetails();
+        const totalProfitValue = profitCars.reduce((sum, c) => sum + (c.profit || 0), 0);
+        const totalRevenueValue = profitCars.reduce((sum, c) => sum + (c.salePrice || 0), 0);
+        const totalCostValue = profitCars.reduce((sum, c) => sum + c.purchasePrice, 0);
+        data = {
+          title: getCardLabel(cardId, 'إجمالي الأرباح'),
+          value: formatCurrency(stats.totalProfit),
+          breakdown: [
+            { label: 'إجمالي المبيعات', value: totalRevenueValue, type: 'add' },
+            { label: 'إجمالي تكلفة الشراء', value: totalCostValue, type: 'subtract' },
+            { label: 'صافي الربح', value: totalProfitValue, type: 'total' },
+          ],
+          cars: profitCars,
+          showCarsTable: true,
+        };
+        break;
+      }
       default:
         data = null;
     }
