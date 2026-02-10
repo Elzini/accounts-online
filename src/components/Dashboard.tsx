@@ -386,6 +386,53 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         };
         break;
       }
+      case 'todaySales': {
+        const todaySalesCars = buildSalesCarDetails().filter(c => {
+          if (!c.saleDate) return false;
+          const today = new Date().toISOString().split('T')[0];
+          return c.saleDate.startsWith(today);
+        });
+        data = {
+          title: getCardLabel(cardId, 'مبيعات اليوم'),
+          value: stats.todaySales,
+          breakdown: [],
+          cars: todaySalesCars,
+          showCarsTable: true,
+        };
+        break;
+      }
+      case 'monthSalesCount': {
+        data = {
+          title: getCardLabel(cardId, 'عدد مبيعات الشهر'),
+          value: stats.monthSales,
+          breakdown: [],
+          cars: buildSalesCarDetails(),
+          showCarsTable: true,
+        };
+        break;
+      }
+      case 'allTimePurchases': {
+        data = {
+          title: getCardLabel(cardId, 'إجمالي مشتريات الشركة'),
+          value: formatCurrency(allTimeStats?.allTimePurchases || 0),
+          subtitle: `${allTimeStats?.totalCarsCount || 0} وحدة`,
+          breakdown: [],
+          cars: buildPurchaseCarDetails(),
+          showCarsTable: true,
+        };
+        break;
+      }
+      case 'allTimeSales': {
+        data = {
+          title: getCardLabel(cardId, 'إجمالي مبيعات الشركة'),
+          value: formatCurrency(allTimeStats?.allTimeSales || 0),
+          subtitle: `${allTimeStats?.allTimeSalesCount || 0} عملية بيع`,
+          breakdown: [],
+          cars: buildSalesCarDetails(),
+          showCarsTable: true,
+        };
+        break;
+      }
       default:
         data = null;
     }
