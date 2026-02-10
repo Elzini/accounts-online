@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { setCompanyOverride } from '@/lib/companyOverride';
 
 export type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import';
 
@@ -43,6 +44,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   const setViewAsCompanyId = async (id: string | null) => {
     setViewAsCompanyIdState(id);
+    setCompanyOverride(id);
     queryClient.clear();
     if (id) {
       const { data } = await supabase
