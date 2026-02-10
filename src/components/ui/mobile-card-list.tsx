@@ -11,7 +11,7 @@ export function MobileCard({ children, className, onClick }: MobileCardProps) {
   return (
     <div 
       className={cn(
-        "bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md transition-all",
+        "bg-card rounded-xl p-4 border border-border/60 shadow-sm hover:shadow-md transition-all hover:border-primary/20",
         onClick && "cursor-pointer active:scale-[0.98]",
         className
       )}
@@ -31,9 +31,9 @@ interface MobileCardRowProps {
 
 export function MobileCardRow({ label, value, icon, className }: MobileCardRowProps) {
   return (
-    <div className={cn("flex items-center justify-between py-1.5", className)}>
-      <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-        {icon}
+    <div className={cn("flex items-center justify-between py-1.5 px-1", className)}>
+      <span className="text-xs text-muted-foreground/70 flex items-center gap-1.5">
+        {icon && <span className="text-muted-foreground/50">{icon}</span>}
         {label}
       </span>
       <span className="text-sm font-medium text-foreground">{value}</span>
@@ -50,14 +50,14 @@ interface MobileCardHeaderProps {
 
 export function MobileCardHeader({ title, subtitle, badge, actions }: MobileCardHeaderProps) {
   return (
-    <div className="flex items-start justify-between gap-3 mb-3 pb-3 border-b border-border">
+    <div className="flex items-start justify-between gap-3 mb-3 pb-3 border-b border-border/40">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h3 className="font-bold text-foreground truncate">{title}</h3>
           {badge}
         </div>
         {subtitle && (
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>
+          <p className="text-xs text-muted-foreground/60 mt-0.5 truncate">{subtitle}</p>
         )}
       </div>
       {actions && <div className="shrink-0">{actions}</div>}
