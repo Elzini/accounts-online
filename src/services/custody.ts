@@ -49,7 +49,7 @@ export type CustodyTransactionInsert = Omit<CustodyTransaction, 'id' | 'created_
 export async function fetchCustodies(companyId: string): Promise<Custody[]> {
   const { data, error } = await supabase
     .from('custodies')
-    .select('*, employee:employees(id, name)')
+    .select('*, employee:employees(id, name), transactions:custody_transactions(id, custody_id, company_id, transaction_date, description, analysis_category, amount, account_id, notes, created_by, created_at, updated_at)')
     .eq('company_id', companyId)
     .order('custody_date', { ascending: false });
   

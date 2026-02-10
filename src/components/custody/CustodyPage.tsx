@@ -120,25 +120,29 @@ export function CustodyPage() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right">رقم العهدة</TableHead>
-                  <TableHead className="text-right">اسم العهدة</TableHead>
-                  <TableHead className="text-right">المستلم</TableHead>
-                  <TableHead className="text-right">المبلغ</TableHead>
-                  <TableHead className="text-right">التاريخ</TableHead>
-                  <TableHead className="text-right">الحالة</TableHead>
-                  <TableHead className="text-right">الإجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {custodies.map((custody) => {
-                  const summary = calculateCustodySummary(custody);
-                  return (
-                    <TableRow key={custody.id}>
-                      <TableCell className="font-medium">#{custody.custody_number}</TableCell>
-                      <TableCell>{custody.custody_name}</TableCell>
-                      <TableCell>{custody.employee?.name || '-'}</TableCell>
-                      <TableCell>{formatNumber(custody.custody_amount)} ر.س</TableCell>
+                 <TableRow>
+                   <TableHead className="text-right">رقم العهدة</TableHead>
+                   <TableHead className="text-right">اسم العهدة</TableHead>
+                   <TableHead className="text-right">المستلم</TableHead>
+                   <TableHead className="text-right">المبلغ</TableHead>
+                   <TableHead className="text-right">المصروف</TableHead>
+                   <TableHead className="text-right">الباقي</TableHead>
+                   <TableHead className="text-right">التاريخ</TableHead>
+                   <TableHead className="text-right">الحالة</TableHead>
+                   <TableHead className="text-right">الإجراءات</TableHead>
+                 </TableRow>
+               </TableHeader>
+               <TableBody>
+                 {custodies.map((custody) => {
+                   const summary = calculateCustodySummary(custody);
+                   return (
+                     <TableRow key={custody.id}>
+                       <TableCell className="font-medium">#{custody.custody_number}</TableCell>
+                       <TableCell>{custody.custody_name}</TableCell>
+                       <TableCell>{custody.employee?.name || '-'}</TableCell>
+                       <TableCell>{formatNumber(custody.custody_amount)} ر.س</TableCell>
+                       <TableCell className="text-destructive">{formatNumber(summary.totalSpent)} ر.س</TableCell>
+                       <TableCell className="text-green-600 font-semibold">{formatNumber(summary.returnedAmount)} ر.س</TableCell>
                       <TableCell>{new Date(custody.custody_date).toLocaleDateString('ar-SA')}</TableCell>
                       <TableCell>{getStatusBadge(custody.status)}</TableCell>
                       <TableCell>
@@ -155,7 +159,6 @@ export function CustodyPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(custody)}
-                            disabled={custody.status === 'settled'}
                           >
                             تعديل
                           </Button>
