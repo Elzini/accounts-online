@@ -1,4 +1,5 @@
 import { Car, ShoppingCart, DollarSign, TrendingUp, Package, BarChart3, RefreshCw, HardHat, Building2 } from 'lucide-react';
+import { AnimatedDashboardBackground } from './dashboard/AnimatedDashboardBackground';
 import { StatCard } from './StatCard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -440,8 +441,20 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     setDetailDialogOpen(true);
   }, [fiscalYearCars, fiscalYearSales, buildPurchaseCarDetails, buildSalesCarDetails, getCardLabel, industryLabels]);
 
+  // Track animation index for staggered entry
+  let statCardIndex = 0;
+  const getNextAnimIndex = () => statCardIndex++;
+
+  // Simple monthly progress estimator (day of month / days in month)
+  const monthProgress = useMemo(() => {
+    const now = new Date();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return Math.round((now.getDate() / daysInMonth) * 100);
+  }, []);
+
   return (
-    <div className="space-y-4 sm:space-y-6 md:space-y-8 animate-fade-in">
+    <div className="relative space-y-4 sm:space-y-6 md:space-y-8">
+      <AnimatedDashboardBackground />
       {/* Welcome Header */}
       <WelcomeHeader
         amountDisplayMode={amountDisplayMode}
@@ -526,6 +539,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         fontSize={getCardConfig('availableCars').fontSize}
                         height={getCardConfig('availableCars').height}
                         enable3D={getCardConfig('availableCars').enable3D}
+                        animationIndex={getNextAnimIndex()}
                       />
                     </EditableWidgetWrapper>
                   );
@@ -546,6 +560,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         fontSize={getCardConfig('totalPurchases').fontSize}
                         height={getCardConfig('totalPurchases').height}
                         enable3D={getCardConfig('totalPurchases').enable3D}
+                        animationIndex={getNextAnimIndex()}
+                        progress={monthProgress}
                       />
                     </EditableWidgetWrapper>
                   );
@@ -566,6 +582,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         fontSize={getCardConfig('monthSales').fontSize}
                         height={getCardConfig('monthSales').height}
                         enable3D={getCardConfig('monthSales').enable3D}
+                        animationIndex={getNextAnimIndex()}
+                        progress={monthProgress}
                       />
                     </EditableWidgetWrapper>
                   );
@@ -586,6 +604,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         fontSize={getCardConfig('totalProfit').fontSize}
                         height={getCardConfig('totalProfit').height}
                         enable3D={getCardConfig('totalProfit').enable3D}
+                        animationIndex={getNextAnimIndex()}
+                        progress={monthProgress}
                       />
                     </EditableWidgetWrapper>
                   );
@@ -605,6 +625,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         fontSize={getCardConfig('todaySales').fontSize}
                         height={getCardConfig('todaySales').height}
                         enable3D={getCardConfig('todaySales').enable3D}
+                        animationIndex={getNextAnimIndex()}
                       />
                     </EditableWidgetWrapper>
                   );
@@ -624,6 +645,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         fontSize={getCardConfig('monthSalesCount').fontSize}
                         height={getCardConfig('monthSalesCount').height}
                         enable3D={getCardConfig('monthSalesCount').enable3D}
+                        animationIndex={getNextAnimIndex()}
                       />
                     </EditableWidgetWrapper>
                   );
@@ -645,6 +667,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         fontSize={getCardConfig('allTimePurchases').fontSize}
                         height={getCardConfig('allTimePurchases').height}
                         enable3D={getCardConfig('allTimePurchases').enable3D}
+                        animationIndex={getNextAnimIndex()}
                       />
                     </EditableWidgetWrapper>
                   );
@@ -666,6 +689,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         fontSize={getCardConfig('allTimeSales').fontSize}
                         height={getCardConfig('allTimeSales').height}
                         enable3D={getCardConfig('allTimeSales').enable3D}
+                        animationIndex={getNextAnimIndex()}
                       />
                     </EditableWidgetWrapper>
                   );
