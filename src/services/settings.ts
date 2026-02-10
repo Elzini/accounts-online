@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getCompanyOverride } from '@/lib/companyOverride';
 
 export interface AppSettings {
   app_name: string;
@@ -124,7 +125,6 @@ export const defaultSettings: AppSettings = {
 
 // Helper function to get current user's company_id
 async function getCurrentCompanyId(): Promise<string | null> {
-  const { getCompanyOverride } = await import('@/lib/companyOverride');
   const override = getCompanyOverride();
   if (override) return override;
 

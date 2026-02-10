@@ -1,4 +1,18 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getCompanyOverride } from '@/lib/companyOverride';
+
+async function getCurrentCompanyId(): Promise<string | null> {
+  const override = getCompanyOverride();
+  if (override) return override;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_id')
+    .eq('user_id', user.id)
+    .single();
+  return profile?.company_id || null;
+}
 
 export interface AdvancedStats {
   // Trend comparisons
@@ -67,6 +81,8 @@ export interface AdvancedStats {
 }
 
 export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<AdvancedStats> {
+  const companyId = await getCurrentCompanyId();
+  
   const toDateOnly = (date: Date) => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -97,10 +113,11 @@ export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<Adv
   const thisMonthEnd = toDateOnly(new Date(now.getFullYear(), now.getMonth() + 1, 0));
   const lastMonthEnd = toDateOnly(new Date(now.getFullYear(), now.getMonth(), 0));
 
-  // Build queries with fiscal year filter
+  // Build queries with fiscal year filter AND company filter
   let allCarsQuery = supabase
     .from('cars')
     .select('id, name, model, status, purchase_price, purchase_date, created_at, supplier_id');
+  if (companyId) allCarsQuery = allCarsQuery.eq('company_id', companyId);
   
   let allSalesQuery = supabase
     .from('sales')
@@ -114,6 +131,7 @@ export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<Adv
       car:cars(id, name, model, purchase_price, purchase_date)
     `)
     .order('sale_date', { ascending: false });
+  if (companyId) allSalesQuery = allSalesQuery.eq('company_id', companyId);
 
   // Apply fiscal year filter - filter by date only
   if (fiscalYearStart && fiscalYearEnd) {
@@ -127,6 +145,15 @@ export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<Adv
   }
 
   // Parallel fetches for better performance
+  let customersQuery = supabase.from('customers').select('id, name, phone');
+  if (companyId) customersQuery = customersQuery.eq('company_id', companyId);
+  
+  let suppliersQuery = supabase.from('suppliers').select('id, name');
+  if (companyId) suppliersQuery = suppliersQuery.eq('company_id', companyId);
+  
+  let transfersQuery = supabase.from('car_transfers').select('id, car_id, status');
+  if (companyId) transfersQuery = transfersQuery.eq('company_id', companyId);
+
   const [
     allCars,
     allSales,
@@ -136,15 +163,9 @@ export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<Adv
   ] = await Promise.all([
     allCarsQuery,
     allSalesQuery,
-    supabase
-      .from('customers')
-      .select('id, name, phone'),
-    supabase
-      .from('suppliers')
-      .select('id, name'),
-    supabase
-      .from('car_transfers')
-      .select('id, car_id, status')
+    customersQuery,
+    suppliersQuery,
+    transfersQuery
   ]);
 
   // Calculate sales for this month and last month (within fiscal year if specified)
