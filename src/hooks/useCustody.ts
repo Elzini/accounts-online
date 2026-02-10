@@ -54,6 +54,37 @@ export function useCustody() {
         }
       }
       
+      if (deductedAmount > 0 && deductedAmount >= data.custody_amount) {
+        // Carried balance is >= new custody: no active custody needed
+        // Remaining debt = carried - newAmount
+        const remainingDebt = deductedAmount - data.custody_amount;
+        
+        if (remainingDebt > 0) {
+          // Still owed to employee, create a reduced carried record
+          return addCustody({
+            ...data,
+            company_id: companyId,
+            custody_amount: remainingDebt,
+            custody_date: data.custody_date,
+            status: 'carried',
+            fiscal_year_id: selectedFiscalYear?.id || null,
+            notes: `رصيد مرحّل محدّث - تم خصم ${data.custody_amount} ر.س من مرحّل سابق ${deductedAmount} ر.س`,
+          });
+        } else {
+          // Exact match - debt fully settled, create a settled record
+          return addCustody({
+            ...data,
+            company_id: companyId,
+            custody_amount: 0,
+            status: 'settled',
+            settlement_date: data.custody_date,
+            fiscal_year_id: selectedFiscalYear?.id || null,
+            notes: `تم تسوية الرصيد المرحّل بالكامل (${deductedAmount} ر.س)`,
+          });
+        }
+      }
+      
+      // Normal case: new custody > carried balance
       const adjustedAmount = data.custody_amount - deductedAmount;
       const notes = deductedAmount > 0
         ? `${data.notes || ''}\nتم خصم ${deductedAmount} ر.س رصيد مرحّل من عهدة سابقة`.trim()
@@ -61,8 +92,8 @@ export function useCustody() {
       
       return addCustody({
         ...data,
-        custody_amount: adjustedAmount > 0 ? adjustedAmount : data.custody_amount,
-        notes: deductedAmount > 0 ? notes : data.notes,
+        custody_amount: adjustedAmount,
+        notes,
         company_id: companyId,
         fiscal_year_id: selectedFiscalYear?.id || null,
       });
