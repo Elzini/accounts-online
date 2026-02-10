@@ -10,13 +10,12 @@ interface StatCardProps {
   gradient: 'primary' | 'success' | 'warning' | 'danger';
   subtitle?: string;
   onClick?: () => void;
-  // Customization props
   size?: 'small' | 'medium' | 'large';
   bgColor?: string;
-  fontSize?: number; // percentage 80-130
-  showAsWords?: boolean; // عرض الرقم بالكلمات العربية
-  height?: number; // ارتفاع البطاقة بالبكسل
-  enable3D?: boolean; // تفعيل التأثير ثلاثي الأبعاد
+  fontSize?: number;
+  showAsWords?: boolean;
+  height?: number;
+  enable3D?: boolean;
 }
 
 const gradientClasses = {
@@ -26,28 +25,35 @@ const gradientClasses = {
   danger: 'gradient-danger',
 };
 
+const iconBgClasses = {
+  primary: 'bg-primary/10 text-primary',
+  success: 'bg-success/10 text-success',
+  warning: 'bg-warning/10 text-warning',
+  danger: 'bg-destructive/10 text-destructive',
+};
+
 const sizeClasses = {
-  small: 'p-2 sm:p-2.5',
-  medium: 'p-2.5 sm:p-3 md:p-4',
-  large: 'p-3 sm:p-4 md:p-5',
+  small: 'p-3 sm:p-3.5',
+  medium: 'p-3.5 sm:p-4 md:p-5',
+  large: 'p-4 sm:p-5 md:p-6',
 };
 
 const iconSizeClasses = {
-  small: 'w-6 h-6 sm:w-7 sm:h-7',
-  medium: 'w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10',
-  large: 'w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12',
+  small: 'w-9 h-9',
+  medium: 'w-11 h-11 sm:w-12 sm:h-12',
+  large: 'w-12 h-12 sm:w-14 sm:h-14',
 };
 
 const iconInnerClasses = {
-  small: 'w-3 h-3 sm:w-3.5 sm:h-3.5',
-  medium: 'w-4 h-4 sm:w-5 sm:h-5',
-  large: 'w-5 h-5 sm:w-6 sm:h-6',
+  small: 'w-4 h-4',
+  medium: 'w-5 h-5 sm:w-6 sm:h-6',
+  large: 'w-6 h-6 sm:w-7 sm:h-7',
 };
 
 const valueSizeClasses = {
-  small: 'text-sm sm:text-base md:text-lg',
-  medium: 'text-base sm:text-lg md:text-xl lg:text-2xl',
-  large: 'text-lg sm:text-xl md:text-2xl lg:text-3xl',
+  small: 'text-base sm:text-lg',
+  medium: 'text-lg sm:text-xl md:text-2xl',
+  large: 'text-xl sm:text-2xl md:text-3xl',
 };
 
 export function StatCard({
@@ -68,43 +74,33 @@ export function StatCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const [transform, setTransform] = useState({ rotateX: 0, rotateY: 0 });
 
-  // الحصول على الكلمات العربية للرقم
   const getArabicWords = () => {
     if (!showAsWords) return null;
-    
     let numericValue: number | null = null;
-    
     if (typeof value === 'number') {
       numericValue = value;
     } else if (typeof value === 'string') {
-      // إزالة الفواصل والرموز واستخراج الرقم
       const cleanedValue = value.replace(/,/g, '').replace(/[^\d.-]/g, '');
       numericValue = parseFloat(cleanedValue);
     }
-    
     if (numericValue !== null && !isNaN(numericValue) && numericValue !== 0) {
       return numberToArabicWordsShort(numericValue) + ' ريال';
     }
-    
     return null;
   };
   
   const arabicWords = getArabicWords();
 
-  // معالجة حركة الماوس للتأثير ثلاثي الأبعاد
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!enable3D || !cardRef.current) return;
-    
     const card = cardRef.current;
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
-    
     const rotateX = ((y - centerY) / centerY) * -10;
     const rotateY = ((x - centerX) / centerX) * 10;
-    
     setTransform({ rotateX, rotateY });
   };
 
@@ -118,15 +114,15 @@ export function StatCard({
     <div
       ref={cardRef}
       className={cn(
-        'bg-card rounded-lg sm:rounded-xl md:rounded-2xl border border-border animate-fade-in',
+        'bg-card rounded-xl sm:rounded-2xl border border-border/60 animate-fade-in group',
         sizeClasses[size],
-        onClick && 'cursor-pointer hover:border-primary/50',
-        !enable3D && 'hover-lift shadow-sm transition-colors'
+        onClick && 'cursor-pointer hover:border-primary/40',
+        !enable3D && 'hover-lift shadow-sm hover:shadow-md transition-all duration-300'
       )}
       style={{
         backgroundColor: bgColor || undefined,
         height: height ? `${height}px` : undefined,
-        minHeight: height ? `${height}px` : (size === 'small' ? '80px' : size === 'large' ? '110px' : '95px'),
+        minHeight: height ? `${height}px` : (size === 'small' ? '85px' : size === 'large' ? '120px' : '100px'),
         transform: enable3D 
           ? `perspective(1000px) rotateX(${transform.rotateX - 3}deg) rotateY(${transform.rotateY + 3}deg) scale(${transform.rotateX !== 0 || transform.rotateY !== 0 ? 1.03 : 1})`
           : undefined,
@@ -134,12 +130,8 @@ export function StatCard({
         transition: enable3D ? 'transform 0.15s ease-out, box-shadow 0.15s ease-out' : undefined,
         boxShadow: enable3D 
           ? `${-transform.rotateY * 1.5 - 4}px ${transform.rotateX * 1.5 + 8}px 25px rgba(0,0,0,0.2), 
-             ${-transform.rotateY * 0.5 - 2}px ${transform.rotateX * 0.5 + 3}px 8px rgba(0,0,0,0.1),
-             inset 0 1px 0 rgba(255,255,255,0.1)`
+             ${-transform.rotateY * 0.5 - 2}px ${transform.rotateX * 0.5 + 3}px 8px rgba(0,0,0,0.1)`
           : undefined,
-        background: enable3D 
-          ? `linear-gradient(145deg, ${bgColor || 'hsl(var(--card))'} 0%, ${bgColor ? bgColor : 'hsl(var(--card))'} 100%)`
-          : bgColor || undefined,
       }}
       onClick={onClick}
       onMouseMove={handleMouseMove}
@@ -148,27 +140,27 @@ export function StatCard({
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? e => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
     >
-      <div className="flex items-center justify-between gap-2 sm:gap-3 h-full">
+      <div className="flex items-center justify-between gap-3 h-full">
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <p
-            className="font-medium text-muted-foreground mb-1 truncate"
-            style={{ fontSize: `clamp(0.6rem, ${0.5 * fontScale}vw + 0.3rem, ${0.7 * fontScale}rem)` }}
+            className="font-medium text-muted-foreground mb-1.5 truncate"
+            style={{ fontSize: `clamp(0.65rem, ${0.5 * fontScale}vw + 0.3rem, ${0.75 * fontScale}rem)` }}
           >
             {title}
           </p>
           <p
             className={cn(
-              'font-bold text-card-foreground whitespace-nowrap overflow-hidden text-ellipsis',
+              'font-bold text-card-foreground whitespace-nowrap overflow-hidden text-ellipsis tracking-tight',
               valueSizeClasses[size]
             )}
-            style={{ fontSize: `clamp(0.7rem, ${0.85 * fontScale}vw + 0.35rem, ${1.3 * fontScale}rem)` }}
+            style={{ fontSize: `clamp(0.8rem, ${0.85 * fontScale}vw + 0.4rem, ${1.4 * fontScale}rem)` }}
             title={typeof value === 'string' ? value : String(value)}
           >
             {value}
           </p>
           {arabicWords && (
             <p
-              className="text-xs sm:text-sm text-muted-foreground mt-0.5 leading-tight"
+              className="text-xs text-muted-foreground mt-0.5 leading-tight"
               style={{ fontSize: `${0.7 * fontScale}rem` }}
             >
               {arabicWords}
@@ -176,8 +168,8 @@ export function StatCard({
           )}
           {subtitle && (
             <p
-              className="text-muted-foreground mt-0.5 sm:mt-1 truncate"
-              style={{ fontSize: `clamp(0.5rem, ${0.4 * fontScale}vw + 0.25rem, ${0.625 * fontScale}rem)` }}
+              className="text-muted-foreground mt-1 truncate"
+              style={{ fontSize: `clamp(0.55rem, ${0.4 * fontScale}vw + 0.25rem, ${0.65 * fontScale}rem)` }}
             >
               {subtitle}
             </p>
@@ -185,15 +177,15 @@ export function StatCard({
         </div>
         <div
           className={cn(
-            'rounded-lg md:rounded-xl flex items-center justify-center shrink-0 shadow-sm',
+            'rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110',
             iconSizeClasses[size],
-            gradientClasses[gradient]
+            iconBgClasses[gradient]
           )}
           style={{
             transform: enable3D ? 'translateZ(20px)' : undefined,
           }}
         >
-          <Icon className={cn('text-white', iconInnerClasses[size])} />
+          <Icon className={cn(iconInnerClasses[size])} />
         </div>
       </div>
     </div>

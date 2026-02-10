@@ -521,42 +521,46 @@ export function Sidebar({
     const filteredItems = items.filter(item => hasAccess(item.permission) && isItemVisible(sectionId, item.id));
     if (filteredItems.length === 0) return null;
     if (!isCollapsible) {
-      return <div className="mb-4 sm:mb-5">
-          <p className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3">
+      return <div className="mb-5">
+          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-sidebar-foreground/40 mb-2 px-3">
             {sectionLabel}
           </p>
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {filteredItems.map(item => {
             const Icon = item.icon;
             const isActive = activePage === item.id;
             const itemLabel = getItemLabel(sectionId, item.id, item.label);
             return <li key={item.id}>
-                  <button onClick={() => setActivePage(item.id)} className={cn("w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200", isActive ? "gradient-primary text-white shadow-md" : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white")}>
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                    <span className="font-medium text-sm sm:text-base truncate">{itemLabel}</span>
+                  <button onClick={() => setActivePage(item.id)} className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200", isActive ? "bg-sidebar-primary text-white shadow-md shadow-sidebar-primary/25" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground")}>
+                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors", isActive ? "bg-white/20" : "bg-sidebar-accent/50")}>
+                      <Icon className="w-4 h-4 shrink-0" />
+                    </div>
+                    <span className="font-medium text-sm truncate">{itemLabel}</span>
                   </button>
                 </li>;
           })}
           </ul>
         </div>;
     }
-    return <Collapsible open={!isCollapsed} onOpenChange={() => toggleSection(sectionId)} className="mb-4 sm:mb-5">
+    return <Collapsible open={!isCollapsed} onOpenChange={() => toggleSection(sectionId)} className="mb-5">
         <CollapsibleTrigger asChild>
-          <button className="flex items-center justify-between w-full text-[11px] sm:text-xs font-semibold text-sidebar-foreground/50 mb-2 sm:mb-3 px-2 sm:px-3 hover:text-sidebar-foreground/70 transition-colors">
+          <button className="flex items-center justify-between w-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-sidebar-foreground/40 mb-2 px-3 hover:text-sidebar-foreground/60 transition-colors">
             <span>{sectionLabel}</span>
-            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {filteredItems.map(item => {
             const Icon = item.icon;
             const isActive = activePage === item.id;
             const itemLabel = getItemLabel(sectionId, item.id, item.label);
             return <li key={item.id}>
-                  <button onClick={() => setActivePage(item.id)} className={cn("w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200", isActive ? "gradient-primary text-white shadow-md" : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white")}>
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                    <span className="font-medium text-sm sm:text-base truncate">{itemLabel}</span>
+                  <button onClick={() => setActivePage(item.id)} className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200", isActive ? "bg-sidebar-primary text-white shadow-md shadow-sidebar-primary/25" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground")}>
+                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors", isActive ? "bg-white/20" : "bg-sidebar-accent/50")}>
+                      <Icon className="w-4 h-4 shrink-0" />
+                    </div>
+                    <span className="font-medium text-sm truncate">{itemLabel}</span>
                   </button>
                 </li>;
           })}
@@ -566,21 +570,22 @@ export function Sidebar({
   };
   return <aside className="w-[280px] sm:w-64 min-h-screen max-h-[100dvh] bg-sidebar text-sidebar-foreground flex flex-col shrink-0">
       {/* Logo */}
-      <div className="p-4 sm:p-5 border-b border-sidebar-border">
+      <div className="p-4 sm:p-5 border-b border-sidebar-border/50">
         <div className="flex items-center gap-3">
-          <img src={logoUrl} alt="Logo" className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl object-cover bg-white/10" onError={e => {
-          (e.target as HTMLImageElement).src = defaultLogo;
-        }} />
+          <div className="w-11 h-11 rounded-xl overflow-hidden bg-sidebar-accent flex items-center justify-center ring-2 ring-sidebar-primary/20">
+            <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" onError={e => {
+            (e.target as HTMLImageElement).src = defaultLogo;
+          }} />
+          </div>
           <div className="min-w-0 flex-1">
-            <h1 className="font-bold text-base sm:text-lg text-white truncate">{appName}</h1>
-            <p className="text-[11px] sm:text-xs text-sidebar-foreground/70 truncate">{appSubtitle}</p>
+            <h1 className="font-bold text-base text-white truncate">{appName}</h1>
+            <p className="text-[10px] text-sidebar-foreground/50 truncate">{appSubtitle}</p>
           </div>
         </div>
       </div>
 
       {/* Main Menu */}
-      <nav className="flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto">
-        {/* Main Section - Changes based on company type */}
+      <nav className="flex-1 min-h-0 p-3 overflow-y-auto">
         {renderCollapsibleSection('main', 'القائمة الرئيسية', 
           companyType === 'construction' ? constructionMenuItems :
           companyType === 'restaurant' ? restaurantMenuItems :
@@ -588,35 +593,31 @@ export function Sidebar({
           defaultMenuItems
         )}
 
-        {/* Transfers - Only for car dealership */}
         {companyType === 'car_dealership' && renderCollapsibleSection('transfers', settings?.transfers_section_title || 'التحويلات', transferItems, permissions.admin || permissions.sales || permissions.purchases)}
 
-        {/* Finance Section */}
         {renderCollapsibleSection('finance', settings?.finance_section_title || 'المالية', financeItems, permissions.admin || permissions.sales || permissions.purchases)}
 
-        {/* Reports */}
         {renderCollapsibleSection('reports', settings?.reports_title || 'التقارير', reportItems, hasAccess('reports'))}
 
-        {/* Accounting */}
         {renderCollapsibleSection('accounting', settings?.accounting_section_title || 'المحاسبة', accountingItems, permissions.admin || permissions.reports)}
 
-        {/* Super Admin - Companies */}
-        {isSuperAdmin && <div className="mb-4 sm:mb-5">
-            <p className="text-[11px] sm:text-xs font-semibold text-warning/70 mb-2 sm:mb-3 px-2 sm:px-3">مدير النظام</p>
-            <ul className="space-y-1">
+        {isSuperAdmin && <div className="mb-5">
+            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-warning/50 mb-2 px-3">مدير النظام</p>
+            <ul className="space-y-0.5">
               <li>
                 <button type="button" onClick={() => {
               setActivePage('dashboard');
               navigate('/companies');
-            }} className={cn("w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200", "text-warning/80 hover:bg-warning/20 hover:text-warning")}>
-                  <Crown className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                  <span className="font-medium text-sm sm:text-base truncate">إدارة الشركات</span>
+            }} className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200", "text-warning/70 hover:bg-warning/10 hover:text-warning")}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-warning/10">
+                    <Crown className="w-4 h-4 shrink-0" />
+                  </div>
+                  <span className="font-medium text-sm truncate">إدارة الشركات</span>
                 </button>
               </li>
             </ul>
           </div>}
 
-        {/* Admin Section */}
         {canManageUsers && renderCollapsibleSection('admin', settings?.admin_section_title || 'الإدارة', [{
         id: 'users-management' as ActivePage,
         label: settings?.users_management_title || 'إدارة المستخدمين',
@@ -649,8 +650,8 @@ export function Sidebar({
       </nav>
 
       {/* Footer */}
-      <div className="p-3 sm:p-4 border-t border-sidebar-border">
-        <p className="text-[10px] sm:text-xs text-center text-sidebar-foreground/50">
+      <div className="p-3 border-t border-sidebar-border/50">
+        <p className="text-[10px] text-center text-sidebar-foreground/30 font-medium">
           {companyType === 'construction' ? 'نظام إدارة المقاولات' : 
            companyType === 'general_trading' ? 'نظام إدارة التجارة' : 
            companyType === 'restaurant' ? 'نظام إدارة المطاعم' :
