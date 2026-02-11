@@ -143,4 +143,12 @@ export type ActivePage =
    | 'checks'
    | 'budgets'
    | 'financial-kpis'
-   | 'approvals';
+   | 'approvals'
+   // HR Module
+   | 'attendance'
+   | 'leaves'
+   | 'insurance'
+   // Manufacturing
+   | 'manufacturing'
+   // Integrations
+   | 'integrations';
