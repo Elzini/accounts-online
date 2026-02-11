@@ -7,11 +7,14 @@ const corsHeaders = {
 };
 
 interface SecurityCheckRequest {
-  action: 'validate_ip' | 'log_access' | 'check_session';
+  action: 'validate_ip' | 'log_access' | 'check_session' | 'check_rate_limit';
   company_id?: string;
   user_id?: string;
   ip_address?: string;
   user_agent?: string;
+  endpoint?: string;
+  max_requests?: number;
+  window_seconds?: number;
 }
 
 interface SecurityLogEntry {
@@ -200,6 +203,52 @@ serve(async (req) => {
             two_fa_enabled: twoFA?.is_enabled || false,
             ip: clientIP
           }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      case 'check_rate_limit': {
+        const companyId = body.company_id;
+        if (!companyId) {
+          return new Response(
+            JSON.stringify({ error: 'company_id required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const endpoint = body.endpoint || 'general';
+        const maxRequests = body.max_requests || 100;
+        const windowSeconds = body.window_seconds || 60;
+
+        const { data: allowed, error: rlError } = await supabaseClient
+          .rpc('check_rate_limit', {
+            _company_id: companyId,
+            _endpoint: endpoint,
+            _max_requests: maxRequests,
+            _window_seconds: windowSeconds,
+          });
+
+        if (rlError) {
+          console.error('Rate limit check error:', rlError);
+          return new Response(
+            JSON.stringify({ allowed: true }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        if (!allowed) {
+          return new Response(
+            JSON.stringify({ 
+              allowed: false, 
+              error: 'Rate limit exceeded',
+              retry_after: windowSeconds,
+            }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(windowSeconds) } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ allowed: true }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
