@@ -2091,6 +2091,13 @@ export type Database = {
             foreignKeyName: "financing_contracts_financing_company_id_fkey"
             columns: ["financing_company_id"]
             isOneToOne: false
+            referencedRelation: "financing_companies_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financing_contracts_financing_company_id_fkey"
+            columns: ["financing_company_id"]
+            isOneToOne: false
             referencedRelation: "financing_companies_safe"
             referencedColumns: ["id"]
           },
@@ -5842,6 +5849,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      financing_companies_admin: {
+        Row: {
+          api_endpoint: string | null
+          api_key_status: string | null
+          bank_name: string | null
+          commission_rate: number | null
+          company_id: string | null
+          contact_person: string | null
+          created_at: string | null
+          email: string | null
+          id: string | null
+          is_active: boolean | null
+          name: string | null
+          notes: string | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_endpoint?: string | null
+          api_key_status?: never
+          bank_name?: string | null
+          commission_rate?: number | null
+          company_id?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_endpoint?: string | null
+          api_key_status?: never
+          bank_name?: string | null
+          commission_rate?: number | null
+          company_id?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       financing_companies_safe: {
         Row: {
