@@ -17,6 +17,7 @@ import {
   useApprovePayroll,
   useDeletePayroll,
   useEmployees,
+  useRefreshPayrollAdvances,
 } from '@/hooks/usePayroll';
 import { PayrollItem } from '@/services/payroll';
 import { toast } from 'sonner';
@@ -34,7 +35,8 @@ import {
   AlertCircle,
   FileSpreadsheet,
   BookOpen,
-  Pencil
+  Pencil,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -366,10 +368,20 @@ function PayrollDetailsSection({
 }: PayrollDetailsSectionProps) {
   const updatePayrollItem = useUpdatePayrollItem();
   const updatePayrollTotals = useUpdatePayrollTotals();
+  const refreshAdvances = useRefreshPayrollAdvances();
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<PayrollItem>>({});
   const [editingJournalEntryId, setEditingJournalEntryId] = useState<string | null>(null);
+
+  const handleRefreshAdvances = async () => {
+    try {
+      await refreshAdvances.mutateAsync(payroll.id);
+      toast.success('تم تحديث السلفيات بنجاح');
+    } catch {
+      toast.error('حدث خطأ أثناء تحديث السلفيات');
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ar-SA', {
@@ -564,6 +576,12 @@ function PayrollDetailsSection({
               <BookOpen className="w-4 h-4" />
               القيد المحاسبي
               <Pencil className="w-3 h-3" />
+            </Button>
+          )}
+          {payroll.status === 'draft' && (
+            <Button variant="outline" onClick={handleRefreshAdvances} disabled={refreshAdvances.isPending} className="gap-2">
+              {refreshAdvances.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              تحديث السلفيات
             </Button>
           )}
           <Button variant="outline" onClick={handleExportExcel}>

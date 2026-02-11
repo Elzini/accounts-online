@@ -18,6 +18,7 @@ import {
   updatePayrollTotals,
   approvePayroll,
   deletePayroll,
+  refreshPayrollAdvances,
   Employee,
   EmployeeAdvance,
   PayrollItem,
@@ -205,6 +206,22 @@ export function useDeletePayroll() {
     mutationFn: deletePayroll,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payroll-records', companyId] });
+    },
+  });
+}
+
+export function useRefreshPayrollAdvances() {
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+
+  return useMutation({
+    mutationFn: (payrollId: string) => {
+      if (!companyId) throw new Error('Company ID required');
+      return refreshPayrollAdvances(payrollId, companyId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payroll-records', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['payroll'] });
     },
   });
 }
