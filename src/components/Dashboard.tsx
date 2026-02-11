@@ -125,7 +125,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
     if (dashboardConfig?.stat_cards && dashboardConfig.stat_cards.length > 0) {
       const savedIds = new Set(dashboardConfig.stat_cards.map((c: any) => c.id));
       const mergedCards = [
-        ...dashboardConfig.stat_cards.map((c: any) => ({
+      ...dashboardConfig.stat_cards.map((c: any) => ({
           id: c.id,
           type: c.type || 'stat',
           label: c.label,
@@ -133,7 +133,12 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           order: c.order ?? 0,
           size: c.size || 'medium',
           bgColor: c.bgColor || '',
+          textColor: c.textColor || '',
+          gradientFrom: c.gradientFrom || '',
+          gradientTo: c.gradientTo || '',
           fontSize: c.fontSize || 100,
+          height: c.height,
+          enable3D: c.enable3D || false,
         })),
         ...DEFAULT_STAT_CARDS.filter(dc => !savedIds.has(dc.id)).map((dc, i) => ({
           ...dc,
