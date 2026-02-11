@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PanelLeft, Save, GripVertical, Eye, EyeOff, ChevronDown, ChevronRight } from 'lucide-react';
+import { PanelLeft, Save, GripVertical, Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -63,10 +63,8 @@ export function MenuConfigurationTab() {
     setMenuItems(prev => prev.map(section => {
       if (section.id === sectionId) {
         if (!itemId) {
-          // Update section itself
           return { ...section, ...updates };
         }
-        // Update child item
         return {
           ...section,
           children: section.children?.map(item => 
@@ -76,6 +74,58 @@ export function MenuConfigurationTab() {
       }
       return section;
     }));
+    setHasChanges(true);
+  };
+
+  const handleAddItem = (sectionId: string) => {
+    const newId = `custom-${Date.now()}`;
+    setMenuItems(prev => prev.map(section => {
+      if (section.id === sectionId) {
+        const newOrder = (section.children?.length || 0);
+        return {
+          ...section,
+          children: [...(section.children || []), {
+            id: newId,
+            label: 'عنصر جديد',
+            visible: true,
+            order: newOrder,
+            path: newId,
+          }],
+        };
+      }
+      return section;
+    }));
+    setHasChanges(true);
+  };
+
+  const handleDeleteItem = (sectionId: string, itemId: string) => {
+    setMenuItems(prev => prev.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          children: section.children?.filter(item => item.id !== itemId),
+        };
+      }
+      return section;
+    }));
+    setHasChanges(true);
+  };
+
+  const handleAddSection = () => {
+    const newId = `section-${Date.now()}`;
+    setMenuItems(prev => [...prev, {
+      id: newId,
+      label: 'قسم جديد',
+      visible: true,
+      order: prev.length,
+      isCollapsible: true,
+      children: [],
+    }]);
+    setHasChanges(true);
+  };
+
+  const handleDeleteSection = (sectionId: string) => {
+    setMenuItems(prev => prev.filter(s => s.id !== sectionId));
     setHasChanges(true);
   };
 
@@ -121,6 +171,12 @@ export function MenuConfigurationTab() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          <div className="flex justify-end mb-2">
+            <Button variant="outline" size="sm" onClick={handleAddSection}>
+              <Plus className="w-4 h-4 ml-2" />
+              إضافة قسم جديد
+            </Button>
+          </div>
           <Accordion type="multiple" defaultValue={menuItems.map(m => m.id)} className="w-full">
             {menuItems.map((section) => (
               <AccordionItem key={section.id} value={section.id}>
@@ -151,6 +207,14 @@ export function MenuConfigurationTab() {
                         onCheckedChange={(checked) => handleItemUpdate(section.id, null, { isCollapsible: checked })}
                       />
                       <Label className="text-xs">قابل للطي</Label>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteSection(section.id); }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
                 </AccordionTrigger>
@@ -186,8 +250,25 @@ export function MenuConfigurationTab() {
                             <EyeOff className="w-4 h-4 text-muted-foreground" />
                           )}
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteItem(section.id, item.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full mt-2"
+                      onClick={() => handleAddItem(section.id)}
+                    >
+                      <Plus className="w-4 h-4 ml-2" />
+                      إضافة عنصر
+                    </Button>
                   </div>
                 </AccordionContent>
               </AccordionItem>
