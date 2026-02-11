@@ -159,12 +159,12 @@ export function PluginsPage() {
   const [plugins, setPlugins] = useState(AVAILABLE_PLUGINS);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  const filteredPlugins = selectedCategory === 'all'
-    ? plugins
-    : plugins.filter(p => p.category === selectedCategory);
-
   const installedPlugins = plugins.filter(p => p.installed);
   const availablePlugins = plugins.filter(p => !p.installed);
+
+  const filteredMarketplace = selectedCategory === 'all'
+    ? availablePlugins
+    : availablePlugins.filter(p => p.category === selectedCategory);
 
   const handleInstall = (pluginId: string) => {
     setPlugins(prev => prev.map(p =>
@@ -312,9 +312,18 @@ export function PluginsPage() {
               </Button>
             ))}
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredPlugins.map(renderPluginCard)}
-          </div>
+          {filteredMarketplace.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Puzzle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">لا توجد إضافات متاحة في هذا التصنيف</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredMarketplace.map(renderPluginCard)}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
