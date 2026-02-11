@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -83,7 +83,12 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'letters-of-credit': FileBox,
   'customs-clearance': Globe,
   'accounting-audit': ShieldCheck,
-  'tasks': ListTodo
+  'tasks': ListTodo,
+  // Inventory
+  'warehouses': Warehouse,
+  'items-catalog': Package,
+  'item-categories': FolderTree,
+  'units-of-measure': Ruler,
 };
 
 export function Sidebar({
@@ -331,6 +336,24 @@ export function Sidebar({
     id: 'tasks' as ActivePage,
     label: 'إدارة المهام',
     icon: ListTodo
+  }];
+  // Inventory items
+  const inventoryItems = [{
+    id: 'warehouses' as ActivePage,
+    label: 'المستودعات',
+    icon: Warehouse
+  }, {
+    id: 'items-catalog' as ActivePage,
+    label: 'ملف الأصناف',
+    icon: Package
+  }, {
+    id: 'item-categories' as ActivePage,
+    label: 'فئات الأصناف',
+    icon: FolderTree
+  }, {
+    id: 'units-of-measure' as ActivePage,
+    label: 'وحدات القياس',
+    icon: Ruler
   }];
   // Reports - filtered by company type
   const allReportItems = [{
@@ -596,6 +619,8 @@ export function Sidebar({
         {companyType === 'car_dealership' && renderCollapsibleSection('transfers', settings?.transfers_section_title || 'التحويلات', transferItems, permissions.admin || permissions.sales || permissions.purchases)}
 
         {renderCollapsibleSection('finance', settings?.finance_section_title || 'المالية', financeItems, permissions.admin || permissions.sales || permissions.purchases)}
+
+        {renderCollapsibleSection('inventory', 'المستودعات', inventoryItems, permissions.admin || permissions.purchases)}
 
         {renderCollapsibleSection('reports', settings?.reports_title || 'التقارير', reportItems, hasAccess('reports'))}
 
