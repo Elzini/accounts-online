@@ -141,4 +141,6 @@ export type ActivePage =
    // New modules
    | 'aging-report'
    | 'checks'
-   | 'budgets';
+   | 'budgets'
+   | 'financial-kpis'
+   | 'approvals';

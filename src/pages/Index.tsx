@@ -71,7 +71,10 @@ import { WarehousesPage, ItemsPage, UnitsPage, CategoriesPage } from '@/componen
 import { AgingReportPage } from '@/components/receivables/AgingReportPage';
 import { ChecksPage } from '@/components/checks/ChecksPage';
 import { BudgetsPage } from '@/components/budgets/BudgetsPage';
+import { FinancialKPIsPage } from '@/components/reports/FinancialKPIsPage';
+import { ApprovalsPage } from '@/components/approvals/ApprovalsPage';
 import { AIChatWidget } from '@/components/chat/AIChatWidget';
+import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -220,6 +223,8 @@ const Index = () => {
       case 'aging-report': return <AgingReportPage />;
       case 'checks': return <ChecksPage />;
       case 'budgets': return <BudgetsPage />;
+      case 'financial-kpis': return <FinancialKPIsPage />;
+      case 'approvals': return <ApprovalsPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };
@@ -293,6 +298,7 @@ const Index = () => {
                 )}
               </div>
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <NotificationsBell />
                 <CheckUpdateButton />
                 <PWAInstallButton />
                 {permissions.super_admin && (
