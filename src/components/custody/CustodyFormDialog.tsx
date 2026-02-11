@@ -43,6 +43,9 @@ const formSchema = z.object({
   employee_id: z.string().optional(),
   custody_account_id: z.string().optional(),
   cash_account_id: z.string().optional(),
+  custody_type: z.enum(['custody', 'advance']).default('custody'),
+  installment_amount: z.coerce.number().optional(),
+  installment_count: z.coerce.number().optional(),
   notes: z.string().optional(),
 });
 
@@ -72,6 +75,9 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
       employee_id: '',
       custody_account_id: '',
       cash_account_id: '',
+      custody_type: 'custody',
+      installment_amount: 0,
+      installment_count: 1,
       notes: '',
     },
   });
@@ -95,6 +101,9 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
         employee_id: custody.employee_id || '',
         custody_account_id: custody.custody_account_id || '',
         cash_account_id: custody.cash_account_id || '',
+        custody_type: custody.custody_type || 'custody',
+        installment_amount: custody.installment_amount || 0,
+        installment_count: custody.installment_count || 1,
         notes: custody.notes || '',
       });
     } else {
@@ -105,12 +114,32 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
         employee_id: '',
         custody_account_id: '',
         cash_account_id: '',
+        custody_type: 'custody',
+        installment_amount: 0,
+        installment_count: 1,
         notes: '',
       });
     }
   }, [custody, form]);
 
+  const watchedType = form.watch('custody_type');
+
+  // Auto-set name for advance type
+  useEffect(() => {
+    if (watchedType === 'advance' && !custody) {
+      const emp = employees.find(e => e.id === watchedEmployeeId);
+      if (emp) {
+        form.setValue('custody_name', `سلفة - ${emp.name}`);
+      }
+    }
+  }, [watchedType, watchedEmployeeId, employees, custody, form]);
+
   const onSubmit = (values: FormValues) => {
+    if (values.custody_type === 'advance' && (!values.employee_id || values.employee_id === '__none__')) {
+      form.setError('employee_id', { message: 'يجب تحديد الموظف للسلفة' });
+      return;
+    }
+
     if (custody) {
       const updates = {
         custody_name: values.custody_name,
@@ -119,6 +148,9 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
         employee_id: values.employee_id && values.employee_id !== '__none__' ? values.employee_id : null,
         custody_account_id: values.custody_account_id || null,
         cash_account_id: values.cash_account_id || null,
+        custody_type: values.custody_type,
+        installment_amount: values.installment_amount || 0,
+        installment_count: values.installment_count || 1,
         notes: values.notes || null,
       };
       updateCustody({ id: custody.id, updates });
@@ -130,6 +162,10 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
         employee_id: values.employee_id && values.employee_id !== '__none__' ? values.employee_id : null,
         custody_account_id: values.custody_account_id || null,
         cash_account_id: values.cash_account_id || null,
+        custody_type: values.custody_type,
+        advance_id: null,
+        installment_amount: values.installment_amount || 0,
+        installment_count: values.installment_count || 1,
         notes: values.notes || null,
         status: 'active' as const,
         settlement_date: null,
@@ -146,19 +182,42 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg" dir="rtl">
         <DialogHeader>
-          <DialogTitle>{custody ? 'تعديل العهدة' : 'إضافة عهدة جديدة'}</DialogTitle>
+          <DialogTitle>{custody ? (watchedType === 'advance' ? 'تعديل السلفة' : 'تعديل العهدة') : (watchedType === 'advance' ? 'إضافة سلفة جديدة' : 'إضافة عهدة جديدة')}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
+            {/* Type Selection */}
+            <FormField
+              control={form.control}
+              name="custody_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>النوع</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={!!custody}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="custody">عهدة</SelectItem>
+                      <SelectItem value="advance">سلفة موظف</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="custody_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>اسم العهدة</FormLabel>
+                  <FormLabel>{watchedType === 'advance' ? 'اسم السلفة' : 'اسم العهدة'}</FormLabel>
                   <FormControl>
-                    <Input placeholder="مثال: عهدة مصاريف نثرية" {...field} />
+                    <Input placeholder={watchedType === 'advance' ? 'مثال: سلفة شخصية' : 'مثال: عهدة مصاريف نثرية'} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -240,6 +299,49 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
               </Alert>
             )}
 
+            {/* Installment fields for advance type */}
+            {watchedType === 'advance' && (
+              <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+                <p className="text-sm font-semibold text-foreground">إعدادات الأقساط (خصم من الراتب)</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="installment_count"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>عدد الأقساط</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="1" {...field} onChange={(e) => {
+                            field.onChange(e);
+                            const count = Number(e.target.value) || 1;
+                            const amount = form.getValues('custody_amount');
+                            if (count > 0 && amount > 0) {
+                              form.setValue('installment_amount', Math.round((amount / count) * 100) / 100);
+                            }
+                          }} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="installment_amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>مبلغ القسط الشهري</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">سيتم خصم مبلغ القسط تلقائياً من مسير الراتب الشهري</p>
+              </div>
+            )}
+
             <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
               <p className="text-sm font-semibold text-foreground">ربط الحسابات (لإنشاء قيد تلقائي)</p>
               
@@ -248,13 +350,13 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
                 name="custody_account_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>حساب العهدة (مدين)</FormLabel>
+                    <FormLabel>{watchedType === 'advance' ? 'حساب السلف (مدين)' : 'حساب العهدة (مدين)'}</FormLabel>
                     <FormControl>
                       <AccountSearchSelect
                         accounts={accountsList}
                         value={field.value || ''}
                         onChange={field.onChange}
-                        placeholder="مثال: عهد الموظفين"
+                        placeholder={watchedType === 'advance' ? 'مثال: سلف الموظفين' : 'مثال: عهد الموظفين'}
                       />
                     </FormControl>
                     <FormMessage />

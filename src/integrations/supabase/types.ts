@@ -1870,6 +1870,7 @@ export type Database = {
       }
       custodies: {
         Row: {
+          advance_id: string | null
           cash_account_id: string | null
           company_id: string
           created_at: string
@@ -1879,9 +1880,12 @@ export type Database = {
           custody_date: string
           custody_name: string
           custody_number: number
+          custody_type: string
           employee_id: string | null
           fiscal_year_id: string | null
           id: string
+          installment_amount: number | null
+          installment_count: number | null
           journal_entry_id: string | null
           notes: string | null
           settlement_date: string | null
@@ -1889,6 +1893,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          advance_id?: string | null
           cash_account_id?: string | null
           company_id: string
           created_at?: string
@@ -1898,9 +1903,12 @@ export type Database = {
           custody_date?: string
           custody_name: string
           custody_number?: number
+          custody_type?: string
           employee_id?: string | null
           fiscal_year_id?: string | null
           id?: string
+          installment_amount?: number | null
+          installment_count?: number | null
           journal_entry_id?: string | null
           notes?: string | null
           settlement_date?: string | null
@@ -1908,6 +1916,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          advance_id?: string | null
           cash_account_id?: string | null
           company_id?: string
           created_at?: string
@@ -1917,9 +1926,12 @@ export type Database = {
           custody_date?: string
           custody_name?: string
           custody_number?: number
+          custody_type?: string
           employee_id?: string | null
           fiscal_year_id?: string | null
           id?: string
+          installment_amount?: number | null
+          installment_count?: number | null
           journal_entry_id?: string | null
           notes?: string | null
           settlement_date?: string | null
@@ -1927,6 +1939,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "custodies_advance_id_fkey"
+            columns: ["advance_id"]
+            isOneToOne: false
+            referencedRelation: "employee_advances"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "custodies_cash_account_id_fkey"
             columns: ["cash_account_id"]
