@@ -1,4 +1,18 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getCompanyOverride } from '@/lib/companyOverride';
+
+async function getCurrentCompanyId(): Promise<string | null> {
+  const override = getCompanyOverride();
+  if (override) return override;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_id')
+    .eq('id', user.id)
+    .single();
+  return profile?.company_id || null;
+}
 
 export interface ExpenseCategory {
   id: string;
@@ -44,10 +58,12 @@ export type ExpenseCategoryInsert = Omit<ExpenseCategory, 'id' | 'created_at' | 
 
 // Expense Categories
 export async function fetchExpenseCategories(): Promise<ExpenseCategory[]> {
-  const { data, error } = await supabase
+  const companyId = await getCurrentCompanyId();
+  let query = supabase
     .from('expense_categories')
-    .select('*')
-    .order('name');
+    .select('*');
+  if (companyId) query = query.eq('company_id', companyId);
+  const { data, error } = await query.order('name');
   
   if (error) throw error;
   return data as ExpenseCategory[];
@@ -87,10 +103,12 @@ export async function deleteExpenseCategory(id: string): Promise<void> {
 
 // Expenses
 export async function fetchExpenses(): Promise<Expense[]> {
-  const { data, error } = await supabase
+  const companyId = await getCurrentCompanyId();
+  let query = supabase
     .from('expenses')
-    .select('*, category:expense_categories(*), account:account_categories(id, code, name), car:cars(id, name, chassis_number)')
-    .order('expense_date', { ascending: false });
+    .select('*, category:expense_categories(*), account:account_categories(id, code, name), car:cars(id, name, chassis_number)');
+  if (companyId) query = query.eq('company_id', companyId);
+  const { data, error } = await query.order('expense_date', { ascending: false });
   
   if (error) throw error;
   return (data || []).map(exp => ({

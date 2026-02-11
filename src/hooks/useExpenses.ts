@@ -15,11 +15,13 @@ import {
   ExpenseCategoryInsert,
   ExpenseInsert,
 } from '@/services/expenses';
+import { useCompany } from '@/contexts/CompanyContext';
 
 // Expense Categories Hooks
 export function useExpenseCategories() {
+  const { companyId } = useCompany();
   return useQuery({
-    queryKey: ['expenseCategories'],
+    queryKey: ['expenseCategories', companyId],
     queryFn: fetchExpenseCategories,
   });
 }
@@ -67,8 +69,9 @@ export function useCreateDefaultExpenseCategories() {
 
 // Expenses Hooks
 export function useExpenses() {
+  const { companyId } = useCompany();
   return useQuery({
-    queryKey: ['expenses'],
+    queryKey: ['expenses', companyId],
     queryFn: fetchExpenses,
   });
 }
