@@ -119,29 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // === Auto sign-out when app/browser is minimized or locked ===
-    // When the page becomes hidden (user locks screen, minimizes, switches tabs/apps),
-    // clear the session flag so re-opening forces a fresh login.
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        // Remove the session-active flag so when user returns,
-        // the app will treat it as a fresh open and force re-login
-        sessionStorage.removeItem(SESSION_ACTIVE_KEY);
-      }
-    };
-
-    // Also handle page unload/close (for desktop app / Electron)
-    const handlePageHide = () => {
-      sessionStorage.removeItem(SESSION_ACTIVE_KEY);
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('pagehide', handlePageHide);
-
     return () => {
       subscription.unsubscribe();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('pagehide', handlePageHide);
     };
   }, []);
 
