@@ -4,147 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Puzzle, Download, Settings, Star, Globe, Shield, Zap, Package } from 'lucide-react';
+import { Puzzle, Download, Settings, Star, Globe, Zap, Package } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface Plugin {
-  id: string;
-  name: string;
-  name_en: string;
-  description: string;
-  description_en: string;
-  version: string;
-  author: string;
-  category: 'accounting' | 'hr' | 'inventory' | 'reports' | 'integrations' | 'utilities';
-  icon: string;
-  installed: boolean;
-  enabled: boolean;
-  rating: number;
-  downloads: number;
-}
-
-const AVAILABLE_PLUGINS: Plugin[] = [
-  {
-    id: 'zatca-phase2',
-    name: 'الفوترة الإلكترونية ZATCA',
-    name_en: 'ZATCA E-Invoicing',
-    description: 'الامتثال الكامل لمتطلبات هيئة الزكاة والضريبة والجمارك - المرحلة الثانية',
-    description_en: 'Full compliance with ZATCA Phase 2 requirements',
-    version: '2.1.0',
-    author: 'Elzini',
-    category: 'accounting',
-    icon: '🧾',
-    installed: true,
-    enabled: true,
-    rating: 4.9,
-    downloads: 1250,
-  },
-  {
-    id: 'advanced-hr',
-    name: 'الموارد البشرية المتقدمة',
-    name_en: 'Advanced HR',
-    description: 'إدارة شاملة للموارد البشرية تشمل التأمينات والتقييم والتدريب',
-    description_en: 'Comprehensive HR management with insurance, evaluation and training',
-    version: '1.5.0',
-    author: 'Elzini',
-    category: 'hr',
-    icon: '👥',
-    installed: true,
-    enabled: true,
-    rating: 4.7,
-    downloads: 890,
-  },
-  {
-    id: 'multi-warehouse',
-    name: 'المستودعات المتعددة',
-    name_en: 'Multi-Warehouse',
-    description: 'إدارة مخزون متعددة المواقع مع تتبع التحويلات والجرد',
-    description_en: 'Multi-location inventory with transfer tracking and stocktake',
-    version: '1.3.0',
-    author: 'Elzini',
-    category: 'inventory',
-    icon: '🏭',
-    installed: true,
-    enabled: true,
-    rating: 4.8,
-    downloads: 720,
-  },
-  {
-    id: 'bi-analytics',
-    name: 'تحليلات الأعمال BI',
-    name_en: 'Business Intelligence',
-    description: 'لوحات تحليل متقدمة مع مخططات تفاعلية وتقارير ذكية',
-    description_en: 'Advanced analytics dashboards with interactive charts and smart reports',
-    version: '1.2.0',
-    author: 'Elzini',
-    category: 'reports',
-    icon: '📊',
-    installed: false,
-    enabled: false,
-    rating: 4.6,
-    downloads: 560,
-  },
-  {
-    id: 'pos-system',
-    name: 'نقاط البيع POS',
-    name_en: 'Point of Sale',
-    description: 'نظام نقاط بيع متكامل مع دعم الباركود والطابعات الحرارية',
-    description_en: 'Integrated POS system with barcode and thermal printer support',
-    version: '1.0.0',
-    author: 'Elzini',
-    category: 'utilities',
-    icon: '🖥️',
-    installed: false,
-    enabled: false,
-    rating: 4.5,
-    downloads: 340,
-  },
-  {
-    id: 'whatsapp-integration',
-    name: 'تكامل واتساب',
-    name_en: 'WhatsApp Integration',
-    description: 'إرسال الفواتير والتقارير عبر واتساب تلقائياً',
-    description_en: 'Auto-send invoices and reports via WhatsApp',
-    version: '1.1.0',
-    author: 'Elzini Partners',
-    category: 'integrations',
-    icon: '💬',
-    installed: false,
-    enabled: false,
-    rating: 4.4,
-    downloads: 430,
-  },
-  {
-    id: 'ifrs-compliance',
-    name: 'معايير IFRS الدولية',
-    name_en: 'IFRS Compliance',
-    description: 'الامتثال لمعايير المحاسبة الدولية IFRS مع التقارير المطلوبة',
-    description_en: 'International Financial Reporting Standards compliance',
-    version: '1.0.0',
-    author: 'Elzini',
-    category: 'accounting',
-    icon: '🌍',
-    installed: false,
-    enabled: false,
-    rating: 4.3,
-    downloads: 210,
-  },
-  {
-    id: 'project-management',
-    name: 'إدارة المشاريع المتقدمة',
-    name_en: 'Advanced Project Management',
-    description: 'إدارة المشاريع مع Gantt Charts وتتبع الموارد والتكاليف',
-    description_en: 'Project management with Gantt Charts, resource and cost tracking',
-    version: '1.4.0',
-    author: 'Elzini',
-    category: 'utilities',
-    icon: '📋',
-    installed: false,
-    enabled: false,
-    rating: 4.7,
-    downloads: 380,
-  },
-];
+import { usePlugins, PluginInfo } from '@/hooks/usePlugins';
 
 const CATEGORY_LABELS: Record<string, { ar: string; en: string }> = {
   accounting: { ar: 'المحاسبة', en: 'Accounting' },
@@ -155,39 +17,40 @@ const CATEGORY_LABELS: Record<string, { ar: string; en: string }> = {
   utilities: { ar: 'أدوات', en: 'Utilities' },
 };
 
-export function PluginsPage() {
-  const [plugins, setPlugins] = useState(AVAILABLE_PLUGINS);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+interface PluginsPageProps {
+  setActivePage?: (page: string) => void;
+}
 
-  const installedPlugins = plugins.filter(p => p.installed);
-  const availablePlugins = plugins.filter(p => !p.installed);
+export function PluginsPage({ setActivePage }: PluginsPageProps) {
+  const { plugins, installedPlugins, availablePlugins, installPlugin, uninstallPlugin, togglePlugin } = usePlugins();
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   const filteredMarketplace = selectedCategory === 'all'
     ? availablePlugins
     : availablePlugins.filter(p => p.category === selectedCategory);
 
   const handleInstall = (pluginId: string) => {
-    setPlugins(prev => prev.map(p =>
-      p.id === pluginId ? { ...p, installed: true, enabled: true } : p
-    ));
-    toast.success('تم تثبيت الإضافة بنجاح');
+    installPlugin(pluginId);
+    toast.success('تم تثبيت الإضافة بنجاح - يمكنك الوصول إليها من القائمة الجانبية');
   };
 
   const handleUninstall = (pluginId: string) => {
-    setPlugins(prev => prev.map(p =>
-      p.id === pluginId ? { ...p, installed: false, enabled: false } : p
-    ));
+    uninstallPlugin(pluginId);
     toast.success('تم إزالة الإضافة');
   };
 
   const handleToggle = (pluginId: string, enabled: boolean) => {
-    setPlugins(prev => prev.map(p =>
-      p.id === pluginId ? { ...p, enabled } : p
-    ));
+    togglePlugin(pluginId, enabled);
     toast.success(enabled ? 'تم تفعيل الإضافة' : 'تم تعطيل الإضافة');
   };
 
-  const renderPluginCard = (plugin: Plugin) => (
+  const handleGoToPlugin = (plugin: PluginInfo) => {
+    if (setActivePage) {
+      setActivePage(plugin.pageId);
+    }
+  };
+
+  const renderPluginCard = (plugin: PluginInfo) => (
     <Card key={plugin.id} className="hover:shadow-lg transition-all">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
@@ -225,19 +88,26 @@ export function PluginsPage() {
               {CATEGORY_LABELS[plugin.category]?.ar}
             </Badge>
           </div>
-          {!plugin.installed ? (
-            <Button size="sm" onClick={() => handleInstall(plugin.id)}>
-              <Download className="w-3 h-3 me-1" /> تثبيت
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => handleUninstall(plugin.id)}
-            >
-              إزالة
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {plugin.installed && plugin.enabled && (
+              <Button size="sm" variant="outline" onClick={() => handleGoToPlugin(plugin)}>
+                فتح
+              </Button>
+            )}
+            {!plugin.installed ? (
+              <Button size="sm" onClick={() => handleInstall(plugin.id)}>
+                <Download className="w-3 h-3 me-1" /> تثبيت
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => handleUninstall(plugin.id)}
+              >
+                إزالة
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -292,7 +162,6 @@ export function PluginsPage() {
         </TabsContent>
 
         <TabsContent value="marketplace" className="mt-6">
-          {/* Category filter */}
           <div className="flex gap-2 mb-4 flex-wrap">
             <Button
               variant={selectedCategory === 'all' ? 'default' : 'outline'}

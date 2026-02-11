@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle, Monitor, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,7 @@ import { useMenuConfiguration } from '@/hooks/useSystemControl';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import defaultLogo from '@/assets/logo.png';
+import { usePlugins } from '@/hooks/usePlugins';
 
 interface SidebarProps {
   activePage: ActivePage;
@@ -104,6 +105,14 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'integrations': Plug,
   'currencies': Coins,
   'branches': GitFork,
+  'monitor': Monitor,
+  'message-circle': MessageCircle,
+  'clipboard-list': ClipboardList,
+  'receipt': Receipt,
+  'users': Users,
+  'warehouse': Warehouse,
+  'bar-chart-3': BarChart3,
+  'globe': Globe,
 };
 
 export function Sidebar({
@@ -364,6 +373,14 @@ export function Sidebar({
     label: 'التصنيع',
     icon: Factory
   }];
+  const { installedPlugins: activePlugins } = usePlugins();
+
+  const pluginMenuItems = activePlugins.map(p => ({
+    id: p.pageId as ActivePage,
+    label: p.menuLabel,
+    icon: ICON_MAP[p.menuIcon] || Puzzle,
+  }));
+
   const integrationItems = [{
     id: 'integrations' as ActivePage,
     label: 'التكاملات الخارجية',
@@ -376,7 +393,7 @@ export function Sidebar({
     id: 'plugins' as ActivePage,
     label: 'الإضافات',
     icon: Puzzle
-  }];
+  }, ...pluginMenuItems];
   // Inventory items
   const inventoryItems = [{
     id: 'warehouses' as ActivePage,

@@ -83,6 +83,8 @@ import { JournalAttachments } from '@/components/accounting/JournalAttachments';
 import { AIChatWidget } from '@/components/chat/AIChatWidget';
 import { ApiManagementPage } from '@/components/api/ApiManagementPage';
 import { PluginsPage } from '@/components/plugins/PluginsPage';
+import { PluginPlaceholderPage } from '@/components/plugins/PluginPlaceholderPage';
+import { ALL_PLUGINS } from '@/hooks/usePlugins';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -241,8 +243,15 @@ const Index = () => {
       case 'currencies': return <CurrenciesPage />;
       case 'branches': return <BranchesPage />;
       case 'api-management': return <ApiManagementPage />;
-      case 'plugins': return <PluginsPage />;
-      default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
+      case 'plugins': return <PluginsPage setActivePage={setActivePage as any} />;
+      default: {
+        // Check if it's a plugin page
+        const pluginPage = ALL_PLUGINS.find(p => p.pageId === activePage);
+        if (pluginPage) {
+          return <PluginPlaceholderPage plugin={pluginPage} />;
+        }
+        return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
+      }
     }
   };
 
