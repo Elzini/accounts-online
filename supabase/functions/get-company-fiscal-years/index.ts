@@ -59,10 +59,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get company name
+    // Get company name and subdomain
     const { data: company } = await supabaseAdmin
       .from('companies')
-      .select('name')
+      .select('name, subdomain')
       .eq('id', profile.company_id)
       .single();
 
@@ -85,6 +85,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         fiscal_years: fiscalYears || [],
         company_name: company?.name || null,
+        company_subdomain: company?.subdomain || null,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

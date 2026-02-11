@@ -39,6 +39,25 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const navigate = useNavigate();
   const { setSelectedFiscalYear } = useFiscalYear();
 
+  const [autoFetchTriggered, setAutoFetchTriggered] = useState(false);
+
+  // Auto-fill email from URL params (after subdomain redirect)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const emailParam = params.get('email');
+    if (emailParam) {
+      setEmail(emailParam);
+      setAutoFetchTriggered(true);
+      // Clean URL
+      params.delete('email');
+      params.delete('auth_redirect');
+      const clean = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', clean);
+    }
+  }, []);
+
   // Fetch settings from secure edge function
   const { settings: globalSettings, loading: settingsLoading } = usePublicAuthSettings();
 
@@ -89,6 +108,19 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
       const years = data?.fiscal_years || [];
       const fetchedCompanyName = data?.company_name || null;
+      const fetchedSubdomain = data?.company_subdomain || null;
+      
+      // If we're on a bare tenant domain (e.g. elzini.com) and company has a subdomain, redirect immediately
+      const currentSubdomain = extractSubdomain();
+      const baseDomain = getBaseDomain();
+      if (!currentSubdomain && baseDomain && fetchedSubdomain) {
+        const tenantUrl = buildTenantUrl(fetchedSubdomain, baseDomain);
+        // Pass email as query param so user doesn't have to re-enter it
+        const params = new URLSearchParams({ email: email.trim(), auth_redirect: '1' });
+        window.location.href = `${tenantUrl}/auth/company?${params.toString()}`;
+        return;
+      }
+      
       setFiscalYears(years);
       setCompanyName(fetchedCompanyName);
       setEmailConfirmed(true);
@@ -106,6 +138,14 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       setFetchingFiscalYears(false);
     }
   }, [email, mode]);
+
+  // Auto-fetch fiscal years when email is pre-filled from redirect
+  useEffect(() => {
+    if (autoFetchTriggered && email && mode === 'company' && !emailConfirmed) {
+      setAutoFetchTriggered(false);
+      fetchFiscalYearsForEmail();
+    }
+  }, [autoFetchTriggered, email, mode, emailConfirmed, fetchFiscalYearsForEmail]);
 
   const handleEmailKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && mode === 'company' && !emailConfirmed) {
