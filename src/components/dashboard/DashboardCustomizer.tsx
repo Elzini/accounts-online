@@ -44,6 +44,9 @@ export interface CardConfig {
   order: number;
   size: 'small' | 'medium' | 'large';
   bgColor?: string;
+  textColor?: string;
+  gradientFrom?: string;
+  gradientTo?: string;
   fontSize?: number; // percentage 80-120
   height?: number; // ارتفاع البطاقة بالبكسل
   enable3D?: boolean; // تفعيل التأثير ثلاثي الأبعاد
@@ -76,6 +79,31 @@ const CARD_COLORS = [
   { value: 'hsl(190 90% 50% / 0.1)', label: 'سماوي' },
   { value: 'hsl(330 80% 60% / 0.1)', label: 'وردي' },
   { value: 'hsl(45 90% 55% / 0.1)', label: 'ذهبي' },
+];
+
+const TEXT_COLORS = [
+  { value: '', label: 'افتراضي (أبيض)' },
+  { value: '#ffffff', label: 'أبيض' },
+  { value: '#000000', label: 'أسود' },
+  { value: '#1e293b', label: 'رمادي داكن' },
+  { value: '#f1f5f9', label: 'رمادي فاتح' },
+  { value: '#fbbf24', label: 'ذهبي' },
+  { value: '#34d399', label: 'أخضر' },
+  { value: '#60a5fa', label: 'أزرق' },
+];
+
+const GRADIENT_PRESETS = [
+  { from: '', to: '', label: 'بدون تدرج' },
+  { from: 'hsl(220 90% 55%)', to: 'hsl(260 80% 60%)', label: 'أزرق بنفسجي' },
+  { from: 'hsl(160 80% 45%)', to: 'hsl(200 85% 50%)', label: 'أخضر سماوي' },
+  { from: 'hsl(340 80% 55%)', to: 'hsl(20 90% 55%)', label: 'وردي برتقالي' },
+  { from: 'hsl(30 90% 55%)', to: 'hsl(50 95% 55%)', label: 'برتقالي ذهبي' },
+  { from: 'hsl(270 80% 55%)', to: 'hsl(320 80% 55%)', label: 'بنفسجي وردي' },
+  { from: 'hsl(180 70% 45%)', to: 'hsl(220 80% 55%)', label: 'سماوي أزرق' },
+  { from: 'hsl(0 80% 55%)', to: 'hsl(30 90% 55%)', label: 'أحمر برتقالي' },
+  { from: 'hsl(200 85% 45%)', to: 'hsl(160 80% 50%)', label: 'أزرق أخضر' },
+  { from: 'hsl(250 70% 50%)', to: 'hsl(200 80% 55%)', label: 'نيلي سماوي' },
+  { from: 'hsl(45 90% 50%)', to: 'hsl(30 85% 45%)', label: 'ذهبي بني' },
 ];
 
 interface DashboardCustomizerProps {
@@ -435,6 +463,75 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                   </div>
                 </div>
 
+                {/* Text Color */}
+                <div className="space-y-2">
+                  <Label className="text-sm flex items-center gap-2">
+                    <Type className="w-4 h-4" />
+                    لون الخط
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {TEXT_COLORS.map(color => (
+                      <button
+                        key={color.value || 'default-text'}
+                        onClick={() => updateCard(selected.id, { textColor: color.value })}
+                        className={cn(
+                          'w-8 h-8 rounded-lg border-2 transition-all flex items-center justify-center',
+                          (selected.textColor || '') === color.value
+                            ? 'ring-2 ring-primary ring-offset-2'
+                            : 'border-border hover:border-primary/50'
+                        )}
+                        style={{
+                          backgroundColor: color.value || 'hsl(var(--card))',
+                        }}
+                        title={color.label}
+                      >
+                        {(selected.textColor || '') === color.value && (
+                          <Check className="w-4 h-4" style={{ color: color.value === '#000000' || color.value === '#1e293b' ? '#fff' : '#000' }} />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Gradient Presets */}
+                <div className="space-y-2">
+                  <Label className="text-sm flex items-center gap-2">
+                    <Palette className="w-4 h-4" />
+                    ألوان تدريجية
+                  </Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {GRADIENT_PRESETS.map((preset, i) => {
+                      const isSelected = (selected.gradientFrom || '') === preset.from && (selected.gradientTo || '') === preset.to;
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => updateCard(selected.id, { 
+                            gradientFrom: preset.from, 
+                            gradientTo: preset.to,
+                            bgColor: preset.from ? '' : selected.bgColor, // clear bgColor when using gradient
+                          })}
+                          className={cn(
+                            'h-8 rounded-lg border-2 transition-all flex items-center justify-center',
+                            isSelected
+                              ? 'ring-2 ring-primary ring-offset-2'
+                              : 'border-border hover:border-primary/50'
+                          )}
+                          style={{
+                            background: preset.from
+                              ? `linear-gradient(135deg, ${preset.from}, ${preset.to})`
+                              : 'hsl(var(--card))',
+                          }}
+                          title={preset.label}
+                        >
+                          {isSelected && (
+                            <Check className="w-4 h-4 text-white drop-shadow-md" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Font Size */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -502,14 +599,17 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                   <Label className="text-sm mb-2 block">معاينة</Label>
                   <div
                     className={cn(
-                      'rounded-xl p-4 border transition-all',
+                      'rounded-xl p-4 border transition-all overflow-hidden',
                       selected.size === 'small' && 'text-xs',
                       selected.size === 'large' && 'text-lg'
                     )}
                     style={{
-                      backgroundColor: selected.bgColor || 'hsl(var(--card))',
+                      background: selected.gradientFrom && selected.gradientTo
+                        ? `linear-gradient(135deg, ${selected.gradientFrom}, ${selected.gradientTo})`
+                        : selected.bgColor || 'hsl(var(--card))',
                       fontSize: `${(selected.fontSize || 100) / 100}em`,
                       height: selected.height ? `${selected.height}px` : undefined,
+                      color: selected.textColor || undefined,
                       transform: selected.enable3D 
                         ? 'perspective(1000px) rotateX(-3deg) rotateY(3deg)'
                         : undefined,
@@ -518,9 +618,9 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                         : undefined,
                     }}
                   >
-                    <p className="text-muted-foreground text-[0.75em] mb-1">{selected.label}</p>
-                    <p className="font-bold text-[1.5em]">123,456</p>
-                    <p className="text-muted-foreground text-[0.7em]">ريال سعودي</p>
+                    <p className="opacity-75 text-[0.75em] mb-1" style={{ color: selected.textColor || undefined }}>{selected.label}</p>
+                    <p className="font-bold text-[1.5em]" style={{ color: selected.textColor || undefined }}>123,456</p>
+                    <p className="opacity-60 text-[0.7em]" style={{ color: selected.textColor || undefined }}>ريال سعودي</p>
                   </div>
                 </div>
               </div>

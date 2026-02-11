@@ -225,8 +225,23 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
 
   // Helper to get card config by id
   const getCardConfig = useCallback((id: string) => {
-    return cardConfigs.find(c => c.id === id) || { visible: true, size: 'medium' as const, bgColor: '', fontSize: 100, height: undefined, enable3D: false, label: '' };
+    return cardConfigs.find(c => c.id === id) || { visible: true, size: 'medium' as const, bgColor: '', textColor: '', gradientFrom: '', gradientTo: '', fontSize: 100, height: undefined, enable3D: false, label: '' };
   }, [cardConfigs]);
+
+  // Spread helper for StatCard style props
+  const getCardStyleProps = useCallback((id: string) => {
+    const cfg = getCardConfig(id);
+    return {
+      size: cfg.size,
+      bgColor: cfg.bgColor,
+      textColor: cfg.textColor,
+      gradientFrom: cfg.gradientFrom,
+      gradientTo: cfg.gradientTo,
+      fontSize: cfg.fontSize,
+      height: cfg.height,
+      enable3D: cfg.enable3D,
+    };
+  }, [getCardConfig]);
 
   const getCardLabel = useCallback((id: string, defaultLabel: string) => {
     const cfg = cardConfigs.find(c => c.id === id);
@@ -544,11 +559,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         gradient="primary"
                         subtitle={industryLabels.availableSubtitle}
                         onClick={() => showStatDetail('availableCars')}
-                        size={getCardConfig('availableCars').size}
-                        bgColor={getCardConfig('availableCars').bgColor}
-                        fontSize={getCardConfig('availableCars').fontSize}
-                        height={getCardConfig('availableCars').height}
-                        enable3D={getCardConfig('availableCars').enable3D}
+                        {...getCardStyleProps('availableCars')}
                         animationIndex={getNextAnimIndex()}
                       />
                     </EditableWidgetWrapper>
@@ -565,11 +576,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         subtitle={getCurrencySubtitle()}
                         onClick={() => showStatDetail('totalPurchases')}
                         showAsWords={showAmountAsWords}
-                        size={getCardConfig('totalPurchases').size}
-                        bgColor={getCardConfig('totalPurchases').bgColor}
-                        fontSize={getCardConfig('totalPurchases').fontSize}
-                        height={getCardConfig('totalPurchases').height}
-                        enable3D={getCardConfig('totalPurchases').enable3D}
+                        {...getCardStyleProps('totalPurchases')}
                         animationIndex={getNextAnimIndex()}
                         progress={monthProgress}
                         trend={analytics?.purchasesTrend?.percentChange}
@@ -588,11 +595,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         subtitle={getCurrencySubtitle()}
                         onClick={() => showStatDetail('monthSales')}
                         showAsWords={showAmountAsWords}
-                        size={getCardConfig('monthSales').size}
-                        bgColor={getCardConfig('monthSales').bgColor}
-                        fontSize={getCardConfig('monthSales').fontSize}
-                        height={getCardConfig('monthSales').height}
-                        enable3D={getCardConfig('monthSales').enable3D}
+                        {...getCardStyleProps('monthSales')}
                         animationIndex={getNextAnimIndex()}
                         progress={monthProgress}
                         trend={analytics?.salesTrend?.percentChange}
@@ -611,11 +614,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         subtitle={getCurrencySubtitle()}
                         onClick={() => showStatDetail('totalProfit')}
                         showAsWords={showAmountAsWords}
-                        size={getCardConfig('totalProfit').size}
-                        bgColor={getCardConfig('totalProfit').bgColor}
-                        fontSize={getCardConfig('totalProfit').fontSize}
-                        height={getCardConfig('totalProfit').height}
-                        enable3D={getCardConfig('totalProfit').enable3D}
+                        {...getCardStyleProps('totalProfit')}
                         animationIndex={getNextAnimIndex()}
                         progress={monthProgress}
                         trend={analytics?.profitTrend?.percentChange}
@@ -634,11 +633,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         gradient="primary"
                         subtitle="عملية بيع"
                         onClick={() => showStatDetail('todaySales')}
-                        size={getCardConfig('todaySales').size}
-                        bgColor={getCardConfig('todaySales').bgColor}
-                        fontSize={getCardConfig('todaySales').fontSize}
-                        height={getCardConfig('todaySales').height}
-                        enable3D={getCardConfig('todaySales').enable3D}
+                        {...getCardStyleProps('todaySales')}
                         animationIndex={getNextAnimIndex()}
                       />
                     </EditableWidgetWrapper>
@@ -654,11 +649,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         gradient="success"
                         subtitle="عملية بيع"
                         onClick={() => showStatDetail('monthSalesCount')}
-                        size={getCardConfig('monthSalesCount').size}
-                        bgColor={getCardConfig('monthSalesCount').bgColor}
-                        fontSize={getCardConfig('monthSalesCount').fontSize}
-                        height={getCardConfig('monthSalesCount').height}
-                        enable3D={getCardConfig('monthSalesCount').enable3D}
+                        {...getCardStyleProps('monthSalesCount')}
                         animationIndex={getNextAnimIndex()}
                       />
                     </EditableWidgetWrapper>
@@ -676,11 +667,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         subtitle={`${allTimeStats.totalCarsCount} ${industryLabels.allTimePurchasesSubUnit} - ${getDisplayModeLabel(amountDisplayMode)}`}
                         onClick={() => showStatDetail('allTimePurchases')}
                         showAsWords={showAmountAsWords}
-                        size={getCardConfig('allTimePurchases').size}
-                        bgColor={getCardConfig('allTimePurchases').bgColor}
-                        fontSize={getCardConfig('allTimePurchases').fontSize}
-                        height={getCardConfig('allTimePurchases').height}
-                        enable3D={getCardConfig('allTimePurchases').enable3D}
+                        {...getCardStyleProps('allTimePurchases')}
                         animationIndex={getNextAnimIndex()}
                       />
                     </EditableWidgetWrapper>
@@ -698,11 +685,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         subtitle={`${allTimeStats.allTimeSalesCount} ${industryLabels.allTimeSalesSubUnit} - ${getDisplayModeLabel(amountDisplayMode)}`}
                         onClick={() => showStatDetail('allTimeSales')}
                         showAsWords={showAmountAsWords}
-                        size={getCardConfig('allTimeSales').size}
-                        bgColor={getCardConfig('allTimeSales').bgColor}
-                        fontSize={getCardConfig('allTimeSales').fontSize}
-                        height={getCardConfig('allTimeSales').height}
-                        enable3D={getCardConfig('allTimeSales').enable3D}
+                        {...getCardStyleProps('allTimeSales')}
                         animationIndex={getNextAnimIndex()}
                       />
                     </EditableWidgetWrapper>
