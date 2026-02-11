@@ -19,52 +19,42 @@ interface StatCardProps {
   showAsWords?: boolean;
   height?: number;
   enable3D?: boolean;
-  /** 0-100 progress toward monthly target */
   progress?: number;
-  /** Stagger delay index for entry animation */
   animationIndex?: number;
-  /** Trend percentage vs previous period (positive = up, negative = down) */
   trend?: number;
-  /** Additional metric label shown as a badge (e.g., "هامش 15%") */
   badge?: string;
-  /** Show/hide trend indicator */
   showTrend?: boolean;
-  /** Custom trend text color */
   trendColor?: string;
 }
 
-const gradientStyles = {
+const gradientThemes = {
   primary: {
-    bg: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)',
-    glow: 'hsl(var(--primary) / 0.35)',
-    iconBg: 'rgba(255,255,255,0.18)',
-    accent: 'hsl(var(--primary) / 0.7)',
-    progressTrack: 'rgba(255,255,255,0.12)',
-    progressBar: 'rgba(255,255,255,0.55)',
+    border: 'hsl(var(--primary))',
+    iconBg: 'hsl(var(--primary) / 0.12)',
+    iconColor: 'hsl(var(--primary))',
+    progressTrack: 'hsl(var(--primary) / 0.1)',
+    progressBar: 'hsl(var(--primary))',
   },
   success: {
-    bg: 'linear-gradient(135deg, hsl(var(--success)) 0%, hsl(var(--success) / 0.7) 100%)',
-    glow: 'hsl(var(--success) / 0.35)',
-    iconBg: 'rgba(255,255,255,0.18)',
-    accent: 'hsl(var(--success) / 0.6)',
-    progressTrack: 'rgba(255,255,255,0.12)',
-    progressBar: 'rgba(255,255,255,0.55)',
+    border: 'hsl(var(--success))',
+    iconBg: 'hsl(var(--success) / 0.12)',
+    iconColor: 'hsl(var(--success))',
+    progressTrack: 'hsl(var(--success) / 0.1)',
+    progressBar: 'hsl(var(--success))',
   },
   warning: {
-    bg: 'linear-gradient(135deg, hsl(var(--warning)) 0%, hsl(var(--warning) / 0.7) 100%)',
-    glow: 'hsl(var(--warning) / 0.35)',
-    iconBg: 'rgba(255,255,255,0.18)',
-    accent: 'hsl(var(--warning) / 0.7)',
-    progressTrack: 'rgba(255,255,255,0.12)',
-    progressBar: 'rgba(255,255,255,0.55)',
+    border: 'hsl(var(--warning))',
+    iconBg: 'hsl(var(--warning) / 0.12)',
+    iconColor: 'hsl(var(--warning))',
+    progressTrack: 'hsl(var(--warning) / 0.1)',
+    progressBar: 'hsl(var(--warning))',
   },
   danger: {
-    bg: 'linear-gradient(135deg, hsl(var(--destructive)) 0%, hsl(var(--destructive) / 0.7) 100%)',
-    glow: 'hsl(var(--destructive) / 0.35)',
-    iconBg: 'rgba(255,255,255,0.18)',
-    accent: 'hsl(var(--destructive) / 0.7)',
-    progressTrack: 'rgba(255,255,255,0.12)',
-    progressBar: 'rgba(255,255,255,0.55)',
+    border: 'hsl(var(--destructive))',
+    iconBg: 'hsl(var(--destructive) / 0.12)',
+    iconColor: 'hsl(var(--destructive))',
+    progressTrack: 'hsl(var(--destructive) / 0.1)',
+    progressBar: 'hsl(var(--destructive))',
   },
 };
 
@@ -111,19 +101,18 @@ export function StatCard({
 }: StatCardProps) {
   const fontScale = fontSize / 100;
   const cardRef = useRef<HTMLDivElement>(null);
-  const [tilt, setTilt] = useState({ x: 0, y: 0, active: false });
   const [animatedProgress, setAnimatedProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
-  const style = gradientStyles[gradient];
+  const theme = gradientThemes[gradient];
+  const hasCustomGradient = gradientFrom && gradientTo;
+  const useGradientMode = hasCustomGradient || bgColor;
 
-  // Staggered entry animation
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), animationIndex * 80);
     return () => clearTimeout(timer);
   }, [animationIndex]);
 
-  // Animate progress bar
   useEffect(() => {
     if (progress == null) return;
     const timer = setTimeout(() => {
@@ -149,88 +138,68 @@ export function StatCard({
 
   const arabicWords = getArabicWords();
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-    const tiltX = (y - 0.5) * -15;
-    const tiltY = (x - 0.5) * 15;
-    setTilt({ x: tiltX, y: tiltY, active: true });
-  };
-
-  const handleMouseLeave = () => {
-    setTilt({ x: 0, y: 0, active: false });
-  };
+  // Colors based on mode
+  const titleColor = textColor || (useGradientMode ? 'rgba(255,255,255,0.75)' : 'hsl(var(--muted-foreground))');
+  const valueColor = textColor || (useGradientMode ? 'white' : 'hsl(var(--foreground))');
+  const subtitleColor = textColor ? `${textColor}99` : (useGradientMode ? 'rgba(255,255,255,0.6)' : 'hsl(var(--muted-foreground))');
+  const arabicWordsColor = textColor ? `${textColor}80` : (useGradientMode ? 'rgba(255,255,255,0.5)' : 'hsl(var(--muted-foreground) / 0.6)');
 
   return (
     <div
       ref={cardRef}
       className={cn(
-        'relative overflow-hidden rounded-2xl group cursor-pointer',
+        'relative overflow-hidden rounded-xl group cursor-pointer border',
         sizeClasses[size],
       )}
       style={{
-        background: gradientFrom && gradientTo
+        background: hasCustomGradient
           ? `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`
-          : bgColor || style.bg,
+          : bgColor || 'hsl(var(--card))',
+        borderColor: useGradientMode ? 'transparent' : 'hsl(var(--border) / 0.6)',
         height: height ? `${height}px` : undefined,
         minHeight: height ? `${height}px` : (size === 'small' ? '90px' : size === 'large' ? '130px' : '110px'),
-        perspective: '1000px',
         opacity: isVisible ? 1 : 0,
         transform: isVisible
-          ? tilt.active
-            ? `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale3d(1.03, 1.03, 1.03)`
-            : 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1) translateY(0px)'
-          : 'perspective(1000px) translateY(30px) scale3d(0.95, 0.95, 0.95)',
-        transformStyle: 'preserve-3d',
-        transition: isVisible
-          ? tilt.active
-            ? 'transform 0.1s ease-out, opacity 0.5s ease-out'
-            : 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.5s ease-out'
-          : 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.5s ease-out',
-        boxShadow: tilt.active
-          ? `0 20px 40px -10px ${style.glow}, 0 8px 20px -8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)`
-          : `0 8px 24px -6px ${style.glow}, 0 4px 12px -4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.1)`,
+          ? 'translateY(0px) scale(1)'
+          : 'translateY(20px) scale(0.97)',
+        transition: 'transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s ease-out, box-shadow 0.3s ease',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.03)',
       }}
       onClick={onClick}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)';
+        e.currentTarget.style.transform = 'translateY(-2px) scale(1.01)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.03)';
+        e.currentTarget.style.transform = 'translateY(0px) scale(1)';
+      }}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? e => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
     >
-      {/* Glass overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10 pointer-events-none" />
-      
-      {/* Animated shine effect */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        style={{
-          background: tilt.active
-            ? `radial-gradient(circle at ${50 + tilt.y * 3}% ${50 + tilt.x * 3}%, rgba(255,255,255,0.2) 0%, transparent 60%)`
-            : 'none',
-        }}
-      />
-
-      {/* Decorative circles */}
-      <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/5 blur-sm" />
-      <div className="absolute -bottom-4 -right-4 w-20 h-20 rounded-full bg-white/5 blur-sm" />
+      {/* Colored top border stripe */}
+      {!useGradientMode && (
+        <div
+          className="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
+          style={{ backgroundColor: theme.border }}
+        />
+      )}
 
       {/* Content */}
-      <div className="relative flex items-center justify-between gap-3" style={{ transform: 'translateZ(10px)' }}>
+      <div className="relative flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <p
             className="font-medium mb-1 truncate"
-            style={{ fontSize: `clamp(0.65rem, ${0.5 * fontScale}vw + 0.3rem, ${0.8 * fontScale}rem)`, color: textColor ? `${textColor}bb` : 'rgba(255,255,255,0.75)' }}
+            style={{ fontSize: `clamp(0.65rem, ${0.5 * fontScale}vw + 0.3rem, ${0.8 * fontScale}rem)`, color: titleColor }}
           >
             {title}
           </p>
           <p
-            className="font-bold tracking-tight drop-shadow-sm leading-tight"
-            style={{ 
+            className="font-bold tracking-tight leading-tight"
+            style={{
               fontSize: `clamp(0.9rem, ${0.9 * fontScale}vw + 0.4rem, ${1.5 * fontScale}rem)`,
-              color: textColor || 'white',
+              color: valueColor,
               wordBreak: 'break-word',
               overflowWrap: 'break-word',
               whiteSpace: 'normal',
@@ -241,8 +210,8 @@ export function StatCard({
           </p>
           {arabicWords && (
             <p
-            className="mt-0.5 leading-tight text-xs"
-              style={{ fontSize: `${0.7 * fontScale}rem`, color: textColor ? `${textColor}80` : 'rgba(255,255,255,0.5)' }}
+              className="mt-0.5 leading-tight text-xs"
+              style={{ fontSize: `${0.7 * fontScale}rem`, color: arabicWordsColor }}
             >
               {arabicWords}
             </p>
@@ -250,7 +219,7 @@ export function StatCard({
           {subtitle && (
             <p
               className="mt-1 truncate"
-              style={{ fontSize: `clamp(0.55rem, ${0.4 * fontScale}vw + 0.25rem, ${0.7 * fontScale}rem)`, color: textColor ? `${textColor}99` : 'rgba(255,255,255,0.6)' }}
+              style={{ fontSize: `clamp(0.55rem, ${0.4 * fontScale}vw + 0.25rem, ${0.7 * fontScale}rem)`, color: subtitleColor }}
             >
               {subtitle}
             </p>
@@ -259,13 +228,13 @@ export function StatCard({
           {showTrend && trend !== undefined && trend !== 0 && (
             <div className="flex items-center gap-1 mt-1">
               {trend > 0 ? (
-                <TrendUpIcon className="w-3 h-3" style={{ color: trendColor || (trend > 0 ? '#86efac' : '#fca5a5') }} />
+                <TrendUpIcon className="w-3 h-3" style={{ color: trendColor || 'hsl(var(--success))' }} />
               ) : (
-                <TrendDownIcon className="w-3 h-3" style={{ color: trendColor || '#fca5a5' }} />
+                <TrendDownIcon className="w-3 h-3" style={{ color: trendColor || 'hsl(var(--destructive))' }} />
               )}
               <span
                 className="text-[10px] font-bold"
-                style={{ color: trendColor || (trend > 0 ? '#86efac' : '#fca5a5') }}
+                style={{ color: trendColor || (trend > 0 ? 'hsl(var(--success))' : 'hsl(var(--destructive))') }}
               >
                 {trend > 0 ? '+' : ''}{trend.toFixed(1)}% عن الشهر السابق
               </span>
@@ -273,51 +242,54 @@ export function StatCard({
           )}
           {/* Badge */}
           {badge && (
-            <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-white/20 text-white/90 backdrop-blur-sm">
+            <span
+              className="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full"
+              style={{
+                backgroundColor: useGradientMode ? 'rgba(255,255,255,0.2)' : theme.iconBg,
+                color: useGradientMode ? 'rgba(255,255,255,0.9)' : theme.iconColor,
+              }}
+            >
               {badge}
             </span>
           )}
         </div>
-        
-        {/* Icon with glass background */}
+
+        {/* Icon */}
         <div
           className={cn(
-            'rounded-2xl flex items-center justify-center shrink-0 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3',
+            'rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110',
             iconSizeClasses[size],
           )}
           style={{
-            background: style.iconBg,
-            border: '1px solid rgba(255,255,255,0.12)',
-            transform: tilt.active ? 'translateZ(30px)' : 'translateZ(0px)',
-            transition: 'transform 0.3s ease',
+            backgroundColor: useGradientMode ? 'rgba(255,255,255,0.18)' : theme.iconBg,
           }}
         >
-          <Icon className={cn(iconInnerClasses[size], 'text-white drop-shadow-sm')} />
+          <Icon
+            className={cn(iconInnerClasses[size])}
+            style={{ color: useGradientMode ? 'white' : theme.iconColor }}
+          />
         </div>
       </div>
 
       {/* Progress bar */}
       {progress != null && (
-        <div className="relative mt-3" style={{ transform: 'translateZ(5px)' }}>
+        <div className="relative mt-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] text-white/50">التقدم الشهري</span>
-            <span className="text-[10px] font-bold text-white/70">{Math.round(progress)}%</span>
+            <span className="text-[10px]" style={{ color: subtitleColor }}>التقدم الشهري</span>
+            <span className="text-[10px] font-bold" style={{ color: valueColor }}>{Math.round(progress)}%</span>
           </div>
           <div
             className="h-1.5 rounded-full overflow-hidden"
-            style={{ background: style.progressTrack }}
+            style={{ background: useGradientMode ? 'rgba(255,255,255,0.12)' : theme.progressTrack }}
           >
             <div
               className="h-full rounded-full relative"
               style={{
                 width: `${animatedProgress}%`,
-                background: style.progressBar,
+                background: useGradientMode ? 'rgba(255,255,255,0.55)' : theme.progressBar,
                 transition: 'width 1s cubic-bezier(0.23, 1, 0.32, 1)',
               }}
-            >
-              {/* Shimmer on progress bar */}
-              <div className="absolute inset-0 bg-gradient-to-l from-white/30 via-transparent to-transparent animate-pulse" />
-            </div>
+            />
           </div>
         </div>
       )}
