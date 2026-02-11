@@ -23,9 +23,12 @@ import { CardConfig, DEFAULT_STAT_CARDS } from './dashboard/DashboardCustomizer'
 import { TrendCard } from './dashboard/TrendCard';
 import { InventoryPieChart } from './dashboard/InventoryPieChart';
 import { RevenueAreaChart } from './dashboard/RevenueAreaChart';
+import { SalesPurchasesBarChart } from './dashboard/SalesPurchasesBarChart';
 import { TopPerformersCard } from './dashboard/TopPerformersCard';
 import { PerformanceMetrics } from './dashboard/PerformanceMetrics';
 import { RecentActivityCard } from './dashboard/RecentActivityCard';
+import { FinancialKPICards } from './dashboard/FinancialKPICards';
+import { ExpenseDistributionChart } from './dashboard/ExpenseDistributionChart';
 import { StatCardDetailDialog, StatDetailData, CarDetailItem } from './dashboard/StatCardDetailDialog';
 import { AmountDisplaySelector, AmountDisplayMode, calculateDisplayAmount, getDisplayModeLabel } from './dashboard/AmountDisplaySelector';
 import { WelcomeHeader } from './dashboard/WelcomeHeader';
@@ -43,6 +46,7 @@ import {
 } from './dashboard/DashboardEditMode';
 import { useCardFormulas, buildFormulaVariables, evaluateFormula } from '@/hooks/useCardFormulas';
 import { MonthlyExpensesCard } from './dashboard/MonthlyExpensesCard';
+import { useMonthlyExpenseBreakdown } from '@/hooks/useMonthlyExpenseBreakdown';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { useInstallmentStats, ActiveInstallmentsCard, OverdueInstallmentsCard, UpcomingInstallmentsCard, TotalDueCard, NextPaymentCard } from './dashboard/widgets/InstallmentsWidget';
 import { TransfersWidget } from './dashboard/widgets/TransfersWidget';
@@ -73,6 +77,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const { data: allTimeStats } = useAllTimeStats();
   const { selectedFiscalYear } = useFiscalYear();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { data: expenseBreakdown } = useMonthlyExpenseBreakdown();
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailData, setDetailData] = useState<StatDetailData | null>(null);
   const [amountDisplayMode, setAmountDisplayMode] = useState<AmountDisplayMode>('total');
@@ -814,15 +819,46 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 />
               </div>
 
-              {/* Revenue Area Chart & Inventory Pie Chart */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-                <div className="lg:col-span-2 bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 card-shadow overflow-hidden">
+              {/* Advanced Financial KPIs */}
+              <FinancialKPICards
+                totalRevenue={(allSales || []).reduce((sum, s) => sum + (s.sale_price || 0), 0)}
+                totalCost={(allSales || []).reduce((sum, s) => sum + ((s.sale_price || 0) - (s.profit || 0)), 0)}
+                totalProfit={(allSales || []).reduce((sum, s) => sum + (s.profit || 0), 0)}
+                totalExpenses={expenseBreakdown?.total || 0}
+                averageDaysToSell={analytics.averageDaysToSell}
+                inventoryCount={analytics.inventoryByStatus.available}
+                soldCount={analytics.inventoryByStatus.sold}
+                salesCount={allSales?.length || 0}
+                purchasesThisMonth={analytics.purchasesTrend.thisMonth}
+                salesThisMonth={analytics.salesTrend.thisMonth}
+              />
+
+              {/* Revenue Area Chart & Sales vs Purchases Bar Chart */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+                <div className="bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 card-shadow overflow-hidden">
                   <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">تحليل الإيرادات والأرباح</h3>
                   <RevenueAreaChart data={analytics.revenueByMonth} />
                 </div>
+                <div className="bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 card-shadow overflow-hidden">
+                  <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">المبيعات مقابل المشتريات</h3>
+                  <SalesPurchasesBarChart data={analytics.revenueByMonth} />
+                </div>
+              </div>
+
+              {/* Inventory Pie Chart & Expense Distribution */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
                 <div className="bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 card-shadow">
                   <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">توزيع المخزون</h3>
                   <InventoryPieChart data={analytics.inventoryByStatus} />
+                </div>
+                <div className="bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 card-shadow">
+                  <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">توزيع المصروفات</h3>
+                  <ExpenseDistributionChart
+                    custodyExpenses={expenseBreakdown?.custodyExpenses || 0}
+                    payrollExpenses={expenseBreakdown?.payrollExpenses || 0}
+                    rentExpenses={expenseBreakdown?.rentExpenses || 0}
+                    otherExpenses={expenseBreakdown?.otherExpenses || 0}
+                  />
                 </div>
               </div>
 
