@@ -13,6 +13,9 @@ const TENANT_DOMAINS = ['elzini.com', 'alnimar-car.com'];
 // Subdomains to ignore (not tenant identifiers)
 const IGNORED_SUBDOMAINS = ['www', 'app', 'api', 'admin', 'mail', 'smtp', 'ftp'];
 
+// The dedicated super admin subdomain
+const ADMIN_SUBDOMAIN = 'admin';
+
 /**
  * Extract the subdomain/tenant slug from the current hostname.
  * Returns null if on a non-tenant domain (localhost, lovable.app, bare domain).
@@ -70,4 +73,26 @@ export function buildTenantUrl(subdomain: string, baseDomain?: string): string {
   const domain = baseDomain || getBaseDomain() || TENANT_DOMAINS[0];
   const protocol = window.location.protocol;
   return `${protocol}//${subdomain}.${domain}`;
+}
+
+/**
+ * Check if the current hostname is the admin subdomain (e.g., admin.elzini.com).
+ */
+export function isAdminSubdomain(): boolean {
+  const hostname = window.location.hostname;
+  for (const domain of TENANT_DOMAINS) {
+    if (hostname === `${ADMIN_SUBDOMAIN}.${domain}`) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Build the admin subdomain URL for super admin access.
+ */
+export function getAdminUrl(baseDomain?: string): string {
+  const domain = baseDomain || getBaseDomain() || TENANT_DOMAINS[0];
+  const protocol = window.location.protocol;
+  return `${protocol}//${ADMIN_SUBDOMAIN}.${domain}`;
 }

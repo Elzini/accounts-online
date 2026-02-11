@@ -13,7 +13,7 @@ import { usePublicAuthSettings } from '@/hooks/usePublicAuthSettings';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { extractSubdomain, buildTenantUrl, getBaseDomain } from '@/lib/tenantResolver';
+import { extractSubdomain, buildTenantUrl, getBaseDomain, isAdminSubdomain, getAdminUrl } from '@/lib/tenantResolver';
 
 type AuthMode = 'company' | 'super_admin';
 
@@ -165,11 +165,17 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
         toast.success('تم تسجيل الدخول بنجاح');
         
-        // If on a company subdomain, redirect to base domain
+        // If on a company subdomain, redirect to admin subdomain
         const currentSubdomain = extractSubdomain();
         const baseDomain = getBaseDomain();
         if (currentSubdomain && baseDomain) {
-          window.location.href = `${window.location.protocol}//${baseDomain}/companies?auth_redirect=1`;
+          window.location.href = getAdminUrl(baseDomain) + '/companies?auth_redirect=1';
+          return;
+        }
+        
+        // If on admin subdomain already, stay there
+        if (isAdminSubdomain()) {
+          navigate('/companies', { replace: true });
           return;
         }
         
@@ -389,10 +395,18 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             {/* Navigation Links */}
             <div className="flex items-center justify-between gap-3 text-sm">
               {mode === 'company' ? (
-                <Link to="/auth/super-admin" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
-                  دخول مدير النظام
-                </Link>
+                // On tenant domains, redirect to admin subdomain; on dev/lovable, use internal route
+                getBaseDomain() ? (
+                  <a href={getAdminUrl() + '/auth/super-admin'} className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    دخول مدير النظام
+                  </a>
+                ) : (
+                  <Link to="/auth/super-admin" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    دخول مدير النظام
+                  </Link>
+                )
               ) : (
                 <Link to="/auth/company" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
                   <Building2 className="w-4 h-4" />
