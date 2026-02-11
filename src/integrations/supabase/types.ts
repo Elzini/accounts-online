@@ -370,13 +370,11 @@ export type Database = {
         Row: {
           account_category_id: string | null
           account_name: string
-          account_number: string | null
           account_number_encrypted: string | null
           bank_name: string
           company_id: string
           created_at: string
           current_balance: number | null
-          iban: string | null
           iban_encrypted: string | null
           id: string
           is_active: boolean
@@ -388,13 +386,11 @@ export type Database = {
         Insert: {
           account_category_id?: string | null
           account_name: string
-          account_number?: string | null
           account_number_encrypted?: string | null
           bank_name: string
           company_id: string
           created_at?: string
           current_balance?: number | null
-          iban?: string | null
           iban_encrypted?: string | null
           id?: string
           is_active?: boolean
@@ -406,13 +402,11 @@ export type Database = {
         Update: {
           account_category_id?: string | null
           account_name?: string
-          account_number?: string | null
           account_number_encrypted?: string | null
           bank_name?: string
           company_id?: string
           created_at?: string
           current_balance?: number | null
-          iban?: string | null
           iban_encrypted?: string | null
           id?: string
           is_active?: boolean
