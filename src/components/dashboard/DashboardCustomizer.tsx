@@ -30,6 +30,7 @@ import {
   ChevronDown,
   Ruler,
   Box,
+  TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDashboardConfig, useSaveDashboardConfig } from '@/hooks/useSystemControl';
@@ -50,6 +51,8 @@ export interface CardConfig {
   fontSize?: number; // percentage 80-120
   height?: number; // ارتفاع البطاقة بالبكسل
   enable3D?: boolean; // تفعيل التأثير ثلاثي الأبعاد
+  showTrend?: boolean; // إظهار/إخفاء مؤشر الترند
+  trendColor?: string; // لون نص الترند
 }
 
 // Default stat cards
@@ -90,6 +93,18 @@ const TEXT_COLORS = [
   { value: '#fbbf24', label: 'ذهبي' },
   { value: '#34d399', label: 'أخضر' },
   { value: '#60a5fa', label: 'أزرق' },
+];
+
+const TREND_COLORS = [
+  { value: '', label: 'افتراضي (أخضر/أحمر)' },
+  { value: '#ffffff', label: 'أبيض' },
+  { value: '#fbbf24', label: 'ذهبي' },
+  { value: '#60a5fa', label: 'أزرق' },
+  { value: '#34d399', label: 'أخضر' },
+  { value: '#f472b6', label: 'وردي' },
+  { value: '#a78bfa', label: 'بنفسجي' },
+  { value: '#22d3ee', label: 'سماوي' },
+  { value: '#000000', label: 'أسود' },
 ];
 
 const GRADIENT_PRESETS = [
@@ -605,6 +620,50 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                     onCheckedChange={(checked) => updateCard(selected.id, { enable3D: checked })}
                   />
                 </div>
+
+                {/* Trend Visibility */}
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    إظهار مؤشر الترند
+                  </Label>
+                  <Switch
+                    checked={selected.showTrend ?? true}
+                    onCheckedChange={(checked) => updateCard(selected.id, { showTrend: checked })}
+                  />
+                </div>
+
+                {/* Trend Color */}
+                {(selected.showTrend ?? true) && (
+                  <div className="space-y-2">
+                    <Label className="text-sm flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4" />
+                      لون نص الترند
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {TREND_COLORS.map(color => (
+                        <button
+                          key={color.value || 'default-trend'}
+                          onClick={() => updateCard(selected.id, { trendColor: color.value })}
+                          className={cn(
+                            'w-8 h-8 rounded-lg border-2 transition-all flex items-center justify-center',
+                            (selected.trendColor || '') === color.value
+                              ? 'ring-2 ring-primary ring-offset-2'
+                              : 'border-border hover:border-primary/50'
+                          )}
+                          style={{
+                            backgroundColor: color.value || 'hsl(var(--card))',
+                          }}
+                          title={color.label}
+                        >
+                          {(selected.trendColor || '') === color.value && (
+                            <Check className="w-4 h-4" style={{ color: ['#000000', '#1e293b'].includes(color.value) ? '#fff' : '#000' }} />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Visibility */}
                 <div className="flex items-center justify-between">

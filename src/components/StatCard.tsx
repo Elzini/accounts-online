@@ -27,6 +27,10 @@ interface StatCardProps {
   trend?: number;
   /** Additional metric label shown as a badge (e.g., "هامش 15%") */
   badge?: string;
+  /** Show/hide trend indicator */
+  showTrend?: boolean;
+  /** Custom trend text color */
+  trendColor?: string;
 }
 
 const gradientStyles = {
@@ -102,6 +106,8 @@ export function StatCard({
   animationIndex = 0,
   trend,
   badge,
+  showTrend = true,
+  trendColor,
 }: StatCardProps) {
   const fontScale = fontSize / 100;
   const cardRef = useRef<HTMLDivElement>(null);
@@ -250,14 +256,17 @@ export function StatCard({
             </p>
           )}
           {/* Trend indicator */}
-          {trend !== undefined && trend !== 0 && (
+          {showTrend && trend !== undefined && trend !== 0 && (
             <div className="flex items-center gap-1 mt-1">
               {trend > 0 ? (
-                <TrendUpIcon className="w-3 h-3 text-green-300" />
+                <TrendUpIcon className="w-3 h-3" style={{ color: trendColor || (trend > 0 ? '#86efac' : '#fca5a5') }} />
               ) : (
-                <TrendDownIcon className="w-3 h-3 text-red-300" />
+                <TrendDownIcon className="w-3 h-3" style={{ color: trendColor || '#fca5a5' }} />
               )}
-              <span className={`text-[10px] font-bold ${trend > 0 ? 'text-green-300' : 'text-red-300'}`}>
+              <span
+                className="text-[10px] font-bold"
+                style={{ color: trendColor || (trend > 0 ? '#86efac' : '#fca5a5') }}
+              >
                 {trend > 0 ? '+' : ''}{trend.toFixed(1)}% عن الشهر السابق
               </span>
             </div>
