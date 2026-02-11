@@ -1,4 +1,4 @@
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, TrendingUp as TrendUpIcon, TrendingDown as TrendDownIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { numberToArabicWordsShort } from '@/lib/numberToArabicWords';
 import { useState, useRef, useEffect } from 'react';
@@ -20,6 +20,10 @@ interface StatCardProps {
   progress?: number;
   /** Stagger delay index for entry animation */
   animationIndex?: number;
+  /** Trend percentage vs previous period (positive = up, negative = down) */
+  trend?: number;
+  /** Additional metric label shown as a badge (e.g., "هامش 15%") */
+  badge?: string;
 }
 
 const gradientStyles = {
@@ -90,6 +94,8 @@ export function StatCard({
   enable3D = false,
   progress,
   animationIndex = 0,
+  trend,
+  badge,
 }: StatCardProps) {
   const fontScale = fontSize / 100;
   const cardRef = useRef<HTMLDivElement>(null);
@@ -228,6 +234,25 @@ export function StatCard({
             >
               {subtitle}
             </p>
+          )}
+          {/* Trend indicator */}
+          {trend !== undefined && trend !== 0 && (
+            <div className="flex items-center gap-1 mt-1">
+              {trend > 0 ? (
+                <TrendUpIcon className="w-3 h-3 text-green-300" />
+              ) : (
+                <TrendDownIcon className="w-3 h-3 text-red-300" />
+              )}
+              <span className={`text-[10px] font-bold ${trend > 0 ? 'text-green-300' : 'text-red-300'}`}>
+                {trend > 0 ? '+' : ''}{trend.toFixed(1)}% عن الشهر السابق
+              </span>
+            </div>
+          )}
+          {/* Badge */}
+          {badge && (
+            <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-white/20 text-white/90 backdrop-blur-sm">
+              {badge}
+            </span>
           )}
         </div>
         
