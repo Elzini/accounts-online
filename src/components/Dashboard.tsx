@@ -832,11 +832,13 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
 
               {/* Revenue Area Chart & Sales vs Purchases Bar Chart */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
-                <div className="bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 card-shadow overflow-hidden">
+                <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 border border-border/60">
+                  <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--primary))' }} />
                   <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">تحليل الإيرادات والأرباح</h3>
                   <RevenueAreaChart data={analytics.revenueByMonth} />
                 </div>
-                <div className="bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 card-shadow overflow-hidden">
+                <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 border border-border/60">
+                  <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--success))' }} />
                   <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">المبيعات مقابل المشتريات</h3>
                   <SalesPurchasesBarChart data={analytics.revenueByMonth} />
                 </div>
@@ -844,11 +846,13 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
 
               {/* Inventory Pie Chart & Expense Distribution */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
-                <div className="bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 card-shadow">
+                <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 border border-border/60">
+                  <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--warning))' }} />
                   <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">توزيع المخزون</h3>
                   <InventoryPieChart data={analytics.inventoryByStatus} />
                 </div>
-                <div className="bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 card-shadow">
+                <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 border border-border/60">
+                  <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--destructive))' }} />
                   <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">توزيع المصروفات</h3>
                   <ExpenseDistributionChart
                     custodyExpenses={expenseBreakdown?.custodyExpenses || 0}
@@ -879,7 +883,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 <RecentActivityCard recentSales={analytics.recentSales} />
                 
                 {/* Summary Stats */}
-                <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+                <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-4 md:p-6 border border-border/60">
+                  <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--primary))' }} />
                   <h3 className="text-lg font-bold text-card-foreground mb-4">ملخص الأداء</h3>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">

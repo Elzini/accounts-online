@@ -40,11 +40,12 @@ export function RecentInvoicesCard({ setActivePage }: RecentInvoicesCardProps) {
   };
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="relative overflow-hidden border-border/60">
+      <div className="absolute top-0 left-0 right-0 h-1" style={{ backgroundColor: 'hsl(217 91% 60%)' }} />
       <CardHeader className="flex flex-row items-center justify-between pb-2 sm:pb-4 border-b">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-            <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'hsl(217 91% 60% / 0.12)' }}>
+            <FileText className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: 'hsl(217 91% 60%)' }} />
           </div>
           <div>
             <CardTitle className="text-base sm:text-lg">أحدث الفواتير</CardTitle>
