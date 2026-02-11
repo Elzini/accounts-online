@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useAppSettings } from '@/hooks/useSettings';
 import { AmountDisplaySelector, AmountDisplayMode } from './AmountDisplaySelector';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface WelcomeHeaderProps {
   amountDisplayMode: AmountDisplayMode;
@@ -22,17 +23,18 @@ export function WelcomeHeader({
   const { user } = useAuth();
   const { selectedFiscalYear } = useFiscalYear();
   const { data: settings } = useAppSettings();
+  const { t, language } = useLanguage();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return { text: 'صباح الخير', icon: Sunrise };
-    if (hour >= 12 && hour < 18) return { text: 'مساء الخير', icon: Sun };
-    return { text: 'مساء الخير', icon: Moon };
+    if (hour >= 5 && hour < 12) return { text: t.greeting_morning, icon: Sunrise };
+    if (hour >= 12 && hour < 18) return { text: t.greeting_afternoon, icon: Sun };
+    return { text: t.greeting_evening, icon: Moon };
   };
 
   const greeting = getGreeting();
-  const userName = user?.email?.split('@')[0] || 'المستخدم';
-  const currentTime = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+  const userName = user?.email?.split('@')[0] || (language === 'en' ? 'User' : 'المستخدم');
+  const currentTime = new Date().toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-l from-slate-900 via-slate-800 to-slate-900 p-3 sm:p-4 md:p-6 min-w-0">
@@ -53,14 +55,14 @@ export function WelcomeHeader({
                 {currentTime}
               </span>
               <span>•</span>
-              <span className="hidden xs:inline">متصل الآن</span>
+              <span className="hidden xs:inline">{t.online_now}</span>
               <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500 animate-pulse" />
             </div>
             <h1 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-bold text-white truncate">
-              أهلاً, {userName} <greeting.icon className="inline-block w-4 h-4 sm:w-6 sm:h-6 text-amber-400" />
+              {t.hello}, {userName} <greeting.icon className="inline-block w-4 h-4 sm:w-6 sm:h-6 text-amber-400" />
             </h1>
             <p className="text-white/70 text-[10px] sm:text-sm mt-0.5 sm:mt-1 truncate">
-              {settings?.welcome_message || 'لوحة التحكم الرئيسية • نظرة شاملة على الأداء'}
+              {settings?.welcome_message || t.dashboard_default_subtitle}
             </p>
           </div>
         </div>
@@ -75,28 +77,28 @@ export function WelcomeHeader({
               className="text-white/70 hover:text-white hover:bg-white/10 text-[10px] sm:text-xs h-7 sm:h-8 px-1.5 sm:px-3"
             >
               <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 ml-0.5 sm:ml-1" />
-              اليوم
+              {t.today}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               className="text-white/50 hover:text-white hover:bg-white/10 text-[10px] sm:text-xs h-7 sm:h-8 px-1.5 sm:px-3"
             >
-              الأسبوع
+              {t.this_week}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               className="text-white/50 hover:text-white hover:bg-white/10 text-[10px] sm:text-xs h-7 sm:h-8 px-1.5 sm:px-3"
             >
-              الشهر
+              {t.this_month}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               className="text-white/50 hover:text-white hover:bg-white/10 text-[10px] sm:text-xs h-7 sm:h-8 px-1.5 sm:px-3"
             >
-              الكل
+              {t.show_all}
             </Button>
           </div>
 

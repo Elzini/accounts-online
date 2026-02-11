@@ -48,6 +48,7 @@ import { useCardFormulas, buildFormulaVariables, evaluateFormula } from '@/hooks
 import { MonthlyExpensesCard } from './dashboard/MonthlyExpensesCard';
 import { useMonthlyExpenseBreakdown } from '@/hooks/useMonthlyExpenseBreakdown';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useInstallmentStats, ActiveInstallmentsCard, OverdueInstallmentsCard, UpcomingInstallmentsCard, TotalDueCard, NextPaymentCard } from './dashboard/widgets/InstallmentsWidget';
 import { TransfersWidget } from './dashboard/widgets/TransfersWidget';
 import { QuickActionsWidget } from './dashboard/widgets/QuickActionsWidget';
@@ -69,6 +70,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
   const isCarDealership = companyType === 'car_dealership';
   const industryLabels = useIndustryLabels();
+  const { t, language } = useLanguage();
   const { data: transfers } = useCarTransfers();
   const { data: dealerships } = usePartnerDealerships();
   const { data: installmentSales = [] } = useInstallmentSales();
@@ -191,10 +193,10 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         layout_settings: { widgets } as any,
       });
       setIsEditMode(false);
-      toast.success('تم حفظ ترتيب لوحة التحكم');
+      toast.success(t.layout_saved);
     } catch (error) {
       console.error('Error saving widget config:', error);
-      toast.error('حدث خطأ أثناء الحفظ');
+      toast.error(t.save_error);
     }
   }, [saveDashboardConfig]);
 
@@ -290,9 +292,9 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       await queryClient.invalidateQueries({ queryKey: ['stats'] });
       await queryClient.invalidateQueries({ queryKey: ['analytics'] });
       await queryClient.invalidateQueries({ queryKey: ['monthlyChartData'] });
-      toast.success('تم تحديث البيانات');
+      toast.success(t.data_updated);
     } catch (error) {
-      toast.error('فشل تحديث البيانات');
+      toast.error(t.data_update_failed);
     } finally {
       setIsRefreshing(false);
     }
@@ -302,13 +304,13 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const installmentStats = useInstallmentStats(installmentSales);
 
   const formatCurrency = useCallback((value: number) => {
-    return new Intl.NumberFormat('ar-SA', { 
+    return new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-SA', { 
       style: 'currency', 
       currency: 'SAR',
       maximumFractionDigits: 0,
       notation: value >= 1000000 ? 'compact' : 'standard',
     }).format(value);
-  }, []);
+  }, [language]);
 
   const formatCurrencyWithMode = useCallback((value: number) => {
     const displayValue = calculateDisplayAmount(value, amountDisplayMode);
@@ -316,8 +318,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   }, [amountDisplayMode, formatCurrency]);
 
   const getCurrencySubtitle = useCallback(() => {
-    return 'ريال سعودي';
-  }, []);
+    return t.currency_sar_label;
+  }, [t]);
 
   const formatChartValue = useCallback((value: number) => {
     if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;

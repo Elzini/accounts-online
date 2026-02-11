@@ -264,4 +264,34 @@ export interface TranslationKeys {
   
   // HR
   nav_hr: string;
+
+  // Extra nav / sections
+  nav_main_menu: string;
+  nav_api_management: string;
+  nav_plugins: string;
+  nav_integrations_section: string;
+  nav_super_admin: string;
+  nav_company_management: string;
+  nav_system_footer_car: string;
+  nav_system_footer_construction: string;
+  nav_system_footer_trading: string;
+  nav_system_footer_restaurant: string;
+  nav_system_footer_export_import: string;
+
+  // WelcomeHeader
+  greeting_morning: string;
+  greeting_afternoon: string;
+  greeting_evening: string;
+  hello: string;
+  online_now: string;
+  today: string;
+  this_week: string;
+  this_month: string;
+  show_all: string;
+  dashboard_default_subtitle: string;
+  data_updated: string;
+  data_update_failed: string;
+  layout_saved: string;
+  save_error: string;
+  currency_sar_label: string;
 }
