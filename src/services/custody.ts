@@ -15,6 +15,9 @@ export interface Custody {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  journal_entry_id: string | null;
+  custody_account_id: string | null;
+  cash_account_id: string | null;
   employee?: {
     id: string;
     name: string;
@@ -31,6 +34,7 @@ export interface CustodyTransaction {
   analysis_category: string | null;
   amount: number;
   account_id: string | null;
+  journal_entry_id: string | null;
   notes: string | null;
   created_by: string | null;
   created_at: string;
@@ -49,7 +53,7 @@ export type CustodyTransactionInsert = Omit<CustodyTransaction, 'id' | 'created_
 export async function fetchCustodies(companyId: string): Promise<Custody[]> {
   const { data, error } = await supabase
     .from('custodies')
-    .select('*, employee:employees(id, name), transactions:custody_transactions(id, custody_id, company_id, transaction_date, description, analysis_category, amount, account_id, notes, created_by, created_at, updated_at)')
+    .select('*, employee:employees(id, name), transactions:custody_transactions(id, custody_id, company_id, transaction_date, description, analysis_category, amount, account_id, journal_entry_id, notes, created_by, created_at, updated_at)')
     .eq('company_id', companyId)
     .order('custody_date', { ascending: false });
   
@@ -80,6 +84,109 @@ export async function fetchCustodyWithTransactions(custodyId: string): Promise<C
     ...custody,
     transactions: transactions || []
   } as Custody;
+}
+
+// Create journal entry for custody creation (Dr. Custody Account → Cr. Cash Account)
+export async function createCustodyJournalEntry(
+  companyId: string,
+  custodyName: string,
+  amount: number,
+  custodyAccountId: string,
+  cashAccountId: string,
+  custodyDate: string,
+  fiscalYearId: string | null,
+): Promise<string> {
+  const { data: journalEntry, error: journalError } = await supabase
+    .from('journal_entries')
+    .insert({
+      company_id: companyId,
+      description: `إنشاء عهدة - ${custodyName}`,
+      entry_date: custodyDate,
+      reference_type: 'custody',
+      total_debit: amount,
+      total_credit: amount,
+      is_posted: true,
+      fiscal_year_id: fiscalYearId,
+    })
+    .select()
+    .single();
+
+  if (journalError) throw journalError;
+
+  const { error: linesError } = await supabase
+    .from('journal_entry_lines')
+    .insert([
+      {
+        journal_entry_id: journalEntry.id,
+        account_id: custodyAccountId,
+        description: `عهدة - ${custodyName}`,
+        debit: amount,
+        credit: 0,
+      },
+      {
+        journal_entry_id: journalEntry.id,
+        account_id: cashAccountId,
+        description: `صرف عهدة - ${custodyName}`,
+        debit: 0,
+        credit: amount,
+      },
+    ]);
+
+  if (linesError) throw linesError;
+
+  return journalEntry.id;
+}
+
+// Create journal entry for custody transaction (Dr. Expense Account → Cr. Custody Account)
+export async function createTransactionJournalEntry(
+  companyId: string,
+  custodyName: string,
+  transactionDescription: string,
+  amount: number,
+  expenseAccountId: string,
+  custodyAccountId: string,
+  transactionDate: string,
+  fiscalYearId: string | null,
+): Promise<string> {
+  const { data: journalEntry, error: journalError } = await supabase
+    .from('journal_entries')
+    .insert({
+      company_id: companyId,
+      description: `تحليل عهدة - ${custodyName}: ${transactionDescription}`,
+      entry_date: transactionDate,
+      reference_type: 'custody_transaction',
+      total_debit: amount,
+      total_credit: amount,
+      is_posted: true,
+      fiscal_year_id: fiscalYearId,
+    })
+    .select()
+    .single();
+
+  if (journalError) throw journalError;
+
+  const { error: linesError } = await supabase
+    .from('journal_entry_lines')
+    .insert([
+      {
+        journal_entry_id: journalEntry.id,
+        account_id: expenseAccountId,
+        description: transactionDescription,
+        debit: amount,
+        credit: 0,
+      },
+      {
+        journal_entry_id: journalEntry.id,
+        account_id: custodyAccountId,
+        description: `تسوية عهدة - ${custodyName}`,
+        debit: 0,
+        credit: amount,
+      },
+    ]);
+
+  if (linesError) throw linesError;
+
+  return journalEntry.id;
 }
 
 // Add new custody
@@ -195,7 +302,6 @@ export async function resolveCarriedCustodies(companyId: string, employeeId: str
 
 // Calculate custody summary
 export function calculateCustodySummary(custody: Custody) {
-  // For "carried" status: the custody_amount is the debt (company owes employee), not a fund
   if (custody.status === 'carried') {
     const totalSpent = custody.transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
     return {
