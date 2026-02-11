@@ -1663,6 +1663,50 @@ export type Database = {
           },
         ]
       }
+      company_encryption_keys: {
+        Row: {
+          algorithm: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_version: number
+          rotated_at: string | null
+        }
+        Insert: {
+          algorithm?: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_version?: number
+          rotated_at?: string | null
+        }
+        Update: {
+          algorithm?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_version?: number
+          rotated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_encryption_keys_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           advance_payment: number | null
@@ -6140,6 +6184,41 @@ export type Database = {
           },
         ]
       }
+      rate_limit_log: {
+        Row: {
+          company_id: string
+          created_at: string
+          endpoint: string
+          id: string
+          request_count: number
+          window_start: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          request_count?: number
+          window_start?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          request_count?: number
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_limit_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_menu_items: {
         Row: {
           category: string
@@ -7898,6 +7977,16 @@ export type Database = {
         Args: { _company_id: string; required_permission: string }
         Returns: boolean
       }
+      check_rate_limit: {
+        Args: {
+          _company_id: string
+          _endpoint: string
+          _max_requests?: number
+          _window_seconds?: number
+        }
+        Returns: boolean
+      }
+      cleanup_rate_limit_logs: { Args: never; Returns: undefined }
       create_default_accounts: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -7924,8 +8013,16 @@ export type Database = {
         Args: { encrypted_text: string; encryption_key: string }
         Returns: string
       }
+      decrypt_tenant_data: {
+        Args: { _ciphertext: string; _company_id: string }
+        Returns: string
+      }
       encrypt_sensitive_data: {
         Args: { encryption_key: string; plain_text: string }
+        Returns: string
+      }
+      encrypt_tenant_data: {
+        Args: { _company_id: string; _plaintext: string }
         Returns: string
       }
       fix_missing_cogs_entries: {
@@ -8013,6 +8110,10 @@ export type Database = {
           logo_url: string
           name: string
         }[]
+      }
+      rotate_company_encryption_key: {
+        Args: { _company_id: string }
+        Returns: undefined
       }
       secure_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }
