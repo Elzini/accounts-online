@@ -214,6 +214,28 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
     setHasChanges(true);
   }, []);
 
+  const applyStyleToAll = useCallback((sourceId: string) => {
+    setCards(prev => {
+      const source = prev.find(c => c.id === sourceId);
+      if (!source) return prev;
+      return prev.map(c => ({
+        ...c,
+        size: source.size,
+        bgColor: source.bgColor,
+        textColor: source.textColor,
+        gradientFrom: source.gradientFrom,
+        gradientTo: source.gradientTo,
+        fontSize: source.fontSize,
+        height: source.height,
+        enable3D: source.enable3D,
+        showTrend: source.showTrend,
+        trendColor: source.trendColor,
+      }));
+    });
+    setHasChanges(true);
+    toast.success('تم تطبيق التصميم على جميع البطاقات');
+  }, []);
+
   // Drag and drop handlers
   const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, id: string) => {
     setDraggedId(id);
@@ -673,6 +695,17 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                     onCheckedChange={() => toggleVisibility(selected.id)}
                   />
                 </div>
+
+                {/* Apply to All */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2 border-dashed border-primary/50 text-primary hover:bg-primary/10"
+                  onClick={() => applyStyleToAll(selected.id)}
+                >
+                  <Palette className="w-4 h-4" />
+                  تطبيق هذا التصميم على جميع البطاقات
+                </Button>
 
                 {/* Preview */}
                 <div className="pt-3 border-t">
