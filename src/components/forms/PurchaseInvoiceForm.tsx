@@ -10,7 +10,8 @@ import {
   ChevronLeft,
   Car,
   ArrowRight,
-  RotateCcw
+  RotateCcw,
+  Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,9 +39,23 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { PaymentAccountSelector } from './PaymentAccountSelector';
 import { InvoiceSearchBar } from './InvoiceSearchBar';
+import { useItems, useUnits } from '@/hooks/useInventory';
+import { useCompanyId } from '@/hooks/useCompanyId';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PurchaseInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
+}
+
+interface PurchaseInventoryItem {
+  id: string;
+  item_id: string | null; // null for new items
+  item_name: string;
+  barcode: string;
+  unit_name: string;
+  unit_id: string | null;
+  purchase_price: string;
+  quantity: number;
 }
 
 interface CarItem {
@@ -76,6 +91,59 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const addPurchaseBatch = useAddPurchaseBatch();
   const updateCar = useUpdateCar();
   const deleteCar = useDeleteCar();
+  const companyId = useCompanyId();
+
+  // Inventory hooks
+  const { data: inventoryItems = [] } = useItems();
+  const { data: units = [] } = useUnits();
+  const isCarDealership = company?.company_type === 'car_dealership';
+
+  // Inventory items state for non-car companies
+  const [purchaseInventoryItems, setPurchaseInventoryItems] = useState<PurchaseInventoryItem[]>([]);
+
+  const createEmptyInventoryItem = (): PurchaseInventoryItem => ({
+    id: crypto.randomUUID(),
+    item_id: null,
+    item_name: '',
+    barcode: '',
+    unit_name: 'وحدة',
+    unit_id: null,
+    purchase_price: '',
+    quantity: 1,
+  });
+
+  const handleAddInventoryItem = () => {
+    setPurchaseInventoryItems([...purchaseInventoryItems, createEmptyInventoryItem()]);
+  };
+
+  const handleSelectExistingItem = (itemId: string) => {
+    const item = (inventoryItems || []).find((i: any) => i.id === itemId) as any;
+    if (!item) return;
+    setPurchaseInventoryItems([...purchaseInventoryItems, {
+      id: crypto.randomUUID(),
+      item_id: item.id,
+      item_name: item.name,
+      barcode: item.barcode || '',
+      unit_name: item.units_of_measure?.abbreviation || item.units_of_measure?.name || 'وحدة',
+      unit_id: item.unit_id,
+      purchase_price: String(item.cost_price || ''),
+      quantity: 1,
+    }]);
+  };
+
+  const handleRemoveInventoryItem = (id: string) => {
+    if (purchaseInventoryItems.length === 1) {
+      toast.error('يجب إضافة صنف واحد على الأقل');
+      return;
+    }
+    setPurchaseInventoryItems(purchaseInventoryItems.filter(i => i.id !== id));
+  };
+
+  const handleInventoryItemChange = (id: string, field: keyof PurchaseInventoryItem, value: string | number) => {
+    setPurchaseInventoryItems(purchaseInventoryItems.map(item =>
+      item.id === id ? { ...item, [field]: value } : item
+    ));
+  };
 
   // Filter purchase batches by fiscal year and sort from oldest to newest
   const fiscalYearFilteredBatches = useMemo(() => {
