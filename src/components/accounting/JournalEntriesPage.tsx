@@ -14,7 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useJournalEntries, useAccounts, useCreateJournalEntry, useDeleteJournalEntry, useJournalEntry } from '@/hooks/useAccounting';
 import { useCostCenters } from '@/hooks/useCostCenters';
 import { toast } from 'sonner';
-import { Loader2, Plus, Eye, Trash2, BookOpen, CalendarIcon, X, Printer, FileDown } from 'lucide-react';
+import { Loader2, Plus, Eye, Trash2, BookOpen, CalendarIcon, X, Printer, FileDown, Paperclip } from 'lucide-react';
+import { JournalEntryEditDialog } from './JournalEntryEditDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -46,6 +47,7 @@ export function JournalEntriesPage() {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [viewingEntryId, setViewingEntryId] = useState<string | null>(null);
+  const [attachmentEntryId, setAttachmentEntryId] = useState<string | null>(null);
   const [printingEntryId, setPrintingEntryId] = useState<string | null>(null);
   const { data: viewingEntry } = useJournalEntry(viewingEntryId);
   const { data: printingEntry } = useJournalEntry(printingEntryId);
@@ -653,6 +655,14 @@ export function JournalEntriesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => setAttachmentEntryId(entry.id)}
+                          title="المرفقات"
+                        >
+                          <Paperclip className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => setViewingEntryId(entry.id)}
                           title="عرض"
                         >
@@ -696,6 +706,14 @@ export function JournalEntriesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Attachments Dialog */}
+      <JournalEntryEditDialog
+        entryId={attachmentEntryId}
+        open={!!attachmentEntryId}
+        onOpenChange={(open) => !open && setAttachmentEntryId(null)}
+        title="مرفقات القيد"
+      />
 
       {/* Print Dialog */}
       <JournalEntryPrintDialog
