@@ -32,6 +32,11 @@ export interface EmployeeAdvance {
   notes: string | null;
   created_at: string;
   employee?: Employee;
+  monthly_deduction: number;
+  remaining_amount: number;
+  total_installments: number;
+  deducted_installments: number;
+  custody_id: string | null;
 }
 
 export interface PayrollRecord {
@@ -200,10 +205,28 @@ export async function addEmployeeAdvance(advance: Omit<EmployeeAdvance, 'id' | '
   return data;
 }
 
-export async function updateAdvanceDeducted(advanceId: string, payrollId: string): Promise<void> {
+export async function updateAdvanceDeducted(advanceId: string, payrollId: string, deductionAmount?: number): Promise<void> {
+  // Get current advance state
+  const { data: advance, error: fetchError } = await supabase
+    .from('employee_advances')
+    .select('*')
+    .eq('id', advanceId)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  const remaining = Number(advance.remaining_amount || advance.amount) - (deductionAmount || Number(advance.amount));
+  const newDeductedInstallments = (Number(advance.deducted_installments) || 0) + 1;
+  const isFullyDeducted = remaining <= 0;
+
   const { error } = await supabase
     .from('employee_advances')
-    .update({ is_deducted: true, deducted_in_payroll_id: payrollId })
+    .update({ 
+      is_deducted: isFullyDeducted, 
+      deducted_in_payroll_id: payrollId,
+      remaining_amount: Math.max(0, remaining),
+      deducted_installments: newDeductedInstallments,
+    })
     .eq('id', advanceId);
 
   if (error) throw error;
@@ -308,7 +331,13 @@ export async function generatePayrollItems(
 
   for (const emp of activeEmployees) {
     const empAdvances = pendingAdvances.filter(a => a.employee_id === emp.id);
-    const totalAdvances = empAdvances.reduce((sum, a) => sum + Number(a.amount), 0);
+    // Use monthly_deduction (installment) if available, otherwise use remaining_amount
+    const totalAdvances = empAdvances.reduce((sum, a) => {
+      const deduction = Number(a.monthly_deduction) > 0 
+        ? Math.min(Number(a.monthly_deduction), Number(a.remaining_amount || a.amount))
+        : Number(a.remaining_amount || a.amount);
+      return sum + deduction;
+    }, 0);
 
     const grossSalary = Number(emp.base_salary) + Number(emp.housing_allowance) + Number(emp.transport_allowance);
     const totalDeductions = totalAdvances;
@@ -515,19 +544,22 @@ export async function approvePayroll(
 
   if (linesError) throw linesError;
 
-  // Mark advances as deducted
+  // Mark advances as deducted (with installment support)
   if (updatedPayroll.items) {
     for (const item of updatedPayroll.items) {
       if (item.advances_deducted > 0) {
         const { data: advances } = await supabase
           .from('employee_advances')
-          .select('id')
+          .select('*')
           .eq('employee_id', item.employee_id)
           .eq('is_deducted', false);
 
         if (advances) {
           for (const advance of advances) {
-            await updateAdvanceDeducted(advance.id, payrollId);
+            const deduction = Number(advance.monthly_deduction) > 0 
+              ? Math.min(Number(advance.monthly_deduction), Number(advance.remaining_amount || advance.amount))
+              : Number(advance.remaining_amount || advance.amount);
+            await updateAdvanceDeducted(advance.id, payrollId, deduction);
           }
         }
       }

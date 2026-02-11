@@ -710,7 +710,7 @@ function PayrollDetailsSection({
                     <TableCell>{formatCurrency(item.bonus)}</TableCell>
                     <TableCell>{formatCurrency(item.overtime_amount)}</TableCell>
                     <TableCell className="font-medium">{formatCurrency(grossSalary)}</TableCell>
-                    <TableCell>{formatCurrency(item.advances_deducted)}</TableCell>
+                    <TableCell className={Number(item.advances_deducted) > 0 ? 'text-orange-600 font-medium' : ''}>{formatCurrency(item.advances_deducted)}</TableCell>
                     <TableCell>{formatCurrency(item.other_deductions)}</TableCell>
                     <TableCell className="text-sm">{item.deduction_notes || '-'}</TableCell>
                     <TableCell>{formatCurrency(item.absence_amount)}</TableCell>
@@ -732,7 +732,7 @@ function PayrollDetailsSection({
                     payroll.total_bonuses + payroll.total_overtime
                   )}
                 </TableCell>
-                <TableCell>{formatCurrency(payroll.total_advances)}</TableCell>
+                <TableCell className="text-orange-600">{formatCurrency(payroll.total_advances)}</TableCell>
                 <TableCell>{formatCurrency(payroll.total_deductions)}</TableCell>
                 <TableCell></TableCell>
                 <TableCell>{formatCurrency(payroll.total_absences)}</TableCell>

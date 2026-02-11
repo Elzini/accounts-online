@@ -60,7 +60,11 @@ export async function createEmployeeAdvance(
   amount: number,
   advanceDate: string,
   reason: string | null,
+  installmentAmount: number = 0,
+  installmentCount: number = 1,
+  custodyId?: string,
 ): Promise<string> {
+  const monthlyDeduction = installmentAmount > 0 ? installmentAmount : amount;
   const { data, error } = await supabase
     .from('employee_advances')
     .insert({
@@ -71,6 +75,11 @@ export async function createEmployeeAdvance(
       reason,
       is_deducted: false,
       notes: 'تم إنشاؤها من نظام العهد',
+      monthly_deduction: monthlyDeduction,
+      remaining_amount: amount,
+      total_installments: installmentCount,
+      deducted_installments: 0,
+      custody_id: custodyId || null,
     })
     .select()
     .single();
