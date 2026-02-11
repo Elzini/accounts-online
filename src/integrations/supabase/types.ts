@@ -1870,9 +1870,11 @@ export type Database = {
       }
       custodies: {
         Row: {
+          cash_account_id: string | null
           company_id: string
           created_at: string
           created_by: string | null
+          custody_account_id: string | null
           custody_amount: number
           custody_date: string
           custody_name: string
@@ -1880,15 +1882,18 @@ export type Database = {
           employee_id: string | null
           fiscal_year_id: string | null
           id: string
+          journal_entry_id: string | null
           notes: string | null
           settlement_date: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          cash_account_id?: string | null
           company_id: string
           created_at?: string
           created_by?: string | null
+          custody_account_id?: string | null
           custody_amount?: number
           custody_date?: string
           custody_name: string
@@ -1896,15 +1901,18 @@ export type Database = {
           employee_id?: string | null
           fiscal_year_id?: string | null
           id?: string
+          journal_entry_id?: string | null
           notes?: string | null
           settlement_date?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          cash_account_id?: string | null
           company_id?: string
           created_at?: string
           created_by?: string | null
+          custody_account_id?: string | null
           custody_amount?: number
           custody_date?: string
           custody_name?: string
@@ -1912,6 +1920,7 @@ export type Database = {
           employee_id?: string | null
           fiscal_year_id?: string | null
           id?: string
+          journal_entry_id?: string | null
           notes?: string | null
           settlement_date?: string | null
           status?: string
@@ -1919,10 +1928,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "custodies_cash_account_id_fkey"
+            columns: ["cash_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "custodies_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custodies_custody_account_id_fkey"
+            columns: ["custody_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
             referencedColumns: ["id"]
           },
           {
@@ -1953,6 +1976,13 @@ export type Database = {
             referencedRelation: "fiscal_years_public"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "custodies_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
         ]
       }
       custody_transactions: {
@@ -1966,6 +1996,7 @@ export type Database = {
           custody_id: string
           description: string
           id: string
+          journal_entry_id: string | null
           notes: string | null
           transaction_date: string
           updated_at: string
@@ -1980,6 +2011,7 @@ export type Database = {
           custody_id: string
           description: string
           id?: string
+          journal_entry_id?: string | null
           notes?: string | null
           transaction_date?: string
           updated_at?: string
@@ -1994,6 +2026,7 @@ export type Database = {
           custody_id?: string
           description?: string
           id?: string
+          journal_entry_id?: string | null
           notes?: string | null
           transaction_date?: string
           updated_at?: string
@@ -2018,6 +2051,13 @@ export type Database = {
             columns: ["custody_id"]
             isOneToOne: false
             referencedRelation: "custodies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_transactions_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
         ]

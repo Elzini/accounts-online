@@ -33,12 +33,16 @@ import { useCompanyId } from '@/hooks/useCompanyId';
 import { formatNumber } from '@/components/financial-statements/utils/numberFormatting';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { AccountSearchSelect } from '@/components/accounting/AccountSearchSelect';
+import { useAccounts } from '@/hooks/useAccounting';
 
 const formSchema = z.object({
   custody_name: z.string().min(1, 'اسم العهدة مطلوب'),
   custody_amount: z.coerce.number().min(1, 'المبلغ مطلوب'),
   custody_date: z.string().min(1, 'التاريخ مطلوب'),
   employee_id: z.string().optional(),
+  custody_account_id: z.string().optional(),
+  cash_account_id: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -53,8 +57,11 @@ interface CustodyFormDialogProps {
 export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDialogProps) {
   const { addCustody, updateCustody, isAdding, isUpdating } = useCustody();
   const { data: employees = [] } = useEmployees();
+  const { data: accounts = [] } = useAccounts();
   const companyId = useCompanyId();
   const [carriedBalance, setCarriedBalance] = useState(0);
+
+  const accountsList = accounts.map((a: any) => ({ id: a.id, code: a.code, name: a.name }));
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -63,6 +70,8 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
       custody_amount: 0,
       custody_date: new Date().toISOString().split('T')[0],
       employee_id: '',
+      custody_account_id: '',
+      cash_account_id: '',
       notes: '',
     },
   });
@@ -84,6 +93,8 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
         custody_amount: custody.custody_amount,
         custody_date: custody.custody_date,
         employee_id: custody.employee_id || '',
+        custody_account_id: custody.custody_account_id || '',
+        cash_account_id: custody.cash_account_id || '',
         notes: custody.notes || '',
       });
     } else {
@@ -92,6 +103,8 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
         custody_amount: 0,
         custody_date: new Date().toISOString().split('T')[0],
         employee_id: '',
+        custody_account_id: '',
+        cash_account_id: '',
         notes: '',
       });
     }
@@ -99,27 +112,30 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
 
   const onSubmit = (values: FormValues) => {
     if (custody) {
-      // When updating, only update the editable fields - preserve fiscal_year_id
       const updates = {
         custody_name: values.custody_name,
         custody_amount: values.custody_amount,
         custody_date: values.custody_date,
         employee_id: values.employee_id && values.employee_id !== '__none__' ? values.employee_id : null,
+        custody_account_id: values.custody_account_id || null,
+        cash_account_id: values.cash_account_id || null,
         notes: values.notes || null,
       };
       updateCustody({ id: custody.id, updates });
     } else {
-      // When adding, let the hook handle fiscal_year_id
       const data = {
         custody_name: values.custody_name,
         custody_amount: values.custody_amount,
         custody_date: values.custody_date,
         employee_id: values.employee_id && values.employee_id !== '__none__' ? values.employee_id : null,
+        custody_account_id: values.custody_account_id || null,
+        cash_account_id: values.cash_account_id || null,
         notes: values.notes || null,
         status: 'active' as const,
         settlement_date: null,
         created_by: null,
         fiscal_year_id: null,
+        journal_entry_id: null,
       };
       addCustody(data);
     }
@@ -128,7 +144,7 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md" dir="rtl">
+      <DialogContent className="max-w-lg" dir="rtl">
         <DialogHeader>
           <DialogTitle>{custody ? 'تعديل العهدة' : 'إضافة عهدة جديدة'}</DialogTitle>
         </DialogHeader>
@@ -149,33 +165,35 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="custody_amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>مبلغ العهدة</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="custody_amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>مبلغ العهدة</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="custody_date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>تاريخ العهدة</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="custody_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>تاريخ العهدة</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
@@ -221,6 +239,48 @@ export function CustodyFormDialog({ open, onOpenChange, custody }: CustodyFormDi
                 </AlertDescription>
               </Alert>
             )}
+
+            <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+              <p className="text-sm font-semibold text-foreground">ربط الحسابات (لإنشاء قيد تلقائي)</p>
+              
+              <FormField
+                control={form.control}
+                name="custody_account_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>حساب العهدة (مدين)</FormLabel>
+                    <FormControl>
+                      <AccountSearchSelect
+                        accounts={accountsList}
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        placeholder="مثال: عهد الموظفين"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="cash_account_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>حساب الدفع (دائن)</FormLabel>
+                    <FormControl>
+                      <AccountSearchSelect
+                        accounts={accountsList}
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        placeholder="مثال: الصندوق أو البنك"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

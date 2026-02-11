@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, FileDown, Printer, CheckCircle, Eye } from 'lucide-react';
+import { Plus, Trash2, FileDown, Eye, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -34,12 +34,15 @@ import { calculateCustodySummary } from '@/services/custody';
 import { formatNumber } from '@/components/financial-statements/utils/numberFormatting';
 import { useCustodyExport } from './useCustodyExport';
 import { CustodyPrintPreviewDialog } from './CustodyPrintPreviewDialog';
+import { AccountSearchSelect } from '@/components/accounting/AccountSearchSelect';
+import { useAccounts } from '@/hooks/useAccounting';
 
 const transactionSchema = z.object({
   transaction_date: z.string().min(1, 'التاريخ مطلوب'),
   description: z.string().min(1, 'البيان مطلوب'),
   analysis_category: z.string().optional(),
   amount: z.coerce.number().min(0.01, 'المبلغ مطلوب'),
+  account_id: z.string().optional(),
 });
 
 type TransactionFormValues = z.infer<typeof transactionSchema>;
@@ -54,8 +57,11 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
   const { custody, isLoading, addTransaction, deleteTransaction, isAddingTransaction } = useCustodyDetails(custodyId);
   const { settleCustody, isSettling } = useCustody();
   const { exportToExcel } = useCustodyExport();
+  const { data: accounts = [] } = useAccounts();
   const [showForm, setShowForm] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+
+  const accountsList = accounts.map((a: any) => ({ id: a.id, code: a.code, name: a.name }));
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
@@ -64,6 +70,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
       description: '',
       analysis_category: '',
       amount: 0,
+      account_id: '',
     },
   });
 
@@ -86,7 +93,8 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
       description: values.description,
       analysis_category: values.analysis_category || null,
       amount: values.amount,
-      account_id: null,
+      account_id: values.account_id || null,
+      journal_entry_id: null,
       notes: null,
       created_by: null,
     });
@@ -95,6 +103,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
       description: '',
       analysis_category: '',
       amount: 0,
+      account_id: '',
     });
     setShowForm(false);
   };
@@ -107,8 +116,8 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
 
   const handleSettle = () => {
     const confirmMsg = summary.carriedBalance > 0
-      ? `هل أنت متأكد من تصفية هذه العهدة؟ سيتم ترحيل مبلغ ${formatNumber(summary.carriedBalance)} ر.س إلى عهدة جديدة باسم ${custody.employee?.name || custody.custody_name}. لن يمكن التعديل عليها بعد التصفية.`
-      : 'هل أنت متأكد من تصفية هذه العهدة؟ لن يمكن التعديل عليها بعد التصفية.';
+      ? `هل أنت متأكد من تصفية هذه العهدة؟ سيتم ترحيل مبلغ ${formatNumber(summary.carriedBalance)} ر.س إلى عهدة جديدة باسم ${custody.employee?.name || custody.custody_name}.`
+      : 'هل أنت متأكد من تصفية هذه العهدة؟';
     
     if (confirm(confirmMsg)) {
       settleCustody({
@@ -121,14 +130,6 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
     }
   };
 
-  const handleOpenPrintPreview = () => {
-    setShowPrintPreview(true);
-  };
-
-  const handleExportExcel = () => {
-    exportToExcel(custody, summary);
-  };
-
   const isSettled = custody.status === 'settled';
 
   return (
@@ -138,11 +139,11 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
           <DialogTitle className="flex items-center justify-between">
             <span>تصفية العهدة - {custody.custody_name}</span>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleOpenPrintPreview}>
+              <Button variant="outline" size="sm" onClick={() => setShowPrintPreview(true)}>
                 <Eye className="h-4 w-4 ml-1" />
                 معاينة PDF
               </Button>
-              <Button variant="outline" size="sm" onClick={handleExportExcel}>
+              <Button variant="outline" size="sm" onClick={() => exportToExcel(custody, summary)}>
                 <FileDown className="h-4 w-4 ml-1" />
                 Excel
               </Button>
@@ -153,15 +154,12 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
         {/* Custody Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {summary.isCarried ? (
-            <>
-              <Card className="col-span-2 md:col-span-4">
-                <CardContent className="pt-4 text-center">
-                  <div className="text-sm text-muted-foreground">رصيد مرحّل (مستحق للموظف)</div>
-                  <div className="text-2xl font-bold text-blue-600">{formatNumber(summary.carriedBalance)} ر.س</div>
-                  <div className="text-xs text-muted-foreground mt-1">سيتم خصمه تلقائياً من العهدة التالية</div>
-                </CardContent>
-              </Card>
-            </>
+            <Card className="col-span-2 md:col-span-4">
+              <CardContent className="pt-4 text-center">
+                <div className="text-sm text-muted-foreground">رصيد مرحّل (مستحق للموظف)</div>
+                <div className="text-2xl font-bold text-blue-600">{formatNumber(summary.carriedBalance)} ر.س</div>
+              </CardContent>
+            </Card>
           ) : (
             <>
               <Card>
@@ -200,6 +198,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                 <TableRow className="bg-primary/10">
                   <TableHead className="text-right font-bold">التاريخ</TableHead>
                   <TableHead className="text-right font-bold">التحليل</TableHead>
+                  <TableHead className="text-right font-bold">الحساب</TableHead>
                   <TableHead className="text-right font-bold">البيان</TableHead>
                   <TableHead className="text-right font-bold">القيمة</TableHead>
                   {!isSettled && <TableHead className="text-right font-bold w-16">حذف</TableHead>}
@@ -208,7 +207,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
               <TableBody>
                 {transactions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isSettled ? 4 : 5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={isSettled ? 5 : 6} className="text-center py-8 text-muted-foreground">
                       لا توجد مصروفات مسجلة
                     </TableCell>
                   </TableRow>
@@ -217,6 +216,13 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                     <TableRow key={tx.id}>
                       <TableCell>{new Date(tx.transaction_date).toLocaleDateString('ar-SA')}</TableCell>
                       <TableCell>{tx.analysis_category || '-'}</TableCell>
+                      <TableCell className="text-xs">
+                        {tx.account ? (
+                          <span className="bg-primary/10 text-primary px-2 py-0.5 rounded">
+                            {tx.account.code} - {tx.account.name}
+                          </span>
+                        ) : '-'}
+                      </TableCell>
                       <TableCell>{tx.description}</TableCell>
                       <TableCell className="font-medium">{formatNumber(tx.amount)}</TableCell>
                       {!isSettled && (
@@ -237,17 +243,17 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
               </TableBody>
               <TableFooter>
                 <TableRow className="bg-muted/50">
-                  <TableCell colSpan={3} className="text-right font-bold">الإجمالي</TableCell>
+                  <TableCell colSpan={4} className="text-right font-bold">الإجمالي</TableCell>
                   <TableCell className="font-bold text-primary">{formatNumber(summary.totalSpent)}</TableCell>
                   {!isSettled && <TableCell />}
                 </TableRow>
                 <TableRow className="bg-green-50">
-                  <TableCell colSpan={3} className="text-right font-bold">المبلغ المردود</TableCell>
+                  <TableCell colSpan={4} className="text-right font-bold">المبلغ المردود</TableCell>
                   <TableCell className="font-bold text-green-600">{formatNumber(summary.returnedAmount)}</TableCell>
                   {!isSettled && <TableCell />}
                 </TableRow>
                 <TableRow className="bg-orange-50">
-                  <TableCell colSpan={3} className="text-right font-bold">الرصيد المرحل</TableCell>
+                  <TableCell colSpan={4} className="text-right font-bold">الرصيد المرحل</TableCell>
                   <TableCell className="font-bold text-orange-600">{formatNumber(summary.carriedBalance)}</TableCell>
                   {!isSettled && <TableCell />}
                 </TableRow>
@@ -318,6 +324,24 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                           )}
                         />
                       </div>
+                      <FormField
+                        control={form.control}
+                        name="account_id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>حساب المصروف (لإنشاء قيد تلقائي)</FormLabel>
+                            <FormControl>
+                              <AccountSearchSelect
+                                accounts={accountsList}
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                placeholder="اختر الحساب المدين للمصروف..."
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       <div className="flex gap-2 justify-end">
                         <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
                           إلغاء
@@ -353,7 +377,6 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
         </div>
       </DialogContent>
 
-      {/* Print Preview Dialog */}
       <CustodyPrintPreviewDialog
         open={showPrintPreview}
         onOpenChange={setShowPrintPreview}

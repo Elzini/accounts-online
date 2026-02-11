@@ -5,7 +5,7 @@ import {
   fetchCustodies,
   fetchCustodyWithTransactions,
   addCustody,
-  updateCustody,
+  updateCustody as updateCustodyService,
   deleteCustody,
   addCustodyTransaction,
   updateCustodyTransaction,
@@ -13,6 +13,8 @@ import {
   settleCustody,
   getEmployeeCarriedBalance,
   resolveCarriedCustodies,
+  createCustodyJournalEntry,
+  createTransactionJournalEntry,
   CustodyInsert,
   CustodyTransactionInsert,
   Custody,
@@ -68,6 +70,9 @@ export function useCustody() {
             custody_date: data.custody_date,
             status: 'carried',
             fiscal_year_id: selectedFiscalYear?.id || null,
+            journal_entry_id: null,
+            custody_account_id: data.custody_account_id || null,
+            cash_account_id: data.cash_account_id || null,
             notes: `رصيد مرحّل محدّث - تم خصم ${data.custody_amount} ر.س من مرحّل سابق ${deductedAmount} ر.س`,
           });
         } else {
@@ -79,6 +84,9 @@ export function useCustody() {
             status: 'settled',
             settlement_date: data.custody_date,
             fiscal_year_id: selectedFiscalYear?.id || null,
+            journal_entry_id: null,
+            custody_account_id: data.custody_account_id || null,
+            cash_account_id: data.cash_account_id || null,
             notes: `تم تسوية الرصيد المرحّل بالكامل (${deductedAmount} ر.س)`,
           });
         }
@@ -90,12 +98,28 @@ export function useCustody() {
         ? `${data.notes || ''}\nتم خصم ${deductedAmount} ر.س رصيد مرحّل من عهدة سابقة`.trim()
         : data.notes;
       
+      let journalEntryId: string | null = null;
+
+      // Auto-create journal entry if both accounts are provided
+      if (data.custody_account_id && data.cash_account_id && adjustedAmount > 0) {
+        journalEntryId = await createCustodyJournalEntry(
+          companyId,
+          data.custody_name,
+          adjustedAmount,
+          data.custody_account_id,
+          data.cash_account_id,
+          data.custody_date,
+          selectedFiscalYear?.id || null,
+        );
+      }
+
       return addCustody({
         ...data,
         custody_amount: adjustedAmount,
         notes,
         company_id: companyId,
         fiscal_year_id: selectedFiscalYear?.id || null,
+        journal_entry_id: journalEntryId,
       });
     },
     onSuccess: () => {
@@ -110,7 +134,7 @@ export function useCustody() {
   // Update custody mutation
   const updateCustodyMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<CustodyInsert> }) =>
-      updateCustody(id, updates),
+      updateCustodyService(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custodies'] });
       toast.success('تم تحديث العهدة بنجاح');
@@ -156,6 +180,9 @@ export function useCustody() {
           notes: `مرحّل من العهدة المصفاة بتاريخ ${settlementDate}`,
           settlement_date: null,
           created_by: null,
+          journal_entry_id: null,
+          custody_account_id: null,
+          cash_account_id: null,
         });
       }
       
@@ -201,14 +228,32 @@ export function useCustodyDetails(custodyId: string | null) {
     enabled: !!custodyId,
   });
 
-  // Add transaction mutation
+  // Add transaction mutation - auto-creates journal entry if account_id is provided
   const addTransactionMutation = useMutation({
-    mutationFn: (data: Omit<CustodyTransactionInsert, 'company_id' | 'custody_id'>) => {
+    mutationFn: async (data: Omit<CustodyTransactionInsert, 'company_id' | 'custody_id'>) => {
       if (!companyId || !custodyId) throw new Error('Company ID and Custody ID are required');
+      
+      let journalEntryId: string | null = null;
+
+      // Auto-create journal entry if expense account is provided and custody has a custody_account
+      if (data.account_id && custody?.custody_account_id) {
+        journalEntryId = await createTransactionJournalEntry(
+          companyId,
+          custody.custody_name,
+          data.description,
+          data.amount,
+          data.account_id,
+          custody.custody_account_id,
+          data.transaction_date,
+          custody.fiscal_year_id || null,
+        );
+      }
+
       return addCustodyTransaction({
         ...data,
         company_id: companyId,
         custody_id: custodyId,
+        journal_entry_id: journalEntryId,
       });
     },
     onSuccess: () => {
