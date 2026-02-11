@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ActivePage } from '@/types';
 import { DashboardCustomizer, CardConfig } from './DashboardCustomizer';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CustomizeInterfaceButtonProps {
   setActivePage: (page: ActivePage) => void;
@@ -26,8 +27,8 @@ export function CustomizeInterfaceButton({
   isEditMode 
 }: CustomizeInterfaceButtonProps) {
   const [customizerOpen, setCustomizerOpen] = useState(false);
+  const { t } = useLanguage();
 
-  // If in edit mode, don't show the button
   if (isEditMode) return null;
 
   return (
@@ -40,50 +41,38 @@ export function CustomizeInterfaceButton({
             className="gap-2 border-dashed hover:border-primary hover:bg-primary/5 transition-all"
           >
             <Settings className="w-4 h-4" />
-            تخصيص الواجهة
+            {t.customize_interface}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuLabel>خيارات التخصيص</DropdownMenuLabel>
+          <DropdownMenuLabel>{t.customization_options}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={onEnterEditMode}
-            className="gap-2 cursor-pointer"
-          >
+          <DropdownMenuItem onClick={onEnterEditMode} className="gap-2 cursor-pointer">
             <Edit3 className="w-4 h-4 text-primary" />
             <div>
-              <p className="font-medium">تحرير لوحة التحكم</p>
-              <p className="text-xs text-muted-foreground">سحب وإفلات وإخفاء الأقسام</p>
+              <p className="font-medium">{t.edit_dashboard}</p>
+              <p className="text-xs text-muted-foreground">{t.drag_drop_sections}</p>
             </div>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => setCustomizerOpen(true)}
-            className="gap-2 cursor-pointer"
-          >
+          <DropdownMenuItem onClick={() => setCustomizerOpen(true)} className="gap-2 cursor-pointer">
             <LayoutGrid className="w-4 h-4 text-success" />
             <div>
-              <p className="font-medium">ترتيب البطاقات</p>
-              <p className="text-xs text-muted-foreground">تحريك وتغيير حجم وألوان البطاقات</p>
+              <p className="font-medium">{t.arrange_cards}</p>
+              <p className="text-xs text-muted-foreground">{t.move_resize_cards}</p>
             </div>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => setActivePage('theme-settings')}
-            className="gap-2 cursor-pointer"
-          >
+          <DropdownMenuItem onClick={() => setActivePage('theme-settings')} className="gap-2 cursor-pointer">
             <Palette className="w-4 h-4 text-warning" />
             <div>
-              <p className="font-medium">الألوان والثيمات</p>
-              <p className="text-xs text-muted-foreground">تغيير ألوان الواجهة</p>
+              <p className="font-medium">{t.colors_themes}</p>
+              <p className="text-xs text-muted-foreground">{t.change_interface_colors}</p>
             </div>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => setActivePage('theme-settings')}
-            className="gap-2 cursor-pointer"
-          >
+          <DropdownMenuItem onClick={() => setActivePage('theme-settings')} className="gap-2 cursor-pointer">
             <Sparkles className="w-4 h-4 text-purple-500" />
             <div>
-              <p className="font-medium">التأثيرات المتقدمة</p>
-              <p className="text-xs text-muted-foreground">الحركات والتأثيرات التفاعلية</p>
+              <p className="font-medium">{t.advanced_effects}</p>
+              <p className="text-xs text-muted-foreground">{t.animations_effects}</p>
             </div>
           </DropdownMenuItem>
         </DropdownMenuContent>

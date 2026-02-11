@@ -1,138 +1,146 @@
 import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { TranslationKeys } from '@/i18n/types';
 
 export interface IndustryLabels {
-  // General terms
-  itemName: string;        // السيارة / المشروع / المنتج
-  itemsName: string;       // السيارات / المشاريع / المنتجات
-  itemUnit: string;        // سيارة / مشروع / منتج (counting unit)
-  
-  // Dashboard
-  availableItems: string;  // السيارات المتاحة / المشاريع النشطة
-  availableSubtitle: string; // سيارة في المخزون / مشروع نشط
+  itemName: string;
+  itemsName: string;
+  itemUnit: string;
+  availableItems: string;
+  availableSubtitle: string;
   totalPurchasesLabel: string;
-  
-  // All-time stats
-  allTimePurchasesSubUnit: string; // سيارة / مشروع
-  allTimeSalesSubUnit: string;    // عملية بيع / عقد
-  
-  // Quick access
-  inventoryLabel: string;  // المخزون / المواد
+  allTimePurchasesSubUnit: string;
+  allTimeSalesSubUnit: string;
+  inventoryLabel: string;
   inventoryActions: { label: string; page: string }[];
-  
-  // Reports
   showTransfersReport: boolean;
   showPartnerReport: boolean;
   showCommissionsReport: boolean;
   showInventoryReport: boolean;
 }
 
-const labelsMap: Record<CompanyActivityType, IndustryLabels> = {
-  car_dealership: {
-    itemName: 'السيارة',
-    itemsName: 'السيارات',
-    itemUnit: 'سيارة',
-    availableItems: 'السيارات المتاحة',
-    availableSubtitle: 'سيارة في المخزون',
-    totalPurchasesLabel: 'إجمالي المشتريات',
-    allTimePurchasesSubUnit: 'سيارة',
-    allTimeSalesSubUnit: 'عملية بيع',
-    inventoryLabel: 'المخزون',
-    inventoryActions: [
-      { label: 'السيارات المتاحة', page: 'purchases' },
-      { label: 'تقرير المخزون', page: 'inventory-report' },
-      { label: 'التحويلات', page: 'car-transfers' },
-    ],
-    showTransfersReport: true,
-    showPartnerReport: true,
-    showCommissionsReport: true,
-    showInventoryReport: true,
-  },
-  construction: {
-    itemName: 'المشروع',
-    itemsName: 'المشاريع',
-    itemUnit: 'مشروع',
-    availableItems: 'المشاريع النشطة',
-    availableSubtitle: 'مشروع قيد التنفيذ',
-    totalPurchasesLabel: 'إجمالي التكاليف',
-    allTimePurchasesSubUnit: 'مشروع',
-    allTimeSalesSubUnit: 'عقد',
-    inventoryLabel: 'المواد',
-    inventoryActions: [
-      { label: 'المشاريع', page: 'projects' },
-      { label: 'العقود', page: 'contracts' },
-      { label: 'المستخلصات', page: 'progress-billings' },
-    ],
-    showTransfersReport: false,
-    showPartnerReport: false,
-    showCommissionsReport: false,
-    showInventoryReport: false,
-  },
-  general_trading: {
-    itemName: 'المنتج',
-    itemsName: 'المنتجات',
-    itemUnit: 'منتج',
-    availableItems: 'المنتجات المتاحة',
-    availableSubtitle: 'منتج في المخزون',
-    totalPurchasesLabel: 'إجمالي المشتريات',
-    allTimePurchasesSubUnit: 'منتج',
-    allTimeSalesSubUnit: 'عملية بيع',
-    inventoryLabel: 'المخزون',
-    inventoryActions: [
-      { label: 'المنتجات المتاحة', page: 'purchases' },
-      { label: 'تقرير المخزون', page: 'inventory-report' },
-    ],
-    showTransfersReport: false,
-    showPartnerReport: false,
-    showCommissionsReport: true,
-    showInventoryReport: true,
-  },
-  restaurant: {
-    itemName: 'الصنف',
-    itemsName: 'الأصناف',
-    itemUnit: 'صنف',
-    availableItems: 'الأصناف المتاحة',
-    availableSubtitle: 'صنف في القائمة',
-    totalPurchasesLabel: 'إجمالي التوريدات',
-    allTimePurchasesSubUnit: 'طلب توريد',
-    allTimeSalesSubUnit: 'عملية بيع',
-    inventoryLabel: 'المخزون',
-    inventoryActions: [
-      { label: 'إدارة القائمة', page: 'menu-management' },
-      { label: 'الطلبات', page: 'restaurant-orders' },
-    ],
-    showTransfersReport: false,
-    showPartnerReport: false,
-    showCommissionsReport: false,
-    showInventoryReport: true,
-  },
-  export_import: {
-    itemName: 'الشحنة',
-    itemsName: 'الشحنات',
-    itemUnit: 'شحنة',
-    availableItems: 'الشحنات النشطة',
-    availableSubtitle: 'شحنة قيد المعالجة',
-    totalPurchasesLabel: 'إجمالي الواردات',
-    allTimePurchasesSubUnit: 'شحنة',
-    allTimeSalesSubUnit: 'عملية تصدير',
-    inventoryLabel: 'الشحنات',
-    inventoryActions: [
-      { label: 'الشحنات', page: 'shipments' },
-      { label: 'خطابات الاعتماد', page: 'letters-of-credit' },
-      { label: 'التخليص الجمركي', page: 'customs-clearance' },
-    ],
-    showTransfersReport: false,
-    showPartnerReport: false,
-    showCommissionsReport: false,
-    showInventoryReport: false,
-  },
-};
+function buildLabels(companyType: CompanyActivityType, t: TranslationKeys): Record<CompanyActivityType, IndustryLabels> {
+  return {
+    car_dealership: {
+      itemName: t.industry_car,
+      itemsName: t.industry_cars,
+      itemUnit: t.industry_car_unit,
+      availableItems: t.industry_available_cars,
+      availableSubtitle: t.industry_car_in_stock,
+      totalPurchasesLabel: t.dashboard_total_purchases,
+      allTimePurchasesSubUnit: t.industry_car_unit,
+      allTimeSalesSubUnit: t.industry_sale_operation,
+      inventoryLabel: t.industry_inventory,
+      inventoryActions: [
+        { label: t.available_cars, page: 'purchases' },
+        { label: t.inventory_report, page: 'inventory-report' },
+        { label: t.nav_transfers, page: 'car-transfers' },
+      ],
+      showTransfersReport: true,
+      showPartnerReport: true,
+      showCommissionsReport: true,
+      showInventoryReport: true,
+    },
+    construction: {
+      itemName: t.industry_project,
+      itemsName: t.industry_projects,
+      itemUnit: t.industry_project_unit,
+      availableItems: t.industry_active_projects,
+      availableSubtitle: t.industry_project_in_progress,
+      totalPurchasesLabel: t.industry_total_costs,
+      allTimePurchasesSubUnit: t.industry_project_unit,
+      allTimeSalesSubUnit: t.industry_contract,
+      inventoryLabel: t.industry_materials,
+      inventoryActions: [
+        { label: t.projects_label, page: 'projects' },
+        { label: t.contracts_label, page: 'contracts' },
+        { label: t.billings_label, page: 'progress-billings' },
+      ],
+      showTransfersReport: false,
+      showPartnerReport: false,
+      showCommissionsReport: false,
+      showInventoryReport: false,
+    },
+    general_trading: {
+      itemName: t.industry_product,
+      itemsName: t.industry_products,
+      itemUnit: t.industry_product_unit,
+      availableItems: t.industry_available_products,
+      availableSubtitle: t.industry_product_in_stock,
+      totalPurchasesLabel: t.dashboard_total_purchases,
+      allTimePurchasesSubUnit: t.industry_product_unit,
+      allTimeSalesSubUnit: t.industry_sale_operation,
+      inventoryLabel: t.industry_inventory,
+      inventoryActions: [
+        { label: t.available_products, page: 'purchases' },
+        { label: t.inventory_report, page: 'inventory-report' },
+      ],
+      showTransfersReport: false,
+      showPartnerReport: false,
+      showCommissionsReport: true,
+      showInventoryReport: true,
+    },
+    restaurant: {
+      itemName: t.industry_item,
+      itemsName: t.industry_items,
+      itemUnit: t.industry_item_unit,
+      availableItems: t.industry_available_items,
+      availableSubtitle: t.industry_item_in_menu,
+      totalPurchasesLabel: t.industry_total_supplies,
+      allTimePurchasesSubUnit: t.industry_supply_order,
+      allTimeSalesSubUnit: t.industry_sale_operation,
+      inventoryLabel: t.industry_inventory,
+      inventoryActions: [
+        { label: t.menu_management_label, page: 'menu-management' },
+        { label: t.orders_label, page: 'restaurant-orders' },
+      ],
+      showTransfersReport: false,
+      showPartnerReport: false,
+      showCommissionsReport: false,
+      showInventoryReport: true,
+    },
+    export_import: {
+      itemName: t.industry_shipment,
+      itemsName: t.industry_shipments,
+      itemUnit: t.industry_shipment_unit,
+      availableItems: t.industry_active_shipments,
+      availableSubtitle: t.industry_shipment_processing,
+      totalPurchasesLabel: t.industry_total_imports,
+      allTimePurchasesSubUnit: t.industry_shipment_unit,
+      allTimeSalesSubUnit: t.industry_export_operation,
+      inventoryLabel: t.industry_shipments,
+      inventoryActions: [
+        { label: t.shipments_label, page: 'shipments' },
+        { label: t.lc_label, page: 'letters-of-credit' },
+        { label: t.customs_label, page: 'customs-clearance' },
+      ],
+      showTransfersReport: false,
+      showPartnerReport: false,
+      showCommissionsReport: false,
+      showInventoryReport: false,
+    },
+  };
+}
 
 export function useIndustryLabels(): IndustryLabels {
   const { company } = useCompany();
+  const { t } = useLanguage();
   const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
-  return labelsMap[companyType] || labelsMap.car_dealership;
+  const allLabels = buildLabels(companyType, t);
+  return allLabels[companyType] || allLabels.car_dealership;
 }
 
 export function getIndustryLabelsByType(companyType: CompanyActivityType): IndustryLabels {
-  return labelsMap[companyType] || labelsMap.car_dealership;
+  // This static version can't use hooks, so it returns Arabic defaults
+  // For proper i18n, use the useIndustryLabels hook instead
+  const fallback: IndustryLabels = {
+    itemName: 'Item', itemsName: 'Items', itemUnit: 'item',
+    availableItems: 'Available', availableSubtitle: 'in stock',
+    totalPurchasesLabel: 'Total Purchases',
+    allTimePurchasesSubUnit: 'item', allTimeSalesSubUnit: 'sale',
+    inventoryLabel: 'Inventory', inventoryActions: [],
+    showTransfersReport: false, showPartnerReport: false,
+    showCommissionsReport: false, showInventoryReport: false,
+  };
+  return fallback;
 }
