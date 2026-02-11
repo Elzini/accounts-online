@@ -16,6 +16,7 @@ import { useCostCenters } from '@/hooks/useCostCenters';
 import { toast } from 'sonner';
 import { Loader2, Plus, Eye, Trash2, BookOpen, CalendarIcon, X, Printer, FileDown, Paperclip } from 'lucide-react';
 import { JournalEntryEditDialog } from './JournalEntryEditDialog';
+import { JournalAttachments } from './JournalAttachments';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -583,7 +584,8 @@ export function JournalEntriesPage() {
                     <TableCell className="text-center">{viewingEntry.total_credit.toLocaleString()}</TableCell>
                   </TableRow>
                 </TableBody>
-              </Table>
+                </Table>
+              {viewingEntryId && <JournalAttachments journalEntryId={viewingEntryId} />}
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setViewingEntryId(null)}>
                   إغلاق
