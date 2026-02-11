@@ -15,7 +15,7 @@
  * 4. Deploy this worker
  */
 
-// Subdomains that should NOT be treated as tenants
+// Subdomains that should NOT be treated as tenants (but should still be proxied)
 const RESERVED_SUBDOMAINS = ['www', 'app', 'api', 'admin', 'mail', 'smtp', 'ftp', 'ns1', 'ns2'];
 
 // Your base domains
