@@ -417,4 +417,213 @@ export const en: TranslationKeys = {
 
   // Quick actions
   quick_actions: 'Quick Actions',
+
+  // Top navbar
+  hello_greeting: 'Hello,',
+  view_as_company: 'View as company...',
+  my_original_company: 'My Original Company',
+  fiscal_year_label: 'Fiscal Year',
+  check_updates: 'Check Updates',
+  install: 'Install',
+  company_management: 'Company Management',
+
+  // Page titles & subtitles
+  customers_page_title: 'Customers',
+  customers_page_subtitle: 'Manage Customer Data',
+  suppliers_page_title: 'Suppliers',
+  suppliers_page_subtitle: 'Manage Supplier Data',
+  purchases_page_title: 'Purchases',
+  purchases_page_subtitle: 'Manage Car Inventory',
+  sales_page_title: 'Sales',
+  sales_page_subtitle: 'Sales Records',
+
+  // Table headers
+  th_number: '#',
+  th_customer_name: 'Customer Name',
+  th_supplier_name: 'Supplier Name',
+  th_id_number: 'ID Number',
+  th_phone: 'Phone',
+  th_address: 'Address',
+  th_tax_number: 'Tax Number',
+  th_actions: 'Actions',
+  th_notes: 'Notes',
+  th_inventory_number: 'Inventory #',
+  th_car_name: 'Car Name',
+  th_model: 'Model',
+  th_color: 'Color',
+  th_chassis_number: 'Chassis Number',
+  th_base_amount: 'Base Amount',
+  th_tax: 'Tax',
+  th_total_with_tax: 'Total with Tax',
+  th_payment_method: 'Payment Method',
+  th_purchase_date: 'Purchase Date',
+  th_status: 'Status',
+  th_sale_number: 'Sale #',
+  th_customer: 'Customer',
+  th_car: 'Car',
+  th_profit: 'Profit',
+  th_receipt_method: 'Receipt Method',
+  th_sale_date: 'Sale Date',
+
+  // Search placeholders
+  search_customers: 'Search by name, phone, ID...',
+  search_suppliers: 'Search by name, phone, registration...',
+  search_purchases: 'Search by name, model, chassis...',
+  search_sales: 'Search by customer, car, sale number...',
+
+  // Empty states
+  no_customers_yet: 'No customers yet',
+  add_first_customer: 'Add First Customer',
+  no_suppliers_yet: 'No suppliers yet',
+  add_first_supplier: 'Add First Supplier',
+  no_cars_in_stock: 'No cars in stock',
+  add_first_car: 'Add First Car',
+  no_sales_yet: 'No sales yet',
+  record_first_sale: 'Record First Sale',
+  no_search_results: 'No matching results found',
+
+  // Status labels
+  status_available: 'Available',
+  status_sold: 'Sold',
+  status_transferred: 'Transferred',
+
+  // Payment methods
+  payment_cash: 'Cash',
+  payment_bank_transfer: 'Bank Transfer',
+  payment_pos: 'POS',
+  payment_deferred: 'Deferred',
+  payment_check: 'Check',
+
+  // Summary labels
+  total_base_amount: 'Total Base Amount',
+  total_tax: 'Total Tax',
+  total_purchases_with_tax: 'Total Purchases with Tax',
+  total_sales_with_tax: 'Total Sales with Tax',
+  total_profits: 'Total Profits',
+
+  // Buttons
+  btn_add_car: 'Add Car',
+  btn_add_customer: 'Add Customer',
+  btn_add_supplier: 'Add Supplier',
+  btn_record_sale: 'Record Sale',
+  btn_recalculate_profits: 'Recalculate Profits',
+  btn_save_data: 'Save Data',
+  btn_saving: 'Saving...',
+  btn_home: 'Home',
+
+  // Form labels
+  form_customer: 'Customer *',
+  form_supplier: 'Supplier *',
+  form_car: 'Car *',
+  form_select_customer: 'Select Customer',
+  form_select_supplier: 'Select Supplier',
+  form_select_car: 'Select Car',
+  form_chassis_number: 'Chassis Number *',
+  form_car_name: 'Car Name *',
+  form_model: 'Model',
+  form_color: 'Color',
+  form_purchase_price: 'Purchase Price *',
+  form_sale_price: 'Sale Price *',
+  form_seller_name: 'Seller Name',
+  form_commission: 'Sales Commission',
+  form_other_expenses: 'Other Expenses',
+  form_purchase_date: 'Purchase Date',
+  form_sale_date: 'Sale Date',
+  form_payment_method: 'Payment Method',
+  form_receipt_method: 'Receipt Method',
+  form_enter_chassis: 'Enter chassis number',
+  form_enter_seller: 'Enter seller name',
+  form_example_car: 'e.g. Toyota Camry',
+  form_example_year: 'e.g. 2024',
+  form_enter_color: 'Enter color',
+
+  // Form headers
+  form_add_new_car: 'Add New Car',
+  form_add_to_stock: 'Add car to stock',
+  form_register_sale: 'Register Sale',
+  form_register_car_sale: 'Register car sale',
+
+  // Invoice details
+  invoice_details: 'Invoice Details',
+  invoice_base_amount: 'Base Amount',
+  invoice_vat: 'Value Added Tax',
+  invoice_total_with_tax: 'Total Including Tax',
+  invoice_tax_not_active: 'Tax is not active on purchases',
+
+  // Car details
+  car_details_name: 'Car Name',
+  car_details_model: 'Model',
+  car_details_purchase_price: 'Purchase Price',
+  car_transferred: 'Transferred Car',
+  car_partner_dealership: 'Partner Dealership',
+  car_agreed_commission: 'Agreed Commission',
+  car_transfer_auto_link: 'This sale will be automatically linked to the transfer and commission calculated',
+
+  // Profit
+  profit_label: 'Profit',
+
+  // Toast messages
+  toast_fill_required: 'Please fill in the required fields',
+  toast_sale_registered: 'Sale registered successfully',
+  toast_sale_with_transfer: 'Sale registered and transfer linked successfully',
+  toast_sale_transfer_error: 'Sale registered (error linking transfer)',
+  toast_sale_error: 'Error registering sale',
+  toast_car_added: 'Car added to stock successfully',
+  toast_chassis_exists: 'Chassis number already exists',
+  toast_car_add_error: 'Error adding car',
+  toast_profits_recalculated: 'Profits recalculated',
+  toast_profits_error: 'Error recalculating profits',
+
+  // Sidebar app names
+  sidebar_construction_system: 'Construction Management',
+  sidebar_trading_system: 'Trading Management',
+  sidebar_restaurant_system: 'Restaurant Management',
+  sidebar_export_import_system: 'Export/Import Management',
+  sidebar_car_subtitle: 'Car Dealership',
+  sidebar_construction_subtitle: 'Projects & Contracts',
+  sidebar_trading_subtitle: 'General Trading',
+  sidebar_restaurant_subtitle: 'Restaurants & Cafes',
+  sidebar_export_import_subtitle: 'Export & Import',
+
+  // Multi-car sale
+  cars_count: 'cars',
+
+  // Installment sale
+  installment_sale: 'Installment Sale',
+  sale_terms: 'Sale & Payment Terms',
+  sale_terms_placeholder: 'Sale terms and conditions...',
+
+  // Sales/Purchase invoice form
+  sales_invoice: 'Sales Invoice',
+  purchase_invoice_title: 'Purchase Invoice',
+  invoice_number: 'Invoice Number',
+  sales_order: 'Sales Order',
+  reference: 'Reference',
+  warehouse: 'Warehouse',
+  main_warehouse: 'Main',
+  salesperson: 'Salesperson',
+  salesperson_name: 'Seller Name',
+  tax_label: 'Tax',
+  cash_account: 'Cash Account',
+  paid_amount: 'Paid',
+  cost_center: 'Cost Center',
+  price_includes_tax: 'Price includes tax',
+  quantity: 'Quantity',
+  price: 'Price',
+  subtotal: 'Subtotal',
+  vat_percent: 'VAT %',
+  grand_total: 'Grand Total',
+  discount: 'Discount',
+  select_car_to_add: 'Select a car to add to the invoice',
+  add_car_to_invoice: 'Select a car to add...',
+  supplier_invoice: 'Supplier Invoice',
+  due_date: 'Due Date',
+  additional_notes: 'Additional notes...',
+  approve: 'Approve',
+  new_entry: 'New',
+  return_label: 'Return',
+  exit_label: 'Exit',
+
+  // Fiscal year
+  fiscal_year: 'Fiscal Year',
 };

@@ -8,6 +8,7 @@ import { MobileCard, MobileCardHeader, MobileCardRow } from '@/components/ui/mob
 import { ActivePage } from '@/types';
 import { useSuppliers } from '@/hooks/useDatabase';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SuppliersTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -17,10 +18,10 @@ export function SuppliersTable({ setActivePage }: SuppliersTableProps) {
   const { data: suppliers = [], isLoading } = useSuppliers();
   const [searchQuery, setSearchQuery] = useState('');
   const isMobile = useIsMobile();
+  const { t, isRTL } = useLanguage();
 
   const filteredSuppliers = useMemo(() => {
     if (!searchQuery.trim()) return suppliers;
-    
     const query = searchQuery.toLowerCase();
     return suppliers.filter(supplier =>
       supplier.name.toLowerCase().includes(query) ||
@@ -41,60 +42,41 @@ export function SuppliersTable({ setActivePage }: SuppliersTableProps) {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">الموردين</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">إدارة بيانات الموردين</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{t.suppliers_page_title}</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t.suppliers_page_subtitle}</p>
         </div>
         <Button 
           onClick={() => setActivePage('add-supplier')}
           className="gradient-warning hover:opacity-90 w-full sm:w-auto h-10 sm:h-11"
         >
-          <Truck className="w-5 h-5 ml-2" />
-          إضافة مورد
+          <Truck className={`w-5 h-5 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+          {t.btn_add_supplier}
         </Button>
       </div>
 
-      {/* Search */}
       <SearchFilter
-        searchPlaceholder="البحث بالاسم، الهاتف، السجل..."
+        searchPlaceholder={t.search_suppliers}
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
       />
 
-      {/* Mobile Card View */}
       {isMobile ? (
         <div className="space-y-3">
           {filteredSuppliers.map((supplier, index) => (
             <MobileCard key={supplier.id}>
               <MobileCardHeader
                 title={supplier.name}
-                subtitle={`رقم ${index + 1}`}
+                subtitle={`${t.th_number} ${index + 1}`}
                 actions={<SupplierActions supplier={supplier} />}
               />
               <div className="space-y-1">
-                <MobileCardRow 
-                  label="الرقم الضريبي" 
-                  value={<span dir="ltr" className="font-mono">{supplier.registration_number || '-'}</span>}
-                  icon={<IdCard className="w-3.5 h-3.5" />}
-                />
-                <MobileCardRow 
-                  label="الهاتف" 
-                  value={<span dir="ltr" className="font-mono">{supplier.phone}</span>}
-                  icon={<Phone className="w-3.5 h-3.5" />}
-                />
-                <MobileCardRow 
-                  label="العنوان" 
-                  value={supplier.address || '-'}
-                  icon={<MapPin className="w-3.5 h-3.5" />}
-                />
+                <MobileCardRow label={t.th_tax_number} value={<span dir="ltr" className="font-mono">{supplier.registration_number || '-'}</span>} icon={<IdCard className="w-3.5 h-3.5" />} />
+                <MobileCardRow label={t.th_phone} value={<span dir="ltr" className="font-mono">{supplier.phone}</span>} icon={<Phone className="w-3.5 h-3.5" />} />
+                <MobileCardRow label={t.th_address} value={supplier.address || '-'} icon={<MapPin className="w-3.5 h-3.5" />} />
                 {supplier.notes && (
-                  <MobileCardRow 
-                    label="ملاحظات" 
-                    value={<span className="truncate max-w-[150px] inline-block">{supplier.notes}</span>}
-                    icon={<FileText className="w-3.5 h-3.5" />}
-                  />
+                  <MobileCardRow label={t.th_notes} value={<span className="truncate max-w-[150px] inline-block">{supplier.notes}</span>} icon={<FileText className="w-3.5 h-3.5" />} />
                 )}
               </div>
             </MobileCard>
@@ -102,35 +84,28 @@ export function SuppliersTable({ setActivePage }: SuppliersTableProps) {
           
           {suppliers.length === 0 && (
             <div className="p-8 text-center bg-card rounded-xl border">
-              <p className="text-muted-foreground mb-4">لا يوجد موردين حتى الآن</p>
-              <Button 
-                onClick={() => setActivePage('add-supplier')}
-                className="gradient-warning"
-              >
-                إضافة أول مورد
-              </Button>
+              <p className="text-muted-foreground mb-4">{t.no_suppliers_yet}</p>
+              <Button onClick={() => setActivePage('add-supplier')} className="gradient-warning">{t.add_first_supplier}</Button>
             </div>
           )}
-
           {suppliers.length > 0 && filteredSuppliers.length === 0 && (
             <div className="p-8 text-center bg-card rounded-xl border">
-              <p className="text-muted-foreground">لا توجد نتائج مطابقة للبحث</p>
+              <p className="text-muted-foreground">{t.no_search_results}</p>
             </div>
           )}
         </div>
       ) : (
-        /* Desktop Table View */
         <div className="bg-card rounded-xl md:rounded-2xl card-shadow overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="text-right font-bold">#</TableHead>
-                <TableHead className="text-right font-bold">اسم المورد</TableHead>
-                <TableHead className="text-right font-bold">الرقم الضريبي</TableHead>
-                <TableHead className="text-right font-bold">رقم الهاتف</TableHead>
-                <TableHead className="text-right font-bold">العنوان</TableHead>
-                <TableHead className="text-right font-bold">ملاحظات</TableHead>
-                <TableHead className="text-right font-bold">الإجراءات</TableHead>
+                <TableHead className="text-right font-bold">{t.th_number}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_supplier_name}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_tax_number}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_phone}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_address}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_notes}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -162,19 +137,13 @@ export function SuppliersTable({ setActivePage }: SuppliersTableProps) {
           
           {suppliers.length === 0 && (
             <div className="p-12 text-center">
-              <p className="text-muted-foreground">لا يوجد موردين حتى الآن</p>
-              <Button 
-                onClick={() => setActivePage('add-supplier')}
-                className="mt-4 gradient-warning"
-              >
-                إضافة أول مورد
-              </Button>
+              <p className="text-muted-foreground">{t.no_suppliers_yet}</p>
+              <Button onClick={() => setActivePage('add-supplier')} className="mt-4 gradient-warning">{t.add_first_supplier}</Button>
             </div>
           )}
-
           {suppliers.length > 0 && filteredSuppliers.length === 0 && (
             <div className="p-12 text-center">
-              <p className="text-muted-foreground">لا توجد نتائج مطابقة للبحث</p>
+              <p className="text-muted-foreground">{t.no_search_results}</p>
             </div>
           )}
         </div>

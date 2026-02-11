@@ -101,6 +101,7 @@ import { ActivePage } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -109,6 +110,7 @@ const Index = () => {
   const { signOut, user, permissions } = useAuth();
   const { isSuperAdmin, viewAsCompanyId, setViewAsCompanyId, company: currentCompany } = useCompany();
   const { fiscalYears, selectedFiscalYear, setSelectedFiscalYear, isLoading: isFiscalYearLoading } = useFiscalYear();
+  const { t } = useLanguage();
 
   // Fetch all companies for super admin selector
   const { data: allCompanies = [] } = useQuery({
@@ -292,7 +294,7 @@ const Index = () => {
             <div className="flex justify-between items-center gap-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
                 <p className="text-responsive-sm text-muted-foreground truncate">
-                  مرحباً، <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
+                  {t.hello_greeting} <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
                 </p>
                 {/* Super Admin Company Selector */}
                 {isSuperAdmin && allCompanies.length > 0 && (
@@ -302,10 +304,10 @@ const Index = () => {
                   >
                     <SelectTrigger className="h-8 w-auto min-w-[140px] max-w-[220px] text-xs gap-1 border-primary/50 bg-primary/5">
                       <Eye className="w-3.5 h-3.5 text-primary shrink-0" />
-                      <SelectValue placeholder="عرض كشركة..." />
+                      <SelectValue placeholder={t.view_as_company} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="default">شركتي الأصلية</SelectItem>
+                      <SelectItem value="default">{t.my_original_company}</SelectItem>
                       {allCompanies.map(c => (
                         <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                       ))}
@@ -341,7 +343,7 @@ const Index = () => {
                     className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3"
                   >
                     <Building2 className="w-4 h-4" />
-                    <span className="hidden sm:inline text-xs sm:text-sm">إدارة الشركات</span>
+                    <span className="hidden sm:inline text-xs sm:text-sm">{t.company_management}</span>
                   </Button>
                 )}
                 <CarSearch />
@@ -352,7 +354,7 @@ const Index = () => {
                   className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 text-muted-foreground hover:text-destructive"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline text-xs sm:text-sm">خروج</span>
+                  <span className="hidden sm:inline text-xs sm:text-sm">{t.logout}</span>
                 </Button>
               </div>
             </div>
