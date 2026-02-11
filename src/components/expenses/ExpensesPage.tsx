@@ -17,10 +17,12 @@ import { useAccounts } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Expense, ExpenseCategory } from '@/services/expenses';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
+import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 
 export function ExpensesPage() {
   const { companyId } = useCompany();
   const { filterByFiscalYear } = useFiscalYearFilter();
+  const labels = useIndustryLabels();
   const { data: expenses = [], isLoading: expensesLoading } = useExpenses();
   const { data: categories = [], isLoading: categoriesLoading } = useExpenseCategories();
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
@@ -182,7 +184,7 @@ export function ExpensesPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">مصروفات السيارات</p>
+                <p className="text-sm text-muted-foreground">مصروفات {labels.itemsName}</p>
                 <p className="text-2xl font-bold text-orange-500">{formatCurrency(carExpensesTotal)}</p>
               </div>
               <Car className="w-8 h-8 text-orange-500" />
@@ -261,13 +263,13 @@ export function ExpensesPage() {
                     </Select>
                   </div>
                   <div>
-                    <Label>ربط بسيارة (اختياري)</Label>
+                    <Label>ربط بـ{labels.itemName} (اختياري)</Label>
                     <Select value={expenseForm.car_id} onValueChange={(v) => setExpenseForm({...expenseForm, car_id: v === 'none' ? '' : v})}>
                       <SelectTrigger>
-                        <SelectValue placeholder="اختر السيارة (للمصروفات المرتبطة)" />
+                        <SelectValue placeholder={`اختر ${labels.itemName} (للمصروفات المرتبطة)`} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">مصروف عام (بدون سيارة)</SelectItem>
+                        <SelectItem value="none">مصروف عام (بدون {labels.itemName})</SelectItem>
                         {availableCars.map(car => (
                           <SelectItem key={car.id} value={car.id}>
                             {car.name} - {car.chassis_number}
@@ -276,7 +278,7 @@ export function ExpensesPage() {
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-1">
-                      * المصروفات المرتبطة بسيارة تُخصم من ربحها عند البيع
+                      * المصروفات المرتبطة بـ{labels.itemName} تُخصم من ربحها عند البيع
                     </p>
                   </div>
                   <div className="space-y-3">
@@ -378,7 +380,7 @@ export function ExpensesPage() {
                     <TableHead>التاريخ</TableHead>
                     <TableHead>الحساب</TableHead>
                     <TableHead>الفئة</TableHead>
-                    <TableHead>السيارة</TableHead>
+                    <TableHead>{labels.itemName}</TableHead>
                     <TableHead>الوصف</TableHead>
                     <TableHead>طريقة الدفع</TableHead>
                     <TableHead>فاتورة ضريبية</TableHead>

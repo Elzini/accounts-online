@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
+import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 
 export function SuppliersReport() {
   const { data: suppliers, isLoading: suppliersLoading } = useSuppliers();
@@ -18,6 +19,7 @@ export function SuppliersReport() {
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
   const { printReport } = usePrintReport();
   const { exportToExcel } = useExcelExport();
+  const labels = useIndustryLabels();
 
   // Filter cars by date and supplier
   const filteredCars = useMemo(() => {
@@ -101,13 +103,13 @@ export function SuppliersReport() {
       columns: selectedSupplier === 'all' ? [
         { header: 'الاسم', key: 'name' },
         { header: 'رقم الهاتف', key: 'phone' },
-        { header: 'عدد السيارات', key: 'cars_count' },
+        { header: `عدد ${labels.itemsName}`, key: 'cars_count' },
         { header: 'المتاحة', key: 'available' },
         { header: 'المباعة', key: 'sold' },
         { header: 'إجمالي المشتريات', key: 'total_purchases' },
       ] : [
         { header: 'رقم المخزون', key: 'inventory_number' },
-        { header: 'السيارة', key: 'car' },
+        { header: labels.itemName, key: 'car' },
         { header: 'الموديل', key: 'model' },
         { header: 'اللون', key: 'color' },
         { header: 'سعر الشراء', key: 'purchase_price' },
@@ -134,7 +136,7 @@ export function SuppliersReport() {
           })),
       summaryCards: [
         { label: selectedSupplier === 'all' ? 'إجمالي الموردين' : 'المورد', value: selectedSupplier === 'all' ? String(totalSuppliers) : selectedSupplierData?.name || '' },
-        { label: 'عدد السيارات', value: String(totalCarsCount) },
+        { label: `عدد ${labels.itemsName}`, value: String(totalCarsCount) },
         { label: 'إجمالي المشتريات', value: `${formatCurrencySimple(totalPurchasesAmount)} ريال` },
       ],
     });
@@ -149,14 +151,14 @@ export function SuppliersReport() {
         { header: 'رقم السجل', key: 'registration_number' },
         { header: 'رقم الهاتف', key: 'phone' },
         { header: 'العنوان', key: 'address' },
-        { header: 'عدد السيارات', key: 'cars_count' },
+        { header: `عدد ${labels.itemsName}`, key: 'cars_count' },
         { header: 'المتاحة', key: 'available' },
         { header: 'المباعة', key: 'sold' },
         { header: 'إجمالي المشتريات', key: 'total_purchases' },
         { header: 'ملاحظات', key: 'notes' },
       ] : [
         { header: 'رقم المخزون', key: 'inventory_number' },
-        { header: 'السيارة', key: 'car' },
+        { header: labels.itemName, key: 'car' },
         { header: 'الموديل', key: 'model' },
         { header: 'اللون', key: 'color' },
         { header: 'رقم الشاسيه', key: 'chassis' },
@@ -189,7 +191,7 @@ export function SuppliersReport() {
           })),
       summaryData: [
         { label: selectedSupplier === 'all' ? 'إجمالي الموردين' : 'المورد', value: selectedSupplier === 'all' ? totalSuppliers : selectedSupplierData?.name || '' },
-        { label: 'عدد السيارات', value: totalCarsCount },
+        { label: `عدد ${labels.itemsName}`, value: totalCarsCount },
         { label: 'إجمالي المشتريات', value: totalPurchasesAmount },
       ],
       fileName: `تقرير_الموردين_${selectedSupplier === 'all' ? 'إجمالي' : selectedSupplierData?.name}_${new Date().toLocaleDateString('ar-SA')}`,
@@ -258,7 +260,7 @@ export function SuppliersReport() {
                 <Package className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">عدد السيارات</p>
+                <p className="text-sm text-muted-foreground">عدد {labels.itemsName}</p>
                 <p className="text-2xl font-bold text-foreground">{totalCarsCount}</p>
               </div>
             </div>
@@ -327,11 +329,11 @@ export function SuppliersReport() {
                 <p className="font-medium">{selectedSupplierData.notes || '-'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">السيارات المتاحة</p>
+                <p className="text-sm text-muted-foreground">{labels.itemsName} المتاحة</p>
                 <p className="font-medium text-green-600">{selectedSupplierData.availableCars}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">السيارات المباعة</p>
+                <p className="text-sm text-muted-foreground">{labels.itemsName} المباعة</p>
                 <p className="font-medium text-blue-600">{selectedSupplierData.soldCars}</p>
               </div>
             </div>
@@ -356,7 +358,7 @@ export function SuppliersReport() {
                   <TableRow>
                     <TableHead className="text-right">الاسم</TableHead>
                     <TableHead className="text-right">رقم الهاتف</TableHead>
-                    <TableHead className="text-right">عدد السيارات</TableHead>
+                    <TableHead className="text-right">عدد {labels.itemsName}</TableHead>
                     <TableHead className="text-right">المتاحة</TableHead>
                     <TableHead className="text-right">المباعة</TableHead>
                     <TableHead className="text-right">إجمالي المشتريات</TableHead>
@@ -386,19 +388,19 @@ export function SuppliersReport() {
       {selectedSupplier !== 'all' && (
         <Card>
           <CardHeader>
-            <CardTitle>سيارات المورد</CardTitle>
+            <CardTitle>{labels.itemsName} المورد</CardTitle>
           </CardHeader>
           <CardContent>
             {filteredCars.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                لا توجد سيارات مسجلة لهذا المورد
+                لا توجد {labels.itemsName} مسجلة لهذا المورد
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-right">رقم المخزون</TableHead>
-                    <TableHead className="text-right">السيارة</TableHead>
+                    <TableHead className="text-right">{labels.itemName}</TableHead>
                     <TableHead className="text-right">الموديل</TableHead>
                     <TableHead className="text-right">اللون</TableHead>
                     <TableHead className="text-right">سعر الشراء</TableHead>

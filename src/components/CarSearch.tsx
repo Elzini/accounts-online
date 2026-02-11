@@ -12,12 +12,14 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 
 export function CarSearch() {
   const { data: cars = [] } = useCars();
   const { selectedFiscalYear } = useFiscalYear();
   const [searchQuery, setSearchQuery] = useState('');
   const [open, setOpen] = useState(false);
+  const labels = useIndustryLabels();
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -58,14 +60,14 @@ export function CarSearch() {
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
           <Search className="w-4 h-4" />
-          <span className="hidden sm:inline">بحث عن سيارة</span>
+          <span className="hidden sm:inline">بحث</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Car className="w-5 h-5" />
-            البحث عن سيارة
+            <Search className="w-5 h-5" />
+            البحث في {labels.itemsName}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
@@ -141,7 +143,7 @@ export function CarSearch() {
           {!searchQuery && (
             <div className="text-center py-8 text-muted-foreground">
               <Search className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>ابدأ الكتابة للبحث عن سيارة</p>
+              <p>ابدأ الكتابة للبحث</p>
             </div>
           )}
         </div>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
+import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 
 export function ProfitReport() {
   const { data: sales = [], isLoading: salesLoading } = useSales();
@@ -16,6 +17,7 @@ export function ProfitReport() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const { printReport } = usePrintReport();
+  const labels = useIndustryLabels();
 
   const filteredSales = useMemo(() => {
     // First filter by fiscal year
@@ -79,10 +81,10 @@ export function ProfitReport() {
       subtitle: 'تفاصيل الأرباح والمصاريف',
       columns: [
         { header: 'التاريخ', key: 'date' },
-        { header: 'السيارة', key: 'car' },
+        { header: labels.itemName, key: 'car' },
         { header: 'سعر البيع', key: 'sale_price' },
         { header: 'الربح الإجمالي', key: 'gross_profit' },
-        { header: 'مصروفات السيارة', key: 'car_expenses' },
+        { header: `مصروفات ${labels.itemName}`, key: 'car_expenses' },
         { header: 'صافي الربح', key: 'net_profit' },
       ],
       data: salesWithCarExpenses.map(sale => ({
@@ -96,7 +98,7 @@ export function ProfitReport() {
       summaryCards: [
         { label: 'صافي الربح النهائي', value: `${formatCurrency(finalNetProfit)} ريال` },
         { label: 'إجمالي المبيعات', value: `${formatCurrency(totalSales)} ريال` },
-        { label: 'مصروفات السيارات', value: `${formatCurrency(totalCarExpenses)} ريال` },
+        { label: `مصروفات ${labels.itemsName}`, value: `${formatCurrency(totalCarExpenses)} ريال` },
         { label: 'المصروفات العامة', value: `${formatCurrency(totalGeneralExpenses)} ريال` },
       ],
     });
@@ -109,7 +111,7 @@ export function ProfitReport() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">تقرير الأرباح</h1>
-          <p className="text-muted-foreground">تفاصيل الأرباح والمصاريف (شامل مصروفات السيارات)</p>
+          <p className="text-muted-foreground">تفاصيل الأرباح والمصاريف (شامل مصروفات {labels.itemsName})</p>
         </div>
         <div className="flex items-center gap-4">
           <DateRangeFilter
@@ -168,7 +170,7 @@ export function ProfitReport() {
               <Car className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">مصروفات السيارات</p>
+              <p className="text-sm text-muted-foreground">مصروفات {labels.itemsName}</p>
               <p className="text-2xl font-bold text-orange-600">{formatCurrency(totalCarExpenses)} ريال</p>
             </div>
           </div>
@@ -196,7 +198,7 @@ export function ProfitReport() {
               <span className="font-bold text-success">+ {formatCurrency(totalGrossProfit)} ريال</span>
             </div>
             <div className="flex justify-between py-2 border-b">
-              <span>مصروفات السيارات (إصلاح، تجهيز، إلخ)</span>
+              <span>مصروفات {labels.itemsName} (إصلاح، تجهيز، إلخ)</span>
               <span className="font-bold text-orange-600">- {formatCurrency(totalCarExpenses)} ريال</span>
             </div>
             <div className="flex justify-between py-2 border-b">
@@ -213,12 +215,12 @@ export function ProfitReport() {
           <div className="bg-muted/50 rounded-lg p-4">
             <h4 className="font-semibold mb-2">شرح المعادلة:</h4>
             <p className="text-sm text-muted-foreground mb-2">
-              <strong>صافي الربح</strong> = الربح الإجمالي - مصروفات السيارات - المصروفات العامة
-            </p>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• <strong>مصروفات السيارات:</strong> المصروفات المرتبطة بسيارة معينة (إصلاح، صيانة، تجهيز)</li>
-              <li>• <strong>المصروفات العامة:</strong> مصروفات الشركة غير المرتبطة بسيارة (إيجار، كهرباء، رواتب)</li>
-            </ul>
+               <strong>صافي الربح</strong> = الربح الإجمالي - مصروفات {labels.itemsName} - المصروفات العامة
+             </p>
+             <ul className="text-sm text-muted-foreground space-y-1">
+               <li>• <strong>مصروفات {labels.itemsName}:</strong> المصروفات المرتبطة بـ{labels.itemName} معينة (إصلاح، صيانة، تجهيز)</li>
+               <li>• <strong>المصروفات العامة:</strong> مصروفات الشركة غير المرتبطة بـ{labels.itemName} (إيجار، كهرباء، رواتب)</li>
+             </ul>
           </div>
         </div>
       </div>
@@ -226,7 +228,7 @@ export function ProfitReport() {
       {/* Detailed Table */}
       <div className="bg-card rounded-2xl card-shadow overflow-hidden">
         <div className="p-4 border-b">
-          <h3 className="font-bold">تفاصيل الأرباح لكل سيارة</h3>
+          <h3 className="font-bold">تفاصيل الأرباح لكل {labels.itemName}</h3>
         </div>
         {salesWithCarExpenses.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
@@ -237,10 +239,10 @@ export function ProfitReport() {
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="text-right font-bold">التاريخ</TableHead>
-                <TableHead className="text-right font-bold">السيارة</TableHead>
+                <TableHead className="text-right font-bold">{labels.itemName}</TableHead>
                 <TableHead className="text-right font-bold">سعر البيع</TableHead>
                 <TableHead className="text-right font-bold">الربح الإجمالي</TableHead>
-                <TableHead className="text-right font-bold">مصروفات السيارة</TableHead>
+                <TableHead className="text-right font-bold">مصروفات {labels.itemName}</TableHead>
                 <TableHead className="text-right font-bold">صافي الربح</TableHead>
               </TableRow>
             </TableHeader>
@@ -268,7 +270,7 @@ export function ProfitReport() {
       {filteredGeneralExpenses.length > 0 && (
         <div className="bg-card rounded-2xl card-shadow overflow-hidden">
           <div className="p-4 border-b">
-            <h3 className="font-bold">المصروفات العامة (غير المرتبطة بسيارات)</h3>
+            <h3 className="font-bold">المصروفات العامة (غير المرتبطة بـ{labels.itemsName})</h3>
           </div>
           <Table>
             <TableHeader>
