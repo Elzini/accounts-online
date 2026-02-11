@@ -14,6 +14,8 @@ import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { extractSubdomain, buildTenantUrl, getBaseDomain, isAdminSubdomain, getAdminUrl } from '@/lib/tenantResolver';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 type AuthMode = 'company' | 'super_admin';
 
@@ -38,6 +40,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { setSelectedFiscalYear } = useFiscalYear();
+  const { t } = useLanguage();
 
   const [autoFetchTriggered, setAutoFetchTriggered] = useState(false);
 
@@ -66,9 +69,9 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     [globalSettings.login_header_gradient_end, globalSettings.login_header_gradient_start]
   );
 
-  const pageTitle = mode === 'super_admin' ? 'تسجيل دخول مدير النظام' : globalSettings.login_title;
-  const pageSubtitle = mode === 'super_admin' ? 'هذه الصفحة مخصصة فقط لحساب السوبر أدمن' : globalSettings.login_subtitle;
-  const primaryButtonText = mode === 'super_admin' ? 'دخول مدير النظام' : globalSettings.login_button_text;
+  const pageTitle = mode === 'super_admin' ? t.super_admin_login : globalSettings.login_title;
+  const pageSubtitle = mode === 'super_admin' ? t.super_admin_only : globalSettings.login_subtitle;
+  const primaryButtonText = mode === 'super_admin' ? t.super_admin_enter : globalSettings.login_button_text;
 
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMM yyyy', { locale: ar });
@@ -90,7 +93,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      toast.error('يرجى إدخال بريد إلكتروني صحيح');
+      toast.error(t.email_invalid || 'يرجى إدخال بريد إلكتروني صحيح');
       return;
     }
 
@@ -102,7 +105,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
       if (error) {
         console.error('Error fetching fiscal years:', error);
-        toast.error('حدث خطأ أثناء جلب السنوات المالية');
+        toast.error(t.error_fetching_fiscal_years || 'حدث خطأ أثناء جلب السنوات المالية');
         return;
       }
 
@@ -133,7 +136,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       }
     } catch (err) {
       console.error('Error:', err);
-      toast.error('حدث خطأ غير متوقع');
+      toast.error(t.unexpected_error || 'حدث خطأ غير متوقع');
     } finally {
       setFetchingFiscalYears(false);
     }
@@ -158,18 +161,18 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     e.preventDefault();
 
     if (!email || !password) {
-      toast.error('يرجى إدخال البريد الإلكتروني وكلمة المرور');
+      toast.error(t.enter_email_password || 'يرجى إدخال البريد الإلكتروني وكلمة المرور');
       return;
     }
 
     if (password.length < 6) {
-      toast.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+      toast.error(t.password_min_length || 'كلمة المرور يجب أن تكون 6 أحرف على الأقل');
       return;
     }
 
     // For company mode, require fiscal year selection if years are available
     if (mode === 'company' && fiscalYears.length > 0 && !selectedFiscalYearId) {
-      toast.error('يرجى اختيار السنة المالية');
+      toast.error(t.select_fiscal_year || 'يرجى اختيار السنة المالية');
       return;
     }
 
@@ -179,11 +182,11 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       const { error, data } = await signIn(email, password);
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
-          toast.error('بيانات الدخول غير صحيحة');
+          toast.error(t.invalid_credentials || 'بيانات الدخول غير صحيحة');
         } else if (error.message.includes('Email not confirmed')) {
-          toast.error('يرجى تأكيد البريد الإلكتروني أولاً');
+          toast.error(t.confirm_email_first || 'يرجى تأكيد البريد الإلكتروني أولاً');
         } else {
-          toast.error('حدث خطأ أثناء تسجيل الدخول');
+          toast.error(t.login_error || 'حدث خطأ أثناء تسجيل الدخول');
         }
         return;
       }
@@ -199,11 +202,11 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
         if (roleError || !roleData) {
           await supabase.auth.signOut();
-          toast.error('هذا الحساب ليس لديه صلاحية مدير النظام');
+          toast.error(t.invalid_credentials || 'هذا الحساب ليس لديه صلاحية مدير النظام');
           return;
         }
 
-        toast.success('تم تسجيل الدخول بنجاح');
+        toast.success(t.success || 'تم تسجيل الدخول بنجاح');
         
         // If on a company subdomain, redirect to admin subdomain
         const currentSubdomain = extractSubdomain();
@@ -242,7 +245,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         }
       }
 
-      toast.success('تم تسجيل الدخول بنجاح');
+      toast.success(t.success || 'تم تسجيل الدخول بنجاح');
 
       // Auto-redirect to company subdomain if on a known tenant domain (not lovable.app/localhost)
       if (mode === 'company' && data?.user) {
@@ -276,7 +279,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
       navigate('/', { replace: true });
     } catch {
-      toast.error('حدث خطأ غير متوقع');
+      toast.error(t.unexpected_error || 'حدث خطأ غير متوقع');
     } finally {
       setLoading(false);
     }
@@ -286,7 +289,11 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const showPasswordAndFiscalYear = mode === 'super_admin' || emailConfirmed;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: globalSettings.login_bg_color }}>
+    <div className="min-h-screen flex items-center justify-center p-4 relative" style={{ backgroundColor: globalSettings.login_bg_color }}>
+      {/* Language Switcher */}
+      <div className="absolute top-4 left-4">
+        <LanguageSwitcher variant="compact" />
+      </div>
       <div className="w-full max-w-md">
         <div className="rounded-2xl card-shadow overflow-hidden" style={{ backgroundColor: globalSettings.login_card_color }}>
           {/* Header */}
@@ -314,7 +321,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
             {/* Email Field - Always visible */}
             <div className="space-y-2">
-              <Label htmlFor="email">البريد الإلكتروني</Label>
+              <Label htmlFor="email">{t.email}</Label>
               <div className="relative">
                 <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -323,7 +330,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onKeyDown={handleEmailKeyDown}
-                  placeholder="أدخل البريد الإلكتروني"
+                  placeholder={t.email_placeholder}
                   className="h-12 pr-10"
                   dir="ltr"
                   required
@@ -343,10 +350,10 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                 {fetchingFiscalYears ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    جاري التحقق...
+                    {t.checking}
                   </span>
                 ) : (
-                  'التالي'
+                  t.next
                 )}
               </Button>
             )}
@@ -357,13 +364,13 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                 {/* Company Name Display */}
                 {mode === 'company' && companyName && (
                   <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-center">
-                    <p className="text-xs text-muted-foreground">الشركة</p>
+                    <p className="text-xs text-muted-foreground">{t.company_label}</p>
                     <p className="text-base font-bold text-foreground">{companyName}</p>
                   </div>
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">كلمة المرور</Label>
+                  <Label htmlFor="password">{t.password_placeholder}</Label>
                   <div className="relative">
                     <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
@@ -371,7 +378,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="أدخل كلمة المرور"
+                      placeholder={t.password_placeholder}
                       className="h-12 pr-10"
                       dir="ltr"
                       required
@@ -384,7 +391,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                 {/* Fiscal Year Selector - Only in company mode with available years */}
                 {mode === 'company' && fiscalYears.length > 0 && (
                   <div className="space-y-2">
-                    <Label htmlFor="fiscal-year">السنة المالية</Label>
+                    <Label htmlFor="fiscal-year">{t.fiscal_year_select}</Label>
                     <div className="relative">
                       <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10 pointer-events-none" />
                       <Select
@@ -392,7 +399,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                         onValueChange={setSelectedFiscalYearId}
                       >
                         <SelectTrigger className="h-12 pr-10 text-right">
-                          <SelectValue placeholder="اختر السنة المالية" />
+                          <SelectValue placeholder={t.fiscal_year_select} />
                         </SelectTrigger>
                         <SelectContent className="bg-background border z-50">
                           {fiscalYears.map((fy) => (
@@ -404,12 +411,12 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                                 </span>
                                 {fy.is_current && (
                                   <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                                    الحالية
+                                    {t.current_label}
                                   </span>
                                 )}
                                 {fy.status === 'closed' && (
                                   <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">
-                                    مغلقة
+                                    {t.closed_label}
                                   </span>
                                 )}
                               </div>
@@ -427,7 +434,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                   style={{ background: headerGradient }}
                   disabled={loading}
                 >
-                  {loading ? 'جاري التحميل...' : primaryButtonText}
+                  {loading ? t.loading : primaryButtonText}
                 </Button>
               </>
             )}
@@ -439,32 +446,32 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                 getBaseDomain() ? (
                   <a href={getAdminUrl() + '/auth/super-admin'} className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
                     <Shield className="w-4 h-4" />
-                    دخول مدير النظام
+                    {t.super_admin_login}
                   </a>
                 ) : (
                   <Link to="/auth/super-admin" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
                     <Shield className="w-4 h-4" />
-                    دخول مدير النظام
+                    {t.super_admin_login}
                   </Link>
                 )
               ) : (
                 <Link to="/auth/company" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
                   <Building2 className="w-4 h-4" />
-                  دخول الشركات
+                  {t.company_login}
                 </Link>
               )}
 
               <Link to="/auth" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
                 <ArrowLeft className="w-4 h-4" />
-                رجوع
+                {t.back}
               </Link>
             </div>
 
             {mode === 'company' && (
               <p className="text-center text-sm text-muted-foreground">
-                ليس لديك حساب؟{' '}
+                {t.no_account}{' '}
                 <Link to="/register" className="text-primary hover:underline font-medium">
-                  تسجيل شركة جديدة
+                  {t.register_company}
                 </Link>
               </p>
             )}
