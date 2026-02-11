@@ -60,7 +60,22 @@ export interface TranslationKeys {
   no_company_linked: string;
   contact_admin: string;
   fiscal_year_select: string;
-  
+  super_admin_only: string;
+  super_admin_enter: string;
+  email_invalid: string;
+  error_fetching_fiscal_years: string;
+  unexpected_error: string;
+  enter_email_password: string;
+  select_fiscal_year: string;
+  invalid_credentials: string;
+  confirm_email_first: string;
+  login_error: string;
+  checking: string;
+  company_label: string;
+  current_label: string;
+  closed_label: string;
+  register_company: string;
+  no_account: string;
   // Navigation / Sidebar
   nav_dashboard: string;
   nav_customers: string;
