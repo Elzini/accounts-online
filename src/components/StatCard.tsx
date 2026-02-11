@@ -225,21 +225,6 @@ export function StatCard({
             </p>
           )}
           {/* Trend indicator */}
-          {showTrend && trend !== undefined && trend !== 0 && (
-            <div className="flex items-center gap-1 mt-1">
-              {trend > 0 ? (
-                <TrendUpIcon className="w-3 h-3" style={{ color: trendColor || 'hsl(var(--success))' }} />
-              ) : (
-                <TrendDownIcon className="w-3 h-3" style={{ color: trendColor || 'hsl(var(--destructive))' }} />
-              )}
-              <span
-                className="text-[10px] font-bold"
-                style={{ color: trendColor || (trend > 0 ? 'hsl(var(--success))' : 'hsl(var(--destructive))') }}
-              >
-                {trend > 0 ? '+' : ''}{trend.toFixed(1)}%
-              </span>
-            </div>
-          )}
           {/* Badge */}
           {badge && (
             <span
