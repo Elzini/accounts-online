@@ -158,4 +158,13 @@ export type ActivePage =
    | 'branches'
    // API & Plugins
    | 'api-management'
-   | 'plugins';
+   | 'plugins'
+   // Plugin pages
+   | 'plugin-zatca'
+   | 'plugin-advanced-hr'
+   | 'plugin-multi-warehouse'
+   | 'plugin-bi-analytics'
+   | 'plugin-pos'
+   | 'plugin-whatsapp'
+   | 'plugin-ifrs'
+   | 'plugin-project-mgmt';
