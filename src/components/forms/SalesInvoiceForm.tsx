@@ -13,7 +13,8 @@ import {
   FileSpreadsheet,
   ChevronDown,
   MessageSquare,
-  RotateCcw
+  RotateCcw,
+  Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,6 +53,8 @@ import { CarTransfer } from '@/services/transfers';
 import { useAddInstallmentSale } from '@/hooks/useInstallments';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { InvoiceSearchBar } from './InvoiceSearchBar';
+import { useItems, useUnits } from '@/hooks/useInventory';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SalesInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -68,6 +71,19 @@ interface SelectedCarItem {
   chassis_number: string;
   quantity: number;
   pendingTransfer?: CarTransfer | null;
+}
+
+interface SelectedInventoryItem {
+  id: string;
+  item_id: string;
+  item_name: string;
+  barcode: string;
+  unit_name: string;
+  unit_id: string | null;
+  sale_price: string;
+  cost_price: number;
+  quantity: number;
+  available_quantity: number;
 }
 
 export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
@@ -87,6 +103,11 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const updateSaleWithItems = useUpdateSaleWithItems();
   const addInstallmentSale = useAddInstallmentSale();
   const companyId = useCompanyId();
+
+  // Inventory hooks
+  const { data: inventoryItems = [] } = useItems();
+  const { data: units = [] } = useUnits();
+  const isCarDealership = company?.company_type === 'car_dealership';
 
   // Available cars for sale
   const availableCars = useMemo(() => 
@@ -154,14 +175,56 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
 
+  // Inventory items state (for non-car companies)
+  const [selectedInventoryItems, setSelectedInventoryItems] = useState<SelectedInventoryItem[]>([]);
+
   const selectedCustomer = customers.find(c => c.id === invoiceData.customer_id);
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_sales ? (taxSettings?.tax_rate || 15) : 0;
+
+  // Available inventory items for selection
+  const availableInventoryItems = useMemo(() => 
+    (inventoryItems || []).filter((item: any) => item.is_active && !selectedInventoryItems.some(si => si.item_id === item.id)),
+    [inventoryItems, selectedInventoryItems]
+  );
 
   // Cars that are still available for selection
   const remainingCars = useMemo(() => 
     availableCars.filter(car => !selectedCars.some(sc => sc.car_id === car.id)),
     [availableCars, selectedCars]
   );
+
+  // Add inventory item to invoice
+  const handleAddInventoryItem = (itemId: string) => {
+    const item = (inventoryItems || []).find((i: any) => i.id === itemId) as any;
+    if (!item) return;
+
+    setSelectedInventoryItems([...selectedInventoryItems, {
+      id: crypto.randomUUID(),
+      item_id: item.id,
+      item_name: item.name,
+      barcode: item.barcode || '',
+      unit_name: item.units_of_measure?.abbreviation || item.units_of_measure?.name || 'وحدة',
+      unit_id: item.unit_id,
+      sale_price: String(item.sale_price_1 || 0),
+      cost_price: Number(item.cost_price || 0),
+      quantity: 1,
+      available_quantity: Number(item.current_quantity || 0),
+    }]);
+  };
+
+  const handleRemoveInventoryItem = (id: string) => {
+    if (selectedInventoryItems.length === 1) {
+      toast.error('يجب إضافة صنف واحد على الأقل');
+      return;
+    }
+    setSelectedInventoryItems(selectedInventoryItems.filter(i => i.id !== id));
+  };
+
+  const handleInventoryItemChange = (id: string, field: keyof SelectedInventoryItem, value: string | number) => {
+    setSelectedInventoryItems(selectedInventoryItems.map(item => 
+      item.id === id ? { ...item, [field]: value } : item
+    ));
+  };
 
   const handleAddCar = async (carId: string) => {
     const car = availableCars.find(c => c.id === carId);
@@ -202,21 +265,15 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     ));
   };
 
-  // Calculate totals
+  // Calculate totals - supports both cars and inventory items
   const calculations = useMemo(() => {
     let subtotal = 0;
     let totalVAT = 0;
     const commission = parseFloat(invoiceData.commission) || 0;
     const otherExpenses = parseFloat(invoiceData.other_expenses) || 0;
 
-    const itemsWithCalc = selectedCars.map(car => {
-      const price = parseFloat(car.sale_price) || 0;
-      const quantity = car.quantity || 1;
-      
-      let baseAmount: number;
-      let vatAmount: number;
-      let total: number;
-
+    const calcItem = (price: number, quantity: number) => {
+      let baseAmount: number, vatAmount: number, total: number;
       if (invoiceData.price_includes_tax && taxRate > 0) {
         total = price * quantity;
         baseAmount = total / (1 + taxRate / 100);
@@ -226,16 +283,23 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
         vatAmount = baseAmount * (taxRate / 100);
         total = baseAmount + vatAmount;
       }
-
       subtotal += baseAmount;
       totalVAT += vatAmount;
+      return { baseAmount, vatAmount, total };
+    };
 
-      return {
-        ...car,
-        baseAmount,
-        vatAmount,
-        total,
-      };
+    // Car items
+    const itemsWithCalc = selectedCars.map(car => {
+      const price = parseFloat(car.sale_price) || 0;
+      const result = calcItem(price, car.quantity || 1);
+      return { ...car, ...result };
+    });
+
+    // Inventory items
+    const inventoryItemsWithCalc = selectedInventoryItems.map(item => {
+      const price = parseFloat(item.sale_price) || 0;
+      const result = calcItem(price, item.quantity || 1);
+      return { ...item, ...result };
     });
 
     // Calculate discount
@@ -248,11 +312,15 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
     const subtotalAfterDiscount = subtotal - discountAmount;
     const finalTotal = subtotalAfterDiscount + totalVAT;
-    const totalPurchasePrice = selectedCars.reduce((sum, car) => sum + car.purchase_price, 0);
+    const totalPurchasePrice = isCarDealership
+      ? selectedCars.reduce((sum, car) => sum + car.purchase_price, 0)
+      : selectedInventoryItems.reduce((sum, item) => sum + (item.cost_price * item.quantity), 0);
     const profit = finalTotal - totalPurchasePrice - commission - otherExpenses;
+    const totalQuantity = isCarDealership ? selectedCars.length : selectedInventoryItems.reduce((sum, i) => sum + i.quantity, 0);
 
     return {
       items: itemsWithCalc,
+      inventoryItems: inventoryItemsWithCalc,
       subtotal,
       discountAmount,
       subtotalAfterDiscount,
@@ -261,9 +329,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       roundedTotal: Math.round(finalTotal),
       totalPurchasePrice,
       profit,
-      quantity: selectedCars.length,
+      quantity: totalQuantity,
     };
-  }, [selectedCars, invoiceData.price_includes_tax, invoiceData.commission, invoiceData.other_expenses, taxRate, discount, discountType]);
+  }, [selectedCars, selectedInventoryItems, invoiceData.price_includes_tax, invoiceData.commission, invoiceData.other_expenses, taxRate, discount, discountType, isCarDealership]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA', {
@@ -278,91 +346,129 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       return;
     }
 
-    if (selectedCars.length === 0) {
-      toast.error('الرجاء إضافة سيارة واحدة على الأقل');
-      return;
-    }
+    if (isCarDealership) {
+      // Car dealership flow (existing logic)
+      if (selectedCars.length === 0) {
+        toast.error('الرجاء إضافة سيارة واحدة على الأقل');
+        return;
+      }
+      const invalidCar = selectedCars.find(car => !car.sale_price || parseFloat(car.sale_price) <= 0);
+      if (invalidCar) {
+        toast.error('الرجاء إدخال سعر البيع لجميع السيارات');
+        return;
+      }
 
-    const invalidCar = selectedCars.find(car => !car.sale_price || parseFloat(car.sale_price) <= 0);
-    if (invalidCar) {
-      toast.error('الرجاء إدخال سعر البيع لجميع السيارات');
-      return;
-    }
+      try {
+        const carsWithPrices = selectedCars.map((car, index) => ({
+          car_id: car.car_id,
+          sale_price: calculations.items[index].total,
+          purchase_price: car.purchase_price,
+        }));
 
-    try {
-      // Calculate actual sale prices - use the total price (with tax) that the customer pays
-      const carsWithPrices = selectedCars.map((car, index) => ({
-        car_id: car.car_id,
-        sale_price: calculations.items[index].total, // Total price including tax
-        purchase_price: car.purchase_price,
-      }));
+        const sale = await addMultiCarSale.mutateAsync({
+          customer_id: invoiceData.customer_id,
+          seller_name: invoiceData.seller_name || undefined,
+          commission: parseFloat(invoiceData.commission) || 0,
+          other_expenses: parseFloat(invoiceData.other_expenses) || 0,
+          sale_date: invoiceData.sale_date,
+          payment_account_id: invoiceData.payment_account_id || undefined,
+          cars: carsWithPrices,
+        });
 
-      const sale = await addMultiCarSale.mutateAsync({
-        customer_id: invoiceData.customer_id,
-        seller_name: invoiceData.seller_name || undefined,
-        commission: parseFloat(invoiceData.commission) || 0,
-        other_expenses: parseFloat(invoiceData.other_expenses) || 0,
-        sale_date: invoiceData.sale_date,
-        payment_account_id: invoiceData.payment_account_id || undefined,
-        cars: carsWithPrices,
-      });
-
-      // Link pending transfers to this sale
-      for (const car of selectedCars) {
-        if (car.pendingTransfer) {
-          try {
-            await linkTransferToSale(
-              car.pendingTransfer.id,
-              sale.id,
-              parseFloat(car.sale_price),
-              car.pendingTransfer.agreed_commission,
-              car.pendingTransfer.commission_percentage
-            );
-          } catch (error) {
-            console.error('Error linking transfer to sale:', error);
+        for (const car of selectedCars) {
+          if (car.pendingTransfer) {
+            try {
+              await linkTransferToSale(car.pendingTransfer.id, sale.id, parseFloat(car.sale_price), car.pendingTransfer.agreed_commission, car.pendingTransfer.commission_percentage);
+            } catch (error) { console.error('Error linking transfer to sale:', error); }
           }
         }
-      }
 
-      // Create installment contract if enabled
-      if (invoiceData.is_installment && companyId) {
-        const downPayment = parseFloat(invoiceData.down_payment) || 0;
-        const numberOfInstallments = parseInt(invoiceData.number_of_installments) || 12;
-        const remainingAmount = calculations.finalTotal - downPayment;
-        const installmentAmount = remainingAmount / numberOfInstallments;
-
-        try {
-          await addInstallmentSale.mutateAsync({
-            company_id: companyId,
-            sale_id: sale.id,
-            total_amount: calculations.finalTotal,
-            down_payment: downPayment,
-            remaining_amount: remainingAmount,
-            number_of_installments: numberOfInstallments,
-            installment_amount: installmentAmount,
-            start_date: invoiceData.sale_date,
-            status: 'active',
-            notes: invoiceData.notes || null,
-          });
-          toast.success('تم إنشاء عقد التقسيط بنجاح');
-        } catch (error) {
-          console.error('Installment creation error:', error);
-          toast.error('حدث خطأ أثناء إنشاء عقد التقسيط');
+        if (invoiceData.is_installment && companyId) {
+          const downPayment = parseFloat(invoiceData.down_payment) || 0;
+          const numberOfInstallments = parseInt(invoiceData.number_of_installments) || 12;
+          const remainingAmount = calculations.finalTotal - downPayment;
+          const installmentAmount = remainingAmount / numberOfInstallments;
+          try {
+            await addInstallmentSale.mutateAsync({ company_id: companyId, sale_id: sale.id, total_amount: calculations.finalTotal, down_payment: downPayment, remaining_amount: remainingAmount, number_of_installments: numberOfInstallments, installment_amount: installmentAmount, start_date: invoiceData.sale_date, status: 'active', notes: invoiceData.notes || null });
+            toast.success('تم إنشاء عقد التقسيط بنجاح');
+          } catch (error) { toast.error('حدث خطأ أثناء إنشاء عقد التقسيط'); }
         }
+
+        setSavedSaleData({ ...sale, customer: selectedCustomer, cars: selectedCars });
+        toast.success(`تم تسجيل بيع ${selectedCars.length} سيارة بنجاح`);
+        setInvoiceOpen(true);
+      } catch (error: any) {
+        console.error('Sale error:', error);
+        toast.error('حدث خطأ أثناء تسجيل البيع');
       }
-      
-      // Store saved data for invoice
-      setSavedSaleData({
-        ...sale,
-        customer: selectedCustomer,
-        cars: selectedCars,
-      });
-      
-      toast.success(`تم تسجيل بيع ${selectedCars.length} سيارة بنجاح`);
-      setInvoiceOpen(true);
-    } catch (error: any) {
-      console.error('Sale error:', error);
-      toast.error('حدث خطأ أثناء تسجيل البيع');
+    } else {
+      // Inventory items flow (new)
+      if (selectedInventoryItems.length === 0) {
+        toast.error('الرجاء إضافة صنف واحد على الأقل');
+        return;
+      }
+      const invalidItem = selectedInventoryItems.find(i => !i.sale_price || parseFloat(i.sale_price) <= 0);
+      if (invalidItem) {
+        toast.error('الرجاء إدخال سعر البيع لجميع الأصناف');
+        return;
+      }
+
+      try {
+        if (!companyId) throw new Error('لا يمكن العثور على الشركة');
+        const invoiceNumber = `INV-${Date.now()}`;
+
+        // Create invoice
+        const { data: invoice, error: invoiceError } = await supabase
+          .from('invoices')
+          .insert({
+            company_id: companyId,
+            invoice_number: invoiceData.invoice_number || invoiceNumber,
+            invoice_type: 'sale',
+            customer_id: invoiceData.customer_id,
+            customer_name: selectedCustomer?.name || '',
+            invoice_date: invoiceData.sale_date,
+            subtotal: calculations.subtotal,
+            taxable_amount: calculations.subtotalAfterDiscount,
+            vat_rate: taxRate,
+            vat_amount: calculations.totalVAT,
+            total: calculations.finalTotal,
+            discount_amount: calculations.discountAmount,
+            amount_paid: paidAmount,
+            payment_status: paidAmount >= calculations.finalTotal ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid',
+            status: 'active',
+            fiscal_year_id: selectedFiscalYear?.id || null,
+            notes: invoiceData.notes || null,
+          })
+          .select()
+          .single();
+
+        if (invoiceError) throw invoiceError;
+
+        // Create invoice items (triggers auto stock update)
+        const invoiceItems = selectedInventoryItems.map((item, index) => ({
+          invoice_id: invoice.id,
+          item_description: item.item_name,
+          item_code: item.barcode || '',
+          quantity: item.quantity,
+          unit: item.unit_name,
+          unit_price: calculations.inventoryItems[index].baseAmount / item.quantity,
+          taxable_amount: calculations.inventoryItems[index].baseAmount,
+          vat_rate: taxRate,
+          vat_amount: calculations.inventoryItems[index].vatAmount,
+          total: calculations.inventoryItems[index].total,
+          inventory_item_id: item.item_id,
+        }));
+
+        const { error: itemsError } = await supabase.from('invoice_items').insert(invoiceItems);
+        if (itemsError) throw itemsError;
+
+        setSavedSaleData({ id: invoice.id, customer: selectedCustomer, inventoryItems: selectedInventoryItems });
+        toast.success(`تم إصدار فاتورة بيع ${selectedInventoryItems.length} صنف بنجاح`);
+        setInvoiceOpen(true);
+      } catch (error: any) {
+        console.error('Invoice error:', error);
+        toast.error('حدث خطأ أثناء إصدار الفاتورة');
+      }
     }
   };
 
@@ -385,6 +491,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       first_installment_date: new Date().toISOString().split('T')[0],
     });
     setSelectedCars([]);
+    setSelectedInventoryItems([]);
     setDiscount(0);
     setPaidAmount(0);
     setSavedSaleData(null);
@@ -947,147 +1054,198 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
           {/* Items Table */}
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="text-right text-xs w-10">#</TableHead>
-                  <TableHead className="text-right text-xs min-w-[150px]">البيان</TableHead>
-                  <TableHead className="text-right text-xs min-w-[100px]">الموديل</TableHead>
-                  <TableHead className="text-right text-xs min-w-[80px]">اللون</TableHead>
-                  <TableHead className="text-right text-xs min-w-[120px]">رقم الهيكل</TableHead>
-                  <TableHead className="text-center text-xs w-16">الكمية</TableHead>
-                  <TableHead className="text-center text-xs w-20">الوحدة</TableHead>
-                  <TableHead className="text-center text-xs w-24">السعر</TableHead>
-                  <TableHead className="text-center text-xs w-24">المجموع</TableHead>
-                  <TableHead className="text-center text-xs w-16">VAT %</TableHead>
-                  <TableHead className="text-center text-xs w-24">المجموع الكلي</TableHead>
-                  <TableHead className="text-center text-xs w-10"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {selectedCars.map((car, index) => {
-                  const calcItem = calculations.items[index];
-                  return (
-                    <TableRow key={car.id} className="hover:bg-muted/30">
-                      <TableCell className="text-center text-sm">{index + 1}</TableCell>
-                      <TableCell className="text-sm font-medium">
-                        {car.car_name}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {car.model || '-'}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {car.color || '-'}
-                      </TableCell>
-                      <TableCell className="text-sm font-mono" dir="ltr">
-                        {car.chassis_number}
-                      </TableCell>
-                      <TableCell className="text-center text-sm">1</TableCell>
-                      <TableCell className="text-center text-sm">سيارة</TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={car.sale_price}
-                          onChange={(e) => handleCarChange(car.id, 'sale_price', e.target.value)}
-                          placeholder="0"
-                          className="h-8 text-sm text-center w-24"
-                          dir="ltr"
-                        />
-                      </TableCell>
-                      <TableCell className="text-center text-sm font-medium">
-                        {formatCurrency(calcItem?.baseAmount || 0)}
-                      </TableCell>
-                      <TableCell className="text-center text-sm text-warning">
-                        {taxRate}%
-                      </TableCell>
-                      <TableCell className="text-center text-sm font-bold text-primary">
-                        {formatCurrency(calcItem?.total || 0)}
-                      </TableCell>
-                      <TableCell>
-                        {selectedCars.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRemoveCar(car.id)}
-                            className="h-7 w-7 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </TableCell>
+            {isCarDealership ? (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="text-right text-xs w-10">#</TableHead>
+                      <TableHead className="text-right text-xs min-w-[150px]">البيان</TableHead>
+                      <TableHead className="text-right text-xs min-w-[100px]">الموديل</TableHead>
+                      <TableHead className="text-right text-xs min-w-[80px]">اللون</TableHead>
+                      <TableHead className="text-right text-xs min-w-[120px]">رقم الهيكل</TableHead>
+                      <TableHead className="text-center text-xs w-16">الكمية</TableHead>
+                      <TableHead className="text-center text-xs w-20">الوحدة</TableHead>
+                      <TableHead className="text-center text-xs w-24">السعر</TableHead>
+                      <TableHead className="text-center text-xs w-24">المجموع</TableHead>
+                      <TableHead className="text-center text-xs w-16">VAT %</TableHead>
+                      <TableHead className="text-center text-xs w-24">المجموع الكلي</TableHead>
+                      <TableHead className="text-center text-xs w-10"></TableHead>
                     </TableRow>
-                  );
-                })}
-                {selectedCars.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
-                      اختر سيارة لإضافتها للفاتورة
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-
-            {/* Add Item Section */}
-            <div className="p-2 border-t flex gap-2 flex-wrap">
-              <Select onValueChange={handleAddCar}>
-                <SelectTrigger className="w-[300px] h-9 text-sm">
-                  <SelectValue placeholder="اختر سيارة لإضافتها..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {remainingCars.map((car) => (
-                    <SelectItem key={car.id} value={car.id}>
-                      <div className="flex items-center gap-2">
-                        <Car className="w-4 h-4" />
-                        <span>{car.name} {car.model}</span>
-                        <span className="text-muted-foreground text-xs" dir="ltr">{car.chassis_number}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Import from saved templates */}
-              {savedTemplates.length > 0 && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2 h-9">
-                      <FileSpreadsheet className="w-4 h-4" />
-                      استيراد من قالب
-                      <ChevronDown className="w-3 h-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {savedTemplates.map((template) => (
-                      <DropdownMenuItem
-                        key={template.id}
-                        onClick={() => {
-                          let matchedCount = 0;
-                          template.data.forEach((item) => {
-                            const matchingCar = remainingCars.find(car => 
-                              car.name.includes(item.description) || 
-                              car.chassis_number === item.description
-                            );
-                            if (matchingCar) {
-                              handleAddCar(matchingCar.id);
-                              matchedCount++;
-                            }
-                          });
-                          if (matchedCount > 0) {
-                            toast.success(`تم استيراد ${matchedCount} سيارة من القالب`);
-                          } else {
-                            toast.warning('لم يتم العثور على سيارات مطابقة');
-                          }
-                        }}
-                      >
-                        {template.name}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedCars.map((car, index) => {
+                      const calcItem = calculations.items[index];
+                      return (
+                        <TableRow key={car.id} className="hover:bg-muted/30">
+                          <TableCell className="text-center text-sm">{index + 1}</TableCell>
+                          <TableCell className="text-sm font-medium">{car.car_name}</TableCell>
+                          <TableCell className="text-sm">{car.model || '-'}</TableCell>
+                          <TableCell className="text-sm">{car.color || '-'}</TableCell>
+                          <TableCell className="text-sm font-mono" dir="ltr">{car.chassis_number}</TableCell>
+                          <TableCell className="text-center text-sm">1</TableCell>
+                          <TableCell className="text-center text-sm">سيارة</TableCell>
+                          <TableCell>
+                            <Input type="number" value={car.sale_price} onChange={(e) => handleCarChange(car.id, 'sale_price', e.target.value)} placeholder="0" className="h-8 text-sm text-center w-24" dir="ltr" />
+                          </TableCell>
+                          <TableCell className="text-center text-sm font-medium">{formatCurrency(calcItem?.baseAmount || 0)}</TableCell>
+                          <TableCell className="text-center text-sm text-warning">{taxRate}%</TableCell>
+                          <TableCell className="text-center text-sm font-bold text-primary">{formatCurrency(calcItem?.total || 0)}</TableCell>
+                          <TableCell>
+                            {selectedCars.length > 1 && (
+                              <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveCar(car.id)} className="h-7 w-7 text-destructive hover:text-destructive/90 hover:bg-destructive/10">
+                                <X className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {selectedCars.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={12} className="text-center text-muted-foreground py-8">اختر سيارة لإضافتها للفاتورة</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                <div className="p-2 border-t flex gap-2 flex-wrap">
+                  <Select onValueChange={handleAddCar}>
+                    <SelectTrigger className="w-[300px] h-9 text-sm">
+                      <SelectValue placeholder="اختر سيارة لإضافتها..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {remainingCars.map((car) => (
+                        <SelectItem key={car.id} value={car.id}>
+                          <div className="flex items-center gap-2">
+                            <Car className="w-4 h-4" />
+                            <span>{car.name} {car.model}</span>
+                            <span className="text-muted-foreground text-xs" dir="ltr">{car.chassis_number}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {savedTemplates.length > 0 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-2 h-9">
+                          <FileSpreadsheet className="w-4 h-4" />
+                          استيراد من قالب
+                          <ChevronDown className="w-3 h-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {savedTemplates.map((template) => (
+                          <DropdownMenuItem
+                            key={template.id}
+                            onClick={() => {
+                              let matchedCount = 0;
+                              template.data.forEach((item) => {
+                                const matchingCar = remainingCars.find(car => car.name.includes(item.description) || car.chassis_number === item.description);
+                                if (matchingCar) { handleAddCar(matchingCar.id); matchedCount++; }
+                              });
+                              if (matchedCount > 0) { toast.success(`تم استيراد ${matchedCount} سيارة من القالب`); }
+                              else { toast.warning('لم يتم العثور على سيارات مطابقة'); }
+                            }}
+                          >
+                            {template.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Inventory Items Table */}
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="text-right text-xs w-10">#</TableHead>
+                      <TableHead className="text-right text-xs min-w-[180px]">الصنف</TableHead>
+                      <TableHead className="text-right text-xs min-w-[100px]">الباركود</TableHead>
+                      <TableHead className="text-center text-xs w-20">الكمية</TableHead>
+                      <TableHead className="text-center text-xs w-16">المتاح</TableHead>
+                      <TableHead className="text-center text-xs w-20">الوحدة</TableHead>
+                      <TableHead className="text-center text-xs w-24">السعر</TableHead>
+                      <TableHead className="text-center text-xs w-24">المجموع</TableHead>
+                      <TableHead className="text-center text-xs w-16">VAT %</TableHead>
+                      <TableHead className="text-center text-xs w-24">المجموع الكلي</TableHead>
+                      <TableHead className="text-center text-xs w-10"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedInventoryItems.map((item, index) => {
+                      const calcItem = calculations.inventoryItems[index];
+                      return (
+                        <TableRow key={item.id} className="hover:bg-muted/30">
+                          <TableCell className="text-center text-sm">{index + 1}</TableCell>
+                          <TableCell className="text-sm font-medium">{item.item_name}</TableCell>
+                          <TableCell className="text-sm font-mono" dir="ltr">{item.barcode || '-'}</TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={item.available_quantity || undefined}
+                              value={item.quantity}
+                              onChange={(e) => handleInventoryItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)}
+                              className="h-8 text-sm text-center w-20"
+                            />
+                          </TableCell>
+                          <TableCell className="text-center text-sm text-muted-foreground">{item.available_quantity}</TableCell>
+                          <TableCell className="text-center text-sm">{item.unit_name}</TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={item.sale_price}
+                              onChange={(e) => handleInventoryItemChange(item.id, 'sale_price', e.target.value)}
+                              placeholder="0"
+                              className="h-8 text-sm text-center w-24"
+                              dir="ltr"
+                            />
+                          </TableCell>
+                          <TableCell className="text-center text-sm font-medium">{formatCurrency(calcItem?.baseAmount || 0)}</TableCell>
+                          <TableCell className="text-center text-sm text-warning">{taxRate}%</TableCell>
+                          <TableCell className="text-center text-sm font-bold text-primary">{formatCurrency(calcItem?.total || 0)}</TableCell>
+                          <TableCell>
+                            {selectedInventoryItems.length > 1 && (
+                              <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveInventoryItem(item.id)} className="h-7 w-7 text-destructive hover:text-destructive/90 hover:bg-destructive/10">
+                                <X className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {selectedInventoryItems.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={11} className="text-center text-muted-foreground py-8">اختر صنف لإضافته للفاتورة</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                <div className="p-2 border-t flex gap-2 flex-wrap">
+                  <Select onValueChange={handleAddInventoryItem}>
+                    <SelectTrigger className="w-[300px] h-9 text-sm">
+                      <SelectValue placeholder="اختر صنف لإضافته..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableInventoryItems.map((item: any) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          <div className="flex items-center gap-2">
+                            <Package className="w-4 h-4" />
+                            <span>{item.name}</span>
+                            {item.barcode && <span className="text-muted-foreground text-xs" dir="ltr">{item.barcode}</span>}
+                            <span className="text-muted-foreground text-xs">({item.current_quantity || 0})</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Totals Section */}
