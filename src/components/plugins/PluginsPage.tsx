@@ -22,7 +22,7 @@ interface PluginsPageProps {
 }
 
 export function PluginsPage({ setActivePage }: PluginsPageProps) {
-  const { plugins, installedPlugins, availablePlugins, installPlugin, uninstallPlugin, togglePlugin } = usePlugins();
+  const { plugins, installedPlugins, activePlugins, availablePlugins, installPlugin, uninstallPlugin, togglePlugin } = usePlugins();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   const filteredMarketplace = selectedCategory === 'all'
@@ -130,7 +130,7 @@ export function PluginsPage({ setActivePage }: PluginsPageProps) {
           </Badge>
           <Badge variant="secondary" className="gap-1">
             <Zap className="w-3 h-3" />
-            {installedPlugins.filter(p => p.enabled).length} نشطة
+            {activePlugins.length} نشطة
           </Badge>
         </div>
       </div>
