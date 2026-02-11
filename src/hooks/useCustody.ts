@@ -285,6 +285,20 @@ export function useCustodyDetails(custodyId: string | null) {
         );
       }
 
+      // Auto-create employee_advance if employee_id is provided (advance expense from custody)
+      if (data.employee_id && companyId) {
+        await createEmployeeAdvance(
+          companyId,
+          data.employee_id,
+          data.amount,
+          data.transaction_date,
+          data.description,
+          data.amount, // monthly_deduction = full amount (single deduction)
+          1, // single installment
+          custodyId!,
+        );
+      }
+
       return addCustodyTransaction({
         ...data,
         company_id: companyId,
@@ -305,8 +319,9 @@ export function useCustodyDetails(custodyId: string | null) {
   // Update transaction mutation - auto-creates journal entry if account added
   const updateTransactionMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<CustodyTransactionInsert> }) => {
-      // Check if we need to create a journal entry (account added to a transaction that didn't have one)
       const existingTx = custody?.transactions?.find(t => t.id === id);
+      
+      // Auto-create journal entry if account added to a transaction that didn't have one
       if (updates.account_id && custody?.custody_account_id && existingTx && !existingTx.journal_entry_id) {
         const journalEntryId = await createTransactionJournalEntry(
           companyId!,
@@ -318,8 +333,23 @@ export function useCustodyDetails(custodyId: string | null) {
           updates.transaction_date || existingTx.transaction_date,
           custody.fiscal_year_id || null,
         );
-        return updateCustodyTransaction(id, { ...updates, journal_entry_id: journalEntryId });
+        updates = { ...updates, journal_entry_id: journalEntryId };
       }
+
+      // Auto-create employee_advance if employee added and didn't exist before
+      if (updates.employee_id && companyId && existingTx && !existingTx.employee_id) {
+        await createEmployeeAdvance(
+          companyId,
+          updates.employee_id,
+          updates.amount || existingTx.amount,
+          updates.transaction_date || existingTx.transaction_date,
+          updates.description || existingTx.description,
+          updates.amount || existingTx.amount,
+          1,
+          custodyId!,
+        );
+      }
+
       return updateCustodyTransaction(id, updates);
     },
     onSuccess: () => {

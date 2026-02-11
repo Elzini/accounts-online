@@ -36,6 +36,14 @@ import { useCustodyExport } from './useCustodyExport';
 import { CustodyPrintPreviewDialog } from './CustodyPrintPreviewDialog';
 import { AccountSearchSelect } from '@/components/accounting/AccountSearchSelect';
 import { useAccounts } from '@/hooks/useAccounting';
+import { useEmployees } from '@/hooks/usePayroll';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const transactionSchema = z.object({
   transaction_date: z.string().min(1, 'التاريخ مطلوب'),
@@ -43,6 +51,7 @@ const transactionSchema = z.object({
   analysis_category: z.string().optional(),
   amount: z.coerce.number().min(0.01, 'المبلغ مطلوب'),
   account_id: z.string().optional(),
+  employee_id: z.string().optional(),
 });
 
 type TransactionFormValues = z.infer<typeof transactionSchema>;
@@ -58,7 +67,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
   const { settleCustody, isSettling } = useCustody();
   const { exportToExcel } = useCustodyExport();
   const { data: accounts = [] } = useAccounts();
-  const [showForm, setShowForm] = useState(false);
+  const { data: employees = [] } = useEmployees();
   const [editingTransaction, setEditingTransaction] = useState<CustodyTransaction | null>(null);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
 
@@ -72,8 +81,11 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
       analysis_category: '',
       amount: 0,
       account_id: '',
+      employee_id: '',
     },
   });
+
+  const [showForm, setShowForm] = useState(false);
 
   if (isLoading || !custody) {
     return (
@@ -99,6 +111,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
           analysis_category: values.analysis_category || null,
           amount: values.amount,
           account_id: values.account_id || null,
+          employee_id: values.employee_id && values.employee_id !== '__none__' ? values.employee_id : null,
         },
       });
       setEditingTransaction(null);
@@ -109,6 +122,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
         analysis_category: values.analysis_category || null,
         amount: values.amount,
         account_id: values.account_id || null,
+        employee_id: values.employee_id && values.employee_id !== '__none__' ? values.employee_id : null,
         journal_entry_id: null,
         notes: null,
         created_by: null,
@@ -120,6 +134,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
       analysis_category: '',
       amount: 0,
       account_id: '',
+      employee_id: '',
     });
     setShowForm(false);
   };
@@ -132,6 +147,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
       analysis_category: tx.analysis_category || '',
       amount: tx.amount,
       account_id: tx.account_id || '',
+      employee_id: (tx as any).employee_id || '',
     });
     setShowForm(true);
   };
@@ -251,7 +267,12 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                           </span>
                         ) : <span className="text-muted-foreground">بدون حساب</span>}
                       </TableCell>
-                      <TableCell>{tx.description}</TableCell>
+                      <TableCell>
+                        {tx.description}
+                        {tx.employee && (
+                          <span className="text-xs text-primary mr-1">({tx.employee.name})</span>
+                        )}
+                      </TableCell>
                       <TableCell className="font-medium">{formatNumber(tx.amount)}</TableCell>
                       {!isSettled && (
                         <TableCell>
@@ -381,6 +402,34 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                           </FormItem>
                         )}
                       />
+                      {/* Employee selector - shows when category is سلفة */}
+                      {form.watch('analysis_category')?.includes('سلف') && (
+                        <FormField
+                          control={form.control}
+                          name="employee_id"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>الموظف (لترحيل السلفة على مسير الراتب)</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="اختر الموظف..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="__none__">بدون تحديد</SelectItem>
+                                  {employees.map((emp) => (
+                                    <SelectItem key={emp.id} value={emp.id}>
+                                      {emp.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
                       <div className="flex gap-2 justify-end">
                         <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingTransaction(null); form.reset(); }}>
                           إلغاء

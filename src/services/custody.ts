@@ -38,6 +38,7 @@ export interface CustodyTransaction {
   analysis_category: string | null;
   amount: number;
   account_id: string | null;
+  employee_id: string | null;
   journal_entry_id: string | null;
   notes: string | null;
   created_by: string | null;
@@ -48,10 +49,14 @@ export interface CustodyTransaction {
     code: string;
     name: string;
   };
+  employee?: {
+    id: string;
+    name: string;
+  };
 }
 
 export type CustodyInsert = Omit<Custody, 'id' | 'custody_number' | 'created_at' | 'updated_at' | 'employee' | 'transactions'>;
-export type CustodyTransactionInsert = Omit<CustodyTransaction, 'id' | 'created_at' | 'updated_at' | 'account'>;
+export type CustodyTransactionInsert = Omit<CustodyTransaction, 'id' | 'created_at' | 'updated_at' | 'account' | 'employee'>;
 
 // Create employee advance record linked to custody
 export async function createEmployeeAdvance(
@@ -113,7 +118,7 @@ export async function fetchCustodyWithTransactions(custodyId: string): Promise<C
 
   const { data: transactions, error: transError } = await supabase
     .from('custody_transactions')
-    .select('*, account:account_categories(id, code, name)')
+    .select('*, account:account_categories(id, code, name), employee:employees(id, name)')
     .eq('custody_id', custodyId)
     .order('transaction_date', { ascending: true });
   

@@ -2014,6 +2014,7 @@ export type Database = {
           created_by: string | null
           custody_id: string
           description: string
+          employee_id: string | null
           id: string
           journal_entry_id: string | null
           notes: string | null
@@ -2029,6 +2030,7 @@ export type Database = {
           created_by?: string | null
           custody_id: string
           description: string
+          employee_id?: string | null
           id?: string
           journal_entry_id?: string | null
           notes?: string | null
@@ -2044,6 +2046,7 @@ export type Database = {
           created_by?: string | null
           custody_id?: string
           description?: string
+          employee_id?: string | null
           id?: string
           journal_entry_id?: string | null
           notes?: string | null
@@ -2070,6 +2073,20 @@ export type Database = {
             columns: ["custody_id"]
             isOneToOne: false
             referencedRelation: "custodies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_transactions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_transactions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
           {
