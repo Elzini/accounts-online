@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,7 @@ import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
 import { useAppSettings } from '@/hooks/useSettings';
 import { useMenuConfiguration } from '@/hooks/useSystemControl';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import defaultLogo from '@/assets/logo.png';
 
 interface SidebarProps {
@@ -366,6 +367,14 @@ export function Sidebar({
     id: 'integrations' as ActivePage,
     label: 'التكاملات الخارجية',
     icon: Plug
+  }, {
+    id: 'api-management' as ActivePage,
+    label: 'API عام',
+    icon: Globe
+  }, {
+    id: 'plugins' as ActivePage,
+    label: 'الإضافات',
+    icon: Puzzle
   }];
   // Inventory items
   const inventoryItems = [{
@@ -736,8 +745,9 @@ export function Sidebar({
       }], canManageUsers)}
       </nav>
 
-      {/* Footer */}
-      <div className="p-3 border-t border-sidebar-border/50">
+      {/* Language Switcher & Footer */}
+      <div className="p-3 border-t border-sidebar-border/50 space-y-2">
+        <LanguageSwitcher variant="sidebar" />
         <p className="text-[10px] text-center text-sidebar-foreground/30 font-medium">
           {companyType === 'construction' ? 'نظام إدارة المقاولات' : 
            companyType === 'general_trading' ? 'نظام إدارة التجارة' : 
