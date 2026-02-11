@@ -161,9 +161,9 @@ export function MenuConfigurationTab() {
       await saveMenuConfiguration(selectedCompanyId, { menu_items: menuItems });
       toast.success('تم حفظ إعدادات القائمة');
       setHasChanges(false);
-    } catch (error) {
-      console.error('Error saving menu config:', error);
-      toast.error('حدث خطأ أثناء الحفظ');
+    } catch (error: any) {
+      console.error('Error saving menu config:', error?.message, error?.code, error?.details, error);
+      toast.error('حدث خطأ أثناء الحفظ: ' + (error?.message || ''));
     } finally {
       setIsSaving(false);
     }
