@@ -15,6 +15,7 @@ import {
   resolveCarriedCustodies,
   createCustodyJournalEntry,
   createTransactionJournalEntry,
+  createEmployeeAdvance,
   CustodyInsert,
   CustodyTransactionInsert,
   Custody,
@@ -113,6 +114,18 @@ export function useCustody() {
         );
       }
 
+      // If this is an advance type, create employee_advance record
+      let advanceId: string | null = null;
+      if (data.custody_type === 'advance' && data.employee_id) {
+        advanceId = await createEmployeeAdvance(
+          companyId,
+          data.employee_id,
+          adjustedAmount,
+          data.custody_date,
+          data.custody_name,
+        );
+      }
+
       return addCustody({
         ...data,
         custody_amount: adjustedAmount,
@@ -120,6 +133,7 @@ export function useCustody() {
         company_id: companyId,
         fiscal_year_id: selectedFiscalYear?.id || null,
         journal_entry_id: journalEntryId,
+        advance_id: advanceId,
       });
     },
     onSuccess: () => {
@@ -183,6 +197,10 @@ export function useCustody() {
           journal_entry_id: null,
           custody_account_id: null,
           cash_account_id: null,
+          custody_type: 'custody',
+          advance_id: null,
+          installment_amount: 0,
+          installment_count: 1,
         });
       }
       

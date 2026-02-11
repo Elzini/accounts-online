@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, FileText, Download, Wallet, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Plus, FileText, Download, Wallet, CheckCircle, Clock, AlertCircle, Banknote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -71,13 +71,13 @@ export function CustodyPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Wallet className="h-7 w-7 text-primary" />
-            إدارة العهد
+            إدارة العهد والسلف
           </h1>
-          <p className="text-muted-foreground">إدارة العهد النقدية وتصفيتها</p>
+          <p className="text-muted-foreground">إدارة العهد النقدية والسلف وتصفيتها مع الربط التلقائي بمسير الرواتب</p>
         </div>
         <Button onClick={() => { setSelectedCustody(null); setIsFormOpen(true); }} className="gap-2">
           <Plus className="h-4 w-4" />
-          إضافة عهدة جديدة
+          إضافة عهدة / سلفة
         </Button>
       </div>
 
@@ -141,8 +141,9 @@ export function CustodyPage() {
             <Table>
               <TableHeader>
                  <TableRow>
-                   <TableHead className="text-right">رقم العهدة</TableHead>
-                   <TableHead className="text-right">اسم العهدة</TableHead>
+                   <TableHead className="text-right">رقم</TableHead>
+                   <TableHead className="text-right">النوع</TableHead>
+                   <TableHead className="text-right">الاسم</TableHead>
                    <TableHead className="text-right">المستلم</TableHead>
                    <TableHead className="text-right">المبلغ</TableHead>
                    <TableHead className="text-right">المصروف</TableHead>
@@ -157,8 +158,14 @@ export function CustodyPage() {
                    const summary = calculateCustodySummary(custody);
                    return (
                      <TableRow key={custody.id}>
-                       <TableCell className="font-medium">#{custody.custody_number}</TableCell>
-                       <TableCell>{custody.custody_name}</TableCell>
+                        <TableCell className="font-medium">#{custody.custody_number}</TableCell>
+                        <TableCell>
+                          {custody.custody_type === 'advance' 
+                            ? <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/5"><Banknote className="h-3 w-3" /> سلفة</Badge>
+                            : <Badge variant="outline" className="gap-1"><Wallet className="h-3 w-3" /> عهدة</Badge>
+                          }
+                        </TableCell>
+                        <TableCell>{custody.custody_name}</TableCell>
                        <TableCell>{custody.employee?.name || '-'}</TableCell>
                        <TableCell>{formatNumber(custody.custody_amount)} ر.س</TableCell>
                        <TableCell className="text-destructive">{formatNumber(summary.totalSpent)} ر.س</TableCell>

@@ -18,6 +18,10 @@ export interface Custody {
   journal_entry_id: string | null;
   custody_account_id: string | null;
   cash_account_id: string | null;
+  custody_type: 'custody' | 'advance';
+  advance_id: string | null;
+  installment_amount: number;
+  installment_count: number;
   employee?: {
     id: string;
     name: string;
@@ -48,6 +52,32 @@ export interface CustodyTransaction {
 
 export type CustodyInsert = Omit<Custody, 'id' | 'custody_number' | 'created_at' | 'updated_at' | 'employee' | 'transactions'>;
 export type CustodyTransactionInsert = Omit<CustodyTransaction, 'id' | 'created_at' | 'updated_at' | 'account'>;
+
+// Create employee advance record linked to custody
+export async function createEmployeeAdvance(
+  companyId: string,
+  employeeId: string,
+  amount: number,
+  advanceDate: string,
+  reason: string | null,
+): Promise<string> {
+  const { data, error } = await supabase
+    .from('employee_advances')
+    .insert({
+      company_id: companyId,
+      employee_id: employeeId,
+      amount,
+      advance_date: advanceDate,
+      reason,
+      is_deducted: false,
+      notes: 'تم إنشاؤها من نظام العهد',
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data.id;
+}
 
 // Fetch all custodies with employee info
 export async function fetchCustodies(companyId: string): Promise<Custody[]> {
