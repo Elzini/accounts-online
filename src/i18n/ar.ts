@@ -417,4 +417,213 @@ export const ar: TranslationKeys = {
 
   // Quick actions
   quick_actions: 'الإجراءات السريعة',
+
+  // Top navbar
+  hello_greeting: 'مرحباً،',
+  view_as_company: 'عرض كشركة...',
+  my_original_company: 'شركتي الأصلية',
+  fiscal_year_label: 'السنة المالية',
+  check_updates: 'تحقق من التحديثات',
+  install: 'تثبيت',
+  company_management: 'إدارة الشركات',
+
+  // Page titles & subtitles
+  customers_page_title: 'العملاء',
+  customers_page_subtitle: 'إدارة بيانات العملاء',
+  suppliers_page_title: 'الموردين',
+  suppliers_page_subtitle: 'إدارة بيانات الموردين',
+  purchases_page_title: 'المشتريات',
+  purchases_page_subtitle: 'إدارة مخزون السيارات',
+  sales_page_title: 'المبيعات',
+  sales_page_subtitle: 'سجل عمليات البيع',
+
+  // Table headers
+  th_number: '#',
+  th_customer_name: 'اسم العميل',
+  th_supplier_name: 'اسم المورد',
+  th_id_number: 'رقم الهوية',
+  th_phone: 'رقم الهاتف',
+  th_address: 'العنوان',
+  th_tax_number: 'الرقم الضريبي',
+  th_actions: 'الإجراءات',
+  th_notes: 'ملاحظات',
+  th_inventory_number: 'رقم المخزون',
+  th_car_name: 'اسم السيارة',
+  th_model: 'الموديل',
+  th_color: 'اللون',
+  th_chassis_number: 'رقم الهيكل',
+  th_base_amount: 'المبلغ الأصلي',
+  th_tax: 'الضريبة',
+  th_total_with_tax: 'الإجمالي مع الضريبة',
+  th_payment_method: 'طريقة الدفع',
+  th_purchase_date: 'تاريخ الشراء',
+  th_status: 'الحالة',
+  th_sale_number: 'رقم البيع',
+  th_customer: 'العميل',
+  th_car: 'السيارة',
+  th_profit: 'الربح',
+  th_receipt_method: 'طريقة الاستلام',
+  th_sale_date: 'تاريخ البيع',
+
+  // Search placeholders
+  search_customers: 'البحث بالاسم، الهاتف، الهوية...',
+  search_suppliers: 'البحث بالاسم، الهاتف، السجل...',
+  search_purchases: 'البحث بالاسم، الموديل، الهيكل...',
+  search_sales: 'البحث بالعميل، السيارة، رقم البيع...',
+
+  // Empty states
+  no_customers_yet: 'لا يوجد عملاء حتى الآن',
+  add_first_customer: 'إضافة أول عميل',
+  no_suppliers_yet: 'لا يوجد موردين حتى الآن',
+  add_first_supplier: 'إضافة أول مورد',
+  no_cars_in_stock: 'لا يوجد سيارات في المخزون',
+  add_first_car: 'إضافة أول سيارة',
+  no_sales_yet: 'لا يوجد عمليات بيع حتى الآن',
+  record_first_sale: 'تسجيل أول عملية بيع',
+  no_search_results: 'لا توجد نتائج مطابقة للبحث',
+
+  // Status labels
+  status_available: 'متاحة',
+  status_sold: 'مباعة',
+  status_transferred: 'محولة',
+
+  // Payment methods
+  payment_cash: 'نقداً',
+  payment_bank_transfer: 'تحويل بنكي',
+  payment_pos: 'نقاط البيع',
+  payment_deferred: 'آجل',
+  payment_check: 'شيك',
+
+  // Summary labels
+  total_base_amount: 'إجمالي المبلغ الأصلي',
+  total_tax: 'إجمالي الضريبة',
+  total_purchases_with_tax: 'إجمالي المشتريات مع الضريبة',
+  total_sales_with_tax: 'إجمالي المبيعات مع الضريبة',
+  total_profits: 'إجمالي الأرباح',
+
+  // Buttons
+  btn_add_car: 'إضافة سيارة',
+  btn_add_customer: 'إضافة عميل',
+  btn_add_supplier: 'إضافة مورد',
+  btn_record_sale: 'تسجيل بيع',
+  btn_recalculate_profits: 'إعادة احتساب الأرباح',
+  btn_save_data: 'حفظ البيانات',
+  btn_saving: 'جاري الحفظ...',
+  btn_home: 'الرئيسية',
+
+  // Form labels
+  form_customer: 'العميل *',
+  form_supplier: 'المورد *',
+  form_car: 'السيارة *',
+  form_select_customer: 'اختر العميل',
+  form_select_supplier: 'اختر المورد',
+  form_select_car: 'اختر السيارة',
+  form_chassis_number: 'رقم الهيكل *',
+  form_car_name: 'اسم السيارة *',
+  form_model: 'الموديل',
+  form_color: 'اللون',
+  form_purchase_price: 'سعر الشراء *',
+  form_sale_price: 'سعر البيع *',
+  form_seller_name: 'اسم البائع',
+  form_commission: 'عمولة البيع',
+  form_other_expenses: 'مصروفات أخرى',
+  form_purchase_date: 'تاريخ الشراء',
+  form_sale_date: 'تاريخ البيع',
+  form_payment_method: 'طريقة الدفع',
+  form_receipt_method: 'طريقة الاستلام',
+  form_enter_chassis: 'أدخل رقم الهيكل',
+  form_enter_seller: 'أدخل اسم البائع',
+  form_example_car: 'مثال: تويوتا كامري',
+  form_example_year: 'مثال: 2024',
+  form_enter_color: 'أدخل اللون',
+
+  // Form headers
+  form_add_new_car: 'إضافة سيارة جديدة',
+  form_add_to_stock: 'إضافة سيارة للمخزون',
+  form_register_sale: 'تسجيل عملية بيع',
+  form_register_car_sale: 'تسجيل بيع سيارة',
+
+  // Invoice details
+  invoice_details: 'تفاصيل الفاتورة',
+  invoice_base_amount: 'أصل المبلغ',
+  invoice_vat: 'ضريبة القيمة المضافة',
+  invoice_total_with_tax: 'الإجمالي شامل الضريبة',
+  invoice_tax_not_active: 'الضريبة غير مفعلة على المشتريات',
+
+  // Car details
+  car_details_name: 'اسم السيارة',
+  car_details_model: 'الموديل',
+  car_details_purchase_price: 'سعر الشراء',
+  car_transferred: 'سيارة محولة',
+  car_partner_dealership: 'المعرض الشريك',
+  car_agreed_commission: 'العمولة المتفق عليها',
+  car_transfer_auto_link: 'سيتم ربط هذا البيع بالتحويل تلقائياً وحساب العمولة',
+
+  // Profit
+  profit_label: 'الربح',
+
+  // Toast messages
+  toast_fill_required: 'الرجاء ملء الحقول المطلوبة',
+  toast_sale_registered: 'تم تسجيل عملية البيع بنجاح',
+  toast_sale_with_transfer: 'تم تسجيل عملية البيع وربط التحويل بنجاح',
+  toast_sale_transfer_error: 'تم تسجيل عملية البيع (حدث خطأ في ربط التحويل)',
+  toast_sale_error: 'حدث خطأ أثناء تسجيل البيع',
+  toast_car_added: 'تم إضافة السيارة للمخزون بنجاح',
+  toast_chassis_exists: 'رقم الهيكل موجود مسبقاً',
+  toast_car_add_error: 'حدث خطأ أثناء إضافة السيارة',
+  toast_profits_recalculated: 'تم إعادة احتساب الأرباح',
+  toast_profits_error: 'حدث خطأ أثناء إعادة احتساب الأرباح',
+
+  // Sidebar app names
+  sidebar_construction_system: 'نظام إدارة المقاولات',
+  sidebar_trading_system: 'نظام إدارة التجارة',
+  sidebar_restaurant_system: 'نظام إدارة المطاعم',
+  sidebar_export_import_system: 'نظام التصدير والاستيراد',
+  sidebar_car_subtitle: 'لتجارة السيارات',
+  sidebar_construction_subtitle: 'للمشاريع والعقود',
+  sidebar_trading_subtitle: 'للتجارة العامة',
+  sidebar_restaurant_subtitle: 'للمطاعم والكافيهات',
+  sidebar_export_import_subtitle: 'للتصدير والاستيراد',
+
+  // Multi-car sale
+  cars_count: 'سيارات',
+
+  // Installment sale
+  installment_sale: 'بيع بالتقسيط',
+  sale_terms: 'شروط البيع والدفع',
+  sale_terms_placeholder: 'شروط وأحكام البيع...',
+
+  // Sales/Purchase invoice form
+  sales_invoice: 'فاتورة مبيعات',
+  purchase_invoice_title: 'فاتورة مشتريات',
+  invoice_number: 'رقم الفاتورة',
+  sales_order: 'أمر البيع',
+  reference: 'المرجع',
+  warehouse: 'المستودع',
+  main_warehouse: 'الرئيسي',
+  salesperson: 'المندوب',
+  salesperson_name: 'اسم البائع',
+  tax_label: 'الضريبة',
+  cash_account: 'حساب النقدية',
+  paid_amount: 'المدفوع',
+  cost_center: 'م. التكلفة',
+  price_includes_tax: 'السعر شامل الضريبة',
+  quantity: 'الكمية',
+  price: 'السعر',
+  subtotal: 'المجموع',
+  vat_percent: 'VAT %',
+  grand_total: 'المجموع الكلي',
+  discount: 'الخصم',
+  select_car_to_add: 'اختر سيارة لإضافتها للفاتورة',
+  add_car_to_invoice: 'اختر سيارة لإضافتها...',
+  supplier_invoice: 'فاتورة المورد',
+  due_date: 'الاستحقاق',
+  additional_notes: 'ملاحظات إضافية...',
+  approve: 'اعتماد',
+  new_entry: 'جديد',
+  return_label: 'إرجاع',
+  exit_label: 'خروج',
+
+  // Fiscal year
+  fiscal_year: 'السنة المالية',
 };

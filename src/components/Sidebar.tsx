@@ -146,10 +146,10 @@ export function Sidebar({
   const getAppName = () => {
     if (settings?.app_name) return settings.app_name;
     switch (companyType) {
-      case 'construction': return 'نظام إدارة المقاولات';
-      case 'general_trading': return 'نظام إدارة التجارة';
-      case 'restaurant': return 'نظام إدارة المطاعم';
-      case 'export_import': return 'نظام التصدير والاستيراد';
+      case 'construction': return t.sidebar_construction_system;
+      case 'general_trading': return t.sidebar_trading_system;
+      case 'restaurant': return t.sidebar_restaurant_system;
+      case 'export_import': return t.sidebar_export_import_system;
       default: return 'Elzini SaaS';
     }
   };
@@ -157,11 +157,11 @@ export function Sidebar({
   const getAppSubtitle = () => {
     if (settings?.app_subtitle) return settings.app_subtitle;
     switch (companyType) {
-      case 'construction': return 'للمشاريع والعقود';
-      case 'general_trading': return 'للتجارة العامة';
-      case 'restaurant': return 'للمطاعم والكافيهات';
-      case 'export_import': return 'للتصدير والاستيراد';
-      default: return 'لتجارة السيارات';
+      case 'construction': return t.sidebar_construction_subtitle;
+      case 'general_trading': return t.sidebar_trading_subtitle;
+      case 'restaurant': return t.sidebar_restaurant_subtitle;
+      case 'export_import': return t.sidebar_export_import_subtitle;
+      default: return t.sidebar_car_subtitle;
     }
   };
   

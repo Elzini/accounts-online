@@ -418,4 +418,215 @@ export interface TranslationKeys {
 
   // Quick actions widget
   quick_actions: string;
+
+  // ============ NEW COMPREHENSIVE KEYS ============
+
+  // Top navbar
+  hello_greeting: string;
+  view_as_company: string;
+  my_original_company: string;
+  fiscal_year_label: string;
+  check_updates: string;
+  install: string;
+  company_management: string;
+
+  // Page titles & subtitles
+  customers_page_title: string;
+  customers_page_subtitle: string;
+  suppliers_page_title: string;
+  suppliers_page_subtitle: string;
+  purchases_page_title: string;
+  purchases_page_subtitle: string;
+  sales_page_title: string;
+  sales_page_subtitle: string;
+
+  // Table headers
+  th_number: string;
+  th_customer_name: string;
+  th_supplier_name: string;
+  th_id_number: string;
+  th_phone: string;
+  th_address: string;
+  th_tax_number: string;
+  th_actions: string;
+  th_notes: string;
+  th_inventory_number: string;
+  th_car_name: string;
+  th_model: string;
+  th_color: string;
+  th_chassis_number: string;
+  th_base_amount: string;
+  th_tax: string;
+  th_total_with_tax: string;
+  th_payment_method: string;
+  th_purchase_date: string;
+  th_status: string;
+  th_sale_number: string;
+  th_customer: string;
+  th_car: string;
+  th_profit: string;
+  th_receipt_method: string;
+  th_sale_date: string;
+
+  // Search placeholders
+  search_customers: string;
+  search_suppliers: string;
+  search_purchases: string;
+  search_sales: string;
+
+  // Empty states
+  no_customers_yet: string;
+  add_first_customer: string;
+  no_suppliers_yet: string;
+  add_first_supplier: string;
+  no_cars_in_stock: string;
+  add_first_car: string;
+  no_sales_yet: string;
+  record_first_sale: string;
+  no_search_results: string;
+
+  // Status labels
+  status_available: string;
+  status_sold: string;
+  status_transferred: string;
+
+  // Payment methods
+  payment_cash: string;
+  payment_bank_transfer: string;
+  payment_pos: string;
+  payment_deferred: string;
+  payment_check: string;
+
+  // Summary labels
+  total_base_amount: string;
+  total_tax: string;
+  total_purchases_with_tax: string;
+  total_sales_with_tax: string;
+  total_profits: string;
+
+  // Buttons
+  btn_add_car: string;
+  btn_add_customer: string;
+  btn_add_supplier: string;
+  btn_record_sale: string;
+  btn_recalculate_profits: string;
+  btn_save_data: string;
+  btn_saving: string;
+  btn_home: string;
+
+  // Form labels
+  form_customer: string;
+  form_supplier: string;
+  form_car: string;
+  form_select_customer: string;
+  form_select_supplier: string;
+  form_select_car: string;
+  form_chassis_number: string;
+  form_car_name: string;
+  form_model: string;
+  form_color: string;
+  form_purchase_price: string;
+  form_sale_price: string;
+  form_seller_name: string;
+  form_commission: string;
+  form_other_expenses: string;
+  form_purchase_date: string;
+  form_sale_date: string;
+  form_payment_method: string;
+  form_receipt_method: string;
+  form_enter_chassis: string;
+  form_enter_seller: string;
+  form_example_car: string;
+  form_example_year: string;
+  form_enter_color: string;
+
+  // Form headers
+  form_add_new_car: string;
+  form_add_to_stock: string;
+  form_register_sale: string;
+  form_register_car_sale: string;
+
+  // Invoice details
+  invoice_details: string;
+  invoice_base_amount: string;
+  invoice_vat: string;
+  invoice_total_with_tax: string;
+  invoice_tax_not_active: string;
+
+  // Car details
+  car_details_name: string;
+  car_details_model: string;
+  car_details_purchase_price: string;
+  car_transferred: string;
+  car_partner_dealership: string;
+  car_agreed_commission: string;
+  car_transfer_auto_link: string;
+
+  // Profit
+  profit_label: string;
+
+  // Toast messages
+  toast_fill_required: string;
+  toast_sale_registered: string;
+  toast_sale_with_transfer: string;
+  toast_sale_transfer_error: string;
+  toast_sale_error: string;
+  toast_car_added: string;
+  toast_chassis_exists: string;
+  toast_car_add_error: string;
+  toast_profits_recalculated: string;
+  toast_profits_error: string;
+
+  // Sidebar app names
+  sidebar_construction_system: string;
+  sidebar_trading_system: string;
+  sidebar_restaurant_system: string;
+  sidebar_export_import_system: string;
+  sidebar_car_subtitle: string;
+  sidebar_construction_subtitle: string;
+  sidebar_trading_subtitle: string;
+  sidebar_restaurant_subtitle: string;
+  sidebar_export_import_subtitle: string;
+
+  // Multi-car sale
+  cars_count: string;
+
+  // Installment sale
+  installment_sale: string;
+  sale_terms: string;
+  sale_terms_placeholder: string;
+
+  // Sales invoice form
+  sales_invoice: string;
+  purchase_invoice_title: string;
+  invoice_number: string;
+  sales_order: string;
+  reference: string;
+  warehouse: string;
+  main_warehouse: string;
+  salesperson: string;
+  salesperson_name: string;
+  tax_label: string;
+  cash_account: string;
+  paid_amount: string;
+  cost_center: string;
+  price_includes_tax: string;
+  quantity: string;
+  price: string;
+  subtotal: string;
+  vat_percent: string;
+  grand_total: string;
+  discount: string;
+  select_car_to_add: string;
+  add_car_to_invoice: string;
+  supplier_invoice: string;
+  due_date: string;
+  additional_notes: string;
+  approve: string;
+  new_entry: string;
+  return_label: string;
+  exit_label: string;
+
+  // Fiscal year
+  fiscal_year: string;
 }
