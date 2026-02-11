@@ -13,7 +13,7 @@ import { usePublicAuthSettings } from '@/hooks/usePublicAuthSettings';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { extractSubdomain, buildTenantUrl } from '@/lib/tenantResolver';
+import { extractSubdomain, buildTenantUrl, getBaseDomain } from '@/lib/tenantResolver';
 
 type AuthMode = 'company' | 'super_admin';
 
@@ -189,10 +189,13 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
       toast.success('تم تسجيل الدخول بنجاح');
 
-      // Auto-redirect to company subdomain if not already on it
+      // Auto-redirect to company subdomain if on a known tenant domain (not lovable.app/localhost)
       if (mode === 'company' && data?.user) {
         const currentSubdomain = extractSubdomain();
-        if (!currentSubdomain) {
+        const baseDomain = getBaseDomain();
+        
+        // Only redirect if we're on a known tenant domain but without a subdomain
+        if (!currentSubdomain && baseDomain) {
           // Fetch the user's company subdomain
           const { data: profile } = await supabase
             .from('profiles')
@@ -208,7 +211,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
               .maybeSingle();
             
             if (company?.subdomain) {
-              const tenantUrl = buildTenantUrl(company.subdomain);
+              const tenantUrl = buildTenantUrl(company.subdomain, baseDomain);
               window.location.href = tenantUrl + '?auth_redirect=1';
               return;
             }
