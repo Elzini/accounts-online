@@ -278,7 +278,12 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   const installmentStats = useInstallmentStats(installmentSales);
 
   const formatCurrency = useCallback((value: number) => {
-    return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(value);
+    return new Intl.NumberFormat('ar-SA', { 
+      style: 'currency', 
+      currency: 'SAR',
+      maximumFractionDigits: 0,
+      notation: value >= 1000000 ? 'compact' : 'standard',
+    }).format(value);
   }, []);
 
   const formatCurrencyWithMode = useCallback((value: number) => {
@@ -514,7 +519,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
 
           {/* Dynamic Dashboard Grid - rendered in sorted order */}
           <div 
-            className="flex flex-wrap gap-2 sm:gap-3 md:gap-4 items-start"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
             onDrop={isEditMode ? handleGridDrop : undefined}
             onDragOver={isEditMode ? handleGridDragOver : undefined}
           >

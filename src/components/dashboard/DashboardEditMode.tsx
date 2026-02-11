@@ -154,8 +154,8 @@ export function EditableWidgetWrapper({
   if (!visible) return null;
 
   const colSpanClass = colSpan === 1 
-    ? 'w-[calc(50%-0.25rem)] md:w-[calc(25%-0.75rem)]' 
-    : 'w-full md:w-[calc(50%-0.5rem)]';
+    ? 'col-span-1' 
+    : 'col-span-2 md:col-span-2';
 
   if (!isEditMode) {
     return (
