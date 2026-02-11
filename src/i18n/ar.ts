@@ -264,4 +264,34 @@ export const ar: TranslationKeys = {
 
   // HR
   nav_hr: 'الموارد البشرية',
+
+  // Extra nav / sections
+  nav_main_menu: 'القائمة الرئيسية',
+  nav_api_management: 'API عام',
+  nav_plugins: 'الإضافات',
+  nav_integrations_section: 'التكاملات والإضافات',
+  nav_super_admin: 'مدير النظام',
+  nav_company_management: 'إدارة الشركات',
+  nav_system_footer_car: 'نظام إدارة المعرض',
+  nav_system_footer_construction: 'نظام إدارة المقاولات',
+  nav_system_footer_trading: 'نظام إدارة التجارة',
+  nav_system_footer_restaurant: 'نظام إدارة المطاعم',
+  nav_system_footer_export_import: 'نظام إدارة التصدير والاستيراد',
+
+  // WelcomeHeader
+  greeting_morning: 'صباح الخير',
+  greeting_afternoon: 'مساء الخير',
+  greeting_evening: 'مساء الخير',
+  hello: 'أهلاً',
+  online_now: 'متصل الآن',
+  today: 'اليوم',
+  this_week: 'الأسبوع',
+  this_month: 'الشهر',
+  show_all: 'الكل',
+  dashboard_default_subtitle: 'لوحة التحكم الرئيسية • نظرة شاملة على الأداء',
+  data_updated: 'تم تحديث البيانات',
+  data_update_failed: 'فشل تحديث البيانات',
+  layout_saved: 'تم حفظ ترتيب لوحة التحكم',
+  save_error: 'حدث خطأ أثناء الحفظ',
+  currency_sar_label: 'ريال سعودي',
 };

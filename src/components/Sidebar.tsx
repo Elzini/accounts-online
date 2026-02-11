@@ -12,6 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import defaultLogo from '@/assets/logo.png';
 import { usePlugins } from '@/hooks/usePlugins';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SidebarProps {
   activePage: ActivePage;
@@ -130,6 +131,7 @@ export function Sidebar({
   const {
     data: menuConfig
   } = useMenuConfiguration();
+  const { t } = useLanguage();
 
   // Get company type
   const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
@@ -169,31 +171,31 @@ export function Sidebar({
   // Construction-specific menu items
   const constructionMenuItems = [{
     id: 'dashboard' as ActivePage,
-    label: 'الرئيسية',
+    label: t.nav_dashboard,
     icon: LayoutDashboard
   }, {
     id: 'projects' as ActivePage,
-    label: 'المشاريع',
+    label: t.nav_projects,
     icon: Building2,
     permission: 'purchases' as const
   }, {
     id: 'contracts' as ActivePage,
-    label: 'العقود',
+    label: t.nav_contracts,
     icon: FileText,
     permission: 'purchases' as const
   }, {
     id: 'progress-billings' as ActivePage,
-    label: 'المستخلصات',
+    label: t.nav_progress_billings,
     icon: Receipt,
     permission: 'sales' as const
   }, {
     id: 'customers' as ActivePage,
-    label: 'العملاء',
+    label: t.nav_customers,
     icon: Users,
     permission: 'sales' as const
   }, {
     id: 'suppliers' as ActivePage,
-    label: 'الموردين',
+    label: t.nav_suppliers,
     icon: Truck,
     permission: 'purchases' as const
   }];
@@ -201,36 +203,36 @@ export function Sidebar({
   // Restaurant-specific menu items
   const restaurantMenuItems = [{
     id: 'dashboard' as ActivePage,
-    label: 'الرئيسية',
+    label: t.nav_dashboard,
     icon: LayoutDashboard
   }, {
     id: 'menu-management' as ActivePage,
-    label: 'إدارة القائمة',
+    label: t.nav_menu_management,
     icon: UtensilsCrossed,
     permission: 'purchases' as const
   }, {
     id: 'restaurant-orders' as ActivePage,
-    label: 'الطلبات',
+    label: t.nav_restaurant_orders,
     icon: Coffee,
     permission: 'sales' as const
   }, {
     id: 'kitchen-display' as ActivePage,
-    label: 'شاشة المطبخ',
+    label: t.nav_kitchen_display,
     icon: ChefHat,
     permission: 'sales' as const
   }, {
     id: 'table-management' as ActivePage,
-    label: 'إدارة الطاولات',
+    label: t.nav_table_management,
     icon: LayoutDashboard,
     permission: 'sales' as const
   }, {
     id: 'customers' as ActivePage,
-    label: 'العملاء',
+    label: t.nav_customers,
     icon: Users,
     permission: 'sales' as const
   }, {
     id: 'suppliers' as ActivePage,
-    label: 'الموردين',
+    label: t.nav_suppliers,
     icon: Truck,
     permission: 'purchases' as const
   }];
@@ -238,41 +240,41 @@ export function Sidebar({
   // Export/Import-specific menu items
   const exportImportMenuItems = [{
     id: 'dashboard' as ActivePage,
-    label: 'الرئيسية',
+    label: t.nav_dashboard,
     icon: LayoutDashboard
   }, {
     id: 'shipments' as ActivePage,
-    label: 'الشحنات',
+    label: t.nav_shipments,
     icon: Ship,
     permission: 'purchases' as const
   }, {
     id: 'letters-of-credit' as ActivePage,
-    label: 'خطابات الاعتماد',
+    label: t.nav_letters_of_credit,
     icon: FileBox,
     permission: 'purchases' as const
   }, {
     id: 'customs-clearance' as ActivePage,
-    label: 'التخليص الجمركي',
+    label: t.nav_customs_clearance,
     icon: Globe,
     permission: 'purchases' as const
   }, {
     id: 'customers' as ActivePage,
-    label: 'العملاء',
+    label: t.nav_customers,
     icon: Users,
     permission: 'sales' as const
   }, {
     id: 'suppliers' as ActivePage,
-    label: 'الموردين',
+    label: t.nav_suppliers,
     icon: Truck,
     permission: 'purchases' as const
   }, {
     id: 'purchases' as ActivePage,
-    label: 'الواردات',
+    label: t.nav_purchases,
     icon: ShoppingCart,
     permission: 'purchases' as const
   }, {
     id: 'sales' as ActivePage,
-    label: 'الصادرات',
+    label: t.nav_sales,
     icon: DollarSign,
     permission: 'sales' as const
   }];
@@ -280,97 +282,97 @@ export function Sidebar({
   // Default menu structure (car dealership / general trading)
   const defaultMenuItems = [{
     id: 'dashboard' as ActivePage,
-    label: settings?.dashboard_title || 'الرئيسية',
+    label: settings?.dashboard_title || t.nav_dashboard,
     icon: LayoutDashboard
   }, {
     id: 'customers' as ActivePage,
-    label: settings?.customers_title || 'العملاء',
+    label: settings?.customers_title || t.nav_customers,
     icon: Users,
     permission: 'sales' as const
   }, {
     id: 'suppliers' as ActivePage,
-    label: settings?.suppliers_title || 'الموردين',
+    label: settings?.suppliers_title || t.nav_suppliers,
     icon: Truck,
     permission: 'purchases' as const
   }, {
     id: 'purchases' as ActivePage,
-    label: settings?.purchases_title || 'المشتريات',
+    label: settings?.purchases_title || t.nav_purchases,
     icon: ShoppingCart,
     permission: 'purchases' as const
   }, {
     id: 'sales' as ActivePage,
-    label: settings?.sales_title || 'المبيعات',
+    label: settings?.sales_title || t.nav_sales,
     icon: DollarSign,
     permission: 'sales' as const
   }];
   const transferItems = [{
     id: 'partner-dealerships' as ActivePage,
-    label: settings?.partner_dealerships_title || 'المعارض الشريكة',
+    label: settings?.partner_dealerships_title || t.nav_partner_dealerships,
     icon: Building2
   }, {
     id: 'car-transfers' as ActivePage,
-    label: settings?.car_transfers_title || 'تحويلات السيارات',
+    label: settings?.car_transfers_title || t.nav_car_transfers,
     icon: ArrowLeftRight
   }];
   const financeItems = [{
     id: 'employees' as ActivePage,
-    label: 'الموظفين',
+    label: t.nav_employees,
     icon: Users
   }, {
     id: 'payroll' as ActivePage,
-    label: 'مسير الرواتب',
+    label: t.nav_payroll,
     icon: CreditCard
   }, {
     id: 'attendance' as ActivePage,
-    label: 'الحضور والانصراف',
+    label: t.nav_attendance,
     icon: Clock
   }, {
     id: 'leaves' as ActivePage,
-    label: 'الإجازات',
+    label: t.nav_leaves,
     icon: CalendarDays
   }, {
     id: 'expenses' as ActivePage,
-    label: settings?.expenses_title || 'المصروفات',
+    label: settings?.expenses_title || t.nav_expenses,
     icon: Wallet
   }, {
     id: 'prepaid-expenses' as ActivePage,
-    label: settings?.prepaid_expenses_title || 'المصروفات المقدمة',
+    label: settings?.prepaid_expenses_title || t.nav_prepaid_expenses,
     icon: Clock
   }, {
     id: 'quotations' as ActivePage,
-    label: settings?.quotations_title || 'عروض الأسعار',
+    label: settings?.quotations_title || t.nav_quotations,
     icon: FileCheck
   }, {
     id: 'installments' as ActivePage,
-    label: settings?.installments_title || 'الأقساط',
+    label: settings?.installments_title || t.nav_installments,
     icon: CreditCard
   }, {
     id: 'vouchers' as ActivePage,
-    label: settings?.vouchers_title || 'سندات القبض والصرف',
+    label: settings?.vouchers_title || t.nav_vouchers,
     icon: Receipt
   }, {
     id: 'financing' as ActivePage,
-    label: settings?.financing_title || 'شركات التمويل',
+    label: settings?.financing_title || t.nav_financing,
     icon: Landmark
   }, {
     id: 'banking' as ActivePage,
-    label: settings?.banking_title || 'إدارة البنوك',
+    label: settings?.banking_title || t.nav_banking,
     icon: Scale
   }, {
     id: 'custody' as ActivePage,
-    label: 'إدارة العهد',
+    label: t.nav_custody,
     icon: HandCoins
   }, {
     id: 'trips' as ActivePage,
-    label: 'إدارة الرحلات',
+    label: t.nav_trips,
     icon: MapPin
   }, {
     id: 'tasks' as ActivePage,
-    label: 'إدارة المهام',
+    label: t.nav_tasks,
     icon: ListTodo
   }, {
     id: 'manufacturing' as ActivePage,
-    label: 'التصنيع',
+    label: t.nav_manufacturing,
     icon: Factory
   }];
   const { activePlugins } = usePlugins();
@@ -383,93 +385,93 @@ export function Sidebar({
 
   const integrationItems = [{
     id: 'integrations' as ActivePage,
-    label: 'التكاملات الخارجية',
+    label: t.nav_integrations,
     icon: Plug
   }, {
     id: 'api-management' as ActivePage,
-    label: 'API عام',
+    label: t.nav_api_management,
     icon: Globe
   }, {
     id: 'plugins' as ActivePage,
-    label: 'الإضافات',
+    label: t.nav_plugins,
     icon: Puzzle
   }, ...pluginMenuItems];
   // Inventory items
   const inventoryItems = [{
     id: 'warehouses' as ActivePage,
-    label: 'المستودعات',
+    label: t.nav_warehouses,
     icon: Warehouse
   }, {
     id: 'items-catalog' as ActivePage,
-    label: 'ملف الأصناف',
+    label: t.nav_items,
     icon: Package
   }, {
     id: 'item-categories' as ActivePage,
-    label: 'فئات الأصناف',
+    label: t.nav_categories,
     icon: FolderTree
   }, {
     id: 'units-of-measure' as ActivePage,
-    label: 'وحدات القياس',
+    label: t.nav_units,
     icon: Ruler
   }];
   // Reports - filtered by company type
   const allReportItems = [{
     id: 'inventory-report' as ActivePage,
-    label: settings?.inventory_report_title || 'تقرير المخزون',
+    label: settings?.inventory_report_title || t.nav_inventory_report,
     icon: Package,
     permission: 'reports' as const,
     types: ['car_dealership', 'general_trading', 'restaurant'] as string[],
   }, {
     id: 'profit-report' as ActivePage,
-    label: settings?.profit_report_title || 'تقرير الأرباح',
+    label: settings?.profit_report_title || t.nav_profit_report,
     icon: TrendingUp,
     permission: 'reports' as const,
-    types: null, // all types
+    types: null,
   }, {
     id: 'purchases-report' as ActivePage,
-    label: settings?.purchases_report_title || 'تقرير المشتريات',
+    label: settings?.purchases_report_title || t.nav_purchases_report,
     icon: FileText,
     permission: 'reports' as const,
     types: null,
   }, {
     id: 'sales-report' as ActivePage,
-    label: settings?.sales_report_title || 'تقرير المبيعات',
+    label: settings?.sales_report_title || t.nav_sales_report,
     icon: DollarSign,
     permission: 'reports' as const,
     types: null,
   }, {
     id: 'customers-report' as ActivePage,
-    label: settings?.customers_report_title || 'تقرير العملاء',
+    label: settings?.customers_report_title || t.nav_customers_report,
     icon: Users,
     permission: 'reports' as const,
     types: null,
   }, {
     id: 'suppliers-report' as ActivePage,
-    label: settings?.suppliers_report_title || 'تقرير الموردين',
+    label: settings?.suppliers_report_title || t.nav_suppliers_report,
     icon: Truck,
     permission: 'reports' as const,
     types: null,
   }, {
     id: 'commissions-report' as ActivePage,
-    label: settings?.commissions_report_title || 'تقرير العمولات',
+    label: settings?.commissions_report_title || t.nav_commissions_report,
     icon: DollarSign,
     permission: 'reports' as const,
     types: ['car_dealership', 'general_trading'] as string[],
   }, {
     id: 'transfers-report' as ActivePage,
-    label: settings?.transfers_report_title || 'تقرير التحويلات',
+    label: settings?.transfers_report_title || t.nav_transfers_report,
     icon: ArrowLeftRight,
     permission: 'reports' as const,
     types: ['car_dealership'] as string[],
   }, {
     id: 'partner-report' as ActivePage,
-    label: settings?.partner_report_title || 'تقرير المعرض الشريك',
+    label: settings?.partner_report_title || t.nav_partner_report,
     icon: Building2,
     permission: 'reports' as const,
     types: ['car_dealership'] as string[],
   }, {
     id: 'account-movement' as ActivePage,
-    label: 'تقرير حركة الحسابات',
+    label: t.nav_account_movement,
     icon: ClipboardList,
     permission: 'reports' as const,
     types: null,
@@ -480,87 +482,87 @@ export function Sidebar({
     .map(({ types, ...rest }) => rest);
   const accountingItems = [{
     id: 'fiscal-years' as ActivePage,
-    label: 'السنوات المالية',
+    label: t.nav_fiscal_years,
     icon: Calendar
   }, {
     id: 'tax-settings' as ActivePage,
-    label: settings?.tax_settings_title || 'إعدادات الضريبة',
+    label: settings?.tax_settings_title || t.nav_tax_settings,
     icon: Percent
   }, {
     id: 'chart-of-accounts' as ActivePage,
-    label: settings?.chart_of_accounts_title || 'شجرة الحسابات',
+    label: settings?.chart_of_accounts_title || t.nav_chart_of_accounts,
     icon: BookOpen
   }, {
     id: 'journal-entries' as ActivePage,
-    label: settings?.journal_entries_title || 'دفتر اليومية',
+    label: settings?.journal_entries_title || t.nav_journal_entries,
     icon: Calculator
   }, {
     id: 'general-ledger' as ActivePage,
-    label: settings?.general_ledger_title || 'دفتر الأستاذ',
+    label: settings?.general_ledger_title || t.nav_general_ledger,
     icon: FileText
   }, {
     id: 'account-statement' as ActivePage,
-    label: 'كشف حساب مفصل',
+    label: t.nav_account_statement,
     icon: ClipboardList
   }, {
     id: 'vat-return-report' as ActivePage,
-    label: 'إقرار ضريبة القيمة المضافة',
+    label: t.nav_vat_return,
     icon: Receipt
   }, {
     id: 'financial-reports' as ActivePage,
-    label: settings?.financial_reports_title || 'التقارير المالية',
+    label: settings?.financial_reports_title || t.nav_financial_reports,
     icon: PieChart
   }, {
     id: 'zakat-reports' as ActivePage,
-    label: 'القوائم الزكوية',
+    label: t.nav_zakat_reports,
     icon: Scale
   }, {
     id: 'trial-balance-analysis' as ActivePage,
-    label: 'تحليل ميزان المراجعة',
+    label: t.nav_trial_balance,
     icon: FileSpreadsheet
   }, {
     id: 'financial-statements' as ActivePage,
-    label: 'القوائم المالية الشاملة',
+    label: t.nav_financial_statements,
     icon: FileText
   }, {
     id: 'fixed-assets' as ActivePage,
-    label: 'الأصول الثابتة',
+    label: t.nav_fixed_assets,
     icon: Boxes
   }, {
     id: 'cost-centers' as ActivePage,
-    label: 'مراكز التكلفة',
+    label: t.nav_cost_centers,
     icon: Target
   }, {
     id: 'medad-import' as ActivePage,
-    label: 'استيراد من مداد',
+    label: t.nav_medad_import,
     icon: FileUp
   }, {
     id: 'aging-report' as ActivePage,
-    label: 'أعمار الذمم',
+    label: t.nav_aging_report,
     icon: Clock
   }, {
     id: 'checks' as ActivePage,
-    label: 'الشيكات',
+    label: t.nav_checks,
     icon: ClipboardCheck
   }, {
     id: 'budgets' as ActivePage,
-    label: 'الموازنات التقديرية',
+    label: t.nav_budgets,
     icon: BarChart3
   }, {
     id: 'financial-kpis' as ActivePage,
-    label: 'المؤشرات المالية',
+    label: t.nav_financial_kpis,
     icon: Activity
   }, {
     id: 'approvals' as ActivePage,
-    label: 'الموافقات',
+    label: t.nav_approvals,
     icon: GitBranch
   }, {
     id: 'currencies' as ActivePage,
-    label: 'العملات وأسعار الصرف',
+    label: t.nav_currencies,
     icon: Coins
   }, {
     id: 'branches' as ActivePage,
-    label: 'إدارة الفروع',
+    label: t.nav_branches,
     icon: GitFork
   }];
   const hasAccess = (permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users') => {
@@ -698,27 +700,27 @@ export function Sidebar({
 
       {/* Main Menu */}
       <nav className="flex-1 min-h-0 p-3 overflow-y-auto">
-        {renderCollapsibleSection('main', 'القائمة الرئيسية', 
+        {renderCollapsibleSection('main', t.nav_main_menu, 
           companyType === 'construction' ? constructionMenuItems :
           companyType === 'restaurant' ? restaurantMenuItems :
           companyType === 'export_import' ? exportImportMenuItems :
           defaultMenuItems
         )}
 
-        {companyType === 'car_dealership' && renderCollapsibleSection('transfers', settings?.transfers_section_title || 'التحويلات', transferItems, permissions.admin || permissions.sales || permissions.purchases)}
+        {companyType === 'car_dealership' && renderCollapsibleSection('transfers', settings?.transfers_section_title || t.nav_transfers, transferItems, permissions.admin || permissions.sales || permissions.purchases)}
 
-        {renderCollapsibleSection('finance', settings?.finance_section_title || 'المالية', financeItems, permissions.admin || permissions.sales || permissions.purchases)}
+        {renderCollapsibleSection('finance', settings?.finance_section_title || t.nav_finance, financeItems, permissions.admin || permissions.sales || permissions.purchases)}
 
-        {renderCollapsibleSection('inventory', 'المستودعات', inventoryItems, permissions.admin || permissions.purchases)}
+        {renderCollapsibleSection('inventory', t.nav_inventory, inventoryItems, permissions.admin || permissions.purchases)}
 
-        {renderCollapsibleSection('reports', settings?.reports_title || 'التقارير', reportItems, hasAccess('reports'))}
+        {renderCollapsibleSection('reports', settings?.reports_title || t.nav_reports, reportItems, hasAccess('reports'))}
 
-        {renderCollapsibleSection('accounting', settings?.accounting_section_title || 'المحاسبة', accountingItems, permissions.admin || permissions.reports)}
+        {renderCollapsibleSection('accounting', settings?.accounting_section_title || t.nav_accounting, accountingItems, permissions.admin || permissions.reports)}
 
-        {renderCollapsibleSection('integrations', 'التكاملات والإضافات', integrationItems, true)}
+        {renderCollapsibleSection('integrations', t.nav_integrations_section, integrationItems, true)}
 
         {isSuperAdmin && <div className="mb-5">
-            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-warning/50 mb-2 px-3">مدير النظام</p>
+            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-warning/50 mb-2 px-3">{t.nav_super_admin}</p>
             <ul className="space-y-0.5">
               <li>
                 <button type="button" onClick={() => {
@@ -728,39 +730,39 @@ export function Sidebar({
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-warning/10">
                     <Crown className="w-4 h-4 shrink-0" />
                   </div>
-                  <span className="font-medium text-sm truncate">إدارة الشركات</span>
+                  <span className="font-medium text-sm truncate">{t.nav_company_management}</span>
                 </button>
               </li>
             </ul>
           </div>}
 
-        {canManageUsers && renderCollapsibleSection('admin', settings?.admin_section_title || 'الإدارة', [{
+        {canManageUsers && renderCollapsibleSection('admin', settings?.admin_section_title || t.nav_admin, [{
         id: 'users-management' as ActivePage,
-        label: settings?.users_management_title || 'إدارة المستخدمين',
+        label: settings?.users_management_title || t.nav_users_management,
         icon: UserCog
       }, {
         id: 'app-settings' as ActivePage,
-        label: settings?.app_settings_title || 'إعدادات النظام',
+        label: settings?.app_settings_title || t.nav_app_settings,
         icon: Settings
       }, {
         id: 'theme-settings' as ActivePage,
-        label: 'إعدادات المظهر',
+        label: t.nav_theme_settings,
         icon: Palette
       }, {
         id: 'audit-logs' as ActivePage,
-        label: settings?.audit_logs_title || 'سجل التدقيق',
+        label: settings?.audit_logs_title || t.nav_audit_logs,
         icon: ClipboardList
       }, {
         id: 'backups' as ActivePage,
-        label: settings?.backups_title || 'النسخ الاحتياطي',
+        label: settings?.backups_title || t.nav_backups,
         icon: Database
       }, {
         id: 'control-center' as ActivePage,
-        label: 'مركز التحكم',
+        label: t.nav_control_center,
         icon: Settings2
       }, {
         id: 'accounting-audit' as ActivePage,
-        label: 'فحص النظام المحاسبي',
+        label: t.nav_accounting_audit,
         icon: ShieldCheck
       }], canManageUsers)}
       </nav>
@@ -769,11 +771,11 @@ export function Sidebar({
       <div className="p-3 border-t border-sidebar-border/50 space-y-2">
         <LanguageSwitcher variant="sidebar" />
         <p className="text-[10px] text-center text-sidebar-foreground/30 font-medium">
-          {companyType === 'construction' ? 'نظام إدارة المقاولات' : 
-           companyType === 'general_trading' ? 'نظام إدارة التجارة' : 
-           companyType === 'restaurant' ? 'نظام إدارة المطاعم' :
-           companyType === 'export_import' ? 'نظام إدارة التصدير والاستيراد' :
-           'نظام إدارة المعرض'} © 2026
+          {companyType === 'construction' ? t.nav_system_footer_construction : 
+           companyType === 'general_trading' ? t.nav_system_footer_trading : 
+           companyType === 'restaurant' ? t.nav_system_footer_restaurant :
+           companyType === 'export_import' ? t.nav_system_footer_export_import :
+           t.nav_system_footer_car} © 2026
         </p>
       </div>
     </aside>;

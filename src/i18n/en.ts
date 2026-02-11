@@ -264,4 +264,34 @@ export const en: TranslationKeys = {
 
   // HR
   nav_hr: 'Human Resources',
+
+  // Extra nav / sections
+  nav_main_menu: 'Main Menu',
+  nav_api_management: 'Public API',
+  nav_plugins: 'Plugins',
+  nav_integrations_section: 'Integrations & Plugins',
+  nav_super_admin: 'Super Admin',
+  nav_company_management: 'Company Management',
+  nav_system_footer_car: 'Dealership Management',
+  nav_system_footer_construction: 'Construction Management',
+  nav_system_footer_trading: 'Trading Management',
+  nav_system_footer_restaurant: 'Restaurant Management',
+  nav_system_footer_export_import: 'Export/Import Management',
+
+  // WelcomeHeader
+  greeting_morning: 'Good Morning',
+  greeting_afternoon: 'Good Afternoon',
+  greeting_evening: 'Good Evening',
+  hello: 'Hello',
+  online_now: 'Online Now',
+  today: 'Today',
+  this_week: 'This Week',
+  this_month: 'This Month',
+  show_all: 'All',
+  dashboard_default_subtitle: 'Main Dashboard • Performance Overview',
+  data_updated: 'Data updated successfully',
+  data_update_failed: 'Failed to update data',
+  layout_saved: 'Dashboard layout saved',
+  save_error: 'Error saving',
+  currency_sar_label: 'Saudi Riyal',
 };
