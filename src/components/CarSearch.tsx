@@ -74,7 +74,7 @@ export function CarSearch() {
           <div className="relative">
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="ابحث بالاسم أو رقم الشاسيه أو الموديل..."
+              placeholder="ابحث بالاسم أو الرقم..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pr-10"
