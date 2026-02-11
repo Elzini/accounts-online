@@ -70,7 +70,7 @@ export function CustomersTable({ setActivePage }: CustomersTableProps) {
               <MobileCardHeader
                 title={customer.name}
                 subtitle={`رقم ${index + 1}`}
-                actions={<CustomerActions customer={customer} />}
+                actions={<CustomerActions customer={{ ...customer, credit_limit: (customer as any).credit_limit ?? 0 }} />}
               />
               <div className="space-y-1">
                 <MobileCardRow 
@@ -151,7 +151,7 @@ export function CustomersTable({ setActivePage }: CustomersTableProps) {
                     {customer.registration_number || '-'}
                   </TableCell>
                   <TableCell>
-                    <CustomerActions customer={customer} />
+                    <CustomerActions customer={{ ...customer, credit_limit: (customer as any).credit_limit ?? 0 }} />
                   </TableCell>
                 </TableRow>
               ))}

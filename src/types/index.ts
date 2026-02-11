@@ -135,6 +135,10 @@ export type ActivePage =
   | 'warehouses'
   | 'items-catalog'
   | 'item-categories'
-  | 'units-of-measure'
-  // Cost Centers
-  | 'cost-centers';
+   | 'units-of-measure'
+   // Cost Centers
+   | 'cost-centers'
+   // New modules
+   | 'aging-report'
+   | 'checks'
+   | 'budgets';

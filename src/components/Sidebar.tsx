@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -90,6 +90,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'item-categories': FolderTree,
   'units-of-measure': Ruler,
   'cost-centers': Target,
+  'aging-report': Clock,
+  'checks': ClipboardCheck,
+  'budgets': BarChart3,
 };
 
 export function Sidebar({
@@ -478,6 +481,18 @@ export function Sidebar({
     id: 'medad-import' as ActivePage,
     label: 'استيراد من مداد',
     icon: FileUp
+  }, {
+    id: 'aging-report' as ActivePage,
+    label: 'أعمار الذمم',
+    icon: Clock
+  }, {
+    id: 'checks' as ActivePage,
+    label: 'الشيكات',
+    icon: ClipboardCheck
+  }, {
+    id: 'budgets' as ActivePage,
+    label: 'الموازنات التقديرية',
+    icon: BarChart3
   }];
   const hasAccess = (permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users') => {
     if (!permission) return true;
