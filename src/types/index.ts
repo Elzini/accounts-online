@@ -151,4 +151,8 @@ export type ActivePage =
    // Manufacturing
    | 'manufacturing'
    // Integrations
-   | 'integrations';
+   | 'integrations'
+   // Currencies
+   | 'currencies'
+   // Branches
+   | 'branches';
