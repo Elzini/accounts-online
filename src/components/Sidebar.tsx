@@ -363,7 +363,8 @@ export function Sidebar({
     id: 'manufacturing' as ActivePage,
     label: 'التصنيع',
     icon: Factory
-  }, {
+  }];
+  const integrationItems = [{
     id: 'integrations' as ActivePage,
     label: 'التكاملات الخارجية',
     icon: Plug
@@ -696,6 +697,8 @@ export function Sidebar({
         {renderCollapsibleSection('reports', settings?.reports_title || 'التقارير', reportItems, hasAccess('reports'))}
 
         {renderCollapsibleSection('accounting', settings?.accounting_section_title || 'المحاسبة', accountingItems, permissions.admin || permissions.reports)}
+
+        {renderCollapsibleSection('integrations', 'التكاملات والإضافات', integrationItems, permissions.admin)}
 
         {isSuperAdmin && <div className="mb-5">
             <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-warning/50 mb-2 px-3">مدير النظام</p>
