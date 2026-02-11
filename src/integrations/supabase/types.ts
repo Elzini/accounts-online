@@ -7964,6 +7964,55 @@ export type Database = {
         | "admin"
         | "users"
         | "super_admin"
+        | "financial_accounting"
+        | "sales_invoices"
+        | "purchase_invoices"
+        | "control_center"
+        | "accounting_audit"
+        | "theme_settings"
+        | "app_settings"
+        | "branches"
+        | "approvals"
+        | "currencies"
+        | "financial_kpis"
+        | "budgets"
+        | "checks"
+        | "aging_report"
+        | "medad_import"
+        | "cost_centers"
+        | "fixed_assets"
+        | "financial_statements"
+        | "trial_balance"
+        | "zakat_reports"
+        | "financial_reports"
+        | "vat_return"
+        | "account_statement"
+        | "general_ledger"
+        | "journal_entries"
+        | "chart_of_accounts"
+        | "tax_settings"
+        | "fiscal_years"
+        | "all_reports"
+        | "warehouses"
+        | "integrations"
+        | "manufacturing"
+        | "tasks"
+        | "custody"
+        | "banking"
+        | "financing"
+        | "vouchers"
+        | "installments"
+        | "quotations"
+        | "prepaid_expenses"
+        | "expenses"
+        | "leaves"
+        | "attendance"
+        | "payroll"
+        | "employees"
+        | "car_transfers"
+        | "partner_dealerships"
+        | "customers"
+        | "suppliers"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -8107,6 +8156,55 @@ export const Constants = {
         "admin",
         "users",
         "super_admin",
+        "financial_accounting",
+        "sales_invoices",
+        "purchase_invoices",
+        "control_center",
+        "accounting_audit",
+        "theme_settings",
+        "app_settings",
+        "branches",
+        "approvals",
+        "currencies",
+        "financial_kpis",
+        "budgets",
+        "checks",
+        "aging_report",
+        "medad_import",
+        "cost_centers",
+        "fixed_assets",
+        "financial_statements",
+        "trial_balance",
+        "zakat_reports",
+        "financial_reports",
+        "vat_return",
+        "account_statement",
+        "general_ledger",
+        "journal_entries",
+        "chart_of_accounts",
+        "tax_settings",
+        "fiscal_years",
+        "all_reports",
+        "warehouses",
+        "integrations",
+        "manufacturing",
+        "tasks",
+        "custody",
+        "banking",
+        "financing",
+        "vouchers",
+        "installments",
+        "quotations",
+        "prepaid_expenses",
+        "expenses",
+        "leaves",
+        "attendance",
+        "payroll",
+        "employees",
+        "car_transfers",
+        "partner_dealerships",
+        "customers",
+        "suppliers",
       ],
     },
   },

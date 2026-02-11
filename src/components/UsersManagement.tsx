@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Users, Shield, Check, X, Save, UserPlus, Pencil, Trash2 } from 'lucide-react';
+import { Users, Shield, Check, X, Save, UserPlus, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
@@ -35,14 +36,203 @@ interface UsersManagementProps {
   setActivePage: (page: ActivePage) => void;
 }
 
-// Exclude super_admin from displayed permissions
-const PERMISSIONS: { key: UserPermission; label: string }[] = [
-  { key: 'sales', label: 'المبيعات' },
-  { key: 'purchases', label: 'المشتريات' },
-  { key: 'reports', label: 'التقارير' },
-  { key: 'admin', label: 'الإدارة' },
-  { key: 'users', label: 'المستخدمين' },
+interface PermissionGroup {
+  label: string;
+  permissions: { key: UserPermission; label: string }[];
+}
+
+const PERMISSION_GROUPS: PermissionGroup[] = [
+  {
+    label: 'المبيعات والمشتريات',
+    permissions: [
+      { key: 'sales', label: 'المبيعات' },
+      { key: 'purchases', label: 'المشتريات' },
+      { key: 'customers', label: 'العملاء' },
+      { key: 'suppliers', label: 'الموردين' },
+      { key: 'sales_invoices', label: 'فواتير البيع' },
+      { key: 'purchase_invoices', label: 'فواتير الشراء' },
+      { key: 'quotations', label: 'عروض الأسعار' },
+      { key: 'partner_dealerships', label: 'المعارض الشريكة' },
+      { key: 'car_transfers', label: 'تحويلات السيارات' },
+    ],
+  },
+  {
+    label: 'المحاسبة',
+    permissions: [
+      { key: 'financial_accounting', label: 'المحاسبة المالية' },
+      { key: 'chart_of_accounts', label: 'شجرة الحسابات' },
+      { key: 'journal_entries', label: 'دفتر اليومية' },
+      { key: 'general_ledger', label: 'دفتر الأستاذ' },
+      { key: 'account_statement', label: 'كشف حساب مفصل' },
+      { key: 'fiscal_years', label: 'السنوات المالية' },
+      { key: 'tax_settings', label: 'إعدادات الضريبة' },
+      { key: 'cost_centers', label: 'مراكز التكلفة' },
+      { key: 'fixed_assets', label: 'الأصول الثابتة' },
+      { key: 'vouchers', label: 'سندات القبض والصرف' },
+      { key: 'expenses', label: 'المصروفات' },
+      { key: 'prepaid_expenses', label: 'المصروفات المقدمة' },
+      { key: 'installments', label: 'الأقساط' },
+      { key: 'checks', label: 'الشيكات' },
+    ],
+  },
+  {
+    label: 'التقارير والقوائم المالية',
+    permissions: [
+      { key: 'reports', label: 'التقارير' },
+      { key: 'all_reports', label: 'جميع التقارير' },
+      { key: 'financial_reports', label: 'التقارير المالية' },
+      { key: 'financial_statements', label: 'القوائم المالية الشاملة' },
+      { key: 'trial_balance', label: 'تحليل ميزان المراجعة' },
+      { key: 'vat_return', label: 'إقرار ضريبة القيمة المضافة' },
+      { key: 'zakat_reports', label: 'القوائم الزكوية' },
+      { key: 'aging_report', label: 'أعمار الذمم' },
+      { key: 'financial_kpis', label: 'المؤشرات المالية' },
+      { key: 'budgets', label: 'الموازنة التقديرية' },
+    ],
+  },
+  {
+    label: 'البنوك والتمويل',
+    permissions: [
+      { key: 'banking', label: 'إدارة البنوك' },
+      { key: 'financing', label: 'شركات التمويل' },
+      { key: 'currencies', label: 'العملات وأسعار الصرف' },
+    ],
+  },
+  {
+    label: 'الموارد البشرية',
+    permissions: [
+      { key: 'employees', label: 'الموظفين' },
+      { key: 'payroll', label: 'مسير الرواتب' },
+      { key: 'attendance', label: 'الحضور والانصراف' },
+      { key: 'leaves', label: 'الإجازات' },
+    ],
+  },
+  {
+    label: 'المستودعات والتصنيع',
+    permissions: [
+      { key: 'warehouses', label: 'المستودعات' },
+      { key: 'manufacturing', label: 'التصنيع' },
+    ],
+  },
+  {
+    label: 'الإدارة والنظام',
+    permissions: [
+      { key: 'admin', label: 'الإدارة العامة' },
+      { key: 'users', label: 'إدارة المستخدمين' },
+      { key: 'control_center', label: 'مركز التحكم' },
+      { key: 'accounting_audit', label: 'فحص النظام الحسابي' },
+      { key: 'app_settings', label: 'إعدادات النظام' },
+      { key: 'theme_settings', label: 'إعدادات الظهور' },
+      { key: 'branches', label: 'إدارة الفروع' },
+      { key: 'approvals', label: 'الموافقات' },
+      { key: 'tasks', label: 'إدارة المهام' },
+      { key: 'custody', label: 'إدارة العهد' },
+      { key: 'integrations', label: 'التكاملات الخارجية' },
+      { key: 'medad_import', label: 'استيراد من مداد' },
+    ],
+  },
 ];
+
+// Flat list for quick lookups
+const ALL_PERMISSIONS = PERMISSION_GROUPS.flatMap(g => g.permissions);
+
+function PermissionsEditor({
+  selected,
+  onToggle,
+  disabledKeys = [],
+}: {
+  selected: UserPermission[];
+  onToggle: (key: UserPermission) => void;
+  disabledKeys?: UserPermission[];
+}) {
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (label: string) => {
+    setCollapsed(prev => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  const toggleAllInGroup = (group: PermissionGroup, checked: boolean) => {
+    group.permissions.forEach(p => {
+      if (disabledKeys.includes(p.key)) return;
+      const isSelected = selected.includes(p.key);
+      if (checked && !isSelected) onToggle(p.key);
+      if (!checked && isSelected) onToggle(p.key);
+    });
+  };
+
+  return (
+    <ScrollArea className="max-h-[400px]">
+      <div className="space-y-3 p-1">
+        {PERMISSION_GROUPS.map(group => {
+          const isCollapsed = collapsed[group.label];
+          const groupSelected = group.permissions.filter(p => selected.includes(p.key)).length;
+          const allSelected = groupSelected === group.permissions.length;
+          const someSelected = groupSelected > 0 && !allSelected;
+
+          return (
+            <div key={group.label} className="border rounded-lg overflow-hidden">
+              <div 
+                className="flex items-center justify-between p-3 bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
+                onClick={() => toggleGroup(group.label)}
+              >
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={allSelected}
+                    // @ts-ignore
+                    indeterminate={someSelected}
+                    onCheckedChange={(checked) => {
+                      toggleAllInGroup(group, !!checked);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <span className="font-semibold text-sm">{group.label}</span>
+                  <span className="text-xs text-muted-foreground">({groupSelected}/{group.permissions.length})</span>
+                </div>
+                {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+              </div>
+              {!isCollapsed && (
+                <div className="grid grid-cols-2 gap-2 p-3">
+                  {group.permissions.map(p => (
+                    <div key={p.key} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`perm-${p.key}`}
+                        checked={selected.includes(p.key)}
+                        onCheckedChange={() => onToggle(p.key)}
+                        disabled={disabledKeys.includes(p.key)}
+                      />
+                      <Label htmlFor={`perm-${p.key}`} className="text-sm cursor-pointer">
+                        {p.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </ScrollArea>
+  );
+}
+
+function PermissionsBadges({ permissions }: { permissions: UserPermission[] }) {
+  const displayPerms = permissions.filter(p => p !== 'super_admin');
+  if (displayPerms.length === 0) return <span className="text-muted-foreground text-xs">لا توجد صلاحيات</span>;
+  
+  const labels = displayPerms.map(p => ALL_PERMISSIONS.find(ap => ap.key === p)?.label || p);
+  const maxShow = 4;
+  
+  return (
+    <div className="flex flex-wrap gap-1">
+      {labels.slice(0, maxShow).map((label, i) => (
+        <span key={i} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{label}</span>
+      ))}
+      {labels.length > maxShow && (
+        <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">+{labels.length - maxShow}</span>
+      )}
+    </div>
+  );
+}
 
 export function UsersManagement({ setActivePage }: UsersManagementProps) {
   const { data: users = [], isLoading } = useUsers();
@@ -58,6 +248,8 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
   const [newUsername, setNewUsername] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{ id: string; username: string } | null>(null);
+  const [permDialogOpen, setPermDialogOpen] = useState(false);
+  const [permDialogUserId, setPermDialogUserId] = useState<string | null>(null);
   
   // Add user dialog state
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -68,14 +260,10 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
 
   const canManageUsers = myPermissions.admin || myPermissions.users || myPermissions.super_admin;
 
-  const startEditing = (userId: string, currentPermissions: UserPermission[]) => {
-    setEditingUser(userId);
-    setSelectedPermissions([...currentPermissions]);
-  };
-
-  const cancelEditing = () => {
-    setEditingUser(null);
-    setSelectedPermissions([]);
+  const openPermissionsDialog = (userId: string, currentPermissions: UserPermission[]) => {
+    setPermDialogUserId(userId);
+    setSelectedPermissions([...currentPermissions.filter(p => p !== 'super_admin')]);
+    setPermDialogOpen(true);
   };
 
   const togglePermission = (permission: UserPermission) => {
@@ -94,11 +282,13 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
     );
   };
 
-  const savePermissions = async (userId: string) => {
+  const savePermissions = async () => {
+    if (!permDialogUserId) return;
     try {
-      await updatePermissions.mutateAsync({ userId, permissions: selectedPermissions });
+      await updatePermissions.mutateAsync({ userId: permDialogUserId, permissions: selectedPermissions });
       toast.success('تم تحديث الصلاحيات بنجاح');
-      setEditingUser(null);
+      setPermDialogOpen(false);
+      setPermDialogUserId(null);
     } catch (error) {
       toast.error('حدث خطأ أثناء تحديث الصلاحيات');
     }
@@ -216,20 +406,14 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
               <TableHead className="text-right font-bold">#</TableHead>
               <TableHead className="text-right font-bold">اسم المستخدم</TableHead>
               <TableHead className="text-right font-bold">تاريخ التسجيل</TableHead>
-              {PERMISSIONS.map(p => (
-                <TableHead key={p.key} className="text-center font-bold text-sm">
-                  {p.label}
-                </TableHead>
-              ))}
+              <TableHead className="text-right font-bold">الصلاحيات</TableHead>
               <TableHead className="text-center font-bold">إجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {users
-              // Filter out super_admin users from the list
               .filter(u => !u.permissions.includes('super_admin'))
               .map((u, index) => {
-              const isEditing = editingUser === u.user_id;
               const isEditingName = editingUsername === u.user_id;
               const isCurrentUser = u.user_id === user?.id;
               
@@ -282,63 +466,34 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
                     )}
                   </TableCell>
                   <TableCell>{formatDate(u.created_at)}</TableCell>
-                  {PERMISSIONS.map(p => (
-                    <TableCell key={p.key} className="text-center">
-                      {isEditing ? (
-                        <Checkbox
-                          checked={selectedPermissions.includes(p.key)}
-                          onCheckedChange={() => togglePermission(p.key)}
-                          disabled={isCurrentUser && p.key === 'admin'}
-                        />
-                      ) : (
-                        u.permissions.includes(p.key) ? (
-                          <Check className="w-5 h-5 text-success mx-auto" />
-                        ) : (
-                          <X className="w-5 h-5 text-muted-foreground/30 mx-auto" />
-                        )
-                      )}
-                    </TableCell>
-                  ))}
+                  <TableCell>
+                    <PermissionsBadges permissions={u.permissions} />
+                  </TableCell>
                   <TableCell className="text-center">
-                    {isEditing ? (
-                      <div className="flex gap-2 justify-center">
-                        <Button 
-                          size="sm" 
-                          onClick={() => savePermissions(u.user_id)}
-                          disabled={updatePermissions.isPending}
-                          className="gradient-success"
-                        >
-                          <Save className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={cancelEditing}>
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2 justify-center">
+                    <div className="flex gap-2 justify-center">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => openPermissionsDialog(u.user_id, u.permissions)}
+                        disabled={isCurrentUser}
+                      >
+                        <Shield className="w-4 h-4 ml-1" />
+                        تعديل الصلاحيات
+                      </Button>
+                      {!isCurrentUser && (
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => startEditing(u.user_id, u.permissions)}
-                          disabled={isCurrentUser}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => {
+                            setUserToDelete({ id: u.user_id, username: u.username });
+                            setDeleteDialogOpen(true);
+                          }}
                         >
-                          تعديل الصلاحيات
+                          <Trash2 className="w-4 h-4" />
                         </Button>
-                        {!isCurrentUser && (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => {
-                              setUserToDelete({ id: u.user_id, username: u.username });
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -353,43 +508,38 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
         )}
       </div>
 
-      {/* Permissions Legend */}
-      <div className="bg-card rounded-2xl p-6 card-shadow">
-        <h3 className="font-bold mb-4">شرح الصلاحيات</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="p-3 rounded-lg bg-muted/50">
-            <p className="font-semibold text-sm">صلاحية المبيعات</p>
-            <p className="text-xs text-muted-foreground">إدارة المبيعات والعملاء</p>
-          </div>
-          <div className="p-3 rounded-lg bg-muted/50">
-            <p className="font-semibold text-sm">صلاحية المشتريات</p>
-            <p className="text-xs text-muted-foreground">إدارة المشتريات والموردين والمخزون</p>
-          </div>
-          <div className="p-3 rounded-lg bg-muted/50">
-            <p className="font-semibold text-sm">صلاحية التقارير</p>
-            <p className="text-xs text-muted-foreground">عرض التقارير والإحصائيات</p>
-          </div>
-          <div className="p-3 rounded-lg bg-muted/50">
-            <p className="font-semibold text-sm">صلاحية الإدارة</p>
-            <p className="text-xs text-muted-foreground">صلاحيات كاملة على الشركة</p>
-          </div>
-          <div className="p-3 rounded-lg bg-muted/50">
-            <p className="font-semibold text-sm">صلاحية المستخدمين</p>
-            <p className="text-xs text-muted-foreground">إدارة مستخدمي الشركة والصلاحيات</p>
-          </div>
-        </div>
-      </div>
+      {/* Edit Permissions Dialog */}
+      <Dialog open={permDialogOpen} onOpenChange={setPermDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تعديل الصلاحيات</DialogTitle>
+            <DialogDescription>
+              حدد الصلاحيات المطلوبة لهذا المستخدم
+            </DialogDescription>
+          </DialogHeader>
+          <PermissionsEditor
+            selected={selectedPermissions}
+            onToggle={togglePermission}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPermDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={savePermissions} disabled={updatePermissions.isPending}>
+              {updatePermissions.isPending ? 'جاري الحفظ...' : 'حفظ الصلاحيات'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add User Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]" dir="rtl">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh]" dir="rtl">
           <DialogHeader>
             <DialogTitle>إضافة مستخدم جديد</DialogTitle>
             <DialogDescription>
               قم بإدخال بيانات المستخدم الجديد وتحديد صلاحياته
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-4 py-2">
             <div className="grid gap-2">
               <Label htmlFor="username">اسم المستخدم</Label>
               <Input
@@ -423,20 +573,10 @@ export function UsersManagement({ setActivePage }: UsersManagementProps) {
             </div>
             <div className="grid gap-2">
               <Label>الصلاحيات</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {PERMISSIONS.map(p => (
-                  <div key={p.key} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`new-${p.key}`}
-                      checked={newUserPermissions.includes(p.key)}
-                      onCheckedChange={() => toggleNewUserPermission(p.key)}
-                    />
-                    <Label htmlFor={`new-${p.key}`} className="text-sm cursor-pointer">
-                      {p.label}
-                    </Label>
-                  </div>
-                ))}
-              </div>
+              <PermissionsEditor
+                selected={newUserPermissions}
+                onToggle={toggleNewUserPermission}
+              />
             </div>
           </div>
           <DialogFooter>

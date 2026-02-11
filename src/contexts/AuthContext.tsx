@@ -9,7 +9,71 @@ interface UserPermissions {
   admin: boolean;
   users: boolean;
   super_admin: boolean;
+  financial_accounting: boolean;
+  sales_invoices: boolean;
+  purchase_invoices: boolean;
+  control_center: boolean;
+  accounting_audit: boolean;
+  theme_settings: boolean;
+  app_settings: boolean;
+  branches: boolean;
+  approvals: boolean;
+  currencies: boolean;
+  financial_kpis: boolean;
+  budgets: boolean;
+  checks: boolean;
+  aging_report: boolean;
+  medad_import: boolean;
+  cost_centers: boolean;
+  fixed_assets: boolean;
+  financial_statements: boolean;
+  trial_balance: boolean;
+  zakat_reports: boolean;
+  financial_reports: boolean;
+  vat_return: boolean;
+  account_statement: boolean;
+  general_ledger: boolean;
+  journal_entries: boolean;
+  chart_of_accounts: boolean;
+  tax_settings: boolean;
+  fiscal_years: boolean;
+  all_reports: boolean;
+  warehouses: boolean;
+  integrations: boolean;
+  manufacturing: boolean;
+  tasks: boolean;
+  custody: boolean;
+  banking: boolean;
+  financing: boolean;
+  vouchers: boolean;
+  installments: boolean;
+  quotations: boolean;
+  prepaid_expenses: boolean;
+  expenses: boolean;
+  leaves: boolean;
+  attendance: boolean;
+  payroll: boolean;
+  employees: boolean;
+  car_transfers: boolean;
+  partner_dealerships: boolean;
+  customers: boolean;
+  suppliers: boolean;
 }
+
+const DEFAULT_PERMISSIONS: UserPermissions = {
+  sales: false, purchases: false, reports: false, admin: false, users: false, super_admin: false,
+  financial_accounting: false, sales_invoices: false, purchase_invoices: false, control_center: false,
+  accounting_audit: false, theme_settings: false, app_settings: false, branches: false, approvals: false,
+  currencies: false, financial_kpis: false, budgets: false, checks: false, aging_report: false,
+  medad_import: false, cost_centers: false, fixed_assets: false, financial_statements: false,
+  trial_balance: false, zakat_reports: false, financial_reports: false, vat_return: false,
+  account_statement: false, general_ledger: false, journal_entries: false, chart_of_accounts: false,
+  tax_settings: false, fiscal_years: false, all_reports: false, warehouses: false, integrations: false,
+  manufacturing: false, tasks: false, custody: false, banking: false, financing: false, vouchers: false,
+  installments: false, quotations: false, prepaid_expenses: false, expenses: false, leaves: false,
+  attendance: false, payroll: false, employees: false, car_transfers: false, partner_dealerships: false,
+  customers: false, suppliers: false,
+};
 
 interface AuthContextType {
   user: User | null;
@@ -27,14 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [permissions, setPermissions] = useState<UserPermissions>({
-    sales: false,
-    purchases: false,
-    reports: false,
-    admin: false,
-    users: false,
-    super_admin: false,
-  });
+  const [permissions, setPermissions] = useState<UserPermissions>({ ...DEFAULT_PERMISSIONS });
 
   const fetchPermissions = async (userId: string) => {
     const { data, error } = await supabase
@@ -47,14 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const newPermissions: UserPermissions = {
-      sales: false,
-      purchases: false,
-      reports: false,
-      admin: false,
-      users: false,
-      super_admin: false,
-    };
+    const newPermissions: UserPermissions = { ...DEFAULT_PERMISSIONS };
 
     data?.forEach((role) => {
       if (role.permission in newPermissions) {
@@ -83,14 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             fetchPermissions(session.user.id);
           }, 0);
         } else {
-          setPermissions({
-            sales: false,
-            purchases: false,
-            reports: false,
-            admin: false,
-            users: false,
-            super_admin: false,
-          });
+          setPermissions({ ...DEFAULT_PERMISSIONS });
         }
       }
     );
@@ -153,14 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear local state first to ensure UI updates immediately
       setUser(null);
       setSession(null);
-      setPermissions({
-        sales: false,
-        purchases: false,
-        reports: false,
-        admin: false,
-        users: false,
-        super_admin: false,
-      });
+      setPermissions({ ...DEFAULT_PERMISSIONS });
       
       // Then attempt server-side logout (ignore errors if session already expired)
       await supabase.auth.signOut();
