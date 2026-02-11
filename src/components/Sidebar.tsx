@@ -698,7 +698,7 @@ export function Sidebar({
 
         {renderCollapsibleSection('accounting', settings?.accounting_section_title || 'المحاسبة', accountingItems, permissions.admin || permissions.reports)}
 
-        {renderCollapsibleSection('integrations', 'التكاملات والإضافات', integrationItems, permissions.admin)}
+        {renderCollapsibleSection('integrations', 'التكاملات والإضافات', integrationItems, true)}
 
         {isSuperAdmin && <div className="mb-5">
             <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-warning/50 mb-2 px-3">مدير النظام</p>
