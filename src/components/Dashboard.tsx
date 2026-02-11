@@ -562,6 +562,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         enable3D={getCardConfig('totalPurchases').enable3D}
                         animationIndex={getNextAnimIndex()}
                         progress={monthProgress}
+                        trend={analytics?.purchasesTrend?.percentChange}
                       />
                     </EditableWidgetWrapper>
                   );
@@ -584,6 +585,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         enable3D={getCardConfig('monthSales').enable3D}
                         animationIndex={getNextAnimIndex()}
                         progress={monthProgress}
+                        trend={analytics?.salesTrend?.percentChange}
                       />
                     </EditableWidgetWrapper>
                   );
@@ -606,6 +608,8 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         enable3D={getCardConfig('totalProfit').enable3D}
                         animationIndex={getNextAnimIndex()}
                         progress={monthProgress}
+                        trend={analytics?.profitTrend?.percentChange}
+                        badge={stats.totalPurchases > 0 ? `هامش ${((stats.totalProfit / stats.totalPurchases) * 100).toFixed(1)}%` : undefined}
                       />
                     </EditableWidgetWrapper>
                   );
