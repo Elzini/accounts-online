@@ -39,8 +39,8 @@ export function BankingPage() {
   const [accountForm, setAccountForm] = useState({
     account_name: '',
     bank_name: '',
-    account_number: '',
-    iban: '',
+    account_number_encrypted: '',
+    iban_encrypted: '',
     account_category_id: '',
     opening_balance: 0,
     notes: ''
@@ -75,7 +75,7 @@ export function BankingPage() {
       });
       toast.success('تمت إضافة الحساب البنكي بنجاح');
       setShowAccountDialog(false);
-      setAccountForm({ account_name: '', bank_name: '', account_number: '', iban: '', account_category_id: '', opening_balance: 0, notes: '' });
+      setAccountForm({ account_name: '', bank_name: '', account_number_encrypted: '', iban_encrypted: '', account_category_id: '', opening_balance: 0, notes: '' });
     } catch (error) {
       toast.error('حدث خطأ أثناء الإضافة');
     }
@@ -425,11 +425,11 @@ export function BankingPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>رقم الحساب</Label>
-                <Input value={accountForm.account_number} onChange={e => setAccountForm({ ...accountForm, account_number: e.target.value })} dir="ltr" />
+                <Input value={accountForm.account_number_encrypted} onChange={e => setAccountForm({ ...accountForm, account_number_encrypted: e.target.value })} dir="ltr" />
               </div>
               <div>
                 <Label>IBAN</Label>
-                <Input value={accountForm.iban} onChange={e => setAccountForm({ ...accountForm, iban: e.target.value })} dir="ltr" placeholder="SA..." />
+                <Input value={accountForm.iban_encrypted} onChange={e => setAccountForm({ ...accountForm, iban_encrypted: e.target.value })} dir="ltr" placeholder="SA..." />
               </div>
             </div>
             <div>
