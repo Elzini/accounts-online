@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -89,6 +89,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'items-catalog': Package,
   'item-categories': FolderTree,
   'units-of-measure': Ruler,
+  'cost-centers': Target,
 };
 
 export function Sidebar({
@@ -469,6 +470,10 @@ export function Sidebar({
     id: 'fixed-assets' as ActivePage,
     label: 'الأصول الثابتة',
     icon: Boxes
+  }, {
+    id: 'cost-centers' as ActivePage,
+    label: 'مراكز التكلفة',
+    icon: Target
   }, {
     id: 'medad-import' as ActivePage,
     label: 'استيراد من مداد',

@@ -181,7 +181,7 @@ export async function fetchJournalEntryWithLines(entryId: string): Promise<Journ
 
 export async function createJournalEntry(
   entry: Omit<JournalEntry, 'id' | 'entry_number' | 'created_at' | 'updated_at' | 'lines'>,
-  lines: Array<{ account_id: string; description?: string; debit: number; credit: number }>
+  lines: Array<{ account_id: string; description?: string; debit: number; credit: number; cost_center_id?: string | null }>
 ): Promise<JournalEntry> {
   // Calculate totals
   const totalDebit = lines.reduce((sum, line) => sum + (line.debit || 0), 0);
@@ -207,6 +207,7 @@ export async function createJournalEntry(
     description: line.description || null,
     debit: line.debit || 0,
     credit: line.credit || 0,
+    cost_center_id: line.cost_center_id || null,
   }));
 
   const { error: linesError } = await supabase
@@ -231,7 +232,7 @@ export async function deleteJournalEntry(id: string): Promise<void> {
 export async function updateJournalEntry(
   entryId: string,
   entry: Partial<Omit<JournalEntry, 'id' | 'entry_number' | 'created_at' | 'updated_at' | 'lines'>>,
-  lines: Array<{ id?: string; account_id: string; description?: string; debit: number; credit: number }>
+  lines: Array<{ id?: string; account_id: string; description?: string; debit: number; credit: number; cost_center_id?: string | null }>
 ): Promise<JournalEntry> {
   // Update the entry
   const { data: updatedEntry, error: entryError } = await supabase
@@ -263,6 +264,7 @@ export async function updateJournalEntry(
     description: line.description || null,
     debit: line.debit || 0,
     credit: line.credit || 0,
+    cost_center_id: line.cost_center_id || null,
   }));
 
   const { error: linesError } = await supabase

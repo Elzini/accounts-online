@@ -1178,6 +1178,57 @@ export type Database = {
           },
         ]
       }
+      cost_centers: {
+        Row: {
+          code: string
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_centers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_centers_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "cost_centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custodies: {
         Row: {
           company_id: string
@@ -3364,6 +3415,7 @@ export type Database = {
       journal_entry_lines: {
         Row: {
           account_id: string
+          cost_center_id: string | null
           created_at: string
           credit: number
           debit: number
@@ -3373,6 +3425,7 @@ export type Database = {
         }
         Insert: {
           account_id: string
+          cost_center_id?: string | null
           created_at?: string
           credit?: number
           debit?: number
@@ -3382,6 +3435,7 @@ export type Database = {
         }
         Update: {
           account_id?: string
+          cost_center_id?: string | null
           created_at?: string
           credit?: number
           debit?: number
@@ -3395,6 +3449,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_cost_center_id_fkey"
+            columns: ["cost_center_id"]
+            isOneToOne: false
+            referencedRelation: "cost_centers"
             referencedColumns: ["id"]
           },
           {
