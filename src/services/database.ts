@@ -37,6 +37,13 @@ async function getCurrentCompanyId(): Promise<string | null> {
   return profile?.company_id || null;
 }
 
+// Strict version that requires company_id - returns empty results if not available
+async function requireCompanyId(): Promise<string> {
+  const companyId = await getCurrentCompanyId();
+  if (!companyId) throw new Error('COMPANY_REQUIRED');
+  return companyId;
+}
+
 function toDateOnly(date: Date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -67,19 +74,16 @@ export interface MultiCarSaleData {
 // Use customers_safe view for read operations to mask sensitive PII (id_number, registration_number)
 // The view shows only last 4 digits of identity documents for non-admin users
 export async function fetchCustomers() {
-  const companyId = await getCurrentCompanyId();
-  let query = supabase
+  const companyId = await requireCompanyId();
+  const { data, error } = await supabase
     .from('customers_safe')
     .select('*')
+    .eq('company_id', companyId)
     .order('created_at', { ascending: false });
-  if (companyId) query = query.eq('company_id', companyId);
-  const { data, error } = await query;
   
   if (error) throw error;
-  // The view now uses the same field names, just return the data directly
   return data?.map(customer => ({
     ...customer,
-    // Not exposed in safe view - provide null for type compatibility
     id_number_encrypted: null as string | null,
   })) || [];
 }
@@ -123,16 +127,14 @@ export async function deleteCustomer(id: string) {
 // Use suppliers_safe view for read operations to mask sensitive data (phone, id_number, registration_number)
 // The view shows only last 4 digits for non-admin users
 export async function fetchSuppliers() {
-  const companyId = await getCurrentCompanyId();
-  let query = supabase
+  const companyId = await requireCompanyId();
+  const { data, error } = await supabase
     .from('suppliers_safe')
     .select('*')
+    .eq('company_id', companyId)
     .order('created_at', { ascending: false });
-  if (companyId) query = query.eq('company_id', companyId);
-  const { data, error } = await query;
   
   if (error) throw error;
-  // Map the masked fields back to expected field names for UI compatibility
   return data?.map(supplier => ({
     id: supplier.id,
     company_id: supplier.company_id,
@@ -144,7 +146,6 @@ export async function fetchSuppliers() {
     registration_number: supplier.registration_number_masked,
     created_at: supplier.created_at,
     updated_at: supplier.updated_at,
-    // Not exposed in safe view - provide null for type compatibility
     registration_number_encrypted: null as string | null,
   })) || [];
 }
@@ -186,17 +187,16 @@ export async function deleteSupplier(id: string) {
 
 // Cars
 export async function fetchCars() {
-  const companyId = await getCurrentCompanyId();
-  let query = supabase
+  const companyId = await requireCompanyId();
+  const { data, error } = await supabase
     .from('cars')
     .select(`
       *,
       supplier:suppliers(name),
       payment_account:account_categories!cars_payment_account_id_fkey(id, name, code)
     `)
+    .eq('company_id', companyId)
     .order('inventory_number', { ascending: true });
-  if (companyId) query = query.eq('company_id', companyId);
-  const { data, error } = await query;
   
   if (error) throw error;
   return data;
@@ -423,8 +423,8 @@ export async function updateCarStatus(carId: string, status: 'available' | 'sold
 
 // Sales
 export async function fetchSales() {
-  const companyId = await getCurrentCompanyId();
-  let query = supabase
+  const companyId = await requireCompanyId();
+  const { data, error } = await supabase
     .from('sales')
     .select(`
       *,
@@ -436,9 +436,8 @@ export async function fetchSales() {
       ),
       payment_account:account_categories!sales_payment_account_id_fkey(id, name, code)
     `)
+    .eq('company_id', companyId)
     .order('created_at', { ascending: false });
-  if (companyId) query = query.eq('company_id', companyId);
-  const { data, error } = await query;
   
   if (error) throw error;
   return data;
@@ -671,15 +670,14 @@ export async function fetchStats(fiscalYearId?: string | null) {
     }
   }
 
-  const companyId = await getCurrentCompanyId();
+  const companyId = await requireCompanyId();
 
-  // Build all queries (without awaiting yet)
+  // Build all queries - always filter by company_id
   let availableCarsQuery = supabase
     .from('cars')
     .select('*', { count: 'exact', head: true })
-    .eq('status', 'available');
-
-  if (companyId) availableCarsQuery = availableCarsQuery.eq('company_id', companyId);
+    .eq('status', 'available')
+    .eq('company_id', companyId);
 
   if (fiscalYearStart && fiscalYearEnd) {
     availableCarsQuery = availableCarsQuery
@@ -690,9 +688,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
   let todaySalesQuery = supabase
     .from('sales')
     .select('*', { count: 'exact', head: true })
-    .eq('sale_date', today);
-
-  if (companyId) todaySalesQuery = todaySalesQuery.eq('company_id', companyId);
+    .eq('sale_date', today)
+    .eq('company_id', companyId);
   
   if (fiscalYearStart && fiscalYearEnd) {
     todaySalesQuery = todaySalesQuery
@@ -702,9 +699,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
 
   let salesQuery = supabase
     .from('sales')
-    .select('profit, car_id, sale_date, sale_price');
-
-  if (companyId) salesQuery = salesQuery.eq('company_id', companyId);
+    .select('profit, car_id, sale_date, sale_price')
+    .eq('company_id', companyId);
   
   if (fiscalYearStart && fiscalYearEnd) {
     salesQuery = salesQuery
@@ -714,9 +710,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
 
   let expensesQuery = supabase
     .from('expenses')
-    .select('amount, car_id, expense_date, payment_method');
-
-  if (companyId) expensesQuery = expensesQuery.eq('company_id', companyId);
+    .select('amount, car_id, expense_date, payment_method')
+    .eq('company_id', companyId);
   
   if (fiscalYearStart && fiscalYearEnd) {
     expensesQuery = expensesQuery
@@ -727,11 +722,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
   let payrollQuery = supabase
     .from('payroll_records')
     .select('month, year, total_base_salaries, total_allowances, total_bonuses, total_overtime, total_absences')
-    .eq('status', 'approved');
-
-  if (companyId) {
-    payrollQuery = payrollQuery.eq('company_id', companyId);
-  }
+    .eq('status', 'approved')
+    .eq('company_id', companyId);
 
   let prepaidAmortQuery = supabase
     .from('prepaid_expense_amortizations')
@@ -741,11 +733,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
       status,
       prepaid_expense:prepaid_expenses!inner(company_id, status)
     `)
-    .lte('amortization_date', toDateOnly(now));
-
-  if (companyId) {
-    prepaidAmortQuery = prepaidAmortQuery.eq('prepaid_expense.company_id', companyId);
-  }
+    .lte('amortization_date', toDateOnly(now))
+    .eq('prepaid_expense.company_id', companyId);
   
   if (fiscalYearStart && fiscalYearEnd) {
     prepaidAmortQuery = prepaidAmortQuery
@@ -755,9 +744,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
 
   let purchasesQuery = supabase
     .from('cars')
-    .select('purchase_price');
-
-  if (companyId) purchasesQuery = purchasesQuery.eq('company_id', companyId);
+    .select('purchase_price')
+    .eq('company_id', companyId);
   
   if (fiscalYearId) {
     if (fiscalYearStart && fiscalYearEnd) {
@@ -919,22 +907,17 @@ export async function fetchStats(fiscalYearId?: string | null) {
 
 // All-time stats (across all fiscal years)
 export async function fetchAllTimeStats() {
-  const companyId = await getCurrentCompanyId();
+  const companyId = await requireCompanyId();
   
   // Total purchases across all years
-  let carsQuery = supabase.from('cars').select('purchase_price');
-  if (companyId) carsQuery = carsQuery.eq('company_id', companyId);
-  const { data: carsData } = await carsQuery;
+  const { data: carsData } = await supabase.from('cars').select('purchase_price').eq('company_id', companyId);
   
   // Purchase prices are stored as base amounts (without VAT)
-  // Multiply by 1.15 to get VAT-inclusive totals
   const allTimePurchasesBase = carsData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
   const allTimePurchases = Math.round(allTimePurchasesBase * 1.15);
   
   // Total sales across all years
-  let salesQ = supabase.from('sales').select('sale_price, profit');
-  if (companyId) salesQ = salesQ.eq('company_id', companyId);
-  const { data: salesData } = await salesQ;
+  const { data: salesData } = await supabase.from('sales').select('sale_price, profit').eq('company_id', companyId);
   
   const allTimeSales = salesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
   const allTimeSalesCount = salesData?.length || 0;
@@ -983,17 +966,14 @@ export async function fetchMonthlyChartData(fiscalYearId?: string) {
     endDate = toDateOnly(new Date());
   }
 
-  const companyId = await getCurrentCompanyId();
-  let chartQuery = supabase
+  const companyId = await requireCompanyId();
+  const { data, error } = await supabase
     .from('sales')
     .select('sale_date, sale_price, profit')
+    .eq('company_id', companyId)
     .gte('sale_date', startDate)
     .lte('sale_date', endDate)
     .order('sale_date', { ascending: true });
-
-  if (companyId) chartQuery = chartQuery.eq('company_id', companyId);
-
-  const { data, error } = await chartQuery;
 
   if (error) throw error;
 
@@ -1098,17 +1078,16 @@ export async function addPurchaseBatch(
 }
 
 export async function fetchPurchaseBatches() {
-  const companyId = await getCurrentCompanyId();
-  let query = supabase
+  const companyId = await requireCompanyId();
+  const { data, error } = await supabase
     .from('purchase_batches')
     .select(`
       *,
       supplier:suppliers(name),
       cars:cars(*)
     `)
+    .eq('company_id', companyId)
     .order('created_at', { ascending: false });
-  if (companyId) query = query.eq('company_id', companyId);
-  const { data, error } = await query;
   
   if (error) throw error;
   return data;
@@ -1172,8 +1151,8 @@ export async function addMultiCarSale(saleData: MultiCarSaleData) {
 }
 
 export async function fetchSalesWithItems() {
-  const companyId = await getCurrentCompanyId();
-  let query = supabase
+  const companyId = await requireCompanyId();
+  const { data, error } = await supabase
     .from('sales')
     .select(`
       *,
@@ -1183,9 +1162,8 @@ export async function fetchSalesWithItems() {
         car:cars(*)
       )
     `)
+    .eq('company_id', companyId)
     .order('created_at', { ascending: false });
-  if (companyId) query = query.eq('company_id', companyId);
-  const { data, error } = await query;
   
   if (error) throw error;
   return data;
