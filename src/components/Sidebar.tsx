@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GlobalSearch } from './GlobalSearch';
+
 import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
@@ -666,10 +666,6 @@ export function Sidebar({
             <h1 className="font-bold text-base text-white truncate">{appName}</h1>
             <p className="text-[10px] text-sidebar-foreground/50 truncate">{appSubtitle}</p>
           </div>
-        </div>
-        {/* Global Search */}
-        <div className="px-1 pt-3 pb-2">
-          <GlobalSearch setActivePage={setActivePage} />
         </div>
       </div>
 
