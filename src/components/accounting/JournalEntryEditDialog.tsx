@@ -10,6 +10,7 @@ import { useJournalEntry, useAccounts, useUpdateJournalEntry } from '@/hooks/use
 import { AccountSearchSelect } from './AccountSearchSelect';
 import { toast } from 'sonner';
 import { Loader2, Plus, Trash2, Save, Eye, Pencil, AlertCircle } from 'lucide-react';
+import { JournalAttachments } from './JournalAttachments';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -379,6 +380,9 @@ export function JournalEntryEditDialog({
                 </Table>
               </div>
             </div>
+
+            {/* Attachments */}
+            {entryId && <JournalAttachments journalEntryId={entryId} />}
 
             {/* Balance Warning */}
             {isEditMode && !isBalanced && (
