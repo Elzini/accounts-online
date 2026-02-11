@@ -867,6 +867,56 @@ export type Database = {
           },
         ]
       }
+      branches: {
+        Row: {
+          address: string | null
+          code: string | null
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          is_main: boolean | null
+          manager_name: string | null
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          code?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_main?: boolean | null
+          manager_name?: string | null
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          code?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_main?: boolean | null
+          manager_name?: string | null
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_lines: {
         Row: {
           account_id: string
@@ -1768,6 +1818,56 @@ export type Database = {
           },
         ]
       }
+      currencies: {
+        Row: {
+          code: string
+          company_id: string
+          created_at: string
+          decimal_places: number | null
+          id: string
+          is_active: boolean | null
+          is_base: boolean | null
+          name_ar: string
+          name_en: string | null
+          symbol: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          company_id: string
+          created_at?: string
+          decimal_places?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_base?: boolean | null
+          name_ar: string
+          name_en?: string | null
+          symbol?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          company_id?: string
+          created_at?: string
+          decimal_places?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_base?: boolean | null
+          name_ar?: string
+          name_en?: string | null
+          symbol?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "currencies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custodies: {
         Row: {
           company_id: string
@@ -2647,6 +2747,58 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exchange_rates: {
+        Row: {
+          company_id: string
+          created_at: string
+          effective_date: string
+          from_currency_id: string
+          id: string
+          rate: number
+          to_currency_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          effective_date?: string
+          from_currency_id: string
+          id?: string
+          rate: number
+          to_currency_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          effective_date?: string
+          from_currency_id?: string
+          id?: string
+          rate?: number
+          to_currency_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchange_rates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchange_rates_from_currency_id_fkey"
+            columns: ["from_currency_id"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchange_rates_to_currency_id_fkey"
+            columns: ["to_currency_id"]
+            isOneToOne: false
+            referencedRelation: "currencies"
             referencedColumns: ["id"]
           },
         ]
@@ -4236,6 +4388,57 @@ export type Database = {
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_attachments: {
+        Row: {
+          company_id: string
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          journal_entry_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          journal_entry_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          journal_entry_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_attachments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_attachments_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
         ]

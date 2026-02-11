@@ -77,6 +77,9 @@ import { AttendancePage } from '@/components/hr/AttendancePage';
 import { LeavesPage } from '@/components/hr/LeavesPage';
 import { ManufacturingPage } from '@/components/manufacturing/ManufacturingPage';
 import { IntegrationsPage } from '@/components/integrations/IntegrationsPage';
+import { CurrenciesPage } from '@/components/currencies/CurrenciesPage';
+import { BranchesPage } from '@/components/branches/BranchesPage';
+import { JournalAttachments } from '@/components/accounting/JournalAttachments';
 import { AIChatWidget } from '@/components/chat/AIChatWidget';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { useStats } from '@/hooks/useDatabase';
@@ -233,6 +236,8 @@ const Index = () => {
       case 'leaves': return <LeavesPage />;
       case 'manufacturing': return <ManufacturingPage />;
       case 'integrations': return <IntegrationsPage />;
+      case 'currencies': return <CurrenciesPage />;
+      case 'branches': return <BranchesPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };
