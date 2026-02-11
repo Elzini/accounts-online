@@ -164,6 +164,15 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         }
 
         toast.success('تم تسجيل الدخول بنجاح');
+        
+        // If on a company subdomain, redirect to base domain
+        const currentSubdomain = extractSubdomain();
+        const baseDomain = getBaseDomain();
+        if (currentSubdomain && baseDomain) {
+          window.location.href = `${window.location.protocol}//${baseDomain}/companies?auth_redirect=1`;
+          return;
+        }
+        
         navigate('/companies', { replace: true });
         return;
       }
