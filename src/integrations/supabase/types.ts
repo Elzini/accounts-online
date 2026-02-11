@@ -3130,6 +3130,170 @@ export type Database = {
           },
         ]
       }
+      item_categories: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          parent_id: string | null
+          sort_order: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_id?: string | null
+          sort_order?: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_id?: string | null
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "item_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      items: {
+        Row: {
+          barcode: string | null
+          category_id: string | null
+          commission_rate: number | null
+          company_id: string
+          cost_price: number
+          created_at: string
+          current_quantity: number
+          expiry_date: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          item_number: number
+          item_type: string
+          max_quantity: number | null
+          min_quantity: number | null
+          name: string
+          notes: string | null
+          opening_quantity: number
+          purchase_discount: number | null
+          reorder_level: number | null
+          sale_price_1: number
+          sale_price_2: number | null
+          sale_price_3: number | null
+          unit_id: string | null
+          updated_at: string
+          warehouse_id: string | null
+          wholesale_price: number | null
+        }
+        Insert: {
+          barcode?: string | null
+          category_id?: string | null
+          commission_rate?: number | null
+          company_id: string
+          cost_price?: number
+          created_at?: string
+          current_quantity?: number
+          expiry_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          item_number?: number
+          item_type?: string
+          max_quantity?: number | null
+          min_quantity?: number | null
+          name: string
+          notes?: string | null
+          opening_quantity?: number
+          purchase_discount?: number | null
+          reorder_level?: number | null
+          sale_price_1?: number
+          sale_price_2?: number | null
+          sale_price_3?: number | null
+          unit_id?: string | null
+          updated_at?: string
+          warehouse_id?: string | null
+          wholesale_price?: number | null
+        }
+        Update: {
+          barcode?: string | null
+          category_id?: string | null
+          commission_rate?: number | null
+          company_id?: string
+          cost_price?: number
+          created_at?: string
+          current_quantity?: number
+          expiry_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          item_number?: number
+          item_type?: string
+          max_quantity?: number | null
+          min_quantity?: number | null
+          name?: string
+          notes?: string | null
+          opening_quantity?: number
+          purchase_discount?: number | null
+          reorder_level?: number | null
+          sale_price_1?: number
+          sale_price_2?: number | null
+          sale_price_3?: number | null
+          unit_id?: string | null
+          updated_at?: string
+          warehouse_id?: string | null
+          wholesale_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "item_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units_of_measure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_entries: {
         Row: {
           company_id: string
@@ -5417,6 +5581,41 @@ export type Database = {
             columns: ["fiscal_year_id"]
             isOneToOne: false
             referencedRelation: "fiscal_years_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      units_of_measure: {
+        Row: {
+          abbreviation: string | null
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          abbreviation?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          abbreviation?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "units_of_measure_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]

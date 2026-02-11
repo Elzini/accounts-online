@@ -130,4 +130,9 @@ export type ActivePage =
   // Accounting Audit
   | 'accounting-audit'
   // Tasks
-  | 'tasks';
+  | 'tasks'
+  // Inventory module
+  | 'warehouses'
+  | 'items-catalog'
+  | 'item-categories'
+  | 'units-of-measure';

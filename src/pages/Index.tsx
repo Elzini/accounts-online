@@ -66,6 +66,7 @@ import { ThemeSettingsPage } from '@/components/themes/ThemeSettingsPage';
 import { MenuManagementPage, OrdersPage, KitchenPage, TablesPage } from '@/components/restaurant';
 import { ShipmentsPage, LettersOfCreditPage, CustomsClearancePage } from '@/components/export-import';
 import { TasksPage } from '@/components/tasks/TasksPage';
+import { WarehousesPage, ItemsPage, UnitsPage, CategoriesPage } from '@/components/inventory';
 import { AIChatWidget } from '@/components/chat/AIChatWidget';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -205,6 +206,11 @@ const Index = () => {
       // Accounting Audit
       case 'accounting-audit': return <AccountingAuditPage />;
       case 'tasks': return <TasksPage />;
+      // Inventory module
+      case 'warehouses': return <WarehousesPage />;
+      case 'items-catalog': return <ItemsPage />;
+      case 'item-categories': return <CategoriesPage />;
+      case 'units-of-measure': return <UnitsPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };
