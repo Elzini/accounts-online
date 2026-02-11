@@ -883,6 +883,7 @@ export type Database = {
           logo_url: string | null
           name: string
           phone: string | null
+          subdomain: string | null
           updated_at: string
         }
         Insert: {
@@ -896,6 +897,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           phone?: string | null
+          subdomain?: string | null
           updated_at?: string
         }
         Update: {
@@ -909,6 +911,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           phone?: string | null
+          subdomain?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -6585,6 +6588,15 @@ export type Database = {
       regenerate_journal_entries: {
         Args: { p_company_id: string }
         Returns: string
+      }
+      resolve_company_by_subdomain: {
+        Args: { p_subdomain: string }
+        Returns: {
+          company_type: Database["public"]["Enums"]["company_activity_type"]
+          id: string
+          logo_url: string
+          name: string
+        }[]
       }
       secure_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }

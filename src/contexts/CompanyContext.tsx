@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { setCompanyOverride } from '@/lib/companyOverride';
+import { extractSubdomain } from '@/lib/tenantResolver';
 
 export type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import';
 
@@ -27,6 +28,7 @@ interface CompanyContextType {
   updateCompany: (updates: Partial<Company>) => Promise<void>;
   viewAsCompanyId: string | null;
   setViewAsCompanyId: (id: string | null) => void;
+  tenantSubdomain: string | null;
 }
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
@@ -41,6 +43,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const [previousCompanyId, setPreviousCompanyId] = useState<string | null>(null);
   const [viewAsCompanyId, setViewAsCompanyIdState] = useState<string | null>(null);
   const [viewAsCompany, setViewAsCompany] = useState<Company | null>(null);
+  const [tenantSubdomain] = useState<string | null>(() => extractSubdomain());
 
   const setViewAsCompanyId = async (id: string | null) => {
     setViewAsCompanyIdState(id);
@@ -55,6 +58,26 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       setViewAsCompany(data);
     } else {
       setViewAsCompany(null);
+    }
+  };
+
+  const resolveCompanyBySubdomain = async (): Promise<{ id: string } | null> => {
+    if (!tenantSubdomain) return null;
+    
+    try {
+      const { data, error } = await supabase.rpc('resolve_company_by_subdomain', {
+        p_subdomain: tenantSubdomain
+      });
+      
+      if (error || !data || data.length === 0) {
+        console.warn('Subdomain tenant not found:', tenantSubdomain);
+        return null;
+      }
+      
+      return { id: data[0].id };
+    } catch (err) {
+      console.error('Error resolving subdomain tenant:', err);
+      return null;
     }
   };
 
@@ -77,32 +100,43 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       const superAdmin = roles?.some(r => r.permission === 'super_admin') || false;
       setIsSuperAdmin(superAdmin);
 
-      // Get user's profile with company_id
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('user_id', user.id)
-        .single();
+      // If subdomain is present, resolve company from subdomain first
+      let resolvedCompanyId: string | null = null;
       
-      if (profile?.company_id) {
-        // If company changed, clear the cache to prevent showing old data
-        if (previousCompanyId && previousCompanyId !== profile.company_id) {
+      if (tenantSubdomain) {
+        const subdomainCompany = await resolveCompanyBySubdomain();
+        if (subdomainCompany) {
+          resolvedCompanyId = subdomainCompany.id;
+        }
+      }
+
+      // Fallback: Get user's profile with company_id
+      if (!resolvedCompanyId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('company_id')
+          .eq('user_id', user.id)
+          .single();
+        
+        resolvedCompanyId = profile?.company_id || null;
+      }
+
+      if (resolvedCompanyId) {
+        if (previousCompanyId && previousCompanyId !== resolvedCompanyId) {
           queryClient.clear();
         }
         
-        setPreviousCompanyId(profile.company_id);
-        setCompanyId(profile.company_id);
+        setPreviousCompanyId(resolvedCompanyId);
+        setCompanyId(resolvedCompanyId);
         
-        // Fetch company details
         const { data: companyData } = await supabase
           .from('companies')
           .select('*')
-          .eq('id', profile.company_id)
+          .eq('id', resolvedCompanyId)
           .single();
         
         setCompany(companyData);
       } else {
-        // User has no company, clear any cached data
         if (previousCompanyId) {
           queryClient.clear();
           setPreviousCompanyId(null);
@@ -138,7 +172,6 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     if (session) {
       fetchCompanyData();
     } else {
-      // User logged out - clear all cached data
       queryClient.clear();
       setCompany(null);
       setCompanyId(null);
@@ -161,6 +194,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       updateCompany,
       viewAsCompanyId,
       setViewAsCompanyId,
+      tenantSubdomain,
     }}>
       {children}
     </CompanyContext.Provider>
