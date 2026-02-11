@@ -2,7 +2,7 @@ import { useRef, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ZatcaInvoice } from './ZatcaInvoice';
-import { Printer, Download, X, FileCode, FileJson, Copy, Check, Send } from 'lucide-react';
+import { Printer, Download, X, FileCode, FileJson, Copy, Check, Send, LayoutTemplate } from 'lucide-react';
 import { TaxSettings } from '@/services/accounting';
 import { useReactToPrint } from 'react-to-print';
 import jsPDF from 'jspdf';
@@ -10,6 +10,9 @@ import html2canvas from 'html2canvas';
 import { generateZatcaXML, downloadXMLInvoice, generateInvoiceUUID, generateInvoiceHash, type ZatcaXMLInvoiceData } from '@/lib/zatcaXML';
 import { generateZatcaJSONString, downloadJSONInvoice } from '@/lib/zatcaJSON';
 import { toast } from 'sonner';
+import { InvoiceTemplateSelector } from './InvoiceTemplateSelector';
+import { InvoiceTemplate1, InvoiceTemplate2, InvoiceTemplate3, InvoiceTemplate4 } from './templates';
+import { InvoiceTemplateName, InvoiceTemplateData } from './templates/types';
 
 interface InvoiceItem {
   description: string;
@@ -59,8 +62,9 @@ interface InvoicePreviewDialogProps {
 export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePreviewDialogProps) {
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [uuidCopied, setUuidCopied] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplateName>('default');
+  const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
 
-  // Generate a stable UUID for this invoice
   const invoiceUUID = useMemo(() => generateInvoiceUUID(), [data.invoiceNumber]);
 
   const handlePrint = useReactToPrint({
@@ -70,24 +74,12 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
 
   const handleExportPDF = async () => {
     if (!invoiceRef.current) return;
-    
     try {
-      const canvas = await html2canvas(invoiceRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      });
-      
+      const canvas = await html2canvas(invoiceRef.current, { scale: 2, useCORS: true, logging: false });
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-      
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       pdf.save(`فاتورة_${data.invoiceNumber}.pdf`);
     } catch (error) {
@@ -98,31 +90,17 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
   const buildInvoiceData = (): ZatcaXMLInvoiceData => {
     const taxRate = data.taxSettings?.tax_rate || 15;
     return {
-      uuid: invoiceUUID,
-      invoiceNumber: data.invoiceNumber,
-      invoiceDate: data.invoiceDate,
-      invoiceType: data.invoiceType,
-      invoiceTypeCode: '388',
-      sellerName: data.sellerName,
-      sellerTaxNumber: data.sellerTaxNumber || data.taxSettings?.tax_number || '',
+      uuid: invoiceUUID, invoiceNumber: data.invoiceNumber, invoiceDate: data.invoiceDate,
+      invoiceType: data.invoiceType, invoiceTypeCode: '388',
+      sellerName: data.sellerName, sellerTaxNumber: data.sellerTaxNumber || data.taxSettings?.tax_number || '',
       sellerAddress: data.sellerAddress || data.taxSettings?.national_address || '',
       sellerCommercialRegister: data.taxSettings?.commercial_register || '',
-      buyerName: data.buyerName,
-      buyerTaxNumber: data.buyerTaxNumber,
-      buyerIdNumber: data.buyerIdNumber,
-      buyerAddress: data.buyerAddress,
+      buyerName: data.buyerName, buyerTaxNumber: data.buyerTaxNumber, buyerIdNumber: data.buyerIdNumber, buyerAddress: data.buyerAddress,
       items: data.items.map(item => ({
-        description: item.description,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        taxRate: item.taxRate,
-        taxAmount: item.unitPrice * item.quantity * (item.taxRate / 100),
-        total: item.total,
+        description: item.description, quantity: item.quantity, unitPrice: item.unitPrice, taxRate: item.taxRate,
+        taxAmount: item.unitPrice * item.quantity * (item.taxRate / 100), total: item.total,
       })),
-      subtotal: data.subtotal,
-      taxAmount: data.taxAmount,
-      total: data.total,
-      taxRate,
+      subtotal: data.subtotal, taxAmount: data.taxAmount, total: data.total, taxRate,
     };
   };
 
@@ -130,33 +108,20 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     try {
       const xmlData = buildInvoiceData();
       const xmlContent = generateZatcaXML(xmlData);
-      
       const hash = await generateInvoiceHash(xmlContent);
       console.log('Invoice Hash (SHA-256):', hash);
-
       downloadXMLInvoice(xmlContent, `ZATCA_Invoice_${data.invoiceNumber}`);
-      toast.success('تم تصدير الفاتورة بصيغة XML بنجاح', {
-        description: `UUID: ${invoiceUUID.substring(0, 8)}...`,
-      });
-    } catch (error) {
-      console.error('Error exporting XML:', error);
-      toast.error('فشل تصدير الفاتورة بصيغة XML');
-    }
+      toast.success('تم تصدير الفاتورة بصيغة XML بنجاح', { description: `UUID: ${invoiceUUID.substring(0, 8)}...` });
+    } catch (error) { console.error('Error exporting XML:', error); toast.error('فشل تصدير الفاتورة بصيغة XML'); }
   };
 
   const handleExportJSON = async () => {
     try {
       const jsonData = buildInvoiceData();
       const jsonContent = generateZatcaJSONString(jsonData);
-      
       downloadJSONInvoice(jsonContent, `ZATCA_Invoice_${data.invoiceNumber}`);
-      toast.success('تم تصدير الفاتورة بصيغة JSON بنجاح', {
-        description: `UUID: ${invoiceUUID.substring(0, 8)}...`,
-      });
-    } catch (error) {
-      console.error('Error exporting JSON:', error);
-      toast.error('فشل تصدير الفاتورة بصيغة JSON');
-    }
+      toast.success('تم تصدير الفاتورة بصيغة JSON بنجاح', { description: `UUID: ${invoiceUUID.substring(0, 8)}...` });
+    } catch (error) { console.error('Error exporting JSON:', error); toast.error('فشل تصدير الفاتورة بصيغة JSON'); }
   };
 
   const handleCopyUUID = () => {
@@ -166,46 +131,79 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     setTimeout(() => setUuidCopied(false), 2000);
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>معاينة الفاتورة</span>
-            <div className="flex gap-2 flex-wrap">
-              <Button variant="outline" size="sm" onClick={handleExportXML}>
-                <FileCode className="w-4 h-4 ml-2" />
-                XML
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleExportJSON}>
-                <FileJson className="w-4 h-4 ml-2" />
-                JSON
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => handlePrint()}>
-                <Printer className="w-4 h-4 ml-2" />
-                طباعة
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleExportPDF}>
-                <Download className="w-4 h-4 ml-2" />
-                PDF
-              </Button>
-            </div>
-          </DialogTitle>
-        </DialogHeader>
+  // Convert data to template format
+  const templateData: InvoiceTemplateData = {
+    invoiceNumber: data.invoiceNumber, invoiceDate: data.invoiceDate, invoiceType: data.invoiceType,
+    sellerName: data.sellerName, sellerTaxNumber: data.sellerTaxNumber, sellerAddress: data.sellerAddress,
+    buyerName: data.buyerName, buyerPhone: data.buyerPhone, buyerAddress: data.buyerAddress,
+    buyerTaxNumber: data.buyerTaxNumber, buyerIdNumber: data.buyerIdNumber,
+    items: data.items, subtotal: data.subtotal, taxAmount: data.taxAmount, total: data.total,
+    taxSettings: data.taxSettings, companyLogoUrl: data.companyLogoUrl, uuid: invoiceUUID,
+    sellerCommercialRegister: data.taxSettings?.commercial_register,
+  };
 
-        {/* UUID Display */}
-        <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-lg px-3 py-2 text-sm" dir="ltr">
-          <span className="text-muted-foreground font-medium">UUID:</span>
-          <code className="text-xs font-mono flex-1 truncate">{invoiceUUID}</code>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={handleCopyUUID}>
-            {uuidCopied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-          </Button>
-        </div>
-        
-        <div className="border border-border rounded-lg overflow-hidden bg-muted p-4">
-          <ZatcaInvoice ref={invoiceRef} data={{ ...data, uuid: invoiceUUID }} />
-        </div>
-      </DialogContent>
-    </Dialog>
+  const renderTemplate = () => {
+    switch (selectedTemplate) {
+      case 'template1': return <InvoiceTemplate1 ref={invoiceRef} data={templateData} />;
+      case 'template2': return <InvoiceTemplate2 ref={invoiceRef} data={templateData} />;
+      case 'template3': return <InvoiceTemplate3 ref={invoiceRef} data={templateData} />;
+      case 'template4': return <InvoiceTemplate4 ref={invoiceRef} data={templateData} />;
+      default: return <ZatcaInvoice ref={invoiceRef} data={{ ...data, uuid: invoiceUUID }} />;
+    }
+  };
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>معاينة الفاتورة</span>
+              <div className="flex gap-2 flex-wrap">
+                <Button variant="outline" size="sm" onClick={() => setTemplateSelectorOpen(true)}>
+                  <LayoutTemplate className="w-4 h-4 ml-2" />
+                  نموذج
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExportXML}>
+                  <FileCode className="w-4 h-4 ml-2" />
+                  XML
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExportJSON}>
+                  <FileJson className="w-4 h-4 ml-2" />
+                  JSON
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handlePrint()}>
+                  <Printer className="w-4 h-4 ml-2" />
+                  طباعة
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExportPDF}>
+                  <Download className="w-4 h-4 ml-2" />
+                  PDF
+                </Button>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* UUID Display */}
+          <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-lg px-3 py-2 text-sm" dir="ltr">
+            <span className="text-muted-foreground font-medium">UUID:</span>
+            <code className="text-xs font-mono flex-1 truncate">{invoiceUUID}</code>
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={handleCopyUUID}>
+              {uuidCopied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+            </Button>
+          </div>
+          
+          <div className="border border-border rounded-lg overflow-hidden bg-muted p-4">
+            {renderTemplate()}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <InvoiceTemplateSelector
+        open={templateSelectorOpen}
+        onClose={() => setTemplateSelectorOpen(false)}
+        onSelect={setSelectedTemplate}
+      />
+    </>
   );
 }
