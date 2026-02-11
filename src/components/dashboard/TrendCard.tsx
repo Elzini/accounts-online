@@ -9,23 +9,51 @@ interface TrendCardProps {
   gradient: 'primary' | 'success' | 'warning' | 'danger';
 }
 
-const gradientClasses = {
-  primary: 'gradient-primary',
-  success: 'gradient-success',
-  warning: 'gradient-warning',
-  danger: 'gradient-danger',
+const gradientThemes = {
+  primary: {
+    border: 'hsl(var(--primary))',
+    iconBg: 'hsl(var(--primary) / 0.12)',
+    iconColor: 'hsl(var(--primary))',
+  },
+  success: {
+    border: 'hsl(var(--success))',
+    iconBg: 'hsl(var(--success) / 0.12)',
+    iconColor: 'hsl(var(--success))',
+  },
+  warning: {
+    border: 'hsl(var(--warning))',
+    iconBg: 'hsl(var(--warning) / 0.12)',
+    iconColor: 'hsl(var(--warning))',
+  },
+  danger: {
+    border: 'hsl(var(--destructive))',
+    iconBg: 'hsl(var(--destructive) / 0.12)',
+    iconColor: 'hsl(var(--destructive))',
+  },
 };
 
 export function TrendCard({ title, value, trend, icon: Icon, gradient }: TrendCardProps) {
   const TrendIcon = trend > 0 ? TrendingUp : trend < 0 ? TrendingDown : Minus;
-  const trendColor = trend > 0 ? 'text-green-500' : trend < 0 ? 'text-red-500' : 'text-muted-foreground';
-  const trendBg = trend > 0 ? 'bg-green-500/10' : trend < 0 ? 'bg-red-500/10' : 'bg-muted';
+  const trendColor = trend > 0 ? 'text-success' : trend < 0 ? 'text-destructive' : 'text-muted-foreground';
+  const trendBg = trend > 0 ? 'bg-success/10' : trend < 0 ? 'bg-destructive/10' : 'bg-muted';
+  const theme = gradientThemes[gradient];
 
   return (
-    <div className="bg-card rounded-xl md:rounded-2xl p-3 md:p-5 card-shadow hover-lift animate-fade-in">
+    <div
+      className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-3 md:p-5 border border-border/60 hover:shadow-lg transition-all duration-300"
+    >
+      {/* Colored top border stripe */}
+      <div
+        className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl"
+        style={{ backgroundColor: theme.border }}
+      />
+
       <div className="flex items-start justify-between gap-2 mb-3">
-        <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl flex items-center justify-center", gradientClasses[gradient])}>
-          <Icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
+        <div
+          className="w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl flex items-center justify-center"
+          style={{ backgroundColor: theme.iconBg }}
+        >
+          <Icon className="w-5 h-5 md:w-6 md:h-6" style={{ color: theme.iconColor }} />
         </div>
         <div className={cn("flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium", trendBg, trendColor)}>
           <TrendIcon className="w-3 h-3" />

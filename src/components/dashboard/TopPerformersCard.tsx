@@ -40,7 +40,8 @@ export function TopPerformersCard({ topCustomers, topSuppliers, topCars }: TopPe
   };
 
   return (
-    <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+    <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-4 md:p-6 border border-border/60">
+      <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--primary))' }} />
       <h3 className="text-lg font-bold text-card-foreground mb-4">الأفضل أداءً</h3>
       <Tabs defaultValue="customers" className="w-full">
         <TabsList className="w-full grid grid-cols-3">
@@ -65,10 +66,7 @@ export function TopPerformersCard({ topCustomers, topSuppliers, topCars }: TopPe
             ) : (
               <div className="space-y-3">
                 {topCustomers.map((customer, index) => (
-                  <div
-                    key={customer.id}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                  >
+                  <div key={customer.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
                         {index + 1}
@@ -95,10 +93,7 @@ export function TopPerformersCard({ topCustomers, topSuppliers, topCars }: TopPe
             ) : (
               <div className="space-y-3">
                 {topSuppliers.map((supplier, index) => (
-                  <div
-                    key={supplier.id}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                  >
+                  <div key={supplier.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center text-sm font-bold text-warning">
                         {index + 1}
@@ -125,10 +120,7 @@ export function TopPerformersCard({ topCustomers, topSuppliers, topCars }: TopPe
             ) : (
               <div className="space-y-3">
                 {topCars.map((car, index) => (
-                  <div
-                    key={`${car.name}-${car.model}`}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                  >
+                  <div key={`${car.name}-${car.model}`} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center text-sm font-bold text-success">
                         {index + 1}

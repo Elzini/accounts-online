@@ -30,6 +30,7 @@ interface KPIItem {
   icon: React.ElementType;
   color: string;
   bgColor: string;
+  borderColor: string;
   trend?: 'up' | 'down' | 'neutral';
 }
 
@@ -45,23 +46,12 @@ export function FinancialKPICards({
   purchasesThisMonth,
   salesThisMonth,
 }: FinancialKPICardsProps) {
-  // Gross Profit Margin
   const grossProfitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-
-  // Operating Expense Ratio
   const opexRatio = totalRevenue > 0 ? (totalExpenses / totalRevenue) * 100 : 0;
-
-  // Inventory Turnover Rate
   const avgInventory = inventoryCount > 0 ? inventoryCount : 1;
   const inventoryTurnover = totalCost > 0 ? totalCost / (avgInventory * (totalCost / Math.max(soldCount + inventoryCount, 1))) : 0;
-
-  // Net Profit Margin
   const netProfitMargin = totalRevenue > 0 ? ((totalProfit - totalExpenses) / totalRevenue) * 100 : 0;
-
-  // Sales Efficiency (sales/purchases ratio)
   const salesEfficiency = purchasesThisMonth > 0 ? (salesThisMonth / purchasesThisMonth) * 100 : 0;
-
-  // Average Deal Size
   const avgDealSize = salesCount > 0 ? totalRevenue / salesCount : 0;
 
   const formatCurrency = (value: number) => {
@@ -79,8 +69,9 @@ export function FinancialKPICards({
       value: `${grossProfitMargin.toFixed(1)}%`,
       description: 'نسبة الربح من إجمالي الإيرادات',
       icon: Percent,
-      color: 'text-emerald-600 dark:text-emerald-400',
-      bgColor: 'bg-emerald-500/10',
+      color: 'hsl(160 84% 39%)',
+      bgColor: 'hsl(160 84% 39% / 0.12)',
+      borderColor: 'hsl(160 84% 39%)',
       trend: grossProfitMargin > 15 ? 'up' : grossProfitMargin > 5 ? 'neutral' : 'down',
     },
     {
@@ -88,8 +79,9 @@ export function FinancialKPICards({
       value: `${netProfitMargin.toFixed(1)}%`,
       description: 'بعد خصم المصروفات التشغيلية',
       icon: DollarSign,
-      color: netProfitMargin >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400',
-      bgColor: netProfitMargin >= 0 ? 'bg-blue-500/10' : 'bg-red-500/10',
+      color: netProfitMargin >= 0 ? 'hsl(217 91% 60%)' : 'hsl(0 84% 60%)',
+      bgColor: netProfitMargin >= 0 ? 'hsl(217 91% 60% / 0.12)' : 'hsl(0 84% 60% / 0.12)',
+      borderColor: netProfitMargin >= 0 ? 'hsl(217 91% 60%)' : 'hsl(0 84% 60%)',
       trend: netProfitMargin > 10 ? 'up' : netProfitMargin >= 0 ? 'neutral' : 'down',
     },
     {
@@ -97,8 +89,9 @@ export function FinancialKPICards({
       value: `${opexRatio.toFixed(1)}%`,
       description: 'المصروفات كنسبة من الإيرادات',
       icon: BarChart3,
-      color: 'text-amber-600 dark:text-amber-400',
-      bgColor: 'bg-amber-500/10',
+      color: 'hsl(38 92% 50%)',
+      bgColor: 'hsl(38 92% 50% / 0.12)',
+      borderColor: 'hsl(38 92% 50%)',
       trend: opexRatio < 30 ? 'up' : opexRatio < 60 ? 'neutral' : 'down',
     },
     {
@@ -106,8 +99,9 @@ export function FinancialKPICards({
       value: `${averageDaysToSell} يوم`,
       description: 'متوسط المدة من الشراء للبيع',
       icon: Clock,
-      color: 'text-purple-600 dark:text-purple-400',
-      bgColor: 'bg-purple-500/10',
+      color: 'hsl(270 75% 55%)',
+      bgColor: 'hsl(270 75% 55% / 0.12)',
+      borderColor: 'hsl(270 75% 55%)',
       trend: averageDaysToSell < 30 ? 'up' : averageDaysToSell < 90 ? 'neutral' : 'down',
     },
     {
@@ -115,8 +109,9 @@ export function FinancialKPICards({
       value: `${salesEfficiency.toFixed(0)}%`,
       description: 'نسبة المبيعات إلى المشتريات الشهرية',
       icon: Target,
-      color: 'text-cyan-600 dark:text-cyan-400',
-      bgColor: 'bg-cyan-500/10',
+      color: 'hsl(190 85% 45%)',
+      bgColor: 'hsl(190 85% 45% / 0.12)',
+      borderColor: 'hsl(190 85% 45%)',
       trend: salesEfficiency > 80 ? 'up' : salesEfficiency > 40 ? 'neutral' : 'down',
     },
     {
@@ -124,30 +119,35 @@ export function FinancialKPICards({
       value: formatCurrency(avgDealSize),
       description: 'متوسط قيمة البيع الواحد',
       icon: Layers,
-      color: 'text-indigo-600 dark:text-indigo-400',
-      bgColor: 'bg-indigo-500/10',
+      color: 'hsl(240 60% 60%)',
+      bgColor: 'hsl(240 60% 60% / 0.12)',
+      borderColor: 'hsl(240 60% 60%)',
       trend: 'neutral',
     },
   ];
 
   return (
-    <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+    <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-4 md:p-6 border border-border/60">
+      <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--primary))' }} />
       <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-4">مؤشرات الأداء المالي المتقدمة</h3>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
         {kpis.map((kpi) => {
           const TrendIcon = kpi.trend === 'up' ? TrendingUp : kpi.trend === 'down' ? TrendingDown : BarChart3;
-          const trendColor = kpi.trend === 'up' ? 'text-emerald-500' : kpi.trend === 'down' ? 'text-red-500' : 'text-muted-foreground';
 
           return (
             <div
               key={kpi.label}
-              className="p-3 sm:p-4 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors border border-border/50"
+              className="relative overflow-hidden p-3 sm:p-4 rounded-xl bg-card border border-border/50 hover:shadow-md transition-all"
             >
+              <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-xl" style={{ backgroundColor: kpi.borderColor }} />
               <div className="flex items-center justify-between mb-2">
-                <div className={cn('w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center', kpi.bgColor)}>
-                  <kpi.icon className={cn('w-4 h-4 sm:w-5 sm:h-5', kpi.color)} />
+                <div
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: kpi.bgColor }}
+                >
+                  <kpi.icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: kpi.color }} />
                 </div>
-                <TrendIcon className={cn('w-3.5 h-3.5', trendColor)} />
+                <TrendIcon className="w-3.5 h-3.5" style={{ color: kpi.trend === 'up' ? 'hsl(var(--success))' : kpi.trend === 'down' ? 'hsl(var(--destructive))' : 'hsl(var(--muted-foreground))' }} />
               </div>
               <p className="text-[10px] sm:text-xs text-muted-foreground mb-1 leading-tight">{kpi.label}</p>
               <p className="text-base sm:text-lg font-bold text-foreground leading-tight">{kpi.value}</p>

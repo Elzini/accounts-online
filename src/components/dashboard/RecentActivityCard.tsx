@@ -34,7 +34,8 @@ export function RecentActivityCard({ recentSales }: RecentActivityCardProps) {
   };
 
   return (
-    <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 card-shadow">
+    <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-4 md:p-6 border border-border/60">
+      <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--success))' }} />
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-card-foreground">آخر المبيعات</h3>
         <ArrowUpRight className="w-5 h-5 text-muted-foreground" />
