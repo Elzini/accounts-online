@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { PanelLeft, Save, GripVertical, Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
+import { PanelLeft, Save, GripVertical, Eye, EyeOff, Plus, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useMenuConfiguration, useSaveMenuConfiguration } from '@/hooks/useSystemControl';
-import { MenuItem } from '@/services/systemControl';
+import { fetchMenuConfiguration, saveMenuConfiguration, MenuItem } from '@/services/systemControl';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 // Default menu structure
@@ -47,17 +49,40 @@ const DEFAULT_MENU: MenuItem[] = [
 ];
 
 export function MenuConfigurationTab() {
-  const { data: config, isLoading } = useMenuConfiguration();
-  const saveConfig = useSaveMenuConfiguration();
-
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [menuItems, setMenuItems] = useState<MenuItem[]>(DEFAULT_MENU);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Fetch all companies
+  const { data: companies = [] } = useQuery({
+    queryKey: ['all-companies-menu'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name, company_type')
+        .eq('is_active', true)
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch menu config for selected company
+  const { data: config, isLoading: isLoadingConfig } = useQuery({
+    queryKey: ['menu-configuration', selectedCompanyId],
+    queryFn: () => fetchMenuConfiguration(selectedCompanyId),
+    enabled: !!selectedCompanyId,
+  });
 
   useEffect(() => {
     if (config?.menu_items && config.menu_items.length > 0) {
       setMenuItems(config.menu_items);
+    } else {
+      setMenuItems(DEFAULT_MENU);
     }
-  }, [config]);
+    setHasChanges(false);
+  }, [config, selectedCompanyId]);
 
   const handleItemUpdate = (sectionId: string, itemId: string | null, updates: Partial<MenuItem>) => {
     setMenuItems(prev => prev.map(section => {
@@ -130,46 +155,90 @@ export function MenuConfigurationTab() {
   };
 
   const handleSave = async () => {
+    if (!selectedCompanyId) return;
+    setIsSaving(true);
     try {
-      await saveConfig.mutateAsync({ menu_items: menuItems });
+      await saveMenuConfiguration(selectedCompanyId, { menu_items: menuItems });
       toast.success('تم حفظ إعدادات القائمة');
       setHasChanges(false);
     } catch (error) {
       console.error('Error saving menu config:', error);
       toast.error('حدث خطأ أثناء الحفظ');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
+  const selectedCompany = companies.find(c => c.id === selectedCompanyId);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
           <div className="flex items-center gap-3">
             <PanelLeft className="w-6 h-6 text-primary" />
             <div>
               <CardTitle>إعدادات القائمة الجانبية</CardTitle>
               <CardDescription>
-                تخصيص عناصر القائمة وترتيبها وإظهارها/إخفائها
+                اختر الشركة ثم خصص عناصر القائمة وترتيبها وإظهارها/إخفائها
               </CardDescription>
             </div>
           </div>
-          {hasChanges && (
-            <Button onClick={handleSave} disabled={saveConfig.isPending}>
-              <Save className="w-4 h-4 ml-2" />
-              حفظ التغييرات
-            </Button>
-          )}
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <Label>اختر الشركة</Label>
+              <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر شركة لتخصيص قائمتها..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map(company => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {selectedCompany && (
+              <div className="text-sm text-muted-foreground mt-5">
+                نوع النشاط: <span className="font-medium text-foreground">
+                  {selectedCompany.company_type === 'car_dealership' ? 'معرض سيارات' :
+                   selectedCompany.company_type === 'construction' ? 'مقاولات' :
+                   selectedCompany.company_type === 'general_trading' ? 'تجارة عامة' :
+                   selectedCompany.company_type === 'restaurant' ? 'مطاعم' :
+                   selectedCompany.company_type === 'export_import' ? 'استيراد وتصدير' : ''}
+                </span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {isLoadingConfig && selectedCompanyId && (
+        <div className="flex justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      </CardHeader>
-      <CardContent>
+      )}
+
+      {selectedCompanyId && !isLoadingConfig && (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">عناصر القائمة</CardTitle>
+            <div className="flex items-center gap-2">
+              {hasChanges && (
+                <Button onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Save className="w-4 h-4 ml-2" />}
+                  حفظ التغييرات
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
         <div className="space-y-4">
           <div className="flex justify-end mb-2">
             <Button variant="outline" size="sm" onClick={handleAddSection}>
@@ -277,5 +346,7 @@ export function MenuConfigurationTab() {
         </div>
       </CardContent>
     </Card>
+    )}
+    </div>
   );
 }
