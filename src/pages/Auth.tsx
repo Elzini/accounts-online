@@ -209,7 +209,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             
             if (company?.subdomain) {
               const tenantUrl = buildTenantUrl(company.subdomain);
-              window.location.href = tenantUrl;
+              window.location.href = tenantUrl + '?auth_redirect=1';
               return;
             }
           }

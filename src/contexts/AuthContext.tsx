@@ -138,6 +138,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
+    // Check if this is a redirect from login (cross-domain)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('auth_redirect') === '1') {
+      sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
+      urlParams.delete('auth_redirect');
+      const cleanUrl = urlParams.toString()
+        ? `${window.location.pathname}?${urlParams.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+
     // THEN check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       // Force re-login on fresh browser/tab open:
