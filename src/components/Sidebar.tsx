@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -95,6 +95,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'budgets': BarChart3,
   'financial-kpis': Activity,
   'approvals': GitBranch,
+  'attendance': Clock,
+  'leaves': CalendarDays,
+  'insurance': Shield,
+  'manufacturing': Factory,
+  'integrations': Plug,
 };
 
 export function Sidebar({
@@ -303,6 +308,14 @@ export function Sidebar({
     label: 'مسير الرواتب',
     icon: CreditCard
   }, {
+    id: 'attendance' as ActivePage,
+    label: 'الحضور والانصراف',
+    icon: Clock
+  }, {
+    id: 'leaves' as ActivePage,
+    label: 'الإجازات',
+    icon: CalendarDays
+  }, {
     id: 'expenses' as ActivePage,
     label: settings?.expenses_title || 'المصروفات',
     icon: Wallet
@@ -342,6 +355,14 @@ export function Sidebar({
     id: 'tasks' as ActivePage,
     label: 'إدارة المهام',
     icon: ListTodo
+  }, {
+    id: 'manufacturing' as ActivePage,
+    label: 'التصنيع',
+    icon: Factory
+  }, {
+    id: 'integrations' as ActivePage,
+    label: 'التكاملات الخارجية',
+    icon: Plug
   }];
   // Inventory items
   const inventoryItems = [{
