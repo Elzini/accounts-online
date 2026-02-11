@@ -375,6 +375,47 @@ export async function generatePayrollItems(
   return (data || []).map(mapPayrollItemWithSafeEmployee);
 }
 
+// Refresh advances for all items in a payroll (re-calculate from pending advances)
+export async function refreshPayrollAdvances(
+  payrollId: string,
+  companyId: string
+): Promise<void> {
+  const { data: items, error: itemsError } = await supabase
+    .from('payroll_items')
+    .select('*')
+    .eq('payroll_id', payrollId);
+  
+  if (itemsError) throw itemsError;
+  if (!items || items.length === 0) return;
+
+  const pendingAdvances = await fetchPendingAdvances(companyId);
+
+  for (const item of items) {
+    const empAdvances = pendingAdvances.filter(a => a.employee_id === item.employee_id);
+    const totalAdvances = empAdvances.reduce((sum, a) => {
+      const deduction = Number(a.monthly_deduction) > 0 
+        ? Math.min(Number(a.monthly_deduction), Number(a.remaining_amount || a.amount))
+        : Number(a.remaining_amount || a.amount);
+      return sum + deduction;
+    }, 0);
+
+    if (totalAdvances !== Number(item.advances_deducted)) {
+      const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + Number(item.transport_allowance) + Number(item.bonus || 0) + Number(item.overtime_amount || 0);
+      const totalDeductions = totalAdvances + Number(item.absence_amount || 0) + Number(item.other_deductions || 0);
+      const netSalary = grossSalary - totalDeductions;
+
+      await supabase
+        .from('payroll_items')
+        .update({
+          advances_deducted: totalAdvances,
+          total_deductions: totalDeductions,
+          net_salary: netSalary,
+        })
+        .eq('id', item.id);
+    }
+  }
+}
+
 export async function updatePayrollItem(
   itemId: string,
   updates: Partial<PayrollItem>
