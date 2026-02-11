@@ -155,4 +155,7 @@ export type ActivePage =
    // Currencies
    | 'currencies'
    // Branches
-   | 'branches';
+   | 'branches'
+   // API & Plugins
+   | 'api-management'
+   | 'plugins';

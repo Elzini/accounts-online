@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CompanyProvider, useCompany } from "@/contexts/CompanyContext";
 import { FiscalYearProvider } from "@/contexts/FiscalYearContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { NetworkStatusIndicator } from "@/components/pwa/NetworkStatusIndicator";
 import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
@@ -164,24 +165,26 @@ function AppRoutes() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <CompanyProvider>
-          <FiscalYearProvider>
-            <ThemeProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <NetworkStatusIndicator />
-                  <UpdatePrompt />
-                  <InstallBanner />
-                  <AppRoutes />
-                </BrowserRouter>
-              </TooltipProvider>
-            </ThemeProvider>
-          </FiscalYearProvider>
-        </CompanyProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <CompanyProvider>
+            <FiscalYearProvider>
+              <ThemeProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <NetworkStatusIndicator />
+                    <UpdatePrompt />
+                    <InstallBanner />
+                    <AppRoutes />
+                  </BrowserRouter>
+                </TooltipProvider>
+              </ThemeProvider>
+            </FiscalYearProvider>
+          </CompanyProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

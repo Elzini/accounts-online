@@ -81,6 +81,8 @@ import { CurrenciesPage } from '@/components/currencies/CurrenciesPage';
 import { BranchesPage } from '@/components/branches/BranchesPage';
 import { JournalAttachments } from '@/components/accounting/JournalAttachments';
 import { AIChatWidget } from '@/components/chat/AIChatWidget';
+import { ApiManagementPage } from '@/components/api/ApiManagementPage';
+import { PluginsPage } from '@/components/plugins/PluginsPage';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -238,6 +240,8 @@ const Index = () => {
       case 'integrations': return <IntegrationsPage />;
       case 'currencies': return <CurrenciesPage />;
       case 'branches': return <BranchesPage />;
+      case 'api-management': return <ApiManagementPage />;
+      case 'plugins': return <PluginsPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };
