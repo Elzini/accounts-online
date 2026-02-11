@@ -284,10 +284,26 @@ export function useCustodyDetails(custodyId: string | null) {
     },
   });
 
-  // Update transaction mutation
+  // Update transaction mutation - auto-creates journal entry if account added
   const updateTransactionMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<CustodyTransactionInsert> }) =>
-      updateCustodyTransaction(id, updates),
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CustodyTransactionInsert> }) => {
+      // Check if we need to create a journal entry (account added to a transaction that didn't have one)
+      const existingTx = custody?.transactions?.find(t => t.id === id);
+      if (updates.account_id && custody?.custody_account_id && existingTx && !existingTx.journal_entry_id) {
+        const journalEntryId = await createTransactionJournalEntry(
+          companyId!,
+          custody.custody_name,
+          updates.description || existingTx.description,
+          updates.amount || existingTx.amount,
+          updates.account_id,
+          custody.custody_account_id,
+          updates.transaction_date || existingTx.transaction_date,
+          custody.fiscal_year_id || null,
+        );
+        return updateCustodyTransaction(id, { ...updates, journal_entry_id: journalEntryId });
+      }
+      return updateCustodyTransaction(id, updates);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custody', custodyId] });
       queryClient.invalidateQueries({ queryKey: ['custodies'] });

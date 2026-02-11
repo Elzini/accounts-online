@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, FileDown, Eye, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, FileDown, Eye, CheckCircle, Pencil } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -30,7 +30,7 @@ import {
   TableFooter,
 } from '@/components/ui/table';
 import { useCustodyDetails, useCustody } from '@/hooks/useCustody';
-import { calculateCustodySummary } from '@/services/custody';
+import { calculateCustodySummary, CustodyTransaction } from '@/services/custody';
 import { formatNumber } from '@/components/financial-statements/utils/numberFormatting';
 import { useCustodyExport } from './useCustodyExport';
 import { CustodyPrintPreviewDialog } from './CustodyPrintPreviewDialog';
@@ -54,11 +54,12 @@ interface CustodySettlementDialogProps {
 }
 
 export function CustodySettlementDialog({ open, onOpenChange, custodyId }: CustodySettlementDialogProps) {
-  const { custody, isLoading, addTransaction, deleteTransaction, isAddingTransaction } = useCustodyDetails(custodyId);
+  const { custody, isLoading, addTransaction, updateTransaction, deleteTransaction, isAddingTransaction, isUpdatingTransaction } = useCustodyDetails(custodyId);
   const { settleCustody, isSettling } = useCustody();
   const { exportToExcel } = useCustodyExport();
   const { data: accounts = [] } = useAccounts();
   const [showForm, setShowForm] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<CustodyTransaction | null>(null);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   const accountsList = accounts.map((a: any) => ({ id: a.id, code: a.code, name: a.name }));
@@ -88,16 +89,31 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
   const transactions = custody.transactions || [];
 
   const onSubmitTransaction = (values: TransactionFormValues) => {
-    addTransaction({
-      transaction_date: values.transaction_date,
-      description: values.description,
-      analysis_category: values.analysis_category || null,
-      amount: values.amount,
-      account_id: values.account_id || null,
-      journal_entry_id: null,
-      notes: null,
-      created_by: null,
-    });
+    if (editingTransaction) {
+      // Update existing transaction
+      updateTransaction({
+        id: editingTransaction.id,
+        updates: {
+          transaction_date: values.transaction_date,
+          description: values.description,
+          analysis_category: values.analysis_category || null,
+          amount: values.amount,
+          account_id: values.account_id || null,
+        },
+      });
+      setEditingTransaction(null);
+    } else {
+      addTransaction({
+        transaction_date: values.transaction_date,
+        description: values.description,
+        analysis_category: values.analysis_category || null,
+        amount: values.amount,
+        account_id: values.account_id || null,
+        journal_entry_id: null,
+        notes: null,
+        created_by: null,
+      });
+    }
     form.reset({
       transaction_date: new Date().toISOString().split('T')[0],
       description: '',
@@ -106,6 +122,18 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
       account_id: '',
     });
     setShowForm(false);
+  };
+
+  const handleEditTransaction = (tx: CustodyTransaction) => {
+    setEditingTransaction(tx);
+    form.reset({
+      transaction_date: tx.transaction_date,
+      description: tx.description,
+      analysis_category: tx.analysis_category || '',
+      amount: tx.amount,
+      account_id: tx.account_id || '',
+    });
+    setShowForm(true);
   };
 
   const handleDeleteTransaction = (id: string) => {
@@ -201,7 +229,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                   <TableHead className="text-right font-bold">الحساب</TableHead>
                   <TableHead className="text-right font-bold">البيان</TableHead>
                   <TableHead className="text-right font-bold">القيمة</TableHead>
-                  {!isSettled && <TableHead className="text-right font-bold w-16">حذف</TableHead>}
+                  {!isSettled && <TableHead className="text-right font-bold w-24">إجراءات</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -213,7 +241,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                   </TableRow>
                 ) : (
                   transactions.map((tx) => (
-                    <TableRow key={tx.id}>
+                    <TableRow key={tx.id} className={!tx.account_id ? 'bg-orange-50/50' : ''}>
                       <TableCell>{new Date(tx.transaction_date).toLocaleDateString('ar-SA')}</TableCell>
                       <TableCell>{tx.analysis_category || '-'}</TableCell>
                       <TableCell className="text-xs">
@@ -221,20 +249,31 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                           <span className="bg-primary/10 text-primary px-2 py-0.5 rounded">
                             {tx.account.code} - {tx.account.name}
                           </span>
-                        ) : '-'}
+                        ) : <span className="text-muted-foreground">بدون حساب</span>}
                       </TableCell>
                       <TableCell>{tx.description}</TableCell>
                       <TableCell className="font-medium">{formatNumber(tx.amount)}</TableCell>
                       {!isSettled && (
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive h-8 w-8 p-0"
-                            onClick={() => handleDeleteTransaction(tx.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleEditTransaction(tx)}
+                              title="تعديل"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive h-8 w-8 p-0"
+                              onClick={() => handleDeleteTransaction(tx.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       )}
                     </TableRow>
@@ -343,11 +382,11 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                         )}
                       />
                       <div className="flex gap-2 justify-end">
-                        <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                        <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingTransaction(null); form.reset(); }}>
                           إلغاء
                         </Button>
-                        <Button type="submit" disabled={isAddingTransaction}>
-                          إضافة المصروف
+                        <Button type="submit" disabled={isAddingTransaction || isUpdatingTransaction}>
+                          {editingTransaction ? 'تحديث المصروف' : 'إضافة المصروف'}
                         </Button>
                       </div>
                     </form>
@@ -355,7 +394,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                 </CardContent>
               </Card>
             ) : (
-              <Button variant="outline" onClick={() => setShowForm(true)} className="gap-2">
+              <Button variant="outline" onClick={() => { setEditingTransaction(null); setShowForm(true); }} className="gap-2">
                 <Plus className="h-4 w-4" />
                 إضافة مصروف
               </Button>
