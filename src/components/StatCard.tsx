@@ -12,6 +12,9 @@ interface StatCardProps {
   onClick?: () => void;
   size?: 'small' | 'medium' | 'large';
   bgColor?: string;
+  textColor?: string;
+  gradientFrom?: string;
+  gradientTo?: string;
   fontSize?: number;
   showAsWords?: boolean;
   height?: number;
@@ -88,6 +91,9 @@ export function StatCard({
   onClick,
   size = 'medium',
   bgColor,
+  textColor,
+  gradientFrom,
+  gradientTo,
   fontSize = 100,
   showAsWords = false,
   height,
@@ -159,7 +165,9 @@ export function StatCard({
         sizeClasses[size],
       )}
       style={{
-        background: bgColor || style.bg,
+        background: gradientFrom && gradientTo
+          ? `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`
+          : bgColor || style.bg,
         height: height ? `${height}px` : undefined,
         minHeight: height ? `${height}px` : (size === 'small' ? '90px' : size === 'large' ? '130px' : '110px'),
         perspective: '1000px',
@@ -207,15 +215,16 @@ export function StatCard({
       <div className="relative flex items-center justify-between gap-3" style={{ transform: 'translateZ(10px)' }}>
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <p
-            className="font-medium text-white/75 mb-1 truncate"
-            style={{ fontSize: `clamp(0.65rem, ${0.5 * fontScale}vw + 0.3rem, ${0.8 * fontScale}rem)` }}
+            className="font-medium mb-1 truncate"
+            style={{ fontSize: `clamp(0.65rem, ${0.5 * fontScale}vw + 0.3rem, ${0.8 * fontScale}rem)`, color: textColor ? `${textColor}bb` : 'rgba(255,255,255,0.75)' }}
           >
             {title}
           </p>
           <p
-            className="font-bold text-white tracking-tight drop-shadow-sm leading-tight"
+            className="font-bold tracking-tight drop-shadow-sm leading-tight"
             style={{ 
               fontSize: `clamp(0.9rem, ${0.9 * fontScale}vw + 0.4rem, ${1.5 * fontScale}rem)`,
+              color: textColor || 'white',
               wordBreak: 'break-word',
               overflowWrap: 'break-word',
               whiteSpace: 'normal',
@@ -226,16 +235,16 @@ export function StatCard({
           </p>
           {arabicWords && (
             <p
-              className="text-white/50 mt-0.5 leading-tight text-xs"
-              style={{ fontSize: `${0.7 * fontScale}rem` }}
+            className="mt-0.5 leading-tight text-xs"
+              style={{ fontSize: `${0.7 * fontScale}rem`, color: textColor ? `${textColor}80` : 'rgba(255,255,255,0.5)' }}
             >
               {arabicWords}
             </p>
           )}
           {subtitle && (
             <p
-              className="text-white/60 mt-1 truncate"
-              style={{ fontSize: `clamp(0.55rem, ${0.4 * fontScale}vw + 0.25rem, ${0.7 * fontScale}rem)` }}
+              className="mt-1 truncate"
+              style={{ fontSize: `clamp(0.55rem, ${0.4 * fontScale}vw + 0.25rem, ${0.7 * fontScale}rem)`, color: textColor ? `${textColor}99` : 'rgba(255,255,255,0.6)' }}
             >
               {subtitle}
             </p>
