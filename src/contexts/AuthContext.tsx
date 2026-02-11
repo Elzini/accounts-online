@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { extractSubdomain, getBaseDomain } from '@/lib/tenantResolver';
 
 interface UserPermissions {
   sales: boolean;
@@ -209,11 +210,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(null);
       setPermissions({ ...DEFAULT_PERMISSIONS });
       
+      // Clear session flag
+      sessionStorage.removeItem('app_session_active');
+      
       // Then attempt server-side logout (ignore errors if session already expired)
       await supabase.auth.signOut();
     } catch (error) {
       // Session might already be expired/invalid, which is fine
       console.log('Sign out completed (session may have been expired)');
+    }
+    
+    // Redirect to the main domain if on a company subdomain
+    const currentSubdomain = extractSubdomain();
+    const baseDomain = getBaseDomain();
+    if (currentSubdomain && baseDomain) {
+      const protocol = window.location.protocol;
+      window.location.href = `${protocol}//${baseDomain}/auth/company`;
+      return;
     }
   };
 
