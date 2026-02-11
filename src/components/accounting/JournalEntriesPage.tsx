@@ -12,6 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { useJournalEntries, useAccounts, useCreateJournalEntry, useDeleteJournalEntry, useJournalEntry } from '@/hooks/useAccounting';
+import { useCostCenters } from '@/hooks/useCostCenters';
 import { toast } from 'sonner';
 import { Loader2, Plus, Eye, Trash2, BookOpen, CalendarIcon, X, Printer, FileDown } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -32,11 +33,13 @@ interface JournalLine {
   reference?: string;
   line_date?: string;
   cost_center?: string;
+  cost_center_id?: string;
 }
 
 export function JournalEntriesPage() {
   const { data: entries = [], isLoading } = useJournalEntries();
   const { data: accounts = [] } = useAccounts();
+  const { data: costCenters = [] } = useCostCenters();
   const { filterByFiscalYear } = useFiscalYearFilter();
   const createJournalEntry = useCreateJournalEntry();
   const deleteJournalEntry = useDeleteJournalEntry();
@@ -148,6 +151,7 @@ export function JournalEntriesPage() {
           description: line.description,
           debit: line.debit,
           credit: line.credit,
+          cost_center_id: line.cost_center_id || null,
         })),
       });
       toast.success('تم إنشاء القيد بنجاح');
@@ -391,12 +395,20 @@ export function JournalEntriesPage() {
                             />
                           </TableCell>
                           <TableCell>
-                            <Input
-                              value={line.cost_center || ''}
-                              onChange={(e) => updateLine(index, 'cost_center', e.target.value)}
-                              placeholder="م.تكلفة"
-                              className="text-sm"
-                            />
+                            <Select
+                              value={line.cost_center_id || 'none'}
+                              onValueChange={(value) => updateLine(index, 'cost_center_id', value === 'none' ? '' : value)}
+                            >
+                              <SelectTrigger className="text-sm">
+                                <SelectValue placeholder="م.تكلفة" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">بدون</SelectItem>
+                                {costCenters.filter(c => c.is_active).map(cc => (
+                                  <SelectItem key={cc.id} value={cc.id}>{cc.code} - {cc.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                           <TableCell>
                             {lines.length > 2 && (

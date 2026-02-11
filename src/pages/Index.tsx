@@ -34,6 +34,7 @@ import { CarSearch } from '@/components/CarSearch';
 import { TaxSettingsPage } from '@/components/accounting/TaxSettingsPage';
 import { ChartOfAccountsPage } from '@/components/accounting/ChartOfAccountsPage';
 import { JournalEntriesPage } from '@/components/accounting/JournalEntriesPage';
+import { CostCentersPage } from '@/components/accounting/CostCentersPage';
 import { FinancialReportsPage } from '@/components/accounting/FinancialReportsPage';
 import { GeneralLedgerPage } from '@/components/accounting/GeneralLedgerPage';
 import { ZakatReportsPage } from '@/components/accounting/ZakatReportsPage';
@@ -205,6 +206,7 @@ const Index = () => {
       case 'customs-clearance': return <CustomsClearancePage />;
       // Accounting Audit
       case 'accounting-audit': return <AccountingAuditPage />;
+      case 'cost-centers': return <CostCentersPage />;
       case 'tasks': return <TasksPage />;
       // Inventory module
       case 'warehouses': return <WarehousesPage />;

@@ -135,4 +135,6 @@ export type ActivePage =
   | 'warehouses'
   | 'items-catalog'
   | 'item-categories'
-  | 'units-of-measure';
+  | 'units-of-measure'
+  // Cost Centers
+  | 'cost-centers';
