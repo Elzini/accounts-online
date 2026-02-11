@@ -135,6 +135,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       // Also update sidebar primary
       root.style.setProperty('--sidebar-primary', primaryHsl);
       root.style.setProperty('--sidebar-ring', primaryHsl);
+
+      // Update gradients that depend on primary/accent
+      root.style.setProperty('--gradient-primary', `linear-gradient(135deg, hsl(${primaryHsl}) 0%, hsl(${variations.light}) 100%)`);
+      root.style.setProperty('--gradient-accent', `linear-gradient(135deg, hsl(${variations.light}) 0%, hsl(${primaryHsl}) 100%)`);
+      root.style.setProperty('--shadow-primary', `0 4px 14px -3px hsl(${primaryHsl} / 0.25)`);
     }
     
     // Apply sidebar color
@@ -147,6 +152,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--sidebar-border', sidebarVariations.dark);
       root.style.setProperty('--sidebar-foreground', '210 40% 98%');
       root.style.setProperty('--sidebar-accent-foreground', '210 40% 98%');
+
+      // Update gradients that depend on sidebar colors
+      root.style.setProperty('--gradient-header', `linear-gradient(135deg, hsl(${sidebarHsl}) 0%, hsl(${sidebarVariations.light}) 100%)`);
+      root.style.setProperty('--gradient-dark', `linear-gradient(135deg, hsl(${sidebarHsl}) 0%, hsl(${sidebarVariations.light}) 100%)`);
     }
     
     // Apply font family
