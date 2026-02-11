@@ -68,6 +68,9 @@ import { MenuManagementPage, OrdersPage, KitchenPage, TablesPage } from '@/compo
 import { ShipmentsPage, LettersOfCreditPage, CustomsClearancePage } from '@/components/export-import';
 import { TasksPage } from '@/components/tasks/TasksPage';
 import { WarehousesPage, ItemsPage, UnitsPage, CategoriesPage } from '@/components/inventory';
+import { AgingReportPage } from '@/components/receivables/AgingReportPage';
+import { ChecksPage } from '@/components/checks/ChecksPage';
+import { BudgetsPage } from '@/components/budgets/BudgetsPage';
 import { AIChatWidget } from '@/components/chat/AIChatWidget';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -213,6 +216,10 @@ const Index = () => {
       case 'items-catalog': return <ItemsPage />;
       case 'item-categories': return <CategoriesPage />;
       case 'units-of-measure': return <UnitsPage />;
+      // New modules
+      case 'aging-report': return <AgingReportPage />;
+      case 'checks': return <ChecksPage />;
+      case 'budgets': return <BudgetsPage />;
       default: return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
     }
   };
