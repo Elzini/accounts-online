@@ -63,6 +63,7 @@ import { AllUsersManagement } from '@/components/super-admin/AllUsersManagement'
 import { CompanyAccountingSettings } from '@/components/super-admin/CompanyAccountingSettings';
 import { CompaniesReport } from '@/components/super-admin/CompaniesReport';
 import { DefaultCompanySettings } from '@/components/super-admin/DefaultCompanySettings';
+import { SystemLabelsManagement } from '@/components/super-admin/SystemLabelsManagement';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import';
@@ -377,10 +378,14 @@ export default function Companies() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="companies" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
             <TabsTrigger value="companies" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               <span>الشركات</span>
+            </TabsTrigger>
+            <TabsTrigger value="system-labels" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              <span>المسميات</span>
             </TabsTrigger>
             <TabsTrigger value="default-settings" className="flex items-center gap-2">
               <Cog className="w-4 h-4" />
@@ -399,6 +404,10 @@ export default function Companies() {
               <span>شاشة الدخول</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="system-labels">
+            <SystemLabelsManagement />
+          </TabsContent>
 
           <TabsContent value="default-settings">
             <DefaultCompanySettings />
