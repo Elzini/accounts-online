@@ -2381,36 +2381,51 @@ export type Database = {
           amount: number
           company_id: string
           created_at: string
+          custody_id: string | null
           deducted_in_payroll_id: string | null
+          deducted_installments: number | null
           employee_id: string
           id: string
           is_deducted: boolean
+          monthly_deduction: number | null
           notes: string | null
           reason: string | null
+          remaining_amount: number | null
+          total_installments: number | null
         }
         Insert: {
           advance_date?: string
           amount: number
           company_id: string
           created_at?: string
+          custody_id?: string | null
           deducted_in_payroll_id?: string | null
+          deducted_installments?: number | null
           employee_id: string
           id?: string
           is_deducted?: boolean
+          monthly_deduction?: number | null
           notes?: string | null
           reason?: string | null
+          remaining_amount?: number | null
+          total_installments?: number | null
         }
         Update: {
           advance_date?: string
           amount?: number
           company_id?: string
           created_at?: string
+          custody_id?: string | null
           deducted_in_payroll_id?: string | null
+          deducted_installments?: number | null
           employee_id?: string
           id?: string
           is_deducted?: boolean
+          monthly_deduction?: number | null
           notes?: string | null
           reason?: string | null
+          remaining_amount?: number | null
+          total_installments?: number | null
         }
         Relationships: [
           {
@@ -2418,6 +2433,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_advances_custody_id_fkey"
+            columns: ["custody_id"]
+            isOneToOne: false
+            referencedRelation: "custodies"
             referencedColumns: ["id"]
           },
           {

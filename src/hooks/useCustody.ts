@@ -114,16 +114,34 @@ export function useCustody() {
         );
       }
 
-      // If this is an advance type, create employee_advance record
+      // If this is an advance type, create employee_advance record with installment info
       let advanceId: string | null = null;
       if (data.custody_type === 'advance' && data.employee_id) {
+        // First create custody to get its ID, then create advance
+        const custodyResult = await addCustody({
+          ...data,
+          custody_amount: adjustedAmount,
+          notes,
+          company_id: companyId,
+          fiscal_year_id: selectedFiscalYear?.id || null,
+          journal_entry_id: journalEntryId,
+          advance_id: null,
+        });
+
         advanceId = await createEmployeeAdvance(
           companyId,
           data.employee_id,
           adjustedAmount,
           data.custody_date,
           data.custody_name,
+          data.installment_amount || 0,
+          data.installment_count || 1,
+          custodyResult.id,
         );
+
+        // Update custody with advance_id
+        await updateCustodyService(custodyResult.id, { advance_id: advanceId });
+        return custodyResult;
       }
 
       return addCustody({
