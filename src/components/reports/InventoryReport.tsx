@@ -9,21 +9,46 @@ import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 
 export function InventoryReport() {
   const { data: cars = [], isLoading } = useCars();
   const { selectedFiscalYear } = useFiscalYear();
+  const labels = useIndustryLabels();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const { printReport } = usePrintReport();
 
+  // Dynamic labels based on company type
+  const L = useMemo(() => ({
+    title: 'تقرير المخزون',
+    subtitle: `حالة ${labels.itemsName} في المخزون`,
+    total: `إجمالي ${labels.itemsName}`,
+    available: `${labels.itemsName} متاحة`,
+    transferred: `${labels.itemsName} محولة`,
+    sold: `${labels.itemsName} مباعة`,
+    stockValue: 'قيمة المخزون',
+    details: 'تفاصيل المخزون',
+    noItems: `لا توجد ${labels.itemsName} في هذه الفترة`,
+    searchPlaceholder: `بحث بالاسم أو الرقم...`,
+    filterAll: `جميع ${labels.itemsName}`,
+    filterAvailable: 'المتاحة فقط',
+    filterTransferred: 'المحولة فقط',
+    filterSold: 'المباعة فقط',
+    colNumber: 'رقم المخزون',
+    colName: `اسم ${labels.itemName}`,
+    colIdentifier: 'رقم التعريف',
+    colModel: 'الموديل',
+    colPrice: 'سعر الشراء',
+    colDate: 'تاريخ الشراء',
+    colStatus: 'الحالة',
+  }), [labels]);
+
   const filteredCars = useMemo(() => {
     let base = cars;
 
-    // فلترة المخزون حسب السنة المالية عن طريق fiscal_year_id (يدعم السيارات المُرحّلة)
-    // احتياط: لو fiscal_year_id فارغ (بيانات قديمة)، نرجع لفلترة تاريخ الشراء.
     if (selectedFiscalYear) {
       const fyStart = new Date(selectedFiscalYear.start_date);
       fyStart.setHours(0, 0, 0, 0);
@@ -43,7 +68,6 @@ export function InventoryReport() {
       if (endDate && purchaseDate > new Date(endDate + 'T23:59:59')) return false;
       if (statusFilter !== 'all' && car.status !== statusFilter) return false;
       
-      // Search by name or chassis number
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesName = car.name.toLowerCase().includes(query);
@@ -59,23 +83,22 @@ export function InventoryReport() {
   const soldCars = filteredCars.filter(c => c.status === 'sold');
   const transferredCars = filteredCars.filter(c => c.status === 'transferred');
   const totalValue = availableCars.reduce((sum, car) => sum + Number(car.purchase_price), 0);
-  const transferredValue = transferredCars.reduce((sum, car) => sum + Number(car.purchase_price), 0);
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('ar-SA').format(value);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ar-SA');
 
   const handlePrint = () => {
     printReport({
-      title: 'تقرير المخزون',
-      subtitle: 'حالة السيارات في المخزون',
+      title: L.title,
+      subtitle: L.subtitle,
       columns: [
-        { header: 'رقم المخزون', key: 'inventory_number' },
-        { header: 'اسم السيارة', key: 'name' },
-        { header: 'رقم الشاسيه', key: 'chassis_number' },
-        { header: 'الموديل', key: 'model' },
-        { header: 'سعر الشراء', key: 'purchase_price' },
-        { header: 'تاريخ الشراء', key: 'purchase_date' },
-        { header: 'الحالة', key: 'status' },
+        { header: L.colNumber, key: 'inventory_number' },
+        { header: L.colName, key: 'name' },
+        { header: L.colIdentifier, key: 'chassis_number' },
+        { header: L.colModel, key: 'model' },
+        { header: L.colPrice, key: 'purchase_price' },
+        { header: L.colDate, key: 'purchase_date' },
+        { header: L.colStatus, key: 'status' },
       ],
       data: filteredCars.map(car => ({
         inventory_number: car.inventory_number,
@@ -87,11 +110,11 @@ export function InventoryReport() {
         status: car.status === 'available' ? 'متاحة' : car.status === 'transferred' ? 'محولة' : 'مباعة',
       })),
       summaryCards: [
-        { label: 'إجمالي السيارات', value: String(filteredCars.length) },
-        { label: 'سيارات متاحة', value: String(availableCars.length) },
-        { label: 'سيارات محولة', value: String(transferredCars.length) },
-        { label: 'سيارات مباعة', value: String(soldCars.length) },
-        { label: 'قيمة المخزون', value: `${formatCurrency(totalValue)} ريال` },
+        { label: L.total, value: String(filteredCars.length) },
+        { label: L.available, value: String(availableCars.length) },
+        { label: L.transferred, value: String(transferredCars.length) },
+        { label: L.sold, value: String(soldCars.length) },
+        { label: L.stockValue, value: `${formatCurrency(totalValue)} ريال` },
       ],
     });
   };
@@ -102,14 +125,14 @@ export function InventoryReport() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">تقرير المخزون</h1>
-          <p className="text-muted-foreground">حالة السيارات في المخزون</p>
+          <h1 className="text-3xl font-bold text-foreground">{L.title}</h1>
+          <p className="text-muted-foreground">{L.subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <div className="relative">
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="بحث بالاسم أو رقم الشاسيه..."
+              placeholder={L.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pr-10 w-[250px]"
@@ -117,13 +140,13 @@ export function InventoryReport() {
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="حالة السيارة" />
+              <SelectValue placeholder={L.colStatus} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">جميع السيارات</SelectItem>
-              <SelectItem value="available">المتاحة فقط</SelectItem>
-              <SelectItem value="transferred">المحولة فقط</SelectItem>
-              <SelectItem value="sold">المباعة فقط</SelectItem>
+              <SelectItem value="all">{L.filterAll}</SelectItem>
+              <SelectItem value="available">{L.filterAvailable}</SelectItem>
+              <SelectItem value="transferred">{L.filterTransferred}</SelectItem>
+              <SelectItem value="sold">{L.filterSold}</SelectItem>
             </SelectContent>
           </Select>
           <DateRangeFilter
@@ -146,7 +169,7 @@ export function InventoryReport() {
               <Package className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">إجمالي السيارات</p>
+              <p className="text-sm text-muted-foreground">{L.total}</p>
               <p className="text-2xl font-bold">{filteredCars.length}</p>
             </div>
           </div>
@@ -157,7 +180,7 @@ export function InventoryReport() {
               <CheckCircle className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">سيارات متاحة</p>
+              <p className="text-sm text-muted-foreground">{L.available}</p>
               <p className="text-2xl font-bold text-success">{availableCars.length}</p>
             </div>
           </div>
@@ -168,7 +191,7 @@ export function InventoryReport() {
               <ArrowRightLeft className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">سيارات محولة</p>
+              <p className="text-sm text-muted-foreground">{L.transferred}</p>
               <p className="text-2xl font-bold text-orange-600">{transferredCars.length}</p>
             </div>
           </div>
@@ -179,7 +202,7 @@ export function InventoryReport() {
               <Car className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">سيارات مباعة</p>
+              <p className="text-sm text-muted-foreground">{L.sold}</p>
               <p className="text-2xl font-bold">{soldCars.length}</p>
             </div>
           </div>
@@ -190,7 +213,7 @@ export function InventoryReport() {
               <Car className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">قيمة المخزون</p>
+              <p className="text-sm text-muted-foreground">{L.stockValue}</p>
               <p className="text-2xl font-bold">{formatCurrency(totalValue)} ريال</p>
             </div>
           </div>
@@ -199,23 +222,23 @@ export function InventoryReport() {
 
       <div className="bg-card rounded-2xl card-shadow overflow-hidden">
         <div className="p-4 border-b">
-          <h3 className="font-bold">تفاصيل المخزون</h3>
+          <h3 className="font-bold">{L.details}</h3>
         </div>
         {filteredCars.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            لا توجد سيارات في هذه الفترة
+            {L.noItems}
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="text-right font-bold">رقم المخزون</TableHead>
-                <TableHead className="text-right font-bold">اسم السيارة</TableHead>
-                <TableHead className="text-right font-bold">رقم الشاسيه</TableHead>
-                <TableHead className="text-right font-bold">الموديل</TableHead>
-                <TableHead className="text-right font-bold">سعر الشراء</TableHead>
-                <TableHead className="text-right font-bold">تاريخ الشراء</TableHead>
-                <TableHead className="text-right font-bold">الحالة</TableHead>
+                <TableHead className="text-right font-bold">{L.colNumber}</TableHead>
+                <TableHead className="text-right font-bold">{L.colName}</TableHead>
+                <TableHead className="text-right font-bold">{L.colIdentifier}</TableHead>
+                <TableHead className="text-right font-bold">{L.colModel}</TableHead>
+                <TableHead className="text-right font-bold">{L.colPrice}</TableHead>
+                <TableHead className="text-right font-bold">{L.colDate}</TableHead>
+                <TableHead className="text-right font-bold">{L.colStatus}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
