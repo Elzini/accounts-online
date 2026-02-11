@@ -243,40 +243,39 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     ));
   };
 
-  // Calculate totals
+  // Calculate totals - supports both cars and inventory items
   const calculations = useMemo(() => {
     let subtotal = 0;
     let totalVAT = 0;
 
-    const itemsWithCalc = cars.map(car => {
-      const price = parseFloat(car.purchase_price) || 0;
-      const quantity = car.quantity || 1;
-      
-      let baseAmount: number;
-      let vatAmount: number;
-      let total: number;
-
+    const calcItem = (price: number, quantity: number) => {
+      let baseAmount: number, vatAmount: number, total: number;
       if (invoiceData.price_includes_tax && taxRate > 0) {
-        // السعر شامل الضريبة
         total = price * quantity;
         baseAmount = total / (1 + taxRate / 100);
         vatAmount = total - baseAmount;
       } else {
-        // السعر غير شامل الضريبة
         baseAmount = price * quantity;
         vatAmount = baseAmount * (taxRate / 100);
         total = baseAmount + vatAmount;
       }
-
       subtotal += baseAmount;
       totalVAT += vatAmount;
+      return { baseAmount, vatAmount, total };
+    };
 
-      return {
-        ...car,
-        baseAmount,
-        vatAmount,
-        total,
-      };
+    // Car items
+    const itemsWithCalc = cars.map(car => {
+      const price = parseFloat(car.purchase_price) || 0;
+      const result = calcItem(price, car.quantity || 1);
+      return { ...car, ...result };
+    });
+
+    // Inventory items
+    const inventoryItemsWithCalc = purchaseInventoryItems.map(item => {
+      const price = parseFloat(item.purchase_price) || 0;
+      const result = calcItem(price, item.quantity || 1);
+      return { ...item, ...result };
     });
 
     // Calculate discount
@@ -292,6 +291,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
     return {
       items: itemsWithCalc,
+      inventoryItems: inventoryItemsWithCalc,
       subtotal,
       discountAmount,
       subtotalAfterDiscount,
@@ -299,7 +299,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       finalTotal,
       roundedTotal: Math.round(finalTotal),
     };
-  }, [cars, invoiceData.price_includes_tax, taxRate, discount, discountType]);
+  }, [cars, purchaseInventoryItems, invoiceData.price_includes_tax, taxRate, discount, discountType]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA', {
@@ -314,58 +314,127 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       return;
     }
 
-    const invalidCar = cars.find(car => 
-      !car.chassis_number || !car.name || !car.purchase_price
-    );
-    if (invalidCar) {
-      toast.error('الرجاء ملء جميع الحقول المطلوبة لكل سيارة');
-      return;
-    }
+    if (isCarDealership) {
+      // Car dealership flow (existing logic)
+      const invalidCar = cars.find(car => 
+        !car.chassis_number || !car.name || !car.purchase_price
+      );
+      if (invalidCar) {
+        toast.error('الرجاء ملء جميع الحقول المطلوبة لكل سيارة');
+        return;
+      }
 
-    // Check for duplicate chassis numbers within the batch
-    const chassisNumbers = cars.map(car => car.chassis_number);
-    const duplicates = chassisNumbers.filter((item, index) => chassisNumbers.indexOf(item) !== index);
-    if (duplicates.length > 0) {
-      toast.error('يوجد تكرار في أرقام الهيكل');
-      return;
-    }
+      const chassisNumbers = cars.map(car => car.chassis_number);
+      const duplicates = chassisNumbers.filter((item, index) => chassisNumbers.indexOf(item) !== index);
+      if (duplicates.length > 0) {
+        toast.error('يوجد تكرار في أرقام الهيكل');
+        return;
+      }
 
-    try {
-      // Calculate actual purchase prices (base amounts without tax)
-      const carsWithPrices = calculations.items.map((car, index) => ({
-        chassis_number: cars[index].chassis_number,
-        name: cars[index].name,
-        model: cars[index].model || null,
-        color: cars[index].color || null,
-        purchase_price: car.baseAmount / (cars[index].quantity || 1), // Store base price per unit
-        fiscal_year_id: selectedFiscalYear?.id ?? null,
-      }));
+      try {
+        const carsWithPrices = calculations.items.map((car, index) => ({
+          chassis_number: cars[index].chassis_number,
+          name: cars[index].name,
+          model: cars[index].model || null,
+          color: cars[index].color || null,
+          purchase_price: car.baseAmount / (cars[index].quantity || 1),
+          fiscal_year_id: selectedFiscalYear?.id ?? null,
+        }));
 
-      const result = await addPurchaseBatch.mutateAsync({
-        batch: {
-          supplier_id: invoiceData.supplier_id,
-          purchase_date: invoiceData.purchase_date,
-          notes: invoiceData.notes || null,
-          payment_account_id: invoiceData.payment_account_id || undefined,
-        },
-        cars: carsWithPrices,
-      });
-      
-      // Store saved data for invoice
-      setSavedBatchData({
-        ...result,
-        supplier: selectedSupplier,
-        cars: cars,
-      });
-      
-      toast.success(`تم إضافة ${cars.length} سيارة للمخزون بنجاح`);
-      setInvoiceOpen(true);
-    } catch (error: any) {
-      if (error.message?.includes('duplicate')) {
-        toast.error('أحد أرقام الهيكل موجود مسبقاً');
-      } else {
-        console.error('Purchase batch error:', error);
-        toast.error('حدث خطأ أثناء إضافة السيارات');
+        const result = await addPurchaseBatch.mutateAsync({
+          batch: {
+            supplier_id: invoiceData.supplier_id,
+            purchase_date: invoiceData.purchase_date,
+            notes: invoiceData.notes || null,
+            payment_account_id: invoiceData.payment_account_id || undefined,
+          },
+          cars: carsWithPrices,
+        });
+        
+        setSavedBatchData({
+          ...result,
+          supplier: selectedSupplier,
+          cars: cars,
+        });
+        
+        toast.success(`تم إضافة ${cars.length} سيارة للمخزون بنجاح`);
+        setInvoiceOpen(true);
+      } catch (error: any) {
+        if (error.message?.includes('duplicate')) {
+          toast.error('أحد أرقام الهيكل موجود مسبقاً');
+        } else {
+          console.error('Purchase batch error:', error);
+          toast.error('حدث خطأ أثناء إضافة السيارات');
+        }
+      }
+    } else {
+      // Inventory items flow
+      if (purchaseInventoryItems.length === 0) {
+        toast.error('الرجاء إضافة صنف واحد على الأقل');
+        return;
+      }
+      const invalidItem = purchaseInventoryItems.find(i => !i.purchase_price || parseFloat(i.purchase_price) <= 0);
+      if (invalidItem) {
+        toast.error('الرجاء إدخال سعر الشراء لجميع الأصناف');
+        return;
+      }
+
+      try {
+        if (!companyId) throw new Error('لا يمكن العثور على الشركة');
+        const invoiceNumber = `PUR-${Date.now()}`;
+
+        // Create purchase invoice
+        const { data: invoice, error: invoiceError } = await supabase
+          .from('invoices')
+          .insert({
+            company_id: companyId,
+            invoice_number: invoiceData.invoice_number || invoiceNumber,
+            invoice_type: 'purchase',
+            supplier_id: invoiceData.supplier_id,
+            customer_name: selectedSupplier?.name || '',
+            invoice_date: invoiceData.purchase_date,
+            due_date: invoiceData.due_date,
+            subtotal: calculations.subtotal,
+            taxable_amount: calculations.subtotalAfterDiscount,
+            vat_rate: taxRate,
+            vat_amount: calculations.totalVAT,
+            total: calculations.finalTotal,
+            discount_amount: calculations.discountAmount,
+            amount_paid: 0,
+            payment_status: 'unpaid',
+            status: 'active',
+            fiscal_year_id: selectedFiscalYear?.id || null,
+            notes: invoiceData.notes || null,
+          })
+          .select()
+          .single();
+
+        if (invoiceError) throw invoiceError;
+
+        // Create invoice items (triggers auto stock update via DB trigger)
+        const invoiceItems = purchaseInventoryItems.map((item, index) => ({
+          invoice_id: invoice.id,
+          item_description: item.item_name,
+          item_code: item.barcode || '',
+          quantity: item.quantity,
+          unit: item.unit_name,
+          unit_price: calculations.inventoryItems[index].baseAmount / item.quantity,
+          taxable_amount: calculations.inventoryItems[index].baseAmount,
+          vat_rate: taxRate,
+          vat_amount: calculations.inventoryItems[index].vatAmount,
+          total: calculations.inventoryItems[index].total,
+          inventory_item_id: item.item_id,
+        }));
+
+        const { error: itemsError } = await supabase.from('invoice_items').insert(invoiceItems);
+        if (itemsError) throw itemsError;
+
+        setSavedBatchData({ batch: { id: invoice.id }, supplier: selectedSupplier, inventoryItems: purchaseInventoryItems });
+        toast.success(`تم إصدار فاتورة شراء ${purchaseInventoryItems.length} صنف بنجاح`);
+        setInvoiceOpen(true);
+      } catch (error: any) {
+        console.error('Purchase invoice error:', error);
+        toast.error('حدث خطأ أثناء إصدار فاتورة الشراء');
       }
     }
   };
@@ -792,120 +861,217 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
           {/* Items Table */}
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="text-right text-xs w-10">#</TableHead>
-                  <TableHead className="text-right text-xs min-w-[150px]">البيان</TableHead>
-                  <TableHead className="text-right text-xs min-w-[100px]">الموديل</TableHead>
-                  <TableHead className="text-right text-xs min-w-[80px]">اللون</TableHead>
-                  <TableHead className="text-right text-xs min-w-[120px]">رقم الهيكل</TableHead>
-                  <TableHead className="text-center text-xs w-16">الكمية</TableHead>
-                  <TableHead className="text-center text-xs w-20">الوحدة</TableHead>
-                  <TableHead className="text-center text-xs w-24">السعر</TableHead>
-                  <TableHead className="text-center text-xs w-24">المجموع</TableHead>
-                  <TableHead className="text-center text-xs w-16">VAT</TableHead>
-                  <TableHead className="text-center text-xs w-24">المجموع الكلي</TableHead>
-                  <TableHead className="text-center text-xs w-10"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {calculations.items.map((car, index) => (
-                  <TableRow key={car.id} className="hover:bg-muted/30">
-                    <TableCell className="text-center text-sm">{index + 1}</TableCell>
-                    <TableCell>
-                      <Input
-                        value={cars[index].name}
-                        onChange={(e) => handleCarChange(car.id, 'name', e.target.value)}
-                        placeholder="اسم السيارة"
-                        className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={cars[index].model}
-                        onChange={(e) => handleCarChange(car.id, 'model', e.target.value)}
-                        placeholder="الموديل"
-                        className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={cars[index].color}
-                        onChange={(e) => handleCarChange(car.id, 'color', e.target.value)}
-                        placeholder="اللون"
-                        className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={cars[index].chassis_number}
-                        onChange={(e) => handleCarChange(car.id, 'chassis_number', e.target.value)}
-                        placeholder="رقم الهيكل"
-                        className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
-                        dir="ltr"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={cars[index].quantity}
-                        onChange={(e) => handleCarChange(car.id, 'quantity', parseInt(e.target.value) || 1)}
-                        className="h-8 text-sm text-center border-0 bg-transparent focus-visible:ring-1 w-16"
-                      />
-                    </TableCell>
-                    <TableCell className="text-center text-sm">سيارة</TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        value={cars[index].purchase_price}
-                        onChange={(e) => handleCarChange(car.id, 'purchase_price', e.target.value)}
-                        placeholder="0"
-                        className="h-8 text-sm text-center w-24"
-                        dir="ltr"
-                      />
-                    </TableCell>
-                    <TableCell className="text-center text-sm font-medium">
-                      {formatCurrency(car.baseAmount)}
-                    </TableCell>
-                    <TableCell className="text-center text-sm text-warning">
-                      {taxRate}%
-                    </TableCell>
-                    <TableCell className="text-center text-sm font-bold text-primary">
-                      {formatCurrency(car.total)}
-                    </TableCell>
-                    <TableCell>
-                      {cars.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveCar(car.id)}
-                          className="h-7 w-7 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            {/* Add Item Button */}
-            <div className="p-2 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddCar}
-                className="gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                إضافة سيارة
-              </Button>
-            </div>
+            {isCarDealership ? (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="text-right text-xs w-10">#</TableHead>
+                      <TableHead className="text-right text-xs min-w-[150px]">البيان</TableHead>
+                      <TableHead className="text-right text-xs min-w-[100px]">الموديل</TableHead>
+                      <TableHead className="text-right text-xs min-w-[80px]">اللون</TableHead>
+                      <TableHead className="text-right text-xs min-w-[120px]">رقم الهيكل</TableHead>
+                      <TableHead className="text-center text-xs w-16">الكمية</TableHead>
+                      <TableHead className="text-center text-xs w-20">الوحدة</TableHead>
+                      <TableHead className="text-center text-xs w-24">السعر</TableHead>
+                      <TableHead className="text-center text-xs w-24">المجموع</TableHead>
+                      <TableHead className="text-center text-xs w-16">VAT</TableHead>
+                      <TableHead className="text-center text-xs w-24">المجموع الكلي</TableHead>
+                      <TableHead className="text-center text-xs w-10"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {calculations.items.map((car, index) => (
+                      <TableRow key={car.id} className="hover:bg-muted/30">
+                        <TableCell className="text-center text-sm">{index + 1}</TableCell>
+                        <TableCell>
+                          <Input
+                            value={cars[index].name}
+                            onChange={(e) => handleCarChange(car.id, 'name', e.target.value)}
+                            placeholder="اسم السيارة"
+                            className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            value={cars[index].model}
+                            onChange={(e) => handleCarChange(car.id, 'model', e.target.value)}
+                            placeholder="الموديل"
+                            className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            value={cars[index].color}
+                            onChange={(e) => handleCarChange(car.id, 'color', e.target.value)}
+                            placeholder="اللون"
+                            className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            value={cars[index].chassis_number}
+                            onChange={(e) => handleCarChange(car.id, 'chassis_number', e.target.value)}
+                            placeholder="رقم الهيكل"
+                            className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
+                            dir="ltr"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={cars[index].quantity}
+                            onChange={(e) => handleCarChange(car.id, 'quantity', parseInt(e.target.value) || 1)}
+                            className="h-8 text-sm text-center border-0 bg-transparent focus-visible:ring-1 w-16"
+                          />
+                        </TableCell>
+                        <TableCell className="text-center text-sm">سيارة</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={cars[index].purchase_price}
+                            onChange={(e) => handleCarChange(car.id, 'purchase_price', e.target.value)}
+                            placeholder="0"
+                            className="h-8 text-sm text-center w-24"
+                            dir="ltr"
+                          />
+                        </TableCell>
+                        <TableCell className="text-center text-sm font-medium">
+                          {formatCurrency(car.baseAmount)}
+                        </TableCell>
+                        <TableCell className="text-center text-sm text-warning">
+                          {taxRate}%
+                        </TableCell>
+                        <TableCell className="text-center text-sm font-bold text-primary">
+                          {formatCurrency(car.total)}
+                        </TableCell>
+                        <TableCell>
+                          {cars.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRemoveCar(car.id)}
+                              className="h-7 w-7 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <div className="p-2 border-t">
+                  <Button type="button" variant="outline" size="sm" onClick={handleAddCar} className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    إضافة سيارة
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="text-right text-xs w-10">#</TableHead>
+                      <TableHead className="text-right text-xs min-w-[200px]">الصنف</TableHead>
+                      <TableHead className="text-right text-xs min-w-[100px]">الباركود</TableHead>
+                      <TableHead className="text-center text-xs w-16">الكمية</TableHead>
+                      <TableHead className="text-center text-xs w-20">الوحدة</TableHead>
+                      <TableHead className="text-center text-xs w-24">سعر الشراء</TableHead>
+                      <TableHead className="text-center text-xs w-24">المجموع</TableHead>
+                      <TableHead className="text-center text-xs w-16">VAT</TableHead>
+                      <TableHead className="text-center text-xs w-24">المجموع الكلي</TableHead>
+                      <TableHead className="text-center text-xs w-10"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {calculations.inventoryItems.map((item, index) => (
+                      <TableRow key={item.id} className="hover:bg-muted/30">
+                        <TableCell className="text-center text-sm">{index + 1}</TableCell>
+                        <TableCell>
+                          <div className="text-sm font-medium">{item.item_name}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            value={purchaseInventoryItems[index]?.barcode || ''}
+                            onChange={(e) => handleInventoryItemChange(item.id, 'barcode', e.target.value)}
+                            placeholder="الباركود"
+                            className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
+                            dir="ltr"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={purchaseInventoryItems[index]?.quantity || 1}
+                            onChange={(e) => handleInventoryItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)}
+                            className="h-8 text-sm text-center border-0 bg-transparent focus-visible:ring-1 w-16"
+                          />
+                        </TableCell>
+                        <TableCell className="text-center text-sm">{item.unit_name}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={purchaseInventoryItems[index]?.purchase_price || ''}
+                            onChange={(e) => handleInventoryItemChange(item.id, 'purchase_price', e.target.value)}
+                            placeholder="0"
+                            className="h-8 text-sm text-center w-24"
+                            dir="ltr"
+                          />
+                        </TableCell>
+                        <TableCell className="text-center text-sm font-medium">
+                          {formatCurrency(item.baseAmount)}
+                        </TableCell>
+                        <TableCell className="text-center text-sm text-warning">
+                          {taxRate}%
+                        </TableCell>
+                        <TableCell className="text-center text-sm font-bold text-primary">
+                          {formatCurrency(item.total)}
+                        </TableCell>
+                        <TableCell>
+                          {purchaseInventoryItems.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRemoveInventoryItem(item.id)}
+                              className="h-7 w-7 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <div className="p-2 border-t flex gap-2">
+                  <Select onValueChange={handleSelectExistingItem}>
+                    <SelectTrigger className="h-8 text-sm w-[250px]">
+                      <SelectValue placeholder="اختر صنف من المخزون..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(inventoryItems || []).map((item: any) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          <div className="flex items-center gap-2">
+                            <Package className="w-3 h-3" />
+                            {item.name} {item.barcode ? `(${item.barcode})` : ''}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" variant="outline" size="sm" onClick={handleAddInventoryItem} className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    صنف جديد
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Totals Section */}
