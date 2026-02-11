@@ -13,6 +13,7 @@ import { usePublicAuthSettings } from '@/hooks/usePublicAuthSettings';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { extractSubdomain, buildTenantUrl } from '@/lib/tenantResolver';
 
 type AuthMode = 'company' | 'super_admin';
 
@@ -187,6 +188,34 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       }
 
       toast.success('تم تسجيل الدخول بنجاح');
+
+      // Auto-redirect to company subdomain if not already on it
+      if (mode === 'company' && data?.user) {
+        const currentSubdomain = extractSubdomain();
+        if (!currentSubdomain) {
+          // Fetch the user's company subdomain
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('company_id')
+            .eq('user_id', data.user.id)
+            .maybeSingle();
+          
+          if (profile?.company_id) {
+            const { data: company } = await supabase
+              .from('companies')
+              .select('subdomain')
+              .eq('id', profile.company_id)
+              .maybeSingle();
+            
+            if (company?.subdomain) {
+              const tenantUrl = buildTenantUrl(company.subdomain);
+              window.location.href = tenantUrl;
+              return;
+            }
+          }
+        }
+      }
+
       navigate('/', { replace: true });
     } catch {
       toast.error('حدث خطأ غير متوقع');
