@@ -9,9 +9,20 @@ interface QuickAccessCard {
   id: string;
   title: string;
   icon: LucideIcon;
-  gradient: string;
+  borderColor: string;
+  iconBg: string;
+  iconColor: string;
   actions: { label: string; page: ActivePage }[];
 }
+
+const CARD_THEMES = {
+  blue:    { borderColor: 'hsl(220 90% 56%)', iconBg: 'hsl(220 90% 56% / 0.12)', iconColor: 'hsl(220 90% 56%)' },
+  purple:  { borderColor: 'hsl(270 75% 55%)', iconBg: 'hsl(270 75% 55% / 0.12)', iconColor: 'hsl(270 75% 55%)' },
+  orange:  { borderColor: 'hsl(20 90% 52%)',  iconBg: 'hsl(20 90% 52% / 0.12)',  iconColor: 'hsl(20 90% 52%)' },
+  green:   { borderColor: 'hsl(155 70% 42%)', iconBg: 'hsl(155 70% 42% / 0.12)', iconColor: 'hsl(155 70% 42%)' },
+  rose:    { borderColor: 'hsl(340 75% 55%)', iconBg: 'hsl(340 75% 55% / 0.12)', iconColor: 'hsl(340 75% 55%)' },
+  cyan:    { borderColor: 'hsl(190 85% 45%)', iconBg: 'hsl(190 85% 45% / 0.12)', iconColor: 'hsl(190 85% 45%)' },
+};
 
 function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnType<typeof useIndustryLabels>): QuickAccessCard[] {
   const baseCards: QuickAccessCard[] = [
@@ -19,7 +30,7 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
       id: 'customers',
       title: 'العملاء',
       icon: Users,
-      gradient: 'from-blue-500 via-blue-400 to-cyan-400',
+      ...CARD_THEMES.blue,
       actions: [
         { label: 'إضافة عميل', page: 'add-customer' },
         { label: 'قائمة العملاء', page: 'customers' },
@@ -30,7 +41,7 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
       id: 'treasury',
       title: 'الخزينة',
       icon: Wallet,
-      gradient: 'from-emerald-500 via-emerald-400 to-teal-400',
+      ...CARD_THEMES.purple,
       actions: [
         { label: 'السندات', page: 'vouchers' },
         { label: 'البنوك', page: 'banking' },
@@ -46,7 +57,7 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
           id: 'projects',
           title: 'المشاريع',
           icon: HardHat,
-          gradient: 'from-primary via-primary/90 to-primary/70',
+          ...CARD_THEMES.cyan,
           actions: [
             { label: 'المشاريع', page: 'projects' },
             { label: 'العقود', page: 'contracts' },
@@ -58,7 +69,7 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
           id: 'suppliers',
           title: 'الموردين',
           icon: Truck,
-          gradient: 'from-orange-500 via-orange-400 to-amber-400',
+          ...CARD_THEMES.orange,
           actions: [
             { label: 'إضافة مورد', page: 'add-supplier' },
             { label: 'قائمة الموردين', page: 'suppliers' },
@@ -72,7 +83,7 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
           id: 'shipments',
           title: 'الشحنات',
           icon: Ship,
-          gradient: 'from-primary via-primary/90 to-primary/70',
+          ...CARD_THEMES.cyan,
           actions: [
             { label: 'الشحنات', page: 'shipments' },
             { label: 'خطابات الاعتماد', page: 'letters-of-credit' },
@@ -84,7 +95,7 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
           id: 'purchases',
           title: 'الواردات',
           icon: Truck,
-          gradient: 'from-orange-500 via-orange-400 to-amber-400',
+          ...CARD_THEMES.orange,
           actions: [
             { label: 'فاتورة واردات', page: 'add-purchase-invoice' },
             { label: 'الواردات', page: 'purchases' },
@@ -93,13 +104,13 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
         },
       ];
 
-    default: // car_dealership, general_trading, restaurant
+    default:
       return [
         {
           id: 'sales',
           title: 'المبيعات',
           icon: ShoppingCart,
-          gradient: 'from-primary via-primary/90 to-primary/70',
+          ...CARD_THEMES.purple,
           actions: [
             { label: 'فاتورة بيع جديدة', page: 'add-sale-invoice' },
             { label: 'المبيعات', page: 'sales' },
@@ -110,7 +121,7 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
           id: 'purchases',
           title: 'المشتريات',
           icon: Truck,
-          gradient: 'from-orange-500 via-orange-400 to-amber-400',
+          ...CARD_THEMES.orange,
           actions: [
             { label: 'فاتورة شراء', page: 'add-purchase-invoice' },
             { label: 'المشتريات', page: 'purchases' },
@@ -121,7 +132,7 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
           id: 'inventory',
           title: labels.inventoryLabel,
           icon: Package as LucideIcon,
-          gradient: 'from-rose-500 via-pink-500 to-fuchsia-500',
+          ...CARD_THEMES.green,
           actions: labels.inventoryActions.map(a => ({ label: a.label, page: a.page as ActivePage })),
         }] : []),
       ];
@@ -162,24 +173,27 @@ export function QuickAccessSection({ setActivePage }: QuickAccessSectionProps) {
         {quickAccessCards.map((card) => (
           <Card
             key={card.id}
-            className="group relative overflow-hidden border-2 border-transparent hover:border-primary/20 transition-all duration-300 hover:shadow-lg"
+            className="group relative overflow-hidden bg-card hover:shadow-xl transition-all duration-300 rounded-xl border border-border/60"
           >
-            {/* Gradient Header */}
-            <div className={cn(
-              "relative h-12 sm:h-14 md:h-16 bg-gradient-to-l",
-              card.gradient
-            )}>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-              <div className="absolute inset-0 flex items-center justify-end px-2 sm:px-3 md:px-4 gap-1.5 sm:gap-2 md:gap-3">
-                <span className="text-white font-bold text-xs sm:text-sm md:text-base truncate">{card.title}</span>
-                <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shrink-0">
-                  <card.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
-                </div>
+            {/* Colored Top Border */}
+            <div
+              className="h-1 w-full"
+              style={{ backgroundColor: card.borderColor }}
+            />
+
+            {/* Card Header */}
+            <div className="flex items-center justify-end gap-2 px-3 sm:px-4 pt-3 sm:pt-4 pb-2">
+              <span className="font-bold text-sm sm:text-base text-foreground truncate">{card.title}</span>
+              <div
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300"
+                style={{ backgroundColor: card.iconBg }}
+              >
+                <card.icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: card.iconColor }} />
               </div>
             </div>
 
             {/* Actions List */}
-            <div className="p-2 sm:p-3 space-y-1">
+            <div className="px-2 sm:px-3 pb-3 sm:pb-4 space-y-0.5">
               {card.actions.map((action, index) => (
                 <button
                   key={index}
