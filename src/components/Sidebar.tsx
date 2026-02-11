@@ -373,7 +373,7 @@ export function Sidebar({
     label: 'التصنيع',
     icon: Factory
   }];
-  const { installedPlugins: activePlugins } = usePlugins();
+  const { activePlugins } = usePlugins();
 
   const pluginMenuItems = activePlugins.map(p => ({
     id: p.pageId as ActivePage,

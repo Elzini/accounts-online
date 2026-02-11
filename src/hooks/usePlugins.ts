@@ -193,7 +193,8 @@ export function usePlugins() {
     return p;
   });
 
-  const installedPlugins = plugins.filter(p => p.installed && p.enabled);
+  const installedPlugins = plugins.filter(p => p.installed);
+  const activePlugins = plugins.filter(p => p.installed && p.enabled);
   const availablePlugins = plugins.filter(p => !p.installed);
 
   const installPlugin = useCallback((pluginId: string) => {
@@ -220,5 +221,5 @@ export function usePlugins() {
     });
   }, []);
 
-  return { plugins, installedPlugins, availablePlugins, installPlugin, uninstallPlugin, togglePlugin };
+  return { plugins, installedPlugins, activePlugins, availablePlugins, installPlugin, uninstallPlugin, togglePlugin };
 }
