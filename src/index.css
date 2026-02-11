@@ -54,15 +54,15 @@
     --sidebar-border: 217 33% 17%;
     --sidebar-ring: 221 83% 53%;
 
-    /* Custom gradients - Modern Blue theme */
-    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(262 83% 58%) 100%);
-    --gradient-header: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(217 33% 17%) 50%, hsl(221 50% 25%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(172 66% 50%) 100%);
-    --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(25 90% 55%) 100%);
-    --gradient-danger: linear-gradient(135deg, hsl(0 72% 51%) 0%, hsl(350 70% 55%) 100%);
-    --gradient-dark: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(217 33% 17%) 100%);
-    --gradient-info: linear-gradient(135deg, hsl(199 89% 48%) 0%, hsl(210 80% 55%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(280 70% 55%) 100%);
+    /* Custom gradients - uses design tokens so themes apply everywhere */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+    --gradient-header: linear-gradient(135deg, hsl(var(--sidebar-background)) 0%, hsl(var(--sidebar-accent)) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(var(--success) / 0.7) 100%);
+    --gradient-warning: linear-gradient(135deg, hsl(var(--warning)) 0%, hsl(var(--warning) / 0.7) 100%);
+    --gradient-danger: linear-gradient(135deg, hsl(var(--destructive)) 0%, hsl(var(--destructive) / 0.7) 100%);
+    --gradient-dark: linear-gradient(135deg, hsl(var(--sidebar-background)) 0%, hsl(var(--sidebar-accent)) 100%);
+    --gradient-info: linear-gradient(135deg, hsl(var(--info)) 0%, hsl(var(--info) / 0.7) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--primary)) 100%);
 
     /* Card accent colors */
     --card-green: 160 84% 39%;

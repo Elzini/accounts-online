@@ -109,7 +109,6 @@ export function ThemeSettingsPage() {
   const applyThemeColors = (colors: ThemePreset['colors']) => {
     const root = document.documentElement;
 
-    // Convert hex to HSL for CSS variables
     const hexToHsl = (hex: string): string => {
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
       if (!result) return '210 85% 45%';
@@ -143,12 +142,26 @@ export function ThemeSettingsPage() {
       return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
     };
 
-    root.style.setProperty('--primary', hexToHsl(colors.primary));
-    root.style.setProperty('--ring', hexToHsl(colors.primary));
-    root.style.setProperty('--sidebar-background', hexToHsl(colors.sidebar));
-    root.style.setProperty('--accent', hexToHsl(colors.accent));
-    root.style.setProperty('--success', hexToHsl(colors.success));
-    root.style.setProperty('--warning', hexToHsl(colors.warning));
+    const primaryHsl = hexToHsl(colors.primary);
+    const sidebarHsl = hexToHsl(colors.sidebar);
+    const accentHsl = hexToHsl(colors.accent);
+    const successHsl = hexToHsl(colors.success);
+    const warningHsl = hexToHsl(colors.warning);
+
+    root.style.setProperty('--primary', primaryHsl);
+    root.style.setProperty('--ring', primaryHsl);
+    root.style.setProperty('--sidebar-background', sidebarHsl);
+    root.style.setProperty('--accent', accentHsl);
+    root.style.setProperty('--success', successHsl);
+    root.style.setProperty('--warning', warningHsl);
+
+    // Update gradients to match new theme
+    root.style.setProperty('--gradient-primary', `linear-gradient(135deg, hsl(${primaryHsl}) 0%, hsl(${accentHsl}) 100%)`);
+    root.style.setProperty('--gradient-accent', `linear-gradient(135deg, hsl(${accentHsl}) 0%, hsl(${primaryHsl}) 100%)`);
+    root.style.setProperty('--gradient-success', `linear-gradient(135deg, hsl(${successHsl}) 0%, hsl(${successHsl} / 0.7) 100%)`);
+    root.style.setProperty('--gradient-warning', `linear-gradient(135deg, hsl(${warningHsl}) 0%, hsl(${warningHsl} / 0.7) 100%)`);
+    root.style.setProperty('--gradient-header', `linear-gradient(135deg, hsl(${sidebarHsl}) 0%, hsl(${primaryHsl} / 0.3) 100%)`);
+    root.style.setProperty('--shadow-primary', `0 4px 14px -3px hsl(${primaryHsl} / 0.25)`);
   };
 
   // Toggle dark mode

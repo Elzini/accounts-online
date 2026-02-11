@@ -14,7 +14,7 @@ export function AnimatedDashboardBackground() {
       <div
         className="absolute w-[500px] h-[500px] rounded-full opacity-[0.04] dark:opacity-[0.06] blur-[100px]"
         style={{
-          background: 'hsl(221 83% 53%)',
+          background: 'hsl(var(--primary))',
           top: '10%',
           right: '-5%',
           animation: 'blob-float 20s ease-in-out infinite',
@@ -23,7 +23,7 @@ export function AnimatedDashboardBackground() {
       <div
         className="absolute w-[400px] h-[400px] rounded-full opacity-[0.04] dark:opacity-[0.06] blur-[100px]"
         style={{
-          background: 'hsl(262 83% 58%)',
+          background: 'hsl(var(--accent))',
           bottom: '15%',
           left: '-5%',
           animation: 'blob-float 25s ease-in-out infinite reverse',
@@ -32,7 +32,7 @@ export function AnimatedDashboardBackground() {
       <div
         className="absolute w-[350px] h-[350px] rounded-full opacity-[0.03] dark:opacity-[0.05] blur-[80px]"
         style={{
-          background: 'hsl(160 84% 39%)',
+          background: 'hsl(var(--success))',
           top: '50%',
           left: '30%',
           animation: 'blob-float 30s ease-in-out infinite 5s',
