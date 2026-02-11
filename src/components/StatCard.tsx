@@ -131,7 +131,7 @@ export function StatCard({
       numericValue = parseFloat(cleanedValue);
     }
     if (numericValue !== null && !isNaN(numericValue) && numericValue !== 0) {
-      return numberToArabicWordsShort(numericValue) + ' ريال';
+      return numberToArabicWordsShort(numericValue) + ' SAR';
     }
     return null;
   };
@@ -260,7 +260,7 @@ export function StatCard({
       {progress != null && (
         <div className="relative mt-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px]" style={{ color: subtitleColor }}>التقدم الشهري</span>
+            <span className="text-[10px]" style={{ color: subtitleColor }}>Monthly Progress</span>
             <span className="text-[10px] font-bold" style={{ color: valueColor }}>{Math.round(progress)}%</span>
           </div>
           <div

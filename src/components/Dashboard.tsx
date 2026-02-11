@@ -351,9 +351,9 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
 
   const buildSalesCarDetails = useCallback((): CarDetailItem[] => {
     // Build details for sales cars
-    return fiscalYearSales.map(sale => ({
+      return fiscalYearSales.map(sale => ({
       id: sale.id,
-      name: sale.car?.name || 'غير محدد',
+      name: sale.car?.name || t.not_specified,
       model: sale.car?.model || '',
       purchasePrice: sale.car?.purchase_price || 0,
       salePrice: sale.sale_price,
@@ -398,7 +398,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         break;
       case 'monthSales':
         data = {
-          title: getCardLabel(cardId, 'مبيعات الشهر'),
+          title: getCardLabel(cardId, t.dashboard_month_sales),
           value: formatCurrency(stats.monthSalesAmount),
           breakdown: [],
           cars: buildSalesCarDetails(),
@@ -411,12 +411,12 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         const totalRevenueValue = profitCars.reduce((sum, c) => sum + (c.salePrice || 0), 0);
         const totalCostValue = profitCars.reduce((sum, c) => sum + c.purchasePrice, 0);
         data = {
-          title: getCardLabel(cardId, 'إجمالي الأرباح'),
+          title: getCardLabel(cardId, t.dashboard_total_profit),
           value: formatCurrency(stats.totalProfit),
           breakdown: [
-            { label: 'إجمالي المبيعات', value: totalRevenueValue, type: 'add' },
-            { label: 'إجمالي تكلفة الشراء', value: totalCostValue, type: 'subtract' },
-            { label: 'صافي الربح', value: totalProfitValue, type: 'total' },
+            { label: t.total_sales_label, value: totalRevenueValue, type: 'add' },
+            { label: t.total_purchase_cost, value: totalCostValue, type: 'subtract' },
+            { label: t.net_profit, value: totalProfitValue, type: 'total' },
           ],
           cars: profitCars,
           showCarsTable: true,
@@ -430,7 +430,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
           return c.saleDate.startsWith(today);
         });
         data = {
-          title: getCardLabel(cardId, 'مبيعات اليوم'),
+          title: getCardLabel(cardId, t.dashboard_today_sales),
           value: stats.todaySales,
           breakdown: [],
           cars: todaySalesCars,
@@ -440,7 +440,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       }
       case 'monthSalesCount': {
         data = {
-          title: getCardLabel(cardId, 'عدد مبيعات الشهر'),
+          title: getCardLabel(cardId, t.dashboard_month_sales_count),
           value: stats.monthSales,
           breakdown: [],
           cars: buildSalesCarDetails(),
@@ -450,9 +450,9 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       }
       case 'allTimePurchases': {
         data = {
-          title: getCardLabel(cardId, 'إجمالي مشتريات الشركة'),
+          title: getCardLabel(cardId, t.all_time_company_purchases),
           value: formatCurrency(allTimeStats?.allTimePurchases || 0),
-          subtitle: `${allTimeStats?.totalCarsCount || 0} وحدة`,
+          subtitle: `${allTimeStats?.totalCarsCount || 0} ${t.unit}`,
           breakdown: [],
           cars: buildPurchaseCarDetails(),
           showCarsTable: true,
@@ -461,9 +461,9 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
       }
       case 'allTimeSales': {
         data = {
-          title: getCardLabel(cardId, 'إجمالي مبيعات الشركة'),
+          title: getCardLabel(cardId, t.all_time_company_sales),
           value: formatCurrency(allTimeStats?.allTimeSales || 0),
-          subtitle: `${allTimeStats?.allTimeSalesCount || 0} عملية بيع`,
+          subtitle: `${allTimeStats?.allTimeSalesCount || 0} ${t.sale_operation}`,
           breakdown: [],
           cars: buildSalesCarDetails(),
           showCarsTable: true,
@@ -504,11 +504,11 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
         <TabsList className="w-full max-w-xs sm:max-w-md grid grid-cols-2 h-8 sm:h-10">
           <TabsTrigger value="overview" className="gap-1 sm:gap-2 text-[11px] sm:text-sm">
             <Package className="w-3 h-3 sm:w-4 sm:h-4" />
-            نظرة عامة
+            {t.tab_overview}
           </TabsTrigger>
           <TabsTrigger value="analytics" className="gap-1 sm:gap-2 text-[11px] sm:text-sm">
             <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
-            التحليلات
+            {t.tab_analytics}
           </TabsTrigger>
         </TabsList>
 
@@ -537,7 +537,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               <PaymentRemindersPopover setActivePage={setActivePage} />
               <div className="h-6 w-px bg-border hidden sm:block" />
               <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-card rounded-lg border border-border">
-                <span className="text-xs sm:text-sm text-muted-foreground hidden md:block">عرض المبالغ:</span>
+                <span className="text-xs sm:text-sm text-muted-foreground hidden md:block">{t.display_amounts}:</span>
                 <AmountDisplaySelector value={amountDisplayMode} onChange={setAmountDisplayMode} />
               </div>
             </div>
@@ -599,7 +599,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   return (
                     <EditableWidgetWrapper key={widget.id} {...props}>
                       <StatCard
-                        title={getCardLabel('monthSales', 'مبيعات الشهر')}
+                        title={getCardLabel('monthSales', t.dashboard_month_sales)}
                         value={formatCurrencyWithMode(getCardValue('monthSales', stats.monthSalesAmount))}
                         icon={TrendingUp}
                         gradient="success"
@@ -618,7 +618,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   return (
                     <EditableWidgetWrapper key={widget.id} {...props}>
                       <StatCard
-                        title={getCardLabel('totalProfit', 'إجمالي الأرباح')}
+                        title={getCardLabel('totalProfit', t.dashboard_total_profit)}
                         value={formatCurrencyWithMode(getCardValue('totalProfit', stats.totalProfit))}
                         icon={DollarSign}
                         gradient="warning"
@@ -629,7 +629,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         animationIndex={getNextAnimIndex()}
                         progress={monthProgress}
                         trend={analytics?.profitTrend?.percentChange}
-                        badge={stats.totalPurchases > 0 ? `هامش ${((stats.totalProfit / stats.totalPurchases) * 100).toFixed(1)}%` : undefined}
+                        badge={stats.totalPurchases > 0 ? `${t.margin} ${((stats.totalProfit / stats.totalPurchases) * 100).toFixed(1)}%` : undefined}
                       />
                     </EditableWidgetWrapper>
                   );
@@ -638,11 +638,11 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   return (
                     <EditableWidgetWrapper key={widget.id} {...props}>
                       <StatCard
-                        title={getCardLabel('todaySales', 'مبيعات اليوم')}
+                        title={getCardLabel('todaySales', t.dashboard_today_sales)}
                         value={getCardValue('todaySales', stats.todaySales)}
                         icon={ShoppingCart}
                         gradient="primary"
-                        subtitle="عملية بيع"
+                        subtitle={t.sale_operation}
                         onClick={() => showStatDetail('todaySales')}
                         {...getCardStyleProps('todaySales')}
                         animationIndex={getNextAnimIndex()}
@@ -654,11 +654,11 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   return (
                     <EditableWidgetWrapper key={widget.id} {...props}>
                       <StatCard
-                        title={getCardLabel('monthSalesCount', 'عدد مبيعات الشهر')}
+                        title={getCardLabel('monthSalesCount', t.dashboard_month_sales_count)}
                         value={getCardValue('monthSalesCount', stats.monthSales)}
                         icon={TrendingUp}
                         gradient="success"
-                        subtitle="عملية بيع"
+                        subtitle={t.sale_operation}
                         onClick={() => showStatDetail('monthSalesCount')}
                         {...getCardStyleProps('monthSalesCount')}
                         animationIndex={getNextAnimIndex()}
@@ -671,7 +671,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   return (
                     <EditableWidgetWrapper key={widget.id} {...props}>
                       <StatCard
-                        title={getCardLabel('allTimePurchases', 'إجمالي مشتريات الشركة')}
+                        title={getCardLabel('allTimePurchases', t.all_time_company_purchases)}
                         value={formatCurrencyWithMode(allTimeStats.allTimePurchases)}
                         icon={Building2}
                         gradient="danger"
@@ -689,7 +689,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                   return (
                     <EditableWidgetWrapper key={widget.id} {...props}>
                       <StatCard
-                        title={getCardLabel('allTimeSales', 'إجمالي مبيعات الشركة')}
+                        title={getCardLabel('allTimeSales', t.all_time_company_sales)}
                         value={formatCurrencyWithMode(allTimeStats.allTimeSales)}
                         icon={TrendingUp}
                         gradient="success"
@@ -796,21 +796,21 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               {/* Trend Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
                 <TrendCard
-                  title="مبيعات هذا الشهر"
+                  title={t.sales_this_month}
                   value={formatCurrency(analytics.salesTrend.thisMonth)}
                   trend={analytics.salesTrend.percentChange}
                   icon={DollarSign}
                   gradient="success"
                 />
                 <TrendCard
-                  title="أرباح هذا الشهر"
+                  title={t.profits_this_month}
                   value={formatCurrency(analytics.profitTrend.thisMonth)}
                   trend={analytics.profitTrend.percentChange}
                   icon={TrendingUp}
                   gradient="primary"
                 />
                 <TrendCard
-                  title="مشتريات هذا الشهر"
+                  title={t.purchases_this_month}
                   value={formatCurrency(analytics.purchasesTrend.thisMonth)}
                   trend={analytics.purchasesTrend.percentChange}
                   icon={ShoppingCart}
@@ -836,12 +836,12 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
                 <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 border border-border/60">
                   <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--primary))' }} />
-                  <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">تحليل الإيرادات والأرباح</h3>
+                  <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">{t.revenue_profit_analysis}</h3>
                   <RevenueAreaChart data={analytics.revenueByMonth} />
                 </div>
                 <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 border border-border/60">
                   <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--success))' }} />
-                  <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">المبيعات مقابل المشتريات</h3>
+                  <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">{t.sales_vs_purchases}</h3>
                   <SalesPurchasesBarChart data={analytics.revenueByMonth} />
                 </div>
               </div>
@@ -850,12 +850,12 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
                 <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 border border-border/60">
                   <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--warning))' }} />
-                  <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">توزيع المخزون</h3>
+                  <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">{t.inventory_distribution}</h3>
                   <InventoryPieChart data={analytics.inventoryByStatus} />
                 </div>
                 <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 border border-border/60">
                   <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--destructive))' }} />
-                  <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">توزيع المصروفات</h3>
+                  <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-3 sm:mb-4">{t.expense_distribution}</h3>
                   <ExpenseDistributionChart
                     custodyExpenses={expenseBreakdown?.custodyExpenses || 0}
                     payrollExpenses={expenseBreakdown?.payrollExpenses || 0}
@@ -887,37 +887,37 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                 {/* Summary Stats */}
                 <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-4 md:p-6 border border-border/60">
                   <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--primary))' }} />
-                  <h3 className="text-lg font-bold text-card-foreground mb-4">ملخص الأداء</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <span className="text-sm text-muted-foreground">إجمالي {industryLabels.itemsName} المتاحة</span>
-                      <span className="font-bold text-primary">{analytics.inventoryByStatus.available}</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <span className="text-sm text-muted-foreground">إجمالي {industryLabels.itemsName} المباعة</span>
-                      <span className="font-bold text-success">{analytics.inventoryByStatus.sold}</span>
-                    </div>
-                    {isCarDealership && (
-                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <span className="text-sm text-muted-foreground">{industryLabels.itemsName} المحولة</span>
-                      <span className="font-bold text-warning">{analytics.inventoryByStatus.transferred}</span>
-                    </div>
-                    )}
-                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <span className="text-sm text-muted-foreground">عدد أفضل العملاء</span>
-                      <span className="font-bold">{analytics.topCustomers.length}</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <span className="text-sm text-muted-foreground">عدد الموردين النشطين</span>
-                      <span className="font-bold">{analytics.topSuppliers.length}</span>
-                    </div>
-                  </div>
+                   <h3 className="text-lg font-bold text-card-foreground mb-4">{t.performance_summary}</h3>
+                   <div className="space-y-4">
+                     <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                       <span className="text-sm text-muted-foreground">{t.total_available} {industryLabels.itemsName}</span>
+                       <span className="font-bold text-primary">{analytics.inventoryByStatus.available}</span>
+                     </div>
+                     <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                       <span className="text-sm text-muted-foreground">{t.total_sold} {industryLabels.itemsName}</span>
+                       <span className="font-bold text-success">{analytics.inventoryByStatus.sold}</span>
+                     </div>
+                     {isCarDealership && (
+                     <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                       <span className="text-sm text-muted-foreground">{industryLabels.itemsName} {t.transferred}</span>
+                       <span className="font-bold text-warning">{analytics.inventoryByStatus.transferred}</span>
+                     </div>
+                     )}
+                     <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                       <span className="text-sm text-muted-foreground">{t.top_customers_count}</span>
+                       <span className="font-bold">{analytics.topCustomers.length}</span>
+                     </div>
+                     <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                       <span className="text-sm text-muted-foreground">{t.active_suppliers_count}</span>
+                       <span className="font-bold">{analytics.topSuppliers.length}</span>
+                     </div>
+                   </div>
                 </div>
               </div>
             </>
           ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              لا توجد بيانات تحليلية متاحة
+             <div className="text-center py-12 text-muted-foreground">
+               {t.no_analytics_data}
             </div>
           )}
         </TabsContent>

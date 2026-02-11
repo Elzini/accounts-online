@@ -76,6 +76,7 @@ export interface TranslationKeys {
   closed_label: string;
   register_company: string;
   no_account: string;
+
   // Navigation / Sidebar
   nav_dashboard: string;
   nav_customers: string;
@@ -294,4 +295,127 @@ export interface TranslationKeys {
   layout_saved: string;
   save_error: string;
   currency_sar_label: string;
+
+  // Dashboard - Additional
+  tab_overview: string;
+  tab_analytics: string;
+  display_amounts: string;
+  amount_base: string;
+  amount_vat_only: string;
+  amount_total: string;
+  amount_without_vat: string;
+  amount_vat: string;
+  amount_with_vat: string;
+  monthly_progress: string;
+  margin: string;
+  sale_operation: string;
+  unit: string;
+  not_specified: string;
+  total_sales_label: string;
+  total_purchase_cost: string;
+  net_profit: string;
+  no_analytics_data: string;
+  sales_this_month: string;
+  profits_this_month: string;
+  purchases_this_month: string;
+  revenue_profit_analysis: string;
+  sales_vs_purchases: string;
+  inventory_distribution: string;
+  expense_distribution: string;
+  performance_summary: string;
+  total_available: string;
+  total_sold: string;
+  transferred: string;
+  top_customers_count: string;
+  active_suppliers_count: string;
+  all_time_company_purchases: string;
+  all_time_company_sales: string;
+
+  // Customize Interface
+  customize_interface: string;
+  customization_options: string;
+  edit_dashboard: string;
+  drag_drop_sections: string;
+  arrange_cards: string;
+  move_resize_cards: string;
+  colors_themes: string;
+  change_interface_colors: string;
+  advanced_effects: string;
+  animations_effects: string;
+
+  // Quick Access
+  quick_access: string;
+  quick_access_subtitle: string;
+  add_customer: string;
+  customer_list: string;
+  treasury: string;
+  receipts: string;
+  banks: string;
+  new_sale_invoice: string;
+  purchase_invoice: string;
+  available_cars: string;
+  inventory_report: string;
+  projects_label: string;
+  contracts_label: string;
+  billings_label: string;
+  add_supplier: string;
+  supplier_list: string;
+  shipments_label: string;
+  lc_label: string;
+  customs_label: string;
+  import_invoice: string;
+  imports_label: string;
+  suppliers_label: string;
+  menu_management_label: string;
+  orders_label: string;
+  available_products: string;
+
+  // Monthly expenses
+  monthly_expenses: string;
+  custody_expenses: string;
+  payroll_expenses: string;
+  rent_expenses: string;
+  other_expenses: string;
+
+  // Industry labels
+  industry_car: string;
+  industry_cars: string;
+  industry_car_unit: string;
+  industry_available_cars: string;
+  industry_car_in_stock: string;
+  industry_project: string;
+  industry_projects: string;
+  industry_project_unit: string;
+  industry_active_projects: string;
+  industry_project_in_progress: string;
+  industry_total_costs: string;
+  industry_contract: string;
+  industry_product: string;
+  industry_products: string;
+  industry_product_unit: string;
+  industry_available_products: string;
+  industry_product_in_stock: string;
+  industry_item: string;
+  industry_items: string;
+  industry_item_unit: string;
+  industry_available_items: string;
+  industry_item_in_menu: string;
+  industry_total_supplies: string;
+  industry_supply_order: string;
+  industry_shipment: string;
+  industry_shipments: string;
+  industry_shipment_unit: string;
+  industry_active_shipments: string;
+  industry_shipment_processing: string;
+  industry_total_imports: string;
+  industry_export_operation: string;
+  industry_sale_operation: string;
+  industry_materials: string;
+  industry_inventory: string;
+
+  // Riyal word
+  riyal: string;
+
+  // Quick actions widget
+  quick_actions: string;
 }
