@@ -236,7 +236,7 @@ export function StatCard({
                 className="text-[10px] font-bold"
                 style={{ color: trendColor || (trend > 0 ? 'hsl(var(--success))' : 'hsl(var(--destructive))') }}
               >
-                {trend > 0 ? '+' : ''}{trend.toFixed(1)}% عن الشهر السابق
+                {trend > 0 ? '+' : ''}{trend.toFixed(1)}%
               </span>
             </div>
           )}
