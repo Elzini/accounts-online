@@ -427,7 +427,22 @@ export interface TranslationKeys {
   my_original_company: string;
   fiscal_year_label: string;
   check_updates: string;
+  checking_updates: string;
   install: string;
+  install_app: string;
+  install_app_tooltip: string;
+  new_update_available: string;
+  update_now: string;
+  update_available_desc: string;
+  no_new_updates: string;
+  using_latest_version: string;
+  check_updates_failed: string;
+  check_internet: string;
+  updating_app: string;
+  page_will_reload: string;
+  update_available_toast: string;
+  click_update_now: string;
+  search_ctrl_k: string;
   company_management: string;
 
   // Page titles & subtitles

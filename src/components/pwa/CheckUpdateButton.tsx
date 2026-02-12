@@ -1,6 +1,7 @@
 import { RefreshCw, Check, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePWAUpdate } from '@/hooks/usePWAUpdate';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import {
   Tooltip,
@@ -10,37 +11,37 @@ import {
 
 export function CheckUpdateButton() {
   const { needRefresh, updateServiceWorker, checkForUpdates, isChecking } = usePWAUpdate();
+  const { t } = useLanguage();
 
   const handleCheck = async () => {
     const result = await checkForUpdates();
     
     if (result.hasUpdate) {
-      toast.success('تحديث جديد متاح!', {
-        description: 'اضغط على "تحديث الآن" لتطبيق التحديث',
+      toast.success(t.new_update_available, {
+        description: t.update_available_desc,
         action: {
-          label: 'تحديث الآن',
+          label: t.update_now,
           onClick: updateServiceWorker,
         },
       });
     } else if (result.error) {
-      toast.error('فشل التحقق من التحديثات', {
-        description: 'تأكد من اتصالك بالإنترنت',
+      toast.error(t.check_updates_failed, {
+        description: t.check_internet,
       });
     } else {
-      toast.info('لا توجد تحديثات جديدة', {
-        description: 'أنت تستخدم أحدث إصدار',
+      toast.info(t.no_new_updates, {
+        description: t.using_latest_version,
       });
     }
   };
 
   const handleUpdate = () => {
     updateServiceWorker();
-    toast.loading('جاري تحديث التطبيق...', {
-      description: 'سيتم إعادة تحميل الصفحة',
+    toast.loading(t.updating_app, {
+      description: t.page_will_reload,
     });
   };
 
-  // If update is available, show update button
   if (needRefresh) {
     return (
       <Tooltip>
@@ -52,11 +53,11 @@ export function CheckUpdateButton() {
             className="gap-2 bg-primary hover:bg-primary/90"
           >
             <AlertCircle className="w-4 h-4" />
-            <span className="hidden sm:inline">تحديث متاح</span>
+            <span className="hidden sm:inline">{t.update_available_toast}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>تحديث جديد متاح - اضغط للتحديث</p>
+          <p>{t.click_update_now}</p>
         </TooltipContent>
       </Tooltip>
     );
@@ -74,12 +75,12 @@ export function CheckUpdateButton() {
         >
           <RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">
-            {isChecking ? 'جاري التحقق...' : 'تحقق من التحديثات'}
+            {isChecking ? t.checking_updates : t.check_updates}
           </span>
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        <p>تحقق من وجود تحديثات جديدة للتطبيق</p>
+        <p>{t.check_updates}</p>
       </TooltipContent>
     </Tooltip>
   );

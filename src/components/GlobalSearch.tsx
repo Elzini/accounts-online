@@ -3,6 +3,7 @@ import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SearchItem {
   id: ActivePage;
@@ -56,6 +57,7 @@ interface GlobalSearchProps {
 }
 
 export function GlobalSearch({ setActivePage }: GlobalSearchProps) {
+  const { t, direction } = useLanguage();
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -122,12 +124,12 @@ export function GlobalSearch({ setActivePage }: GlobalSearchProps) {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-xs" dir="rtl">
+    <div ref={containerRef} className="relative w-full max-w-xs" dir={direction}>
       <div className="relative">
         <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           ref={inputRef}
-          placeholder="بحث... (Ctrl+K)"
+          placeholder={t.search_ctrl_k}
           value={query}
           onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
           onFocus={() => setIsOpen(true)}
