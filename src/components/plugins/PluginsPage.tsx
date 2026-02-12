@@ -7,23 +7,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Puzzle, Download, Settings, Star, Globe, Zap, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlugins, PluginInfo } from '@/hooks/usePlugins';
-
-const CATEGORY_LABELS: Record<string, { ar: string; en: string }> = {
-  accounting: { ar: 'المحاسبة', en: 'Accounting' },
-  hr: { ar: 'الموارد البشرية', en: 'HR' },
-  inventory: { ar: 'المخزون', en: 'Inventory' },
-  reports: { ar: 'التقارير', en: 'Reports' },
-  integrations: { ar: 'التكاملات', en: 'Integrations' },
-  utilities: { ar: 'أدوات', en: 'Utilities' },
-};
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PluginsPageProps {
   setActivePage?: (page: string) => void;
 }
 
 export function PluginsPage({ setActivePage }: PluginsPageProps) {
+  const { t, direction } = useLanguage();
   const { plugins, installedPlugins, activePlugins, availablePlugins, installPlugin, uninstallPlugin, togglePlugin } = usePlugins();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    accounting: t.plugins_category_accounting,
+    hr: t.plugins_category_hr,
+    inventory: t.plugins_category_inventory,
+    reports: t.plugins_category_reports,
+    integrations: t.plugins_category_integrations,
+    utilities: t.plugins_category_utilities,
+  };
 
   const filteredMarketplace = selectedCategory === 'all'
     ? availablePlugins
@@ -31,17 +33,17 @@ export function PluginsPage({ setActivePage }: PluginsPageProps) {
 
   const handleInstall = (pluginId: string) => {
     installPlugin(pluginId);
-    toast.success('تم تثبيت الإضافة بنجاح - يمكنك الوصول إليها من القائمة الجانبية');
+    toast.success(t.plugins_toast_installed);
   };
 
   const handleUninstall = (pluginId: string) => {
     uninstallPlugin(pluginId);
-    toast.success('تم إزالة الإضافة');
+    toast.success(t.plugins_toast_uninstalled);
   };
 
   const handleToggle = (pluginId: string, enabled: boolean) => {
     togglePlugin(pluginId, enabled);
-    toast.success(enabled ? 'تم تفعيل الإضافة' : 'تم تعطيل الإضافة');
+    toast.success(enabled ? t.plugins_toast_enabled : t.plugins_toast_disabled);
   };
 
   const handleGoToPlugin = (plugin: PluginInfo) => {
@@ -85,18 +87,18 @@ export function PluginsPage({ setActivePage }: PluginsPageProps) {
               {plugin.downloads}
             </span>
             <Badge variant="secondary" className="text-xs">
-              {CATEGORY_LABELS[plugin.category]?.ar}
+              {CATEGORY_LABELS[plugin.category]}
             </Badge>
           </div>
           <div className="flex gap-2">
             {plugin.installed && plugin.enabled && (
               <Button size="sm" variant="outline" onClick={() => handleGoToPlugin(plugin)}>
-                فتح
+                {t.plugins_open}
               </Button>
             )}
             {!plugin.installed ? (
               <Button size="sm" onClick={() => handleInstall(plugin.id)}>
-                <Download className="w-3 h-3 me-1" /> تثبيت
+                <Download className="w-3 h-3 me-1" /> {t.plugins_install}
               </Button>
             ) : (
               <Button
@@ -104,7 +106,7 @@ export function PluginsPage({ setActivePage }: PluginsPageProps) {
                 variant="destructive"
                 onClick={() => handleUninstall(plugin.id)}
               >
-                إزالة
+                {t.plugins_uninstall}
               </Button>
             )}
           </div>
@@ -114,23 +116,23 @@ export function PluginsPage({ setActivePage }: PluginsPageProps) {
   );
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in" dir={direction}>
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
           <Puzzle className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">الإضافات والتوسعات</h1>
-          <p className="text-muted-foreground">تخصيص النظام بإضافات ووحدات جاهزة</p>
+          <h1 className="text-3xl font-bold text-foreground">{t.plugins_title}</h1>
+          <p className="text-muted-foreground">{t.plugins_subtitle}</p>
         </div>
         <div className="ms-auto flex gap-2">
           <Badge variant="outline" className="gap-1">
             <Package className="w-3 h-3" />
-            {installedPlugins.length} مثبتة
+            {installedPlugins.length} {t.plugins_installed_count}
           </Badge>
           <Badge variant="secondary" className="gap-1">
             <Zap className="w-3 h-3" />
-            {activePlugins.length} نشطة
+            {activePlugins.length} {t.plugins_active_count}
           </Badge>
         </div>
       </div>
@@ -138,10 +140,10 @@ export function PluginsPage({ setActivePage }: PluginsPageProps) {
       <Tabs defaultValue="installed" className="w-full">
         <TabsList>
           <TabsTrigger value="installed" className="gap-2">
-            <Settings className="w-4 h-4" /> المثبتة ({installedPlugins.length})
+            <Settings className="w-4 h-4" /> {t.plugins_tab_installed} ({installedPlugins.length})
           </TabsTrigger>
           <TabsTrigger value="marketplace" className="gap-2">
-            <Globe className="w-4 h-4" /> المتجر ({availablePlugins.length})
+            <Globe className="w-4 h-4" /> {t.plugins_tab_marketplace} ({availablePlugins.length})
           </TabsTrigger>
         </TabsList>
 
@@ -150,8 +152,8 @@ export function PluginsPage({ setActivePage }: PluginsPageProps) {
             <Card>
               <CardContent className="py-12 text-center">
                 <Puzzle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">لم يتم تثبيت أي إضافات بعد</p>
-                <p className="text-sm text-muted-foreground mt-1">تصفح المتجر لاكتشاف الإضافات المتاحة</p>
+                <p className="text-muted-foreground">{t.plugins_no_installed}</p>
+                <p className="text-sm text-muted-foreground mt-1">{t.plugins_browse_marketplace}</p>
               </CardContent>
             </Card>
           ) : (
@@ -168,7 +170,7 @@ export function PluginsPage({ setActivePage }: PluginsPageProps) {
               size="sm"
               onClick={() => setSelectedCategory('all')}
             >
-              الكل
+              {t.plugins_filter_all}
             </Button>
             {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
               <Button
@@ -177,7 +179,7 @@ export function PluginsPage({ setActivePage }: PluginsPageProps) {
                 size="sm"
                 onClick={() => setSelectedCategory(key)}
               >
-                {label.ar}
+                {label}
               </Button>
             ))}
           </div>
@@ -185,7 +187,7 @@ export function PluginsPage({ setActivePage }: PluginsPageProps) {
             <Card>
               <CardContent className="py-12 text-center">
                 <Puzzle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">لا توجد إضافات متاحة في هذا التصنيف</p>
+                <p className="text-muted-foreground">{t.plugins_no_results}</p>
               </CardContent>
             </Card>
           ) : (
