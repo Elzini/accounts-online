@@ -30,8 +30,8 @@ interface StatCardProps {
 
 const gradientThemes = {
   primary: {
-    border: 'hsl(var(--primary))',
-    iconBg: 'hsl(var(--primary) / 0.10)',
+    headerBg: 'hsl(var(--primary))',
+    iconBg: 'hsl(var(--primary) / 0.08)',
     iconColor: 'hsl(var(--primary))',
     progressTrack: 'hsl(var(--primary) / 0.08)',
     progressBar: 'hsl(var(--primary))',
@@ -39,8 +39,8 @@ const gradientThemes = {
     trendDownBg: 'hsl(var(--destructive) / 0.10)',
   },
   success: {
-    border: 'hsl(var(--success))',
-    iconBg: 'hsl(var(--success) / 0.10)',
+    headerBg: 'hsl(var(--success))',
+    iconBg: 'hsl(var(--success) / 0.08)',
     iconColor: 'hsl(var(--success))',
     progressTrack: 'hsl(var(--success) / 0.08)',
     progressBar: 'hsl(var(--success))',
@@ -48,8 +48,8 @@ const gradientThemes = {
     trendDownBg: 'hsl(var(--destructive) / 0.10)',
   },
   warning: {
-    border: 'hsl(var(--warning))',
-    iconBg: 'hsl(var(--warning) / 0.10)',
+    headerBg: 'hsl(var(--warning))',
+    iconBg: 'hsl(var(--warning) / 0.08)',
     iconColor: 'hsl(var(--warning))',
     progressTrack: 'hsl(var(--warning) / 0.08)',
     progressBar: 'hsl(var(--warning))',
@@ -57,20 +57,14 @@ const gradientThemes = {
     trendDownBg: 'hsl(var(--destructive) / 0.10)',
   },
   danger: {
-    border: 'hsl(var(--destructive))',
-    iconBg: 'hsl(var(--destructive) / 0.10)',
+    headerBg: 'hsl(var(--destructive))',
+    iconBg: 'hsl(var(--destructive) / 0.08)',
     iconColor: 'hsl(var(--destructive))',
     progressTrack: 'hsl(var(--destructive) / 0.08)',
     progressBar: 'hsl(var(--destructive))',
     trendUpBg: 'hsl(var(--success) / 0.10)',
     trendDownBg: 'hsl(var(--destructive) / 0.10)',
   },
-};
-
-const sizeClasses = {
-  small: 'p-3 sm:p-4',
-  medium: 'p-4 sm:p-5',
-  large: 'p-5 sm:p-6',
 };
 
 export function StatCard({
@@ -136,132 +130,138 @@ export function StatCard({
 
   const arabicWords = getArabicWords();
 
-  // Colors based on mode
-  const titleColor = textColor || (useGradientMode ? 'rgba(255,255,255,0.80)' : 'hsl(var(--muted-foreground))');
-  const valueColor = textColor || (useGradientMode ? 'white' : 'hsl(var(--foreground))');
-  const subtitleColor = textColor ? `${textColor}99` : (useGradientMode ? 'rgba(255,255,255,0.60)' : 'hsl(var(--muted-foreground))');
-  const arabicWordsColor = textColor ? `${textColor}80` : (useGradientMode ? 'rgba(255,255,255,0.50)' : 'hsl(var(--muted-foreground) / 0.6)');
-
   // Trend display
   const showTrendIndicator = showTrend && trend != null && trend !== 0;
   const trendIsUp = trend != null && trend > 0;
   const trendIsDown = trend != null && trend < 0;
   const TrendIcon = trendIsUp ? TrendUpIcon : trendIsDown ? TrendDownIcon : Minus;
   const trendDisplayColor = trendColor || (trendIsUp ? 'hsl(var(--success))' : trendIsDown ? 'hsl(var(--destructive))' : 'hsl(var(--muted-foreground))');
-  const trendBgColor = useGradientMode
-    ? (trendIsUp ? 'rgba(34,197,94,0.20)' : trendIsDown ? 'rgba(239,68,68,0.20)' : 'rgba(255,255,255,0.15)')
-    : (trendIsUp ? theme.trendUpBg : trendIsDown ? theme.trendDownBg : 'hsl(var(--muted) / 0.5)');
+
+  // Colors based on mode
+  const valueColor = textColor || (useGradientMode ? 'white' : 'hsl(var(--foreground))');
+  const subtitleColor = textColor ? `${textColor}99` : (useGradientMode ? 'rgba(255,255,255,0.60)' : 'hsl(var(--muted-foreground))');
+  const arabicWordsColor = textColor ? `${textColor}80` : (useGradientMode ? 'rgba(255,255,255,0.50)' : 'hsl(var(--muted-foreground) / 0.6)');
 
   return (
     <div
       ref={cardRef}
-      className={cn(
-        'relative overflow-hidden rounded-xl group cursor-pointer border',
-        sizeClasses[size],
-      )}
+      className="relative overflow-hidden rounded-xl group cursor-pointer border"
       style={{
         background: hasCustomGradient
           ? `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`
           : bgColor || 'hsl(var(--card))',
-        borderColor: useGradientMode ? 'transparent' : 'hsl(var(--border) / 0.6)',
+        borderColor: useGradientMode ? 'transparent' : 'hsl(var(--border) / 0.5)',
         height: height ? `${height}px` : undefined,
-        minHeight: height ? `${height}px` : (size === 'small' ? '100px' : size === 'large' ? '140px' : '120px'),
+        minHeight: height ? `${height}px` : (size === 'small' ? '120px' : size === 'large' ? '160px' : '140px'),
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(16px) scale(0.98)',
         transition: 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s ease-out, box-shadow 0.3s ease',
-        boxShadow: 'var(--shadow-sm)',
+        boxShadow: '0 1px 3px 0 hsl(var(--foreground) / 0.04), 0 1px 2px -1px hsl(var(--foreground) / 0.04)',
       }}
       onClick={onClick}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
-        e.currentTarget.style.transform = 'translateY(-3px) scale(1.01)';
+        e.currentTarget.style.boxShadow = '0 10px 25px -5px hsl(var(--foreground) / 0.08), 0 4px 10px -6px hsl(var(--foreground) / 0.04)';
+        e.currentTarget.style.transform = 'translateY(-2px) scale(1.01)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+        e.currentTarget.style.boxShadow = '0 1px 3px 0 hsl(var(--foreground) / 0.04), 0 1px 2px -1px hsl(var(--foreground) / 0.04)';
         e.currentTarget.style.transform = 'translateY(0) scale(1)';
       }}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? e => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
     >
-      {/* Colored top border stripe */}
+      {/* Colored Header Band with Title */}
       {!useGradientMode && (
         <div
-          className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl"
-          style={{ backgroundColor: theme.border }}
-        />
-      )}
-
-      {/* Main Content - Vertical Stack */}
-      <div className="relative flex flex-col h-full justify-between gap-2">
-        {/* Top: Icon + Title row */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110"
-              style={{
-                backgroundColor: useGradientMode ? 'rgba(255,255,255,0.15)' : theme.iconBg,
-              }}
-            >
-              <Icon
-                className="w-4.5 h-4.5 sm:w-5 sm:h-5"
-                style={{ color: useGradientMode ? 'white' : theme.iconColor }}
-              />
-            </div>
-            <p
-              className="font-medium truncate leading-tight"
-              style={{ fontSize: `clamp(0.68rem, ${0.45 * fontScale}vw + 0.3rem, ${0.78 * fontScale}rem)`, color: titleColor }}
-            >
-              {title}
-            </p>
-          </div>
-
-          {/* Trend indicator - top right */}
+          className="px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between"
+          style={{ backgroundColor: theme.headerBg }}
+        >
+          <p
+            className="font-semibold text-white truncate leading-tight"
+            style={{ fontSize: `clamp(0.7rem, ${0.48 * fontScale}vw + 0.3rem, ${0.82 * fontScale}rem)` }}
+          >
+            {title}
+          </p>
           {showTrendIndicator && (
-            <div
-              className="flex items-center gap-1 px-1.5 py-0.5 rounded-md shrink-0"
-              style={{ backgroundColor: trendBgColor }}
-            >
-              <TrendIcon className="w-3 h-3" style={{ color: trendDisplayColor }} />
-              <span className="text-[10px] font-semibold" style={{ color: trendDisplayColor }}>
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md shrink-0 bg-white/20">
+              <TrendIcon className="w-3 h-3 text-white" />
+              <span className="text-[10px] font-semibold text-white">
                 {Math.abs(trend!).toFixed(1)}%
               </span>
             </div>
           )}
         </div>
+      )}
 
-        {/* Center: Main Value */}
-        <div className="flex-1 flex flex-col justify-center">
+      {/* For gradient mode - show title inline */}
+      {useGradientMode && (
+        <div className="px-3 sm:px-4 pt-3 sm:pt-4 flex items-center justify-between">
           <p
-            className="font-bold tracking-tight leading-none"
-            style={{
-              fontSize: `clamp(1.1rem, ${1.1 * fontScale}vw + 0.5rem, ${1.75 * fontScale}rem)`,
-              color: valueColor,
-              wordBreak: 'break-word',
-              overflowWrap: 'break-word',
-              whiteSpace: 'normal',
-            }}
-            title={typeof value === 'string' ? value : String(value)}
+            className="font-semibold truncate leading-tight"
+            style={{ fontSize: `clamp(0.7rem, ${0.48 * fontScale}vw + 0.3rem, ${0.82 * fontScale}rem)`, color: textColor || 'rgba(255,255,255,0.85)' }}
           >
-            {value}
+            {title}
           </p>
-          {arabicWords && (
-            <p
-              className="mt-0.5 leading-tight"
-              style={{ fontSize: `${0.65 * fontScale}rem`, color: arabicWordsColor }}
-            >
-              {arabicWords}
-            </p>
+          {showTrendIndicator && (
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md shrink-0 bg-white/20">
+              <TrendIcon className="w-3 h-3" style={{ color: 'white' }} />
+              <span className="text-[10px] font-semibold" style={{ color: 'white' }}>
+                {Math.abs(trend!).toFixed(1)}%
+              </span>
+            </div>
           )}
+        </div>
+      )}
+
+      {/* Card Body */}
+      <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-3 sm:pt-4 flex flex-col flex-1 justify-between gap-2">
+        {/* Icon + Value */}
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110"
+            style={{
+              backgroundColor: useGradientMode ? 'rgba(255,255,255,0.15)' : theme.iconBg,
+            }}
+          >
+            <Icon
+              className="w-5 h-5 sm:w-6 sm:h-6"
+              style={{ color: useGradientMode ? 'white' : theme.iconColor }}
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p
+              className="font-bold tracking-tight leading-none"
+              style={{
+                fontSize: `clamp(1.25rem, ${1.2 * fontScale}vw + 0.6rem, ${2 * fontScale}rem)`,
+                color: valueColor,
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+                whiteSpace: 'normal',
+              }}
+              title={typeof value === 'string' ? value : String(value)}
+            >
+              {value}
+            </p>
+            {arabicWords && (
+              <p
+                className="mt-0.5 leading-tight"
+                style={{ fontSize: `${0.65 * fontScale}rem`, color: arabicWordsColor }}
+              >
+                {arabicWords}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Bottom: Subtitle + Badge */}
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 mt-1">
           {subtitle && (
             <p
-              className="truncate leading-tight"
-              style={{ fontSize: `clamp(0.6rem, ${0.38 * fontScale}vw + 0.25rem, ${0.68 * fontScale}rem)`, color: subtitleColor }}
+              className="truncate leading-tight flex items-center gap-1.5"
+              style={{ fontSize: `clamp(0.65rem, ${0.4 * fontScale}vw + 0.28rem, ${0.72 * fontScale}rem)`, color: subtitleColor }}
             >
+              <span className="inline-block w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: useGradientMode ? 'rgba(255,255,255,0.4)' : theme.headerBg }} />
               {subtitle}
             </p>
           )}
@@ -281,13 +281,13 @@ export function StatCard({
 
       {/* Progress bar */}
       {progress != null && (
-        <div className="relative mt-2">
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4">
           <div className="flex items-center justify-between mb-1">
             <span className="text-[10px]" style={{ color: subtitleColor }}>{t.monthly_progress}</span>
             <span className="text-[10px] font-bold" style={{ color: valueColor }}>{Math.round(progress)}%</span>
           </div>
           <div
-            className="h-1 rounded-full overflow-hidden"
+            className="h-1.5 rounded-full overflow-hidden"
             style={{ background: useGradientMode ? 'rgba(255,255,255,0.10)' : theme.progressTrack }}
           >
             <div
