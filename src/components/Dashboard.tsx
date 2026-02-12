@@ -57,10 +57,11 @@ import { ReportsWidget } from './dashboard/widgets/ReportsWidget';
 interface DashboardProps {
   stats: any;
   setActivePage: (page: ActivePage) => void;
+  isLoading?: boolean;
 }
 
 
-export function Dashboard({ stats, setActivePage }: DashboardProps) {
+export function Dashboard({ stats, setActivePage, isLoading = false }: DashboardProps) {
   const queryClient = useQueryClient();
   const { data: chartData, isLoading: chartLoading } = useMonthlyChartData();
   const { data: analytics, isLoading: analyticsLoading } = useAdvancedAnalytics();
@@ -544,7 +545,25 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             </div>
           </div>
 
-           {/* Dynamic Dashboard Grid - rendered in sorted order */}
+          {isLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="rounded-xl border border-border/50 overflow-hidden animate-pulse">
+                  <div className="h-9 bg-muted/60" />
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-muted/40" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-6 bg-muted/40 rounded w-2/3" />
+                        <div className="h-3 bg-muted/30 rounded w-1/2" />
+                      </div>
+                    </div>
+                    <div className="h-3 bg-muted/20 rounded w-1/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
           <div 
             className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5"
             onDrop={isEditMode ? handleGridDrop : undefined}
@@ -784,6 +803,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
               }
             })}
           </div>
+          )}
         </TabsContent>
 
         {/* Advanced Analytics Tab */}
