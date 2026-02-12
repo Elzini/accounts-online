@@ -42,16 +42,16 @@ export function calculateDisplayAmount(storedAmount: number, mode: AmountDisplay
   }
 }
 
-// These need language context so we use a hook-compatible approach
-// For static usage, we provide both ar/en
-export function getDisplayModeLabel(mode: AmountDisplayMode): string {
+// Language-aware display mode label
+export function getDisplayModeLabel(mode: AmountDisplayMode, language?: string): string {
+  const isAr = language === 'ar' || language === undefined;
   switch (mode) {
     case 'base':
-      return 'بدون ضريبة';
+      return isAr ? 'بدون ضريبة' : 'Excl. VAT';
     case 'vat':
-      return 'الضريبة';
+      return isAr ? 'الضريبة' : 'VAT';
     case 'total':
     default:
-      return 'شامل الضريبة';
+      return isAr ? 'شامل الضريبة' : 'Incl. VAT';
   }
 }
