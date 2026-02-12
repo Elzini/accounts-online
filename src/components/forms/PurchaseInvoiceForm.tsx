@@ -42,6 +42,7 @@ import { InvoiceSearchBar } from './InvoiceSearchBar';
 import { useItems, useUnits } from '@/hooks/useInventory';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PurchaseInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -49,7 +50,7 @@ interface PurchaseInvoiceFormProps {
 
 interface PurchaseInventoryItem {
   id: string;
-  item_id: string | null; // null for new items
+  item_id: string | null;
   item_name: string;
   barcode: string;
   unit_name: string;
@@ -69,17 +70,6 @@ interface CarItem {
   unit: string;
 }
 
-const createEmptyCar = (): CarItem => ({
-  id: crypto.randomUUID(),
-  chassis_number: '',
-  name: '',
-  model: '',
-  color: '',
-  purchase_price: '',
-  quantity: 1,
-  unit: 'سيارة',
-});
-
 export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps) {
   const { data: suppliers = [] } = useSuppliers();
   const { data: taxSettings } = useTaxSettings();
@@ -92,11 +82,25 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const updateCar = useUpdateCar();
   const deleteCar = useDeleteCar();
   const companyId = useCompanyId();
+  const { t, language } = useLanguage();
 
   // Inventory hooks
   const { data: inventoryItems = [] } = useItems();
   const { data: units = [] } = useUnits();
   const isCarDealership = company?.company_type === 'car_dealership';
+  const locale = language === 'ar' ? 'ar-SA' : 'en-SA';
+  const currency = t.inv_sar;
+
+  const createEmptyCar = (): CarItem => ({
+    id: crypto.randomUUID(),
+    chassis_number: '',
+    name: '',
+    model: '',
+    color: '',
+    purchase_price: '',
+    quantity: 1,
+    unit: t.inv_car_unit,
+  });
 
   // Inventory items state for non-car companies
   const [purchaseInventoryItems, setPurchaseInventoryItems] = useState<PurchaseInventoryItem[]>([]);
@@ -106,7 +110,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     item_id: null,
     item_name: '',
     barcode: '',
-    unit_name: 'وحدة',
+    unit_name: t.inv_unit,
     unit_id: null,
     purchase_price: '',
     quantity: 1,
@@ -124,7 +128,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       item_id: item.id,
       item_name: item.name,
       barcode: item.barcode || '',
-      unit_name: item.units_of_measure?.abbreviation || item.units_of_measure?.name || 'وحدة',
+      unit_name: item.units_of_measure?.abbreviation || item.units_of_measure?.name || t.inv_unit,
       unit_id: item.unit_id,
       purchase_price: String(item.cost_price || ''),
       quantity: 1,
@@ -133,7 +137,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
   const handleRemoveInventoryItem = (id: string) => {
     if (purchaseInventoryItems.length === 1) {
-      toast.error('يجب إضافة صنف واحد على الأقل');
+      toast.error(t.inv_toast_min_one_item);
       return;
     }
     setPurchaseInventoryItems(purchaseInventoryItems.filter(i => i.id !== id));
@@ -145,7 +149,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     ));
   };
 
-  // Filter purchase batches by fiscal year and sort from oldest to newest
+  // Filter purchase batches by fiscal year and sort
   const fiscalYearFilteredBatches = useMemo(() => {
     let filtered = purchaseBatches;
     
@@ -161,7 +165,6 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       });
     }
     
-    // Sort by purchase_date (ascending) - oldest first, then by created_at
     return [...filtered].sort((a, b) => {
       const dateA = new Date(a.purchase_date).getTime();
       const dateB = new Date(b.purchase_date).getTime();
@@ -170,7 +173,6 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     });
   }, [purchaseBatches, selectedFiscalYear]);
 
-  // Also keep filtered cars for other uses
   const fiscalYearFilteredCars = useMemo(() => {
     if (!selectedFiscalYear) return existingCars;
     
@@ -185,7 +187,6 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     });
   }, [existingCars, selectedFiscalYear]);
 
-  // Generate next invoice number based on batches
   const nextInvoiceNumber = useMemo(() => {
     return purchaseBatches.length + 1;
   }, [purchaseBatches]);
@@ -196,12 +197,11 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     purchase_date: new Date().toISOString().split('T')[0],
     due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     payment_account_id: '',
-    warehouse: 'الرئيسي',
+    warehouse: 'main',
     notes: '',
     price_includes_tax: true,
   });
 
-  // Set default payment account (الصندوق الرئيسي)
   useEffect(() => {
     if (accounts.length > 0 && !invoiceData.payment_account_id) {
       const cashAccount = accounts.find(a => a.code === '1101');
@@ -231,7 +231,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
   const handleRemoveCar = (id: string) => {
     if (cars.length === 1) {
-      toast.error('يجب إضافة سيارة واحدة على الأقل');
+      toast.error(t.inv_toast_min_one_car);
       return;
     }
     setCars(cars.filter(car => car.id !== id));
@@ -243,7 +243,6 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     ));
   };
 
-  // Calculate totals - supports both cars and inventory items
   const calculations = useMemo(() => {
     let subtotal = 0;
     let totalVAT = 0;
@@ -264,21 +263,18 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       return { baseAmount, vatAmount, total };
     };
 
-    // Car items
     const itemsWithCalc = cars.map(car => {
       const price = parseFloat(car.purchase_price) || 0;
       const result = calcItem(price, car.quantity || 1);
       return { ...car, ...result };
     });
 
-    // Inventory items
     const inventoryItemsWithCalc = purchaseInventoryItems.map(item => {
       const price = parseFloat(item.purchase_price) || 0;
       const result = calcItem(price, item.quantity || 1);
       return { ...item, ...result };
     });
 
-    // Calculate discount
     let discountAmount = 0;
     if (discountType === 'percentage') {
       discountAmount = subtotal * (discount / 100);
@@ -302,7 +298,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   }, [cars, purchaseInventoryItems, invoiceData.price_includes_tax, taxRate, discount, discountType]);
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat(locale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);
@@ -310,24 +306,23 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
   const handleSubmit = async () => {
     if (!invoiceData.supplier_id) {
-      toast.error('الرجاء اختيار المورد');
+      toast.error(t.inv_toast_select_supplier);
       return;
     }
 
     if (isCarDealership) {
-      // Car dealership flow (existing logic)
       const invalidCar = cars.find(car => 
         !car.chassis_number || !car.name || !car.purchase_price
       );
       if (invalidCar) {
-        toast.error('الرجاء ملء جميع الحقول المطلوبة لكل سيارة');
+        toast.error(t.inv_toast_fill_fields);
         return;
       }
 
       const chassisNumbers = cars.map(car => car.chassis_number);
       const duplicates = chassisNumbers.filter((item, index) => chassisNumbers.indexOf(item) !== index);
       if (duplicates.length > 0) {
-        toast.error('يوجد تكرار في أرقام الهيكل');
+        toast.error(t.inv_toast_duplicate_chassis);
         return;
       }
 
@@ -357,33 +352,31 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           cars: cars,
         });
         
-        toast.success(`تم إضافة ${cars.length} سيارة للمخزون بنجاح`);
+        toast.success(t.inv_toast_purchase_success);
         setInvoiceOpen(true);
       } catch (error: any) {
         if (error.message?.includes('duplicate')) {
-          toast.error('أحد أرقام الهيكل موجود مسبقاً');
+          toast.error(t.inv_toast_duplicate_exists);
         } else {
           console.error('Purchase batch error:', error);
-          toast.error('حدث خطأ أثناء إضافة السيارات');
+          toast.error(t.inv_toast_purchase_error);
         }
       }
     } else {
-      // Inventory items flow
       if (purchaseInventoryItems.length === 0) {
-        toast.error('الرجاء إضافة صنف واحد على الأقل');
+        toast.error(t.inv_toast_add_item);
         return;
       }
       const invalidItem = purchaseInventoryItems.find(i => !i.purchase_price || parseFloat(i.purchase_price) <= 0);
       if (invalidItem) {
-        toast.error('الرجاء إدخال سعر الشراء لجميع الأصناف');
+        toast.error(t.inv_toast_enter_item_price);
         return;
       }
 
       try {
-        if (!companyId) throw new Error('لا يمكن العثور على الشركة');
+        if (!companyId) throw new Error(t.inv_toast_company_not_found);
         const invoiceNumber = `PUR-${Date.now()}`;
 
-        // Create purchase invoice
         const { data: invoice, error: invoiceError } = await supabase
           .from('invoices')
           .insert({
@@ -411,7 +404,6 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
         if (invoiceError) throw invoiceError;
 
-        // Create invoice items (triggers auto stock update via DB trigger)
         const invoiceItems = purchaseInventoryItems.map((item, index) => ({
           invoice_id: invoice.id,
           item_description: item.item_name,
@@ -430,11 +422,11 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         if (itemsError) throw itemsError;
 
         setSavedBatchData({ batch: { id: invoice.id }, supplier: selectedSupplier, inventoryItems: purchaseInventoryItems });
-        toast.success(`تم إصدار فاتورة شراء ${purchaseInventoryItems.length} صنف بنجاح`);
+        toast.success(t.inv_toast_purchase_inv_success);
         setInvoiceOpen(true);
       } catch (error: any) {
         console.error('Purchase invoice error:', error);
-        toast.error('حدث خطأ أثناء إصدار فاتورة الشراء');
+        toast.error(t.inv_toast_purchase_inv_error);
       }
     }
   };
@@ -446,7 +438,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       purchase_date: new Date().toISOString().split('T')[0],
       due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       payment_account_id: accounts.find(a => a.code === '1101')?.id || '',
-      warehouse: 'الرئيسي',
+      warehouse: 'main',
       notes: '',
       price_includes_tax: true,
     });
@@ -464,7 +456,6 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     }
   };
 
-  // Navigation functions - use fiscal year filtered batches (not individual cars)
   const handleFirstPurchase = () => {
     if (fiscalYearFilteredBatches.length > 0) {
       setCurrentInvoiceIndex(0);
@@ -500,19 +491,17 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     setIsViewingExisting(true);
     setCurrentBatchId(batch.id);
     
-    // When loading existing data, the stored price is the BASE price (without tax)
     setInvoiceData({
       invoice_number: String(currentInvoiceIndex + 1),
       supplier_id: batch.supplier_id || '',
       purchase_date: batch.purchase_date,
       due_date: batch.purchase_date,
       payment_account_id: batch.payment_account_id || '',
-      warehouse: 'الرئيسي',
+      warehouse: 'main',
       notes: batch.notes || '',
-      price_includes_tax: false, // Stored price is BASE price, not inclusive
+      price_includes_tax: false,
     });
 
-    // Load all cars in this batch
     const batchCars = batch.cars || [];
     if (batchCars.length > 0) {
       setCars(batchCars.map((car: any) => ({
@@ -523,72 +512,65 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         color: car.color || '',
         purchase_price: String(car.purchase_price),
         quantity: 1,
-        unit: 'سيارة',
+        unit: t.inv_car_unit,
       })));
     } else {
       setCars([createEmptyCar()]);
     }
   };
 
-  // Handle delete purchase batch
   const handleDeletePurchase = async () => {
     if (!currentBatchId) return;
     
     const batch = purchaseBatches.find(b => b.id === currentBatchId);
     if (!batch) return;
     
-    // Check if any car in this batch is sold
     const batchCars = batch.cars || [];
     const hasSoldCars = batchCars.some((car: any) => car.status === 'sold');
     
     if (hasSoldCars) {
-      toast.error('لا يمكن حذف فاتورة تحتوي على سيارات مباعة');
+      toast.error(t.inv_toast_cannot_delete_sold);
       return;
     }
     
     try {
-      // Delete all cars in the batch
       for (const car of batchCars) {
         await deleteCar.mutateAsync(car.id);
       }
-      toast.success('تم حذف فاتورة الشراء بنجاح');
+      toast.success(t.inv_toast_purchase_delete_success);
       setDeleteDialogOpen(false);
       handleNewInvoice();
     } catch (error) {
-      toast.error('حدث خطأ أثناء حذف الفاتورة');
+      toast.error(t.inv_toast_delete_error);
     }
   };
 
-  // Handle reverse purchase (same as delete for purchases)
   const handleReversePurchase = async () => {
     if (!currentBatchId) return;
     
     const batch = purchaseBatches.find(b => b.id === currentBatchId);
     if (!batch) return;
     
-    // Check if any car in this batch is sold
     const batchCars = batch.cars || [];
     const hasSoldCars = batchCars.some((car: any) => car.status === 'sold');
     
     if (hasSoldCars) {
-      toast.error('لا يمكن إرجاع فاتورة تحتوي على سيارات مباعة');
+      toast.error(t.inv_toast_cannot_reverse_sold);
       return;
     }
     
     try {
-      // Delete all cars in the batch
       for (const car of batchCars) {
         await deleteCar.mutateAsync(car.id);
       }
-      toast.success('تم إرجاع فاتورة الشراء بنجاح وحذف السيارات من المخزون');
+      toast.success(t.inv_toast_purchase_reverse_success);
       setReverseDialogOpen(false);
       handleNewInvoice();
     } catch (error) {
-      toast.error('حدث خطأ أثناء إرجاع الفاتورة');
+      toast.error(t.inv_toast_reverse_error);
     }
   };
 
-  // Handle update purchase - update all cars in the batch
   const handleUpdatePurchase = async () => {
     if (!currentBatchId) return;
 
@@ -597,14 +579,12 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     
     const batchCars = batch.cars || [];
 
-    // For now, just show a message. In a full implementation, we would update each car
     if (cars.length === 0 || !cars[0].chassis_number || !cars[0].name) {
-      toast.error('الرجاء ملء جميع الحقول المطلوبة');
+      toast.error(t.inv_toast_fill_fields);
       return;
     }
 
     try {
-      // Update each car in the batch
       for (let i = 0; i < cars.length && i < batchCars.length; i++) {
         const carData = cars[i];
         const existingCar = batchCars[i];
@@ -623,13 +603,12 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           }
         });
       }
-      toast.success('تم تحديث بيانات الفاتورة بنجاح');
+      toast.success(t.inv_toast_purchase_update_success);
     } catch (error) {
-      toast.error('حدث خطأ أثناء تحديث البيانات');
+      toast.error(t.inv_toast_purchase_update_error);
     }
   };
 
-  // Handle print existing invoice
   const handlePrintExisting = () => {
     if (!currentBatchId) return;
     
@@ -644,18 +623,17 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     setInvoiceOpen(true);
   };
 
-  // Prepare invoice preview data
   const invoicePreviewData = useMemo(() => {
     if (!savedBatchData) return null;
 
     return {
       invoiceNumber: savedBatchData.batch?.id?.slice(0, 8) || nextInvoiceNumber,
       invoiceDate: invoiceData.purchase_date,
-      supplierName: selectedSupplier?.name || 'المورد',
+      supplierName: selectedSupplier?.name || '',
       supplierTaxNumber: selectedSupplier?.registration_number || '',
       supplierAddress: selectedSupplier?.address || '',
       supplierPhone: selectedSupplier?.phone || '',
-      companyName: taxSettings?.company_name_ar || company?.name || 'الشركة',
+      companyName: taxSettings?.company_name_ar || company?.name || '',
       companyTaxNumber: taxSettings?.tax_number || '',
       companyAddress: taxSettings?.national_address || company?.address || '',
       items: calculations.items.map(car => ({
@@ -674,6 +652,8 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     };
   }, [savedBatchData, invoiceData, selectedSupplier, calculations, taxSettings, company, taxRate, nextInvoiceNumber]);
 
+  const dir = language === 'ar' ? 'rtl' : 'ltr';
+
   return (
     <>
       <div className="max-w-full mx-auto animate-fade-in p-2 sm:p-4">
@@ -682,7 +662,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           <div className="bg-primary text-primary-foreground p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <FileText className="w-6 h-6" />
-              <h1 className="text-xl font-bold">فاتورة مشتريات</h1>
+              <h1 className="text-xl font-bold">{t.inv_purchase_invoice}</h1>
             </div>
             <Button 
               variant="ghost" 
@@ -702,7 +682,6 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               suppliers={suppliers}
               onSelectResult={(result) => {
                 if (result.type === 'invoice' || result.type === 'car') {
-                  // Find the batch that contains this car
                   const car = result.data;
                   const batchIndex = fiscalYearFilteredBatches.findIndex(b => 
                     b.cars?.some((c: any) => c.id === car.id)
@@ -712,7 +691,6 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                     loadBatchData(fiscalYearFilteredBatches[batchIndex]);
                   }
                 } else if (result.type === 'supplier') {
-                  // Load first batch of this supplier or set supplier for new invoice
                   const supplierBatches = fiscalYearFilteredBatches.filter(b => 
                     b.supplier_id === result.id
                   );
@@ -735,7 +713,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             {/* Row 1 */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               <div className="space-y-1">
-                <Label className="text-xs">رقم الفاتورة</Label>
+                <Label className="text-xs">{t.inv_invoice_number}</Label>
                 <Input
                   value={invoiceData.invoice_number || nextInvoiceNumber}
                   onChange={(e) => setInvoiceData({ ...invoiceData, invoice_number: e.target.value })}
@@ -744,10 +722,10 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 />
               </div>
               <div className="space-y-1 col-span-2">
-                <Label className="text-xs">المورد *</Label>
+                <Label className="text-xs">{t.inv_supplier} *</Label>
                 <Select value={invoiceData.supplier_id} onValueChange={(v) => setInvoiceData({ ...invoiceData, supplier_id: v })}>
                   <SelectTrigger className="h-9 text-sm">
-                    <SelectValue placeholder="اختر المورد" />
+                    <SelectValue placeholder={t.inv_select_supplier} />
                   </SelectTrigger>
                   <SelectContent>
                     {suppliers.map((supplier) => (
@@ -760,27 +738,27 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               </div>
               {selectedSupplier && (
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">الرصيد:</Label>
+                  <Label className="text-xs text-muted-foreground">{t.inv_balance}</Label>
                   <div className="h-9 flex items-center text-sm font-medium text-success">
-                    {formatCurrency(0)} ر.س
+                    {formatCurrency(0)} {currency}
                   </div>
                 </div>
               )}
               <div className="space-y-1">
-                <Label className="text-xs">فاتورة المورد</Label>
+                <Label className="text-xs">{t.inv_supplier_invoice}</Label>
                 <Input
                   className="h-9 text-sm"
-                  placeholder="المرجع"
+                  placeholder={t.inv_reference}
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">المستودع</Label>
+                <Label className="text-xs">{t.inv_warehouse}</Label>
                 <Select value={invoiceData.warehouse} onValueChange={(v) => setInvoiceData({ ...invoiceData, warehouse: v })}>
                   <SelectTrigger className="h-9 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="الرئيسي">الرئيسي</SelectItem>
+                    <SelectItem value="main">{t.inv_main_warehouse}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -789,7 +767,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             {/* Row 2 */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               <div className="space-y-1">
-                <Label className="text-xs">تاريخ الشراء</Label>
+                <Label className="text-xs">{t.inv_purchase_date}</Label>
                 <Input
                   type="date"
                   value={invoiceData.purchase_date}
@@ -799,7 +777,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">الاستحقاق</Label>
+                <Label className="text-xs">{t.inv_due_date}</Label>
                 <Input
                   type="date"
                   value={invoiceData.due_date}
@@ -809,19 +787,19 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">طريقة الدفع</Label>
+                <Label className="text-xs">{t.inv_payment_method}</Label>
                 <Select defaultValue="cash">
                   <SelectTrigger className="h-9 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">آجـــــلة</SelectItem>
-                    <SelectItem value="bank">تحويل بنكي</SelectItem>
+                    <SelectItem value="cash">{t.inv_deferred}</SelectItem>
+                    <SelectItem value="bank">{t.inv_bank_transfer}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">حساب النقدية</Label>
+                <Label className="text-xs">{t.inv_cash_account}</Label>
                 <PaymentAccountSelector
                   value={invoiceData.payment_account_id}
                   onChange={(v) => setInvoiceData({ ...invoiceData, payment_account_id: v })}
@@ -830,9 +808,9 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">الضريبة</Label>
+                <Label className="text-xs">{t.inv_tax}</Label>
                 <div className="h-9 flex items-center text-sm bg-background px-3 rounded-md border">
-                  مشتريات بالنسبة الأساسية
+                  {t.inv_purchases_basic_rate}
                 </div>
               </div>
               <div className="flex items-end gap-2 pb-1">
@@ -842,18 +820,18 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   onCheckedChange={(checked) => setInvoiceData({ ...invoiceData, price_includes_tax: !!checked })}
                 />
                 <Label htmlFor="price_includes_tax" className="text-xs cursor-pointer">
-                  السعر شامل الضريبة
+                  {t.inv_price_includes_tax}
                 </Label>
               </div>
             </div>
 
             {/* Notes */}
             <div className="space-y-1">
-              <Label className="text-xs">ملاحظات</Label>
+              <Label className="text-xs">{t.inv_notes}</Label>
               <Textarea
                 value={invoiceData.notes}
                 onChange={(e) => setInvoiceData({ ...invoiceData, notes: e.target.value })}
-                placeholder="ملاحظات إضافية..."
+                placeholder={t.inv_additional_notes}
                 className="h-16 text-sm resize-none"
               />
             </div>
@@ -867,16 +845,16 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   <TableHeader>
                     <TableRow className="bg-muted/50">
                       <TableHead className="text-right text-xs w-10">#</TableHead>
-                      <TableHead className="text-right text-xs min-w-[150px]">البيان</TableHead>
-                      <TableHead className="text-right text-xs min-w-[100px]">الموديل</TableHead>
-                      <TableHead className="text-right text-xs min-w-[80px]">اللون</TableHead>
-                      <TableHead className="text-right text-xs min-w-[120px]">رقم الهيكل</TableHead>
-                      <TableHead className="text-center text-xs w-16">الكمية</TableHead>
-                      <TableHead className="text-center text-xs w-20">الوحدة</TableHead>
-                      <TableHead className="text-center text-xs w-24">السعر</TableHead>
-                      <TableHead className="text-center text-xs w-24">المجموع</TableHead>
+                      <TableHead className="text-right text-xs min-w-[150px]">{t.inv_description}</TableHead>
+                      <TableHead className="text-right text-xs min-w-[100px]">{t.inv_model}</TableHead>
+                      <TableHead className="text-right text-xs min-w-[80px]">{t.inv_color}</TableHead>
+                      <TableHead className="text-right text-xs min-w-[120px]">{t.inv_chassis_number}</TableHead>
+                      <TableHead className="text-center text-xs w-16">{t.inv_quantity}</TableHead>
+                      <TableHead className="text-center text-xs w-20">{t.inv_unit}</TableHead>
+                      <TableHead className="text-center text-xs w-24">{t.inv_price}</TableHead>
+                      <TableHead className="text-center text-xs w-24">{t.inv_subtotal}</TableHead>
                       <TableHead className="text-center text-xs w-16">VAT</TableHead>
-                      <TableHead className="text-center text-xs w-24">المجموع الكلي</TableHead>
+                      <TableHead className="text-center text-xs w-24">{t.inv_grand_total}</TableHead>
                       <TableHead className="text-center text-xs w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -888,7 +866,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                           <Input
                             value={cars[index].name}
                             onChange={(e) => handleCarChange(car.id, 'name', e.target.value)}
-                            placeholder="اسم السيارة"
+                            placeholder={t.inv_description}
                             className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
                           />
                         </TableCell>
@@ -896,7 +874,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                           <Input
                             value={cars[index].model}
                             onChange={(e) => handleCarChange(car.id, 'model', e.target.value)}
-                            placeholder="الموديل"
+                            placeholder={t.inv_model}
                             className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
                           />
                         </TableCell>
@@ -904,7 +882,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                           <Input
                             value={cars[index].color}
                             onChange={(e) => handleCarChange(car.id, 'color', e.target.value)}
-                            placeholder="اللون"
+                            placeholder={t.inv_color}
                             className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
                           />
                         </TableCell>
@@ -912,7 +890,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                           <Input
                             value={cars[index].chassis_number}
                             onChange={(e) => handleCarChange(car.id, 'chassis_number', e.target.value)}
-                            placeholder="رقم الهيكل"
+                            placeholder={t.inv_chassis_number}
                             className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
                             dir="ltr"
                           />
@@ -926,7 +904,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                             className="h-8 text-sm text-center border-0 bg-transparent focus-visible:ring-1 w-16"
                           />
                         </TableCell>
-                        <TableCell className="text-center text-sm">سيارة</TableCell>
+                        <TableCell className="text-center text-sm">{t.inv_car_unit}</TableCell>
                         <TableCell>
                           <Input
                             type="number"
@@ -966,7 +944,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 <div className="p-2 border-t">
                   <Button type="button" variant="outline" size="sm" onClick={handleAddCar} className="gap-2">
                     <Plus className="w-4 h-4" />
-                    إضافة سيارة
+                    {t.inv_add_car}
                   </Button>
                 </div>
               </>
@@ -976,14 +954,14 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   <TableHeader>
                     <TableRow className="bg-muted/50">
                       <TableHead className="text-right text-xs w-10">#</TableHead>
-                      <TableHead className="text-right text-xs min-w-[200px]">الصنف</TableHead>
-                      <TableHead className="text-right text-xs min-w-[100px]">الباركود</TableHead>
-                      <TableHead className="text-center text-xs w-16">الكمية</TableHead>
-                      <TableHead className="text-center text-xs w-20">الوحدة</TableHead>
-                      <TableHead className="text-center text-xs w-24">سعر الشراء</TableHead>
-                      <TableHead className="text-center text-xs w-24">المجموع</TableHead>
+                      <TableHead className="text-right text-xs min-w-[200px]">{t.inv_item}</TableHead>
+                      <TableHead className="text-right text-xs min-w-[100px]">{t.inv_barcode}</TableHead>
+                      <TableHead className="text-center text-xs w-16">{t.inv_quantity}</TableHead>
+                      <TableHead className="text-center text-xs w-20">{t.inv_unit}</TableHead>
+                      <TableHead className="text-center text-xs w-24">{t.inv_purchase_price}</TableHead>
+                      <TableHead className="text-center text-xs w-24">{t.inv_subtotal}</TableHead>
                       <TableHead className="text-center text-xs w-16">VAT</TableHead>
-                      <TableHead className="text-center text-xs w-24">المجموع الكلي</TableHead>
+                      <TableHead className="text-center text-xs w-24">{t.inv_grand_total}</TableHead>
                       <TableHead className="text-center text-xs w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -998,7 +976,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                           <Input
                             value={purchaseInventoryItems[index]?.barcode || ''}
                             onChange={(e) => handleInventoryItemChange(item.id, 'barcode', e.target.value)}
-                            placeholder="الباركود"
+                            placeholder={t.inv_barcode}
                             className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
                             dir="ltr"
                           />
@@ -1052,7 +1030,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 <div className="p-2 border-t flex gap-2">
                   <Select onValueChange={handleSelectExistingItem}>
                     <SelectTrigger className="h-8 text-sm w-[250px]">
-                      <SelectValue placeholder="اختر صنف من المخزون..." />
+                      <SelectValue placeholder={t.inv_select_inventory_item} />
                     </SelectTrigger>
                     <SelectContent>
                       {(inventoryItems || []).map((item: any) => (
@@ -1067,7 +1045,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   </Select>
                   <Button type="button" variant="outline" size="sm" onClick={handleAddInventoryItem} className="gap-2">
                     <Plus className="w-4 h-4" />
-                    صنف جديد
+                    {t.inv_new_item}
                   </Button>
                 </div>
               </>
@@ -1078,11 +1056,11 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           <div className="p-4 bg-muted/30 border-t">
             <div className="grid grid-cols-2 md:grid-cols-6 gap-4 items-center">
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">المجموع</Label>
+                <Label className="text-xs text-muted-foreground">{t.inv_total}</Label>
                 <div className="text-lg font-bold">{formatCurrency(calculations.subtotal)}</div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">الخصم</Label>
+                <Label className="text-xs text-muted-foreground">{t.inv_discount}</Label>
                 <div className="flex gap-2">
                   <Input
                     type="number"
@@ -1096,26 +1074,26 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="amount">ر.س</SelectItem>
+                      <SelectItem value="amount">{currency}</SelectItem>
                       <SelectItem value="percentage">%</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">الإجمالي</Label>
+                <Label className="text-xs text-muted-foreground">{t.inv_subtotal_label}</Label>
                 <div className="text-lg font-bold">{formatCurrency(calculations.subtotalAfterDiscount)}</div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">الضريبة {taxRate}%</Label>
+                <Label className="text-xs text-muted-foreground">{t.inv_tax_label} {taxRate}%</Label>
                 <div className="text-lg font-bold text-warning">{formatCurrency(calculations.totalVAT)}</div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">الصافي</Label>
+                <Label className="text-xs text-muted-foreground">{t.inv_net}</Label>
                 <div className="text-xl font-bold text-primary">{formatCurrency(calculations.finalTotal)}</div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">تقريب الصافي</Label>
+                <Label className="text-xs text-muted-foreground">{t.inv_rounded_net}</Label>
                 <div className="text-xl font-bold text-primary">{formatCurrency(calculations.roundedTotal)}</div>
               </div>
             </div>
@@ -1127,17 +1105,17 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               {isViewingExisting ? (
                 <Button onClick={handleUpdatePurchase} className="gap-2 gradient-primary" disabled={updateCar.isPending}>
                   <Save className="w-4 h-4" />
-                  {updateCar.isPending ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+                  {updateCar.isPending ? t.inv_saving : t.inv_save_changes}
                 </Button>
               ) : (
                 <Button onClick={handleSubmit} className="gap-2 gradient-primary" disabled={addPurchaseBatch.isPending}>
                   <Save className="w-4 h-4" />
-                  {addPurchaseBatch.isPending ? 'جاري الحفظ...' : 'اعتماد'}
+                  {addPurchaseBatch.isPending ? t.inv_saving : t.inv_approve}
                 </Button>
               )}
               <Button variant="outline" onClick={handleNewInvoice} className="gap-2">
                 <Plus className="w-4 h-4" />
-                جديد
+                {t.inv_new}
               </Button>
               <Button 
                 variant="outline" 
@@ -1146,7 +1124,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 onClick={handlePrintExisting}
               >
                 <Printer className="w-4 h-4" />
-                طباعة
+                {t.inv_print}
               </Button>
               <Button 
                 variant="outline" 
@@ -1155,7 +1133,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 onClick={() => setReverseDialogOpen(true)}
               >
                 <RotateCcw className="w-4 h-4" />
-                إرجاع
+                {t.inv_return}
               </Button>
               <Button 
                 variant="outline" 
@@ -1164,7 +1142,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 onClick={() => setDeleteDialogOpen(true)}
               >
                 <Trash2 className="w-4 h-4" />
-                حذف
+                {t.delete}
               </Button>
             </div>
 
@@ -1175,51 +1153,23 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 className="gap-2"
               >
                 <ArrowRight className="w-4 h-4" />
-                خروج
+                {t.inv_exit}
               </Button>
               <div className="flex items-center gap-1 border rounded-md overflow-hidden">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 rounded-none"
-                  onClick={handleNextPurchase}
-                  disabled={currentInvoiceIndex >= fiscalYearFilteredBatches.length - 1}
-                  title="الفاتورة التالية"
-                >
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none" onClick={handleNextPurchase} disabled={currentInvoiceIndex >= fiscalYearFilteredBatches.length - 1} title={t.inv_next_invoice}>
                   <ChevronRight className="w-4 h-4" />
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 rounded-none"
-                  onClick={handleLastPurchase}
-                  disabled={fiscalYearFilteredBatches.length === 0}
-                  title="آخر فاتورة"
-                >
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none" onClick={handleLastPurchase} disabled={fiscalYearFilteredBatches.length === 0} title={t.inv_last_invoice}>
                   <ChevronRight className="w-4 h-4" />
                   <ChevronRight className="w-4 h-4 -mr-2" />
                 </Button>
                 <span className="px-3 text-sm bg-muted min-w-[50px] text-center">
                   {fiscalYearFilteredBatches.length > 0 ? currentInvoiceIndex + 1 : 0} / {fiscalYearFilteredBatches.length}
                 </span>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 rounded-none"
-                  onClick={handlePreviousPurchase}
-                  disabled={currentInvoiceIndex <= 0}
-                  title="الفاتورة السابقة"
-                >
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none" onClick={handlePreviousPurchase} disabled={currentInvoiceIndex <= 0} title={t.inv_prev_invoice}>
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 rounded-none"
-                  onClick={handleFirstPurchase}
-                  disabled={fiscalYearFilteredBatches.length === 0}
-                  title="أول فاتورة"
-                >
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none" onClick={handleFirstPurchase} disabled={fiscalYearFilteredBatches.length === 0} title={t.inv_first_invoice}>
                   <ChevronLeft className="w-4 h-4" />
                   <ChevronLeft className="w-4 h-4 -ml-2" />
                 </Button>
@@ -1240,20 +1190,20 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir={dir}>
           <AlertDialogHeader>
-            <AlertDialogTitle>هل أنت متأكد من حذف فاتورة الشراء؟</AlertDialogTitle>
+            <AlertDialogTitle>{t.inv_delete_purchase_confirm}</AlertDialogTitle>
             <AlertDialogDescription>
-              سيتم حذف السيارة من المخزون. لا يمكن التراجع عن هذا الإجراء.
+              {t.inv_delete_purchase_desc}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeletePurchase}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteCar.isPending ? 'جاري الحذف...' : 'حذف'}
+              {deleteCar.isPending ? t.inv_deleting : t.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1261,29 +1211,29 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
       {/* Reverse Confirmation Dialog */}
       <AlertDialog open={reverseDialogOpen} onOpenChange={setReverseDialogOpen}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir={dir}>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <RotateCcw className="h-5 w-5 text-orange-500" />
-              إرجاع فاتورة الشراء
+              {t.inv_return_purchase_invoice}
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <p>هل أنت متأكد من إرجاع هذه الفاتورة؟</p>
+              <p>{t.inv_return_purchase_confirm}</p>
               <ul className="list-disc list-inside text-muted-foreground">
-                <li>سيتم حذف السيارة من المخزون</li>
-                <li>سيتم حذف القيد المحاسبي المرتبط</li>
-                <li>سيتم تحديث الإحصائيات والتقارير</li>
+                <li>{t.inv_delete_car_from_inventory}</li>
+                <li>{t.inv_delete_journal_entry}</li>
+                <li>{t.inv_update_stats}</li>
               </ul>
-              <p className="text-destructive font-medium">لا يمكن التراجع عن هذا الإجراء.</p>
+              <p className="text-destructive font-medium">{t.inv_cannot_undo}</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleReversePurchase}
               className="bg-orange-600 text-white hover:bg-orange-700"
             >
-              {deleteCar.isPending ? 'جاري الإرجاع...' : 'إرجاع الفاتورة'}
+              {deleteCar.isPending ? t.inv_returning : t.inv_return_invoice_btn}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

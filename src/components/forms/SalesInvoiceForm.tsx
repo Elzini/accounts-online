@@ -55,6 +55,7 @@ import { useCompanyId } from '@/hooks/useCompanyId';
 import { InvoiceSearchBar } from './InvoiceSearchBar';
 import { useItems, useUnits } from '@/hooks/useInventory';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SalesInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -103,6 +104,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const updateSaleWithItems = useUpdateSaleWithItems();
   const addInstallmentSale = useAddInstallmentSale();
   const companyId = useCompanyId();
+  const { t, language } = useLanguage();
 
   // Inventory hooks
   const { data: inventoryItems = [] } = useItems();
@@ -140,7 +142,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     customer_id: '',
     sale_date: new Date().toISOString().split('T')[0],
     payment_account_id: '',
-    warehouse: 'الرئيسي',
+    warehouse: 'main',
     seller_name: '',
     notes: '',
     price_includes_tax: true,
@@ -180,6 +182,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
   const selectedCustomer = customers.find(c => c.id === invoiceData.customer_id);
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_sales ? (taxSettings?.tax_rate || 15) : 0;
+  const locale = language === 'ar' ? 'ar-SA' : 'en-SA';
+  const currency = t.inv_sar;
 
   // Available inventory items for selection
   const availableInventoryItems = useMemo(() => 
@@ -203,7 +207,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       item_id: item.id,
       item_name: item.name,
       barcode: item.barcode || '',
-      unit_name: item.units_of_measure?.abbreviation || item.units_of_measure?.name || 'وحدة',
+      unit_name: item.units_of_measure?.abbreviation || item.units_of_measure?.name || t.inv_unit,
       unit_id: item.unit_id,
       sale_price: String(item.sale_price_1 || 0),
       cost_price: Number(item.cost_price || 0),
@@ -214,7 +218,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
   const handleRemoveInventoryItem = (id: string) => {
     if (selectedInventoryItems.length === 1) {
-      toast.error('يجب إضافة صنف واحد على الأقل');
+      toast.error(t.inv_toast_min_one_item);
       return;
     }
     setSelectedInventoryItems(selectedInventoryItems.filter(i => i.id !== id));
@@ -253,7 +257,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
   const handleRemoveCar = (id: string) => {
     if (selectedCars.length === 1) {
-      toast.error('يجب إضافة سيارة واحدة على الأقل');
+      toast.error(t.inv_toast_min_one_car);
       return;
     }
     setSelectedCars(selectedCars.filter(car => car.id !== id));
@@ -334,7 +338,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   }, [selectedCars, selectedInventoryItems, invoiceData.price_includes_tax, invoiceData.commission, invoiceData.other_expenses, taxRate, discount, discountType, isCarDealership]);
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat(locale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);
@@ -342,19 +346,18 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
   const handleSubmit = async () => {
     if (!invoiceData.customer_id) {
-      toast.error('الرجاء اختيار العميل');
+      toast.error(t.inv_toast_select_customer);
       return;
     }
 
     if (isCarDealership) {
-      // Car dealership flow (existing logic)
       if (selectedCars.length === 0) {
-        toast.error('الرجاء إضافة سيارة واحدة على الأقل');
+        toast.error(t.inv_toast_add_car);
         return;
       }
       const invalidCar = selectedCars.find(car => !car.sale_price || parseFloat(car.sale_price) <= 0);
       if (invalidCar) {
-        toast.error('الرجاء إدخال سعر البيع لجميع السيارات');
+        toast.error(t.inv_toast_enter_price);
         return;
       }
 
@@ -390,34 +393,32 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           const installmentAmount = remainingAmount / numberOfInstallments;
           try {
             await addInstallmentSale.mutateAsync({ company_id: companyId, sale_id: sale.id, total_amount: calculations.finalTotal, down_payment: downPayment, remaining_amount: remainingAmount, number_of_installments: numberOfInstallments, installment_amount: installmentAmount, start_date: invoiceData.sale_date, status: 'active', notes: invoiceData.notes || null });
-            toast.success('تم إنشاء عقد التقسيط بنجاح');
-          } catch (error) { toast.error('حدث خطأ أثناء إنشاء عقد التقسيط'); }
+            toast.success(t.inv_toast_installment_success);
+          } catch (error) { toast.error(t.inv_toast_installment_error); }
         }
 
         setSavedSaleData({ ...sale, customer: selectedCustomer, cars: selectedCars });
-        toast.success(`تم تسجيل بيع ${selectedCars.length} سيارة بنجاح`);
+        toast.success(t.inv_toast_sale_success);
         setInvoiceOpen(true);
       } catch (error: any) {
         console.error('Sale error:', error);
-        toast.error('حدث خطأ أثناء تسجيل البيع');
+        toast.error(t.inv_toast_sale_error);
       }
     } else {
-      // Inventory items flow (new)
       if (selectedInventoryItems.length === 0) {
-        toast.error('الرجاء إضافة صنف واحد على الأقل');
+        toast.error(t.inv_toast_add_item);
         return;
       }
       const invalidItem = selectedInventoryItems.find(i => !i.sale_price || parseFloat(i.sale_price) <= 0);
       if (invalidItem) {
-        toast.error('الرجاء إدخال سعر البيع لجميع الأصناف');
+        toast.error(t.inv_toast_enter_item_price);
         return;
       }
 
       try {
-        if (!companyId) throw new Error('لا يمكن العثور على الشركة');
+        if (!companyId) throw new Error(t.inv_toast_company_not_found);
         const invoiceNumber = `INV-${Date.now()}`;
 
-        // Create invoice
         const { data: invoice, error: invoiceError } = await supabase
           .from('invoices')
           .insert({
@@ -444,7 +445,6 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
         if (invoiceError) throw invoiceError;
 
-        // Create invoice items (triggers auto stock update)
         const invoiceItems = selectedInventoryItems.map((item, index) => ({
           invoice_id: invoice.id,
           item_description: item.item_name,
@@ -463,11 +463,11 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
         if (itemsError) throw itemsError;
 
         setSavedSaleData({ id: invoice.id, customer: selectedCustomer, inventoryItems: selectedInventoryItems });
-        toast.success(`تم إصدار فاتورة بيع ${selectedInventoryItems.length} صنف بنجاح`);
+        toast.success(t.inv_toast_invoice_success);
         setInvoiceOpen(true);
       } catch (error: any) {
         console.error('Invoice error:', error);
-        toast.error('حدث خطأ أثناء إصدار الفاتورة');
+        toast.error(t.inv_toast_invoice_error);
       }
     }
   };
@@ -478,7 +478,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       customer_id: '',
       sale_date: new Date().toISOString().split('T')[0],
       payment_account_id: accounts.find(a => a.code === '1101')?.id || '',
-      warehouse: 'الرئيسي',
+      warehouse: 'main',
       seller_name: '',
       notes: '',
       price_includes_tax: true,
@@ -506,7 +506,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     }
   };
 
-  // Navigation functions - use fiscal year filtered data
+  // Navigation functions
   const handleFirstSale = () => {
     if (fiscalYearFilteredSales.length > 0) {
       setCurrentInvoiceIndex(0);
@@ -547,7 +547,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       customer_id: sale.customer_id || '',
       sale_date: sale.sale_date,
       payment_account_id: sale.payment_account_id || '',
-      warehouse: 'الرئيسي',
+      warehouse: 'main',
       seller_name: sale.seller_name || '',
       notes: '',
       price_includes_tax: true,
@@ -560,9 +560,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       first_installment_date: new Date().toISOString().split('T')[0],
     });
 
-    // Check if this is a multi-car sale (has sale_items)
     if (sale.sale_items && sale.sale_items.length > 0) {
-      // Multi-car sale: load all items
       const loadedCars: SelectedCarItem[] = [];
       
       for (const item of sale.sale_items) {
@@ -587,7 +585,6 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
         setSelectedCars(loadedCars);
       }
     } else {
-      // Single car sale: load from car_id
       const car = allCars.find(c => c.id === sale.car_id);
       if (car) {
         setSelectedCars([{
@@ -606,64 +603,58 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     }
   };
 
-  // Handle delete sale
   const handleDeleteSale = async () => {
     if (!currentSaleId) return;
-    
     const sale = existingSales.find(s => s.id === currentSaleId);
     if (!sale) return;
     
     try {
       await deleteSale.mutateAsync({ saleId: currentSaleId, carId: sale.car_id });
-      toast.success('تم حذف الفاتورة بنجاح');
+      toast.success(t.inv_toast_delete_success);
       setDeleteDialogOpen(false);
       handleNewInvoice();
     } catch (error) {
-      toast.error('حدث خطأ أثناء حذف الفاتورة');
+      toast.error(t.inv_toast_delete_error);
     }
   };
 
-  // Handle reverse sale
   const handleReverseSale = async () => {
     if (!currentSaleId) return;
     
     try {
       await reverseSale.mutateAsync(currentSaleId);
-      toast.success('تم إرجاع الفاتورة بنجاح وإعادة السيارات للمخزون');
+      toast.success(t.inv_toast_reverse_success);
       setReverseDialogOpen(false);
       handleNewInvoice();
     } catch (error) {
-      toast.error('حدث خطأ أثناء إرجاع الفاتورة');
+      toast.error(t.inv_toast_reverse_error);
     }
   };
 
-  // Handle update sale
   const handleUpdateSale = async () => {
     if (!currentSaleId || !invoiceData.customer_id) {
-      toast.error('الرجاء اختيار العميل');
+      toast.error(t.inv_toast_select_customer);
       return;
     }
 
     if (selectedCars.length === 0) {
-      toast.error('الرجاء إضافة سيارة واحدة على الأقل');
+      toast.error(t.inv_toast_add_car);
       return;
     }
 
     const invalidCar = selectedCars.find(car => !car.sale_price || parseFloat(car.sale_price) <= 0);
     if (invalidCar) {
-      toast.error('الرجاء إدخال سعر البيع لجميع السيارات');
+      toast.error(t.inv_toast_enter_price);
       return;
     }
 
     try {
-      // Prepare items with updated prices
       const items = selectedCars.map((car, index) => ({
         car_id: car.car_id,
         sale_price: calculations.items[index].total,
         purchase_price: car.purchase_price,
       }));
 
-      // Use the new updateSaleWithItems to also update sale_items
       await updateSaleWithItems.mutateAsync({
         saleId: currentSaleId,
         saleData: {
@@ -677,17 +668,15 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
         },
         items,
       });
-      toast.success('تم تحديث الفاتورة بنجاح');
+      toast.success(t.inv_toast_update_success);
     } catch (error) {
       console.error('Update sale error:', error);
-      toast.error('حدث خطأ أثناء تحديث الفاتورة');
+      toast.error(t.inv_toast_update_error);
     }
   };
 
-  // Handle print existing invoice
   const handlePrintExisting = () => {
     if (!currentSaleId) return;
-    
     const sale = salesWithItems.find(s => s.id === currentSaleId) || existingSales.find(s => s.id === currentSaleId);
     if (!sale) return;
 
@@ -699,7 +688,6 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     setInvoiceOpen(true);
   };
 
-  // Prepare invoice preview data
   const invoicePreviewData = useMemo(() => {
     if (!savedSaleData) return null;
 
@@ -707,10 +695,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       invoiceNumber: savedSaleData.id?.slice(0, 8) || nextInvoiceNumber,
       invoiceDate: invoiceData.sale_date,
       invoiceType: 'sale' as const,
-      sellerName: taxSettings?.company_name_ar || company?.name || 'الشركة',
+      sellerName: taxSettings?.company_name_ar || company?.name || '',
       sellerTaxNumber: taxSettings?.tax_number || '',
       sellerAddress: taxSettings?.national_address || company?.address || '',
-      buyerName: selectedCustomer?.name || 'العميل',
+      buyerName: selectedCustomer?.name || '',
       buyerPhone: selectedCustomer?.phone || '',
       buyerAddress: selectedCustomer?.address || '',
       buyerTaxNumber: selectedCustomer?.registration_number || '',
@@ -730,6 +718,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     };
   }, [savedSaleData, invoiceData, selectedCustomer, calculations, taxSettings, company, taxRate, nextInvoiceNumber]);
 
+  const dir = language === 'ar' ? 'rtl' : 'ltr';
+
   return (
     <>
       <div className="max-w-full mx-auto animate-fade-in p-2 sm:p-4">
@@ -738,7 +728,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           <div className="bg-success text-success-foreground p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <FileText className="w-6 h-6" />
-              <h1 className="text-xl font-bold">فاتورة مبيعات</h1>
+              <h1 className="text-xl font-bold">{t.inv_sales_invoice}</h1>
             </div>
             <Button 
               variant="ghost" 
@@ -758,7 +748,6 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               customers={customers}
               onSelectResult={(result) => {
                 if (result.type === 'invoice' || result.type === 'car') {
-                  // Load the sale
                   const sale = result.data;
                   const saleIndex = fiscalYearFilteredSales.findIndex(s => s.id === sale.id);
                   if (saleIndex >= 0) {
@@ -766,7 +755,6 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                     loadSaleData(fiscalYearFilteredSales[saleIndex]);
                   }
                 } else if (result.type === 'customer') {
-                  // Load first sale of this customer or set customer for new invoice
                   const customerSales = result.data.sales;
                   if (customerSales && customerSales.length > 0) {
                     const saleIndex = fiscalYearFilteredSales.findIndex(s => s.id === customerSales[0].id);
@@ -787,7 +775,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             {/* Row 1 */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               <div className="space-y-1">
-                <Label className="text-xs">رقم الفاتورة</Label>
+                <Label className="text-xs">{t.inv_invoice_number}</Label>
                 <Input
                   value={invoiceData.invoice_number || nextInvoiceNumber}
                   onChange={(e) => setInvoiceData({ ...invoiceData, invoice_number: e.target.value })}
@@ -796,10 +784,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 />
               </div>
               <div className="space-y-1 col-span-2">
-                <Label className="text-xs">العميل *</Label>
+                <Label className="text-xs">{t.inv_customer} *</Label>
                 <Select value={invoiceData.customer_id} onValueChange={(v) => setInvoiceData({ ...invoiceData, customer_id: v })}>
                   <SelectTrigger className="h-9 text-sm">
-                    <SelectValue placeholder="اختر العميل" />
+                    <SelectValue placeholder={t.inv_select_customer} />
                   </SelectTrigger>
                   <SelectContent>
                     {customers.map((customer) => (
@@ -812,27 +800,27 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               </div>
               {selectedCustomer && (
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">الرصيد:</Label>
+                  <Label className="text-xs text-muted-foreground">{t.inv_balance}</Label>
                   <div className="h-9 flex items-center text-sm font-medium text-success">
-                    {formatCurrency(0)} ر.س
+                    {formatCurrency(0)} {currency}
                   </div>
                 </div>
               )}
               <div className="space-y-1">
-                <Label className="text-xs">أمر البيع</Label>
+                <Label className="text-xs">{t.inv_sales_order}</Label>
                 <Input
                   className="h-9 text-sm"
-                  placeholder="المرجع"
+                  placeholder={t.inv_reference}
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">المستودع</Label>
+                <Label className="text-xs">{t.inv_warehouse}</Label>
                 <Select value={invoiceData.warehouse} onValueChange={(v) => setInvoiceData({ ...invoiceData, warehouse: v })}>
                   <SelectTrigger className="h-9 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="الرئيسي">الرئيسي</SelectItem>
+                    <SelectItem value="main">{t.inv_main_warehouse}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -841,7 +829,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             {/* Row 2 */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               <div className="space-y-1">
-                <Label className="text-xs">التاريخ</Label>
+                <Label className="text-xs">{t.inv_date}</Label>
                 <Input
                   type="date"
                   value={invoiceData.sale_date}
@@ -851,28 +839,28 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">المندوب</Label>
+                <Label className="text-xs">{t.inv_salesperson}</Label>
                 <Input
                   value={invoiceData.seller_name}
                   onChange={(e) => setInvoiceData({ ...invoiceData, seller_name: e.target.value })}
                   className="h-9 text-sm"
-                  placeholder="اسم البائع"
+                  placeholder={t.inv_salesperson_name}
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">طريقة الدفع</Label>
+                <Label className="text-xs">{t.inv_payment_method}</Label>
                 <Select defaultValue="cash">
                   <SelectTrigger className="h-9 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">آجـــــلة</SelectItem>
-                    <SelectItem value="bank">تحويل بنكي</SelectItem>
+                    <SelectItem value="cash">{t.inv_deferred}</SelectItem>
+                    <SelectItem value="bank">{t.inv_bank_transfer}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">حساب النقدية</Label>
+                <Label className="text-xs">{t.inv_cash_account}</Label>
                 <PaymentAccountSelector
                   value={invoiceData.payment_account_id}
                   onChange={(v) => setInvoiceData({ ...invoiceData, payment_account_id: v })}
@@ -882,9 +870,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">الضريبة</Label>
+                <Label className="text-xs">{t.inv_tax}</Label>
                 <div className="h-9 flex items-center text-sm bg-background px-3 rounded-md border">
-                  مبيعات بالنسبة الأساسية
+                  {t.inv_sales_basic_rate}
                 </div>
               </div>
               <div className="flex items-end gap-2 pb-1">
@@ -894,7 +882,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   onCheckedChange={(checked) => setInvoiceData({ ...invoiceData, price_includes_tax: !!checked })}
                 />
                 <Label htmlFor="price_includes_tax" className="text-xs cursor-pointer">
-                  السعر شامل الضريبة
+                  {t.inv_price_includes_tax}
                 </Label>
               </div>
             </div>
@@ -902,7 +890,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             {/* Row 3 - Additional fields */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               <div className="space-y-1">
-                <Label className="text-xs">العمولة</Label>
+                <Label className="text-xs">{t.inv_commission}</Label>
                 <Input
                   type="number"
                   value={invoiceData.commission}
@@ -913,7 +901,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">م. التكلفة</Label>
+                <Label className="text-xs">{t.inv_cost_center}</Label>
                 <Input
                   type="number"
                   value={invoiceData.other_expenses}
@@ -924,7 +912,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">المدفوع</Label>
+                <Label className="text-xs">{t.inv_paid_amount}</Label>
                 <Input
                   type="number"
                   value={paidAmount}
@@ -935,11 +923,11 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 />
               </div>
               <div className="space-y-1 col-span-2 lg:col-span-3">
-                <Label className="text-xs">ملاحظات</Label>
+                <Label className="text-xs">{t.inv_notes}</Label>
                 <Input
                   value={invoiceData.notes}
                   onChange={(e) => setInvoiceData({ ...invoiceData, notes: e.target.value })}
-                  placeholder="ملاحظات..."
+                  placeholder={t.inv_notes_placeholder}
                   className="h-9 text-sm"
                 />
               </div>
@@ -954,23 +942,20 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   onCheckedChange={(checked) => setInvoiceData({ ...invoiceData, is_installment: !!checked })}
                 />
                 <Label htmlFor="is_installment" className="text-xs cursor-pointer font-medium text-primary">
-                  بيع بالتقسيط
+                  {t.inv_installment_sale}
                 </Label>
               </div>
               
               {invoiceData.is_installment && (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 p-3 bg-muted/30 rounded-lg border border-primary/20">
-                  {/* سعر السيارة */}
                   <div className="space-y-1">
-                    <Label className="text-xs">سعر السيارة</Label>
+                    <Label className="text-xs">{t.inv_car_price}</Label>
                     <div className="h-9 flex items-center text-sm font-medium bg-background px-3 rounded-md border">
-                      {formatCurrency(calculations.finalTotal)} ر.س
+                      {formatCurrency(calculations.finalTotal)} {currency}
                     </div>
                   </div>
-                  
-                  {/* الدفعة المقدمة */}
                   <div className="space-y-1">
-                    <Label className="text-xs">الدفعة المقدمة</Label>
+                    <Label className="text-xs">{t.inv_down_payment}</Label>
                     <Input
                       type="number"
                       value={invoiceData.down_payment}
@@ -980,10 +965,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                       dir="ltr"
                     />
                   </div>
-                  
-                  {/* عدد الأقساط */}
                   <div className="space-y-1">
-                    <Label className="text-xs">عدد الأقساط</Label>
+                    <Label className="text-xs">{t.inv_installments_count}</Label>
                     <Select 
                       value={invoiceData.number_of_installments} 
                       onValueChange={(v) => setInvoiceData({ ...invoiceData, number_of_installments: v })}
@@ -994,16 +977,14 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                       <SelectContent>
                         {[1, 2, 3, 6, 9, 12, 18, 24, 36, 48, 60].map(num => (
                           <SelectItem key={num} value={String(num)}>
-                            {num === 1 ? 'دفعة واحدة' : num === 2 ? 'دفعتين' : `${num} شهر`}
+                            {num === 1 ? t.inv_single_payment : num === 2 ? t.inv_two_payments : `${num} ${t.inv_months}`}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  
-                  {/* تاريخ أول قسط */}
                   <div className="space-y-1">
-                    <Label className="text-xs">تاريخ أول قسط</Label>
+                    <Label className="text-xs">{t.inv_first_installment_date}</Label>
                     <Input
                       type="date"
                       value={invoiceData.first_installment_date}
@@ -1014,10 +995,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                       className="h-9 text-sm"
                     />
                   </div>
-                  
-                  {/* تاريخ آخر قسط */}
                   <div className="space-y-1">
-                    <Label className="text-xs">تاريخ آخر قسط</Label>
+                    <Label className="text-xs">{t.inv_last_installment_date}</Label>
                     <Input
                       type="date"
                       value={invoiceData.last_payment_date || (() => {
@@ -1031,20 +1010,16 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                       className="h-9 text-sm"
                     />
                   </div>
-                  
-                  {/* المتبقي */}
                   <div className="space-y-1">
-                    <Label className="text-xs">المتبقي</Label>
+                    <Label className="text-xs">{t.inv_remaining}</Label>
                     <div className="h-9 flex items-center text-sm font-medium text-destructive bg-background px-3 rounded-md border">
-                      {formatCurrency(calculations.finalTotal - (parseFloat(invoiceData.down_payment) || 0))} ر.س
+                      {formatCurrency(calculations.finalTotal - (parseFloat(invoiceData.down_payment) || 0))} {currency}
                     </div>
                   </div>
-                  
-                  {/* قيمة القسط */}
                   <div className="space-y-1">
-                    <Label className="text-xs">قيمة القسط</Label>
+                    <Label className="text-xs">{t.inv_installment_value}</Label>
                     <div className="h-9 flex items-center text-sm font-medium text-primary bg-background px-3 rounded-md border">
-                      {formatCurrency((calculations.finalTotal - (parseFloat(invoiceData.down_payment) || 0)) / (parseInt(invoiceData.number_of_installments) || 12))} ر.س
+                      {formatCurrency((calculations.finalTotal - (parseFloat(invoiceData.down_payment) || 0)) / (parseInt(invoiceData.number_of_installments) || 12))} {currency}
                     </div>
                   </div>
                 </div>
@@ -1060,16 +1035,16 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   <TableHeader>
                     <TableRow className="bg-muted/50">
                       <TableHead className="text-right text-xs w-10">#</TableHead>
-                      <TableHead className="text-right text-xs min-w-[150px]">البيان</TableHead>
-                      <TableHead className="text-right text-xs min-w-[100px]">الموديل</TableHead>
-                      <TableHead className="text-right text-xs min-w-[80px]">اللون</TableHead>
-                      <TableHead className="text-right text-xs min-w-[120px]">رقم الهيكل</TableHead>
-                      <TableHead className="text-center text-xs w-16">الكمية</TableHead>
-                      <TableHead className="text-center text-xs w-20">الوحدة</TableHead>
-                      <TableHead className="text-center text-xs w-24">السعر</TableHead>
-                      <TableHead className="text-center text-xs w-24">المجموع</TableHead>
+                      <TableHead className="text-right text-xs min-w-[150px]">{t.inv_description}</TableHead>
+                      <TableHead className="text-right text-xs min-w-[100px]">{t.inv_model}</TableHead>
+                      <TableHead className="text-right text-xs min-w-[80px]">{t.inv_color}</TableHead>
+                      <TableHead className="text-right text-xs min-w-[120px]">{t.inv_chassis_number}</TableHead>
+                      <TableHead className="text-center text-xs w-16">{t.inv_quantity}</TableHead>
+                      <TableHead className="text-center text-xs w-20">{t.inv_unit}</TableHead>
+                      <TableHead className="text-center text-xs w-24">{t.inv_price}</TableHead>
+                      <TableHead className="text-center text-xs w-24">{t.inv_subtotal}</TableHead>
                       <TableHead className="text-center text-xs w-16">VAT %</TableHead>
-                      <TableHead className="text-center text-xs w-24">المجموع الكلي</TableHead>
+                      <TableHead className="text-center text-xs w-24">{t.inv_grand_total}</TableHead>
                       <TableHead className="text-center text-xs w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1084,7 +1059,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                           <TableCell className="text-sm">{car.color || '-'}</TableCell>
                           <TableCell className="text-sm font-mono" dir="ltr">{car.chassis_number}</TableCell>
                           <TableCell className="text-center text-sm">1</TableCell>
-                          <TableCell className="text-center text-sm">سيارة</TableCell>
+                          <TableCell className="text-center text-sm">{t.inv_car_unit}</TableCell>
                           <TableCell>
                             <Input type="number" value={car.sale_price} onChange={(e) => handleCarChange(car.id, 'sale_price', e.target.value)} placeholder="0" className="h-8 text-sm text-center w-24" dir="ltr" />
                           </TableCell>
@@ -1103,7 +1078,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                     })}
                     {selectedCars.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={12} className="text-center text-muted-foreground py-8">اختر سيارة لإضافتها للفاتورة</TableCell>
+                        <TableCell colSpan={12} className="text-center text-muted-foreground py-8">{t.inv_select_car}</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -1111,7 +1086,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 <div className="p-2 border-t flex gap-2 flex-wrap">
                   <Select onValueChange={handleAddCar}>
                     <SelectTrigger className="w-[300px] h-9 text-sm">
-                      <SelectValue placeholder="اختر سيارة لإضافتها..." />
+                      <SelectValue placeholder={t.inv_select_car_placeholder} />
                     </SelectTrigger>
                     <SelectContent>
                       {remainingCars.map((car) => (
@@ -1130,7 +1105,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className="gap-2 h-9">
                           <FileSpreadsheet className="w-4 h-4" />
-                          استيراد من قالب
+                          {t.inv_import_template}
                           <ChevronDown className="w-3 h-3" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -1144,8 +1119,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                                 const matchingCar = remainingCars.find(car => car.name.includes(item.description) || car.chassis_number === item.description);
                                 if (matchingCar) { handleAddCar(matchingCar.id); matchedCount++; }
                               });
-                              if (matchedCount > 0) { toast.success(`تم استيراد ${matchedCount} سيارة من القالب`); }
-                              else { toast.warning('لم يتم العثور على سيارات مطابقة'); }
+                              if (matchedCount > 0) { toast.success(t.inv_imported_cars.replace('{count}', String(matchedCount))); }
+                              else { toast.warning(t.inv_no_matching_cars); }
                             }}
                           >
                             {template.name}
@@ -1163,15 +1138,15 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   <TableHeader>
                     <TableRow className="bg-muted/50">
                       <TableHead className="text-right text-xs w-10">#</TableHead>
-                      <TableHead className="text-right text-xs min-w-[180px]">الصنف</TableHead>
-                      <TableHead className="text-right text-xs min-w-[100px]">الباركود</TableHead>
-                      <TableHead className="text-center text-xs w-20">الكمية</TableHead>
-                      <TableHead className="text-center text-xs w-16">المتاح</TableHead>
-                      <TableHead className="text-center text-xs w-20">الوحدة</TableHead>
-                      <TableHead className="text-center text-xs w-24">السعر</TableHead>
-                      <TableHead className="text-center text-xs w-24">المجموع</TableHead>
+                      <TableHead className="text-right text-xs min-w-[180px]">{t.inv_item}</TableHead>
+                      <TableHead className="text-right text-xs min-w-[100px]">{t.inv_barcode}</TableHead>
+                      <TableHead className="text-center text-xs w-20">{t.inv_quantity}</TableHead>
+                      <TableHead className="text-center text-xs w-16">{t.inv_available}</TableHead>
+                      <TableHead className="text-center text-xs w-20">{t.inv_unit}</TableHead>
+                      <TableHead className="text-center text-xs w-24">{t.inv_price}</TableHead>
+                      <TableHead className="text-center text-xs w-24">{t.inv_subtotal}</TableHead>
                       <TableHead className="text-center text-xs w-16">VAT %</TableHead>
-                      <TableHead className="text-center text-xs w-24">المجموع الكلي</TableHead>
+                      <TableHead className="text-center text-xs w-24">{t.inv_grand_total}</TableHead>
                       <TableHead className="text-center text-xs w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1220,7 +1195,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                     })}
                     {selectedInventoryItems.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={11} className="text-center text-muted-foreground py-8">اختر صنف لإضافته للفاتورة</TableCell>
+                        <TableCell colSpan={11} className="text-center text-muted-foreground py-8">{t.inv_select_item}</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -1228,7 +1203,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 <div className="p-2 border-t flex gap-2 flex-wrap">
                   <Select onValueChange={handleAddInventoryItem}>
                     <SelectTrigger className="w-[300px] h-9 text-sm">
-                      <SelectValue placeholder="اختر صنف لإضافته..." />
+                      <SelectValue placeholder={t.inv_select_item_placeholder} />
                     </SelectTrigger>
                     <SelectContent>
                       {availableInventoryItems.map((item: any) => (
@@ -1252,15 +1227,15 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           <div className="p-4 bg-muted/30 border-t">
             <div className="grid grid-cols-2 md:grid-cols-7 gap-4 items-center">
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">المجموع</Label>
+                <Label className="text-xs text-muted-foreground">{t.inv_total}</Label>
                 <div className="text-lg font-bold">{formatCurrency(calculations.subtotal)}</div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">الكمية</Label>
+                <Label className="text-xs text-muted-foreground">{t.inv_quantity_label}</Label>
                 <div className="text-lg font-bold">{calculations.quantity}</div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">الخصم</Label>
+                <Label className="text-xs text-muted-foreground">{t.inv_discount}</Label>
                 <div className="flex gap-2">
                   <Input
                     type="number"
@@ -1274,26 +1249,26 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="amount">ر.س</SelectItem>
+                      <SelectItem value="amount">{currency}</SelectItem>
                       <SelectItem value="percentage">%</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">الإجمالي</Label>
+                <Label className="text-xs text-muted-foreground">{t.inv_subtotal_label}</Label>
                 <div className="text-lg font-bold">{formatCurrency(calculations.subtotalAfterDiscount)}</div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">الضريبة {taxRate}%</Label>
+                <Label className="text-xs text-muted-foreground">{t.inv_tax_label} {taxRate}%</Label>
                 <div className="text-lg font-bold text-warning">{formatCurrency(calculations.totalVAT)}</div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">الصافي</Label>
+                <Label className="text-xs text-muted-foreground">{t.inv_net}</Label>
                 <div className="text-xl font-bold text-primary">{formatCurrency(calculations.finalTotal)}</div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">الربح</Label>
+                <Label className="text-xs text-muted-foreground">{t.inv_profit}</Label>
                 <div className={`text-lg font-bold ${calculations.profit >= 0 ? 'text-success' : 'text-destructive'}`}>
                   {formatCurrency(calculations.profit)}
                 </div>
@@ -1302,9 +1277,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
             {/* Terms */}
             <div className="mt-4 pt-4 border-t">
-              <Label className="text-xs text-muted-foreground">شروط البيع والدفع</Label>
+              <Label className="text-xs text-muted-foreground">{t.inv_terms}</Label>
               <Textarea
-                placeholder="شروط وأحكام البيع..."
+                placeholder={t.inv_terms_placeholder}
                 className="mt-2 h-12 text-sm resize-none"
               />
             </div>
@@ -1316,17 +1291,17 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               {isViewingExisting ? (
                 <Button onClick={handleUpdateSale} className="gap-2 gradient-success" disabled={updateSale.isPending}>
                   <Save className="w-4 h-4" />
-                  {updateSale.isPending ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+                  {updateSale.isPending ? t.inv_saving : t.inv_save_changes}
                 </Button>
               ) : (
                 <Button onClick={handleSubmit} className="gap-2 gradient-success" disabled={addMultiCarSale.isPending}>
                   <Save className="w-4 h-4" />
-                  {addMultiCarSale.isPending ? 'جاري الحفظ...' : 'اعتماد'}
+                  {addMultiCarSale.isPending ? t.inv_saving : t.inv_approve}
                 </Button>
               )}
               <Button variant="outline" onClick={handleNewInvoice} className="gap-2">
                 <Plus className="w-4 h-4" />
-                جديد
+                {t.inv_new}
               </Button>
               <Button 
                 variant="outline" 
@@ -1335,11 +1310,11 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 onClick={handlePrintExisting}
               >
                 <Printer className="w-4 h-4" />
-                طباعة
+                {t.inv_print}
               </Button>
               <Button variant="outline" className="gap-2" disabled>
                 <FileSpreadsheet className="w-4 h-4" />
-                استيراد بيانات
+                {t.inv_import_data}
               </Button>
               <Button variant="outline" className="gap-2" disabled>
                 <MessageSquare className="w-4 h-4" />
@@ -1352,7 +1327,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 onClick={() => setReverseDialogOpen(true)}
               >
                 <RotateCcw className="w-4 h-4" />
-                إرجاع
+                {t.inv_return}
               </Button>
               <Button 
                 variant="outline" 
@@ -1361,7 +1336,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 onClick={() => setDeleteDialogOpen(true)}
               >
                 <Trash2 className="w-4 h-4" />
-                حذف
+                {t.delete}
               </Button>
             </div>
 
@@ -1372,51 +1347,23 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 className="gap-2"
               >
                 <ArrowRight className="w-4 h-4" />
-                خروج
+                {t.inv_exit}
               </Button>
               <div className="flex items-center gap-1 border rounded-md overflow-hidden">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 rounded-none"
-                  onClick={handleNextSale}
-                  disabled={currentInvoiceIndex >= fiscalYearFilteredSales.length - 1}
-                  title="الفاتورة التالية"
-                >
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none" onClick={handleNextSale} disabled={currentInvoiceIndex >= fiscalYearFilteredSales.length - 1} title={t.inv_next_invoice}>
                   <ChevronRight className="w-4 h-4" />
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 rounded-none"
-                  onClick={handleLastSale}
-                  disabled={fiscalYearFilteredSales.length === 0}
-                  title="آخر فاتورة"
-                >
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none" onClick={handleLastSale} disabled={fiscalYearFilteredSales.length === 0} title={t.inv_last_invoice}>
                   <ChevronRight className="w-4 h-4" />
                   <ChevronRight className="w-4 h-4 -mr-2" />
                 </Button>
                 <span className="px-3 text-sm bg-muted min-w-[50px] text-center">
                   {fiscalYearFilteredSales.length > 0 ? currentInvoiceIndex + 1 : 0} / {fiscalYearFilteredSales.length}
                 </span>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 rounded-none"
-                  onClick={handlePreviousSale}
-                  disabled={currentInvoiceIndex <= 0}
-                  title="الفاتورة السابقة"
-                >
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none" onClick={handlePreviousSale} disabled={currentInvoiceIndex <= 0} title={t.inv_prev_invoice}>
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 rounded-none"
-                  onClick={handleFirstSale}
-                  disabled={fiscalYearFilteredSales.length === 0}
-                  title="أول فاتورة"
-                >
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none" onClick={handleFirstSale} disabled={fiscalYearFilteredSales.length === 0} title={t.inv_first_invoice}>
                   <ChevronLeft className="w-4 h-4" />
                   <ChevronLeft className="w-4 h-4 -ml-2" />
                 </Button>
@@ -1437,20 +1384,20 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir={dir}>
           <AlertDialogHeader>
-            <AlertDialogTitle>هل أنت متأكد من حذف هذه الفاتورة؟</AlertDialogTitle>
+            <AlertDialogTitle>{t.inv_delete_sale_confirm}</AlertDialogTitle>
             <AlertDialogDescription>
-              سيتم حذف الفاتورة وإعادة السيارات للمخزون. لا يمكن التراجع عن هذا الإجراء.
+              {t.inv_delete_sale_desc}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteSale}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteSale.isPending ? 'جاري الحذف...' : 'حذف'}
+              {deleteSale.isPending ? t.inv_deleting : t.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1458,29 +1405,29 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
       {/* Reverse Confirmation Dialog */}
       <AlertDialog open={reverseDialogOpen} onOpenChange={setReverseDialogOpen}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir={dir}>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <RotateCcw className="h-5 w-5 text-orange-500" />
-              إرجاع الفاتورة
+              {t.inv_return_invoice}
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <p>هل أنت متأكد من إرجاع هذه الفاتورة؟</p>
+              <p>{t.inv_return_sale_confirm}</p>
               <ul className="list-disc list-inside text-muted-foreground">
-                <li>سيتم إعادة السيارات للمخزون</li>
-                <li>سيتم حذف القيد المحاسبي المرتبط</li>
-                <li>سيتم تحديث الإحصائيات والتقارير</li>
+                <li>{t.inv_return_cars_to_inventory}</li>
+                <li>{t.inv_delete_journal_entry}</li>
+                <li>{t.inv_update_stats}</li>
               </ul>
-              <p className="text-destructive font-medium">لا يمكن التراجع عن هذا الإجراء.</p>
+              <p className="text-destructive font-medium">{t.inv_cannot_undo}</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleReverseSale}
               className="bg-orange-600 text-white hover:bg-orange-700"
             >
-              {reverseSale.isPending ? 'جاري الإرجاع...' : 'إرجاع الفاتورة'}
+              {reverseSale.isPending ? t.inv_returning : t.inv_return_invoice_btn}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
