@@ -1,14 +1,14 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Shield, Building2, ArrowLeft, Calendar, Loader2 } from 'lucide-react';
+import { User, Lock, Shield, Building2, Calendar, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
+import loginBg from '@/assets/login-bg.jpg';
 import { usePublicAuthSettings } from '@/hooks/usePublicAuthSettings';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { format } from 'date-fns';
@@ -44,14 +44,12 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
   const [autoFetchTriggered, setAutoFetchTriggered] = useState(false);
 
-  // Auto-fill email from URL params (after subdomain redirect)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const emailParam = params.get('email');
     if (emailParam) {
       setEmail(emailParam);
       setAutoFetchTriggered(true);
-      // Clean URL
       params.delete('email');
       params.delete('auth_redirect');
       const clean = params.toString()
@@ -61,13 +59,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     }
   }, []);
 
-  // Fetch settings from secure edge function
   const { settings: globalSettings, loading: settingsLoading } = usePublicAuthSettings();
-
-  const headerGradient = useMemo(
-    () => `linear-gradient(135deg, ${globalSettings.login_header_gradient_start}, ${globalSettings.login_header_gradient_end})`,
-    [globalSettings.login_header_gradient_end, globalSettings.login_header_gradient_start]
-  );
 
   const pageTitle = mode === 'super_admin' ? t.super_admin_login : globalSettings.login_title;
   const pageSubtitle = mode === 'super_admin' ? t.super_admin_only : globalSettings.login_subtitle;
@@ -77,7 +69,6 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     return format(new Date(dateStr), 'dd MMM yyyy', { locale: ar });
   };
 
-  // Reset fiscal years when email changes
   useEffect(() => {
     if (emailConfirmed) {
       setEmailConfirmed(false);
@@ -89,45 +80,35 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
   const fetchFiscalYearsForEmail = useCallback(async () => {
     if (!email || mode !== 'company') return;
-
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       toast.error(t.email_invalid || 'يرجى إدخال بريد إلكتروني صحيح');
       return;
     }
-
     setFetchingFiscalYears(true);
     try {
       const { data, error } = await supabase.functions.invoke('get-company-fiscal-years', {
         body: { email: email.trim() },
       });
-
       if (error) {
         console.error('Error fetching fiscal years:', error);
         toast.error(t.error_fetching_fiscal_years || 'حدث خطأ أثناء جلب السنوات المالية');
         return;
       }
-
       const years = data?.fiscal_years || [];
       const fetchedCompanyName = data?.company_name || null;
       const fetchedSubdomain = data?.company_subdomain || null;
-      
-      // If we're on a bare tenant domain (e.g. elzini.com) and company has a subdomain, redirect immediately
       const currentSubdomain = extractSubdomain();
       const baseDomain = getBaseDomain();
       if (!currentSubdomain && baseDomain && fetchedSubdomain) {
         const tenantUrl = buildTenantUrl(fetchedSubdomain, baseDomain);
-        // Pass email as query param so user doesn't have to re-enter it
         const params = new URLSearchParams({ email: email.trim(), auth_redirect: '1' });
         window.location.href = `${tenantUrl}/auth/company?${params.toString()}`;
         return;
       }
-      
       setFiscalYears(years);
       setCompanyName(fetchedCompanyName);
       setEmailConfirmed(true);
-
       if (years.length > 0) {
         const currentYear = years.find((fy: CompanyFiscalYear) => fy.is_current);
         setSelectedFiscalYearId(currentYear?.id || years[0]?.id || '');
@@ -142,7 +123,6 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     }
   }, [email, mode]);
 
-  // Auto-fetch fiscal years when email is pre-filled from redirect
   useEffect(() => {
     if (autoFetchTriggered && email && mode === 'company' && !emailConfirmed) {
       setAutoFetchTriggered(false);
@@ -159,25 +139,19 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!email || !password) {
       toast.error(t.enter_email_password || 'يرجى إدخال البريد الإلكتروني وكلمة المرور');
       return;
     }
-
     if (password.length < 6) {
       toast.error(t.password_min_length || 'كلمة المرور يجب أن تكون 6 أحرف على الأقل');
       return;
     }
-
-    // For company mode, require fiscal year selection if years are available
     if (mode === 'company' && fiscalYears.length > 0 && !selectedFiscalYearId) {
       toast.error(t.select_fiscal_year || 'يرجى اختيار السنة المالية');
       return;
     }
-
     setLoading(true);
-
     try {
       const { error, data } = await signIn(email, password);
       if (error) {
@@ -190,8 +164,6 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         }
         return;
       }
-
-      // Super admin gate
       if (mode === 'super_admin' && data?.user) {
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
@@ -199,34 +171,25 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           .eq('user_id', data.user.id)
           .eq('permission', 'super_admin')
           .single();
-
         if (roleError || !roleData) {
           await supabase.auth.signOut();
           toast.error(t.invalid_credentials || 'هذا الحساب ليس لديه صلاحية مدير النظام');
           return;
         }
-
         toast.success(t.success || 'تم تسجيل الدخول بنجاح');
-        
-        // If on a company subdomain, redirect to admin subdomain
         const currentSubdomain = extractSubdomain();
         const baseDomain = getBaseDomain();
         if (currentSubdomain && baseDomain) {
           window.location.href = getAdminUrl(baseDomain) + '/companies?auth_redirect=1';
           return;
         }
-        
-        // If on admin subdomain already, stay there
         if (isAdminSubdomain()) {
           navigate('/companies', { replace: true });
           return;
         }
-        
         navigate('/companies', { replace: true });
         return;
       }
-
-      // Set selected fiscal year before navigating
       if (mode === 'company' && selectedFiscalYearId) {
         const selectedYear = fiscalYears.find(fy => fy.id === selectedFiscalYearId);
         if (selectedYear) {
@@ -244,30 +207,22 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           });
         }
       }
-
       toast.success(t.success || 'تم تسجيل الدخول بنجاح');
-
-      // Auto-redirect to company subdomain if on a known tenant domain (not lovable.app/localhost)
       if (mode === 'company' && data?.user) {
         const currentSubdomain = extractSubdomain();
         const baseDomain = getBaseDomain();
-        
-        // Only redirect if we're on a known tenant domain but without a subdomain
         if (!currentSubdomain && baseDomain) {
-          // Fetch the user's company subdomain
           const { data: profile } = await supabase
             .from('profiles')
             .select('company_id')
             .eq('user_id', data.user.id)
             .maybeSingle();
-          
           if (profile?.company_id) {
             const { data: company } = await supabase
               .from('companies')
               .select('subdomain')
               .eq('id', profile.company_id)
               .maybeSingle();
-            
             if (company?.subdomain) {
               const tenantUrl = buildTenantUrl(company.subdomain, baseDomain);
               window.location.href = tenantUrl + '?auth_redirect=1';
@@ -276,7 +231,6 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           }
         }
       }
-
       navigate('/', { replace: true });
     } catch {
       toast.error(t.unexpected_error || 'حدث خطأ غير متوقع');
@@ -285,198 +239,220 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     }
   };
 
-  // In company mode, show password & fiscal year only after email is confirmed
   const showPasswordAndFiscalYear = mode === 'super_admin' || emailConfirmed;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative" style={{ backgroundColor: globalSettings.login_bg_color }}>
+    <div
+      className="min-h-screen flex flex-col items-center justify-center relative"
+      style={{
+        backgroundImage: `url(${loginBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-[hsl(215,50%,15%)]/75" />
+
       {/* Language Switcher */}
-      <div className="absolute top-4 left-4">
+      <div className="absolute top-4 left-4 z-20">
         <LanguageSwitcher variant="compact" />
       </div>
-      <div className="w-full max-w-md">
-        <div className="rounded-2xl card-shadow overflow-hidden" style={{ backgroundColor: globalSettings.login_card_color }}>
-          {/* Header */}
-          <div className="p-8 text-center" style={{ background: headerGradient }}>
-            <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-4 overflow-hidden">
-              {!settingsLoading ? (
-                <img
-                  src={globalSettings.login_logo_url || logo}
-                  alt="شعار النظام"
-                  className="w-16 h-16 object-contain"
-                />
-              ) : (
-                <div className="w-16 h-16 animate-pulse bg-white/20 rounded-lg" />
-              )}
-            </div>
-            <h1 className="text-2xl font-bold text-white">{pageTitle}</h1>
-            <p className="text-white/80 text-sm mt-1">{pageSubtitle}</p>
+
+      {/* Main Content */}
+      <div className="relative z-10 w-full max-w-md px-4 flex flex-col items-center">
+        {/* Logo */}
+        <div className="mb-6 flex flex-col items-center">
+          <div className="w-24 h-24 rounded-full border-2 border-white/30 flex items-center justify-center mb-4 overflow-hidden bg-white/5 backdrop-blur-sm">
+            {!settingsLoading ? (
+              <img
+                src={globalSettings.login_logo_url || logo}
+                alt="Logo"
+                className="w-16 h-16 object-contain"
+              />
+            ) : (
+              <div className="w-16 h-16 animate-pulse bg-white/20 rounded-lg" />
+            )}
           </div>
+          <h1 className="text-2xl font-bold text-white">{pageTitle}</h1>
+          <p className="text-white/60 text-sm mt-1">{pageSubtitle}</p>
+        </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
-            <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-foreground">{primaryButtonText}</h2>
+        {/* Login Form Card */}
+        <form onSubmit={handleSubmit} className="w-full">
+          {/* Input Fields */}
+          <div className="bg-white rounded-lg overflow-hidden shadow-2xl mb-3">
+            {/* Email Input */}
+            <div className="flex items-center border-b border-gray-200">
+              <div className="px-4 py-3">
+                <User className="w-5 h-5 text-gray-400" />
+              </div>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={handleEmailKeyDown}
+                placeholder={t.email_placeholder || "Login ID"}
+                className="flex-1 py-3 pr-3 text-sm text-gray-800 placeholder:text-gray-400 bg-transparent outline-none border-none"
+                dir="ltr"
+                required
+              />
             </div>
 
-            {/* Email Field - Always visible */}
-            <div className="space-y-2">
-              <Label htmlFor="email">{t.email}</Label>
-              <div className="relative">
-                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={handleEmailKeyDown}
-                  placeholder={t.email_placeholder}
-                  className="h-12 pr-10"
+            {/* Password Input - show after email confirmed or super_admin */}
+            {showPasswordAndFiscalYear && (
+              <div className="flex items-center">
+                <div className="px-4 py-3">
+                  <Lock className="w-5 h-5 text-gray-400" />
+                </div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t.password_placeholder || "Password"}
+                  className="flex-1 py-3 pr-3 text-sm text-gray-800 placeholder:text-gray-400 bg-transparent outline-none border-none"
                   dir="ltr"
                   required
+                  minLength={6}
+                  autoFocus
                 />
               </div>
+            )}
+          </div>
+
+          {/* Company Name Display */}
+          {mode === 'company' && companyName && emailConfirmed && (
+            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-3 text-center mb-3">
+              <p className="text-xs text-white/60">{t.company_label}</p>
+              <p className="text-sm font-bold text-white">{companyName}</p>
             </div>
+          )}
 
-            {/* Fetch Fiscal Years Button - Only in company mode before confirmation */}
-            {mode === 'company' && !emailConfirmed && (
-              <Button
-                type="button"
-                onClick={fetchFiscalYearsForEmail}
-                className="w-full h-12 hover:opacity-90"
-                style={{ background: headerGradient }}
-                disabled={fetchingFiscalYears || !email}
-              >
-                {fetchingFiscalYears ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {t.checking}
-                  </span>
-                ) : (
-                  t.next
-                )}
-              </Button>
-            )}
-
-            {/* Password & Fiscal Year - Show after email confirmation */}
-            {showPasswordAndFiscalYear && (
-              <>
-                {/* Company Name Display */}
-                {mode === 'company' && companyName && (
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-center">
-                    <p className="text-xs text-muted-foreground">{t.company_label}</p>
-                    <p className="text-base font-bold text-foreground">{companyName}</p>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">{t.password_placeholder}</Label>
-                  <div className="relative">
-                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder={t.password_placeholder}
-                      className="h-12 pr-10"
-                      dir="ltr"
-                      required
-                      minLength={6}
-                      autoFocus
-                    />
-                  </div>
-                </div>
-
-                {/* Fiscal Year Selector - Only in company mode with available years */}
-                {mode === 'company' && fiscalYears.length > 0 && (
-                  <div className="space-y-2">
-                    <Label htmlFor="fiscal-year">{t.fiscal_year_select}</Label>
-                    <div className="relative">
-                      <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10 pointer-events-none" />
-                      <Select
-                        value={selectedFiscalYearId}
-                        onValueChange={setSelectedFiscalYearId}
-                      >
-                        <SelectTrigger className="h-12 pr-10 text-right">
-                          <SelectValue placeholder={t.fiscal_year_select} />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background border z-50">
-                          {fiscalYears.map((fy) => (
-                            <SelectItem key={fy.id} value={fy.id}>
-                              <div className="flex items-center justify-between w-full gap-3">
-                                <span>{fy.name}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {formatDate(fy.start_date)} - {formatDate(fy.end_date)}
-                                </span>
-                                {fy.is_current && (
-                                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                                    {t.current_label}
-                                  </span>
-                                )}
-                                {fy.status === 'closed' && (
-                                  <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">
-                                    {t.closed_label}
-                                  </span>
-                                )}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-
-                <Button
-                  type="submit"
-                  className="w-full h-12 hover:opacity-90"
-                  style={{ background: headerGradient }}
-                  disabled={loading}
+          {/* Fiscal Year Selector */}
+          {showPasswordAndFiscalYear && mode === 'company' && fiscalYears.length > 0 && (
+            <div className="mb-3">
+              <div className="relative">
+                <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 z-10 pointer-events-none" />
+                <Select
+                  value={selectedFiscalYearId}
+                  onValueChange={setSelectedFiscalYearId}
                 >
-                  {loading ? t.loading : primaryButtonText}
-                </Button>
-              </>
+                  <SelectTrigger className="h-11 pr-10 text-right bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/15">
+                    <SelectValue placeholder={t.fiscal_year_select} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border z-50">
+                    {fiscalYears.map((fy) => (
+                      <SelectItem key={fy.id} value={fy.id}>
+                        <div className="flex items-center justify-between w-full gap-3">
+                          <span>{fy.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(fy.start_date)} - {formatDate(fy.end_date)}
+                          </span>
+                          {fy.is_current && (
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                              {t.current_label}
+                            </span>
+                          )}
+                          {fy.status === 'closed' && (
+                            <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">
+                              {t.closed_label}
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          {/* Can't access link */}
+          {showPasswordAndFiscalYear && (
+            <div className="text-right mb-4">
+              <span className="text-xs text-blue-300 hover:text-blue-200 cursor-pointer">
+                {t.forgot_password || "Can't access your account?"}
+              </span>
+            </div>
+          )}
+
+          {/* Fetch Fiscal Years Button - Only in company mode before confirmation */}
+          {mode === 'company' && !emailConfirmed && (
+            <Button
+              type="button"
+              onClick={fetchFiscalYearsForEmail}
+              className="w-full h-12 bg-[hsl(210,70%,50%)] hover:bg-[hsl(210,70%,45%)] text-white font-bold uppercase tracking-wider rounded-md shadow-lg"
+              disabled={fetchingFiscalYears || !email}
+            >
+              {fetchingFiscalYears ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {t.checking}
+                </span>
+              ) : (
+                t.next
+              )}
+            </Button>
+          )}
+
+          {/* Login Button */}
+          {showPasswordAndFiscalYear && (
+            <Button
+              type="submit"
+              className="w-full h-12 bg-[hsl(210,70%,50%)] hover:bg-[hsl(210,70%,45%)] text-white font-bold uppercase tracking-wider rounded-md shadow-lg"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {t.loading}
+                </span>
+              ) : (
+                primaryButtonText
+              )}
+            </Button>
+          )}
+
+          {/* Bottom links */}
+          <div className="mt-5 text-center space-y-3">
+            {mode === 'company' && (
+              <p className="text-sm text-white/70">
+                {t.no_account}{' '}
+                <Link to="/register" className="text-blue-300 hover:text-blue-200 font-medium">
+                  {t.register_company || 'Sign up'}
+                </Link>
+              </p>
             )}
 
-            {/* Navigation Links */}
-            <div className="flex items-center justify-between gap-3 text-sm">
+            <div className="flex items-center justify-center gap-4 text-xs">
               {mode === 'company' ? (
-                // On tenant domains, redirect to admin subdomain; on dev/lovable, use internal route
                 getBaseDomain() ? (
-                  <a href={getAdminUrl() + '/auth/super-admin'} className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
+                  <a href={getAdminUrl() + '/auth/super-admin'} className="text-white/40 hover:text-white/70 inline-flex items-center gap-1">
+                    <Shield className="w-3 h-3" />
                     {t.super_admin_login}
                   </a>
                 ) : (
-                  <Link to="/auth/super-admin" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
+                  <Link to="/auth/super-admin" className="text-white/40 hover:text-white/70 inline-flex items-center gap-1">
+                    <Shield className="w-3 h-3" />
                     {t.super_admin_login}
                   </Link>
                 )
               ) : (
-                <Link to="/auth/company" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
+                <Link to="/auth/company" className="text-white/40 hover:text-white/70 inline-flex items-center gap-1">
+                  <Building2 className="w-3 h-3" />
                   {t.company_login}
                 </Link>
               )}
-
-              <Link to="/auth" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                {t.back}
-              </Link>
             </div>
+          </div>
+        </form>
+      </div>
 
-            {mode === 'company' && (
-              <p className="text-center text-sm text-muted-foreground">
-                {t.no_account}{' '}
-                <Link to="/register" className="text-primary hover:underline font-medium">
-                  {t.register_company}
-                </Link>
-              </p>
-            )}
-          </form>
-        </div>
+      {/* Footer */}
+      <div className="absolute bottom-4 left-0 right-0 text-center z-10">
+        <p className="text-xs text-white/30">
+          © Copyright {new Date().getFullYear()} by <span className="text-blue-300/50">Elzini SaaS</span>. All Rights Reserved.
+        </p>
       </div>
     </div>
   );
