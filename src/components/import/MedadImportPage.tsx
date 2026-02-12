@@ -28,6 +28,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ImportResult {
   type: string;
@@ -76,6 +77,7 @@ const MEDAD_COLUMN_MAPPINGS = {
 };
 
 export function MedadImportPage() {
+  const { t, direction } = useLanguage();
   const { companyId } = useCompany();
   const { user } = useAuth();
   const { selectedFiscalYear } = useFiscalYear();
@@ -172,10 +174,10 @@ export function MedadImportPage() {
       setActiveTab('preview');
       setProgress(100);
       
-      toast.success('تم تحليل الملف بنجاح');
+      toast.success(t.medad_parsing_success);
     } catch (error) {
       console.error('Error parsing file:', error);
-      toast.error('حدث خطأ أثناء تحليل الملف');
+      toast.error(t.medad_parsing_error);
     } finally {
       setIsProcessing(false);
     }
@@ -281,7 +283,7 @@ export function MedadImportPage() {
   // استيراد العملاء
   const importCustomers = async (): Promise<ImportResult> => {
     const result: ImportResult = {
-      type: 'العملاء',
+      type: t.medad_customers,
       total: parsedData.customers.length,
       success: 0,
       failed: 0,
@@ -319,7 +321,7 @@ export function MedadImportPage() {
   // استيراد الموردين
   const importSuppliers = async (): Promise<ImportResult> => {
     const result: ImportResult = {
-      type: 'الموردين',
+      type: t.medad_suppliers,
       total: parsedData.suppliers.length,
       success: 0,
       failed: 0,
@@ -357,7 +359,7 @@ export function MedadImportPage() {
   // استيراد الحسابات
   const importAccounts = async (): Promise<ImportResult> => {
     const result: ImportResult = {
-      type: 'الحسابات',
+      type: t.medad_accounts,
       total: parsedData.accounts.length,
       success: 0,
       failed: 0,
@@ -408,7 +410,7 @@ export function MedadImportPage() {
   // استيراد المصروفات
   const importExpenses = async (): Promise<ImportResult> => {
     const result: ImportResult = {
-      type: 'المصروفات',
+      type: t.medad_expenses,
       total: parsedData.expenses.length,
       success: 0,
       failed: 0,
@@ -489,453 +491,187 @@ export function MedadImportPage() {
       const totalFailed = results.reduce((sum, r) => sum + r.failed, 0);
       
       if (totalFailed === 0) {
-        toast.success(`تم استيراد ${totalSuccess} سجل بنجاح`);
+        toast.success(t.medad_import_success.replace('{count}', String(totalSuccess)));
       } else {
-        toast.warning(`تم استيراد ${totalSuccess} سجل، فشل ${totalFailed} سجل`);
+        toast.warning(t.medad_import_warning.replace('{success}', String(totalSuccess)).replace('{failed}', String(totalFailed)));
       }
     } catch (error) {
       console.error('Import error:', error);
-      toast.error('حدث خطأ أثناء الاستيراد');
+      toast.error(t.medad_import_error);
     } finally {
       setIsProcessing(false);
-      setProgress(100);
     }
   };
-
-  // إعادة تعيين
-  const reset = () => {
-    setParsedData({
-      customers: [],
-      suppliers: [],
-      accounts: [],
-      journalEntries: [],
-      expenses: [],
-    });
-    setImportResults([]);
-    setFileName(null);
-    setActiveTab('upload');
-    setProgress(0);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      parseExcelFile(file);
-    }
-  };
-
-  const totalRecords = 
-    parsedData.customers.length + 
-    parsedData.suppliers.length + 
-    parsedData.accounts.length + 
-    parsedData.expenses.length;
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6" dir={direction}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">استيراد بيانات مداد</h1>
-          <p className="text-muted-foreground">
-            استيراد البيانات من ملفات Excel المصدرة من برنامج مداد المحاسبي
-          </p>
+          <h1 className="text-2xl font-bold">{t.medad_title}</h1>
+          <p className="text-muted-foreground">{t.medad_subtitle}</p>
         </div>
-        {fileName && (
-          <Button variant="outline" onClick={reset} className="gap-2">
-            <RefreshCw className="w-4 h-4" />
-            ملف جديد
-          </Button>
-        )}
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="upload" className="gap-2">
-            <Upload className="w-4 h-4" />
-            رفع الملف
-          </TabsTrigger>
-          <TabsTrigger value="preview" disabled={!fileName} className="gap-2">
-            <FileSpreadsheet className="w-4 h-4" />
-            معاينة
-          </TabsTrigger>
-          <TabsTrigger value="results" disabled={importResults.length === 0} className="gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            النتائج
-          </TabsTrigger>
-        </TabsList>
+      <Card>
+        <CardContent className="p-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-6">
+              <TabsTrigger value="upload" disabled={isProcessing}>{t.medad_upload_btn}</TabsTrigger>
+              <TabsTrigger value="preview" disabled={!fileName || isProcessing}>{t.medad_preview}</TabsTrigger>
+              <TabsTrigger value="results" disabled={importResults.length === 0 || isProcessing}>{t.medad_results}</TabsTrigger>
+            </TabsList>
 
-        {/* رفع الملف */}
-        <TabsContent value="upload">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileSpreadsheet className="w-5 h-5" />
-                رفع ملف Excel
-              </CardTitle>
-              <CardDescription>
-                قم بتصدير البيانات من برنامج مداد كملف Excel ثم ارفعه هنا
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+            <TabsContent value="upload" className="space-y-6">
               <div 
-                className="border-2 border-dashed rounded-lg p-12 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                className="border-2 border-dashed border-muted-foreground/25 rounded-xl p-12 text-center hover:bg-muted/50 transition-colors cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <Input
+                <input 
+                  type="file" 
                   ref={fileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={handleFileChange}
-                  className="hidden"
+                  className="hidden" 
+                  accept=".xlsx, .xls, .csv"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) parseExcelFile(file);
+                  }}
                 />
-                <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg font-medium mb-2">اسحب الملف هنا أو انقر للاختيار</p>
-                <p className="text-sm text-muted-foreground">
-                  يدعم ملفات Excel (.xlsx, .xls) و CSV
-                </p>
-              </div>
-
-              {isProcessing && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>جاري التحليل...</span>
-                    <span>{progress}%</span>
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Upload className="w-8 h-8 text-primary" />
                   </div>
-                  <Progress value={progress} />
-                </div>
-              )}
-
-              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                <h3 className="font-medium">البيانات المدعومة:</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Users className="w-4 h-4 text-blue-500" />
-                    <span>العملاء</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Truck className="w-4 h-4 text-green-500" />
-                    <span>الموردين</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calculator className="w-4 h-4 text-purple-500" />
-                    <span>دليل الحسابات</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <DollarSign className="w-4 h-4 text-orange-500" />
-                    <span>المصروفات</span>
+                  <div>
+                    <h3 className="text-lg font-semibold">{t.medad_drag_drop}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">{t.medad_supported_formats}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium text-amber-800 dark:text-amber-200">نصائح للتصدير من مداد:</p>
-                    <ul className="mt-2 space-y-1 text-amber-700 dark:text-amber-300">
-                      <li>• تأكد من تسمية الأوراق بأسماء واضحة (عملاء، موردين، حسابات)</li>
-                      <li>• احتفظ بصف العناوين في أول صف</li>
-                      <li>• تأكد من صحة تنسيق الأرقام والتواريخ</li>
-                    </ul>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="bg-blue-50/50 border-blue-100">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <Users className="w-8 h-8 text-blue-600" />
+                    <span className="font-medium">{t.medad_customers}</span>
+                  </CardContent>
+                </Card>
+                <Card className="bg-green-50/50 border-green-100">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <Truck className="w-8 h-8 text-green-600" />
+                    <span className="font-medium">{t.medad_suppliers}</span>
+                  </CardContent>
+                </Card>
+                <Card className="bg-purple-50/50 border-purple-100">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <FileSpreadsheet className="w-8 h-8 text-purple-600" />
+                    <span className="font-medium">{t.medad_accounts}</span>
+                  </CardContent>
+                </Card>
+                <Card className="bg-orange-50/50 border-orange-100">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <DollarSign className="w-8 h-8 text-orange-600" />
+                    <span className="font-medium">{t.medad_expenses}</span>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 className="font-semibold text-yellow-800 flex items-center gap-2 mb-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  {t.medad_tips}
+                </h4>
+                <ul className="list-disc list-inside text-sm text-yellow-700 space-y-1">
+                  <li>{t.medad_tip_1}</li>
+                  <li>{t.medad_tip_2}</li>
+                  <li>{t.medad_tip_3}</li>
+                </ul>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="preview">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">{fileName}</h3>
+                  <Button onClick={executeImport} disabled={isProcessing}>
+                    {isProcessing ? <RefreshCw className="w-4 h-4 animate-spin ml-2" /> : <Download className="w-4 h-4 ml-2" />}
+                    {t.medad_upload_btn}
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="p-4 border rounded-lg bg-card">
+                    <p className="text-sm text-muted-foreground">{t.medad_customers}</p>
+                    <p className="text-2xl font-bold">{parsedData.customers.length}</p>
+                  </div>
+                  <div className="p-4 border rounded-lg bg-card">
+                    <p className="text-sm text-muted-foreground">{t.medad_suppliers}</p>
+                    <p className="text-2xl font-bold">{parsedData.suppliers.length}</p>
+                  </div>
+                  <div className="p-4 border rounded-lg bg-card">
+                    <p className="text-sm text-muted-foreground">{t.medad_accounts}</p>
+                    <p className="text-2xl font-bold">{parsedData.accounts.length}</p>
+                  </div>
+                  <div className="p-4 border rounded-lg bg-card">
+                    <p className="text-sm text-muted-foreground">{t.medad_expenses}</p>
+                    <p className="text-2xl font-bold">{parsedData.expenses.length}</p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        {/* معاينة البيانات */}
-        <TabsContent value="preview">
-          <div className="space-y-4">
-            {fileName && (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-8 h-8 text-green-600" />
-                      <div>
-                        <p className="font-medium">{fileName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          تم العثور على {totalRecords} سجل
-                        </p>
-                      </div>
+                {isProcessing && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>جاري المعالجة...</span>
+                      <span>{Math.round(progress)}%</span>
                     </div>
-                    <Button onClick={executeImport} disabled={totalRecords === 0 || isProcessing} className="gap-2">
-                      {isProcessing ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          جاري الاستيراد...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-4 h-4" />
-                          بدء الاستيراد
-                        </>
-                      )}
-                    </Button>
+                    <Progress value={progress} />
                   </div>
-                  {isProcessing && (
-                    <Progress value={progress} className="mt-4" />
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                )}
+              </div>
+            </TabsContent>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              {/* العملاء */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-blue-500" />
-                      العملاء
-                    </span>
-                    <Badge variant={parsedData.customers.length > 0 ? 'default' : 'secondary'}>
-                      {parsedData.customers.length}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {parsedData.customers.length > 0 ? (
-                    <div className="max-h-48 overflow-auto">
-                      <table className="w-full text-sm">
-                        <thead className="bg-muted sticky top-0">
-                          <tr>
-                            <th className="p-2 text-right">الاسم</th>
-                            <th className="p-2 text-right">الهاتف</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {parsedData.customers.slice(0, 10).map((c, i) => (
-                            <tr key={i} className="border-t">
-                              <td className="p-2">{c.name}</td>
-                              <td className="p-2 text-muted-foreground">{c.phone || '-'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {parsedData.customers.length > 10 && (
-                        <p className="text-xs text-muted-foreground text-center mt-2">
-                          +{parsedData.customers.length - 10} آخرين
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      لم يتم العثور على بيانات عملاء
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* الموردين */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <Truck className="w-4 h-4 text-green-500" />
-                      الموردين
-                    </span>
-                    <Badge variant={parsedData.suppliers.length > 0 ? 'default' : 'secondary'}>
-                      {parsedData.suppliers.length}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {parsedData.suppliers.length > 0 ? (
-                    <div className="max-h-48 overflow-auto">
-                      <table className="w-full text-sm">
-                        <thead className="bg-muted sticky top-0">
-                          <tr>
-                            <th className="p-2 text-right">الاسم</th>
-                            <th className="p-2 text-right">الهاتف</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {parsedData.suppliers.slice(0, 10).map((s, i) => (
-                            <tr key={i} className="border-t">
-                              <td className="p-2">{s.name}</td>
-                              <td className="p-2 text-muted-foreground">{s.phone || '-'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {parsedData.suppliers.length > 10 && (
-                        <p className="text-xs text-muted-foreground text-center mt-2">
-                          +{parsedData.suppliers.length - 10} آخرين
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      لم يتم العثور على بيانات موردين
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* الحسابات */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <Calculator className="w-4 h-4 text-purple-500" />
-                      دليل الحسابات
-                    </span>
-                    <Badge variant={parsedData.accounts.length > 0 ? 'default' : 'secondary'}>
-                      {parsedData.accounts.length}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {parsedData.accounts.length > 0 ? (
-                    <div className="max-h-48 overflow-auto">
-                      <table className="w-full text-sm">
-                        <thead className="bg-muted sticky top-0">
-                          <tr>
-                            <th className="p-2 text-right">الكود</th>
-                            <th className="p-2 text-right">الاسم</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {parsedData.accounts.slice(0, 10).map((a, i) => (
-                            <tr key={i} className="border-t">
-                              <td className="p-2 font-mono">{a.code}</td>
-                              <td className="p-2">{a.name}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {parsedData.accounts.length > 10 && (
-                        <p className="text-xs text-muted-foreground text-center mt-2">
-                          +{parsedData.accounts.length - 10} آخرين
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      لم يتم العثور على بيانات حسابات
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* المصروفات */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-orange-500" />
-                      المصروفات
-                    </span>
-                    <Badge variant={parsedData.expenses.length > 0 ? 'default' : 'secondary'}>
-                      {parsedData.expenses.length}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {parsedData.expenses.length > 0 ? (
-                    <div className="max-h-48 overflow-auto">
-                      <table className="w-full text-sm">
-                        <thead className="bg-muted sticky top-0">
-                          <tr>
-                            <th className="p-2 text-right">البيان</th>
-                            <th className="p-2 text-right">المبلغ</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {parsedData.expenses.slice(0, 10).map((e, i) => (
-                            <tr key={i} className="border-t">
-                              <td className="p-2">{e.description}</td>
-                              <td className="p-2">{e.amount.toLocaleString()} ر.س</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {parsedData.expenses.length > 10 && (
-                        <p className="text-xs text-muted-foreground text-center mt-2">
-                          +{parsedData.expenses.length - 10} آخرين
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      لم يتم العثور على بيانات مصروفات
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* النتائج */}
-        <TabsContent value="results">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                نتائج الاستيراد
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {importResults.map((result, index) => (
-                <div key={index} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-medium">{result.type}</h3>
-                    <div className="flex items-center gap-2">
-                      {result.success > 0 && (
-                        <Badge variant="default" className="bg-green-600">
-                          <CheckCircle2 className="w-3 h-3 mr-1" />
-                          {result.success} نجاح
+            <TabsContent value="results">
+              <div className="space-y-6">
+                {importResults.map((result, index) => (
+                  <Card key={index}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between text-base">
+                        <span>{result.type}</span>
+                        <Badge variant={result.failed > 0 ? 'destructive' : 'default'}>
+                          {result.failed > 0 ? 'مكتمل مع أخطاء' : 'ناجح'}
                         </Badge>
-                      )}
-                      {result.failed > 0 && (
-                        <Badge variant="destructive">
-                          <XCircle className="w-3 h-3 mr-1" />
-                          {result.failed} فشل
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <Progress 
-                    value={(result.success / result.total) * 100} 
-                    className="h-2"
-                  />
-                  
-                  {result.errors.length > 0 && (
-                    <div className="mt-3 bg-red-50 dark:bg-red-950/30 rounded p-3">
-                      <p className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
-                        الأخطاء:
-                      </p>
-                      <ul className="text-xs text-red-700 dark:text-red-300 space-y-1 max-h-32 overflow-auto">
-                        {result.errors.slice(0, 10).map((err, i) => (
-                          <li key={i}>• {err}</li>
-                        ))}
-                        {result.errors.length > 10 && (
-                          <li className="text-muted-foreground">
-                            +{result.errors.length - 10} أخطاء أخرى
-                          </li>
-                        )}
-                      </ul>
-                    </div>
-                  )}
+                      </CardTitle>
+                      <CardDescription>
+                        إجمالي: {result.total} | نجاح: {result.success} | فشل: {result.failed}
+                      </CardDescription>
+                    </CardHeader>
+                    {result.errors.length > 0 && (
+                      <CardContent>
+                        <div className="bg-destructive/10 text-destructive p-4 rounded-lg text-sm max-h-40 overflow-y-auto">
+                          <ul className="list-disc list-inside space-y-1">
+                            {result.errors.map((error, i) => (
+                              <li key={i}>{error}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                ))}
+                
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={() => {
+                    setParsedData({ customers: [], suppliers: [], accounts: [], journalEntries: [], expenses: [] });
+                    setImportResults([]);
+                    setFileName(null);
+                    setActiveTab('upload');
+                  }}>
+                    استيراد ملف آخر
+                  </Button>
                 </div>
-              ))}
-
-              <div className="flex justify-center pt-4">
-                <Button onClick={reset} variant="outline" className="gap-2">
-                  <RefreshCw className="w-4 h-4" />
-                  استيراد ملف جديد
-                </Button>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

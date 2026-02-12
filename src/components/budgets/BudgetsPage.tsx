@@ -6,27 +6,28 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Search, Calculator, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
+import { Plus, Search, Calculator, TrendingUp, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { toast } from 'sonner';
-
-const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
-  draft: { label: 'مسودة', variant: 'outline' },
-  approved: { label: 'معتمدة', variant: 'default' },
-  closed: { label: 'مغلقة', variant: 'secondary' },
-};
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function BudgetsPage() {
+  const { t, direction } = useLanguage();
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const companyId = useCompanyId();
   const { selectedFiscalYear } = useFiscalYear();
   const queryClient = useQueryClient();
+
+  const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
+    draft: { label: t.budgets_status_draft, variant: 'outline' },
+    approved: { label: t.budgets_status_approved, variant: 'default' },
+    closed: { label: t.budgets_status_closed, variant: 'secondary' },
+  };
 
   const [form, setForm] = useState({
     name: '',
@@ -64,12 +65,12 @@ export function BudgetsPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('تم إنشاء الموازنة بنجاح');
+      toast.success(t.budgets_toast_created);
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       setShowForm(false);
       setForm({ name: '', start_date: '', end_date: '', notes: '' });
     },
-    onError: () => toast.error('خطأ في إنشاء الموازنة'),
+    onError: () => toast.error(t.budgets_toast_error),
   });
 
   const filtered = useMemo(() => {
@@ -78,15 +79,15 @@ export function BudgetsPage() {
   }, [budgets, search]);
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6" dir={direction}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">الموازنات التقديرية</h1>
-          <p className="text-muted-foreground">إعداد ومتابعة الموازنات ومقارنة الفعلي بالمخطط</p>
+          <h1 className="text-2xl font-bold">{t.budgets_title}</h1>
+          <p className="text-muted-foreground">{t.budgets_subtitle}</p>
         </div>
         <Button onClick={() => setShowForm(true)}>
           <Plus className="w-4 h-4 ml-2" />
-          موازنة جديدة
+          {t.budgets_new}
         </Button>
       </div>
 
@@ -95,7 +96,7 @@ export function BudgetsPage() {
           <CardContent className="p-4 flex items-center gap-3">
             <Calculator className="w-8 h-8 text-primary" />
             <div>
-              <p className="text-sm text-muted-foreground">إجمالي الموازنات</p>
+              <p className="text-sm text-muted-foreground">{t.budgets_total}</p>
               <p className="text-xl font-bold">{budgets.length}</p>
             </div>
           </CardContent>
@@ -104,7 +105,7 @@ export function BudgetsPage() {
           <CardContent className="p-4 flex items-center gap-3">
             <TrendingUp className="w-8 h-8 text-green-600" />
             <div>
-              <p className="text-sm text-muted-foreground">معتمدة</p>
+              <p className="text-sm text-muted-foreground">{t.budgets_approved}</p>
               <p className="text-xl font-bold">{budgets.filter((b: any) => b.status === 'approved').length}</p>
             </div>
           </CardContent>
@@ -113,7 +114,7 @@ export function BudgetsPage() {
           <CardContent className="p-4 flex items-center gap-3">
             <BarChart3 className="w-8 h-8 text-yellow-600" />
             <div>
-              <p className="text-sm text-muted-foreground">مسودة</p>
+              <p className="text-sm text-muted-foreground">{t.budgets_draft}</p>
               <p className="text-xl font-bold">{budgets.filter((b: any) => b.status === 'draft').length}</p>
             </div>
           </CardContent>
@@ -123,10 +124,10 @@ export function BudgetsPage() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle>قائمة الموازنات</CardTitle>
+            <CardTitle>{t.budgets_list}</CardTitle>
             <div className="relative w-64">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="بحث..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-9" />
+              <Input placeholder={t.search} value={search} onChange={(e) => setSearch(e.target.value)} className="pr-9" />
             </div>
           </div>
         </CardHeader>
@@ -135,23 +136,23 @@ export function BudgetsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="text-right">#</TableHead>
-                <TableHead className="text-right">اسم الموازنة</TableHead>
-                <TableHead className="text-right">من</TableHead>
-                <TableHead className="text-right">إلى</TableHead>
-                <TableHead className="text-right">الحالة</TableHead>
-                <TableHead className="text-right">ملاحظات</TableHead>
+                <TableHead className="text-right">{t.budgets_col_name}</TableHead>
+                <TableHead className="text-right">{t.budgets_col_start}</TableHead>
+                <TableHead className="text-right">{t.budgets_col_end}</TableHead>
+                <TableHead className="text-right">{t.budgets_col_status}</TableHead>
+                <TableHead className="text-right">{t.budgets_col_notes}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">جاري التحميل...</TableCell>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t.loading}</TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     <Calculator className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    لا توجد موازنات
+                    {t.no_data}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -177,33 +178,33 @@ export function BudgetsPage() {
 
       {/* Add Budget Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-md" dir="rtl">
+        <DialogContent className="max-w-md" dir={direction}>
           <DialogHeader>
-            <DialogTitle>موازنة جديدة</DialogTitle>
+            <DialogTitle>{t.budgets_new}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4">
             <div>
-              <Label>اسم الموازنة</Label>
-              <Input value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} placeholder="مثال: موازنة 2026" />
+              <Label>{t.budgets_col_name}</Label>
+              <Input value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} placeholder="2026..." />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>تاريخ البداية</Label>
+                <Label>{t.budgets_col_start}</Label>
                 <Input type="date" value={form.start_date} onChange={(e) => setForm(f => ({ ...f, start_date: e.target.value }))} />
               </div>
               <div>
-                <Label>تاريخ النهاية</Label>
+                <Label>{t.budgets_col_end}</Label>
                 <Input type="date" value={form.end_date} onChange={(e) => setForm(f => ({ ...f, end_date: e.target.value }))} />
               </div>
             </div>
             <div>
-              <Label>ملاحظات</Label>
+              <Label>{t.budgets_col_notes}</Label>
               <Textarea value={form.notes} onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowForm(false)}>إلغاء</Button>
-            <Button onClick={() => addBudget.mutate()} disabled={!form.name || !form.start_date || !form.end_date}>إنشاء</Button>
+            <Button variant="outline" onClick={() => setShowForm(false)}>{t.cancel}</Button>
+            <Button onClick={() => addBudget.mutate()} disabled={!form.name || !form.start_date || !form.end_date}>{t.save}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
