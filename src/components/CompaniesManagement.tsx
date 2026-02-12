@@ -66,6 +66,7 @@ interface Company {
   logo_url: string | null;
   is_active: boolean;
   company_type: 'car_dealership' | 'construction' | 'general_trading';
+  subdomain: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -99,6 +100,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
     name: '',
     phone: '',
     address: '',
+    subdomain: '',
     is_active: true,
     company_type: 'car_dealership' as 'car_dealership' | 'construction' | 'general_trading',
   });
@@ -154,6 +156,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
           name: data.name,
           phone: data.phone || null,
           address: data.address || null,
+          subdomain: data.subdomain || null,
           is_active: data.is_active,
           company_type: data.company_type,
         })
@@ -183,6 +186,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
           name: data.name,
           phone: data.phone || null,
           address: data.address || null,
+          subdomain: data.subdomain || null,
           is_active: data.is_active,
         })
         .eq('id', id)
@@ -230,6 +234,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
       name: '',
       phone: '',
       address: '',
+      subdomain: '',
       is_active: true,
       company_type: 'car_dealership',
     });
@@ -241,6 +246,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
       name: company.name,
       phone: company.phone || '',
       address: company.address || '',
+      subdomain: company.subdomain || '',
       is_active: company.is_active,
       company_type: company.company_type || 'car_dealership',
     });
@@ -360,8 +366,8 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
             <TableRow className="bg-muted/50">
               <TableHead className="text-right font-bold">#</TableHead>
               <TableHead className="text-right font-bold">اسم الشركة</TableHead>
+              <TableHead className="text-right font-bold">النطاق الفرعي</TableHead>
               <TableHead className="text-right font-bold">نوع النشاط</TableHead>
-              <TableHead className="text-right font-bold">الهاتف</TableHead>
               <TableHead className="text-center font-bold">المستخدمين</TableHead>
               <TableHead className="text-center font-bold">السيارات</TableHead>
               <TableHead className="text-center font-bold">المبيعات</TableHead>
@@ -383,20 +389,19 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
                     </div>
                   </TableCell>
                   <TableCell>
+                    {company.subdomain ? (
+                      <Badge variant="outline" className="font-mono text-xs" dir="ltr">
+                        {company.subdomain}.elzini.com
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground/50 text-sm">غير مُعد</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <Badge variant="outline" className="gap-1">
                       {COMPANY_TYPES.find(t => t.value === company.company_type)?.icon || '🏢'}
                       <span className="mr-1">{COMPANY_TYPES.find(t => t.value === company.company_type)?.label || 'غير محدد'}</span>
                     </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {company.phone ? (
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Phone className="w-3 h-3" />
-                        {company.phone}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground/50">-</span>
-                    )}
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge variant="outline" className="gap-1">
@@ -548,6 +553,20 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
                 placeholder="عنوان الشركة"
               />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="subdomain">النطاق الفرعي (Subdomain)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="subdomain"
+                  value={formData.subdomain}
+                  onChange={(e) => setFormData({ ...formData, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                  placeholder="company-name"
+                  dir="ltr"
+                  className="text-left font-mono"
+                />
+                <span className="text-muted-foreground text-sm whitespace-nowrap">.elzini.com</span>
+              </div>
+            </div>
             <div className="flex items-center gap-3">
               <Switch
                 id="is_active"
@@ -605,6 +624,20 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-subdomain">النطاق الفرعي (Subdomain)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="edit-subdomain"
+                  value={formData.subdomain}
+                  onChange={(e) => setFormData({ ...formData, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                  placeholder="company-name"
+                  dir="ltr"
+                  className="text-left font-mono"
+                />
+                <span className="text-muted-foreground text-sm whitespace-nowrap">.elzini.com</span>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <Switch

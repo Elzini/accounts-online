@@ -8166,6 +8166,10 @@ export type Database = {
             Args: { p_company_id: string; p_endpoint?: string }
             Returns: boolean
           }
+      check_tenant_schema_exists: {
+        Args: { p_company_id: string }
+        Returns: boolean
+      }
       cleanup_rate_limit_logs: { Args: never; Returns: undefined }
       create_default_accounts: {
         Args: { p_company_id: string }
