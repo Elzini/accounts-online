@@ -16,6 +16,7 @@ export interface PluginInfo {
   downloads: number;
   pageId: string; // maps to ActivePage
   menuLabel: string;
+  menuLabel_en: string;
   menuIcon: string; // lucide icon key
 }
 
@@ -38,6 +39,7 @@ export const ALL_PLUGINS: PluginInfo[] = [
     downloads: 1250,
     pageId: 'plugin-zatca',
     menuLabel: 'الفوترة الإلكترونية',
+    menuLabel_en: 'E-Invoicing',
     menuIcon: 'receipt',
   },
   {
@@ -56,6 +58,7 @@ export const ALL_PLUGINS: PluginInfo[] = [
     downloads: 890,
     pageId: 'plugin-advanced-hr',
     menuLabel: 'الموارد البشرية المتقدمة',
+    menuLabel_en: 'Advanced HR',
     menuIcon: 'users',
   },
   {
@@ -74,6 +77,7 @@ export const ALL_PLUGINS: PluginInfo[] = [
     downloads: 720,
     pageId: 'plugin-multi-warehouse',
     menuLabel: 'المستودعات المتعددة',
+    menuLabel_en: 'Multi-Warehouse',
     menuIcon: 'warehouse',
   },
   {
@@ -92,6 +96,7 @@ export const ALL_PLUGINS: PluginInfo[] = [
     downloads: 560,
     pageId: 'plugin-bi-analytics',
     menuLabel: 'تحليلات الأعمال BI',
+    menuLabel_en: 'BI Analytics',
     menuIcon: 'bar-chart-3',
   },
   {
@@ -110,6 +115,7 @@ export const ALL_PLUGINS: PluginInfo[] = [
     downloads: 340,
     pageId: 'plugin-pos',
     menuLabel: 'نقاط البيع POS',
+    menuLabel_en: 'POS System',
     menuIcon: 'monitor',
   },
   {
@@ -128,6 +134,7 @@ export const ALL_PLUGINS: PluginInfo[] = [
     downloads: 430,
     pageId: 'plugin-whatsapp',
     menuLabel: 'تكامل واتساب',
+    menuLabel_en: 'WhatsApp Integration',
     menuIcon: 'message-circle',
   },
   {
@@ -146,6 +153,7 @@ export const ALL_PLUGINS: PluginInfo[] = [
     downloads: 210,
     pageId: 'plugin-ifrs',
     menuLabel: 'معايير IFRS',
+    menuLabel_en: 'IFRS Standards',
     menuIcon: 'globe',
   },
   {
@@ -164,6 +172,7 @@ export const ALL_PLUGINS: PluginInfo[] = [
     downloads: 380,
     pageId: 'plugin-project-mgmt',
     menuLabel: 'إدارة المشاريع',
+    menuLabel_en: 'Project Management',
     menuIcon: 'clipboard-list',
   },
 ];
