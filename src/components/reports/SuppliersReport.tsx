@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function SuppliersReport() {
   const { data: suppliers, isLoading: suppliersLoading } = useSuppliers();
@@ -20,6 +21,8 @@ export function SuppliersReport() {
   const { printReport } = usePrintReport();
   const { exportToExcel } = useExcelExport();
   const labels = useIndustryLabels();
+  const { t, language } = useLanguage();
+  const locale = language === 'ar' ? 'ar-SA' : 'en-US';
 
   // Filter cars by date and supplier
   const filteredCars = useMemo(() => {
@@ -78,43 +81,37 @@ export function SuppliersReport() {
   const totalPurchasesAmount = supplierStats.reduce((sum, s) => sum + s.totalPurchases, 0);
   const totalCarsCount = supplierStats.reduce((sum, s) => sum + s.carsCount, 0);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatCurrencySimple = (value: number) => new Intl.NumberFormat('ar-SA').format(value);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ar-SA');
-  };
+  const formatCurrency = (amount: number) => new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: 'SAR',
+    minimumFractionDigits: 0,
+  }).format(amount);
+  const formatCurrencySimple = (value: number) => new Intl.NumberFormat(locale).format(value);
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(locale);
+  const getStatusText = (status: string) => status === 'available' ? t.rpt_status_available : status === 'transferred' ? t.rpt_status_transferred : t.rpt_status_sold;
 
   const reportTitle = selectedSupplier === 'all' 
-    ? 'تقرير الموردين - إجمالي' 
-    : `تقرير المورد: ${selectedSupplierData?.name}`;
+    ? `${t.rpt_supp_title} - ${t.rpt_supp_select_all}` 
+    : `${t.rpt_supp_title}: ${selectedSupplierData?.name}`;
 
   const handlePrint = () => {
     printReport({
       title: reportTitle,
-      subtitle: 'إحصائيات وتفاصيل الموردين',
+      subtitle: t.rpt_supp_subtitle,
       columns: selectedSupplier === 'all' ? [
-        { header: 'الاسم', key: 'name' },
-        { header: 'رقم الهاتف', key: 'phone' },
-        { header: `عدد ${labels.itemsName}`, key: 'cars_count' },
-        { header: 'المتاحة', key: 'available' },
-        { header: 'المباعة', key: 'sold' },
-        { header: 'إجمالي المشتريات', key: 'total_purchases' },
+        { header: t.rpt_supp_col_name, key: 'name' },
+        { header: t.rpt_supp_col_phone, key: 'phone' },
+        { header: `${t.rpt_supp_items_count}`, key: 'cars_count' },
+        { header: t.rpt_supp_col_available, key: 'available' },
+        { header: t.rpt_supp_col_sold, key: 'sold' },
+        { header: t.rpt_supp_purchases_total, key: 'total_purchases' },
       ] : [
-        { header: 'رقم المخزون', key: 'inventory_number' },
+        { header: t.rpt_purch_col_number, key: 'inventory_number' },
         { header: labels.itemName, key: 'car' },
-        { header: 'الموديل', key: 'model' },
-        { header: 'اللون', key: 'color' },
-        { header: 'سعر الشراء', key: 'purchase_price' },
-        { header: 'الحالة', key: 'status' },
-        { header: 'التاريخ', key: 'date' },
+        { header: t.rpt_purch_col_model, key: 'model' },
+        { header: t.rpt_purch_col_price, key: 'purchase_price' },
+        { header: t.rpt_purch_col_status, key: 'status' },
+        { header: t.rpt_purch_col_date, key: 'date' },
       ],
       data: selectedSupplier === 'all'
         ? supplierStats.map(supplier => ({
@@ -123,21 +120,20 @@ export function SuppliersReport() {
             cars_count: supplier.carsCount,
             available: supplier.availableCars,
             sold: supplier.soldCars,
-            total_purchases: `${formatCurrencySimple(supplier.totalPurchases)} ريال`,
+            total_purchases: `${formatCurrencySimple(supplier.totalPurchases)} ${t.rpt_currency}`,
           }))
         : filteredCars.map(car => ({
             inventory_number: car.inventory_number,
             car: car.name,
             model: car.model || '-',
-            color: car.color || '-',
-            purchase_price: `${formatCurrencySimple(Number(car.purchase_price))} ريال`,
-            status: car.status === 'available' ? 'متاحة' : car.status === 'transferred' ? 'محولة' : 'مباعة',
+            purchase_price: `${formatCurrencySimple(Number(car.purchase_price))} ${t.rpt_currency}`,
+            status: getStatusText(car.status),
             date: formatDate(car.purchase_date),
           })),
       summaryCards: [
-        { label: selectedSupplier === 'all' ? 'إجمالي الموردين' : 'المورد', value: selectedSupplier === 'all' ? String(totalSuppliers) : selectedSupplierData?.name || '' },
-        { label: `عدد ${labels.itemsName}`, value: String(totalCarsCount) },
-        { label: 'إجمالي المشتريات', value: `${formatCurrencySimple(totalPurchasesAmount)} ريال` },
+        { label: selectedSupplier === 'all' ? t.rpt_supp_total : t.rpt_supp_select, value: selectedSupplier === 'all' ? String(totalSuppliers) : selectedSupplierData?.name || '' },
+        { label: t.rpt_supp_items_count, value: String(totalCarsCount) },
+        { label: t.rpt_supp_purchases_total, value: `${formatCurrencySimple(totalPurchasesAmount)} ${t.rpt_currency}` },
       ],
     });
   };
@@ -146,31 +142,28 @@ export function SuppliersReport() {
     exportToExcel({
       title: reportTitle,
       columns: selectedSupplier === 'all' ? [
-        { header: 'الاسم', key: 'name' },
-        { header: 'رقم الهوية', key: 'id_number' },
-        { header: 'رقم السجل', key: 'registration_number' },
-        { header: 'رقم الهاتف', key: 'phone' },
-        { header: 'العنوان', key: 'address' },
-        { header: `عدد ${labels.itemsName}`, key: 'cars_count' },
-        { header: 'المتاحة', key: 'available' },
-        { header: 'المباعة', key: 'sold' },
-        { header: 'إجمالي المشتريات', key: 'total_purchases' },
-        { header: 'ملاحظات', key: 'notes' },
+        { header: t.rpt_supp_col_name, key: 'name' },
+        { header: t.rpt_cust_col_id, key: 'id_number' },
+        { header: t.rpt_supp_col_phone, key: 'phone' },
+        { header: t.rpt_cust_col_address, key: 'address' },
+        { header: t.rpt_supp_items_count, key: 'cars_count' },
+        { header: t.rpt_supp_col_available, key: 'available' },
+        { header: t.rpt_supp_col_sold, key: 'sold' },
+        { header: t.rpt_supp_purchases_total, key: 'total_purchases' },
+        { header: t.rpt_supp_col_notes, key: 'notes' },
       ] : [
-        { header: 'رقم المخزون', key: 'inventory_number' },
+        { header: t.rpt_purch_col_number, key: 'inventory_number' },
         { header: labels.itemName, key: 'car' },
-        { header: 'الموديل', key: 'model' },
-        { header: 'اللون', key: 'color' },
-        { header: 'رقم الشاسيه', key: 'chassis' },
-        { header: 'سعر الشراء', key: 'purchase_price' },
-        { header: 'الحالة', key: 'status' },
-        { header: 'التاريخ', key: 'date' },
+        { header: t.rpt_purch_col_model, key: 'model' },
+        { header: t.rpt_purch_col_chassis, key: 'chassis' },
+        { header: t.rpt_purch_col_price, key: 'purchase_price' },
+        { header: t.rpt_purch_col_status, key: 'status' },
+        { header: t.rpt_purch_col_date, key: 'date' },
       ],
       data: selectedSupplier === 'all'
         ? supplierStats.map(supplier => ({
             name: supplier.name,
             id_number: supplier.id_number || '-',
-            registration_number: supplier.registration_number || '-',
             phone: supplier.phone,
             address: supplier.address || '-',
             cars_count: supplier.carsCount,
@@ -183,18 +176,17 @@ export function SuppliersReport() {
             inventory_number: car.inventory_number,
             car: car.name,
             model: car.model || '-',
-            color: car.color || '-',
             chassis: car.chassis_number,
             purchase_price: Number(car.purchase_price),
-            status: car.status === 'available' ? 'متاحة' : car.status === 'transferred' ? 'محولة' : 'مباعة',
+            status: getStatusText(car.status),
             date: formatDate(car.purchase_date),
           })),
       summaryData: [
-        { label: selectedSupplier === 'all' ? 'إجمالي الموردين' : 'المورد', value: selectedSupplier === 'all' ? totalSuppliers : selectedSupplierData?.name || '' },
-        { label: `عدد ${labels.itemsName}`, value: totalCarsCount },
-        { label: 'إجمالي المشتريات', value: totalPurchasesAmount },
+        { label: selectedSupplier === 'all' ? t.rpt_supp_total : t.rpt_supp_select, value: selectedSupplier === 'all' ? totalSuppliers : selectedSupplierData?.name || '' },
+        { label: t.rpt_supp_items_count, value: totalCarsCount },
+        { label: t.rpt_supp_purchases_total, value: totalPurchasesAmount },
       ],
-      fileName: `تقرير_الموردين_${selectedSupplier === 'all' ? 'إجمالي' : selectedSupplierData?.name}_${new Date().toLocaleDateString('ar-SA')}`,
+      fileName: `${t.rpt_supp_title}_${new Date().toLocaleDateString(locale)}`,
     });
   };
 
@@ -205,16 +197,16 @@ export function SuppliersReport() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">تقرير الموردين</h2>
-          <p className="text-muted-foreground">إحصائيات وتفاصيل الموردين</p>
+          <h2 className="text-2xl font-bold text-foreground">{t.rpt_supp_title}</h2>
+          <p className="text-muted-foreground">{t.rpt_supp_subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
             <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="اختر المورد" />
+              <SelectValue placeholder={t.rpt_supp_select} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">جميع الموردين (إجمالي)</SelectItem>
+              <SelectItem value="all">{t.rpt_supp_select_all}</SelectItem>
               {suppliers?.map(supplier => (
                 <SelectItem key={supplier.id} value={supplier.id}>{supplier.name}</SelectItem>
               ))}
@@ -228,11 +220,11 @@ export function SuppliersReport() {
           />
           <Button onClick={handlePrint} variant="outline" className="gap-2">
             <Printer className="w-4 h-4" />
-            طباعة
+            {t.rpt_print}
           </Button>
           <Button onClick={handleExportExcel} className="gap-2">
             <FileSpreadsheet className="w-4 h-4" />
-            تصدير Excel
+            {t.rpt_export_excel}
           </Button>
         </div>
       </div>
@@ -246,7 +238,7 @@ export function SuppliersReport() {
                 <Truck className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{selectedSupplier === 'all' ? 'إجمالي الموردين' : 'المورد'}</p>
+                <p className="text-sm text-muted-foreground">{selectedSupplier === 'all' ? t.rpt_supp_total : t.rpt_supp_select}</p>
                 <p className="text-2xl font-bold text-foreground">{selectedSupplier === 'all' ? totalSuppliers : selectedSupplierData?.name}</p>
               </div>
             </div>
@@ -260,7 +252,7 @@ export function SuppliersReport() {
                 <Package className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">عدد {labels.itemsName}</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_supp_items_count}</p>
                 <p className="text-2xl font-bold text-foreground">{totalCarsCount}</p>
               </div>
             </div>
@@ -274,7 +266,7 @@ export function SuppliersReport() {
                 <DollarSign className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">إجمالي المشتريات</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_supp_purchases_total}</p>
                 <p className="text-2xl font-bold text-foreground">{formatCurrency(totalPurchasesAmount)}</p>
               </div>
             </div>
@@ -288,7 +280,7 @@ export function SuppliersReport() {
                 <Calendar className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{selectedSupplier === 'all' ? 'الموردين النشطين' : 'آخر توريد'}</p>
+                <p className="text-sm text-muted-foreground">{selectedSupplier === 'all' ? t.rpt_supp_active : t.rpt_supp_last_supply}</p>
                 <p className="text-2xl font-bold text-foreground">
                   {selectedSupplier === 'all' 
                     ? activeSuppliers 
@@ -304,36 +296,36 @@ export function SuppliersReport() {
       {selectedSupplier !== 'all' && selectedSupplierData && (
         <Card>
           <CardHeader>
-            <CardTitle>بيانات المورد</CardTitle>
+            <CardTitle>{t.rpt_supp_data}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">الاسم</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_supp_col_name}</p>
                 <p className="font-medium">{selectedSupplierData.name}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">رقم الهاتف</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_supp_col_phone}</p>
                 <p className="font-medium">{selectedSupplierData.phone}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">رقم الهوية</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_cust_col_id}</p>
                 <p className="font-medium">{selectedSupplierData.id_number || '-'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">العنوان</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_cust_col_address}</p>
                 <p className="font-medium">{selectedSupplierData.address || '-'}</p>
               </div>
               <div className="col-span-2">
-                <p className="text-sm text-muted-foreground">ملاحظات</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_supp_col_notes}</p>
                 <p className="font-medium">{selectedSupplierData.notes || '-'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{labels.itemsName} المتاحة</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_supp_col_available}</p>
                 <p className="font-medium text-green-600">{selectedSupplierData.availableCars}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{labels.itemsName} المباعة</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_supp_col_sold}</p>
                 <p className="font-medium text-blue-600">{selectedSupplierData.soldCars}</p>
               </div>
             </div>
@@ -345,24 +337,24 @@ export function SuppliersReport() {
       {selectedSupplier === 'all' && (
         <Card>
           <CardHeader>
-            <CardTitle>جميع الموردين</CardTitle>
+            <CardTitle>{t.rpt_supp_all}</CardTitle>
           </CardHeader>
           <CardContent>
             {sortedSuppliers.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                لا يوجد موردين مسجلين
+                {t.rpt_supp_no_data}
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">الاسم</TableHead>
-                    <TableHead className="text-right">رقم الهاتف</TableHead>
-                    <TableHead className="text-right">عدد {labels.itemsName}</TableHead>
-                    <TableHead className="text-right">المتاحة</TableHead>
-                    <TableHead className="text-right">المباعة</TableHead>
-                    <TableHead className="text-right">إجمالي المشتريات</TableHead>
-                    <TableHead className="text-right">آخر توريد</TableHead>
+                    <TableHead className="text-right">{t.rpt_supp_col_name}</TableHead>
+                    <TableHead className="text-right">{t.rpt_supp_col_phone}</TableHead>
+                    <TableHead className="text-right">{t.rpt_supp_items_count}</TableHead>
+                    <TableHead className="text-right">{t.rpt_supp_col_available}</TableHead>
+                    <TableHead className="text-right">{t.rpt_supp_col_sold}</TableHead>
+                    <TableHead className="text-right">{t.rpt_supp_purchases_total}</TableHead>
+                    <TableHead className="text-right">{t.rpt_supp_last_supply}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -388,24 +380,23 @@ export function SuppliersReport() {
       {selectedSupplier !== 'all' && (
         <Card>
           <CardHeader>
-            <CardTitle>{labels.itemsName} المورد</CardTitle>
+            <CardTitle>{t.rpt_supp_items}</CardTitle>
           </CardHeader>
           <CardContent>
             {filteredCars.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                لا توجد {labels.itemsName} مسجلة لهذا المورد
+                {t.rpt_supp_no_items}
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">رقم المخزون</TableHead>
+                    <TableHead className="text-right">{t.rpt_purch_col_number}</TableHead>
                     <TableHead className="text-right">{labels.itemName}</TableHead>
-                    <TableHead className="text-right">الموديل</TableHead>
-                    <TableHead className="text-right">اللون</TableHead>
-                    <TableHead className="text-right">سعر الشراء</TableHead>
-                    <TableHead className="text-right">الحالة</TableHead>
-                    <TableHead className="text-right">تاريخ الشراء</TableHead>
+                    <TableHead className="text-right">{t.rpt_purch_col_model}</TableHead>
+                    <TableHead className="text-right">{t.rpt_purch_col_price}</TableHead>
+                    <TableHead className="text-right">{t.rpt_purch_col_status}</TableHead>
+                    <TableHead className="text-right">{t.rpt_purch_col_date}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -414,12 +405,11 @@ export function SuppliersReport() {
                       <TableCell className="font-medium">{car.inventory_number}</TableCell>
                       <TableCell>{car.name}</TableCell>
                       <TableCell>{car.model || '-'}</TableCell>
-                      <TableCell>{car.color || '-'}</TableCell>
                       <TableCell>{formatCurrency(Number(car.purchase_price))}</TableCell>
                       <TableCell>
                         <Badge variant={car.status === 'available' ? 'default' : car.status === 'transferred' ? 'default' : 'secondary'}
                           className={car.status === 'transferred' ? 'bg-orange-500' : ''}>
-                          {car.status === 'available' ? 'متاحة' : car.status === 'transferred' ? 'محولة' : 'مباعة'}
+                          {getStatusText(car.status)}
                         </Badge>
                       </TableCell>
                       <TableCell>{formatDate(car.purchase_date)}</TableCell>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function CustomersReport() {
   const { data: customers, isLoading: customersLoading } = useCustomers();
