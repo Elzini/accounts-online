@@ -255,9 +255,10 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
   }, [getCardConfig]);
 
   const getCardLabel = useCallback((id: string, defaultLabel: string) => {
+    if (language !== 'ar') return defaultLabel;
     const cfg = cardConfigs.find(c => c.id === id);
     return cfg?.label || defaultLabel;
-  }, [cardConfigs]);
+  }, [cardConfigs, language]);
 
   const visibleCardIds = useMemo(() => {
     return cardConfigs.filter(c => c.visible).sort((a, b) => a.order - b.order).map(c => c.id);

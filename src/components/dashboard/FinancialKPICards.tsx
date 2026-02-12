@@ -9,6 +9,7 @@ import {
   Target,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface FinancialKPICardsProps {
   totalRevenue: number;
@@ -46,16 +47,16 @@ export function FinancialKPICards({
   purchasesThisMonth,
   salesThisMonth,
 }: FinancialKPICardsProps) {
+  const { t, language } = useLanguage();
   const grossProfitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
   const opexRatio = totalRevenue > 0 ? (totalExpenses / totalRevenue) * 100 : 0;
   const avgInventory = inventoryCount > 0 ? inventoryCount : 1;
-  const inventoryTurnover = totalCost > 0 ? totalCost / (avgInventory * (totalCost / Math.max(soldCount + inventoryCount, 1))) : 0;
   const netProfitMargin = totalRevenue > 0 ? ((totalProfit - totalExpenses) / totalRevenue) * 100 : 0;
   const salesEfficiency = purchasesThisMonth > 0 ? (salesThisMonth / purchasesThisMonth) * 100 : 0;
   const avgDealSize = salesCount > 0 ? totalRevenue / salesCount : 0;
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-SA', {
       style: 'currency',
       currency: 'SAR',
       minimumFractionDigits: 0,
@@ -65,9 +66,9 @@ export function FinancialKPICards({
 
   const kpis: KPIItem[] = [
     {
-      label: 'هامش الربح الإجمالي',
+      label: t.kpi_gross_profit_margin,
       value: `${grossProfitMargin.toFixed(1)}%`,
-      description: 'نسبة الربح من إجمالي الإيرادات',
+      description: t.kpi_gross_profit_desc,
       icon: Percent,
       color: 'hsl(160 84% 39%)',
       bgColor: 'hsl(160 84% 39% / 0.12)',
@@ -75,9 +76,9 @@ export function FinancialKPICards({
       trend: grossProfitMargin > 15 ? 'up' : grossProfitMargin > 5 ? 'neutral' : 'down',
     },
     {
-      label: 'هامش صافي الربح',
+      label: t.kpi_net_profit_margin,
       value: `${netProfitMargin.toFixed(1)}%`,
-      description: 'بعد خصم المصروفات التشغيلية',
+      description: t.kpi_net_profit_desc,
       icon: DollarSign,
       color: netProfitMargin >= 0 ? 'hsl(217 91% 60%)' : 'hsl(0 84% 60%)',
       bgColor: netProfitMargin >= 0 ? 'hsl(217 91% 60% / 0.12)' : 'hsl(0 84% 60% / 0.12)',
@@ -85,9 +86,9 @@ export function FinancialKPICards({
       trend: netProfitMargin > 10 ? 'up' : netProfitMargin >= 0 ? 'neutral' : 'down',
     },
     {
-      label: 'نسبة المصروفات التشغيلية',
+      label: t.kpi_opex_ratio,
       value: `${opexRatio.toFixed(1)}%`,
-      description: 'المصروفات كنسبة من الإيرادات',
+      description: t.kpi_opex_desc,
       icon: BarChart3,
       color: 'hsl(38 92% 50%)',
       bgColor: 'hsl(38 92% 50% / 0.12)',
@@ -95,9 +96,9 @@ export function FinancialKPICards({
       trend: opexRatio < 30 ? 'up' : opexRatio < 60 ? 'neutral' : 'down',
     },
     {
-      label: 'متوسط أيام البيع',
-      value: `${averageDaysToSell} يوم`,
-      description: 'متوسط المدة من الشراء للبيع',
+      label: t.kpi_avg_days_to_sell,
+      value: `${averageDaysToSell} ${t.kpi_avg_days_unit}`,
+      description: t.kpi_avg_days_desc,
       icon: Clock,
       color: 'hsl(270 75% 55%)',
       bgColor: 'hsl(270 75% 55% / 0.12)',
@@ -105,9 +106,9 @@ export function FinancialKPICards({
       trend: averageDaysToSell < 30 ? 'up' : averageDaysToSell < 90 ? 'neutral' : 'down',
     },
     {
-      label: 'كفاءة المبيعات',
+      label: t.kpi_sales_efficiency,
       value: `${salesEfficiency.toFixed(0)}%`,
-      description: 'نسبة المبيعات إلى المشتريات الشهرية',
+      description: t.kpi_sales_efficiency_desc,
       icon: Target,
       color: 'hsl(190 85% 45%)',
       bgColor: 'hsl(190 85% 45% / 0.12)',
@@ -115,9 +116,9 @@ export function FinancialKPICards({
       trend: salesEfficiency > 80 ? 'up' : salesEfficiency > 40 ? 'neutral' : 'down',
     },
     {
-      label: 'متوسط قيمة الصفقة',
+      label: t.kpi_avg_deal_size,
       value: formatCurrency(avgDealSize),
-      description: 'متوسط قيمة البيع الواحد',
+      description: t.kpi_avg_deal_desc,
       icon: Layers,
       color: 'hsl(240 60% 60%)',
       bgColor: 'hsl(240 60% 60% / 0.12)',
@@ -129,7 +130,7 @@ export function FinancialKPICards({
   return (
     <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-4 md:p-6 border border-border/60">
       <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--primary))' }} />
-      <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-4">مؤشرات الأداء المالي المتقدمة</h3>
+      <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-4">{t.kpi_advanced_title}</h3>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
         {kpis.map((kpi) => {
           const TrendIcon = kpi.trend === 'up' ? TrendingUp : kpi.trend === 'down' ? TrendingDown : BarChart3;

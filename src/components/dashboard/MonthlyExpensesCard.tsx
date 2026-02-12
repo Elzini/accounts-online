@@ -8,6 +8,7 @@ import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface MonthlyExpenseBreakdown {
   custodyExpenses: number;
@@ -113,6 +114,7 @@ async function fetchMonthlyExpenses(companyId: string, fiscalYearId?: string): P
 export function MonthlyExpensesCard() {
   const { companyId } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
+  const { t, language } = useLanguage();
   const [expanded, setExpanded] = useState(false);
 
   const { data, isLoading } = useQuery({
@@ -123,7 +125,7 @@ export function MonthlyExpensesCard() {
   });
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-SA', {
       style: 'currency',
       currency: 'SAR',
       minimumFractionDigits: 0,
@@ -131,34 +133,34 @@ export function MonthlyExpensesCard() {
     }).format(value);
   };
 
-  const currentMonthName = new Date().toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' });
+  const currentMonthName = new Date().toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', { month: 'long', year: 'numeric' });
 
   const expenseItems = useMemo(() => {
     if (!data) return [];
     return [
       {
-        label: 'مصاريف العهد',
+        label: t.custody_expenses,
         value: data.custodyExpenses,
         icon: Briefcase,
         color: 'text-blue-500',
         bgColor: 'bg-blue-500/10',
       },
       {
-        label: 'الرواتب والأجور',
+        label: t.payroll_and_salaries,
         value: data.payrollExpenses,
         icon: Users,
         color: 'text-emerald-500',
         bgColor: 'bg-emerald-500/10',
       },
       {
-        label: 'الإيجارات',
+        label: t.rent_label,
         value: data.rentExpenses,
         icon: Home,
         color: 'text-amber-500',
         bgColor: 'bg-amber-500/10',
       },
       {
-        label: 'مصاريف أخرى',
+        label: t.other_expenses,
         value: data.otherExpenses,
         icon: Receipt,
         color: 'text-rose-500',
@@ -203,7 +205,7 @@ export function MonthlyExpensesCard() {
               <Wallet className="w-5 h-5 text-destructive" />
             </div>
             <div>
-              <CardTitle className="text-sm sm:text-base font-bold">المصروفات الشهرية</CardTitle>
+              <CardTitle className="text-sm sm:text-base font-bold">{t.monthly_expenses}</CardTitle>
               <p className="text-[10px] sm:text-xs text-muted-foreground">{currentMonthName}</p>
             </div>
           </div>
@@ -229,7 +231,7 @@ export function MonthlyExpensesCard() {
             </span>
             <span className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1">
               <TrendingDown className="w-3 h-3" />
-              إجمالي المصروفات
+              {t.total_expenses_label}
             </span>
           </div>
           {/* Stacked bar showing proportions */}
@@ -307,10 +309,10 @@ export function MonthlyExpensesCard() {
         {!expanded && data.total > 0 && (
           <div className="flex items-center gap-3 mt-1 text-[10px] sm:text-xs text-muted-foreground">
             {[
-              { label: 'عهد', value: data.custodyExpenses, dot: 'bg-blue-500' },
-              { label: 'رواتب', value: data.payrollExpenses, dot: 'bg-emerald-500' },
-              { label: 'إيجار', value: data.rentExpenses, dot: 'bg-amber-500' },
-              { label: 'أخرى', value: data.otherExpenses, dot: 'bg-rose-500' },
+              { label: t.custody_short, value: data.custodyExpenses, dot: 'bg-blue-500' },
+              { label: t.payroll_short, value: data.payrollExpenses, dot: 'bg-emerald-500' },
+              { label: t.rent_short, value: data.rentExpenses, dot: 'bg-amber-500' },
+              { label: t.other_short, value: data.otherExpenses, dot: 'bg-rose-500' },
             ]
               .filter(c => c.value > 0)
               .map((cat) => (

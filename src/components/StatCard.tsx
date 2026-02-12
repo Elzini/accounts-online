@@ -2,6 +2,7 @@ import { LucideIcon, TrendingUp as TrendUpIcon, TrendingDown as TrendDownIcon } 
 import { cn } from '@/lib/utils';
 import { numberToArabicWordsShort } from '@/lib/numberToArabicWords';
 import { useState, useRef, useEffect } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface StatCardProps {
   title: string;
@@ -103,6 +104,7 @@ export function StatCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const [animatedProgress, setAnimatedProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const { t } = useLanguage();
 
   const theme = gradientThemes[gradient];
   const hasCustomGradient = gradientFrom && gradientTo;
@@ -260,7 +262,7 @@ export function StatCard({
       {progress != null && (
         <div className="relative mt-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px]" style={{ color: subtitleColor }}>Monthly Progress</span>
+            <span className="text-[10px]" style={{ color: subtitleColor }}>{t.monthly_progress}</span>
             <span className="text-[10px] font-bold" style={{ color: valueColor }}>{Math.round(progress)}%</span>
           </div>
           <div

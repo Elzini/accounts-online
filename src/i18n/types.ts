@@ -888,4 +888,29 @@ export interface TranslationKeys {
   payment_recorded: string;
   select_sale: string;
   down_payment_less: string;
+
+  // KPI labels
+  kpi_gross_profit_margin: string;
+  kpi_gross_profit_desc: string;
+  kpi_net_profit_margin: string;
+  kpi_net_profit_desc: string;
+  kpi_opex_ratio: string;
+  kpi_opex_desc: string;
+  kpi_avg_days_to_sell: string;
+  kpi_avg_days_desc: string;
+  kpi_avg_days_unit: string;
+  kpi_sales_efficiency: string;
+  kpi_sales_efficiency_desc: string;
+  kpi_avg_deal_size: string;
+  kpi_avg_deal_desc: string;
+  kpi_advanced_title: string;
+
+  // Monthly expenses card
+  total_expenses_label: string;
+  custody_short: string;
+  payroll_short: string;
+  rent_short: string;
+  other_short: string;
+  payroll_and_salaries: string;
+  rent_label: string;
 }
