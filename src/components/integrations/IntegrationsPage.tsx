@@ -7,33 +7,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Plug, ShoppingBag, CreditCard, Building, Globe, Webhook } from 'lucide-react';
+import { Loader2, Plug, ShoppingBag, CreditCard, Building, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-interface Integration {
-  platform: string;
-  name: string;
-  description: string;
-  icon: React.ReactNode;
-  category: 'ecommerce' | 'payment' | 'banking' | 'other';
-}
-
-const integrations: Integration[] = [
-  { platform: 'salla', name: 'سلة', description: 'ربط مع متجر سلة لمزامنة الطلبات والمنتجات', icon: <ShoppingBag className="w-8 h-8 text-purple-500" />, category: 'ecommerce' },
-  { platform: 'zid', name: 'زد', description: 'ربط مع منصة زد لإدارة المبيعات الإلكترونية', icon: <ShoppingBag className="w-8 h-8 text-blue-500" />, category: 'ecommerce' },
-  { platform: 'shopify', name: 'Shopify', description: 'ربط مع متجر Shopify لمزامنة المنتجات والطلبات', icon: <ShoppingBag className="w-8 h-8 text-emerald-500" />, category: 'ecommerce' },
-  { platform: 'mada', name: 'مدى', description: 'بوابة دفع مدى للمدفوعات المحلية', icon: <CreditCard className="w-8 h-8 text-green-600" />, category: 'payment' },
-  { platform: 'apple_pay', name: 'Apple Pay', description: 'قبول المدفوعات عبر Apple Pay', icon: <CreditCard className="w-8 h-8 text-gray-800" />, category: 'payment' },
-  { platform: 'bank_api', name: 'الربط البنكي', description: 'استيراد كشوف حسابات بنكية تلقائياً', icon: <Building className="w-8 h-8 text-indigo-500" />, category: 'banking' },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function IntegrationsPage() {
+  const { t, direction } = useLanguage();
   const companyId = useCompanyId();
   const queryClient = useQueryClient();
   const [configDialog, setConfigDialog] = useState<string | null>(null);
   const [webhookUrl, setWebhookUrl] = useState('');
+
+  const integrations = [
+    { platform: 'salla', name: 'سلة', description: 'ربط مع متجر سلة لمزامنة الطلبات والمنتجات', icon: <ShoppingBag className="w-8 h-8 text-purple-500" />, category: 'ecommerce' },
+    { platform: 'zid', name: 'زد', description: 'ربط مع منصة زد لإدارة المبيعات الإلكترونية', icon: <ShoppingBag className="w-8 h-8 text-blue-500" />, category: 'ecommerce' },
+    { platform: 'shopify', name: 'Shopify', description: 'ربط مع متجر Shopify لمزامنة المنتجات والطلبات', icon: <ShoppingBag className="w-8 h-8 text-emerald-500" />, category: 'ecommerce' },
+    { platform: 'mada', name: 'مدى', description: 'بوابة دفع مدى للمدفوعات المحلية', icon: <CreditCard className="w-8 h-8 text-green-600" />, category: 'payment' },
+    { platform: 'apple_pay', name: 'Apple Pay', description: 'قبول المدفوعات عبر Apple Pay', icon: <CreditCard className="w-8 h-8 text-gray-800" />, category: 'payment' },
+    { platform: 'bank_api', name: 'الربط البنكي', description: 'استيراد كشوف حسابات بنكية تلقائياً', icon: <Building className="w-8 h-8 text-indigo-500" />, category: 'banking' },
+  ];
 
   const { data: configs = [], isLoading } = useQuery({
     queryKey: ['integrations', companyId],
@@ -63,17 +57,17 @@ export function IntegrationsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['integrations'] });
-      toast.success('تم تحديث التكامل');
+      toast.success(t.integrations_toast_updated);
     },
-    onError: () => toast.error('حدث خطأ'),
+    onError: () => toast.error(t.integrations_toast_error),
   });
 
   const isActive = (platform: string) => configs.find((c: any) => c.platform === platform)?.is_active || false;
 
   const categories = [
-    { key: 'ecommerce', label: 'التجارة الإلكترونية', icon: <Globe className="w-5 h-5" /> },
-    { key: 'payment', label: 'بوابات الدفع', icon: <CreditCard className="w-5 h-5" /> },
-    { key: 'banking', label: 'الربط البنكي', icon: <Building className="w-5 h-5" /> },
+    { key: 'ecommerce', label: t.integrations_ecommerce, icon: <Globe className="w-5 h-5" /> },
+    { key: 'payment', label: t.integrations_payment, icon: <CreditCard className="w-5 h-5" /> },
+    { key: 'banking', label: t.integrations_banking, icon: <Building className="w-5 h-5" /> },
   ];
 
   if (isLoading) {
@@ -81,20 +75,20 @@ export function IntegrationsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={direction}>
       <div>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Plug className="w-6 h-6" />
-          التكاملات الخارجية
+          {t.integrations_title}
         </h1>
-        <p className="text-muted-foreground">ربط النظام مع منصات التجارة الإلكترونية وبوابات الدفع والأنظمة البنكية</p>
+        <p className="text-muted-foreground">{t.integrations_subtitle}</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{configs.filter((c: any) => c.is_active).length}</div><p className="text-sm text-muted-foreground">تكاملات نشطة</p></CardContent></Card>
-        <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{integrations.length}</div><p className="text-sm text-muted-foreground">تكاملات متاحة</p></CardContent></Card>
-        <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{configs.filter((c: any) => c.last_sync_at).length}</div><p className="text-sm text-muted-foreground">تمت المزامنة</p></CardContent></Card>
+        <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{configs.filter((c: any) => c.is_active).length}</div><p className="text-sm text-muted-foreground">{t.integrations_active_count}</p></CardContent></Card>
+        <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{integrations.length}</div><p className="text-sm text-muted-foreground">{t.integrations_available_count}</p></CardContent></Card>
+        <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{configs.filter((c: any) => c.last_sync_at).length}</div><p className="text-sm text-muted-foreground">{t.integrations_synced_count}</p></CardContent></Card>
       </div>
 
       {categories.map((cat) => (
@@ -121,11 +115,11 @@ export function IntegrationsPage() {
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <Badge variant={isActive(integration.platform) ? 'default' : 'secondary'}>
-                      {isActive(integration.platform) ? 'مفعّل' : 'غير مفعّل'}
+                      {isActive(integration.platform) ? t.active : t.inactive}
                     </Badge>
                     {isActive(integration.platform) && (
                       <Button size="sm" variant="outline" onClick={() => setConfigDialog(integration.platform)}>
-                        إعدادات
+                        {t.integrations_settings}
                       </Button>
                     )}
                   </div>
@@ -138,21 +132,21 @@ export function IntegrationsPage() {
 
       {/* Config Dialog */}
       <Dialog open={!!configDialog} onOpenChange={() => setConfigDialog(null)}>
-        <DialogContent>
+        <DialogContent dir={direction}>
           <DialogHeader>
-            <DialogTitle>إعدادات التكامل - {integrations.find(i => i.platform === configDialog)?.name}</DialogTitle>
+            <DialogTitle>{t.integrations_settings} - {integrations.find(i => i.platform === configDialog)?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Webhook URL</Label>
+              <Label>{t.integrations_webhook_url}</Label>
               <Input value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} placeholder="https://..." dir="ltr" />
             </div>
             <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
-              <p className="font-medium mb-2">ملاحظة:</p>
-              <p>لإكمال الربط، يرجى التواصل مع فريق الدعم لتزويدك بمفاتيح API اللازمة وإتمام عملية التكامل.</p>
+              <p className="font-medium mb-2">{t.integrations_note}</p>
+              <p>{t.integrations_contact_support}</p>
             </div>
-            <Button className="w-full" onClick={() => { toast.success('تم حفظ الإعدادات'); setConfigDialog(null); }}>
-              حفظ الإعدادات
+            <Button className="w-full" onClick={() => { toast.success(t.integrations_toast_saved); setConfigDialog(null); }}>
+              {t.integrations_save}
             </Button>
           </div>
         </DialogContent>
