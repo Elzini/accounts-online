@@ -131,7 +131,14 @@ export function Sidebar({
   const {
     data: menuConfig
   } = useMenuConfiguration();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+
+  // Only use custom settings labels when language is Arabic (the original/default language)
+  // When English is selected, always use translation keys
+  const s = (settingValue: string | undefined | null, translationValue: string) => {
+    if (language !== 'ar') return translationValue;
+    return settingValue || translationValue;
+  };
 
   // Get company type
   const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
@@ -144,7 +151,7 @@ export function Sidebar({
   
   // Dynamic app name/subtitle based on company type
   const getAppName = () => {
-    if (settings?.app_name) return settings.app_name;
+    if (settings?.app_name && language === 'ar') return settings.app_name;
     switch (companyType) {
       case 'construction': return t.sidebar_construction_system;
       case 'general_trading': return t.sidebar_trading_system;
@@ -155,7 +162,7 @@ export function Sidebar({
   };
   
   const getAppSubtitle = () => {
-    if (settings?.app_subtitle) return settings.app_subtitle;
+    if (settings?.app_subtitle && language === 'ar') return settings.app_subtitle;
     switch (companyType) {
       case 'construction': return t.sidebar_construction_subtitle;
       case 'general_trading': return t.sidebar_trading_subtitle;
@@ -282,36 +289,36 @@ export function Sidebar({
   // Default menu structure (car dealership / general trading)
   const defaultMenuItems = [{
     id: 'dashboard' as ActivePage,
-    label: settings?.dashboard_title || t.nav_dashboard,
+    label: s(settings?.dashboard_title, t.nav_dashboard),
     icon: LayoutDashboard
   }, {
     id: 'customers' as ActivePage,
-    label: settings?.customers_title || t.nav_customers,
+    label: s(settings?.customers_title, t.nav_customers),
     icon: Users,
     permission: 'sales' as const
   }, {
     id: 'suppliers' as ActivePage,
-    label: settings?.suppliers_title || t.nav_suppliers,
+    label: s(settings?.suppliers_title, t.nav_suppliers),
     icon: Truck,
     permission: 'purchases' as const
   }, {
     id: 'purchases' as ActivePage,
-    label: settings?.purchases_title || t.nav_purchases,
+    label: s(settings?.purchases_title, t.nav_purchases),
     icon: ShoppingCart,
     permission: 'purchases' as const
   }, {
     id: 'sales' as ActivePage,
-    label: settings?.sales_title || t.nav_sales,
+    label: s(settings?.sales_title, t.nav_sales),
     icon: DollarSign,
     permission: 'sales' as const
   }];
   const transferItems = [{
     id: 'partner-dealerships' as ActivePage,
-    label: settings?.partner_dealerships_title || t.nav_partner_dealerships,
+    label: s(settings?.partner_dealerships_title, t.nav_partner_dealerships),
     icon: Building2
   }, {
     id: 'car-transfers' as ActivePage,
-    label: settings?.car_transfers_title || t.nav_car_transfers,
+    label: s(settings?.car_transfers_title, t.nav_car_transfers),
     icon: ArrowLeftRight
   }];
   const financeItems = [{
@@ -332,31 +339,31 @@ export function Sidebar({
     icon: CalendarDays
   }, {
     id: 'expenses' as ActivePage,
-    label: settings?.expenses_title || t.nav_expenses,
+    label: s(settings?.expenses_title, t.nav_expenses),
     icon: Wallet
   }, {
     id: 'prepaid-expenses' as ActivePage,
-    label: settings?.prepaid_expenses_title || t.nav_prepaid_expenses,
+    label: s(settings?.prepaid_expenses_title, t.nav_prepaid_expenses),
     icon: Clock
   }, {
     id: 'quotations' as ActivePage,
-    label: settings?.quotations_title || t.nav_quotations,
+    label: s(settings?.quotations_title, t.nav_quotations),
     icon: FileCheck
   }, {
     id: 'installments' as ActivePage,
-    label: settings?.installments_title || t.nav_installments,
+    label: s(settings?.installments_title, t.nav_installments),
     icon: CreditCard
   }, {
     id: 'vouchers' as ActivePage,
-    label: settings?.vouchers_title || t.nav_vouchers,
+    label: s(settings?.vouchers_title, t.nav_vouchers),
     icon: Receipt
   }, {
     id: 'financing' as ActivePage,
-    label: settings?.financing_title || t.nav_financing,
+    label: s(settings?.financing_title, t.nav_financing),
     icon: Landmark
   }, {
     id: 'banking' as ActivePage,
-    label: settings?.banking_title || t.nav_banking,
+    label: s(settings?.banking_title, t.nav_banking),
     icon: Scale
   }, {
     id: 'custody' as ActivePage,
@@ -417,55 +424,55 @@ export function Sidebar({
   // Reports - filtered by company type
   const allReportItems = [{
     id: 'inventory-report' as ActivePage,
-    label: settings?.inventory_report_title || t.nav_inventory_report,
+    label: s(settings?.inventory_report_title, t.nav_inventory_report),
     icon: Package,
     permission: 'reports' as const,
     types: ['car_dealership', 'general_trading', 'restaurant'] as string[],
   }, {
     id: 'profit-report' as ActivePage,
-    label: settings?.profit_report_title || t.nav_profit_report,
+    label: s(settings?.profit_report_title, t.nav_profit_report),
     icon: TrendingUp,
     permission: 'reports' as const,
     types: null,
   }, {
     id: 'purchases-report' as ActivePage,
-    label: settings?.purchases_report_title || t.nav_purchases_report,
+    label: s(settings?.purchases_report_title, t.nav_purchases_report),
     icon: FileText,
     permission: 'reports' as const,
     types: null,
   }, {
     id: 'sales-report' as ActivePage,
-    label: settings?.sales_report_title || t.nav_sales_report,
+    label: s(settings?.sales_report_title, t.nav_sales_report),
     icon: DollarSign,
     permission: 'reports' as const,
     types: null,
   }, {
     id: 'customers-report' as ActivePage,
-    label: settings?.customers_report_title || t.nav_customers_report,
+    label: s(settings?.customers_report_title, t.nav_customers_report),
     icon: Users,
     permission: 'reports' as const,
     types: null,
   }, {
     id: 'suppliers-report' as ActivePage,
-    label: settings?.suppliers_report_title || t.nav_suppliers_report,
+    label: s(settings?.suppliers_report_title, t.nav_suppliers_report),
     icon: Truck,
     permission: 'reports' as const,
     types: null,
   }, {
     id: 'commissions-report' as ActivePage,
-    label: settings?.commissions_report_title || t.nav_commissions_report,
+    label: s(settings?.commissions_report_title, t.nav_commissions_report),
     icon: DollarSign,
     permission: 'reports' as const,
     types: ['car_dealership', 'general_trading'] as string[],
   }, {
     id: 'transfers-report' as ActivePage,
-    label: settings?.transfers_report_title || t.nav_transfers_report,
+    label: s(settings?.transfers_report_title, t.nav_transfers_report),
     icon: ArrowLeftRight,
     permission: 'reports' as const,
     types: ['car_dealership'] as string[],
   }, {
     id: 'partner-report' as ActivePage,
-    label: settings?.partner_report_title || t.nav_partner_report,
+    label: s(settings?.partner_report_title, t.nav_partner_report),
     icon: Building2,
     permission: 'reports' as const,
     types: ['car_dealership'] as string[],
@@ -486,19 +493,19 @@ export function Sidebar({
     icon: Calendar
   }, {
     id: 'tax-settings' as ActivePage,
-    label: settings?.tax_settings_title || t.nav_tax_settings,
+    label: s(settings?.tax_settings_title, t.nav_tax_settings),
     icon: Percent
   }, {
     id: 'chart-of-accounts' as ActivePage,
-    label: settings?.chart_of_accounts_title || t.nav_chart_of_accounts,
+    label: s(settings?.chart_of_accounts_title, t.nav_chart_of_accounts),
     icon: BookOpen
   }, {
     id: 'journal-entries' as ActivePage,
-    label: settings?.journal_entries_title || t.nav_journal_entries,
+    label: s(settings?.journal_entries_title, t.nav_journal_entries),
     icon: Calculator
   }, {
     id: 'general-ledger' as ActivePage,
-    label: settings?.general_ledger_title || t.nav_general_ledger,
+    label: s(settings?.general_ledger_title, t.nav_general_ledger),
     icon: FileText
   }, {
     id: 'account-statement' as ActivePage,
@@ -510,7 +517,7 @@ export function Sidebar({
     icon: Receipt
   }, {
     id: 'financial-reports' as ActivePage,
-    label: settings?.financial_reports_title || t.nav_financial_reports,
+    label: s(settings?.financial_reports_title, t.nav_financial_reports),
     icon: PieChart
   }, {
     id: 'zakat-reports' as ActivePage,
@@ -707,15 +714,15 @@ export function Sidebar({
           defaultMenuItems
         )}
 
-        {companyType === 'car_dealership' && renderCollapsibleSection('transfers', settings?.transfers_section_title || t.nav_transfers, transferItems, permissions.admin || permissions.sales || permissions.purchases)}
+        {companyType === 'car_dealership' && renderCollapsibleSection('transfers', s(settings?.transfers_section_title, t.nav_transfers), transferItems, permissions.admin || permissions.sales || permissions.purchases)}
 
-        {renderCollapsibleSection('finance', settings?.finance_section_title || t.nav_finance, financeItems, permissions.admin || permissions.sales || permissions.purchases)}
+        {renderCollapsibleSection('finance', s(settings?.finance_section_title, t.nav_finance), financeItems, permissions.admin || permissions.sales || permissions.purchases)}
 
         {renderCollapsibleSection('inventory', t.nav_inventory, inventoryItems, permissions.admin || permissions.purchases)}
 
-        {renderCollapsibleSection('reports', settings?.reports_title || t.nav_reports, reportItems, hasAccess('reports'))}
+        {renderCollapsibleSection('reports', s(settings?.reports_title, t.nav_reports), reportItems, hasAccess('reports'))}
 
-        {renderCollapsibleSection('accounting', settings?.accounting_section_title || t.nav_accounting, accountingItems, permissions.admin || permissions.reports)}
+        {renderCollapsibleSection('accounting', s(settings?.accounting_section_title, t.nav_accounting), accountingItems, permissions.admin || permissions.reports)}
 
         {renderCollapsibleSection('integrations', t.nav_integrations_section, integrationItems, true)}
 
@@ -736,13 +743,13 @@ export function Sidebar({
             </ul>
           </div>}
 
-        {canManageUsers && renderCollapsibleSection('admin', settings?.admin_section_title || t.nav_admin, [{
+        {canManageUsers && renderCollapsibleSection('admin', s(settings?.admin_section_title, t.nav_admin), [{
         id: 'users-management' as ActivePage,
-        label: settings?.users_management_title || t.nav_users_management,
+        label: s(settings?.users_management_title, t.nav_users_management),
         icon: UserCog
       }, {
         id: 'app-settings' as ActivePage,
-        label: settings?.app_settings_title || t.nav_app_settings,
+        label: s(settings?.app_settings_title, t.nav_app_settings),
         icon: Settings
       }, {
         id: 'theme-settings' as ActivePage,
@@ -750,11 +757,11 @@ export function Sidebar({
         icon: Palette
       }, {
         id: 'audit-logs' as ActivePage,
-        label: settings?.audit_logs_title || t.nav_audit_logs,
+        label: s(settings?.audit_logs_title, t.nav_audit_logs),
         icon: ClipboardList
       }, {
         id: 'backups' as ActivePage,
-        label: settings?.backups_title || t.nav_backups,
+        label: s(settings?.backups_title, t.nav_backups),
         icon: Database
       }, {
         id: 'control-center' as ActivePage,
