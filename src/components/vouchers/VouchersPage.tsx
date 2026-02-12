@@ -18,8 +18,10 @@ import { useJournalEntries } from '@/hooks/useAccounting';
 import { Voucher } from '@/services/vouchers';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import { JournalEntryEditDialog } from '@/components/accounting/JournalEntryEditDialog';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function VouchersPage() {
+  const { t, language } = useLanguage();
   const { companyId } = useCompany();
   const { data: allVouchers = [], isLoading } = useVouchers();
   const { data: journalEntries = [] } = useJournalEntries();
@@ -28,7 +30,6 @@ export function VouchersPage() {
   const addVoucher = useAddVoucher();
   const deleteVoucher = useDeleteVoucher();
   
-  // Get journal entry number by ID
   const getJournalEntryNumber = (journalEntryId: string | null) => {
     if (!journalEntryId) return null;
     const entry = journalEntries.find(e => e.id === journalEntryId);
@@ -45,7 +46,6 @@ export function VouchersPage() {
     related_to: ''
   });
 
-  // Filter vouchers by fiscal year
   const filteredVouchers = useMemo(() => {
     return filterByFiscalYear(allVouchers, 'voucher_date');
   }, [allVouchers, filterByFiscalYear]);
@@ -53,9 +53,12 @@ export function VouchersPage() {
   const receiptVouchers = filteredVouchers.filter(v => v.voucher_type === 'receipt');
   const paymentVouchers = filteredVouchers.filter(v => v.voucher_type === 'payment');
 
+  const locale = language === 'ar' ? 'ar-SA' : 'en-SA';
+  const currencyCode = language === 'ar' ? 'SAR' : 'SAR';
+
   const handleSubmit = async () => {
     if (!form.amount || !form.description) {
-      toast.error('يرجى ملء الحقول المطلوبة');
+      toast.error(t.voucher_fill_required);
       return;
     }
 
@@ -71,7 +74,7 @@ export function VouchersPage() {
         related_id: null,
         created_by: null
       });
-      toast.success(`تم إنشاء ${form.voucher_type === 'receipt' ? 'سند القبض' : 'سند الصرف'} بنجاح`);
+      toast.success(t.voucher_created_success);
       setIsDialogOpen(false);
       setForm({
         voucher_type: 'receipt',
@@ -82,22 +85,32 @@ export function VouchersPage() {
         related_to: ''
       });
     } catch (error) {
-      toast.error('حدث خطأ أثناء الإنشاء');
+      toast.error(t.voucher_create_error);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('هل أنت متأكد من الحذف؟')) return;
+    if (!confirm(t.voucher_delete_confirm)) return;
     try {
       await deleteVoucher.mutateAsync(id);
-      toast.success('تم الحذف');
+      toast.success(t.voucher_deleted);
     } catch (error) {
-      toast.error('حدث خطأ أثناء الحذف');
+      toast.error(t.voucher_delete_error);
     }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(amount);
+    return new Intl.NumberFormat(locale, { style: 'currency', currency: currencyCode }).format(amount);
+  };
+
+  const paymentMethodLabel = (method: string) => {
+    const map: Record<string, string> = {
+      cash: language === 'ar' ? 'نقداً' : 'Cash',
+      bank: language === 'ar' ? 'تحويل بنكي' : 'Bank Transfer',
+      card: language === 'ar' ? 'بطاقة' : 'Card',
+      check: language === 'ar' ? 'شيك' : 'Check',
+    };
+    return map[method] || method;
   };
 
   const totalReceipts = receiptVouchers.reduce((sum, v) => sum + Number(v.amount), 0);
@@ -107,20 +120,20 @@ export function VouchersPage() {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>رقم السند</TableHead>
-          <TableHead>التاريخ</TableHead>
-          <TableHead>الوصف</TableHead>
-          <TableHead>طريقة الدفع</TableHead>
-          <TableHead>المبلغ</TableHead>
-          <TableHead>رقم القيد</TableHead>
-          <TableHead>إجراءات</TableHead>
+          <TableHead>{t.voucher_number}</TableHead>
+          <TableHead>{t.date}</TableHead>
+          <TableHead>{t.voucher_description}</TableHead>
+          <TableHead>{t.voucher_payment_method}</TableHead>
+          <TableHead>{t.amount}</TableHead>
+          <TableHead>{t.voucher_journal_number}</TableHead>
+          <TableHead>{t.actions}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {vouchers.length === 0 ? (
           <TableRow>
             <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-              لا توجد سندات
+              {t.voucher_no_vouchers}
             </TableCell>
           </TableRow>
         ) : (
@@ -129,16 +142,11 @@ export function VouchersPage() {
             return (
               <TableRow key={voucher.id}>
                 <TableCell className="font-mono">
-                  {type === 'receipt' ? 'ق' : 'ص'}-{voucher.voucher_number}
+                  {type === 'receipt' ? (language === 'ar' ? 'ق' : 'R') : (language === 'ar' ? 'ص' : 'P')}-{voucher.voucher_number}
                 </TableCell>
-                <TableCell>{new Date(voucher.voucher_date).toLocaleDateString('ar-SA')}</TableCell>
+                <TableCell>{new Date(voucher.voucher_date).toLocaleDateString(locale)}</TableCell>
                 <TableCell>{voucher.description}</TableCell>
-                <TableCell>
-                  {voucher.payment_method === 'cash' && 'نقداً'}
-                  {voucher.payment_method === 'bank' && 'تحويل بنكي'}
-                  {voucher.payment_method === 'card' && 'بطاقة'}
-                  {voucher.payment_method === 'check' && 'شيك'}
-                </TableCell>
+                <TableCell>{paymentMethodLabel(voucher.payment_method)}</TableCell>
                 <TableCell className={`font-semibold ${type === 'receipt' ? 'text-green-600' : 'text-destructive'}`}>
                   {formatCurrency(Number(voucher.amount))}
                 </TableCell>
@@ -162,7 +170,7 @@ export function VouchersPage() {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>عرض / تعديل القيد</p>
+                          <p>{t.voucher_view_edit_entry}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -204,7 +212,7 @@ export function VouchersPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">إجمالي سندات القبض</p>
+                <p className="text-sm text-muted-foreground">{t.voucher_total_receipts}</p>
                 <p className="text-2xl font-bold text-green-600">{formatCurrency(totalReceipts)}</p>
               </div>
               <Receipt className="w-8 h-8 text-green-600" />
@@ -215,7 +223,7 @@ export function VouchersPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">إجمالي سندات الصرف</p>
+                <p className="text-sm text-muted-foreground">{t.voucher_total_payments}</p>
                 <p className="text-2xl font-bold text-destructive">{formatCurrency(totalPayments)}</p>
               </div>
               <CreditCard className="w-8 h-8 text-destructive" />
@@ -226,7 +234,7 @@ export function VouchersPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">الصافي</p>
+                <p className="text-sm text-muted-foreground">{t.voucher_net}</p>
                 <p className={`text-2xl font-bold ${totalReceipts - totalPayments >= 0 ? 'text-green-600' : 'text-destructive'}`}>
                   {formatCurrency(totalReceipts - totalPayments)}
                 </p>
@@ -242,23 +250,23 @@ export function VouchersPage() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => setForm({...form, voucher_type: 'receipt'})}>
-              <Plus className="w-4 h-4 ml-2" /> سند قبض
+              <Plus className="w-4 h-4 ml-2" /> {t.voucher_add_receipt}
             </Button>
           </DialogTrigger>
           <DialogTrigger asChild>
             <Button variant="outline" onClick={() => setForm({...form, voucher_type: 'payment'})}>
-              <Plus className="w-4 h-4 ml-2" /> سند صرف
+              <Plus className="w-4 h-4 ml-2" /> {t.voucher_add_payment}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {form.voucher_type === 'receipt' ? 'سند قبض جديد' : 'سند صرف جديد'}
+                {form.voucher_type === 'receipt' ? t.voucher_new_receipt : t.voucher_new_payment}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>نوع السند</Label>
+                <Label>{t.voucher_type}</Label>
                 <Select 
                   value={form.voucher_type} 
                   onValueChange={(v) => setForm({...form, voucher_type: v as 'receipt' | 'payment'})}
@@ -267,13 +275,13 @@ export function VouchersPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="receipt">سند قبض (استلام)</SelectItem>
-                    <SelectItem value="payment">سند صرف (دفع)</SelectItem>
+                    <SelectItem value="receipt">{t.voucher_type_receipt}</SelectItem>
+                    <SelectItem value="payment">{t.voucher_type_payment}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>المبلغ *</Label>
+                <Label>{t.voucher_amount_required}</Label>
                 <Input
                   type="number"
                   value={form.amount}
@@ -282,18 +290,18 @@ export function VouchersPage() {
                 />
               </div>
               <div>
-                <Label>الوصف *</Label>
+                <Label>{t.voucher_description_label}</Label>
                 <Textarea
                   value={form.description}
                   onChange={(e) => setForm({...form, description: e.target.value})}
                   placeholder={form.voucher_type === 'receipt' 
-                    ? 'مثال: استلام دفعة من العميل أحمد...'
-                    : 'مثال: دفع إيجار المعرض لشهر...'
+                    ? t.voucher_receipt_placeholder
+                    : t.voucher_payment_placeholder
                   }
                 />
               </div>
               <div>
-                <Label>التاريخ</Label>
+                <Label>{t.voucher_date_label}</Label>
                 <Input
                   type="date"
                   value={form.voucher_date}
@@ -301,36 +309,36 @@ export function VouchersPage() {
                 />
               </div>
               <div>
-                <Label>طريقة الدفع</Label>
+                <Label>{t.voucher_payment_method}</Label>
                 <Select value={form.payment_method} onValueChange={(v) => setForm({...form, payment_method: v})}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">نقداً</SelectItem>
-                    <SelectItem value="bank">تحويل بنكي</SelectItem>
-                    <SelectItem value="card">بطاقة</SelectItem>
-                    <SelectItem value="check">شيك</SelectItem>
+                    <SelectItem value="cash">{paymentMethodLabel('cash')}</SelectItem>
+                    <SelectItem value="bank">{paymentMethodLabel('bank')}</SelectItem>
+                    <SelectItem value="card">{paymentMethodLabel('card')}</SelectItem>
+                    <SelectItem value="check">{paymentMethodLabel('check')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>مرتبط بـ</Label>
+                <Label>{t.voucher_related_to}</Label>
                 <Select value={form.related_to} onValueChange={(v) => setForm({...form, related_to: v})}>
                   <SelectTrigger>
-                    <SelectValue placeholder="اختياري" />
+                    <SelectValue placeholder={t.voucher_optional} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="customer">عميل</SelectItem>
-                    <SelectItem value="supplier">مورد</SelectItem>
-                    <SelectItem value="expense">مصروف</SelectItem>
-                    <SelectItem value="installment">قسط</SelectItem>
+                    <SelectItem value="customer">{t.voucher_customer}</SelectItem>
+                    <SelectItem value="supplier">{t.voucher_supplier}</SelectItem>
+                    <SelectItem value="expense">{t.voucher_expense}</SelectItem>
+                    <SelectItem value="installment">{t.voucher_installment}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <Button onClick={handleSubmit} className="w-full" disabled={addVoucher.isPending}>
                 {addVoucher.isPending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}
-                حفظ السند
+                {t.voucher_save}
               </Button>
             </div>
           </DialogContent>
@@ -340,17 +348,17 @@ export function VouchersPage() {
       <Tabs defaultValue="receipts" className="w-full">
         <TabsList>
           <TabsTrigger value="receipts" className="gap-2">
-            <Receipt className="w-4 h-4" /> سندات القبض ({receiptVouchers.length})
+            <Receipt className="w-4 h-4" /> {t.voucher_receipts_tab} ({receiptVouchers.length})
           </TabsTrigger>
           <TabsTrigger value="payments" className="gap-2">
-            <CreditCard className="w-4 h-4" /> سندات الصرف ({paymentVouchers.length})
+            <CreditCard className="w-4 h-4" /> {t.voucher_payments_tab} ({paymentVouchers.length})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="receipts">
           <Card>
             <CardHeader>
-              <CardTitle>سندات القبض</CardTitle>
+              <CardTitle>{t.voucher_receipts_tab}</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <VoucherTable vouchers={receiptVouchers} type="receipt" />
@@ -361,7 +369,7 @@ export function VouchersPage() {
         <TabsContent value="payments">
           <Card>
             <CardHeader>
-              <CardTitle>سندات الصرف</CardTitle>
+              <CardTitle>{t.voucher_payments_tab}</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <VoucherTable vouchers={paymentVouchers} type="payment" />
@@ -370,12 +378,11 @@ export function VouchersPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Journal Entry Edit Dialog */}
       <JournalEntryEditDialog
         entryId={editingJournalEntryId}
         open={!!editingJournalEntryId}
         onOpenChange={(open) => !open && setEditingJournalEntryId(null)}
-        title="القيد المحاسبي للسند"
+        title={t.voucher_journal_entry_title}
         referenceType="voucher"
       />
     </div>
