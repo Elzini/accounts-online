@@ -9,58 +9,27 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  usePayrollRecords, 
-  usePayrollWithItems,
-  useCreatePayroll,
-  useUpdatePayrollItem,
-  useUpdatePayrollTotals,
-  useApprovePayroll,
-  useDeletePayroll,
-  useEmployees,
-  useRefreshPayrollAdvances,
+  usePayrollRecords, usePayrollWithItems, useCreatePayroll, useUpdatePayrollItem,
+  useUpdatePayrollTotals, useApprovePayroll, useDeletePayroll, useEmployees, useRefreshPayrollAdvances,
 } from '@/hooks/usePayroll';
 import { PayrollItem } from '@/services/payroll';
 import { toast } from 'sonner';
-import { 
-  Loader2, 
-  Plus, 
-  FileText, 
-  CheckCircle2,
-  Printer,
-  Trash2,
-  Calculator,
-  Calendar,
-  DollarSign,
-  Users,
-  AlertCircle,
-  FileSpreadsheet,
-  BookOpen,
-  Pencil,
-  RefreshCw
-} from 'lucide-react';
+import { Loader2, Plus, FileText, CheckCircle2, Printer, Trash2, Calculator, Calendar, DollarSign, Users, AlertCircle, FileSpreadsheet, BookOpen, Pencil, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useUnifiedPrintReport, UnifiedReportColumn } from '@/hooks/useUnifiedPrintReport';
 import { useAppSettings } from '@/hooks/useSettings';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { JournalEntryEditDialog } from '@/components/accounting/JournalEntryEditDialog';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-const MONTHS = [
-  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
-];
+const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 export function PayrollPage() {
+  const { t, language } = useLanguage();
+  const MONTHS = language === 'en' ? MONTHS_EN : MONTHS_AR;
   const { data: payrollRecords = [], isLoading } = usePayrollRecords();
   const { data: employees = [] } = useEmployees();
   const createPayroll = useCreatePayroll();
@@ -70,144 +39,82 @@ export function PayrollPage() {
 
   const [selectedPayrollId, setSelectedPayrollId] = useState<string | null>(null);
   const { data: selectedPayroll } = usePayrollWithItems(selectedPayrollId);
-  
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newMonth, setNewMonth] = useState(new Date().getMonth() + 1);
   const [newYear, setNewYear] = useState(new Date().getFullYear());
   const [deleteId, setDeleteId] = useState<string | null>(null);
-
   const { printReport } = useUnifiedPrintReport();
   const { exportToExcel } = useExcelExport();
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
 
   const handleCreatePayroll = async () => {
     try {
       const payroll = await createPayroll.mutateAsync({ month: newMonth, year: newYear });
-      toast.success('تم إنشاء مسير الرواتب بنجاح');
+      toast.success(t.payroll_created);
       setIsCreateDialogOpen(false);
       setSelectedPayrollId(payroll.id);
     } catch (error: any) {
-      if (error.message?.includes('duplicate')) {
-        toast.error('يوجد مسير رواتب لهذا الشهر بالفعل');
-      } else {
-        toast.error('حدث خطأ أثناء إنشاء مسير الرواتب');
-      }
+      if (error.message?.includes('duplicate')) { toast.error(t.payroll_exists); } else { toast.error(t.error_occurred); }
     }
   };
 
   const handleApprovePayroll = async () => {
     if (!selectedPayrollId) return;
-    try {
-      await approvePayroll.mutateAsync(selectedPayrollId);
-      toast.success('تم اعتماد مسير الرواتب وإنشاء القيد المحاسبي');
-    } catch (error) {
-      toast.error('حدث خطأ أثناء الاعتماد');
-    }
+    try { await approvePayroll.mutateAsync(selectedPayrollId); toast.success(t.payroll_approved); } catch (error) { toast.error(t.error_occurred); }
   };
 
   const handleDeletePayroll = async () => {
     if (!deleteId) return;
     try {
       await deletePayroll.mutateAsync(deleteId);
-      toast.success('تم حذف مسير الرواتب');
+      toast.success(t.payroll_deleted);
       setDeleteId(null);
-      if (selectedPayrollId === deleteId) {
-        setSelectedPayrollId(null);
-      }
-    } catch (error) {
-      toast.error('حدث خطأ أثناء الحذف');
-    }
+      if (selectedPayrollId === deleteId) setSelectedPayrollId(null);
+    } catch (error) { toast.error(t.error_occurred); }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'draft':
-        return <Badge variant="secondary">مسودة</Badge>;
-      case 'approved':
-        return <Badge variant="default" className="bg-emerald-500">معتمد</Badge>;
-      case 'paid':
-        return <Badge variant="default" className="bg-blue-500">مدفوع</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
+      case 'draft': return <Badge variant="secondary">{t.draft_status}</Badge>;
+      case 'approved': return <Badge variant="default" className="bg-emerald-500">{t.approved_status}</Badge>;
+      case 'paid': return <Badge variant="default" className="bg-blue-500">{t.paid_status}</Badge>;
+      default: return <Badge>{status}</Badge>;
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (isLoading) { return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>; }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Calculator className="w-6 h-6" />
-            مسير الرواتب الشهري
-          </h1>
-          <p className="text-muted-foreground">إدارة وإعداد رواتب الموظفين الشهرية</p>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Calculator className="w-6 h-6" />{t.payroll_title}</h1>
+          <p className="text-muted-foreground">{t.payroll_subtitle}</p>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2" disabled={employees.length === 0}>
-              <Plus className="w-4 h-4" />
-              إنشاء مسير جديد
-            </Button>
-          </DialogTrigger>
+          <DialogTrigger asChild><Button className="gap-2" disabled={employees.length === 0}><Plus className="w-4 h-4" />{t.create_payroll}</Button></DialogTrigger>
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle>إنشاء مسير رواتب جديد</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>{t.create_new_payroll}</DialogTitle></DialogHeader>
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>الشهر</Label>
+                  <Label>{t.month_label}</Label>
                   <Select value={newMonth.toString()} onValueChange={(v) => setNewMonth(parseInt(v))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MONTHS.map((month, i) => (
-                        <SelectItem key={i} value={(i + 1).toString()}>
-                          {month}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{MONTHS.map((month, i) => (<SelectItem key={i} value={(i + 1).toString()}>{month}</SelectItem>))}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>السنة</Label>
+                  <Label>{t.year_label}</Label>
                   <Select value={newYear.toString()} onValueChange={(v) => setNewYear(parseInt(v))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[2024, 2025, 2026, 2027].map((year) => (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{[2024, 2025, 2026, 2027].map((year) => (<SelectItem key={year} value={year.toString()}>{year}</SelectItem>))}</SelectContent>
                   </Select>
                 </div>
               </div>
-              <Button 
-                className="w-full" 
-                onClick={handleCreatePayroll}
-                disabled={createPayroll.isPending}
-              >
-                {createPayroll.isPending && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
-                إنشاء المسير
+              <Button className="w-full" onClick={handleCreatePayroll} disabled={createPayroll.isPending}>
+                {createPayroll.isPending && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}{t.create_payroll_btn}
               </Button>
             </div>
           </DialogContent>
@@ -216,100 +123,47 @@ export function PayrollPage() {
 
       {employees.length === 0 && (
         <Card className="bg-amber-50 dark:bg-amber-950/30 border-amber-200">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3 text-amber-700 dark:text-amber-400">
-              <AlertCircle className="w-5 h-5" />
-              <p>يجب إضافة موظفين أولاً قبل إنشاء مسير الرواتب</p>
-            </div>
-          </CardContent>
+          <CardContent className="pt-6"><div className="flex items-center gap-3 text-amber-700 dark:text-amber-400"><AlertCircle className="w-5 h-5" /><p>{t.add_employees_first}</p></div></CardContent>
         </Card>
       )}
 
       <Tabs defaultValue="list" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="list">سجلات المسيرات</TabsTrigger>
-          <TabsTrigger value="details" disabled={!selectedPayrollId}>
-            تفاصيل المسير
-          </TabsTrigger>
+          <TabsTrigger value="list">{t.payroll_records}</TabsTrigger>
+          <TabsTrigger value="details" disabled={!selectedPayrollId}>{t.payroll_details}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                سجلات مسيرات الرواتب
-              </CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2"><Calendar className="w-5 h-5" />{t.payroll_records}</CardTitle></CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-right">الشهر</TableHead>
-                      <TableHead className="text-right">السنة</TableHead>
-                      <TableHead className="text-right">الحالة</TableHead>
-                      <TableHead className="text-right">إجمالي الرواتب الأساسية</TableHead>
-                      <TableHead className="text-right">إجمالي البدلات</TableHead>
-                      <TableHead className="text-right">إجمالي الخصومات</TableHead>
-                      <TableHead className="text-right">صافي الرواتب</TableHead>
-                      <TableHead className="text-center">إجراءات</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <TableHeader><TableRow>
+                    <TableHead className="text-right">{t.month_label}</TableHead><TableHead className="text-right">{t.year_label}</TableHead>
+                    <TableHead className="text-right">{t.status}</TableHead><TableHead className="text-right">{t.total_base_salaries}</TableHead>
+                    <TableHead className="text-right">{t.total_allowances}</TableHead><TableHead className="text-right">{t.total_deductions}</TableHead>
+                    <TableHead className="text-right">{t.net_salaries}</TableHead><TableHead className="text-center">{t.actions}</TableHead>
+                  </TableRow></TableHeader>
                   <TableBody>
                     {payrollRecords.map((record) => (
-                      <TableRow 
-                        key={record.id}
-                        className={selectedPayrollId === record.id ? 'bg-muted' : 'cursor-pointer hover:bg-muted/50'}
-                        onClick={() => setSelectedPayrollId(record.id)}
-                      >
+                      <TableRow key={record.id} className={selectedPayrollId === record.id ? 'bg-muted' : 'cursor-pointer hover:bg-muted/50'} onClick={() => setSelectedPayrollId(record.id)}>
                         <TableCell className="font-medium">{MONTHS[record.month - 1]}</TableCell>
                         <TableCell>{record.year}</TableCell>
                         <TableCell>{getStatusBadge(record.status)}</TableCell>
                         <TableCell>{formatCurrency(record.total_base_salaries)}</TableCell>
                         <TableCell>{formatCurrency(record.total_allowances)}</TableCell>
-                        <TableCell className="text-rose-600">
-                          {formatCurrency(record.total_deductions + record.total_advances + record.total_absences)}
-                        </TableCell>
-                        <TableCell className="font-bold text-emerald-600">
-                          {formatCurrency(record.total_net_salaries)}
-                        </TableCell>
+                        <TableCell className="text-rose-600">{formatCurrency(record.total_deductions + record.total_advances + record.total_absences)}</TableCell>
+                        <TableCell className="font-bold text-emerald-600">{formatCurrency(record.total_net_salaries)}</TableCell>
                         <TableCell>
                           <div className="flex justify-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedPayrollId(record.id);
-                              }}
-                            >
-                              <FileText className="w-4 h-4" />
-                            </Button>
-                            {record.status === 'draft' && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeleteId(record.id);
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            )}
+                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setSelectedPayrollId(record.id); }}><FileText className="w-4 h-4" /></Button>
+                            {record.status === 'draft' && <Button variant="ghost" size="icon" className="text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteId(record.id); }}><Trash2 className="w-4 h-4" /></Button>}
                           </div>
                         </TableCell>
                       </TableRow>
                     ))}
-                    {payrollRecords.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                          لا توجد مسيرات رواتب
-                        </TableCell>
-                      </TableRow>
-                    )}
+                    {payrollRecords.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t.no_payroll_records}</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </div>
@@ -318,410 +172,156 @@ export function PayrollPage() {
         </TabsContent>
 
         <TabsContent value="details">
-          {selectedPayroll && (
-            <PayrollDetailsSection 
-              payroll={selectedPayroll}
-              onApprove={handleApprovePayroll}
-              isApproving={approvePayroll.isPending}
-              onPrint={printReport}
-              onExportExcel={exportToExcel}
-            />
-          )}
+          {selectedPayroll && <PayrollDetailsSection payroll={selectedPayroll} onApprove={handleApprovePayroll} isApproving={approvePayroll.isPending} onPrint={printReport} onExportExcel={exportToExcel} />}
         </TabsContent>
       </Tabs>
 
-      {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
-            <AlertDialogDescription>
-              سيتم حذف مسير الرواتب نهائياً. لا يمكن التراجع عن هذا الإجراء.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePayroll} className="bg-destructive text-destructive-foreground">
-              حذف
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>{t.confirm_delete}</AlertDialogTitle><AlertDialogDescription>{t.confirm_delete_desc}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>{t.cancel}</AlertDialogCancel><AlertDialogAction onClick={handleDeletePayroll} className="bg-destructive text-destructive-foreground">{t.delete}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
   );
 }
 
-interface PayrollDetailsSectionProps {
-  payroll: any;
-  onApprove: () => void;
-  isApproving: boolean;
-  onPrint: (options: any) => void;
-  onExportExcel: (options: any) => void;
-}
+interface PayrollDetailsSectionProps { payroll: any; onApprove: () => void; isApproving: boolean; onPrint: (options: any) => void; onExportExcel: (options: any) => void; }
 
-function PayrollDetailsSection({ 
-  payroll, 
-  onApprove, 
-  isApproving, 
-  onPrint,
-  onExportExcel,
-}: PayrollDetailsSectionProps) {
+function PayrollDetailsSection({ payroll, onApprove, isApproving, onPrint, onExportExcel }: PayrollDetailsSectionProps) {
+  const { t, language } = useLanguage();
+  const MONTHS = language === 'en' ? MONTHS_EN : MONTHS_AR;
   const updatePayrollItem = useUpdatePayrollItem();
   const updatePayrollTotals = useUpdatePayrollTotals();
   const refreshAdvances = useRefreshPayrollAdvances();
-
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<PayrollItem>>({});
   const [editingJournalEntryId, setEditingJournalEntryId] = useState<string | null>(null);
 
   const handleRefreshAdvances = async () => {
-    try {
-      await refreshAdvances.mutateAsync(payroll.id);
-      toast.success('تم تحديث السلفيات بنجاح');
-    } catch {
-      toast.error('حدث خطأ أثناء تحديث السلفيات');
-    }
+    try { await refreshAdvances.mutateAsync(payroll.id); toast.success(t.success); } catch { toast.error(t.error_occurred); }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
 
   const startEditing = (item: PayrollItem) => {
     setEditingItemId(item.id);
-    setEditForm({
-      base_salary: item.base_salary,
-      housing_allowance: item.housing_allowance,
-      transport_allowance: item.transport_allowance,
-      bonus: item.bonus,
-      overtime_hours: item.overtime_hours,
-      overtime_rate: item.overtime_rate,
-      overtime_amount: item.overtime_amount,
-      advances_deducted: item.advances_deducted,
-      absence_days: item.absence_days,
-      absence_amount: item.absence_amount,
-      other_deductions: item.other_deductions,
-      deduction_notes: item.deduction_notes,
-    });
+    setEditForm({ base_salary: item.base_salary, housing_allowance: item.housing_allowance, transport_allowance: item.transport_allowance, bonus: item.bonus, overtime_hours: item.overtime_hours, overtime_rate: item.overtime_rate, overtime_amount: item.overtime_amount, advances_deducted: item.advances_deducted, absence_days: item.absence_days, absence_amount: item.absence_amount, other_deductions: item.other_deductions, deduction_notes: item.deduction_notes });
   };
 
   const saveEditing = async () => {
     if (!editingItemId) return;
-    try {
-      await updatePayrollItem.mutateAsync({ itemId: editingItemId, updates: editForm });
-      await updatePayrollTotals.mutateAsync(payroll.id);
-      toast.success('تم حفظ التعديلات');
-      setEditingItemId(null);
-    } catch (error) {
-      toast.error('حدث خطأ أثناء الحفظ');
-    }
+    try { await updatePayrollItem.mutateAsync({ itemId: editingItemId, updates: editForm }); await updatePayrollTotals.mutateAsync(payroll.id); toast.success(t.success); setEditingItemId(null); } catch (error) { toast.error(t.error_occurred); }
   };
 
   const items: PayrollItem[] = payroll.items || [];
 
   const handlePrintPayroll = () => {
-    // Prepare data for unified print with employee signature column
     const columns: UnifiedReportColumn[] = [
-      { header: 'م', key: 'index', align: 'center', width: '40px' },
-      { header: 'الاسم', key: 'name', align: 'right' },
-      { header: 'المسمى الوظيفي', key: 'job_title', align: 'right' },
-      { header: 'الراتب', key: 'base_salary', align: 'right', type: 'currency' },
-      { header: 'الحوافز', key: 'bonus', align: 'right', type: 'currency' },
-      { header: 'أوفرتايم', key: 'overtime', align: 'right', type: 'currency' },
-      { header: 'إجمالي الراتب', key: 'gross_salary', align: 'right', type: 'currency' },
-      { header: 'سلفيات', key: 'advances', align: 'right', type: 'currency' },
-      { header: 'خصم', key: 'deductions', align: 'right', type: 'currency' },
-      { header: 'ملاحظات', key: 'notes', align: 'right' },
-      { header: 'قيمة الغياب', key: 'absence', align: 'right', type: 'currency' },
-      { header: 'إجمالي المستقطع', key: 'total_deductions', align: 'right', type: 'currency', className: 'text-danger' },
-      { header: 'صافي الراتب', key: 'net_salary', align: 'right', type: 'currency', className: 'text-success' },
-      { header: 'توقيع الموظف', key: 'employee_signature', align: 'center', width: '100px' },
+      { header: '#', key: 'index', align: 'center', width: '40px' },
+      { header: t.name, key: 'name', align: 'right' },
+      { header: t.job_title, key: 'job_title', align: 'right' },
+      { header: t.base_salary, key: 'base_salary', align: 'right', type: 'currency' },
+      { header: t.amount, key: 'bonus', align: 'right', type: 'currency' },
+      { header: 'Overtime', key: 'overtime', align: 'right', type: 'currency' },
+      { header: t.total, key: 'gross_salary', align: 'right', type: 'currency' },
+      { header: t.total_deductions, key: 'advances', align: 'right', type: 'currency' },
+      { header: t.total_deductions, key: 'deductions', align: 'right', type: 'currency' },
+      { header: t.notes, key: 'notes', align: 'right' },
+      { header: t.total_deductions, key: 'absence', align: 'right', type: 'currency' },
+      { header: t.total_deductions, key: 'total_deductions', align: 'right', type: 'currency', className: 'text-danger' },
+      { header: t.net_salaries, key: 'net_salary', align: 'right', type: 'currency', className: 'text-success' },
+      { header: '', key: 'employee_signature', align: 'center', width: '100px' },
     ];
 
     const data = items.map((item, index) => {
-      const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + 
-        Number(item.transport_allowance) + Number(item.bonus) + Number(item.overtime_amount);
-      const totalDeductions = Number(item.advances_deducted) + Number(item.absence_amount) + 
-        Number(item.other_deductions);
-      
-      return {
-        index: index + 1,
-        name: item.employee?.name || '-',
-        job_title: item.employee?.job_title || '-',
-        base_salary: item.base_salary,
-        bonus: item.bonus,
-        overtime: item.overtime_amount,
-        gross_salary: grossSalary,
-        advances: item.advances_deducted,
-        deductions: item.other_deductions,
-        notes: item.deduction_notes || '-',
-        absence: item.absence_amount,
-        total_deductions: totalDeductions,
-        net_salary: item.net_salary,
-        employee_signature: '_______________',
-      };
+      const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + Number(item.transport_allowance) + Number(item.bonus) + Number(item.overtime_amount);
+      const totalDeductions = Number(item.advances_deducted) + Number(item.absence_amount) + Number(item.other_deductions);
+      return { index: index + 1, name: item.employee?.name || '-', job_title: item.employee?.job_title || '-', base_salary: item.base_salary, bonus: item.bonus, overtime: item.overtime_amount, gross_salary: grossSalary, advances: item.advances_deducted, deductions: item.other_deductions, notes: item.deduction_notes || '-', absence: item.absence_amount, total_deductions: totalDeductions, net_salary: item.net_salary, employee_signature: '_______________' };
     });
 
-    const grossTotal = payroll.total_base_salaries + payroll.total_allowances + 
-      payroll.total_bonuses + payroll.total_overtime;
+    const grossTotal = payroll.total_base_salaries + payroll.total_allowances + payroll.total_bonuses + payroll.total_overtime;
     const totalDeductionsSum = payroll.total_advances + payroll.total_deductions + payroll.total_absences;
+    const summaryRow = { index: '', name: t.total, job_title: '', base_salary: payroll.total_base_salaries, bonus: payroll.total_bonuses, overtime: payroll.total_overtime, gross_salary: grossTotal, advances: payroll.total_advances, deductions: payroll.total_deductions, notes: '', absence: payroll.total_absences, total_deductions: totalDeductionsSum, net_salary: payroll.total_net_salaries, employee_signature: '' };
 
-    const summaryRow = {
-      index: '',
-      name: 'الإجمالي',
-      job_title: '',
-      base_salary: payroll.total_base_salaries,
-      bonus: payroll.total_bonuses,
-      overtime: payroll.total_overtime,
-      gross_salary: grossTotal,
-      advances: payroll.total_advances,
-      deductions: payroll.total_deductions,
-      notes: '',
-      absence: payroll.total_absences,
-      total_deductions: totalDeductionsSum,
-      net_salary: payroll.total_net_salaries,
-      employee_signature: '',
-    };
-
-    onPrint({
-      title: 'مسير الرواتب',
-      subtitle: `${MONTHS[payroll.month - 1]} ${payroll.year}`,
-      columns,
-      data,
-      summaryRow,
-      showSignatures: true,
-      signatureLabels: ['توقيع المحاسب', 'توقيع المدير العام', 'توقيع المدير المالي'],
-    });
+    onPrint({ title: t.payroll_title, subtitle: `${MONTHS[payroll.month - 1]} ${payroll.year}`, columns, data, summaryRow, showSignatures: true, signatureLabels: [t.approve, t.approve, t.approve] });
   };
 
   const handleExportExcel = () => {
     const excelColumns = [
-      { header: 'م', key: 'index' },
-      { header: 'الاسم', key: 'name' },
-      { header: 'المسمى الوظيفي', key: 'job_title' },
-      { header: 'الراتب', key: 'base_salary' },
-      { header: 'الحوافز', key: 'bonus' },
-      { header: 'أوفرتايم', key: 'overtime' },
-      { header: 'إجمالي الراتب', key: 'gross_salary' },
-      { header: 'سلفيات', key: 'advances' },
-      { header: 'خصم', key: 'deductions' },
-      { header: 'ملاحظات', key: 'notes' },
-      { header: 'قيمة الغياب', key: 'absence' },
-      { header: 'إجمالي المستقطع', key: 'total_deductions' },
-      { header: 'صافي الراتب', key: 'net_salary' },
+      { header: '#', key: 'index' }, { header: t.name, key: 'name' }, { header: t.job_title, key: 'job_title' },
+      { header: t.base_salary, key: 'base_salary' }, { header: t.amount, key: 'bonus' }, { header: 'Overtime', key: 'overtime' },
+      { header: t.total, key: 'gross_salary' }, { header: t.total_deductions, key: 'advances' }, { header: t.total_deductions, key: 'deductions' },
+      { header: t.notes, key: 'notes' }, { header: t.total_deductions, key: 'absence' }, { header: t.total_deductions, key: 'total_deductions' },
+      { header: t.net_salaries, key: 'net_salary' },
     ];
-
     const excelData = items.map((item, index) => {
-      const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + 
-        Number(item.transport_allowance) + Number(item.bonus) + Number(item.overtime_amount);
-      const totalDeductions = Number(item.advances_deducted) + Number(item.absence_amount) + 
-        Number(item.other_deductions);
-      
-      return {
-        index: index + 1,
-        name: item.employee?.name || '-',
-        job_title: item.employee?.job_title || '-',
-        base_salary: Number(item.base_salary),
-        bonus: Number(item.bonus),
-        overtime: Number(item.overtime_amount),
-        gross_salary: grossSalary,
-        advances: Number(item.advances_deducted),
-        deductions: Number(item.other_deductions),
-        notes: item.deduction_notes || '-',
-        absence: Number(item.absence_amount),
-        total_deductions: totalDeductions,
-        net_salary: Number(item.net_salary),
-      };
+      const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + Number(item.transport_allowance) + Number(item.bonus) + Number(item.overtime_amount);
+      const totalDeductions = Number(item.advances_deducted) + Number(item.absence_amount) + Number(item.other_deductions);
+      return { index: index + 1, name: item.employee?.name || '-', job_title: item.employee?.job_title || '-', base_salary: Number(item.base_salary), bonus: Number(item.bonus), overtime: Number(item.overtime_amount), gross_salary: grossSalary, advances: Number(item.advances_deducted), deductions: Number(item.other_deductions), notes: item.deduction_notes || '-', absence: Number(item.absence_amount), total_deductions: totalDeductions, net_salary: Number(item.net_salary) };
     });
-
-    onExportExcel({
-      title: `مسير الرواتب - ${MONTHS[payroll.month - 1]} ${payroll.year}`,
-      columns: excelColumns,
-      data: excelData,
-      fileName: `مسير_الرواتب_${MONTHS[payroll.month - 1]}_${payroll.year}`,
-      summaryData: [
-        { label: 'إجمالي الرواتب الأساسية', value: payroll.total_base_salaries },
-        { label: 'إجمالي البدلات', value: payroll.total_allowances },
-        { label: 'إجمالي الخصومات', value: payroll.total_advances + payroll.total_deductions + payroll.total_absences },
-        { label: 'صافي الرواتب', value: payroll.total_net_salaries },
-      ],
-    });
-    toast.success('تم تصدير مسير الرواتب بنجاح');
+    onExportExcel({ title: `${t.payroll_title} - ${MONTHS[payroll.month - 1]} ${payroll.year}`, columns: excelColumns, data: excelData, fileName: `payroll_${MONTHS[payroll.month - 1]}_${payroll.year}`, summaryData: [{ label: t.total_base_salaries, value: payroll.total_base_salaries }, { label: t.total_allowances, value: payroll.total_allowances }, { label: t.total_deductions, value: payroll.total_advances + payroll.total_deductions + payroll.total_absences }, { label: t.net_salaries, value: payroll.total_net_salaries }] });
+    toast.success(t.success);
   };
 
   return (
     <div className="space-y-4">
-      {/* Actions */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-base px-3 py-1">
-            {MONTHS[payroll.month - 1]} {payroll.year}
-          </Badge>
-          {payroll.status === 'draft' ? (
-            <Badge variant="secondary">مسودة</Badge>
-          ) : (
-            <Badge variant="default" className="bg-emerald-500">معتمد</Badge>
-          )}
+          <Badge variant="outline" className="text-base px-3 py-1">{MONTHS[payroll.month - 1]} {payroll.year}</Badge>
+          {payroll.status === 'draft' ? <Badge variant="secondary">{t.draft_status}</Badge> : <Badge variant="default" className="bg-emerald-500">{t.approved_status}</Badge>}
         </div>
         <div className="flex gap-2">
-          {payroll.journal_entry_id && (
-            <Button 
-              variant="outline" 
-              onClick={() => setEditingJournalEntryId(payroll.journal_entry_id)}
-              className="gap-2"
-            >
-              <BookOpen className="w-4 h-4" />
-              القيد المحاسبي
-              <Pencil className="w-3 h-3" />
-            </Button>
-          )}
-          {payroll.status === 'draft' && (
-            <Button variant="outline" onClick={handleRefreshAdvances} disabled={refreshAdvances.isPending} className="gap-2">
-              {refreshAdvances.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              تحديث السلفيات
-            </Button>
-          )}
-          <Button variant="outline" onClick={handleExportExcel}>
-            <FileSpreadsheet className="w-4 h-4 ml-2" />
-            تصدير Excel
-          </Button>
-          <Button variant="outline" onClick={handlePrintPayroll}>
-            <Printer className="w-4 h-4 ml-2" />
-            طباعة
-          </Button>
-          {payroll.status === 'draft' && (
-            <Button onClick={onApprove} disabled={isApproving} className="bg-emerald-600 hover:bg-emerald-700">
-              {isApproving && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
-              <CheckCircle2 className="w-4 h-4 ml-2" />
-              اعتماد المسير
-            </Button>
-          )}
+          {payroll.journal_entry_id && <Button variant="outline" onClick={() => setEditingJournalEntryId(payroll.journal_entry_id)} className="gap-2"><BookOpen className="w-4 h-4" />{t.accounting_journal_entry}<Pencil className="w-3 h-3" /></Button>}
+          {payroll.status === 'draft' && <Button variant="outline" onClick={handleRefreshAdvances} disabled={refreshAdvances.isPending} className="gap-2">{refreshAdvances.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}{t.refresh}</Button>}
+          <Button variant="outline" onClick={handleExportExcel}><FileSpreadsheet className="w-4 h-4 ml-2" />{t.reports_export_excel}</Button>
+          <Button variant="outline" onClick={handlePrintPayroll}><Printer className="w-4 h-4 ml-2" />{t.print}</Button>
+          {payroll.status === 'draft' && <Button onClick={onApprove} disabled={isApproving} className="bg-emerald-600 hover:bg-emerald-700">{isApproving && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}<CheckCircle2 className="w-4 h-4 ml-2" />{t.approve}</Button>}
         </div>
       </div>
 
-      {/* Journal Entry Edit Dialog */}
-      <JournalEntryEditDialog
-        entryId={editingJournalEntryId}
-        open={!!editingJournalEntryId}
-        onOpenChange={(open) => !open && setEditingJournalEntryId(null)}
-        title="القيد المحاسبي لمسير الرواتب"
-        referenceType="payroll"
-      />
+      <JournalEntryEditDialog entryId={editingJournalEntryId} open={!!editingJournalEntryId} onOpenChange={(open) => !open && setEditingJournalEntryId(null)} title={t.accounting_journal_entry} referenceType="payroll" />
 
-      {/* Table View */}
       <Card>
         <CardContent className="pt-6 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="text-right">الاسم</TableHead>
-                <TableHead className="text-right">المسمى الوظيفي</TableHead>
-                <TableHead className="text-right">الراتب</TableHead>
-                <TableHead className="text-right">الحوافز</TableHead>
-                <TableHead className="text-right">أوفرتايم</TableHead>
-                <TableHead className="text-right">إجمالي الراتب</TableHead>
-                <TableHead className="text-right">سلفيات</TableHead>
-                <TableHead className="text-right">خصم</TableHead>
-                <TableHead className="text-right">ملاحظات</TableHead>
-                <TableHead className="text-right">قيمة الغياب</TableHead>
-                <TableHead className="text-right">إجمالي المستقطع</TableHead>
-                <TableHead className="text-right">صافي الراتب</TableHead>
-                <TableHead className="text-right">تعديل</TableHead>
+                <TableHead className="text-right">{t.name}</TableHead><TableHead className="text-right">{t.job_title}</TableHead>
+                <TableHead className="text-right">{t.base_salary}</TableHead><TableHead className="text-right">{t.amount}</TableHead>
+                <TableHead className="text-right">Overtime</TableHead><TableHead className="text-right">{t.total}</TableHead>
+                <TableHead className="text-right">{t.total_deductions}</TableHead><TableHead className="text-right">{t.total_deductions}</TableHead>
+                <TableHead className="text-right">{t.notes}</TableHead><TableHead className="text-right">{t.total_deductions}</TableHead>
+                <TableHead className="text-right">{t.total_deductions}</TableHead><TableHead className="text-right">{t.net_salaries}</TableHead>
+                <TableHead className="text-right">{t.edit}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {items.map((item) => {
-                const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + 
-                  Number(item.transport_allowance) + Number(item.bonus) + Number(item.overtime_amount);
-                const totalDeductions = Number(item.advances_deducted) + Number(item.absence_amount) + 
-                  Number(item.other_deductions);
+                const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + Number(item.transport_allowance) + Number(item.bonus) + Number(item.overtime_amount);
+                const totalDeductions = Number(item.advances_deducted) + Number(item.absence_amount) + Number(item.other_deductions);
 
                 if (editingItemId === item.id && payroll.status === 'draft') {
                   return (
                     <TableRow key={item.id} className="bg-blue-50 dark:bg-blue-950/30">
                       <TableCell>{item.employee?.name}</TableCell>
                       <TableCell>{item.employee?.job_title}</TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={editForm.base_salary}
-                          onChange={(e) => setEditForm({ ...editForm, base_salary: parseFloat(e.target.value) || 0 })}
-                          className="w-20"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={editForm.bonus}
-                          onChange={(e) => setEditForm({ ...editForm, bonus: parseFloat(e.target.value) || 0 })}
-                          className="w-20"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={editForm.overtime_amount}
-                          onChange={(e) => setEditForm({ ...editForm, overtime_amount: parseFloat(e.target.value) || 0 })}
-                          className="w-20"
-                        />
-                      </TableCell>
+                      <TableCell><Input type="number" value={editForm.base_salary} onChange={(e) => setEditForm({ ...editForm, base_salary: parseFloat(e.target.value) || 0 })} className="w-20" /></TableCell>
+                      <TableCell><Input type="number" value={editForm.bonus} onChange={(e) => setEditForm({ ...editForm, bonus: parseFloat(e.target.value) || 0 })} className="w-20" /></TableCell>
+                      <TableCell><Input type="number" value={editForm.overtime_amount} onChange={(e) => setEditForm({ ...editForm, overtime_amount: parseFloat(e.target.value) || 0 })} className="w-20" /></TableCell>
                       <TableCell className="font-medium">-</TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={editForm.advances_deducted}
-                          onChange={(e) => setEditForm({ ...editForm, advances_deducted: parseFloat(e.target.value) || 0 })}
-                          className="w-20"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={editForm.other_deductions}
-                          onChange={(e) => setEditForm({ ...editForm, other_deductions: parseFloat(e.target.value) || 0 })}
-                          className="w-20"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={editForm.deduction_notes || ''}
-                          onChange={(e) => setEditForm({ ...editForm, deduction_notes: e.target.value })}
-                          className="w-24"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={editForm.absence_amount}
-                          onChange={(e) => setEditForm({ ...editForm, absence_amount: parseFloat(e.target.value) || 0 })}
-                          className="w-20"
-                        />
-                      </TableCell>
-                      <TableCell>-</TableCell>
-                      <TableCell>-</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button size="sm" onClick={saveEditing}>
-                            حفظ
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setEditingItemId(null)}>
-                            إلغاء
-                          </Button>
-                        </div>
-                      </TableCell>
+                      <TableCell><Input type="number" value={editForm.advances_deducted} onChange={(e) => setEditForm({ ...editForm, advances_deducted: parseFloat(e.target.value) || 0 })} className="w-20" /></TableCell>
+                      <TableCell><Input type="number" value={editForm.other_deductions} onChange={(e) => setEditForm({ ...editForm, other_deductions: parseFloat(e.target.value) || 0 })} className="w-20" /></TableCell>
+                      <TableCell><Input value={editForm.deduction_notes || ''} onChange={(e) => setEditForm({ ...editForm, deduction_notes: e.target.value })} className="w-24" /></TableCell>
+                      <TableCell><Input type="number" value={editForm.absence_amount} onChange={(e) => setEditForm({ ...editForm, absence_amount: parseFloat(e.target.value) || 0 })} className="w-20" /></TableCell>
+                      <TableCell>-</TableCell><TableCell>-</TableCell>
+                      <TableCell><div className="flex gap-1"><Button size="sm" onClick={saveEditing}>{t.save}</Button><Button size="sm" variant="outline" onClick={() => setEditingItemId(null)}>{t.cancel}</Button></div></TableCell>
                     </TableRow>
                   );
                 }
 
                 return (
-                  <TableRow 
-                    key={item.id} 
-                    className={payroll.status === 'draft' ? 'cursor-pointer hover:bg-muted/50' : ''}
-                    onClick={() => payroll.status === 'draft' && startEditing(item)}
-                  >
+                  <TableRow key={item.id} className={payroll.status === 'draft' ? 'cursor-pointer hover:bg-muted/50' : ''} onClick={() => payroll.status === 'draft' && startEditing(item)}>
                     <TableCell className="font-medium">{item.employee?.name}</TableCell>
                     <TableCell>{item.employee?.job_title}</TableCell>
                     <TableCell>{formatCurrency(item.base_salary)}</TableCell>
@@ -738,25 +338,17 @@ function PayrollDetailsSection({
                   </TableRow>
                 );
               })}
-              {/* Totals Row */}
               <TableRow className="font-bold bg-muted">
-                <TableCell colSpan={2}>إجمالي الرواتب</TableCell>
+                <TableCell colSpan={2}>{t.total}</TableCell>
                 <TableCell>{formatCurrency(payroll.total_base_salaries)}</TableCell>
                 <TableCell>{formatCurrency(payroll.total_bonuses)}</TableCell>
                 <TableCell>{formatCurrency(payroll.total_overtime)}</TableCell>
-                <TableCell>
-                  {formatCurrency(
-                    payroll.total_base_salaries + payroll.total_allowances + 
-                    payroll.total_bonuses + payroll.total_overtime
-                  )}
-                </TableCell>
+                <TableCell>{formatCurrency(payroll.total_base_salaries + payroll.total_allowances + payroll.total_bonuses + payroll.total_overtime)}</TableCell>
                 <TableCell className="text-orange-600">{formatCurrency(payroll.total_advances)}</TableCell>
                 <TableCell>{formatCurrency(payroll.total_deductions)}</TableCell>
                 <TableCell></TableCell>
                 <TableCell>{formatCurrency(payroll.total_absences)}</TableCell>
-                <TableCell className="text-rose-600">
-                  {formatCurrency(payroll.total_advances + payroll.total_deductions + payroll.total_absences)}
-                </TableCell>
+                <TableCell className="text-rose-600">{formatCurrency(payroll.total_advances + payroll.total_deductions + payroll.total_absences)}</TableCell>
                 <TableCell className="text-emerald-600">{formatCurrency(payroll.total_net_salaries)}</TableCell>
                 <TableCell></TableCell>
               </TableRow>
