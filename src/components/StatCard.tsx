@@ -19,6 +19,7 @@ interface StatCardProps {
   fontSize?: number;
   showAsWords?: boolean;
   height?: number;
+  width?: number;
   enable3D?: boolean;
   progress?: number;
   animationIndex?: number;
@@ -82,6 +83,7 @@ export function StatCard({
   fontSize = 100,
   showAsWords = false,
   height,
+  width,
   enable3D = false,
   progress,
   animationIndex = 0,
@@ -152,6 +154,7 @@ export function StatCard({
           : bgColor || 'hsl(var(--card))',
         borderColor: useGradientMode ? 'transparent' : 'hsl(var(--border) / 0.5)',
         height: height ? `${height}px` : undefined,
+        width: width ? `${width}px` : undefined,
         minHeight: height ? `${height}px` : (size === 'small' ? '120px' : size === 'large' ? '160px' : '140px'),
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(16px) scale(0.98)',

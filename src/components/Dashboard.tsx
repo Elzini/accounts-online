@@ -235,7 +235,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
 
   // Helper to get card config by id
   const getCardConfig = useCallback((id: string) => {
-    return cardConfigs.find(c => c.id === id) || { visible: true, size: 'medium' as const, bgColor: '', textColor: '', gradientFrom: '', gradientTo: '', fontSize: 100, height: undefined, enable3D: false, showTrend: true, trendColor: '', label: '' };
+    return cardConfigs.find(c => c.id === id) || { visible: true, size: 'medium' as const, bgColor: '', textColor: '', gradientFrom: '', gradientTo: '', fontSize: 100, height: undefined, width: undefined, enable3D: false, showTrend: true, trendColor: '', label: '' };
   }, [cardConfigs]);
 
   // Spread helper for StatCard style props
@@ -249,6 +249,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
       gradientTo: cfg.gradientTo,
       fontSize: cfg.fontSize,
       height: cfg.height,
+      width: cfg.width,
       enable3D: cfg.enable3D,
       showTrend: cfg.showTrend ?? true,
       trendColor: cfg.trendColor,

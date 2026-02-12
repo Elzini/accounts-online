@@ -306,21 +306,17 @@ export function DashboardConfigTab() {
 
                       {/* Width */}
                       <div className="space-y-1">
-                        <Label className="text-xs">العرض (col-span)</Label>
-                        <Select
-                          value={String(card.width || 1)}
-                          onValueChange={(value) => updateStatCard(card.id, { width: Number(value) })}
-                        >
-                          <SelectTrigger className="h-9">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1">1 عمود</SelectItem>
-                            <SelectItem value="2">2 عمود</SelectItem>
-                            <SelectItem value="3">3 أعمدة</SelectItem>
-                            <SelectItem value="4">4 أعمدة</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Label className="text-xs">العرض (px)</Label>
+                        <Input
+                          type="number"
+                          value={card.width || 0}
+                          onChange={(e) => updateStatCard(card.id, { width: Number(e.target.value) || 0 })}
+                          className="h-9"
+                          placeholder="تلقائي"
+                          min={0}
+                          max={600}
+                          step={10}
+                        />
                       </div>
 
                       {/* Height */}
