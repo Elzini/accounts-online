@@ -504,6 +504,15 @@ export interface TranslationKeys {
   total_sales_with_tax: string;
   total_profits: string;
 
+  // Page subtitles
+  subtitle_sales_log: string;
+  subtitle_manage_inventory: string;
+  recalculate_success: string;
+  recalculate_error: string;
+  btn_refresh: string;
+  unspecified_customer: string;
+  filter_status: string;
+
   // Buttons
   btn_add_car: string;
   btn_add_customer: string;

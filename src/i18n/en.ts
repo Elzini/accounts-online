@@ -511,6 +511,15 @@ export const en: TranslationKeys = {
   btn_saving: 'Saving...',
   btn_home: 'Home',
 
+  // Page subtitles
+  subtitle_sales_log: 'Sales operations log',
+  subtitle_manage_inventory: 'Manage car inventory',
+  recalculate_success: 'Profits recalculated',
+  recalculate_error: 'Error recalculating profits',
+  btn_refresh: 'Refresh',
+  unspecified_customer: 'Unspecified customer',
+  filter_status: 'Status',
+
   // Form labels
   form_customer: 'Customer *',
   form_supplier: 'Supplier *',
