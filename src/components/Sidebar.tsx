@@ -386,7 +386,7 @@ export function Sidebar({
 
   const pluginMenuItems = activePlugins.map(p => ({
     id: p.pageId as ActivePage,
-    label: p.menuLabel,
+    label: language === 'ar' ? p.menuLabel : p.menuLabel_en,
     icon: ICON_MAP[p.menuIcon] || Puzzle,
   }));
 
