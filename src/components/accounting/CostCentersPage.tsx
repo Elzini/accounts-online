@@ -13,8 +13,10 @@ import { useCostCenters, useAddCostCenter, useUpdateCostCenter, useDeleteCostCen
 import { toast } from 'sonner';
 import { Loader2, Plus, Edit, Trash2, Target } from 'lucide-react';
 import type { CostCenter } from '@/services/costCenters';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function CostCentersPage() {
+  const { t, direction } = useLanguage();
   const { data: centers = [], isLoading } = useCostCenters();
   const addCenter = useAddCostCenter();
   const updateCenter = useUpdateCostCenter();
@@ -46,7 +48,7 @@ export function CostCentersPage() {
 
   const handleSubmit = async () => {
     if (!code || !name) {
-      toast.error('يرجى إدخال الكود والاسم');
+      toast.error(t.cost_toast_required);
       return;
     }
 
@@ -56,7 +58,7 @@ export function CostCentersPage() {
           id: editingCenter.id,
           updates: { code, name, description: description || null, parent_id: parentId || null },
         });
-        toast.success('تم تحديث مركز التكلفة');
+        toast.success(t.cost_toast_updated);
       } else {
         await addCenter.mutateAsync({
           code,
@@ -64,21 +66,21 @@ export function CostCentersPage() {
           description: description || undefined,
           parent_id: parentId || undefined,
         });
-        toast.success('تم إضافة مركز التكلفة');
+        toast.success(t.cost_toast_added);
       }
       setIsDialogOpen(false);
       resetForm();
     } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ');
+      toast.error(error.message || t.cost_toast_error);
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteCenter.mutateAsync(id);
-      toast.success('تم حذف مركز التكلفة');
+      toast.success(t.cost_toast_deleted);
     } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ أثناء الحذف');
+      toast.error(error.message || t.cost_toast_error);
     }
   };
 
@@ -97,11 +99,11 @@ export function CostCentersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={direction}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">مراكز التكلفة</h1>
-          <p className="text-muted-foreground">إدارة مراكز التكلفة وربطها بالقيود المحاسبية</p>
+          <h1 className="text-2xl font-bold text-foreground">{t.cost_title}</h1>
+          <p className="text-muted-foreground">{t.cost_subtitle}</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
           setIsDialogOpen(open);
@@ -110,45 +112,48 @@ export function CostCentersPage() {
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 ml-2" />
-              إضافة مركز تكلفة
+              {t.cost_add}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md" dir="rtl">
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>{editingCenter ? 'تعديل مركز التكلفة' : 'إضافة مركز تكلفة جديد'}</DialogTitle>
+              <DialogTitle>{editingCenter ? t.cost_edit : t.cost_add_new}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>الكود</Label>
-                <Input value={code} onChange={e => setCode(e.target.value)} placeholder="CC-001" />
+                <Label>{t.cost_code}</Label>
+                <Input value={code} onChange={e => setCode(e.target.value)} placeholder="CC-001" className="font-mono" />
               </div>
               <div className="space-y-2">
-                <Label>الاسم</Label>
-                <Input value={name} onChange={e => setName(e.target.value)} placeholder="اسم مركز التكلفة" />
+                <Label>{t.cost_name}</Label>
+                <Input value={name} onChange={e => setName(e.target.value)} placeholder={t.cost_name} />
               </div>
               <div className="space-y-2">
-                <Label>الوصف</Label>
-                <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="وصف اختياري" />
+                <Label>{t.cost_description}</Label>
+                <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder={t.cost_description} />
               </div>
               <div className="space-y-2">
-                <Label>المركز الأب (اختياري)</Label>
+                <Label>{t.cost_parent}</Label>
                 <Select value={parentId} onValueChange={setParentId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="بدون مركز أب" />
+                    <SelectValue placeholder={t.cost_parent_none} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">بدون مركز أب</SelectItem>
+                    <SelectItem value="none">{t.cost_parent_none}</SelectItem>
                     {centers
                       .filter(c => c.id !== editingCenter?.id)
                       .map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.code} - {c.name}</SelectItem>
+                        <SelectItem key={c.id} value={c.id}>
+                          <span className="font-mono text-muted-foreground ml-2">{c.code}</span>
+                          {c.name}
+                        </SelectItem>
                       ))}
                   </SelectContent>
                 </Select>
               </div>
               <Button onClick={handleSubmit} className="w-full" disabled={addCenter.isPending || updateCenter.isPending}>
                 {(addCenter.isPending || updateCenter.isPending) && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
-                {editingCenter ? 'تحديث' : 'إضافة'}
+                {editingCenter ? t.cost_update : t.cost_add_btn}
               </Button>
             </div>
           </DialogContent>
@@ -159,22 +164,22 @@ export function CostCentersPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="w-5 h-5" />
-            مراكز التكلفة ({centers.length})
+            {t.cost_count} ({centers.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {centers.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">لا توجد مراكز تكلفة بعد</p>
+            <p className="text-center text-muted-foreground py-8">{t.cost_no_data}</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">الكود</TableHead>
-                  <TableHead className="text-right">الاسم</TableHead>
-                  <TableHead className="text-right">الوصف</TableHead>
-                  <TableHead className="text-right">المركز الأب</TableHead>
-                  <TableHead className="text-right">الحالة</TableHead>
-                  <TableHead className="text-right">إجراءات</TableHead>
+                  <TableHead className="text-right">{t.cost_code}</TableHead>
+                  <TableHead className="text-right">{t.cost_name}</TableHead>
+                  <TableHead className="text-right">{t.cost_description}</TableHead>
+                  <TableHead className="text-right">{t.cost_parent}</TableHead>
+                  <TableHead className="text-right">{t.cost_status}</TableHead>
+                  <TableHead className="text-right">{t.cost_actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -186,7 +191,7 @@ export function CostCentersPage() {
                     <TableCell>{getParentName(center.parent_id)}</TableCell>
                     <TableCell>
                       <Badge variant={center.is_active ? 'default' : 'secondary'}>
-                        {center.is_active ? 'نشط' : 'غير نشط'}
+                        {center.is_active ? t.cost_active : t.cost_inactive}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -200,16 +205,16 @@ export function CostCentersPage() {
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent dir="rtl">
+                          <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>حذف مركز التكلفة</AlertDialogTitle>
+                              <AlertDialogTitle>{t.cost_confirm_delete}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                هل أنت متأكد من حذف "{center.name}"؟ لا يمكن التراجع عن هذا الإجراء.
+                                {t.cost_confirm_delete_desc} "{center.name}"
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(center.id)}>حذف</AlertDialogAction>
+                              <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(center.id)}>{t.delete}</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>

@@ -239,14 +239,14 @@ export function ChartOfAccountsPage() {
 
   const handleSubmit = async () => {
     if (!formData.code || !formData.name) {
-      toast.error('يرجى ملء جميع الحقول المطلوبة');
+      toast.error(t.coa_toast_fill_required);
       return;
     }
 
     // Check for duplicate code
     const existingAccount = accounts.find(a => a.code === formData.code && a.id !== editingAccount?.id);
     if (existingAccount) {
-      toast.error('رمز الحساب موجود بالفعل');
+      toast.error(t.coa_toast_code_exists);
       return;
     }
 
@@ -256,34 +256,34 @@ export function ChartOfAccountsPage() {
           id: editingAccount.id,
           updates: formData,
         });
-        toast.success('تم تحديث الحساب بنجاح');
+        toast.success(t.coa_toast_updated);
       } else {
         await addAccount.mutateAsync(formData);
-        toast.success('تم إضافة الحساب بنجاح');
+        toast.success(t.coa_toast_added);
       }
       setIsDialogOpen(false);
       resetForm();
     } catch (error) {
-      toast.error('حدث خطأ أثناء حفظ الحساب');
+      toast.error(t.coa_toast_save_error);
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteAccount.mutateAsync(id);
-      toast.success('تم حذف الحساب بنجاح');
+      toast.success(t.coa_toast_deleted);
     } catch (error) {
-      toast.error('حدث خطأ أثناء حذف الحساب');
+      toast.error(t.coa_toast_delete_error);
     }
   };
 
   const handleCreateDefaults = async () => {
     try {
       await createDefaultAccounts.mutateAsync();
-      toast.success('تم إنشاء الحسابات الافتراضية بنجاح');
+      toast.success(t.coa_toast_defaults_created);
       expandAll();
     } catch (error) {
-      toast.error('حدث خطأ أثناء إنشاء الحسابات');
+      toast.error(t.coa_toast_defaults_error);
     }
   };
 
