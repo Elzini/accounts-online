@@ -20,7 +20,8 @@ import {
   LogIn,
   BookOpen,
   FileBarChart,
-  Cog
+  Cog,
+  Globe
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,6 +66,7 @@ import { CompanyAccountingSettings } from '@/components/super-admin/CompanyAccou
 import { CompaniesReport } from '@/components/super-admin/CompaniesReport';
 import { DefaultCompanySettings } from '@/components/super-admin/DefaultCompanySettings';
 import { SystemLabelsManagement } from '@/components/super-admin/SystemLabelsManagement';
+import { SubdomainManagement } from '@/components/super-admin/SubdomainManagement';
 import { MenuConfigurationTab } from '@/components/control-center/tabs/MenuConfigurationTab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -380,10 +382,14 @@ export default function Companies() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="companies" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-8 lg:w-auto lg:inline-grid">
             <TabsTrigger value="companies" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               <span>الشركات</span>
+            </TabsTrigger>
+            <TabsTrigger value="subdomains" className="flex items-center gap-2">
+              <Globe className="w-4 h-4" />
+              <span>النطاقات</span>
             </TabsTrigger>
             <TabsTrigger value="menu-config" className="flex items-center gap-2">
               <PanelLeft className="w-4 h-4" />
@@ -410,6 +416,10 @@ export default function Companies() {
               <span>شاشة الدخول</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="subdomains">
+            <SubdomainManagement />
+          </TabsContent>
 
           <TabsContent value="menu-config">
             <MenuConfigurationTab />
