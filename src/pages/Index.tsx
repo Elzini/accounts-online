@@ -106,7 +106,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const Index = () => {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
-  const { data: stats } = useStats();
+  const { data: stats, isLoading: isStatsLoading } = useStats();
   const { signOut, user, permissions } = useAuth();
   const { isSuperAdmin, viewAsCompanyId, setViewAsCompanyId, company: currentCompany } = useCompany();
   const { fiscalYears, selectedFiscalYear, setSelectedFiscalYear, isLoading: isFiscalYearLoading } = useFiscalYear();
@@ -157,7 +157,7 @@ const Index = () => {
 
   const renderContent = () => {
     switch (activePage) {
-      case 'dashboard': return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
+      case 'dashboard': return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} />;
       case 'customers': return <CustomersTable setActivePage={setActivePage} />;
       case 'suppliers': return <SuppliersTable setActivePage={setActivePage} />;
       case 'purchases': return <PurchasesTable setActivePage={setActivePage} />;
@@ -259,7 +259,7 @@ const Index = () => {
       case 'plugin-ifrs': return <IFRSPluginPage />;
       case 'plugin-project-mgmt': return <ProjectMgmtPluginPage />;
       default:
-        return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} />;
+        return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} />;
     }
   };
 
