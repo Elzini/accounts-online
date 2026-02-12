@@ -311,7 +311,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
       style: 'currency', 
       currency: 'SAR',
       maximumFractionDigits: 0,
-      notation: value >= 1000000 ? 'compact' : 'standard',
+      notation: 'standard',
     }).format(value);
   }, []);
 
