@@ -666,8 +666,10 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
                         gradient="primary"
                         subtitle={t.sale_operation}
                         onClick={() => showStatDetail('todaySales')}
+                        showAsWords={showAmountAsWords}
                         {...getCardStyleProps('todaySales')}
                         animationIndex={getNextAnimIndex()}
+                        progress={monthProgress}
                       />
                     </EditableWidgetWrapper>
                   );
@@ -682,8 +684,10 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
                         gradient="success"
                         subtitle={t.sale_operation}
                         onClick={() => showStatDetail('monthSalesCount')}
+                        showAsWords={showAmountAsWords}
                         {...getCardStyleProps('monthSalesCount')}
                         animationIndex={getNextAnimIndex()}
+                        progress={monthProgress}
                       />
                     </EditableWidgetWrapper>
                   );
