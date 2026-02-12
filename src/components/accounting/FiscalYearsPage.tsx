@@ -21,6 +21,7 @@ import {
   useRefreshAllCarryForward
 } from '@/hooks/useFiscalYears';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { 
   Calendar, 
   Plus, 
@@ -38,6 +39,7 @@ import {
 import { format } from 'date-fns';
 
 export function FiscalYearsPage() {
+  const { t, direction } = useLanguage();
   const { data: fiscalYears = [], isLoading } = useFiscalYears();
   const { permissions } = useAuth();
   const isAdmin = permissions.admin || permissions.super_admin;
@@ -65,421 +67,241 @@ export function FiscalYearsPage() {
   const [refreshFromYearId, setRefreshFromYearId] = useState('');
   const [refreshToYearId, setRefreshToYearId] = useState('');
 
-
   const currentYear = new Date().getFullYear();
 
   const handleCreateYear = () => {
     if (!newYearName || !newYearStart || !newYearEnd) return;
-    
     createFiscalYear.mutate({
-      name: newYearName,
-      start_date: newYearStart,
-      end_date: newYearEnd,
-      is_current: fiscalYears.length === 0,
-      notes: newYearNotes || undefined,
-    }, {
-      onSuccess: () => {
-        setIsCreateDialogOpen(false);
-        resetForm();
-      }
-    });
+      name: newYearName, start_date: newYearStart, end_date: newYearEnd,
+      is_current: fiscalYears.length === 0, notes: newYearNotes || undefined,
+    }, { onSuccess: () => { setIsCreateDialogOpen(false); resetForm(); } });
   };
 
   const handleOpenNewYear = () => {
     if (!newYearName || !newYearStart || !newYearEnd) return;
-    
     openNewFiscalYear.mutate({
-      name: newYearName,
-      startDate: newYearStart,
-      endDate: newYearEnd,
-      previousYearId: previousYearId || undefined,
-      autoCarryForward,
-    }, {
-      onSuccess: () => {
-        setIsNewYearDialogOpen(false);
-        resetForm();
-      }
-    });
+      name: newYearName, startDate: newYearStart, endDate: newYearEnd,
+      previousYearId: previousYearId || undefined, autoCarryForward,
+    }, { onSuccess: () => { setIsNewYearDialogOpen(false); resetForm(); } });
   };
 
   const resetForm = () => {
-    setNewYearName('');
-    setNewYearStart('');
-    setNewYearEnd('');
-    setNewYearNotes('');
-    setAutoCarryForward(true);
-    setPreviousYearId('');
-    setFromYearId('');
-    setToYearId('');
+    setNewYearName(''); setNewYearStart(''); setNewYearEnd(''); setNewYearNotes('');
+    setAutoCarryForward(true); setPreviousYearId(''); setFromYearId(''); setToYearId('');
   };
 
   const handleCarryForwardInventory = () => {
     if (!fromYearId || !toYearId) return;
-    
-    carryForwardInventory.mutate({
-      fromFiscalYearId: fromYearId,
-      toFiscalYearId: toYearId,
-    }, {
-      onSuccess: () => {
-        setIsInventoryDialogOpen(false);
-        setFromYearId('');
-        setToYearId('');
-      }
-    });
+    carryForwardInventory.mutate({ fromFiscalYearId: fromYearId, toFiscalYearId: toYearId },
+      { onSuccess: () => { setIsInventoryDialogOpen(false); setFromYearId(''); setToYearId(''); } });
   };
 
   const handleRefreshAllBalances = () => {
     if (!refreshFromYearId || !refreshToYearId) return;
-    
-    refreshAllCarryForward.mutate({
-      previousYearId: refreshFromYearId,
-      fiscalYearId: refreshToYearId,
-    }, {
-      onSuccess: () => {
-        setIsRefreshDialogOpen(false);
-        setRefreshFromYearId('');
-        setRefreshToYearId('');
-      }
-    });
+    refreshAllCarryForward.mutate({ previousYearId: refreshFromYearId, fiscalYearId: refreshToYearId },
+      { onSuccess: () => { setIsRefreshDialogOpen(false); setRefreshFromYearId(''); setRefreshToYearId(''); } });
   };
 
   const handleSetYearDefaults = (year: number) => {
-    setNewYearName(year.toString());
-    setNewYearStart(`${year}-01-01`);
-    setNewYearEnd(`${year}-12-31`);
+    setNewYearName(year.toString()); setNewYearStart(`${year}-01-01`); setNewYearEnd(`${year}-12-31`);
   };
 
   const closedYears = fiscalYears.filter(y => y.status === 'closed');
   const openYears = fiscalYears.filter(y => y.status === 'open');
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={direction}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">السنوات المالية</h1>
-          <p className="text-muted-foreground">إدارة السنوات المالية وترحيل الحسابات</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t.fy_title}</h1>
+          <p className="text-muted-foreground">{t.fy_subtitle}</p>
         </div>
         <div className="flex gap-2">
-          {/* إنشاء سنة جديدة */}
+          {/* Create fiscal year */}
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 ml-2" />
-                إنشاء سنة مالية
-              </Button>
+              <Button><Plus className="h-4 w-4 ml-2" />{t.fy_create}</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>إنشاء سنة مالية جديدة</DialogTitle>
-                <DialogDescription>أدخل بيانات السنة المالية</DialogDescription>
+                <DialogTitle>{t.fy_create_title}</DialogTitle>
+                <DialogDescription>{t.fy_create_desc}</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="flex gap-2 mb-4">
                   {[currentYear - 1, currentYear, currentYear + 1].map(year => (
-                    <Button 
-                      key={year} 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleSetYearDefaults(year)}
-                    >
-                      {year}
-                    </Button>
+                    <Button key={year} variant="outline" size="sm" onClick={() => handleSetYearDefaults(year)}>{year}</Button>
                   ))}
                 </div>
-                <div className="space-y-2">
-                  <Label>اسم السنة المالية</Label>
-                  <Input
-                    value={newYearName}
-                    onChange={(e) => setNewYearName(e.target.value)}
-                    placeholder="مثل: 2024"
-                  />
-                </div>
+                <div className="space-y-2"><Label>{t.fy_name_label}</Label><Input value={newYearName} onChange={(e) => setNewYearName(e.target.value)} /></div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>تاريخ البداية</Label>
-                    <Input
-                      type="date"
-                      value={newYearStart}
-                      onChange={(e) => setNewYearStart(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>تاريخ النهاية</Label>
-                    <Input
-                      type="date"
-                      value={newYearEnd}
-                      onChange={(e) => setNewYearEnd(e.target.value)}
-                    />
-                  </div>
+                  <div className="space-y-2"><Label>{t.fy_start_date}</Label><Input type="date" value={newYearStart} onChange={(e) => setNewYearStart(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>{t.fy_end_date}</Label><Input type="date" value={newYearEnd} onChange={(e) => setNewYearEnd(e.target.value)} /></div>
                 </div>
-                <div className="space-y-2">
-                  <Label>ملاحظات (اختياري)</Label>
-                  <Textarea
-                    value={newYearNotes}
-                    onChange={(e) => setNewYearNotes(e.target.value)}
-                    placeholder="ملاحظات إضافية..."
-                  />
-                </div>
+                <div className="space-y-2"><Label>{t.fy_notes_optional}</Label><Textarea value={newYearNotes} onChange={(e) => setNewYearNotes(e.target.value)} /></div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  إلغاء
-                </Button>
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>{t.cancel}</Button>
                 <Button onClick={handleCreateYear} disabled={createFiscalYear.isPending}>
-                  {createFiscalYear.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
-                  إنشاء
+                  {createFiscalYear.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}{t.fy_create}
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
 
-          {/* فتح سنة جديدة مع ترحيل */}
+          {/* Open new year with carry forward */}
           {closedYears.length > 0 && (
             <Dialog open={isNewYearDialogOpen} onOpenChange={setIsNewYearDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="secondary">
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                  فتح سنة جديدة وترحيل
-                </Button>
+                <Button variant="secondary"><ArrowRight className="h-4 w-4 ml-2" />{t.fy_open_and_carry}</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>فتح سنة مالية جديدة</DialogTitle>
-                  <DialogDescription>سيتم ترحيل أرصدة الأصول والخصوم وحقوق الملكية</DialogDescription>
+                  <DialogTitle>{t.fy_open_new_title}</DialogTitle>
+                  <DialogDescription>{t.fy_open_new_desc}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="flex gap-2 mb-4">
                     {[currentYear, currentYear + 1].map(year => (
-                      <Button 
-                        key={year} 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleSetYearDefaults(year)}
-                      >
-                        {year}
-                      </Button>
+                      <Button key={year} variant="outline" size="sm" onClick={() => handleSetYearDefaults(year)}>{year}</Button>
                     ))}
                   </div>
-                  <div className="space-y-2">
-                    <Label>اسم السنة المالية الجديدة</Label>
-                    <Input
-                      value={newYearName}
-                      onChange={(e) => setNewYearName(e.target.value)}
-                      placeholder="مثل: 2025"
-                    />
-                  </div>
+                  <div className="space-y-2"><Label>{t.fy_new_name}</Label><Input value={newYearName} onChange={(e) => setNewYearName(e.target.value)} /></div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>تاريخ البداية</Label>
-                      <Input
-                        type="date"
-                        value={newYearStart}
-                        onChange={(e) => setNewYearStart(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>تاريخ النهاية</Label>
-                      <Input
-                        type="date"
-                        value={newYearEnd}
-                        onChange={(e) => setNewYearEnd(e.target.value)}
-                      />
-                    </div>
+                    <div className="space-y-2"><Label>{t.fy_start_date}</Label><Input type="date" value={newYearStart} onChange={(e) => setNewYearStart(e.target.value)} /></div>
+                    <div className="space-y-2"><Label>{t.fy_end_date}</Label><Input type="date" value={newYearEnd} onChange={(e) => setNewYearEnd(e.target.value)} /></div>
                   </div>
                   <div className="space-y-2">
-                    <Label>السنة السابقة (للترحيل)</Label>
+                    <Label>{t.fy_previous_year}</Label>
                     <Select value={previousYearId} onValueChange={setPreviousYearId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر السنة السابقة" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {closedYears.map(year => (
-                          <SelectItem key={year.id} value={year.id}>
-                            {year.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                      <SelectTrigger><SelectValue placeholder={t.fy_select_previous} /></SelectTrigger>
+                      <SelectContent>{closedYears.map(year => <SelectItem key={year.id} value={year.id}>{year.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                     <div>
-                      <Label className="text-base">ترحيل تلقائي للأرصدة</Label>
-                      <p className="text-sm text-muted-foreground">
-                        إنشاء قيد افتتاحي بأرصدة السنة السابقة
-                      </p>
+                      <Label className="text-base">{t.fy_auto_carry}</Label>
+                      <p className="text-sm text-muted-foreground">{t.fy_auto_carry_desc}</p>
                     </div>
-                    <Switch
-                      checked={autoCarryForward}
-                      onCheckedChange={setAutoCarryForward}
-                    />
+                    <Switch checked={autoCarryForward} onCheckedChange={setAutoCarryForward} />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsNewYearDialogOpen(false)}>
-                    إلغاء
-                  </Button>
+                  <Button variant="outline" onClick={() => setIsNewYearDialogOpen(false)}>{t.cancel}</Button>
                   <Button onClick={handleOpenNewYear} disabled={openNewFiscalYear.isPending}>
-                    {openNewFiscalYear.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
-                    فتح وترحيل
+                    {openNewFiscalYear.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}{t.fy_open_carry_btn}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           )}
 
-          {/* ترحيل المخزون */}
+          {/* Carry forward inventory */}
           {fiscalYears.length >= 2 && (
             <Dialog open={isInventoryDialogOpen} onOpenChange={setIsInventoryDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline">
-                  <Package className="h-4 w-4 ml-2" />
-                  ترحيل المخزون
-                </Button>
+                <Button variant="outline"><Package className="h-4 w-4 ml-2" />{t.fy_carry_inventory}</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>ترحيل المخزون</DialogTitle>
-                  <DialogDescription>
-                    نقل السيارات المتاحة (غير المباعة) من سنة مالية إلى أخرى
-                  </DialogDescription>
+                  <DialogTitle>{t.fy_carry_inventory_title}</DialogTitle>
+                  <DialogDescription>{t.fy_carry_inventory_desc}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label>من السنة المالية</Label>
+                    <Label>{t.fy_from_year}</Label>
                     <Select value={fromYearId} onValueChange={setFromYearId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر السنة المصدر" />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={t.fy_select_source} /></SelectTrigger>
                       <SelectContent>
                         {fiscalYears.map(year => (
                           <SelectItem key={year.id} value={year.id} disabled={year.id === toYearId}>
-                            {year.name} ({year.status === 'open' ? 'مفتوحة' : 'مغلقة'})
+                            {year.name} ({year.status === 'open' ? t.fy_status_open : t.fy_status_closed})
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex justify-center">
-                    <ArrowRight className="h-6 w-6 text-muted-foreground rotate-90" />
-                  </div>
+                  <div className="flex justify-center"><ArrowRight className="h-6 w-6 text-muted-foreground rotate-90" /></div>
                   <div className="space-y-2">
-                    <Label>إلى السنة المالية</Label>
+                    <Label>{t.fy_to_year}</Label>
                     <Select value={toYearId} onValueChange={setToYearId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر السنة الهدف" />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={t.fy_select_target} /></SelectTrigger>
                       <SelectContent>
                         {fiscalYears.filter(y => y.status === 'open').map(year => (
-                          <SelectItem key={year.id} value={year.id} disabled={year.id === fromYearId}>
-                            {year.name}
-                          </SelectItem>
+                          <SelectItem key={year.id} value={year.id} disabled={year.id === fromYearId}>{year.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      سيتم نقل جميع السيارات ذات الحالة "متاحة" من السنة المصدر إلى السنة الهدف.
-                      هذا الإجراء لا يمكن التراجع عنه.
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t.fy_carry_warning}</p>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsInventoryDialogOpen(false)}>
-                    إلغاء
-                  </Button>
-                  <Button 
-                    onClick={handleCarryForwardInventory} 
-                    disabled={carryForwardInventory.isPending || !fromYearId || !toYearId}
-                  >
-                    {carryForwardInventory.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
-                    ترحيل المخزون
+                  <Button variant="outline" onClick={() => setIsInventoryDialogOpen(false)}>{t.cancel}</Button>
+                  <Button onClick={handleCarryForwardInventory} disabled={carryForwardInventory.isPending || !fromYearId || !toYearId}>
+                    {carryForwardInventory.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}{t.fy_carry_inventory}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           )}
 
-          {/* تحديث الأرصدة المرحلة */}
+          {/* Refresh carried balances */}
           {fiscalYears.length >= 2 && (
             <Dialog open={isRefreshDialogOpen} onOpenChange={setIsRefreshDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="secondary">
-                  <RefreshCw className="h-4 w-4 ml-2" />
-                  تحديث الأرصدة المرحلة
-                </Button>
+                <Button variant="secondary"><RefreshCw className="h-4 w-4 ml-2" />{t.fy_refresh_balances}</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>تحديث الأرصدة المرحلة</DialogTitle>
-                  <DialogDescription>
-                    تحديث الأرصدة الافتتاحية والمخزون والعملاء والموردين بناءً على التغييرات في السنة السابقة
-                  </DialogDescription>
+                  <DialogTitle>{t.fy_refresh_title}</DialogTitle>
+                  <DialogDescription>{t.fy_refresh_desc}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label>السنة المصدر (السابقة)</Label>
+                    <Label>{t.fy_source_year}</Label>
                     <Select value={refreshFromYearId} onValueChange={setRefreshFromYearId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر السنة المصدر" />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={t.fy_select_source} /></SelectTrigger>
                       <SelectContent>
                         {fiscalYears.map(year => (
                           <SelectItem key={year.id} value={year.id} disabled={year.id === refreshToYearId}>
-                            {year.name} ({year.status === 'open' ? 'مفتوحة' : 'مغلقة'})
+                            {year.name} ({year.status === 'open' ? t.fy_status_open : t.fy_status_closed})
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex justify-center">
-                    <ArrowRight className="h-6 w-6 text-muted-foreground rotate-90" />
-                  </div>
+                  <div className="flex justify-center"><ArrowRight className="h-6 w-6 text-muted-foreground rotate-90" /></div>
                   <div className="space-y-2">
-                    <Label>السنة الهدف (المُرحّل إليها)</Label>
+                    <Label>{t.fy_target_year}</Label>
                     <Select value={refreshToYearId} onValueChange={setRefreshToYearId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر السنة الهدف" />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={t.fy_select_target} /></SelectTrigger>
                       <SelectContent>
                         {fiscalYears.filter(y => y.status === 'open').map(year => (
-                          <SelectItem key={year.id} value={year.id} disabled={year.id === refreshFromYearId}>
-                            {year.name}
-                          </SelectItem>
+                          <SelectItem key={year.id} value={year.id} disabled={year.id === refreshFromYearId}>{year.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="p-4 bg-muted rounded-lg space-y-2">
-                    <p className="text-sm font-medium">سيتم تحديث:</p>
+                    <p className="text-sm font-medium">{t.fy_will_update}</p>
                     <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                      <li>الأرصدة الافتتاحية للحسابات (الأصول، الخصوم، حقوق الملكية)</li>
-                      <li>ترحيل المخزون (السيارات المتاحة)</li>
-                      <li>أرصدة العملاء والموردين</li>
+                      <li>{t.fy_update_list_1}</li>
+                      <li>{t.fy_update_list_2}</li>
+                      <li>{t.fy_update_list_3}</li>
                     </ul>
-                    <p className="text-sm text-destructive mt-2">
-                      تحذير: سيتم حذف القيد الافتتاحي القديم وإنشاء قيد جديد
-                    </p>
+                    <p className="text-sm text-destructive mt-2">{t.fy_update_warning}</p>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsRefreshDialogOpen(false)}>
-                    إلغاء
-                  </Button>
-                  <Button 
-                    onClick={handleRefreshAllBalances} 
-                    disabled={refreshAllCarryForward.isPending || !refreshFromYearId || !refreshToYearId}
-                  >
-                    {refreshAllCarryForward.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
-                    تحديث الأرصدة
+                  <Button variant="outline" onClick={() => setIsRefreshDialogOpen(false)}>{t.cancel}</Button>
+                  <Button onClick={handleRefreshAllBalances} disabled={refreshAllCarryForward.isPending || !refreshFromYearId || !refreshToYearId}>
+                    {refreshAllCarryForward.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}{t.fy_update_balances}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -488,37 +310,34 @@ export function FiscalYearsPage() {
         </div>
       </div>
 
-      {/* قائمة السنوات المالية */}
+      {/* Fiscal years list */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            السنوات المالية
+            {t.fy_title}
           </CardTitle>
           <CardDescription>
-            {fiscalYears.length} سنة مالية ({openYears.length} مفتوحة، {closedYears.length} مغلقة)
+            {fiscalYears.length} {t.fy_count} ({openYears.length} {t.fy_status_open}، {closedYears.length} {t.fy_status_closed})
           </CardDescription>
         </CardHeader>
         <CardContent>
           {fiscalYears.length === 0 ? (
             <div className="text-center py-12">
               <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">لا توجد سنوات مالية</h3>
-              <p className="text-muted-foreground mb-4">قم بإنشاء سنة مالية لبدء العمل</p>
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 ml-2" />
-                إنشاء سنة مالية
-              </Button>
+              <h3 className="text-lg font-medium mb-2">{t.fy_no_years}</h3>
+              <p className="text-muted-foreground mb-4">{t.fy_no_years_desc}</p>
+              <Button onClick={() => setIsCreateDialogOpen(true)}><Plus className="h-4 w-4 ml-2" />{t.fy_create}</Button>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>السنة</TableHead>
-                  <TableHead>الفترة</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>القيود</TableHead>
-                  <TableHead>الإجراءات</TableHead>
+                  <TableHead>{t.fy_col_year}</TableHead>
+                  <TableHead>{t.fy_col_period}</TableHead>
+                  <TableHead>{t.fy_col_status}</TableHead>
+                  <TableHead>{t.fy_col_entries}</TableHead>
+                  <TableHead>{t.fy_col_actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -528,10 +347,7 @@ export function FiscalYearsPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{year.name}</span>
                         {year.is_current && (
-                          <Badge variant="default" className="text-xs">
-                            <CheckCircle2 className="h-3 w-3 ml-1" />
-                            الحالية
-                          </Badge>
+                          <Badge variant="default" className="text-xs"><CheckCircle2 className="h-3 w-3 ml-1" />{t.fy_current}</Badge>
                         )}
                       </div>
                     </TableCell>
@@ -542,108 +358,60 @@ export function FiscalYearsPage() {
                     </TableCell>
                     <TableCell>
                       {year.status === 'open' ? (
-                        <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                          <Unlock className="h-3 w-3 ml-1" />
-                          مفتوحة
-                        </Badge>
+                        <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50"><Unlock className="h-3 w-3 ml-1" />{t.fy_status_open}</Badge>
                       ) : (
-                        <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50">
-                          <Lock className="h-3 w-3 ml-1" />
-                          مغلقة
-                        </Badge>
+                        <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50"><Lock className="h-3 w-3 ml-1" />{t.fy_status_closed}</Badge>
                       )}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        {year.opening_balance_entry_id && (
-                          <Badge variant="secondary" className="text-xs">
-                            <FileText className="h-3 w-3 ml-1" />
-                            افتتاحي
-                          </Badge>
-                        )}
-                        {year.closing_balance_entry_id && (
-                          <Badge variant="secondary" className="text-xs">
-                            <FileText className="h-3 w-3 ml-1" />
-                            إقفال
-                          </Badge>
-                        )}
+                        {year.opening_balance_entry_id && (<Badge variant="secondary" className="text-xs"><FileText className="h-3 w-3 ml-1" />{t.fy_opening_entry}</Badge>)}
+                        {year.closing_balance_entry_id && (<Badge variant="secondary" className="text-xs"><FileText className="h-3 w-3 ml-1" />{t.fy_closing_entry}</Badge>)}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        {/* تعيين كسنة حالية */}
                         {!year.is_current && year.status === 'open' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setCurrentFiscalYear.mutate(year.id)}
-                            disabled={setCurrentFiscalYear.isPending}
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => setCurrentFiscalYear.mutate(year.id)} disabled={setCurrentFiscalYear.isPending}>
                             <CheckCircle2 className="h-4 w-4" />
                           </Button>
                         )}
-                        
-                        {/* إغلاق السنة */}
                         {year.status === 'open' && isAdmin && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="text-orange-600">
-                                <Lock className="h-4 w-4" />
-                              </Button>
+                              <Button variant="ghost" size="sm" className="text-orange-600"><Lock className="h-4 w-4" /></Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle className="flex items-center gap-2">
-                                  <AlertTriangle className="h-5 w-5 text-orange-500" />
-                                  إغلاق السنة المالية
+                                  <AlertTriangle className="h-5 w-5 text-orange-500" />{t.fy_close_year}
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  سيتم إغلاق السنة المالية {year.name} وإنشاء قيد إقفال للإيرادات والمصروفات.
-                                  <br />
-                                  <strong>ملاحظة:</strong> فقط المدير يستطيع التعديل على السنوات المغلقة.
+                                  {t.fy_close_year_desc}<br /><strong>{t.fy_close_year_note}</strong>
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => closeFiscalYear.mutate(year.id)}
-                                  className="bg-orange-600 hover:bg-orange-700"
-                                >
-                                  {closeFiscalYear.isPending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                                  ) : (
-                                    <Lock className="h-4 w-4 ml-2" />
-                                  )}
-                                  إغلاق السنة
+                                <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => closeFiscalYear.mutate(year.id)} className="bg-orange-600 hover:bg-orange-700">
+                                  {closeFiscalYear.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <Lock className="h-4 w-4 ml-2" />}{t.fy_close_btn}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
-
-                        {/* حذف السنة */}
                         {year.status === 'open' && !year.is_current && isAdmin && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <Button variant="ghost" size="sm" className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>حذف السنة المالية</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  هل أنت متأكد من حذف السنة المالية {year.name}؟ هذا الإجراء لا يمكن التراجع عنه.
-                                </AlertDialogDescription>
+                                <AlertDialogTitle>{t.fy_delete_year}</AlertDialogTitle>
+                                <AlertDialogDescription>{t.fy_delete_year_desc}</AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteFiscalYear.mutate(year.id)}
-                                  className="bg-destructive hover:bg-destructive/90"
-                                >
-                                  حذف
-                                </AlertDialogAction>
+                                <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteFiscalYear.mutate(year.id)} className="bg-destructive hover:bg-destructive/90">{t.delete}</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
@@ -658,27 +426,22 @@ export function FiscalYearsPage() {
         </CardContent>
       </Card>
 
-      {/* معلومات إضافية */}
+      {/* Info cards */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">كيفية الترحيل</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-lg">{t.fy_how_carry}</CardTitle></CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
-            <p>• <strong>الترحيل التلقائي:</strong> يُنشئ قيد افتتاحي بأرصدة الأصول والخصوم وحقوق الملكية</p>
-            <p>• <strong>الإيرادات والمصروفات:</strong> تُقفل إلى الأرباح المحتجزة عند إغلاق السنة</p>
-            <p>• <strong>الترحيل اليدوي:</strong> يمكنك تعديل القيد الافتتاحي بعد إنشائه</p>
+            <p>• <strong>{t.fy_carry_auto}</strong> {t.fy_carry_auto_desc}</p>
+            <p>• <strong>{t.fy_carry_revenue}</strong> {t.fy_carry_revenue_desc}</p>
+            <p>• <strong>{t.fy_carry_manual}</strong> {t.fy_carry_manual_desc}</p>
           </CardContent>
         </Card>
-        
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">صلاحيات التعديل</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-lg">{t.fy_permissions}</CardTitle></CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
-            <p>• <strong>السنوات المفتوحة:</strong> جميع المستخدمين يمكنهم إضافة معاملات</p>
-            <p>• <strong>السنوات المغلقة:</strong> المدير فقط يستطيع التعديل</p>
-            <p>• <strong>إعادة الفتح:</strong> غير متاحة - يجب إنشاء قيد تعديل</p>
+            <p>• <strong>{t.fy_perm_open}</strong> {t.fy_perm_open_desc}</p>
+            <p>• <strong>{t.fy_perm_closed}</strong> {t.fy_perm_closed_desc}</p>
+            <p>• <strong>{t.fy_perm_reopen}</strong> {t.fy_perm_reopen_desc}</p>
           </CardContent>
         </Card>
       </div>
