@@ -50,6 +50,7 @@ export interface CardConfig {
   gradientTo?: string;
   fontSize?: number; // percentage 80-120
   height?: number; // ارتفاع البطاقة بالبكسل
+  width?: number; // عرض البطاقة بالبكسل
   enable3D?: boolean; // تفعيل التأثير ثلاثي الأبعاد
   showTrend?: boolean; // إظهار/إخفاء مؤشر الترند
   trendColor?: string; // لون نص الترند
