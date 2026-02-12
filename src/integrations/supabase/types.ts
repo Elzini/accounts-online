@@ -7149,6 +7149,62 @@ export type Database = {
           },
         ]
       }
+      tenant_backups: {
+        Row: {
+          backup_type: string
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          file_path: string | null
+          file_size_bytes: number | null
+          id: string
+          initiated_by: string | null
+          schema_name: string
+          started_at: string | null
+          status: string
+          tables_included: string[] | null
+          tenant_id: string
+        }
+        Insert: {
+          backup_type?: string
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_path?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          initiated_by?: string | null
+          schema_name: string
+          started_at?: string | null
+          status?: string
+          tables_included?: string[] | null
+          tenant_id: string
+        }
+        Update: {
+          backup_type?: string
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_path?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          initiated_by?: string | null
+          schema_name?: string
+          started_at?: string | null
+          status?: string
+          tables_included?: string[] | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_backups_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_db_roles: {
         Row: {
           company_id: string
@@ -8567,6 +8623,7 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: string
       }
+      request_tenant_backup: { Args: { p_company_id: string }; Returns: string }
       resolve_company_by_subdomain: {
         Args: { p_subdomain: string }
         Returns: {
