@@ -10,9 +10,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
 import { getActionLabel, getEntityTypeLabel, getPermissionLabel } from '@/services/auditLogs';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function AuditLogsPage() {
   const { data: logs = [], isLoading, refetch } = useAuditLogs();
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState<string>('all');
 
@@ -24,9 +26,7 @@ export function AuditLogsPage() {
         getActionLabel(log.action).includes(searchTerm) ||
         JSON.stringify(log.new_data).includes(searchTerm) ||
         JSON.stringify(log.old_data).includes(searchTerm);
-
       const matchesAction = actionFilter === 'all' || log.action === actionFilter;
-
       return matchesSearch && matchesAction;
     });
   }, [logs, searchTerm, actionFilter]);
@@ -45,15 +45,8 @@ export function AuditLogsPage() {
   const formatDetails = (log: typeof logs[0]) => {
     const data = log.new_data || log.old_data;
     if (!data) return '-';
-
-    if (log.entity_type === 'user_role' && data.permission) {
-      return getPermissionLabel(data.permission as string);
-    }
-
-    if (log.entity_type === 'user' && data.username) {
-      return data.username as string;
-    }
-
+    if (log.entity_type === 'user_role' && data.permission) return getPermissionLabel(data.permission as string);
+    if (log.entity_type === 'user' && data.username) return data.username as string;
     return '-';
   };
 
@@ -66,89 +59,64 @@ export function AuditLogsPage() {
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
-      {/* Header */}
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
             <FileText className="w-7 h-7 text-primary" />
-            سجل التدقيق
+            {t.audit_title}
           </h1>
-          <p className="text-muted-foreground mt-1">
-            تتبع جميع عمليات إنشاء المستخدمين وتغيير الصلاحيات
-          </p>
+          <p className="text-muted-foreground mt-1">{t.audit_subtitle}</p>
         </div>
         <Button variant="outline" onClick={() => refetch()} className="gap-2">
           <RefreshCw className="w-4 h-4" />
-          تحديث
+          {t.refresh}
         </Button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              إجمالي السجلات
+              <FileText className="w-4 h-4" />{t.audit_total_records}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{logs.length}</div>
-          </CardContent>
+          <CardContent><div className="text-2xl font-bold">{logs.length}</div></CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <User className="w-4 h-4" />
-              عمليات المستخدمين
+              <User className="w-4 h-4" />{t.audit_user_operations}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {logs.filter((l) => l.entity_type === 'user').length}
-            </div>
-          </CardContent>
+          <CardContent><div className="text-2xl font-bold">{logs.filter((l) => l.entity_type === 'user').length}</div></CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Shield className="w-4 h-4" />
-              تغييرات الصلاحيات
+              <Shield className="w-4 h-4" />{t.audit_permission_changes}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {logs.filter((l) => l.entity_type === 'user_role').length}
-            </div>
-          </CardContent>
+          <CardContent><div className="text-2xl font-bold">{logs.filter((l) => l.entity_type === 'user_role').length}</div></CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
       <Card>
         <CardContent className="pt-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="بحث في السجلات..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
-              />
+              <Input placeholder={t.audit_search_placeholder} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pr-10" />
             </div>
             <Select value={actionFilter} onValueChange={setActionFilter}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <Filter className="w-4 h-4 ml-2" />
-                <SelectValue placeholder="فلترة حسب العملية" />
+                <SelectValue placeholder={t.audit_filter_by_action} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">جميع العمليات</SelectItem>
+                <SelectItem value="all">{t.audit_all_operations}</SelectItem>
                 {uniqueActions.map((action) => (
-                  <SelectItem key={action} value={action}>
-                    {getActionLabel(action)}
-                  </SelectItem>
+                  <SelectItem key={action} value={action}>{getActionLabel(action)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -156,25 +124,22 @@ export function AuditLogsPage() {
         </CardContent>
       </Card>
 
-      {/* Table */}
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="text-right font-bold">التاريخ والوقت</TableHead>
-                  <TableHead className="text-right font-bold">العملية</TableHead>
-                  <TableHead className="text-right font-bold">النوع</TableHead>
-                  <TableHead className="text-right font-bold">التفاصيل</TableHead>
+                  <TableHead className="text-right font-bold">{t.audit_datetime}</TableHead>
+                  <TableHead className="text-right font-bold">{t.audit_operation}</TableHead>
+                  <TableHead className="text-right font-bold">{t.audit_type}</TableHead>
+                  <TableHead className="text-right font-bold">{t.audit_details}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredLogs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                      لا توجد سجلات
-                    </TableCell>
+                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">{t.audit_no_records}</TableCell>
                   </TableRow>
                 ) : (
                   filteredLogs.map((log) => (
@@ -186,18 +151,10 @@ export function AuditLogsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getActionBadgeVariant(log.action)}>
-                          {getActionLabel(log.action)}
-                        </Badge>
+                        <Badge variant={getActionBadgeVariant(log.action)}>{getActionLabel(log.action)}</Badge>
                       </TableCell>
-                      <TableCell>
-                        <span className="text-muted-foreground">
-                          {getEntityTypeLabel(log.entity_type)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-medium">{formatDetails(log)}</span>
-                      </TableCell>
+                      <TableCell><span className="text-muted-foreground">{getEntityTypeLabel(log.entity_type)}</span></TableCell>
+                      <TableCell><span className="font-medium">{formatDetails(log)}</span></TableCell>
                     </TableRow>
                   ))
                 )}
