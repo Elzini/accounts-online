@@ -22,6 +22,7 @@ import { useAppSettings, useUpdateAppSetting, useResetDatabase } from '@/hooks/u
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useCompanySettings, useUpdateCompanySettings, useUploadCompanyLogo } from '@/hooks/useCompanySettings';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 import { defaultSettings, uploadLoginLogo } from '@/services/settings';
@@ -43,6 +44,7 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
   const resetDb = useResetDatabase();
   const { permissions } = useAuth();
   const { companyId, company } = useCompany();
+  const { t } = useLanguage();
   
   // Company settings hooks
   const { data: companySettings, isLoading: companySettingsLoading } = useCompanySettings(companyId);
@@ -122,7 +124,6 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
       setCustomersTitle(settings.customers_title || defaultSettings.customers_title);
       setSuppliersTitle(settings.suppliers_title || defaultSettings.suppliers_title);
       setReportsTitle(settings.reports_title || defaultSettings.reports_title);
-      // Login settings
       setLoginTitle(settings.login_title || defaultSettings.login_title);
       setLoginSubtitle(settings.login_subtitle || defaultSettings.login_subtitle);
       setLoginBgColor(settings.login_bg_color || defaultSettings.login_bg_color);
@@ -152,14 +153,12 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
         { key: 'app_subtitle', value: appSubtitle },
         { key: 'welcome_message', value: welcomeMessage },
       ];
-      
       for (const update of updates) {
         await updateSetting.mutateAsync(update);
       }
-      
-      toast.success('تم حفظ إعدادات الهوية بنجاح');
+      toast.success(t.settings_branding_saved);
     } catch (error) {
-      toast.error('حدث خطأ أثناء حفظ الإعدادات');
+      toast.error(t.settings_save_error);
     }
   };
 
@@ -173,14 +172,12 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
         { key: 'suppliers_title', value: suppliersTitle },
         { key: 'reports_title', value: reportsTitle },
       ];
-      
       for (const update of updates) {
         await updateSetting.mutateAsync(update);
       }
-      
-      toast.success('تم حفظ تسميات الأقسام بنجاح');
+      toast.success(t.settings_labels_saved);
     } catch (error) {
-      toast.error('حدث خطأ أثناء حفظ الإعدادات');
+      toast.error(t.settings_save_error);
     }
   };
 
@@ -198,40 +195,35 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
         { key: 'login_switch_text', value: loginSwitchText },
         { key: 'signup_switch_text', value: signupSwitchText },
       ];
-      
       for (const update of updates) {
         await updateSetting.mutateAsync(update);
       }
-      
-      toast.success('تم حفظ إعدادات شاشة الدخول بنجاح');
+      toast.success(t.settings_login_saved);
     } catch (error) {
-      toast.error('حدث خطأ أثناء حفظ الإعدادات');
+      toast.error(t.settings_save_error);
     }
   };
 
   const handleLoginLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('حجم الصورة يجب أن يكون أقل من 2 ميجابايت');
+      toast.error(t.settings_image_too_large);
       return;
     }
-
     if (!file.type.startsWith('image/')) {
-      toast.error('يرجى اختيار ملف صورة');
+      toast.error(t.settings_select_image);
       return;
     }
-
     setLoginLogoUploading(true);
     try {
       const url = await uploadLoginLogo(file);
       setLoginLogoUrl(url);
       await updateSetting.mutateAsync({ key: 'login_logo_url', value: url });
-      toast.success('تم رفع الشعار بنجاح');
+      toast.success(t.settings_logo_uploaded);
     } catch (error) {
       console.error('Error uploading logo:', error);
-      toast.error('حدث خطأ أثناء رفع الشعار');
+      toast.error(t.settings_save_error);
     } finally {
       setLoginLogoUploading(false);
     }
@@ -241,57 +233,48 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
     try {
       setLoginLogoUrl('');
       await updateSetting.mutateAsync({ key: 'login_logo_url', value: '' });
-      toast.success('تم إزالة الشعار');
+      toast.success(t.settings_logo_removed);
     } catch (error) {
-      toast.error('حدث خطأ أثناء إزالة الشعار');
+      toast.error(t.settings_save_error);
     }
   };
 
   const handleResetDatabase = async () => {
-    if (confirmText !== 'تأكيد الحذف') {
-      toast.error('يرجى كتابة "تأكيد الحذف" للمتابعة');
+    if (confirmText !== t.settings_reset_db_confirm_text) {
+      toast.error(t.settings_reset_db_confirm_label);
       return;
     }
     try {
       await resetDb.mutateAsync();
-      toast.success('تم تصفير قاعدة البيانات بنجاح');
+      toast.success(t.settings_save_success);
       setResetDialogOpen(false);
       setConfirmText('');
     } catch (error) {
-      toast.error('حدث خطأ أثناء تصفير قاعدة البيانات');
+      toast.error(t.settings_save_error);
     }
   };
 
-  // Company logo handlers
   const handleCompanyLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('حجم الصورة يجب أن يكون أقل من 2 ميجابايت');
+      toast.error(t.settings_image_too_large);
       return;
     }
-
     if (!file.type.startsWith('image/')) {
-      toast.error('يرجى اختيار ملف صورة');
+      toast.error(t.settings_select_image);
       return;
     }
-
     try {
-      // Show preview immediately
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setCompanyLogoPreview(reader.result as string);
-      };
+      reader.onloadend = () => { setCompanyLogoPreview(reader.result as string); };
       reader.readAsDataURL(file);
-
-      // Upload to storage
       const url = await uploadCompanyLogo.mutateAsync(file);
       setCompanyLogoPreview(url);
-      toast.success('تم رفع شعار الشركة بنجاح');
+      toast.success(t.settings_logo_uploaded);
     } catch (error) {
       console.error('Error uploading company logo:', error);
-      toast.error('حدث خطأ أثناء رفع الشعار');
+      toast.error(t.settings_save_error);
     }
   };
 
@@ -299,9 +282,9 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
     try {
       await updateCompanySettings.mutateAsync({ logo_url: '' });
       setCompanyLogoPreview(null);
-      toast.success('تم إزالة شعار الشركة');
+      toast.success(t.settings_logo_removed);
     } catch (error) {
-      toast.error('حدث خطأ أثناء إزالة الشعار');
+      toast.error(t.settings_save_error);
     }
   };
 
@@ -312,28 +295,25 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
         app_name: companyAppName,
         app_subtitle: companyAppSubtitle,
       });
-      toast.success('تم حفظ إعدادات الشركة بنجاح');
+      toast.success(t.settings_save_success);
     } catch (error) {
       console.error('Error saving company settings:', error);
-      toast.error('حدث خطأ أثناء حفظ الإعدادات');
+      toast.error(t.settings_save_error);
     }
   };
 
-  const handleLogoClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handleLogoClick = () => { fileInputRef.current?.click(); };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        toast.error('حجم الصورة يجب أن يكون أقل من 2 ميجابايت');
+        toast.error(t.settings_image_too_large);
         return;
       }
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoPreview(reader.result as string);
-        toast.info('لتغيير الشعار بشكل دائم، يرجى رفع الصورة الجديدة إلى المشروع');
       };
       reader.readAsDataURL(file);
     }
@@ -341,55 +321,43 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
 
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error('يرجى ملء جميع الحقول');
+      toast.error(t.settings_fill_all_fields);
       return;
     }
-
     if (newPassword.length < 6) {
-      toast.error('كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل');
+      toast.error(t.settings_password_min);
       return;
     }
-
     if (newPassword !== confirmPassword) {
-      toast.error('كلمة المرور الجديدة غير متطابقة');
+      toast.error(t.settings_password_mismatch);
       return;
     }
-
     setPasswordChanging(true);
     try {
-      // First verify current password by trying to sign in
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.email) {
-        toast.error('حدث خطأ في جلب بيانات المستخدم');
+        toast.error(t.settings_save_error);
         return;
       }
-
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: user.email,
         password: currentPassword,
       });
-
       if (signInError) {
-        toast.error('كلمة المرور الحالية غير صحيحة');
+        toast.error(t.settings_current_password_wrong);
         return;
       }
-
-      // Update password
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
       if (updateError) {
-        toast.error('حدث خطأ أثناء تغيير كلمة المرور');
+        toast.error(t.settings_save_error);
         return;
       }
-
-      toast.success('تم تغيير كلمة المرور بنجاح');
+      toast.success(t.settings_password_changed);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error) {
-      toast.error('حدث خطأ غير متوقع');
+      toast.error(t.settings_save_error);
     } finally {
       setPasswordChanging(false);
     }
@@ -403,8 +371,8 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
           <Settings className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">إعدادات النظام</h1>
-          <p className="text-muted-foreground">تخصيص مظهر وإعدادات البرنامج</p>
+          <h1 className="text-3xl font-bold text-foreground">{t.settings_title}</h1>
+          <p className="text-muted-foreground">{t.settings_subtitle}</p>
         </div>
       </div>
 
@@ -412,92 +380,70 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
         <TabsList className="grid w-full grid-cols-12 lg:w-auto lg:inline-grid overflow-x-auto">
           <TabsTrigger value="company" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
-            <span className="hidden sm:inline">شركتي</span>
+            <span className="hidden sm:inline">{t.settings_tab_company}</span>
           </TabsTrigger>
           <TabsTrigger value="invoice" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
-            <span className="hidden sm:inline">الفاتورة</span>
+            <span className="hidden sm:inline">{t.settings_tab_invoice}</span>
           </TabsTrigger>
           <TabsTrigger value="custom-template" className="flex items-center gap-2">
             <FileImage className="w-4 h-4" />
-            <span className="hidden sm:inline">قالب مخصص</span>
+            <span className="hidden sm:inline">{t.settings_tab_custom_template}</span>
           </TabsTrigger>
           <TabsTrigger value="reports" className="flex items-center gap-2">
             <Printer className="w-4 h-4" />
-            <span className="hidden sm:inline">التقارير</span>
+            <span className="hidden sm:inline">{t.settings_tab_reports}</span>
           </TabsTrigger>
           <TabsTrigger value="advanced-reports" className="flex items-center gap-2">
             <SlidersHorizontal className="w-4 h-4" />
-            <span className="hidden sm:inline">تخصيص متقدم</span>
+            <span className="hidden sm:inline">{t.settings_tab_advanced_reports}</span>
           </TabsTrigger>
           <TabsTrigger value="accounting" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
-            <span className="hidden sm:inline">القيود</span>
+            <span className="hidden sm:inline">{t.settings_tab_accounting}</span>
           </TabsTrigger>
           <TabsTrigger value="branding" className="flex items-center gap-2">
             <Palette className="w-4 h-4" />
-            <span className="hidden sm:inline">الهوية</span>
+            <span className="hidden sm:inline">{t.settings_tab_branding}</span>
           </TabsTrigger>
           <TabsTrigger value="labels" className="flex items-center gap-2">
             <Tag className="w-4 h-4" />
-            <span className="hidden sm:inline">التسميات</span>
+            <span className="hidden sm:inline">{t.settings_tab_labels}</span>
           </TabsTrigger>
           <TabsTrigger value="login" className="flex items-center gap-2">
             <LogIn className="w-4 h-4" />
-            <span className="hidden sm:inline">شاشة الدخول</span>
+            <span className="hidden sm:inline">{t.settings_tab_login}</span>
           </TabsTrigger>
           <TabsTrigger value="password" className="flex items-center gap-2">
             <Lock className="w-4 h-4" />
-            <span className="hidden sm:inline">كلمة المرور</span>
+            <span className="hidden sm:inline">{t.settings_tab_password}</span>
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Shield className="w-4 h-4" />
-            <span className="hidden sm:inline">الأمان</span>
+            <span className="hidden sm:inline">{t.settings_tab_security}</span>
           </TabsTrigger>
           <TabsTrigger value="danger" className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
-            <span className="hidden sm:inline">الخطر</span>
+            <span className="hidden sm:inline">{t.settings_tab_danger}</span>
           </TabsTrigger>
         </TabsList>
 
-        {/* Report Settings Tab */}
-        <TabsContent value="reports" className="mt-6">
-          <ReportSettingsTab />
-        </TabsContent>
-
-        {/* Advanced Report Settings Tab */}
-        <TabsContent value="advanced-reports" className="mt-6">
-          <AdvancedReportSettingsTab />
-        </TabsContent>
-
-        {/* Security Tab (2FA) */}
-        <TabsContent value="security" className="mt-6">
-          <TwoFactorSetup />
-        </TabsContent>
-
-        {/* Invoice Settings Tab */}
-        <TabsContent value="invoice" className="mt-6">
-          <InvoiceSettingsTab />
-        </TabsContent>
-
-        {/* Custom Template Tab */}
-        <TabsContent value="custom-template" className="mt-6">
-          <CustomInvoiceTemplateTab />
-        </TabsContent>
+        <TabsContent value="reports" className="mt-6"><ReportSettingsTab /></TabsContent>
+        <TabsContent value="advanced-reports" className="mt-6"><AdvancedReportSettingsTab /></TabsContent>
+        <TabsContent value="security" className="mt-6"><TwoFactorSetup /></TabsContent>
+        <TabsContent value="invoice" className="mt-6"><InvoiceSettingsTab /></TabsContent>
+        <TabsContent value="custom-template" className="mt-6"><CustomInvoiceTemplateTab /></TabsContent>
 
         {/* Company Settings Tab */}
         <TabsContent value="company" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Company Logo Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Image className="w-5 h-5" />
-                  شعار الشركة
+                  {t.settings_company_logo}
                 </CardTitle>
-                <CardDescription>
-                  شعار شركتك الذي سيظهر في الشريط الجانبي
-                </CardDescription>
+                <CardDescription>{t.settings_company_logo_desc}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-start gap-4">
@@ -507,11 +453,7 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
                   >
                     {companyLogoPreview ? (
                       <>
-                        <img 
-                          src={companyLogoPreview} 
-                          alt="Company Logo" 
-                          className="w-full h-full object-contain p-2"
-                        />
+                        <img src={companyLogoPreview} alt="Company Logo" className="w-full h-full object-contain p-2" />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                           <Upload className="w-6 h-6 text-white" />
                         </div>
@@ -519,34 +461,18 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
                     ) : (
                       <div className="text-center text-muted-foreground">
                         <Upload className="w-8 h-8 mx-auto mb-2" />
-                        <span className="text-xs">رفع شعار</span>
+                        <span className="text-xs">{t.settings_upload_logo}</span>
                       </div>
                     )}
                   </div>
-                  <input
-                    ref={companyLogoInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleCompanyLogoUpload}
-                    className="hidden"
-                  />
+                  <input ref={companyLogoInputRef} type="file" accept="image/*" onChange={handleCompanyLogoUpload} className="hidden" />
                   <div className="flex-1 space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      انقر على الصورة لرفع شعار جديد
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      الحد الأقصى: 2 ميجابايت | PNG, JPG, SVG
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t.settings_click_to_upload}</p>
+                    <p className="text-xs text-muted-foreground">{t.settings_max_size}</p>
                     {companyLogoPreview && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleRemoveCompanyLogo}
-                        className="text-destructive hover:text-destructive"
-                        disabled={uploadCompanyLogo.isPending}
-                      >
+                      <Button variant="outline" size="sm" onClick={handleRemoveCompanyLogo} className="text-destructive hover:text-destructive" disabled={uploadCompanyLogo.isPending}>
                         <X className="w-4 h-4 ml-1" />
-                        إزالة الشعار
+                        {t.settings_remove_logo}
                       </Button>
                     )}
                   </div>
@@ -554,66 +480,33 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
               </CardContent>
             </Card>
 
-            {/* Company Info Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Building2 className="w-5 h-5" />
-                  معلومات الشركة
+                  {t.settings_company_info}
                 </CardTitle>
-                <CardDescription>
-                  اسم ووصف شركتك الذي سيظهر للمستخدمين
-                </CardDescription>
+                <CardDescription>{t.settings_company_info_desc}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="company-app-name">اسم الشركة في التطبيق</Label>
-                  <Input
-                    id="company-app-name"
-                    value={companyAppName}
-                    onChange={(e) => setCompanyAppName(e.target.value)}
-                    placeholder={company?.name || 'اسم الشركة'}
-                    disabled={!isAdmin}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    سيظهر هذا الاسم في الشريط الجانبي ولوحة التحكم
-                  </p>
+                  <Label htmlFor="company-app-name">{t.settings_company_app_name}</Label>
+                  <Input id="company-app-name" value={companyAppName} onChange={(e) => setCompanyAppName(e.target.value)} placeholder={company?.name || ''} disabled={!isAdmin} />
+                  <p className="text-xs text-muted-foreground">{t.settings_company_app_name_hint}</p>
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="company-app-subtitle">وصف الشركة</Label>
-                  <Input
-                    id="company-app-subtitle"
-                    value={companyAppSubtitle}
-                    onChange={(e) => setCompanyAppSubtitle(e.target.value)}
-                    placeholder="وصف قصير للشركة"
-                    disabled={!isAdmin}
-                  />
+                  <Label htmlFor="company-app-subtitle">{t.settings_company_subtitle}</Label>
+                  <Input id="company-app-subtitle" value={companyAppSubtitle} onChange={(e) => setCompanyAppSubtitle(e.target.value)} disabled={!isAdmin} />
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="company-welcome-message">رسالة الترحيب</Label>
-                  <Textarea
-                    id="company-welcome-message"
-                    value={companyWelcomeMessage}
-                    onChange={(e) => setCompanyWelcomeMessage(e.target.value)}
-                    placeholder="رسالة ترحيب تظهر في لوحة التحكم..."
-                    disabled={!isAdmin}
-                    rows={3}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    ستظهر هذه الرسالة في لوحة التحكم لجميع مستخدمي الشركة
-                  </p>
+                  <Label htmlFor="company-welcome-message">{t.settings_welcome_message}</Label>
+                  <Textarea id="company-welcome-message" value={companyWelcomeMessage} onChange={(e) => setCompanyWelcomeMessage(e.target.value)} disabled={!isAdmin} rows={3} />
+                  <p className="text-xs text-muted-foreground">{t.settings_welcome_message_hint}</p>
                 </div>
-
                 {isAdmin && (
-                  <Button 
-                    onClick={handleSaveCompanySettings} 
-                    className="w-full gradient-primary"
-                    disabled={updateCompanySettings.isPending}
-                  >
+                  <Button onClick={handleSaveCompanySettings} className="w-full gradient-primary" disabled={updateCompanySettings.isPending}>
                     <Save className="w-4 h-4 ml-2" />
-                    {updateCompanySettings.isPending ? 'جاري الحفظ...' : 'حفظ إعدادات الشركة'}
+                    {updateCompanySettings.isPending ? t.settings_saving : t.settings_save_company}
                   </Button>
                 )}
               </CardContent>
@@ -621,108 +514,58 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
           </div>
         </TabsContent>
 
-        {/* Accounting Settings Tab */}
-        <TabsContent value="accounting" className="mt-6">
-          <CompanyAccountingSettingsTab />
-        </TabsContent>
+        <TabsContent value="accounting" className="mt-6"><CompanyAccountingSettingsTab /></TabsContent>
 
         {/* Branding Tab */}
         <TabsContent value="branding" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Logo Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Upload className="w-5 h-5" />
-                  شعار البرنامج
+                  {t.settings_app_logo}
                 </CardTitle>
-                <CardDescription>
-                  انقر على الشعار لتغييره (الحد الأقصى 2 ميجابايت)
-                </CardDescription>
+                <CardDescription>{t.settings_app_logo_desc}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div 
-                  className="flex justify-center cursor-pointer group"
-                  onClick={handleLogoClick}
-                >
+                <div className="flex justify-center cursor-pointer group" onClick={handleLogoClick}>
                   <div className="relative">
-                    <img 
-                      src={logoPreview || logo} 
-                      alt="Logo" 
-                      className="w-40 h-40 object-contain rounded-xl border-2 border-dashed border-muted-foreground/30 p-4 transition-all group-hover:border-primary group-hover:bg-primary/5" 
-                    />
+                    <img src={logoPreview || logo} alt="Logo" className="w-40 h-40 object-contain rounded-xl border-2 border-dashed border-muted-foreground/30 p-4 transition-all group-hover:border-primary group-hover:bg-primary/5" />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
                       <Upload className="w-8 h-8 text-white" />
                     </div>
                   </div>
                 </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                  className="hidden"
-                />
-                <p className="text-sm text-muted-foreground text-center">
-                  انقر لاختيار صورة جديدة
-                </p>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+                <p className="text-sm text-muted-foreground text-center">{t.settings_click_to_change}</p>
               </CardContent>
             </Card>
 
-            {/* App Info Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <LayoutDashboard className="w-5 h-5" />
-                  معلومات البرنامج
+                  {t.settings_app_info}
                 </CardTitle>
-                <CardDescription>
-                  اسم البرنامج ورسالة الترحيب
-                </CardDescription>
+                <CardDescription>{t.settings_app_info_desc}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="app-name">اسم البرنامج</Label>
-                  <Input
-                    id="app-name"
-                    value={appName}
-                    onChange={(e) => setAppName(e.target.value)}
-                    placeholder="أشبال النمر"
-                    disabled={!isAdmin}
-                  />
+                  <Label htmlFor="app-name">{t.settings_app_name_label}</Label>
+                  <Input id="app-name" value={appName} onChange={(e) => setAppName(e.target.value)} disabled={!isAdmin} />
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="app-subtitle">وصف البرنامج</Label>
-                  <Input
-                    id="app-subtitle"
-                    value={appSubtitle}
-                    onChange={(e) => setAppSubtitle(e.target.value)}
-                    placeholder="لتجارة السيارات"
-                    disabled={!isAdmin}
-                  />
+                  <Label htmlFor="app-subtitle">{t.settings_app_subtitle_label}</Label>
+                  <Input id="app-subtitle" value={appSubtitle} onChange={(e) => setAppSubtitle(e.target.value)} disabled={!isAdmin} />
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="welcome-message">رسالة الترحيب</Label>
-                  <Textarea
-                    id="welcome-message"
-                    value={welcomeMessage}
-                    onChange={(e) => setWelcomeMessage(e.target.value)}
-                    placeholder="مرحباً بك في نظام..."
-                    disabled={!isAdmin}
-                    rows={3}
-                  />
+                  <Label htmlFor="welcome-message">{t.settings_welcome_message}</Label>
+                  <Textarea id="welcome-message" value={welcomeMessage} onChange={(e) => setWelcomeMessage(e.target.value)} disabled={!isAdmin} rows={3} />
                 </div>
-
                 {isAdmin && (
-                  <Button 
-                    onClick={handleSaveBranding} 
-                    className="w-full gradient-primary"
-                    disabled={updateSetting.isPending}
-                  >
+                  <Button onClick={handleSaveBranding} className="w-full gradient-primary" disabled={updateSetting.isPending}>
                     <Save className="w-4 h-4 ml-2" />
-                    {updateSetting.isPending ? 'جاري الحفظ...' : 'حفظ الهوية'}
+                    {updateSetting.isPending ? t.settings_saving : t.settings_save_branding}
                   </Button>
                 )}
               </CardContent>
@@ -730,24 +573,18 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
           </div>
         </TabsContent>
 
-        {/* Labels Tab */}
-        <TabsContent value="labels" className="mt-6">
-          <MenuLabelsSettingsTab />
-        </TabsContent>
+        <TabsContent value="labels" className="mt-6"><MenuLabelsSettingsTab /></TabsContent>
 
         {/* Login Page Tab */}
         <TabsContent value="login" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {/* Login Logo Settings */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Image className="w-5 h-5" />
-                  شعار شاشة الدخول
+                  {t.settings_login_logo}
                 </CardTitle>
-                <CardDescription>
-                  رفع شعار مخصص لشاشة تسجيل الدخول
-                </CardDescription>
+                <CardDescription>{t.settings_login_logo_desc}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-col items-center gap-4">
@@ -756,246 +593,116 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
                     onClick={() => isAdmin && loginLogoInputRef.current?.click()}
                   >
                     {loginLogoUrl ? (
-                      <img 
-                        src={loginLogoUrl} 
-                        alt="Login Logo" 
-                        className="w-full h-full object-contain p-2"
-                      />
+                      <img src={loginLogoUrl} alt="Login Logo" className="w-full h-full object-contain p-2" />
                     ) : (
                       <div className="text-center p-4">
                         <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-xs text-muted-foreground">اضغط للرفع</p>
+                        <p className="text-xs text-muted-foreground">{t.settings_click_upload}</p>
                       </div>
                     )}
                   </div>
-                  
-                  <input
-                    ref={loginLogoInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLoginLogoUpload}
-                    className="hidden"
-                    disabled={!isAdmin}
-                  />
-                  
+                  <input ref={loginLogoInputRef} type="file" accept="image/*" onChange={handleLoginLogoUpload} className="hidden" disabled={!isAdmin} />
                   <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => loginLogoInputRef.current?.click()}
-                      disabled={!isAdmin || loginLogoUploading}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => loginLogoInputRef.current?.click()} disabled={!isAdmin || loginLogoUploading}>
                       <Upload className="w-4 h-4 ml-2" />
-                      {loginLogoUploading ? 'جاري الرفع...' : 'رفع شعار'}
+                      {loginLogoUploading ? t.settings_uploading : t.settings_upload_new}
                     </Button>
-                    
                     {loginLogoUrl && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={handleRemoveLoginLogo}
-                        disabled={!isAdmin}
-                      >
-                        إزالة
+                      <Button variant="destructive" size="sm" onClick={handleRemoveLoginLogo} disabled={!isAdmin}>
+                        {t.settings_remove}
                       </Button>
                     )}
                   </div>
-                  
-                  <p className="text-xs text-muted-foreground text-center">
-                    الحد الأقصى 2 ميجابايت
-                    <br />
-                    PNG, JPG, WebP
-                  </p>
+                  <p className="text-xs text-muted-foreground text-center">{t.settings_max_size}<br />PNG, JPG, WebP</p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Login Text Settings */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <LogIn className="w-5 h-5" />
-                  نصوص شاشة الدخول
+                  {t.settings_login_texts}
                 </CardTitle>
-                <CardDescription>
-                  تخصيص العناوين والنصوص في شاشة تسجيل الدخول
-                </CardDescription>
+                <CardDescription>{t.settings_login_texts_desc}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-title">عنوان شاشة الدخول</Label>
-                  <Input
-                    id="login-title"
-                    value={loginTitle}
-                    onChange={(e) => setLoginTitle(e.target.value)}
-                    placeholder="أشبال النمر"
-                    disabled={!isAdmin}
-                  />
+                  <Label htmlFor="login-title">{t.settings_login_title_label}</Label>
+                  <Input id="login-title" value={loginTitle} onChange={(e) => setLoginTitle(e.target.value)} disabled={!isAdmin} />
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="login-subtitle">الوصف الفرعي</Label>
-                  <Input
-                    id="login-subtitle"
-                    value={loginSubtitle}
-                    onChange={(e) => setLoginSubtitle(e.target.value)}
-                    placeholder="نظام إدارة معرض السيارات"
-                    disabled={!isAdmin}
-                  />
+                  <Label htmlFor="login-subtitle">{t.settings_login_subtitle_label}</Label>
+                  <Input id="login-subtitle" value={loginSubtitle} onChange={(e) => setLoginSubtitle(e.target.value)} disabled={!isAdmin} />
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="login-button-text">نص زر تسجيل الدخول</Label>
-                  <Input
-                    id="login-button-text"
-                    value={loginButtonText}
-                    onChange={(e) => setLoginButtonText(e.target.value)}
-                    placeholder="تسجيل الدخول"
-                    disabled={!isAdmin}
-                  />
+                  <Label htmlFor="login-button-text">{t.settings_login_button_label}</Label>
+                  <Input id="login-button-text" value={loginButtonText} onChange={(e) => setLoginButtonText(e.target.value)} disabled={!isAdmin} />
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="signup-button-text">نص زر إنشاء حساب</Label>
-                  <Input
-                    id="signup-button-text"
-                    value={signupButtonText}
-                    onChange={(e) => setSignupButtonText(e.target.value)}
-                    placeholder="إنشاء حساب"
-                    disabled={!isAdmin}
-                  />
+                  <Label htmlFor="signup-button-text">{t.settings_signup_button_label}</Label>
+                  <Input id="signup-button-text" value={signupButtonText} onChange={(e) => setSignupButtonText(e.target.value)} disabled={!isAdmin} />
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="login-switch-text">نص التبديل لإنشاء حساب</Label>
-                  <Input
-                    id="login-switch-text"
-                    value={loginSwitchText}
-                    onChange={(e) => setLoginSwitchText(e.target.value)}
-                    placeholder="ليس لديك حساب؟ إنشاء حساب جديد"
-                    disabled={!isAdmin}
-                  />
+                  <Label htmlFor="login-switch-text">{t.settings_login_switch_label}</Label>
+                  <Input id="login-switch-text" value={loginSwitchText} onChange={(e) => setLoginSwitchText(e.target.value)} disabled={!isAdmin} />
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="signup-switch-text">نص التبديل لتسجيل الدخول</Label>
-                  <Input
-                    id="signup-switch-text"
-                    value={signupSwitchText}
-                    onChange={(e) => setSignupSwitchText(e.target.value)}
-                    placeholder="لديك حساب؟ تسجيل الدخول"
-                    disabled={!isAdmin}
-                  />
+                  <Label htmlFor="signup-switch-text">{t.settings_signup_switch_label}</Label>
+                  <Input id="signup-switch-text" value={signupSwitchText} onChange={(e) => setSignupSwitchText(e.target.value)} disabled={!isAdmin} />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Login Colors Settings */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Palette className="w-5 h-5" />
-                  ألوان شاشة الدخول
+                  {t.settings_login_colors}
                 </CardTitle>
-                <CardDescription>
-                  تخصيص ألوان الخلفية والتدرجات اللونية
-                </CardDescription>
+                <CardDescription>{t.settings_login_colors_desc}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-bg-color">لون خلفية الصفحة</Label>
+                  <Label htmlFor="login-bg-color">{t.settings_bg_color}</Label>
                   <div className="flex gap-2">
-                    <Input
-                      id="login-bg-color"
-                      value={loginBgColor}
-                      onChange={(e) => setLoginBgColor(e.target.value)}
-                      placeholder="hsl(222.2, 84%, 4.9%)"
-                      disabled={!isAdmin}
-                      className="flex-1"
-                    />
-                    <div 
-                      className="w-12 h-10 rounded-md border"
-                      style={{ backgroundColor: loginBgColor }}
-                    />
+                    <Input id="login-bg-color" value={loginBgColor} onChange={(e) => setLoginBgColor(e.target.value)} disabled={!isAdmin} className="flex-1" />
+                    <div className="w-12 h-10 rounded-md border" style={{ backgroundColor: loginBgColor }} />
                   </div>
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="login-card-color">لون البطاقة</Label>
+                  <Label htmlFor="login-card-color">{t.settings_card_color}</Label>
                   <div className="flex gap-2">
-                    <Input
-                      id="login-card-color"
-                      value={loginCardColor}
-                      onChange={(e) => setLoginCardColor(e.target.value)}
-                      placeholder="hsl(222.2, 84%, 6%)"
-                      disabled={!isAdmin}
-                      className="flex-1"
-                    />
-                    <div 
-                      className="w-12 h-10 rounded-md border"
-                      style={{ backgroundColor: loginCardColor }}
-                    />
+                    <Input id="login-card-color" value={loginCardColor} onChange={(e) => setLoginCardColor(e.target.value)} disabled={!isAdmin} className="flex-1" />
+                    <div className="w-12 h-10 rounded-md border" style={{ backgroundColor: loginCardColor }} />
                   </div>
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="login-gradient-start">لون بداية التدرج</Label>
+                  <Label htmlFor="login-gradient-start">{t.settings_gradient_start}</Label>
                   <div className="flex gap-2">
-                    <Input
-                      id="login-gradient-start"
-                      value={loginGradientStart}
-                      onChange={(e) => setLoginGradientStart(e.target.value)}
-                      placeholder="hsl(221.2, 83.2%, 53.3%)"
-                      disabled={!isAdmin}
-                      className="flex-1"
-                    />
-                    <div 
-                      className="w-12 h-10 rounded-md border"
-                      style={{ backgroundColor: loginGradientStart }}
-                    />
+                    <Input id="login-gradient-start" value={loginGradientStart} onChange={(e) => setLoginGradientStart(e.target.value)} disabled={!isAdmin} className="flex-1" />
+                    <div className="w-12 h-10 rounded-md border" style={{ backgroundColor: loginGradientStart }} />
                   </div>
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="login-gradient-end">لون نهاية التدرج</Label>
+                  <Label htmlFor="login-gradient-end">{t.settings_gradient_end}</Label>
                   <div className="flex gap-2">
-                    <Input
-                      id="login-gradient-end"
-                      value={loginGradientEnd}
-                      onChange={(e) => setLoginGradientEnd(e.target.value)}
-                      placeholder="hsl(250, 95%, 65%)"
-                      disabled={!isAdmin}
-                      className="flex-1"
-                    />
-                    <div 
-                      className="w-12 h-10 rounded-md border"
-                      style={{ backgroundColor: loginGradientEnd }}
-                    />
+                    <Input id="login-gradient-end" value={loginGradientEnd} onChange={(e) => setLoginGradientEnd(e.target.value)} disabled={!isAdmin} className="flex-1" />
+                    <div className="w-12 h-10 rounded-md border" style={{ backgroundColor: loginGradientEnd }} />
                   </div>
                 </div>
-
-                {/* Preview */}
                 <div className="mt-6 p-4 rounded-lg border">
-                  <Label className="mb-3 block">معاينة التدرج اللوني</Label>
-                  <div 
-                    className="h-20 rounded-lg"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${loginGradientStart}, ${loginGradientEnd})`
-                    }}
-                  />
+                  <Label className="mb-3 block">{t.settings_gradient_preview}</Label>
+                  <div className="h-20 rounded-lg" style={{ background: `linear-gradient(135deg, ${loginGradientStart}, ${loginGradientEnd})` }} />
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {isAdmin && (
-            <Button 
-              onClick={handleSaveLoginSettings} 
-              className="w-full mt-6 gradient-primary"
-              disabled={updateSetting.isPending}
-            >
+            <Button onClick={handleSaveLoginSettings} className="w-full mt-6 gradient-primary" disabled={updateSetting.isPending}>
               <Save className="w-4 h-4 ml-2" />
-              {updateSetting.isPending ? 'جاري الحفظ...' : 'حفظ إعدادات شاشة الدخول'}
+              {updateSetting.isPending ? t.settings_saving : t.settings_save_login}
             </Button>
           )}
         </TabsContent>
@@ -1006,83 +713,41 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Lock className="w-5 h-5" />
-                تغيير كلمة المرور
+                {t.settings_change_password}
               </CardTitle>
-              <CardDescription>
-                قم بتغيير كلمة مرور حسابك الحالي
-              </CardDescription>
+              <CardDescription>{t.settings_change_password_desc}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 max-w-md">
               <div className="space-y-2">
-                <Label htmlFor="current-password">كلمة المرور الحالية</Label>
+                <Label htmlFor="current-password">{t.settings_current_password}</Label>
                 <div className="relative">
-                  <Input
-                    id="current-password"
-                    type={showCurrentPassword ? 'text' : 'password'}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="أدخل كلمة المرور الحالية"
-                    className="pl-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
+                  <Input id="current-password" type={showCurrentPassword ? 'text' : 'password'} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="pl-10" />
+                  <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="new-password">كلمة المرور الجديدة</Label>
+                <Label htmlFor="new-password">{t.settings_new_password}</Label>
                 <div className="relative">
-                  <Input
-                    id="new-password"
-                    type={showNewPassword ? 'text' : 'password'}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="أدخل كلمة المرور الجديدة (6 أحرف على الأقل)"
-                    className="pl-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
+                  <Input id="new-password" type={showNewPassword ? 'text' : 'password'} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="pl-10" />
+                  <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">تأكيد كلمة المرور الجديدة</Label>
+                <Label htmlFor="confirm-password">{t.settings_confirm_new_password}</Label>
                 <div className="relative">
-                  <Input
-                    id="confirm-password"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="أعد إدخال كلمة المرور الجديدة"
-                    className="pl-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
+                  <Input id="confirm-password" type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-10" />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
-
-              <Button 
-                onClick={handleChangePassword} 
-                className="w-full gradient-primary"
-                disabled={passwordChanging}
-              >
+              <Button onClick={handleChangePassword} className="w-full gradient-primary" disabled={passwordChanging}>
                 <Lock className="w-4 h-4 ml-2" />
-                {passwordChanging ? 'جاري التغيير...' : 'تغيير كلمة المرور'}
+                {passwordChanging ? t.settings_password_changing : t.settings_change_password_btn}
               </Button>
             </CardContent>
           </Card>
@@ -1095,26 +760,17 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive">
                   <AlertTriangle className="w-5 h-5" />
-                  منطقة الخطر
+                  {t.settings_danger_zone}
                 </CardTitle>
-                <CardDescription>
-                  إجراءات لا يمكن التراجع عنها - استخدم بحذر شديد
-                </CardDescription>
+                <CardDescription>{t.settings_danger_desc}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
-                  <h4 className="font-bold text-destructive mb-2">تصفير قاعدة البيانات</h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    سيؤدي هذا إلى حذف جميع البيانات (العملاء، الموردين، السيارات، المبيعات) نهائياً.
-                    لا يمكن التراجع عن هذا الإجراء!
-                  </p>
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => setResetDialogOpen(true)}
-                    className="w-full"
-                  >
+                  <h4 className="font-bold text-destructive mb-2">{t.settings_reset_db}</h4>
+                  <p className="text-sm text-muted-foreground mb-4">{t.settings_reset_db_desc}</p>
+                  <Button variant="destructive" onClick={() => setResetDialogOpen(true)} className="w-full">
                     <RotateCcw className="w-4 h-4 ml-2" />
-                    تصفير قاعدة البيانات
+                    {t.settings_reset_db}
                   </Button>
                 </div>
               </CardContent>
@@ -1123,9 +779,7 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
             <Card>
               <CardContent className="p-12 text-center">
                 <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">
-                  ليس لديك صلاحية الوصول لهذا القسم
-                </p>
+                <p className="text-muted-foreground">{t.settings_no_access}</p>
               </CardContent>
             </Card>
           )}
@@ -1136,41 +790,24 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
       <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-destructive">
-              تحذير! تصفير قاعدة البيانات
-            </AlertDialogTitle>
+            <AlertDialogTitle className="text-destructive">{t.settings_reset_db_warning}</AlertDialogTitle>
             <AlertDialogDescription className="space-y-4">
-              <p>
-                أنت على وشك حذف جميع البيانات في النظام بما في ذلك:
-              </p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>جميع العملاء</li>
-                <li>جميع الموردين</li>
-                <li>جميع السيارات</li>
-                <li>جميع عمليات البيع</li>
-              </ul>
-              <p className="font-bold text-destructive">
-                هذا الإجراء لا يمكن التراجع عنه!
-              </p>
+              <p>{t.settings_reset_db_items}</p>
+              <p className="font-bold text-destructive">{t.settings_reset_db_irreversible}</p>
               <div className="mt-4">
-                <Label>اكتب "تأكيد الحذف" للمتابعة:</Label>
-                <Input
-                  value={confirmText}
-                  onChange={(e) => setConfirmText(e.target.value)}
-                  placeholder="تأكيد الحذف"
-                  className="mt-2"
-                />
+                <Label>{t.settings_reset_db_confirm_label}</Label>
+                <Input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} placeholder={t.settings_reset_db_confirm_text} className="mt-2" />
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogCancel onClick={() => setConfirmText('')}>إلغاء</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setConfirmText('')}>{t.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleResetDatabase}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={resetDb.isPending || confirmText !== 'تأكيد الحذف'}
+              disabled={resetDb.isPending || confirmText !== t.settings_reset_db_confirm_text}
             >
-              {resetDb.isPending ? 'جاري الحذف...' : 'تأكيد التصفير'}
+              {resetDb.isPending ? t.settings_deleting : t.settings_confirm_reset}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
