@@ -8496,6 +8496,10 @@ export type Database = {
       }
       mask_phone: { Args: { phone: string }; Returns: string }
       process_prepaid_expense_amortizations: { Args: never; Returns: number }
+      provision_tenant_complete: {
+        Args: { p_company_id: string }
+        Returns: Json
+      }
       rbac_check: { Args: { required_permission: string }; Returns: boolean }
       regenerate_journal_entries: {
         Args: { p_company_id: string }
