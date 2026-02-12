@@ -3696,6 +3696,33 @@ export type Database = {
           },
         ]
       }
+      immutable_baselines: {
+        Row: {
+          baseline_key: string
+          baseline_type: string
+          baseline_value: Json
+          created_at: string | null
+          description: string | null
+          id: string
+        }
+        Insert: {
+          baseline_key: string
+          baseline_type: string
+          baseline_value: Json
+          created_at?: string | null
+          description?: string | null
+          id?: string
+        }
+        Update: {
+          baseline_key?: string
+          baseline_type?: string
+          baseline_value?: Json
+          created_at?: string | null
+          description?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       imported_invoice_data: {
         Row: {
           company_id: string
@@ -6608,6 +6635,71 @@ export type Database = {
           },
         ]
       }
+      security_events: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          details: Json | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          operation: string | null
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          source_schema: string | null
+          table_name: string | null
+          target_schema: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          operation?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source_schema?: string | null
+          table_name?: string | null
+          target_schema?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          operation?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source_schema?: string | null
+          table_name?: string | null
+          target_schema?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shipment_items: {
         Row: {
           created_at: string
@@ -7004,6 +7096,94 @@ export type Database = {
             foreignKeyName: "tax_settings_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_db_roles: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          role_name: string
+          schema_name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          role_name: string
+          schema_name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          role_name?: string
+          schema_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_db_roles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_encryption_config: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          encrypted_columns: string[]
+          encryption_algorithm: string | null
+          id: string
+          is_active: boolean | null
+          key_rotation_days: number | null
+          last_key_rotation: string | null
+          next_key_rotation: string | null
+          schema_name: string
+          table_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          encrypted_columns?: string[]
+          encryption_algorithm?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_rotation_days?: number | null
+          last_key_rotation?: string | null
+          next_key_rotation?: string | null
+          schema_name: string
+          table_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          encrypted_columns?: string[]
+          encryption_algorithm?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_rotation_days?: number | null
+          last_key_rotation?: string | null
+          next_key_rotation?: string | null
+          schema_name?: string
+          table_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_encryption_config_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
@@ -8156,6 +8336,10 @@ export type Database = {
         Args: { _company_id: string; required_permission: string }
         Returns: boolean
       }
+      check_and_throttle_tenant: {
+        Args: { p_company_id: string }
+        Returns: Json
+      }
       check_rate_limit:
         | {
             Args: {
@@ -8175,6 +8359,10 @@ export type Database = {
         Returns: boolean
       }
       cleanup_rate_limit_logs: { Args: never; Returns: undefined }
+      configure_tenant_encryption: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       create_default_accounts: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -8197,6 +8385,7 @@ export type Database = {
         }
         Returns: string
       }
+      create_tenant_db_role: { Args: { p_company_id: string }; Returns: string }
       create_tenant_schema: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -8291,6 +8480,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_security_event: {
+        Args: {
+          p_company_id?: string
+          p_details?: Json
+          p_event_type: string
+          p_operation?: string
+          p_severity: string
+          p_source_schema?: string
+          p_table_name?: string
+          p_target_schema?: string
+          p_user_id?: string
+        }
+        Returns: string
+      }
       mask_phone: { Args: { phone: string }; Returns: string }
       process_prepaid_expense_amortizations: { Args: never; Returns: number }
       rbac_check: { Args: { required_permission: string }; Returns: boolean }
@@ -8346,6 +8549,7 @@ export type Database = {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
       }
+      validate_tenant_schema: { Args: { p_company_id: string }; Returns: Json }
       verify_audit_log_integrity: {
         Args: { _company_id: string }
         Returns: {
