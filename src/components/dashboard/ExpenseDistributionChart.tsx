@@ -1,4 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ExpenseDistributionChartProps {
   custodyExpenses: number;
@@ -8,39 +9,34 @@ interface ExpenseDistributionChartProps {
 }
 
 const EXPENSE_COLORS = [
-  'hsl(217, 91%, 60%)',  // blue
-  'hsl(160, 84%, 39%)',  // emerald
-  'hsl(38, 92%, 50%)',   // amber
-  'hsl(350, 89%, 60%)',  // rose
+  'hsl(217, 91%, 60%)',
+  'hsl(160, 84%, 39%)',
+  'hsl(38, 92%, 50%)',
+  'hsl(350, 89%, 60%)',
 ];
 
 export function ExpenseDistributionChart({
-  custodyExpenses,
-  payrollExpenses,
-  rentExpenses,
-  otherExpenses,
+  custodyExpenses, payrollExpenses, rentExpenses, otherExpenses,
 }: ExpenseDistributionChartProps) {
+  const { t, language } = useLanguage();
   const data = [
-    { name: 'مصاريف العهد', value: custodyExpenses },
-    { name: 'الرواتب والأجور', value: payrollExpenses },
-    { name: 'الإيجارات', value: rentExpenses },
-    { name: 'مصاريف أخرى', value: otherExpenses },
+    { name: t.chart_custody_expenses, value: custodyExpenses },
+    { name: t.chart_payroll, value: payrollExpenses },
+    { name: t.chart_rent, value: rentExpenses },
+    { name: t.chart_other_expenses, value: otherExpenses },
   ].filter((item) => item.value > 0);
 
   const total = custodyExpenses + payrollExpenses + rentExpenses + otherExpenses;
+  const locale = language === 'ar' ? 'ar-SA' : 'en-SA';
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 0,
-    }).format(value);
+    return new Intl.NumberFormat(locale, { style: 'currency', currency: 'SAR', minimumFractionDigits: 0 }).format(value);
   };
 
   if (total === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">
-        لا توجد مصروفات هذا الشهر
+        {t.chart_no_expenses_month}
       </div>
     );
   }
@@ -49,35 +45,17 @@ export function ExpenseDistributionChart({
     <div className="h-64">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={45}
-            outerRadius={75}
-            paddingAngle={4}
-            dataKey="value"
-            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-            labelLine={false}
-          >
+          <Pie data={data} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} dataKey="value"
+            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
             {data.map((_entry, index) => (
               <Cell key={`cell-${index}`} fill={EXPENSE_COLORS[index % EXPENSE_COLORS.length]} />
             ))}
           </Pie>
           <Tooltip
-            formatter={(value: number) => [formatCurrency(value), 'المبلغ']}
-            contentStyle={{
-              backgroundColor: 'hsl(var(--card))',
-              border: '1px solid hsl(var(--border))',
-              borderRadius: '8px',
-              direction: 'rtl',
-            }}
+            formatter={(value: number) => [formatCurrency(value), t.chart_the_amount]}
+            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', direction: language === 'ar' ? 'rtl' : 'ltr' }}
           />
-          <Legend
-            verticalAlign="bottom"
-            height={30}
-            formatter={(value) => <span className="text-[10px] sm:text-xs">{value}</span>}
-          />
+          <Legend verticalAlign="bottom" height={30} formatter={(value) => <span className="text-[10px] sm:text-xs">{value}</span>} />
         </PieChart>
       </ResponsiveContainer>
     </div>

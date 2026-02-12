@@ -1,4 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface InventoryPieChartProps {
   data: {
@@ -11,10 +12,11 @@ interface InventoryPieChartProps {
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--success))', 'hsl(var(--warning))'];
 
 export function InventoryPieChart({ data }: InventoryPieChartProps) {
+  const { t, language } = useLanguage();
   const chartData = [
-    { name: 'متاحة', value: data.available },
-    { name: 'مباعة', value: data.sold },
-    { name: 'محولة', value: data.transferred },
+    { name: t.chart_available, value: data.available },
+    { name: t.chart_sold, value: data.sold },
+    { name: t.chart_transferred, value: data.transferred },
   ].filter(item => item.value > 0);
 
   const total = data.available + data.sold + data.transferred;
@@ -22,7 +24,7 @@ export function InventoryPieChart({ data }: InventoryPieChartProps) {
   if (total === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-muted-foreground">
-        لا توجد بيانات
+        {t.chart_no_data}
       </div>
     );
   }
@@ -47,12 +49,12 @@ export function InventoryPieChart({ data }: InventoryPieChartProps) {
             ))}
           </Pie>
           <Tooltip
-            formatter={(value: number) => [value, 'عدد']}
+            formatter={(value: number) => [value, t.chart_count]}
             contentStyle={{
               backgroundColor: 'hsl(var(--card))',
               border: '1px solid hsl(var(--border))',
               borderRadius: '8px',
-              direction: 'rtl'
+              direction: language === 'ar' ? 'rtl' : 'ltr'
             }}
           />
           <Legend
