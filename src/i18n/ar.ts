@@ -26,6 +26,10 @@ export const ar: TranslationKeys = {
   none: 'لا شيء',
   refresh: 'تحديث',
   actions: 'الإجراءات',
+  active: 'نشط',
+  inactive: 'غير نشط',
+  update: 'تحديث',
+  select: 'اختر',
   details: 'التفاصيل',
   status: 'الحالة',
   date: 'التاريخ',
@@ -2280,20 +2284,6 @@ export const ar: TranslationKeys = {
   acc_deleted: 'تم الحذف',
   acc_error: 'حدث خطأ',
   acc_confirm_sure: 'هل أنت متأكد؟',
-
-  // Common
-  active: 'نشط',
-  inactive: 'غير نشط',
-  update: 'تحديث',
-  select: 'اختر',
-  actions: 'إجراءات',
-  save: 'حفظ',
-  cancel: 'إلغاء',
-  delete: 'حذف',
-  add: 'إضافة',
-  search: 'بحث...',
-  loading: 'جاري التحميل...',
-  no_data: 'لا توجد بيانات',
 
   // Reports - Common
   rpt_print: 'طباعة',

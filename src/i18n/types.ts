@@ -27,6 +27,10 @@ export interface TranslationKeys {
   none: string;
   refresh: string;
   actions: string;
+  active: string;
+  inactive: string;
+  update: string;
+  select: string;
   details: string;
   status: string;
   date: string;
@@ -2283,20 +2287,6 @@ export interface TranslationKeys {
   acc_deleted: string;
   acc_error: string;
   acc_confirm_sure: string;
-
-  // Common
-  active: string;
-  inactive: string;
-  update: string;
-  select: string;
-  actions: string;
-  save: string;
-  cancel: string;
-  delete: string;
-  add: string;
-  search: string;
-  loading: string;
-  no_data: string;
 
   // Reports - Common
   rpt_print: string;

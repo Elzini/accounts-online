@@ -26,6 +26,10 @@ export const en: TranslationKeys = {
   none: 'None',
   refresh: 'Refresh',
   actions: 'Actions',
+  active: 'Active',
+  inactive: 'Inactive',
+  update: 'Update',
+  select: 'Select',
   details: 'Details',
   status: 'Status',
   date: 'Date',
@@ -2280,20 +2284,6 @@ export const en: TranslationKeys = {
   acc_deleted: 'Deleted successfully',
   acc_error: 'An error occurred',
   acc_confirm_sure: 'Are you sure?',
-
-  // Common
-  active: 'Active',
-  inactive: 'Inactive',
-  update: 'Update',
-  select: 'Select',
-  actions: 'Actions',
-  save: 'Save',
-  cancel: 'Cancel',
-  delete: 'Delete',
-  add: 'Add',
-  search: 'Search...',
-  loading: 'Loading...',
-  no_data: 'No data',
 
   // Reports - Common
   rpt_print: 'Print',
