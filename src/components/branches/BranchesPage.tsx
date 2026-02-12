@@ -9,13 +9,15 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Loader2, Plus, Building2, Pencil, Trash2, MapPin } from 'lucide-react';
+import { Loader2, Plus, Building2, Pencil, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function BranchesPage() {
+  const { t, direction } = useLanguage();
   const companyId = useCompanyId();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -52,11 +54,11 @@ export function BranchesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['branches'] });
-      toast.success(editingBranch ? 'تم تحديث الفرع' : 'تم إضافة الفرع');
+      toast.success(editingBranch ? t.branch_toast_updated : t.branch_toast_added);
       setIsDialogOpen(false);
       resetForm();
     },
-    onError: (e: any) => toast.error(e.message?.includes('duplicate') ? 'رمز الفرع مستخدم مسبقاً' : 'حدث خطأ'),
+    onError: (e: any) => toast.error(e.message?.includes('duplicate') ? t.branch_toast_exists : t.branch_toast_error),
   });
 
   const deleteBranch = useMutation({
@@ -66,7 +68,7 @@ export function BranchesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['branches'] });
-      toast.success('تم حذف الفرع');
+      toast.success(t.branch_toast_deleted);
       setDeleteId(null);
     },
   });
@@ -82,30 +84,30 @@ export function BranchesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={direction}>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Building2 className="w-6 h-6" />إدارة الفروع</h1>
-          <p className="text-muted-foreground">إضافة وإدارة فروع الشركة</p>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Building2 className="w-6 h-6" />{t.branch_title}</h1>
+          <p className="text-muted-foreground">{t.branch_subtitle}</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={(v) => { setIsDialogOpen(v); if (!v) resetForm(); }}>
-          <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />إضافة فرع</Button></DialogTrigger>
+          <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />{t.branch_add}</Button></DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>{editingBranch ? 'تعديل الفرع' : 'إضافة فرع جديد'}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editingBranch ? t.branch_edit : t.branch_add}</DialogTitle></DialogHeader>
             <form onSubmit={(e) => { e.preventDefault(); saveBranch.mutate(formData); }} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label>اسم الفرع *</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required /></div>
-                <div className="space-y-2"><Label>رمز الفرع</Label><Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} placeholder="BR-001" dir="ltr" /></div>
+                <div className="space-y-2"><Label>{t.branch_col_name} *</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required /></div>
+                <div className="space-y-2"><Label>{t.branch_col_code}</Label><Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} placeholder="BR-001" dir="ltr" /></div>
               </div>
-              <div className="space-y-2"><Label>العنوان</Label><Textarea value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} /></div>
+              <div className="space-y-2"><Label>{t.branch_col_address}</Label><Textarea value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label>الهاتف</Label><Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} dir="ltr" /></div>
-                <div className="space-y-2"><Label>المدير</Label><Input value={formData.manager_name} onChange={(e) => setFormData({ ...formData, manager_name: e.target.value })} /></div>
+                <div className="space-y-2"><Label>{t.branch_col_phone}</Label><Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} dir="ltr" /></div>
+                <div className="space-y-2"><Label>{t.branch_col_manager}</Label><Input value={formData.manager_name} onChange={(e) => setFormData({ ...formData, manager_name: e.target.value })} /></div>
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg border"><Label>فرع رئيسي</Label><Switch checked={formData.is_main} onCheckedChange={(v) => setFormData({ ...formData, is_main: v })} /></div>
+              <div className="flex items-center gap-3 p-3 rounded-lg border"><Label>{t.branch_main}</Label><Switch checked={formData.is_main} onCheckedChange={(v) => setFormData({ ...formData, is_main: v })} /></div>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>إلغاء</Button>
-                <Button type="submit" disabled={saveBranch.isPending}>{saveBranch.isPending && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}{editingBranch ? 'تحديث' : 'إضافة'}</Button>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>{t.cancel}</Button>
+                <Button type="submit" disabled={saveBranch.isPending}>{saveBranch.isPending && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}{editingBranch ? t.update : t.add}</Button>
               </div>
             </form>
           </DialogContent>
@@ -114,24 +116,24 @@ export function BranchesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{branches.length}</div><p className="text-sm text-muted-foreground">إجمالي الفروع</p></CardContent></Card>
-        <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{branches.filter((b: any) => b.is_active).length}</div><p className="text-sm text-muted-foreground">فروع نشطة</p></CardContent></Card>
-        <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{branches.filter((b: any) => b.is_main).length}</div><p className="text-sm text-muted-foreground">فروع رئيسية</p></CardContent></Card>
+        <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{branches.length}</div><p className="text-sm text-muted-foreground">{t.branch_total}</p></CardContent></Card>
+        <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{branches.filter((b: any) => b.is_active).length}</div><p className="text-sm text-muted-foreground">{t.branch_active}</p></CardContent></Card>
+        <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{branches.filter((b: any) => b.is_main).length}</div><p className="text-sm text-muted-foreground">{t.branch_main_count}</p></CardContent></Card>
       </div>
 
       <Card>
-        <CardHeader><CardTitle>قائمة الفروع</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t.branch_list}</CardTitle></CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-right">الرمز</TableHead>
-                <TableHead className="text-right">الاسم</TableHead>
-                <TableHead className="text-right">العنوان</TableHead>
-                <TableHead className="text-right">الهاتف</TableHead>
-                <TableHead className="text-right">المدير</TableHead>
-                <TableHead className="text-right">النوع</TableHead>
-                <TableHead className="text-center">إجراءات</TableHead>
+                <TableHead className="text-right">{t.branch_col_code}</TableHead>
+                <TableHead className="text-right">{t.branch_col_name}</TableHead>
+                <TableHead className="text-right">{t.branch_col_address}</TableHead>
+                <TableHead className="text-right">{t.branch_col_phone}</TableHead>
+                <TableHead className="text-right">{t.branch_col_manager}</TableHead>
+                <TableHead className="text-right">{t.branch_col_type}</TableHead>
+                <TableHead className="text-center">{t.actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -142,7 +144,7 @@ export function BranchesPage() {
                   <TableCell className="max-w-[200px] truncate">{b.address || '-'}</TableCell>
                   <TableCell dir="ltr">{b.phone || '-'}</TableCell>
                   <TableCell>{b.manager_name || '-'}</TableCell>
-                  <TableCell>{b.is_main ? <Badge>رئيسي</Badge> : <Badge variant="secondary">فرعي</Badge>}</TableCell>
+                  <TableCell>{b.is_main ? <Badge>{t.branch_main}</Badge> : <Badge variant="secondary">{t.branch_sub}</Badge>}</TableCell>
                   <TableCell>
                     <div className="flex justify-center gap-1">
                       <Button size="icon" variant="ghost" onClick={() => openEdit(b)}><Pencil className="w-4 h-4" /></Button>
@@ -151,7 +153,7 @@ export function BranchesPage() {
                   </TableCell>
                 </TableRow>
               ))}
-              {branches.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">لا توجد فروع مسجلة</TableCell></TableRow>}
+              {branches.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t.no_data}</TableCell></TableRow>}
             </TableBody>
           </Table>
         </CardContent>
@@ -159,8 +161,8 @@ export function BranchesPage() {
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>حذف الفرع</AlertDialogTitle><AlertDialogDescription>هل أنت متأكد من حذف هذا الفرع؟</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>إلغاء</AlertDialogCancel><AlertDialogAction onClick={() => deleteId && deleteBranch.mutate(deleteId)} className="bg-destructive text-destructive-foreground">حذف</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>{t.branch_confirm_delete}</AlertDialogTitle><AlertDialogDescription>{t.branch_confirm_delete_desc}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>{t.cancel}</AlertDialogCancel><AlertDialogAction onClick={() => deleteId && deleteBranch.mutate(deleteId)} className="bg-destructive text-destructive-foreground">{t.delete}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

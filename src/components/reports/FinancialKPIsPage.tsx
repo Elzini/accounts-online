@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface KPIs {
   grossProfitMargin: number;
@@ -25,6 +26,7 @@ interface KPIs {
 }
 
 export function FinancialKPIsPage() {
+  const { t, direction, language } = useLanguage();
   const companyId = useCompanyId();
   const { selectedFiscalYear } = useFiscalYear();
 
@@ -97,35 +99,37 @@ export function FinancialKPIsPage() {
     enabled: !!companyId,
   });
 
-  const fmt = (n: number) => n.toLocaleString('ar-SA', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const locale = language === 'ar' ? 'ar-SA' : 'en-US';
+  const currency = language === 'ar' ? 'ر.س' : 'SAR';
+  const fmt = (n: number) => n.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const pct = (n: number) => n.toFixed(1) + '%';
 
   const k = kpis || defaultKPIs();
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6" dir={direction}>
       <div>
-        <h1 className="text-2xl font-bold">المؤشرات المالية المتقدمة</h1>
-        <p className="text-muted-foreground">تحليل الأداء المالي والنسب والمؤشرات الرئيسية</p>
+        <h1 className="text-2xl font-bold">{t.kpi_title}</h1>
+        <p className="text-muted-foreground">{t.kpi_subtitle}</p>
       </div>
 
       <Tabs defaultValue="kpis">
         <TabsList>
-          <TabsTrigger value="kpis" className="gap-2"><Activity className="w-4 h-4" /> مؤشرات الأداء</TabsTrigger>
-          <TabsTrigger value="breakeven" className="gap-2"><Target className="w-4 h-4" /> نقطة التعادل</TabsTrigger>
-          <TabsTrigger value="ratios" className="gap-2"><PieChart className="w-4 h-4" /> النسب المالية</TabsTrigger>
+          <TabsTrigger value="kpis" className="gap-2"><Activity className="w-4 h-4" /> {t.kpi_tab_indicators}</TabsTrigger>
+          <TabsTrigger value="breakeven" className="gap-2"><Target className="w-4 h-4" /> {t.kpi_tab_breakeven}</TabsTrigger>
+          <TabsTrigger value="ratios" className="gap-2"><PieChart className="w-4 h-4" /> {t.kpi_tab_ratios}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="kpis" className="mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <KPICard icon={DollarSign} title="إجمالي الإيرادات" value={fmt(k.totalRevenue) + ' ر.س'} color="text-primary" />
-            <KPICard icon={TrendingUp} title="إجمالي الربح" value={fmt(k.grossProfit) + ' ر.س'} subtitle={`هامش ${pct(k.grossProfitMargin)}`} color="text-green-600" />
-            <KPICard icon={TrendingDown} title="صافي الربح" value={fmt(k.netProfit) + ' ر.س'} subtitle={`هامش ${pct(k.netProfitMargin)}`} color={k.netProfit >= 0 ? 'text-green-600' : 'text-red-600'} />
-            <KPICard icon={BarChart3} title="نسبة المصروفات" value={pct(k.operatingExpenseRatio)} subtitle={fmt(k.totalExpenses) + ' ر.س'} color="text-orange-600" />
-            <KPICard icon={Activity} title="دوران المخزون" value={k.inventoryTurnover.toFixed(1) + ' مرة'} subtitle={`متوسط ${k.avgDaysToSell.toFixed(0)} يوم`} color="text-blue-600" />
-            <KPICard icon={DollarSign} title="الإيراد لكل موظف" value={fmt(k.revenuePerEmployee) + ' ر.س'} color="text-purple-600" />
-            <KPICard icon={TrendingDown} title="تكلفة البضاعة المباعة" value={fmt(k.totalCost) + ' ر.س'} subtitle={`نسبة ${pct(k.variableCostRatio)}`} color="text-red-500" />
-            <KPICard icon={Target} title="نقطة التعادل" value={fmt(k.breakEvenRevenue) + ' ر.س'} subtitle={k.totalRevenue >= k.breakEvenRevenue ? '✅ تم تجاوزها' : '⚠️ لم تتحقق'} color="text-amber-600" />
+            <KPICard icon={DollarSign} title={t.kpi_total_revenue} value={fmt(k.totalRevenue) + ' ' + currency} color="text-primary" />
+            <KPICard icon={TrendingUp} title={t.kpi_gross_profit} value={fmt(k.grossProfit) + ' ' + currency} subtitle={`${t.kpi_margin} ${pct(k.grossProfitMargin)}`} color="text-green-600" />
+            <KPICard icon={TrendingDown} title={t.kpi_net_profit} value={fmt(k.netProfit) + ' ' + currency} subtitle={`${t.kpi_margin} ${pct(k.netProfitMargin)}`} color={k.netProfit >= 0 ? 'text-green-600' : 'text-red-600'} />
+            <KPICard icon={BarChart3} title={t.kpi_expense_ratio} value={pct(k.operatingExpenseRatio)} subtitle={fmt(k.totalExpenses) + ' ' + currency} color="text-orange-600" />
+            <KPICard icon={Activity} title={t.kpi_inventory_turnover} value={k.inventoryTurnover.toFixed(1) + (language === 'ar' ? ' مرة' : ' times')} subtitle={`${t.kpi_avg_days_sell} ${k.avgDaysToSell.toFixed(0)}`} color="text-blue-600" />
+            <KPICard icon={DollarSign} title={t.kpi_revenue_per_employee} value={fmt(k.revenuePerEmployee) + ' ' + currency} color="text-purple-600" />
+            <KPICard icon={TrendingDown} title={t.kpi_cogs} value={fmt(k.totalCost) + ' ' + currency} subtitle={`${t.kpi_margin} ${pct(k.variableCostRatio)}`} color="text-red-500" />
+            <KPICard icon={Target} title={t.kpi_breakeven_point} value={fmt(k.breakEvenRevenue) + ' ' + currency} subtitle={k.totalRevenue >= k.breakEvenRevenue ? '✅' : '⚠️'} color="text-amber-600" />
           </div>
         </TabsContent>
 
@@ -133,38 +137,38 @@ export function FinancialKPIsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Target className="w-5 h-5" /> تحليل نقطة التعادل</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Target className="w-5 h-5" /> {t.kpi_breakeven_point}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between border-b pb-2">
-                  <span className="text-muted-foreground">التكاليف الثابتة (تقديرية)</span>
-                  <span className="font-bold">{fmt(k.fixedCosts)} ر.س</span>
+                  <span className="text-muted-foreground">{t.kpi_fixed_costs}</span>
+                  <span className="font-bold">{fmt(k.fixedCosts)} {currency}</span>
                 </div>
                 <div className="flex justify-between border-b pb-2">
-                  <span className="text-muted-foreground">نسبة التكلفة المتغيرة</span>
+                  <span className="text-muted-foreground">{t.kpi_variable_ratio}</span>
                   <span className="font-bold">{pct(k.variableCostRatio)}</span>
                 </div>
                 <div className="flex justify-between border-b pb-2">
-                  <span className="text-muted-foreground">هامش المساهمة</span>
+                  <span className="text-muted-foreground">{t.kpi_contribution_margin}</span>
                   <span className="font-bold">{pct(100 - k.variableCostRatio)}</span>
                 </div>
                 <div className="flex justify-between pt-2 text-lg">
-                  <span className="font-bold">إيرادات التعادل المطلوبة</span>
-                  <span className="font-bold text-primary">{fmt(k.breakEvenRevenue)} ر.س</span>
+                  <span className="font-bold">{t.kpi_breakeven_required}</span>
+                  <span className="font-bold text-primary">{fmt(k.breakEvenRevenue)} {currency}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">الإيرادات الفعلية</span>
+                  <span className="text-muted-foreground">{t.kpi_actual_revenue}</span>
                   <span className={`font-bold ${k.totalRevenue >= k.breakEvenRevenue ? 'text-green-600' : 'text-red-600'}`}>
-                    {fmt(k.totalRevenue)} ر.س
+                    {fmt(k.totalRevenue)} {currency}
                   </span>
                 </div>
                 {k.totalRevenue >= k.breakEvenRevenue ? (
                   <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg text-green-700 dark:text-green-300 text-sm">
-                    ✅ تم تجاوز نقطة التعادل بمبلغ {fmt(k.totalRevenue - k.breakEvenRevenue)} ر.س
+                    ✅ {t.kpi_breakeven_passed} {fmt(k.totalRevenue - k.breakEvenRevenue)} {currency}
                   </div>
                 ) : (
                   <div className="bg-red-50 dark:bg-red-950 p-3 rounded-lg text-red-700 dark:text-red-300 text-sm">
-                    ⚠️ ينقص {fmt(k.breakEvenRevenue - k.totalRevenue)} ر.س للوصول لنقطة التعادل
+                    ⚠️ {t.kpi_breakeven_missing} {fmt(k.breakEvenRevenue - k.totalRevenue)} {currency}
                   </div>
                 )}
               </CardContent>
@@ -172,13 +176,13 @@ export function FinancialKPIsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>ملخص الأداء</CardTitle>
+                <CardTitle>{t.kpi_performance_summary}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <ProgressBar label="هامش الربح الإجمالي" value={k.grossProfitMargin} max={100} />
-                <ProgressBar label="هامش الربح الصافي" value={k.netProfitMargin} max={100} />
-                <ProgressBar label="نسبة المصروفات" value={k.operatingExpenseRatio} max={100} negative />
-                <ProgressBar label="التقدم نحو التعادل" value={k.breakEvenRevenue > 0 ? Math.min((k.totalRevenue / k.breakEvenRevenue) * 100, 100) : 100} max={100} />
+                <ProgressBar label={t.kpi_gross_profit} value={k.grossProfitMargin} max={100} />
+                <ProgressBar label={t.kpi_net_profit} value={k.netProfitMargin} max={100} />
+                <ProgressBar label={t.kpi_expense_ratio} value={k.operatingExpenseRatio} max={100} negative />
+                <ProgressBar label={t.kpi_breakeven_point} value={k.breakEvenRevenue > 0 ? Math.min((k.totalRevenue / k.breakEvenRevenue) * 100, 100) : 100} max={100} />
               </CardContent>
             </Card>
           </div>
@@ -186,20 +190,20 @@ export function FinancialKPIsPage() {
 
         <TabsContent value="ratios" className="mt-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <RatioCard title="نسب الربحية" items={[
-              { label: 'هامش الربح الإجمالي', value: pct(k.grossProfitMargin) },
-              { label: 'هامش الربح الصافي', value: pct(k.netProfitMargin) },
-              { label: 'العائد على الإيرادات', value: pct(k.totalRevenue > 0 ? (k.netProfit / k.totalRevenue) * 100 : 0) },
+            <RatioCard title={t.kpi_profitability_ratios} items={[
+              { label: t.kpi_gross_profit, value: pct(k.grossProfitMargin) },
+              { label: t.kpi_net_profit, value: pct(k.netProfitMargin) },
+              { label: 'ROI', value: pct(k.totalRevenue > 0 ? (k.netProfit / k.totalRevenue) * 100 : 0) },
             ]} />
-            <RatioCard title="نسب الكفاءة" items={[
-              { label: 'دوران المخزون', value: k.inventoryTurnover.toFixed(1) + ' مرة' },
-              { label: 'متوسط أيام البيع', value: k.avgDaysToSell.toFixed(0) + ' يوم' },
-              { label: 'إنتاجية الموظف', value: fmt(k.revenuePerEmployee) + ' ر.س' },
+            <RatioCard title={t.kpi_efficiency_ratios} items={[
+              { label: t.kpi_inventory_turnover, value: k.inventoryTurnover.toFixed(1) },
+              { label: t.kpi_avg_days_sell, value: k.avgDaysToSell.toFixed(0) },
+              { label: t.kpi_revenue_per_employee, value: fmt(k.revenuePerEmployee) + ' ' + currency },
             ]} />
-            <RatioCard title="نسب التكاليف" items={[
-              { label: 'نسبة التكلفة للإيراد', value: pct(k.variableCostRatio) },
-              { label: 'نسبة المصروفات', value: pct(k.operatingExpenseRatio) },
-              { label: 'هامش المساهمة', value: pct(100 - k.variableCostRatio) },
+            <RatioCard title={t.kpi_cost_ratios} items={[
+              { label: t.kpi_variable_ratio, value: pct(k.variableCostRatio) },
+              { label: t.kpi_expense_ratio, value: pct(k.operatingExpenseRatio) },
+              { label: t.kpi_contribution_margin, value: pct(100 - k.variableCostRatio) },
             ]} />
           </div>
         </TabsContent>

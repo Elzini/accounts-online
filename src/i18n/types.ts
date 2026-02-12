@@ -2284,6 +2284,20 @@ export interface TranslationKeys {
   acc_error: string;
   acc_confirm_sure: string;
 
+  // Common
+  active: string;
+  inactive: string;
+  update: string;
+  select: string;
+  actions: string;
+  save: string;
+  cancel: string;
+  delete: string;
+  add: string;
+  search: string;
+  loading: string;
+  no_data: string;
+
   // Reports - Common
   rpt_print: string;
   rpt_print_report: string;
@@ -2515,6 +2529,152 @@ export interface TranslationKeys {
   cost_toast_deleted: string;
   cost_toast_error: string;
   cost_toast_required: string;
+
+  // Medad Import
+  medad_title: string;
+  medad_subtitle: string;
+  medad_upload_btn: string;
+  medad_preview: string;
+  medad_results: string;
+  medad_drag_drop: string;
+  medad_supported_formats: string;
+  medad_supported_data: string;
+  medad_customers: string;
+  medad_suppliers: string;
+  medad_accounts: string;
+  medad_expenses: string;
+  medad_tips: string;
+  medad_tip_1: string;
+  medad_tip_2: string;
+  medad_tip_3: string;
+  medad_import_success: string;
+  medad_import_warning: string;
+  medad_import_error: string;
+  medad_parsing_success: string;
+  medad_parsing_error: string;
+
+  // Budgets
+  budgets_title: string;
+  budgets_subtitle: string;
+  budgets_new: string;
+  budgets_total: string;
+  budgets_approved: string;
+  budgets_draft: string;
+  budgets_list: string;
+  budgets_col_name: string;
+  budgets_col_start: string;
+  budgets_col_end: string;
+  budgets_col_status: string;
+  budgets_col_notes: string;
+  budgets_status_draft: string;
+  budgets_status_approved: string;
+  budgets_status_closed: string;
+  budgets_toast_created: string;
+  budgets_toast_error: string;
+
+  // Financial KPIs
+  kpi_title: string;
+  kpi_subtitle: string;
+  kpi_tab_indicators: string;
+  kpi_tab_breakeven: string;
+  kpi_tab_ratios: string;
+  kpi_total_revenue: string;
+  kpi_gross_profit: string;
+  kpi_net_profit: string;
+  kpi_expense_ratio: string;
+  kpi_inventory_turnover: string;
+  kpi_avg_days_sell: string;
+  kpi_revenue_per_employee: string;
+  kpi_cogs: string;
+  kpi_breakeven_point: string;
+  kpi_margin: string;
+  kpi_fixed_costs: string;
+  kpi_variable_ratio: string;
+  kpi_contribution_margin: string;
+  kpi_breakeven_required: string;
+  kpi_actual_revenue: string;
+  kpi_breakeven_passed: string;
+  kpi_breakeven_missing: string;
+  kpi_performance_summary: string;
+  kpi_profitability_ratios: string;
+  kpi_efficiency_ratios: string;
+  kpi_cost_ratios: string;
+
+  // Approvals
+  approval_title: string;
+  approval_subtitle: string;
+  approval_new_path: string;
+  approval_workflows: string;
+  approval_under_review: string;
+  approval_approved: string;
+  approval_total_requests: string;
+  approval_list_workflows: string;
+  approval_col_path: string;
+  approval_col_type: string;
+  approval_col_min: string;
+  approval_col_max: string;
+  approval_col_status: string;
+  approval_list_requests: string;
+  approval_col_stage: string;
+  approval_col_date: string;
+  approval_status_pending: string;
+  approval_status_approved: string;
+  approval_status_rejected: string;
+  approval_status_cancelled: string;
+  approval_toast_created: string;
+  approval_toast_error: string;
+
+  // Currencies
+  currency_title: string;
+  currency_subtitle: string;
+  currency_tab_currencies: string;
+  currency_tab_rates: string;
+  currency_list: string;
+  currency_add: string;
+  currency_col_code: string;
+  currency_col_name: string;
+  currency_col_symbol: string;
+  currency_col_decimals: string;
+  currency_col_type: string;
+  currency_base: string;
+  currency_secondary: string;
+  currency_rates_title: string;
+  currency_add_rate: string;
+  currency_col_from: string;
+  currency_col_to: string;
+  currency_col_rate: string;
+  currency_col_date: string;
+  currency_toast_added: string;
+  currency_toast_rate_added: string;
+  currency_toast_deleted: string;
+  currency_toast_error: string;
+  currency_toast_exists: string;
+
+  // Branches
+  branch_title: string;
+  branch_subtitle: string;
+  branch_add: string;
+  branch_edit: string;
+  branch_total: string;
+  branch_active: string;
+  branch_main_count: string;
+  branch_list: string;
+  branch_col_code: string;
+  branch_col_name: string;
+  branch_col_address: string;
+  branch_col_phone: string;
+  branch_col_manager: string;
+  branch_col_type: string;
+  branch_main: string;
+  branch_sub: string;
+  branch_confirm_delete: string;
+  branch_confirm_delete_desc: string;
+  branch_toast_added: string;
+  branch_toast_updated: string;
+  branch_toast_deleted: string;
+  branch_toast_error: string;
+  branch_toast_exists: string;
+
 
   // Aging Report
   aging_title: string;
