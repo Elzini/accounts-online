@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { AccountSearchSelect } from './AccountSearchSelect';
 import { JournalEntryPrintDialog } from './JournalEntryPrintDialog';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface JournalLine {
   account_id: string;
@@ -39,6 +40,7 @@ interface JournalLine {
 }
 
 export function JournalEntriesPage() {
+  const { t, direction } = useLanguage();
   const { data: entries = [], isLoading } = useJournalEntries();
   const { data: accounts = [] } = useAccounts();
   const { data: costCenters = [] } = useCostCenters();
@@ -122,18 +124,18 @@ export function JournalEntriesPage() {
 
   const handleSubmit = async () => {
     if (!description) {
-      toast.error('يرجى إدخال البيان');
+      toast.error(t.je_statement);
       return;
     }
 
     const validLines = lines.filter(line => line.account_id && (line.debit > 0 || line.credit > 0));
     if (validLines.length < 2) {
-      toast.error('يجب إضافة حسابين على الأقل');
+      toast.error(t.acc_error);
       return;
     }
 
     if (!isBalanced) {
-      toast.error('مجموع المدين يجب أن يساوي مجموع الدائن');
+      toast.error(t.je_unbalanced);
       return;
     }
 
@@ -157,26 +159,37 @@ export function JournalEntriesPage() {
           cost_center_id: line.cost_center_id || null,
         })),
       });
-      toast.success('تم إنشاء القيد بنجاح');
+      toast.success(t.acc_added);
       setIsDialogOpen(false);
       resetForm();
     } catch (error) {
-      toast.error('حدث خطأ أثناء إنشاء القيد');
+      toast.error(t.acc_error);
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteJournalEntry.mutateAsync(id);
-      toast.success('تم حذف القيد بنجاح');
+      toast.success(t.acc_deleted);
     } catch (error) {
-      toast.error('حدث خطأ أثناء حذف القيد');
+      toast.error(t.acc_error);
     }
   };
 
   const getAccountName = (accountId: string) => {
     const account = accounts.find(a => a.id === accountId);
     return account ? `${account.code} - ${account.name}` : accountId;
+  };
+
+  const getReferenceTypeLabel = (type: string | null) => {
+    switch (type) {
+      case 'manual': return t.je_type_manual;
+      case 'sale': return t.je_type_sales;
+      case 'purchase': return t.je_type_purchases;
+      case 'expense': return t.je_type_expenses;
+      case 'voucher': return t.je_type_voucher;
+      default: return t.je_type_auto;
+    }
   };
 
   // Filter entries by fiscal year
@@ -196,11 +209,11 @@ export function JournalEntriesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={direction}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">دفتر اليومية</h1>
-          <p className="text-muted-foreground">إدارة القيود المحاسبية اليدوية والتلقائية</p>
+          <h1 className="text-2xl font-bold text-foreground">{t.je_title}</h1>
+          <p className="text-muted-foreground">{t.je_subtitle}</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
           setIsDialogOpen(open);
@@ -209,19 +222,19 @@ export function JournalEntriesPage() {
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 ml-2" />
-              قيد يومية جديد
+              {t.je_new}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
             <DialogHeader className="border-b pb-4">
-              <DialogTitle className="text-xl">قيد يومية</DialogTitle>
+              <DialogTitle className="text-xl">{t.je_dialog_title}</DialogTitle>
             </DialogHeader>
             
             <div className="space-y-6 py-4">
               {/* Header Section */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-muted/30 rounded-lg border">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">رقم السند</Label>
+                  <Label className="text-sm font-medium">{t.je_voucher_number}</Label>
                   <Input 
                     value={nextEntryNumber} 
                     disabled 
@@ -229,7 +242,7 @@ export function JournalEntriesPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">التاريخ</Label>
+                  <Label className="text-sm font-medium">{t.je_date}</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -240,7 +253,7 @@ export function JournalEntriesPage() {
                         )}
                       >
                         <CalendarIcon className="ml-2 h-4 w-4" />
-                        {entryDate ? format(entryDate, "yyyy-MM-dd") : "اختر التاريخ"}
+                        {entryDate ? format(entryDate, "yyyy-MM-dd") : t.je_date}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -255,7 +268,7 @@ export function JournalEntriesPage() {
                   </Popover>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">رقم القيد</Label>
+                  <Label className="text-sm font-medium">{t.je_entry_number}</Label>
                   <Input 
                     value={nextEntryNumber} 
                     disabled 
@@ -263,16 +276,16 @@ export function JournalEntriesPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">سند دوري</Label>
+                  <Label className="text-sm font-medium">{t.je_periodic}</Label>
                   <Select defaultValue="none">
                     <SelectTrigger>
-                      <SelectValue placeholder="اختر" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">بدون</SelectItem>
-                      <SelectItem value="monthly">شهري</SelectItem>
-                      <SelectItem value="quarterly">ربع سنوي</SelectItem>
-                      <SelectItem value="yearly">سنوي</SelectItem>
+                      <SelectItem value="none">{t.je_periodic_none}</SelectItem>
+                      <SelectItem value="monthly">{t.je_periodic_monthly}</SelectItem>
+                      <SelectItem value="quarterly">{t.je_periodic_quarterly}</SelectItem>
+                      <SelectItem value="yearly">{t.je_periodic_yearly}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -281,29 +294,26 @@ export function JournalEntriesPage() {
               {/* Description Section */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2 space-y-2">
-                  <Label className="text-sm font-medium">البيان *</Label>
+                  <Label className="text-sm font-medium">{t.je_statement}</Label>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="وصف القيد المحاسبي..."
                     className="min-h-[60px]"
                   />
                 </div>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">ملاحظة 1</Label>
+                    <Label className="text-sm font-medium">{t.je_note_1}</Label>
                     <Input
                       value={notes1}
                       onChange={(e) => setNotes1(e.target.value)}
-                      placeholder="ملاحظة إضافية"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">ملاحظة 2</Label>
+                    <Label className="text-sm font-medium">{t.je_note_2}</Label>
                     <Input
                       value={notes2}
                       onChange={(e) => setNotes2(e.target.value)}
-                      placeholder="ملاحظة إضافية"
                     />
                   </div>
                 </div>
@@ -314,7 +324,7 @@ export function JournalEntriesPage() {
                 <div className="bg-muted/50 p-2 flex items-center gap-2 border-b">
                   <Button variant="outline" size="sm" onClick={addLine}>
                     <Plus className="w-4 h-4 ml-1" />
-                    سطر جديد
+                    {t.je_new_line}
                   </Button>
                 </div>
                 <div className="overflow-x-auto">
@@ -322,13 +332,13 @@ export function JournalEntriesPage() {
                     <TableHeader>
                       <TableRow className="bg-muted/30">
                         <TableHead className="w-10 text-center">#</TableHead>
-                        <TableHead className="min-w-[250px]">الحساب</TableHead>
-                        <TableHead className="w-28">مدين</TableHead>
-                        <TableHead className="w-28">دائن</TableHead>
-                        <TableHead className="min-w-[140px]">البيان</TableHead>
-                        <TableHead className="w-28">المرجع</TableHead>
-                        <TableHead className="w-32">التاريخ</TableHead>
-                        <TableHead className="w-28">مركز التكلفة</TableHead>
+                        <TableHead className="min-w-[250px]">{t.je_col_account}</TableHead>
+                        <TableHead className="w-28">{t.je_col_debit}</TableHead>
+                        <TableHead className="w-28">{t.je_col_credit}</TableHead>
+                        <TableHead className="min-w-[140px]">{t.je_col_statement}</TableHead>
+                        <TableHead className="w-28">{t.je_col_reference}</TableHead>
+                        <TableHead className="w-32">{t.je_col_date}</TableHead>
+                        <TableHead className="w-28">{t.je_col_cost_center}</TableHead>
                         <TableHead className="w-12"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -350,7 +360,6 @@ export function JournalEntriesPage() {
                               value={line.account_name || ''}
                               readOnly
                               className="bg-muted/30 text-sm"
-                              placeholder="اسم الحساب"
                             />
                           </TableCell>
                           <TableCell>
@@ -377,7 +386,6 @@ export function JournalEntriesPage() {
                             <Input
                               value={line.description}
                               onChange={(e) => updateLine(index, 'description', e.target.value)}
-                              placeholder="البيان"
                               className="text-sm"
                             />
                           </TableCell>
@@ -385,7 +393,6 @@ export function JournalEntriesPage() {
                             <Input
                               value={line.reference || ''}
                               onChange={(e) => updateLine(index, 'reference', e.target.value)}
-                              placeholder="المرجع"
                               className="text-sm"
                             />
                           </TableCell>
@@ -403,10 +410,10 @@ export function JournalEntriesPage() {
                               onValueChange={(value) => updateLine(index, 'cost_center_id', value === 'none' ? '' : value)}
                             >
                               <SelectTrigger className="text-sm">
-                                <SelectValue placeholder="م.تكلفة" />
+                                <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="none">بدون</SelectItem>
+                                <SelectItem value="none">{t.je_periodic_none}</SelectItem>
                                 {costCenters.filter(c => c.is_active).map(cc => (
                                   <SelectItem key={cc.id} value={cc.id}>{cc.code} - {cc.name}</SelectItem>
                                 ))}
@@ -441,7 +448,7 @@ export function JournalEntriesPage() {
                       checked={includeVat}
                       onCheckedChange={(checked) => setIncludeVat(!!checked)}
                     />
-                    <Label htmlFor="include-vat" className="text-sm cursor-pointer">إضافة قيد الضريبة</Label>
+                    <Label htmlFor="include-vat" className="text-sm cursor-pointer">{t.je_include_vat}</Label>
                   </div>
                   <div className="flex items-center gap-2">
                     <Checkbox 
@@ -449,23 +456,21 @@ export function JournalEntriesPage() {
                       checked={includeVat}
                       onCheckedChange={(checked) => setIncludeVat(!!checked)}
                     />
-                    <Label htmlFor="vat-enabled" className="text-sm cursor-pointer">تسجيل الضريبة</Label>
+                    <Label htmlFor="vat-enabled" className="text-sm cursor-pointer">{t.je_record_vat}</Label>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Label className="text-sm">العميل/المورد</Label>
+                    <Label className="text-sm">{t.je_customer_supplier}</Label>
                     <Input
                       value={supplierCustomer}
                       onChange={(e) => setSupplierCustomer(e.target.value)}
-                      placeholder="اسم العميل أو المورد"
                       className="w-40"
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <Label className="text-sm">الرقم الضريبي</Label>
+                    <Label className="text-sm">{t.je_tax_number}</Label>
                     <Input
                       value={taxNumber}
                       onChange={(e) => setTaxNumber(e.target.value)}
-                      placeholder="الرقم الضريبي"
                       className="w-40"
                     />
                   </div>
@@ -474,8 +479,8 @@ export function JournalEntriesPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="purchases">مشتريات بالنسبة الأساسية</SelectItem>
-                      <SelectItem value="sales">مبيعات بالنسبة الأساسية</SelectItem>
+                      <SelectItem value="purchases">{t.je_purchases_standard}</SelectItem>
+                      <SelectItem value="sales">{t.je_sales_standard}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -485,15 +490,15 @@ export function JournalEntriesPage() {
               <div className="p-4 border rounded-lg bg-muted/30">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                   <div>
-                    <Label className="text-sm text-muted-foreground">إجمالي المدين</Label>
+                    <Label className="text-sm text-muted-foreground">{t.je_total_debit}</Label>
                     <p className="text-xl font-bold text-primary">{totalDebit.toLocaleString()}</p>
                   </div>
                   <div>
-                    <Label className="text-sm text-muted-foreground">إجمالي الدائن</Label>
+                    <Label className="text-sm text-muted-foreground">{t.je_total_credit}</Label>
                     <p className="text-xl font-bold text-primary">{totalCredit.toLocaleString()}</p>
                   </div>
                   <div>
-                    <Label className="text-sm text-muted-foreground">الفرق</Label>
+                    <Label className="text-sm text-muted-foreground">{t.je_difference}</Label>
                     <p className={cn(
                       "text-xl font-bold",
                       difference === 0 ? "text-green-600" : "text-destructive"
@@ -502,12 +507,12 @@ export function JournalEntriesPage() {
                     </p>
                   </div>
                   <div>
-                    <Label className="text-sm text-muted-foreground">الحالة</Label>
+                    <Label className="text-sm text-muted-foreground">{t.je_col_status}</Label>
                     <div className="mt-1">
                       {isBalanced ? (
-                        <Badge className="bg-green-500">القيد متوازن ✓</Badge>
+                        <Badge className="bg-green-500">{t.je_balanced}</Badge>
                       ) : (
-                        <Badge variant="destructive">القيد غير متوازن</Badge>
+                        <Badge variant="destructive">{t.je_unbalanced}</Badge>
                       )}
                     </div>
                   </div>
@@ -518,16 +523,16 @@ export function JournalEntriesPage() {
               <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t">
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    خروج
+                    {t.je_exit}
                   </Button>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline">
                     <Printer className="w-4 h-4 ml-2" />
-                    طباعة
+                    {t.print}
                   </Button>
                   <Button variant="outline" onClick={resetForm}>
-                    جديد
+                    {t.je_new_btn}
                   </Button>
                   <Button 
                     onClick={handleSubmit} 
@@ -537,7 +542,7 @@ export function JournalEntriesPage() {
                     {createJournalEntry.isPending ? (
                       <Loader2 className="w-4 h-4 ml-2 animate-spin" />
                     ) : null}
-                    اعتماد
+                    {t.je_approve}
                   </Button>
                 </div>
               </div>
@@ -550,7 +555,7 @@ export function JournalEntriesPage() {
       <Dialog open={!!viewingEntryId} onOpenChange={(open) => !open && setViewingEntryId(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>تفاصيل القيد #{viewingEntry?.entry_number}</DialogTitle>
+            <DialogTitle>{t.je_details_title} #{viewingEntry?.entry_number}</DialogTitle>
             <DialogDescription>
               {viewingEntry && format(new Date(viewingEntry.entry_date), "PPP", { locale: ar })}
             </DialogDescription>
@@ -563,10 +568,10 @@ export function JournalEntriesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>الحساب</TableHead>
-                    <TableHead>البيان</TableHead>
-                    <TableHead className="text-center">مدين</TableHead>
-                    <TableHead className="text-center">دائن</TableHead>
+                    <TableHead>{t.je_col_account}</TableHead>
+                    <TableHead>{t.je_col_statement}</TableHead>
+                    <TableHead className="text-center">{t.je_col_debit}</TableHead>
+                    <TableHead className="text-center">{t.je_col_credit}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -579,7 +584,7 @@ export function JournalEntriesPage() {
                     </TableRow>
                   ))}
                   <TableRow className="bg-muted/50 font-bold">
-                    <TableCell colSpan={2}>الإجمالي</TableCell>
+                    <TableCell colSpan={2}>{t.total}</TableCell>
                     <TableCell className="text-center">{viewingEntry.total_debit.toLocaleString()}</TableCell>
                     <TableCell className="text-center">{viewingEntry.total_credit.toLocaleString()}</TableCell>
                   </TableRow>
@@ -588,11 +593,11 @@ export function JournalEntriesPage() {
               {viewingEntryId && <JournalAttachments journalEntryId={viewingEntryId} />}
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setViewingEntryId(null)}>
-                  إغلاق
+                  {t.close}
                 </Button>
                 <Button variant="outline">
                   <Printer className="w-4 h-4 ml-2" />
-                  طباعة
+                  {t.print}
                 </Button>
               </div>
             </div>
@@ -605,29 +610,29 @@ export function JournalEntriesPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="w-5 h-5" />
-            القيود المحاسبية
+            {t.je_entries_title}
           </CardTitle>
-          <CardDescription>جميع القيود المسجلة في دفتر اليومية - يدوية وتلقائية</CardDescription>
+          <CardDescription>{t.je_entries_desc}</CardDescription>
         </CardHeader>
         <CardContent>
           {filteredEntries.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-30" />
-              <p>لا توجد قيود مسجلة في هذه السنة المالية</p>
-              <p className="text-sm">اضغط على "قيد يومية جديد" لإنشاء قيد</p>
+              <p>{t.je_no_entries}</p>
+              <p className="text-sm">{t.je_no_entries_hint}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-20">الرقم</TableHead>
-                  <TableHead className="w-28">التاريخ</TableHead>
-                  <TableHead>الوصف</TableHead>
-                  <TableHead className="w-20">النوع</TableHead>
-                  <TableHead className="w-28 text-center">المدين</TableHead>
-                  <TableHead className="w-28 text-center">الدائن</TableHead>
-                  <TableHead className="w-24">الحالة</TableHead>
-                  <TableHead className="w-24">إجراءات</TableHead>
+                  <TableHead className="w-20">{t.je_col_number}</TableHead>
+                  <TableHead className="w-28">{t.je_col_date}</TableHead>
+                  <TableHead>{t.je_col_desc}</TableHead>
+                  <TableHead className="w-20">{t.je_col_type}</TableHead>
+                  <TableHead className="w-28 text-center">{t.je_col_debit}</TableHead>
+                  <TableHead className="w-28 text-center">{t.je_col_credit}</TableHead>
+                  <TableHead className="w-24">{t.je_col_status}</TableHead>
+                  <TableHead className="w-24">{t.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -638,18 +643,14 @@ export function JournalEntriesPage() {
                     <TableCell className="max-w-[300px] truncate">{entry.description}</TableCell>
                     <TableCell>
                       <Badge variant={entry.reference_type === 'manual' ? 'outline' : 'secondary'}>
-                        {entry.reference_type === 'manual' ? 'يدوي' : 
-                         entry.reference_type === 'sale' ? 'مبيعات' :
-                         entry.reference_type === 'purchase' ? 'مشتريات' :
-                         entry.reference_type === 'expense' ? 'مصروفات' :
-                         entry.reference_type === 'voucher' ? 'سند' : 'تلقائي'}
+                        {getReferenceTypeLabel(entry.reference_type)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center font-medium">{entry.total_debit.toLocaleString()}</TableCell>
                     <TableCell className="text-center font-medium">{entry.total_credit.toLocaleString()}</TableCell>
                     <TableCell>
                       <Badge variant={entry.is_posted ? "default" : "secondary"}>
-                        {entry.is_posted ? 'مُرحّل' : 'مسودة'}
+                        {entry.is_posted ? t.je_status_posted : t.je_status_draft}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -658,7 +659,6 @@ export function JournalEntriesPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => setAttachmentEntryId(entry.id)}
-                          title="المرفقات"
                         >
                           <Paperclip className="w-4 h-4" />
                         </Button>
@@ -666,7 +666,6 @@ export function JournalEntriesPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => setViewingEntryId(entry.id)}
-                          title="عرض"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -674,27 +673,26 @@ export function JournalEntriesPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => setPrintingEntryId(entry.id)}
-                          title="طباعة"
                         >
                           <Printer className="w-4 h-4" />
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" title="حذف">
+                            <Button variant="ghost" size="icon">
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+                              <AlertDialogTitle>{t.je_confirm_delete}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                هل أنت متأكد من حذف القيد رقم {entry.entry_number}؟ لا يمكن التراجع عن هذا الإجراء.
+                                {t.je_confirm_delete_desc}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                              <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
                               <AlertDialogAction onClick={() => handleDelete(entry.id)}>
-                                حذف
+                                {t.delete}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -714,7 +712,7 @@ export function JournalEntriesPage() {
         entryId={attachmentEntryId}
         open={!!attachmentEntryId}
         onOpenChange={(open) => !open && setAttachmentEntryId(null)}
-        title="مرفقات القيد"
+        title={t.je_attachments}
       />
 
       {/* Print Dialog */}
