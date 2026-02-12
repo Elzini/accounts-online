@@ -8121,6 +8121,10 @@ export type Database = {
         Returns: undefined
       }
       apply_defaults_to_existing_companies: { Args: never; Returns: Json }
+      apply_tenant_schema_rls: {
+        Args: { p_schema_name: string }
+        Returns: undefined
+      }
       backfill_tenant_schema: {
         Args: { p_company_id: string }
         Returns: undefined
