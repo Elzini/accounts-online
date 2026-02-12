@@ -7009,6 +7009,126 @@ export type Database = {
           },
         ]
       }
+      tenant_encryption_keys: {
+        Row: {
+          algorithm: string | null
+          company_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          key_encrypted: string
+          key_version: number | null
+          rotated_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          algorithm?: string | null
+          company_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_encrypted: string
+          key_version?: number | null
+          rotated_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          algorithm?: string | null
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_encrypted?: string
+          key_version?: number | null
+          rotated_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_encryption_keys_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_rate_limits: {
+        Row: {
+          company_id: string
+          endpoint: string | null
+          id: string
+          request_count: number | null
+          window_start: string
+        }
+        Insert: {
+          company_id: string
+          endpoint?: string | null
+          id?: string
+          request_count?: number | null
+          window_start?: string
+        }
+        Update: {
+          company_id?: string
+          endpoint?: string | null
+          id?: string
+          request_count?: number | null
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_rate_limits_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_resource_quotas: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          max_records_per_table: number | null
+          max_requests_per_minute: number | null
+          max_storage_mb: number | null
+          max_users: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_records_per_table?: number | null
+          max_requests_per_minute?: number | null
+          max_storage_mb?: number | null
+          max_users?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_records_per_table?: number | null
+          max_requests_per_minute?: number | null
+          max_storage_mb?: number | null
+          max_users?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_resource_quotas_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trial_balance_imports: {
         Row: {
           company_id: string
@@ -8032,15 +8152,20 @@ export type Database = {
         Args: { _company_id: string; required_permission: string }
         Returns: boolean
       }
-      check_rate_limit: {
-        Args: {
-          _company_id: string
-          _endpoint: string
-          _max_requests?: number
-          _window_seconds?: number
-        }
-        Returns: boolean
-      }
+      check_rate_limit:
+        | {
+            Args: {
+              _company_id: string
+              _endpoint: string
+              _max_requests?: number
+              _window_seconds?: number
+            }
+            Returns: boolean
+          }
+        | {
+            Args: { p_company_id: string; p_endpoint?: string }
+            Returns: boolean
+          }
       cleanup_rate_limit_logs: { Args: never; Returns: undefined }
       create_default_accounts: {
         Args: { p_company_id: string }
@@ -8092,6 +8217,10 @@ export type Database = {
           sale_id: string
           sale_number: number
         }[]
+      }
+      generate_tenant_encryption_key: {
+        Args: { p_company_id: string }
+        Returns: undefined
       }
       get_car_expenses: { Args: { p_car_id: string }; Returns: number }
       get_current_company_id: { Args: never; Returns: string }
@@ -8174,6 +8303,10 @@ export type Database = {
         Args: { _company_id: string }
         Returns: undefined
       }
+      rotate_tenant_encryption_key: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       secure_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
@@ -8192,6 +8325,14 @@ export type Database = {
       sync_invoice_settings_to_all_companies: {
         Args: never
         Returns: undefined
+      }
+      tenant_decrypt: {
+        Args: { p_company_id: string; p_encrypted: string }
+        Returns: string
+      }
+      tenant_encrypt: {
+        Args: { p_company_id: string; p_data: string }
+        Returns: string
       }
       user_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }
