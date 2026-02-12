@@ -306,13 +306,13 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
   const installmentStats = useInstallmentStats(installmentSales);
 
   const formatCurrency = useCallback((value: number) => {
-    return new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-SA', { 
+    return new Intl.NumberFormat('en-SA', { 
       style: 'currency', 
       currency: 'SAR',
       maximumFractionDigits: 0,
       notation: value >= 1000000 ? 'compact' : 'standard',
     }).format(value);
-  }, [language]);
+  }, []);
 
   const formatCurrencyWithMode = useCallback((value: number) => {
     const displayValue = calculateDisplayAmount(value, amountDisplayMode);
