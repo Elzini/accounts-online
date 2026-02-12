@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef } from 'react';
-import { X, GripVertical, Save, RotateCcw, Check, Maximize2, Minimize2, ArrowUp, ArrowDown } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { X, GripVertical, Save, RotateCcw, Check, Maximize2, Minimize2, ArrowUp, ArrowDown, Move } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -128,6 +128,8 @@ interface EditableWidgetWrapperProps {
   isDragOver: boolean;
   children: React.ReactNode;
   className?: string;
+  onDimensionResize?: (cardId: string, width?: number, height?: number) => void;
+  cardConfig?: { width?: number; height?: number };
 }
 
 export function EditableWidgetWrapper({
@@ -148,8 +150,12 @@ export function EditableWidgetWrapper({
   isDragOver,
   children,
   className,
+  onDimensionResize,
+  cardConfig,
 }: EditableWidgetWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeInfo, setResizeInfo] = useState<{ w: number; h: number } | null>(null);
 
   if (!visible) return null;
 
@@ -237,7 +243,7 @@ export function EditableWidgetWrapper({
         </div>
       </div>
 
-      {/* Resize handle */}
+      {/* Col-span resize handle */}
       <div
         className="absolute bottom-2 left-2 z-10 w-8 h-8 rounded-lg bg-primary/20 hover:bg-primary/40 cursor-ew-resize flex items-center justify-center transition-colors shadow-md opacity-0 group-hover:opacity-100"
         onMouseDown={handleResizeMouseDown}
@@ -250,10 +256,58 @@ export function EditableWidgetWrapper({
         {colSpan === 2 ? <Minimize2 className="w-4 h-4 text-primary" /> : <Maximize2 className="w-4 h-4 text-primary" />}
       </div>
 
+      {/* Corner dimension resize handle (drag to resize width/height) */}
+      {onDimensionResize && (
+        <div
+          className="absolute bottom-1 right-1 z-10 w-8 h-8 rounded-lg bg-accent/80 hover:bg-accent cursor-nwse-resize flex items-center justify-center transition-colors shadow-md opacity-0 group-hover:opacity-100"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const el = containerRef.current;
+            if (!el) return;
+            const startW = cardConfig?.width || el.offsetWidth;
+            const startH = cardConfig?.height || el.offsetHeight;
+            setIsResizing(true);
+
+            const handleMouseMove = (me: MouseEvent) => {
+              const deltaX = me.clientX - startX;
+              const deltaY = me.clientY - startY;
+              const newW = Math.max(150, Math.round((startW + deltaX) / 10) * 10);
+              const newH = Math.max(80, Math.round((startH + deltaY) / 10) * 10);
+              setResizeInfo({ w: newW, h: newH });
+              onDimensionResize(id, newW, newH);
+            };
+
+            const handleMouseUp = () => {
+              setIsResizing(false);
+              setResizeInfo(null);
+              document.removeEventListener('mousemove', handleMouseMove);
+              document.removeEventListener('mouseup', handleMouseUp);
+            };
+
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+          }}
+          title="اسحب لتغيير الحجم"
+        >
+          <Move className="w-4 h-4 text-foreground" />
+        </div>
+      )}
+
+      {/* Size indicator during resize */}
+      {isResizing && resizeInfo && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20 bg-foreground text-background text-xs font-mono px-2 py-1 rounded shadow-lg">
+          {resizeInfo.w} × {resizeInfo.h}
+        </div>
+      )}
+
       {/* Border indicator */}
       <div className={cn(
         'absolute inset-0 rounded-xl border-2 border-dashed pointer-events-none transition-colors',
-        isDragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/30'
+        isDragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/30',
+        isResizing && 'border-accent border-solid'
       )} />
 
       <div className="relative select-none" style={{ pointerEvents: 'none' }}>{children}</div>

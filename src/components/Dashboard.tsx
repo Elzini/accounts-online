@@ -141,6 +141,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
           gradientTo: c.gradientTo || '',
           fontSize: c.fontSize || 100,
           height: c.height,
+          width: c.width,
           enable3D: c.enable3D || false,
           showTrend: c.showTrend ?? true,
           trendColor: c.trendColor || '',
@@ -192,6 +193,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
     try {
       await saveDashboardConfig.mutateAsync({
         layout_settings: { widgets } as any,
+        stat_cards: cardConfigs as any,
       });
       setIsEditMode(false);
       toast.success(t.layout_saved);
@@ -199,7 +201,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
       console.error('Error saving widget config:', error);
       toast.error(t.save_error);
     }
-  }, [saveDashboardConfig]);
+  }, [saveDashboardConfig, cardConfigs]);
 
   const cancelEditMode = useCallback(() => {
     if (dashboardConfig?.layout_settings?.widgets) {
@@ -266,6 +268,13 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
     return cardConfigs.filter(c => c.visible).sort((a, b) => a.order - b.order).map(c => c.id);
   }, [cardConfigs]);
 
+  // Callback for mouse drag resizing stat cards
+  const handleCardDimensionResize = useCallback((cardId: string, newWidth?: number, newHeight?: number) => {
+    setCardConfigs(prev => prev.map(c => 
+      c.id === cardId ? { ...c, width: newWidth, height: newHeight } : c
+    ));
+  }, []);
+
   // Widget layout helper - common props for each widget wrapper
   const getWidgetProps = useCallback((id: string) => ({
     id,
@@ -283,7 +292,9 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
     onDrop: handleDrop,
     isDragging: draggedId === id,
     isDragOver: dragOverId === id,
-  }), [isEditMode, isWidgetVisible, widgetConfigs, removeWidget, resizeWidget, moveWidgetUp, moveWidgetDown, handleDragStart, handleDragEnd, handleDragOver, handleDrop, draggedId, dragOverId]);
+    onDimensionResize: handleCardDimensionResize,
+    cardConfig: getCardConfig(id),
+  }), [isEditMode, isWidgetVisible, widgetConfigs, removeWidget, resizeWidget, moveWidgetUp, moveWidgetDown, handleDragStart, handleDragEnd, handleDragOver, handleDrop, draggedId, dragOverId, handleCardDimensionResize, getCardConfig]);
 
   const canSales = permissions.admin || permissions.sales;
   const canPurchases = permissions.admin || permissions.purchases;
