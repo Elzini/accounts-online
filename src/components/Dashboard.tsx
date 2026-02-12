@@ -611,6 +611,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
                         animationIndex={getNextAnimIndex()}
                         progress={monthProgress}
                         trend={analytics?.purchasesTrend?.percentChange}
+                        badge={`${stats.availableCars} ${industryLabels.availableItems}`}
                       />
                     </EditableWidgetWrapper>
                   );
@@ -695,11 +696,14 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
                         value={formatCurrencyWithMode(allTimeStats.allTimePurchases)}
                         icon={Building2}
                         gradient="danger"
-                        subtitle={`${allTimeStats.totalCarsCount} ${industryLabels.allTimePurchasesSubUnit} - ${getDisplayModeLabel(amountDisplayMode, language)}`}
+                        subtitle={getCurrencySubtitle()}
                         onClick={() => showStatDetail('allTimePurchases')}
                         showAsWords={showAmountAsWords}
                         {...getCardStyleProps('allTimePurchases')}
                         animationIndex={getNextAnimIndex()}
+                        progress={monthProgress}
+                        trend={analytics?.purchasesTrend?.percentChange}
+                        badge={`${allTimeStats.totalCarsCount} ${industryLabels.allTimePurchasesSubUnit}`}
                       />
                     </EditableWidgetWrapper>
                   );
@@ -713,11 +717,14 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
                         value={formatCurrencyWithMode(allTimeStats.allTimeSales)}
                         icon={TrendingUp}
                         gradient="success"
-                        subtitle={`${allTimeStats.allTimeSalesCount} ${industryLabels.allTimeSalesSubUnit} - ${getDisplayModeLabel(amountDisplayMode, language)}`}
+                        subtitle={getCurrencySubtitle()}
                         onClick={() => showStatDetail('allTimeSales')}
                         showAsWords={showAmountAsWords}
                         {...getCardStyleProps('allTimeSales')}
                         animationIndex={getNextAnimIndex()}
+                        progress={monthProgress}
+                        trend={analytics?.salesTrend?.percentChange}
+                        badge={`${allTimeStats.allTimeSalesCount} ${industryLabels.allTimeSalesSubUnit}`}
                       />
                     </EditableWidgetWrapper>
                   );
