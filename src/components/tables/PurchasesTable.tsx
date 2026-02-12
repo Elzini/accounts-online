@@ -13,6 +13,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PurchasesTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -28,23 +29,25 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const isMobile = useIsMobile();
+  const { t, language } = useLanguage();
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    // Invalidate and refetch
     await queryClient.invalidateQueries({ queryKey: ['cars', companyId] });
     await refetch();
     setIsRefreshing(false);
   };
 
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_purchases ? (taxSettings.tax_rate || 15) : 0;
+  const locale = language === 'ar' ? 'ar-SA' : 'en-SA';
+  const currency = language === 'ar' ? 'ريال' : 'SAR';
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA').format(value);
+    return new Intl.NumberFormat(locale).format(value);
   };
 
   const formatDate = (date: string) => {
-    return new Intl.DateTimeFormat('ar-SA').format(new Date(date));
+    return new Intl.DateTimeFormat(locale).format(new Date(date));
   };
 
   const calculateTaxDetails = (purchasePrice: number) => {
@@ -60,11 +63,11 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
 
   const getPaymentMethodInfo = (code?: string) => {
     switch (code) {
-      case '1101': return { label: 'نقداً', icon: Banknote, color: 'text-green-600' };
-      case '1102': return { label: 'تحويل بنكي', icon: Building2, color: 'text-blue-600' };
-      case '1103': return { label: 'نقاط البيع', icon: CreditCard, color: 'text-purple-600' };
-      case '2101': return { label: 'آجل', icon: Wallet, color: 'text-orange-600' };
-      case '2102': return { label: 'شيك', icon: Wallet, color: 'text-amber-600' };
+      case '1101': return { label: t.payment_cash, icon: Banknote, color: 'text-green-600' };
+      case '1102': return { label: t.payment_bank_transfer, icon: Building2, color: 'text-blue-600' };
+      case '1103': return { label: t.payment_pos, icon: CreditCard, color: 'text-purple-600' };
+      case '2101': return { label: t.payment_deferred, icon: Wallet, color: 'text-orange-600' };
+      case '2102': return { label: t.payment_check, icon: Wallet, color: 'text-amber-600' };
       default: return { label: '-', icon: Wallet, color: 'text-muted-foreground' };
     }
   };
@@ -72,11 +75,11 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'available':
-        return <Badge className="bg-success hover:bg-success/90 text-xs">متاحة</Badge>;
+        return <Badge className="bg-success hover:bg-success/90 text-xs">{t.status_available}</Badge>;
       case 'transferred':
-        return <Badge className="bg-orange-500 hover:bg-orange-600 text-xs">محولة</Badge>;
+        return <Badge className="bg-orange-500 hover:bg-orange-600 text-xs">{t.status_transferred}</Badge>;
       case 'sold':
-        return <Badge variant="secondary" className="text-xs">مباعة</Badge>;
+        return <Badge variant="secondary" className="text-xs">{t.status_sold}</Badge>;
       default:
         return <Badge variant="secondary" className="text-xs">{status}</Badge>;
     }
@@ -85,7 +88,6 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const filteredCars = useMemo(() => {
     let result = cars;
 
-    // الفلترة بالتاريخ فقط - كل المشتريات تظهر حسب تاريخ الشراء ضمن نطاق السنة المالية
     if (selectedFiscalYear) {
       const fyStart = new Date(selectedFiscalYear.start_date);
       fyStart.setHours(0, 0, 0, 0);
@@ -98,7 +100,6 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       });
     }
     
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(car =>
@@ -110,7 +111,6 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       );
     }
     
-    // Filter by status
     if (statusFilter !== 'all') {
       result = result.filter(car => car.status === statusFilter);
     }
@@ -133,8 +133,8 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   }, [filteredCars, taxRate]);
 
   const filterOptions = [
-    { value: 'available', label: 'متاحة' },
-    { value: 'sold', label: 'مباعة' },
+    { value: 'available', label: t.status_available },
+    { value: 'sold', label: t.status_sold },
   ];
 
   if (isLoading) {
@@ -150,8 +150,8 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">المشتريات</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">إدارة مخزون السيارات</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{t.nav_purchases}</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t.subtitle_manage_inventory}</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <Button 
@@ -160,28 +160,28 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
             disabled={isRefreshing}
             className="h-10 sm:h-11"
           >
-            <RefreshCw className={`w-4 h-4 ml-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            تحديث
+            <RefreshCw className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'} ${isRefreshing ? 'animate-spin' : ''}`} />
+            {t.btn_refresh}
           </Button>
           <Button 
             onClick={() => setActivePage('add-purchase')}
             className="gradient-primary hover:opacity-90 flex-1 sm:flex-initial h-10 sm:h-11"
           >
-            <ShoppingCart className="w-5 h-5 ml-2" />
-            إضافة سيارة
+            <ShoppingCart className={`w-5 h-5 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+            {t.btn_add_car}
           </Button>
         </div>
       </div>
 
       {/* Search and Filter */}
       <SearchFilter
-        searchPlaceholder="البحث بالاسم، الموديل، الهيكل..."
+        searchPlaceholder={t.search_purchases}
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
         filterOptions={filterOptions}
         filterValue={statusFilter}
         onFilterChange={setStatusFilter}
-        filterPlaceholder="الحالة"
+        filterPlaceholder={t.filter_status}
       />
 
       {/* Mobile Card View */}
@@ -202,37 +202,37 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                 />
                 <div className="space-y-1">
                   <MobileCardRow 
-                    label="رقم المخزون" 
+                    label={t.th_inventory_number} 
                     value={car.inventory_number}
                     icon={<Hash className="w-3.5 h-3.5" />}
                   />
                   <MobileCardRow 
-                    label="رقم الهيكل" 
+                    label={t.th_chassis_number} 
                     value={<span dir="ltr" className="font-mono text-xs">{car.chassis_number}</span>}
                     icon={<Car className="w-3.5 h-3.5" />}
                   />
                   <MobileCardRow 
-                    label="السعر الأصلي" 
-                    value={`${formatCurrency(taxDetails.baseAmount)} ريال`}
+                    label={t.th_base_amount} 
+                    value={`${formatCurrency(taxDetails.baseAmount)} ${currency}`}
                     icon={<Wallet className="w-3.5 h-3.5" />}
                   />
                   {taxRate > 0 && (
                     <MobileCardRow 
-                      label={`الضريبة (${taxRate}%)`}
-                      value={<span className="text-orange-600">{formatCurrency(taxDetails.taxAmount)} ريال</span>}
+                      label={`${t.th_tax} (${taxRate}%)`}
+                      value={<span className="text-orange-600">{formatCurrency(taxDetails.taxAmount)} {currency}</span>}
                     />
                   )}
                   <MobileCardRow 
-                    label="الإجمالي" 
-                    value={<span className="text-primary font-bold">{formatCurrency(taxDetails.totalWithTax)} ريال</span>}
+                    label={t.th_total_with_tax} 
+                    value={<span className="text-primary font-bold">{formatCurrency(taxDetails.totalWithTax)} {currency}</span>}
                   />
                   <MobileCardRow 
-                    label="تاريخ الشراء" 
+                    label={t.th_purchase_date} 
                     value={formatDate(car.purchase_date)}
                     icon={<Calendar className="w-3.5 h-3.5" />}
                   />
                   <MobileCardRow 
-                    label="طريقة الدفع" 
+                    label={t.th_payment_method} 
                     value={<span className={paymentInfo.color}>{paymentInfo.label}</span>}
                   />
                 </div>
@@ -244,37 +244,37 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
           {filteredCars.length > 0 && (
             <div className="grid grid-cols-1 gap-3 mt-4">
               <div className="bg-card rounded-xl p-4 border">
-                <p className="text-xs text-muted-foreground">إجمالي المبلغ الأصلي</p>
-                <p className="text-lg font-bold text-foreground">{formatCurrency(Math.round(totals.baseAmount))} ريال</p>
+                <p className="text-xs text-muted-foreground">{t.total_base_amount}</p>
+                <p className="text-lg font-bold text-foreground">{formatCurrency(Math.round(totals.baseAmount))} {currency}</p>
               </div>
               {taxRate > 0 && (
                 <div className="bg-card rounded-xl p-4 border">
-                  <p className="text-xs text-muted-foreground">إجمالي الضريبة ({taxRate}%)</p>
-                  <p className="text-lg font-bold text-orange-600">{formatCurrency(Math.round(totals.taxAmount))} ريال</p>
+                  <p className="text-xs text-muted-foreground">{t.total_tax} ({taxRate}%)</p>
+                  <p className="text-lg font-bold text-orange-600">{formatCurrency(Math.round(totals.taxAmount))} {currency}</p>
                 </div>
               )}
               <div className="bg-card rounded-xl p-4 border">
-                <p className="text-xs text-muted-foreground">إجمالي المشتريات</p>
-                <p className="text-lg font-bold text-primary">{formatCurrency(Math.round(totals.totalWithTax))} ريال</p>
+                <p className="text-xs text-muted-foreground">{t.total_purchases_with_tax}</p>
+                <p className="text-lg font-bold text-primary">{formatCurrency(Math.round(totals.totalWithTax))} {currency}</p>
               </div>
             </div>
           )}
 
           {cars.length === 0 && (
             <div className="p-8 text-center bg-card rounded-xl border">
-              <p className="text-muted-foreground mb-4">لا يوجد سيارات في المخزون</p>
+              <p className="text-muted-foreground mb-4">{t.no_cars_in_stock}</p>
               <Button 
                 onClick={() => setActivePage('add-purchase')}
                 className="gradient-primary"
               >
-                إضافة أول سيارة
+                {t.add_first_car}
               </Button>
             </div>
           )}
 
           {cars.length > 0 && filteredCars.length === 0 && (
             <div className="p-8 text-center bg-card rounded-xl border">
-              <p className="text-muted-foreground">لا توجد نتائج مطابقة للبحث</p>
+              <p className="text-muted-foreground">{t.no_search_results}</p>
             </div>
           )}
         </div>
@@ -284,18 +284,18 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
           <Table className="min-w-[1200px]">
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="text-right font-bold">رقم المخزون</TableHead>
-                <TableHead className="text-right font-bold">اسم السيارة</TableHead>
-                <TableHead className="text-right font-bold">الموديل</TableHead>
-                <TableHead className="text-right font-bold">اللون</TableHead>
-                <TableHead className="text-right font-bold">رقم الهيكل</TableHead>
-                <TableHead className="text-right font-bold">المبلغ الأصلي</TableHead>
-                <TableHead className="text-right font-bold">الضريبة ({taxRate}%)</TableHead>
-                <TableHead className="text-right font-bold">الإجمالي مع الضريبة</TableHead>
-                <TableHead className="text-right font-bold">طريقة الدفع</TableHead>
-                <TableHead className="text-right font-bold">تاريخ الشراء</TableHead>
-                <TableHead className="text-right font-bold">الحالة</TableHead>
-                <TableHead className="text-right font-bold">الإجراءات</TableHead>
+                <TableHead className="text-right font-bold">{t.th_inventory_number}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_car_name}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_model}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_color}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_chassis_number}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_base_amount}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_tax} ({taxRate}%)</TableHead>
+                <TableHead className="text-right font-bold">{t.th_total_with_tax}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_payment_method}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_purchase_date}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_status}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -316,9 +316,9 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                   <TableCell>{car.model || '-'}</TableCell>
                   <TableCell>{car.color || '-'}</TableCell>
                   <TableCell dir="ltr" className="text-right font-mono text-sm">{car.chassis_number}</TableCell>
-                  <TableCell className="font-medium">{formatCurrency(taxDetails.baseAmount)} ريال</TableCell>
-                  <TableCell className="text-orange-600 font-medium">{formatCurrency(taxDetails.taxAmount)} ريال</TableCell>
-                  <TableCell className="font-semibold text-primary">{formatCurrency(taxDetails.totalWithTax)} ريال</TableCell>
+                  <TableCell className="font-medium">{formatCurrency(taxDetails.baseAmount)} {currency}</TableCell>
+                  <TableCell className="text-orange-600 font-medium">{formatCurrency(taxDetails.taxAmount)} {currency}</TableCell>
+                  <TableCell className="font-semibold text-primary">{formatCurrency(taxDetails.totalWithTax)} {currency}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <PaymentIcon className={`w-4 h-4 ${paymentInfo.color}`} />
@@ -347,16 +347,16 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
             <div className="border-t bg-muted/30 p-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-card rounded-lg p-3 border">
-                  <p className="text-sm text-muted-foreground">إجمالي المبلغ الأصلي</p>
-                  <p className="text-lg font-bold text-foreground">{formatCurrency(Math.round(totals.baseAmount))} ريال</p>
+                  <p className="text-sm text-muted-foreground">{t.total_base_amount}</p>
+                  <p className="text-lg font-bold text-foreground">{formatCurrency(Math.round(totals.baseAmount))} {currency}</p>
                 </div>
                 <div className="bg-card rounded-lg p-3 border">
-                  <p className="text-sm text-muted-foreground">إجمالي الضريبة ({taxRate}%)</p>
-                  <p className="text-lg font-bold text-orange-600">{formatCurrency(Math.round(totals.taxAmount))} ريال</p>
+                  <p className="text-sm text-muted-foreground">{t.total_tax} ({taxRate}%)</p>
+                  <p className="text-lg font-bold text-orange-600">{formatCurrency(Math.round(totals.taxAmount))} {currency}</p>
                 </div>
                 <div className="bg-card rounded-lg p-3 border">
-                  <p className="text-sm text-muted-foreground">إجمالي المشتريات مع الضريبة</p>
-                  <p className="text-lg font-bold text-primary">{formatCurrency(Math.round(totals.totalWithTax))} ريال</p>
+                  <p className="text-sm text-muted-foreground">{t.total_purchases_with_tax}</p>
+                  <p className="text-lg font-bold text-primary">{formatCurrency(Math.round(totals.totalWithTax))} {currency}</p>
                 </div>
               </div>
             </div>
@@ -364,19 +364,19 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
           
           {cars.length === 0 && (
             <div className="p-12 text-center">
-              <p className="text-muted-foreground">لا يوجد سيارات في المخزون</p>
+              <p className="text-muted-foreground">{t.no_cars_in_stock}</p>
               <Button 
                 onClick={() => setActivePage('add-purchase')}
                 className="mt-4 gradient-primary"
               >
-                إضافة أول سيارة
+                {t.add_first_car}
               </Button>
             </div>
           )}
 
           {cars.length > 0 && filteredCars.length === 0 && (
             <div className="p-12 text-center">
-              <p className="text-muted-foreground">لا توجد نتائج مطابقة للبحض</p>
+              <p className="text-muted-foreground">{t.no_search_results}</p>
             </div>
           )}
         </div>

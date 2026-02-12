@@ -511,6 +511,15 @@ export const ar: TranslationKeys = {
   btn_saving: 'جاري الحفظ...',
   btn_home: 'الرئيسية',
 
+  // Page subtitles
+  subtitle_sales_log: 'سجل عمليات البيع',
+  subtitle_manage_inventory: 'إدارة مخزون السيارات',
+  recalculate_success: 'تم إعادة احتساب الأرباح',
+  recalculate_error: 'حدث خطأ أثناء إعادة احتساب الأرباح',
+  btn_refresh: 'تحديث',
+  unspecified_customer: 'عميل غير محدد',
+  filter_status: 'الحالة',
+
   // Form labels
   form_customer: 'العميل *',
   form_supplier: 'المورد *',
