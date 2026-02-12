@@ -5,37 +5,17 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,12 +27,14 @@ import { ActivePage } from '@/types';
 import { CarTransfer } from '@/services/transfers';
 import { format } from 'date-fns';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CarTransfersTableProps {
   setActivePage: (page: ActivePage) => void;
 }
 
 export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
+  const { t } = useLanguage();
   const { data: transfers, isLoading } = useCarTransfers();
   const { data: dealerships } = usePartnerDealerships();
   const { data: cars } = useCars();
@@ -85,7 +67,6 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
     notes: '',
   });
 
-  // For incoming car form - new car data
   const [incomingCarData, setIncomingCarData] = useState({
     name: '',
     model: '',
@@ -132,7 +113,7 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
 
   const handleAdd = async () => {
     if (!formData.car_id || !formData.partner_dealership_id) {
-      toast.error('يرجى اختيار السيارة والمعرض');
+      toast.error(t.select_car_dealership);
       return;
     }
 
@@ -149,7 +130,6 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
         notes: formData.notes || null,
       });
 
-      // Update car status to 'transferred' when adding a new transfer
       if (formData.status === 'pending') {
         await updateCarMutation.mutateAsync({
           id: formData.car_id,
@@ -158,23 +138,21 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
         queryClient.invalidateQueries({ queryKey: ['cars'] });
       }
 
-      toast.success('تم إضافة التحويل بنجاح');
+      toast.success(t.transfer_added);
       setIsAddDialogOpen(false);
       resetForm();
     } catch (error) {
-      toast.error('حدث خطأ أثناء إضافة التحويل');
+      toast.error(t.transfer_error);
     }
   };
 
-  // Handle adding incoming car - creates car first then transfer
   const handleAddIncomingCar = async () => {
     if (!incomingCarData.name || !incomingCarData.chassis_number || !incomingCarData.partner_dealership_id) {
-      toast.error('يرجى إدخال اسم السيارة ورقم الشاسيه والمعرض');
+      toast.error(t.enter_car_name_chassis);
       return;
     }
 
     try {
-      // First, create the car in inventory with status 'transferred'
       const newCar = await addCarMutation.mutateAsync({
         name: incomingCarData.name,
         model: incomingCarData.model || null,
@@ -182,10 +160,9 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
         chassis_number: incomingCarData.chassis_number,
         purchase_price: incomingCarData.purchase_price,
         purchase_date: incomingCarData.purchase_date,
-        status: 'transferred', // Will be changed to 'available' when returned or if needed
+        status: 'transferred',
       });
 
-      // Then create the transfer record
       await addMutation.mutateAsync({
         car_id: newCar.id,
         partner_dealership_id: incomingCarData.partner_dealership_id,
@@ -200,12 +177,12 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
       queryClient.invalidateQueries({ queryKey: ['cars'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
       
-      toast.success('تم إضافة السيارة الواردة بنجاح');
+      toast.success(t.transfer_added);
       setIsIncomingDialogOpen(false);
       resetIncomingForm();
     } catch (error: any) {
       console.error('Error adding incoming car:', error);
-      const errorMessage = error?.message || error?.error_description || 'حدث خطأ أثناء إضافة السيارة الواردة';
+      const errorMessage = error?.message || error?.error_description || t.transfer_error;
       toast.error(errorMessage);
     }
   };
@@ -217,18 +194,12 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
       const previousStatus = editingTransfer.status;
       const newStatus = formData.status;
 
-      // If incoming car is being returned, delete the car completely
       if (previousStatus !== 'returned' && newStatus === 'returned' && formData.transfer_type === 'incoming') {
-        // First delete the transfer record
         await deleteMutation.mutateAsync(editingTransfer.id);
-        
-        // Then delete the car completely
         await deleteCarMutation.mutateAsync(formData.car_id);
-        
         queryClient.invalidateQueries({ queryKey: ['cars'] });
         queryClient.invalidateQueries({ queryKey: ['stats'] });
-        
-        toast.success('تم إرجاع وحذف السيارة الواردة بنجاح');
+        toast.success(t.incoming_car_returned);
         setEditingTransfer(null);
         resetForm();
         return;
@@ -249,7 +220,6 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
         },
       });
 
-      // If outgoing car status changed to 'returned', update car status to 'available'
       if (previousStatus !== 'returned' && newStatus === 'returned') {
         await updateCarMutation.mutateAsync({
           id: formData.car_id,
@@ -258,20 +228,18 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
         queryClient.invalidateQueries({ queryKey: ['cars'] });
       }
 
-      toast.success('تم تحديث التحويل بنجاح');
+      toast.success(t.transfer_updated);
       setEditingTransfer(null);
       resetForm();
     } catch (error) {
-      toast.error('حدث خطأ أثناء تحديث التحويل');
+      toast.error(t.transfer_error);
     }
   };
 
-  // Handle updating incoming car - updates both car and transfer
   const handleUpdateIncomingCar = async () => {
     if (!editingTransfer) return;
 
     try {
-      // Update the car details
       await updateCarMutation.mutateAsync({
         id: editingTransfer.car_id,
         car: {
@@ -284,7 +252,6 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
         },
       });
 
-      // Update the transfer details
       await updateMutation.mutateAsync({
         id: editingTransfer.id,
         data: {
@@ -299,13 +266,13 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
       queryClient.invalidateQueries({ queryKey: ['cars'] });
       queryClient.invalidateQueries({ queryKey: ['carTransfers'] });
       
-      toast.success('تم تحديث بيانات السيارة الواردة بنجاح');
+      toast.success(t.transfer_updated);
       setIsEditIncomingDialogOpen(false);
       setEditingTransfer(null);
       resetIncomingForm();
     } catch (error) {
       console.error('Error updating incoming car:', error);
-      toast.error('حدث خطأ أثناء تحديث بيانات السيارة');
+      toast.error(t.transfer_error);
     }
   };
 
@@ -329,20 +296,13 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
 
   const handleQuickReturn = async (transfer: CarTransfer) => {
     try {
-      // For incoming cars (from partner dealership), delete the car completely
       if (transfer.transfer_type === 'incoming') {
-        // First delete the transfer record
         await deleteMutation.mutateAsync(transfer.id);
-        
-        // Then delete the car completely
         await deleteCarMutation.mutateAsync(transfer.car_id);
-        
         queryClient.invalidateQueries({ queryKey: ['cars'] });
         queryClient.invalidateQueries({ queryKey: ['stats'] });
-        
-        toast.success('تم إرجاع وحذف السيارة الواردة بنجاح');
+        toast.success(t.incoming_car_returned);
       } else {
-        // For outgoing cars, just update status to returned and make car available
         await updateMutation.mutateAsync({
           id: transfer.id,
           data: {
@@ -350,27 +310,24 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
             return_date: format(new Date(), 'yyyy-MM-dd'),
           },
         });
-
-        // Update car status to 'available'
         await updateCarMutation.mutateAsync({
           id: transfer.car_id,
           car: { status: 'available' },
         });
         queryClient.invalidateQueries({ queryKey: ['cars'] });
-
-        toast.success('تم إرجاع السيارة بنجاح');
+        toast.success(t.car_returned);
       }
     } catch (error) {
-      toast.error('حدث خطأ أثناء إرجاع السيارة');
+      toast.error(t.transfer_error);
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success('تم حذف التحويل بنجاح');
+      toast.success(t.transfer_deleted);
     } catch (error) {
-      toast.error('حدث خطأ أثناء حذف التحويل');
+      toast.error(t.transfer_error);
     }
   };
 
@@ -392,11 +349,11 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="gap-1"><Clock className="w-3 h-3" /> قيد الانتظار</Badge>;
+        return <Badge variant="outline" className="gap-1"><Clock className="w-3 h-3" /> {t.pending_status}</Badge>;
       case 'sold':
-        return <Badge className="gap-1 bg-green-500"><CheckCircle className="w-3 h-3" /> تم البيع</Badge>;
+        return <Badge className="gap-1 bg-green-500"><CheckCircle className="w-3 h-3" /> {t.sold_status}</Badge>;
       case 'returned':
-        return <Badge variant="secondary" className="gap-1"><RotateCcw className="w-3 h-3" /> مرتجع</Badge>;
+        return <Badge variant="secondary" className="gap-1"><RotateCcw className="w-3 h-3" /> {t.returned_status}</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -404,9 +361,9 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
 
   const getTypeBadge = (type: string) => {
     if (type === 'outgoing') {
-      return <Badge variant="destructive" className="gap-1"><ArrowUpRight className="w-3 h-3" /> صادر</Badge>;
+      return <Badge variant="destructive" className="gap-1"><ArrowUpRight className="w-3 h-3" /> {t.outgoing_badge}</Badge>;
     }
-    return <Badge className="gap-1 bg-blue-500"><ArrowDownLeft className="w-3 h-3" /> وارد</Badge>;
+    return <Badge className="gap-1 bg-blue-500"><ArrowDownLeft className="w-3 h-3" /> {t.incoming_badge}</Badge>;
   };
 
   const formatCurrency = (value: number) => {
@@ -417,35 +374,33 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
     return format(new Date(date), 'yyyy/MM/dd');
   };
 
-  const filteredTransfers = transfers?.filter(t => {
+  const filteredTransfers = transfers?.filter(tf => {
     const matchesSearch = 
-      t.car?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.car?.chassis_number?.includes(searchQuery) ||
-      t.partner_dealership?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      tf.car?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tf.car?.chassis_number?.includes(searchQuery) ||
+      tf.partner_dealership?.name?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
-    const matchesType = typeFilter === 'all' || t.transfer_type === typeFilter;
+    const matchesStatus = statusFilter === 'all' || tf.status === statusFilter;
+    const matchesType = typeFilter === 'all' || tf.transfer_type === typeFilter;
 
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  // Get available cars for transfer (only available ones)
   const availableCars = cars?.filter(c => c.status === 'available');
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64">جاري التحميل...</div>;
+    return <div className="flex items-center justify-center h-64">{t.loading}</div>;
   }
 
   const canEdit = permissions.admin || permissions.sales || permissions.purchases;
 
-  // Form fields JSX - defined as variables to avoid re-creation
   const formFieldsJSX = (
     <div className="space-y-4">
       <div>
-        <Label>السيارة *</Label>
+        <Label>{t.select_car} *</Label>
         <Select value={formData.car_id} onValueChange={(value) => setFormData({ ...formData, car_id: value })}>
           <SelectTrigger>
-            <SelectValue placeholder="اختر السيارة" />
+            <SelectValue placeholder={t.select_car} />
           </SelectTrigger>
           <SelectContent>
             {(editingTransfer ? cars : availableCars)?.map((car) => (
@@ -457,10 +412,10 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
         </Select>
       </div>
       <div>
-        <Label>المعرض الشريك *</Label>
+        <Label>{t.partner_dealership} *</Label>
         <Select value={formData.partner_dealership_id} onValueChange={(value) => setFormData({ ...formData, partner_dealership_id: value })}>
           <SelectTrigger>
-            <SelectValue placeholder="اختر المعرض" />
+            <SelectValue placeholder={t.select_dealership} />
           </SelectTrigger>
           <SelectContent>
             {dealerships?.map((d) => (
@@ -470,72 +425,53 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
         </Select>
       </div>
       <div>
-        <Label>نوع التحويل</Label>
+        <Label>{t.transfer_type}</Label>
         <Select value={formData.transfer_type} onValueChange={(value: 'outgoing' | 'incoming') => setFormData({ ...formData, transfer_type: value })}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="outgoing">صادر (نحن نرسل)</SelectItem>
-            <SelectItem value="incoming">وارد (نحن نستلم)</SelectItem>
+            <SelectItem value="outgoing">{t.outgoing_we_send}</SelectItem>
+            <SelectItem value="incoming">{t.incoming_we_receive}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>تاريخ التحويل</Label>
-          <Input
-            type="date"
-            value={formData.transfer_date}
-            onChange={(e) => setFormData({ ...formData, transfer_date: e.target.value })}
-          />
+          <Label>{t.transfer_date}</Label>
+          <Input type="date" value={formData.transfer_date} onChange={(e) => setFormData({ ...formData, transfer_date: e.target.value })} />
         </div>
         <div>
-          <Label>تاريخ الإرجاع</Label>
-          <Input
-            type="date"
-            value={formData.return_date}
-            onChange={(e) => setFormData({ ...formData, return_date: e.target.value })}
-          />
+          <Label>{t.return_date}</Label>
+          <Input type="date" value={formData.return_date} onChange={(e) => setFormData({ ...formData, return_date: e.target.value })} />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>العمولة المتفق عليها</Label>
-          <Input
-            type="number"
-            value={formData.agreed_commission}
-            onChange={(e) => setFormData({ ...formData, agreed_commission: Number(e.target.value) })}
-          />
+          <Label>{t.agreed_commission}</Label>
+          <Input type="number" value={formData.agreed_commission} onChange={(e) => setFormData({ ...formData, agreed_commission: Number(e.target.value) })} />
         </div>
         <div>
-          <Label>نسبة العمولة (%)</Label>
-          <Input
-            type="number"
-            value={formData.commission_percentage}
-            onChange={(e) => setFormData({ ...formData, commission_percentage: Number(e.target.value) })}
-          />
+          <Label>{t.commission_percent} (%)</Label>
+          <Input type="number" value={formData.commission_percentage} onChange={(e) => setFormData({ ...formData, commission_percentage: Number(e.target.value) })} />
         </div>
       </div>
       <div>
-        <Label>الحالة</Label>
+        <Label>{t.status}</Label>
         <Select value={formData.status} onValueChange={(value: 'pending' | 'sold' | 'returned') => setFormData({ ...formData, status: value })}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="pending">قيد الانتظار</SelectItem>
-            <SelectItem value="sold">تم البيع</SelectItem>
-            <SelectItem value="returned">مرتجع</SelectItem>
+            <SelectItem value="pending">{t.pending_status}</SelectItem>
+            <SelectItem value="sold">{t.sold_status}</SelectItem>
+            <SelectItem value="returned">{t.returned_status}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       <div>
-        <Label>ملاحظات</Label>
-        <Textarea
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-        />
+        <Label>{t.notes}</Label>
+        <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} />
       </div>
     </div>
   );
@@ -544,63 +480,39 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>اسم السيارة *</Label>
-          <Input
-            value={incomingCarData.name}
-            onChange={(e) => setIncomingCarData({ ...incomingCarData, name: e.target.value })}
-            placeholder="مثال: تويوتا كامري"
-          />
+          <Label>{t.car_name_label} *</Label>
+          <Input value={incomingCarData.name} onChange={(e) => setIncomingCarData({ ...incomingCarData, name: e.target.value })} placeholder={t.form_example_car} />
         </div>
         <div>
-          <Label>الموديل</Label>
-          <Input
-            value={incomingCarData.model}
-            onChange={(e) => setIncomingCarData({ ...incomingCarData, model: e.target.value })}
-            placeholder="مثال: 2023"
-          />
+          <Label>{t.form_model}</Label>
+          <Input value={incomingCarData.model} onChange={(e) => setIncomingCarData({ ...incomingCarData, model: e.target.value })} placeholder={t.form_example_year} />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>رقم الشاسيه *</Label>
-          <Input
-            value={incomingCarData.chassis_number}
-            onChange={(e) => setIncomingCarData({ ...incomingCarData, chassis_number: e.target.value })}
-            placeholder="رقم الشاسيه"
-          />
+          <Label>{t.th_chassis_number} *</Label>
+          <Input value={incomingCarData.chassis_number} onChange={(e) => setIncomingCarData({ ...incomingCarData, chassis_number: e.target.value })} placeholder={t.form_enter_chassis} />
         </div>
         <div>
-          <Label>اللون</Label>
-          <Input
-            value={incomingCarData.color}
-            onChange={(e) => setIncomingCarData({ ...incomingCarData, color: e.target.value })}
-            placeholder="مثال: أبيض"
-          />
+          <Label>{t.form_color}</Label>
+          <Input value={incomingCarData.color} onChange={(e) => setIncomingCarData({ ...incomingCarData, color: e.target.value })} placeholder={t.form_enter_color} />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>سعر الشراء</Label>
-          <Input
-            type="number"
-            value={incomingCarData.purchase_price}
-            onChange={(e) => setIncomingCarData({ ...incomingCarData, purchase_price: Number(e.target.value) })}
-          />
+          <Label>{t.form_purchase_price}</Label>
+          <Input type="number" value={incomingCarData.purchase_price} onChange={(e) => setIncomingCarData({ ...incomingCarData, purchase_price: Number(e.target.value) })} />
         </div>
         <div>
-          <Label>تاريخ الشراء</Label>
-          <Input
-            type="date"
-            value={incomingCarData.purchase_date}
-            onChange={(e) => setIncomingCarData({ ...incomingCarData, purchase_date: e.target.value })}
-          />
+          <Label>{t.form_purchase_date}</Label>
+          <Input type="date" value={incomingCarData.purchase_date} onChange={(e) => setIncomingCarData({ ...incomingCarData, purchase_date: e.target.value })} />
         </div>
       </div>
       <div>
-        <Label>المعرض الشريك *</Label>
+        <Label>{t.partner_dealership} *</Label>
         <Select value={incomingCarData.partner_dealership_id} onValueChange={(value) => setIncomingCarData({ ...incomingCarData, partner_dealership_id: value })}>
           <SelectTrigger>
-            <SelectValue placeholder="اختر المعرض" />
+            <SelectValue placeholder={t.select_dealership} />
           </SelectTrigger>
           <SelectContent>
             {dealerships?.map((d) => (
@@ -611,36 +523,21 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>تاريخ التحويل</Label>
-          <Input
-            type="date"
-            value={incomingCarData.transfer_date}
-            onChange={(e) => setIncomingCarData({ ...incomingCarData, transfer_date: e.target.value })}
-          />
+          <Label>{t.transfer_date}</Label>
+          <Input type="date" value={incomingCarData.transfer_date} onChange={(e) => setIncomingCarData({ ...incomingCarData, transfer_date: e.target.value })} />
         </div>
         <div>
-          <Label>العمولة المتفق عليها</Label>
-          <Input
-            type="number"
-            value={incomingCarData.agreed_commission}
-            onChange={(e) => setIncomingCarData({ ...incomingCarData, agreed_commission: Number(e.target.value) })}
-          />
+          <Label>{t.agreed_commission}</Label>
+          <Input type="number" value={incomingCarData.agreed_commission} onChange={(e) => setIncomingCarData({ ...incomingCarData, agreed_commission: Number(e.target.value) })} />
         </div>
       </div>
       <div>
-        <Label>نسبة العمولة (%)</Label>
-        <Input
-          type="number"
-          value={incomingCarData.commission_percentage}
-          onChange={(e) => setIncomingCarData({ ...incomingCarData, commission_percentage: Number(e.target.value) })}
-        />
+        <Label>{t.commission_percent} (%)</Label>
+        <Input type="number" value={incomingCarData.commission_percentage} onChange={(e) => setIncomingCarData({ ...incomingCarData, commission_percentage: Number(e.target.value) })} />
       </div>
       <div>
-        <Label>ملاحظات</Label>
-        <Textarea
-          value={incomingCarData.notes}
-          onChange={(e) => setIncomingCarData({ ...incomingCarData, notes: e.target.value })}
-        />
+        <Label>{t.notes}</Label>
+        <Textarea value={incomingCarData.notes} onChange={(e) => setIncomingCarData({ ...incomingCarData, notes: e.target.value })} />
       </div>
     </div>
   );
@@ -649,33 +546,33 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
     <Card>
       <CardHeader>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <CardTitle className="text-xl">تحويلات السيارات</CardTitle>
+          <CardTitle className="text-xl">{t.car_transfers_title}</CardTitle>
           <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
             <Input
-              placeholder="بحث..."
+              placeholder={t.search + '...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full md:w-48"
             />
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-full md:w-32">
-                <SelectValue placeholder="النوع" />
+                <SelectValue placeholder={t.transfer_type} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">الكل</SelectItem>
-                <SelectItem value="outgoing">صادر</SelectItem>
-                <SelectItem value="incoming">وارد</SelectItem>
+                <SelectItem value="all">{t.all}</SelectItem>
+                <SelectItem value="outgoing">{t.outgoing_badge}</SelectItem>
+                <SelectItem value="incoming">{t.incoming_badge}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full md:w-32">
-                <SelectValue placeholder="الحالة" />
+                <SelectValue placeholder={t.status} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">الكل</SelectItem>
-                <SelectItem value="pending">قيد الانتظار</SelectItem>
-                <SelectItem value="sold">تم البيع</SelectItem>
-                <SelectItem value="returned">مرتجع</SelectItem>
+                <SelectItem value="all">{t.all}</SelectItem>
+                <SelectItem value="pending">{t.pending_status}</SelectItem>
+                <SelectItem value="sold">{t.sold_status}</SelectItem>
+                <SelectItem value="returned">{t.returned_status}</SelectItem>
               </SelectContent>
             </Select>
             {canEdit && (
@@ -684,16 +581,16 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
                   <DialogTrigger asChild>
                     <Button variant="outline" className="gap-2">
                       <ArrowUpRight className="w-4 h-4" />
-                      تحويل صادر
+                      {t.outgoing_transfer}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-md">
                     <DialogHeader>
-                      <DialogTitle>إضافة تحويل صادر</DialogTitle>
+                      <DialogTitle>{t.add_transfer}</DialogTitle>
                     </DialogHeader>
                     {formFieldsJSX}
                     <Button onClick={handleAdd} className="w-full mt-4">
-                      إضافة
+                      {t.add}
                     </Button>
                   </DialogContent>
                 </Dialog>
@@ -701,16 +598,16 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
                   <DialogTrigger asChild>
                     <Button className="gap-2">
                       <ArrowDownLeft className="w-4 h-4" />
-                      سيارة واردة
+                      {t.incoming_car}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-lg">
                     <DialogHeader>
-                      <DialogTitle>إضافة سيارة واردة من معرض شريك</DialogTitle>
+                      <DialogTitle>{t.incoming_car}</DialogTitle>
                     </DialogHeader>
                     {incomingCarFormFieldsJSX}
                     <Button onClick={handleAddIncomingCar} className="w-full mt-4">
-                      إضافة السيارة
+                      {t.add}
                     </Button>
                   </DialogContent>
                 </Dialog>
@@ -724,14 +621,14 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-right">السيارة</TableHead>
-                <TableHead className="text-right">رقم الشاسيه</TableHead>
-                <TableHead className="text-right">المعرض</TableHead>
-                <TableHead className="text-right">النوع</TableHead>
-                <TableHead className="text-right">تاريخ التحويل</TableHead>
-                <TableHead className="text-right">العمولة</TableHead>
-                <TableHead className="text-right">الحالة</TableHead>
-                {canEdit && <TableHead className="text-right">الإجراءات</TableHead>}
+                <TableHead className="text-right">{t.th_car}</TableHead>
+                <TableHead className="text-right">{t.th_chassis_number}</TableHead>
+                <TableHead className="text-right">{t.partner_dealership}</TableHead>
+                <TableHead className="text-right">{t.transfer_type}</TableHead>
+                <TableHead className="text-right">{t.transfer_date}</TableHead>
+                <TableHead className="text-right">{t.agreed_commission}</TableHead>
+                <TableHead className="text-right">{t.status}</TableHead>
+                {canEdit && <TableHead className="text-right">{t.actions}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -759,36 +656,28 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
                         {transfer.status === 'pending' && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="outline" size="icon" className="text-orange-600 hover:text-orange-700" title="إرجاع السيارة">
+                              <Button variant="outline" size="icon" className="text-orange-600 hover:text-orange-700" title={t.return_label}>
                                 <RotateCcw className="w-4 h-4" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>إرجاع السيارة</AlertDialogTitle>
+                                <AlertDialogTitle>{t.return_label}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  هل تريد إرجاع السيارة "{transfer.car?.name} {transfer.car?.model}" من المعرض "{transfer.partner_dealership?.name}"؟
-                                  <br />
-                                  سيتم تحديث حالة السيارة إلى "متاحة" في المخزون.
+                                  {transfer.car?.name} {transfer.car?.model} - {transfer.partner_dealership?.name}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
                                 <AlertDialogAction onClick={() => handleQuickReturn(transfer)}>
-                                  تأكيد الإرجاع
+                                  {t.confirm}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
-                        {/* Edit button - different dialog for incoming vs outgoing */}
                         {transfer.transfer_type === 'incoming' ? (
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => openEditIncomingDialog(transfer)}
-                            title="تعديل بيانات السيارة"
-                          >
+                          <Button variant="ghost" size="icon" onClick={() => openEditIncomingDialog(transfer)} title={t.edit}>
                             <Edit className="w-4 h-4" />
                           </Button>
                         ) : (
@@ -800,11 +689,11 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
                             </DialogTrigger>
                             <DialogContent className="max-w-md">
                               <DialogHeader>
-                                <DialogTitle>تعديل التحويل</DialogTitle>
+                                <DialogTitle>{t.edit_transfer}</DialogTitle>
                               </DialogHeader>
                               {formFieldsJSX}
                               <Button onClick={handleUpdate} className="w-full mt-4">
-                                حفظ التعديلات
+                                {t.save_changes}
                               </Button>
                             </DialogContent>
                           </Dialog>
@@ -818,15 +707,15 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
+                                <AlertDialogTitle>{t.confirm_delete}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  سيتم حذف التحويل نهائياً. هذا الإجراء لا يمكن التراجع عنه.
+                                  {t.confirm_delete_desc}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
                                 <AlertDialogAction onClick={() => handleDelete(transfer.id)}>
-                                  حذف
+                                  {t.delete}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -841,12 +730,11 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
           </Table>
           {(!filteredTransfers || filteredTransfers.length === 0) && (
             <div className="text-center py-8 text-muted-foreground">
-              لا توجد تحويلات مسجلة
+              {t.no_data}
             </div>
           )}
         </div>
 
-        {/* Edit Incoming Car Dialog */}
         <Dialog open={isEditIncomingDialogOpen} onOpenChange={(open) => {
           setIsEditIncomingDialogOpen(open);
           if (!open) {
@@ -856,11 +744,11 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
         }}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>تعديل بيانات السيارة الواردة</DialogTitle>
+              <DialogTitle>{t.edit_transfer}</DialogTitle>
             </DialogHeader>
             {incomingCarFormFieldsJSX}
             <Button onClick={handleUpdateIncomingCar} className="w-full mt-4">
-              حفظ التعديلات
+              {t.save_changes}
             </Button>
           </DialogContent>
         </Dialog>

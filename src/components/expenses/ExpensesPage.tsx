@@ -18,8 +18,10 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { Expense, ExpenseCategory } from '@/services/expenses';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function ExpensesPage() {
+  const { t } = useLanguage();
   const { companyId } = useCompany();
   const { filterByFiscalYear } = useFiscalYearFilter();
   const labels = useIndustryLabels();
@@ -35,337 +37,149 @@ export function ExpensesPage() {
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [expenseForm, setExpenseForm] = useState({
-    category_id: '',
-    account_id: '',
-    car_id: '',
-    amount: '',
-    description: '',
-    expense_date: new Date().toISOString().split('T')[0],
-    payment_method: 'cash',
-    reference_number: '',
-    notes: '',
-    has_vat_invoice: false
+    category_id: '', account_id: '', car_id: '', amount: '', description: '',
+    expense_date: new Date().toISOString().split('T')[0], payment_method: 'cash',
+    reference_number: '', notes: '', has_vat_invoice: false
   });
   
-  // Filter expense accounts (5xxx codes)
   const expenseAccounts = accounts.filter(acc => acc.code.startsWith('5') && acc.code.length === 4);
-  const [categoryForm, setCategoryForm] = useState({
-    name: '',
-    description: ''
-  });
-
-  // Filter available cars (only available ones for expense linking)
+  const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
   const availableCars = cars.filter(car => car.status === 'available');
 
   const handleAddExpense = async () => {
-    if (!expenseForm.amount || !expenseForm.description) {
-      toast.error('يرجى ملء الحقول المطلوبة');
-      return;
-    }
-
+    if (!expenseForm.amount || !expenseForm.description) { toast.error(t.fill_required); return; }
     try {
       await addExpense.mutateAsync({
-        company_id: companyId!,
-        category_id: expenseForm.category_id || null,
-        account_id: expenseForm.account_id || null,
-        car_id: expenseForm.car_id || null,
-        amount: parseFloat(expenseForm.amount),
-        description: expenseForm.description,
-        expense_date: expenseForm.expense_date,
-        payment_method: expenseForm.payment_method,
-        reference_number: expenseForm.reference_number || null,
-        notes: expenseForm.notes || null,
-        created_by: null,
-        has_vat_invoice: expenseForm.has_vat_invoice
+        company_id: companyId!, category_id: expenseForm.category_id || null, account_id: expenseForm.account_id || null,
+        car_id: expenseForm.car_id || null, amount: parseFloat(expenseForm.amount), description: expenseForm.description,
+        expense_date: expenseForm.expense_date, payment_method: expenseForm.payment_method,
+        reference_number: expenseForm.reference_number || null, notes: expenseForm.notes || null,
+        created_by: null, has_vat_invoice: expenseForm.has_vat_invoice
       });
-      toast.success('تم إضافة المصروف بنجاح');
+      toast.success(t.expense_added);
       setIsExpenseDialogOpen(false);
-      setExpenseForm({
-        category_id: '',
-        account_id: '',
-        car_id: '',
-        amount: '',
-        description: '',
-        expense_date: new Date().toISOString().split('T')[0],
-        payment_method: 'cash',
-        reference_number: '',
-        notes: '',
-        has_vat_invoice: false
-      });
-    } catch (error) {
-      toast.error('حدث خطأ أثناء إضافة المصروف');
-    }
+      setExpenseForm({ category_id: '', account_id: '', car_id: '', amount: '', description: '', expense_date: new Date().toISOString().split('T')[0], payment_method: 'cash', reference_number: '', notes: '', has_vat_invoice: false });
+    } catch (error) { toast.error(t.error_occurred); }
   };
 
   const handleAddCategory = async () => {
-    if (!categoryForm.name) {
-      toast.error('يرجى إدخال اسم الفئة');
-      return;
-    }
-
+    if (!categoryForm.name) { toast.error(t.fill_required); return; }
     try {
-      await addCategory.mutateAsync({
-        company_id: companyId!,
-        name: categoryForm.name,
-        description: categoryForm.description || null,
-        is_active: true
-      });
-      toast.success('تم إضافة الفئة بنجاح');
+      await addCategory.mutateAsync({ company_id: companyId!, name: categoryForm.name, description: categoryForm.description || null, is_active: true });
+      toast.success(t.success);
       setIsCategoryDialogOpen(false);
       setCategoryForm({ name: '', description: '' });
-    } catch (error) {
-      toast.error('حدث خطأ أثناء إضافة الفئة');
-    }
+    } catch (error) { toast.error(t.error_occurred); }
   };
 
   const handleCreateDefaults = async () => {
-    try {
-      await createDefaultCategories.mutateAsync(companyId!);
-      toast.success('تم إنشاء الفئات الافتراضية');
-    } catch (error) {
-      toast.error('حدث خطأ أثناء إنشاء الفئات');
-    }
+    try { await createDefaultCategories.mutateAsync(companyId!); toast.success(t.success); } catch (error) { toast.error(t.error_occurred); }
   };
 
   const handleDeleteExpense = async (id: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا المصروف؟')) return;
-    try {
-      await deleteExpense.mutateAsync(id);
-      toast.success('تم حذف المصروف');
-    } catch (error) {
-      toast.error('حدث خطأ أثناء الحذف');
-    }
+    if (!confirm(t.confirm_delete)) return;
+    try { await deleteExpense.mutateAsync(id); toast.success(t.expense_deleted); } catch (error) { toast.error(t.error_occurred); }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(amount);
-  };
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(amount);
 
-  // Filter expenses by fiscal year
-  const filteredExpenses = useMemo(() => {
-    return filterByFiscalYear(expenses, 'expense_date');
-  }, [expenses, filterByFiscalYear]);
-
+  const filteredExpenses = useMemo(() => filterByFiscalYear(expenses, 'expense_date'), [expenses, filterByFiscalYear]);
   const totalExpenses = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
   const carExpensesTotal = filteredExpenses.filter(exp => exp.car_id).reduce((sum, exp) => sum + Number(exp.amount), 0);
   const generalExpensesTotal = filteredExpenses.filter(exp => !exp.car_id).reduce((sum, exp) => sum + Number(exp.amount), 0);
-  const thisMonthExpenses = filteredExpenses
-    .filter(exp => {
-      const expDate = new Date(exp.expense_date);
-      const now = new Date();
-      return expDate.getMonth() === now.getMonth() && expDate.getFullYear() === now.getFullYear();
-    })
-    .reduce((sum, exp) => sum + Number(exp.amount), 0);
+  const thisMonthExpenses = filteredExpenses.filter(exp => { const d = new Date(exp.expense_date); const n = new Date(); return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear(); }).reduce((sum, exp) => sum + Number(exp.amount), 0);
 
   if (expensesLoading || categoriesLoading || carsLoading || accountsLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">إجمالي المصروفات</p>
-                <p className="text-2xl font-bold">{formatCurrency(totalExpenses)}</p>
-              </div>
-              <Receipt className="w-8 h-8 text-destructive" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">مصروفات {labels.itemsName}</p>
-                <p className="text-2xl font-bold text-orange-500">{formatCurrency(carExpensesTotal)}</p>
-              </div>
-              <Car className="w-8 h-8 text-orange-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">مصروفات عامة</p>
-                <p className="text-2xl font-bold text-blue-500">{formatCurrency(generalExpensesTotal)}</p>
-              </div>
-              <Receipt className="w-8 h-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">مصروفات هذا الشهر</p>
-                <p className="text-2xl font-bold">{formatCurrency(thisMonthExpenses)}</p>
-              </div>
-              <Receipt className="w-8 h-8 text-warning" />
-            </div>
-          </CardContent>
-        </Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">{t.total_expenses}</p><p className="text-2xl font-bold">{formatCurrency(totalExpenses)}</p></div><Receipt className="w-8 h-8 text-destructive" /></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">{t.car_expenses}</p><p className="text-2xl font-bold text-orange-500">{formatCurrency(carExpensesTotal)}</p></div><Car className="w-8 h-8 text-orange-500" /></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">{t.general_expenses}</p><p className="text-2xl font-bold text-blue-500">{formatCurrency(generalExpensesTotal)}</p></div><Receipt className="w-8 h-8 text-blue-500" /></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">{t.this_month_expenses}</p><p className="text-2xl font-bold">{formatCurrency(thisMonthExpenses)}</p></div><Receipt className="w-8 h-8 text-warning" /></div></CardContent></Card>
       </div>
 
       <Tabs defaultValue="expenses" className="w-full">
         <TabsList>
-          <TabsTrigger value="expenses">المصروفات</TabsTrigger>
-          <TabsTrigger value="categories">الفئات</TabsTrigger>
+          <TabsTrigger value="expenses">{t.expenses_tab}</TabsTrigger>
+          <TabsTrigger value="categories">{t.categories_tab}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="expenses" className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">قائمة المصروفات</h2>
+            <h2 className="text-xl font-semibold">{t.expenses_list}</h2>
             <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
-              <DialogTrigger asChild>
-                <Button><Plus className="w-4 h-4 ml-2" /> إضافة مصروف</Button>
-              </DialogTrigger>
+              <DialogTrigger asChild><Button><Plus className="w-4 h-4 ml-2" /> {t.add_expense}</Button></DialogTrigger>
               <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>إضافة مصروف جديد</DialogTitle>
-                </DialogHeader>
+                <DialogHeader><DialogTitle>{t.add_new_expense}</DialogTitle></DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label>حساب المصروفات (من شجرة الحسابات)</Label>
+                    <Label>{t.expense_account}</Label>
                     <Select value={expenseForm.account_id} onValueChange={(v) => setExpenseForm({...expenseForm, account_id: v})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر الحساب" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {expenseAccounts.map(acc => (
-                          <SelectItem key={acc.id} value={acc.id}>
-                            {acc.code} - {acc.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                      <SelectTrigger><SelectValue placeholder={t.form_select_car} /></SelectTrigger>
+                      <SelectContent>{expenseAccounts.map(acc => (<SelectItem key={acc.id} value={acc.id}>{acc.code} - {acc.name}</SelectItem>))}</SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <Label>الفئة (اختياري)</Label>
+                    <Label>{t.category_optional}</Label>
                     <Select value={expenseForm.category_id} onValueChange={(v) => setExpenseForm({...expenseForm, category_id: v === 'none' ? '' : v})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر الفئة" />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={t.category_optional} /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">بدون فئة</SelectItem>
-                        {categories.map(cat => (
-                          <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                        ))}
+                        <SelectItem value="none">{t.no_category}</SelectItem>
+                        {categories.map(cat => (<SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <Label>ربط بـ{labels.itemName} (اختياري)</Label>
+                    <Label>{t.link_to_car}</Label>
                     <Select value={expenseForm.car_id} onValueChange={(v) => setExpenseForm({...expenseForm, car_id: v === 'none' ? '' : v})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={`اختر ${labels.itemName} (للمصروفات المرتبطة)`} />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={t.general_expense} /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">مصروف عام (بدون {labels.itemName})</SelectItem>
-                        {availableCars.map(car => (
-                          <SelectItem key={car.id} value={car.id}>
-                            {car.name} - {car.chassis_number}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="none">{t.general_expense}</SelectItem>
+                        {availableCars.map(car => (<SelectItem key={car.id} value={car.id}>{car.name} - {car.chassis_number}</SelectItem>))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      * المصروفات المرتبطة بـ{labels.itemName} تُخصم من ربحها عند البيع
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">* {t.car_expense_note}</p>
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <Label>{expenseForm.has_vat_invoice ? 'المبلغ الأساسي (قبل الضريبة) *' : 'المبلغ *'}</Label>
-                      <Input
-                        type="number"
-                        value={expenseForm.amount}
-                        onChange={(e) => setExpenseForm({...expenseForm, amount: e.target.value})}
-                        placeholder="0.00"
-                      />
+                      <Label>{expenseForm.has_vat_invoice ? t.base_amount_before_tax + ' *' : t.amount + ' *'}</Label>
+                      <Input type="number" value={expenseForm.amount} onChange={(e) => setExpenseForm({...expenseForm, amount: e.target.value})} placeholder="0.00" />
                     </div>
                     {expenseForm.has_vat_invoice && expenseForm.amount && (
                       <div className="grid grid-cols-2 gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                        <div>
-                          <Label className="text-green-700 dark:text-green-300 text-xs">ضريبة القيمة المضافة (15%)</Label>
-                          <div className="text-lg font-bold text-green-600 dark:text-green-400">
-                            {new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(parseFloat(expenseForm.amount) * 0.15)}
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-green-700 dark:text-green-300 text-xs">الإجمالي شامل الضريبة</Label>
-                          <div className="text-lg font-bold text-green-600 dark:text-green-400">
-                            {new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(parseFloat(expenseForm.amount) * 1.15)}
-                          </div>
-                        </div>
+                        <div><Label className="text-green-700 dark:text-green-300 text-xs">{t.vat_15}</Label><div className="text-lg font-bold text-green-600 dark:text-green-400">{new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(parseFloat(expenseForm.amount) * 0.15)}</div></div>
+                        <div><Label className="text-green-700 dark:text-green-300 text-xs">{t.total_with_tax}</Label><div className="text-lg font-bold text-green-600 dark:text-green-400">{new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(parseFloat(expenseForm.amount) * 1.15)}</div></div>
                       </div>
                     )}
                   </div>
+                  <div><Label>{t.description} *</Label><Input value={expenseForm.description} onChange={(e) => setExpenseForm({...expenseForm, description: e.target.value})} placeholder={t.expense_description} /></div>
+                  <div><Label>{t.date}</Label><Input type="date" value={expenseForm.expense_date} onChange={(e) => setExpenseForm({...expenseForm, expense_date: e.target.value})} /></div>
                   <div>
-                    <Label>الوصف *</Label>
-                    <Input
-                      value={expenseForm.description}
-                      onChange={(e) => setExpenseForm({...expenseForm, description: e.target.value})}
-                      placeholder="وصف المصروف"
-                    />
-                  </div>
-                  <div>
-                    <Label>التاريخ</Label>
-                    <Input
-                      type="date"
-                      value={expenseForm.expense_date}
-                      onChange={(e) => setExpenseForm({...expenseForm, expense_date: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <Label>طريقة الدفع</Label>
+                    <Label>{t.payment_method_label}</Label>
                     <Select value={expenseForm.payment_method} onValueChange={(v) => setExpenseForm({...expenseForm, payment_method: v})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="cash">نقداً</SelectItem>
-                        <SelectItem value="bank">تحويل بنكي</SelectItem>
-                        <SelectItem value="card">بطاقة</SelectItem>
-                        <SelectItem value="check">شيك</SelectItem>
+                        <SelectItem value="cash">{t.cash_payment}</SelectItem>
+                        <SelectItem value="bank">{t.bank_payment}</SelectItem>
+                        <SelectItem value="card">{t.card_payment}</SelectItem>
+                        <SelectItem value="check">{t.check_payment}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <input
-                      type="checkbox"
-                      id="has_vat_invoice"
-                      checked={expenseForm.has_vat_invoice}
-                      onChange={(e) => setExpenseForm({...expenseForm, has_vat_invoice: e.target.checked})}
-                      className="w-5 h-5 rounded border-blue-300"
-                    />
+                    <input type="checkbox" id="has_vat_invoice" checked={expenseForm.has_vat_invoice} onChange={(e) => setExpenseForm({...expenseForm, has_vat_invoice: e.target.checked})} className="w-5 h-5 rounded border-blue-300" />
                     <div>
-                      <Label htmlFor="has_vat_invoice" className="text-blue-700 dark:text-blue-300 font-medium cursor-pointer">
-                        يوجد فاتورة ضريبية
-                      </Label>
-                      <p className="text-xs text-blue-600 dark:text-blue-400">
-                        فعّل هذا الخيار إذا كان المصروف له فاتورة ضريبية لاسترداد الضريبة
-                      </p>
+                      <Label htmlFor="has_vat_invoice" className="text-blue-700 dark:text-blue-300 font-medium cursor-pointer">{t.has_vat_invoice}</Label>
+                      <p className="text-xs text-blue-600 dark:text-blue-400">{t.vat_invoice_desc}</p>
                     </div>
                   </div>
-                  <div>
-                    <Label>ملاحظات</Label>
-                    <Textarea
-                      value={expenseForm.notes}
-                      onChange={(e) => setExpenseForm({...expenseForm, notes: e.target.value})}
-                      placeholder="ملاحظات إضافية..."
-                    />
-                  </div>
+                  <div><Label>{t.notes}</Label><Textarea value={expenseForm.notes} onChange={(e) => setExpenseForm({...expenseForm, notes: e.target.value})} placeholder={t.additional_notes} /></div>
                   <Button onClick={handleAddExpense} className="w-full" disabled={addExpense.isPending}>
-                    {addExpense.isPending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}
-                    حفظ المصروف
+                    {addExpense.isPending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}{t.save_expense}
                   </Button>
                 </div>
               </DialogContent>
@@ -375,77 +189,31 @@ export function ExpensesPage() {
           <Card>
             <CardContent className="p-0">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>التاريخ</TableHead>
-                    <TableHead>الحساب</TableHead>
-                    <TableHead>الفئة</TableHead>
-                    <TableHead>{labels.itemName}</TableHead>
-                    <TableHead>الوصف</TableHead>
-                    <TableHead>طريقة الدفع</TableHead>
-                    <TableHead>فاتورة ضريبية</TableHead>
-                    <TableHead>المبلغ</TableHead>
-                    <TableHead>إجراءات</TableHead>
-                  </TableRow>
-                </TableHeader>
+                <TableHeader><TableRow>
+                  <TableHead>{t.date}</TableHead><TableHead>{t.accounting_account}</TableHead><TableHead>{t.categories_tab}</TableHead>
+                  <TableHead>{labels.itemName}</TableHead><TableHead>{t.description}</TableHead><TableHead>{t.payment_method_label}</TableHead>
+                  <TableHead>{t.has_vat_invoice}</TableHead><TableHead>{t.amount}</TableHead><TableHead>{t.actions}</TableHead>
+                </TableRow></TableHeader>
                 <TableBody>
                   {filteredExpenses.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                        لا توجد مصروفات مسجلة في هذه السنة المالية
-                      </TableCell>
-                    </TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">{t.no_data}</TableCell></TableRow>
                   ) : (
                     filteredExpenses.map((expense) => (
                       <TableRow key={expense.id}>
                         <TableCell>{new Date(expense.expense_date).toLocaleDateString('ar-SA')}</TableCell>
-                        <TableCell>
-                          {expense.account ? (
-                            <Badge variant="outline" className="font-mono">
-                              {expense.account.code} - {expense.account.name}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{expense.category?.name || 'بدون فئة'}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          {expense.car ? (
-                            <Badge variant="secondary" className="bg-orange-100 text-orange-700">
-                              <Car className="w-3 h-3 ml-1" />
-                              {expense.car.name}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">عام</span>
-                          )}
-                        </TableCell>
+                        <TableCell>{expense.account ? <Badge variant="outline" className="font-mono">{expense.account.code} - {expense.account.name}</Badge> : <span className="text-muted-foreground">-</span>}</TableCell>
+                        <TableCell><Badge variant="secondary">{expense.category?.name || t.no_category}</Badge></TableCell>
+                        <TableCell>{expense.car ? <Badge variant="secondary" className="bg-orange-100 text-orange-700"><Car className="w-3 h-3 ml-1" />{expense.car.name}</Badge> : <span className="text-muted-foreground">{t.general_expense}</span>}</TableCell>
                         <TableCell>{expense.description}</TableCell>
                         <TableCell>
-                          {expense.payment_method === 'cash' && 'نقداً'}
-                          {expense.payment_method === 'bank' && 'تحويل بنكي'}
-                          {expense.payment_method === 'card' && 'بطاقة'}
-                          {expense.payment_method === 'check' && 'شيك'}
+                          {expense.payment_method === 'cash' && t.cash_payment}
+                          {expense.payment_method === 'bank' && t.bank_payment}
+                          {expense.payment_method === 'card' && t.card_payment}
+                          {expense.payment_method === 'check' && t.check_payment}
                         </TableCell>
-                        <TableCell>
-                          {expense.has_vat_invoice ? (
-                            <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                              <FileCheck className="w-3 h-3 ml-1" />
-                              نعم
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">لا</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="font-semibold text-destructive">
-                          {formatCurrency(Number(expense.amount))}
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteExpense(expense.id)}>
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        </TableCell>
+                        <TableCell>{expense.has_vat_invoice ? <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"><FileCheck className="w-3 h-3 ml-1" />{t.yes}</Badge> : <span className="text-muted-foreground">{t.no}</span>}</TableCell>
+                        <TableCell className="font-semibold text-destructive">{formatCurrency(Number(expense.amount))}</TableCell>
+                        <TableCell><Button variant="ghost" size="icon" onClick={() => handleDeleteExpense(expense.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button></TableCell>
                       </TableRow>
                     ))
                   )}
@@ -457,60 +225,25 @@ export function ExpensesPage() {
 
         <TabsContent value="categories" className="space-y-4">
           <div className="flex justify-between items-center gap-2">
-            <h2 className="text-xl font-semibold">فئات المصروفات</h2>
+            <h2 className="text-xl font-semibold">{t.categories_tab}</h2>
             <div className="flex gap-2">
-              {categories.length === 0 && (
-                <Button variant="outline" onClick={handleCreateDefaults} disabled={createDefaultCategories.isPending}>
-                  إنشاء فئات افتراضية
-                </Button>
-              )}
+              {categories.length === 0 && <Button variant="outline" onClick={handleCreateDefaults} disabled={createDefaultCategories.isPending}>{t.create_defaults}</Button>}
               <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button><Plus className="w-4 h-4 ml-2" /> إضافة فئة</Button>
-                </DialogTrigger>
+                <DialogTrigger asChild><Button><Plus className="w-4 h-4 ml-2" /> {t.add_category}</Button></DialogTrigger>
                 <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>إضافة فئة جديدة</DialogTitle>
-                  </DialogHeader>
+                  <DialogHeader><DialogTitle>{t.add_category}</DialogTitle></DialogHeader>
                   <div className="space-y-4">
-                    <div>
-                      <Label>اسم الفئة *</Label>
-                      <Input
-                        value={categoryForm.name}
-                        onChange={(e) => setCategoryForm({...categoryForm, name: e.target.value})}
-                        placeholder="مثال: إيجار"
-                      />
-                    </div>
-                    <div>
-                      <Label>الوصف</Label>
-                      <Textarea
-                        value={categoryForm.description}
-                        onChange={(e) => setCategoryForm({...categoryForm, description: e.target.value})}
-                        placeholder="وصف الفئة..."
-                      />
-                    </div>
-                    <Button onClick={handleAddCategory} className="w-full" disabled={addCategory.isPending}>
-                      حفظ الفئة
-                    </Button>
+                    <div><Label>{t.category_name} *</Label><Input value={categoryForm.name} onChange={(e) => setCategoryForm({...categoryForm, name: e.target.value})} /></div>
+                    <div><Label>{t.description}</Label><Textarea value={categoryForm.description} onChange={(e) => setCategoryForm({...categoryForm, description: e.target.value})} /></div>
+                    <Button onClick={handleAddCategory} className="w-full" disabled={addCategory.isPending}>{t.save}</Button>
                   </div>
                 </DialogContent>
               </Dialog>
             </div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {categories.map((category) => (
-              <Card key={category.id}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold">{category.name}</h3>
-                      <p className="text-sm text-muted-foreground">{category.description || 'بدون وصف'}</p>
-                    </div>
-                    <FolderOpen className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                </CardContent>
-              </Card>
+              <Card key={category.id}><CardContent className="pt-6"><div className="flex items-center justify-between"><div><h3 className="font-semibold">{category.name}</h3><p className="text-sm text-muted-foreground">{category.description || t.no_data}</p></div><FolderOpen className="w-6 h-6 text-muted-foreground" /></div></CardContent></Card>
             ))}
           </div>
         </TabsContent>
