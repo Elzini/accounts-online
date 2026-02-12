@@ -17,6 +17,8 @@ export function CustomersReport() {
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
   const { printReport } = usePrintReport();
   const { exportToExcel } = useExcelExport();
+  const { t, language } = useLanguage();
+  const locale = language === 'ar' ? 'ar-SA' : 'en-US';
 
   // Filter sales by date and customer
   const filteredSales = useMemo(() => {
@@ -88,8 +90,8 @@ export function CustomersReport() {
   };
 
   const reportTitle = selectedCustomer === 'all' 
-    ? 'تقرير العملاء - إجمالي' 
-    : `تقرير العميل: ${selectedCustomerData?.name}`;
+    ? `${t.rpt_cust_title} - ${t.rpt_cust_select_all}` 
+    : `${t.rpt_cust_title}: ${selectedCustomerData?.name}`;
 
   const handlePrint = () => {
     printReport({
@@ -187,16 +189,16 @@ export function CustomersReport() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">تقرير العملاء</h2>
-          <p className="text-muted-foreground">إحصائيات وتفاصيل العملاء</p>
+          <h2 className="text-2xl font-bold text-foreground">{t.rpt_cust_title}</h2>
+          <p className="text-muted-foreground">{t.rpt_cust_subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
             <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="اختر العميل" />
+              <SelectValue placeholder={t.rpt_cust_select} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">جميع العملاء (إجمالي)</SelectItem>
+              <SelectItem value="all">{t.rpt_cust_select_all}</SelectItem>
               {customers?.map(customer => (
                 <SelectItem key={customer.id} value={customer.id}>{customer.name}</SelectItem>
               ))}
@@ -210,11 +212,11 @@ export function CustomersReport() {
           />
           <Button onClick={handlePrint} variant="outline" className="gap-2">
             <Printer className="w-4 h-4" />
-            طباعة
+            {t.rpt_print}
           </Button>
           <Button onClick={handleExportExcel} className="gap-2">
             <FileSpreadsheet className="w-4 h-4" />
-            تصدير Excel
+            {t.rpt_export_excel}
           </Button>
         </div>
       </div>
@@ -228,7 +230,7 @@ export function CustomersReport() {
                 <Users className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{selectedCustomer === 'all' ? 'إجمالي العملاء' : 'العميل'}</p>
+                <p className="text-sm text-muted-foreground">{selectedCustomer === 'all' ? t.rpt_cust_total : t.rpt_cust_select}</p>
                 <p className="text-2xl font-bold text-foreground">{selectedCustomer === 'all' ? totalCustomers : selectedCustomerData?.name}</p>
               </div>
             </div>
@@ -242,7 +244,7 @@ export function CustomersReport() {
                 <ShoppingCart className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">عدد المشتريات</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_cust_purchases_count}</p>
                 <p className="text-2xl font-bold text-foreground">{totalSalesCount}</p>
               </div>
             </div>
@@ -256,7 +258,7 @@ export function CustomersReport() {
                 <DollarSign className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">إجمالي المشتريات</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_cust_purchases_total}</p>
                 <p className="text-2xl font-bold text-foreground">{formatCurrency(totalSalesAmount)}</p>
               </div>
             </div>
@@ -270,7 +272,7 @@ export function CustomersReport() {
                 <Calendar className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{selectedCustomer === 'all' ? 'العملاء النشطين' : 'آخر شراء'}</p>
+                <p className="text-sm text-muted-foreground">{selectedCustomer === 'all' ? t.rpt_cust_active : t.rpt_cust_last_purchase}</p>
                 <p className="text-2xl font-bold text-foreground">
                   {selectedCustomer === 'all' 
                     ? activeCustomers 
@@ -286,24 +288,24 @@ export function CustomersReport() {
       {selectedCustomer !== 'all' && selectedCustomerData && (
         <Card>
           <CardHeader>
-            <CardTitle>بيانات العميل</CardTitle>
+            <CardTitle>{t.rpt_cust_data}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">الاسم</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_cust_col_name}</p>
                 <p className="font-medium">{selectedCustomerData.name}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">رقم الهاتف</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_cust_col_phone}</p>
                 <p className="font-medium">{selectedCustomerData.phone}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">رقم الهوية</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_cust_col_id}</p>
                 <p className="font-medium">{selectedCustomerData.id_number || '-'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">العنوان</p>
+                <p className="text-sm text-muted-foreground">{t.rpt_cust_col_address}</p>
                 <p className="font-medium">{selectedCustomerData.address || '-'}</p>
               </div>
             </div>
@@ -315,23 +317,23 @@ export function CustomersReport() {
       {selectedCustomer === 'all' && (
         <Card>
           <CardHeader>
-            <CardTitle>جميع العملاء</CardTitle>
+            <CardTitle>{t.rpt_cust_all}</CardTitle>
           </CardHeader>
           <CardContent>
             {sortedCustomers.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                لا يوجد عملاء مسجلين
+                {t.rpt_cust_no_data}
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">الاسم</TableHead>
-                    <TableHead className="text-right">رقم الهاتف</TableHead>
-                    <TableHead className="text-right">عدد المشتريات</TableHead>
-                    <TableHead className="text-right">إجمالي المشتريات</TableHead>
-                    <TableHead className="text-right">إجمالي الأرباح</TableHead>
-                    <TableHead className="text-right">آخر شراء</TableHead>
+                    <TableHead className="text-right">{t.rpt_cust_col_name}</TableHead>
+                    <TableHead className="text-right">{t.rpt_cust_col_phone}</TableHead>
+                    <TableHead className="text-right">{t.rpt_cust_purchases_count}</TableHead>
+                    <TableHead className="text-right">{t.rpt_cust_purchases_total}</TableHead>
+                    <TableHead className="text-right">{t.rpt_cust_total_profit}</TableHead>
+                    <TableHead className="text-right">{t.rpt_cust_last_purchase}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -356,12 +358,12 @@ export function CustomersReport() {
       {selectedCustomer !== 'all' && (
         <Card>
           <CardHeader>
-            <CardTitle>مشتريات العميل</CardTitle>
+            <CardTitle>{t.rpt_cust_purchases}</CardTitle>
           </CardHeader>
           <CardContent>
             {filteredSales.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                لا توجد مشتريات مسجلة لهذا العميل
+                {t.rpt_cust_no_purchases}
               </div>
             ) : (
               <Table>

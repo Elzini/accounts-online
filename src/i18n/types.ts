@@ -2283,4 +2283,209 @@ export interface TranslationKeys {
   acc_deleted: string;
   acc_error: string;
   acc_confirm_sure: string;
+
+  // Reports - Common
+  rpt_print: string;
+  rpt_print_report: string;
+  rpt_export_excel: string;
+  rpt_filter_date: string;
+  rpt_refresh: string;
+  rpt_no_data_period: string;
+  rpt_currency: string;
+  rpt_status_available: string;
+  rpt_status_transferred: string;
+  rpt_status_sold: string;
+  rpt_loading: string;
+
+  // Inventory Report
+  rpt_inv_title: string;
+  rpt_inv_subtitle: string;
+  rpt_inv_total: string;
+  rpt_inv_available: string;
+  rpt_inv_transferred: string;
+  rpt_inv_sold: string;
+  rpt_inv_stock_value: string;
+  rpt_inv_details: string;
+  rpt_inv_search: string;
+  rpt_inv_filter_all: string;
+  rpt_inv_filter_available: string;
+  rpt_inv_filter_transferred: string;
+  rpt_inv_filter_sold: string;
+  rpt_inv_col_number: string;
+  rpt_inv_col_name: string;
+  rpt_inv_col_id: string;
+  rpt_inv_col_model: string;
+  rpt_inv_col_price: string;
+  rpt_inv_col_date: string;
+  rpt_inv_col_status: string;
+
+  // Profit Report
+  rpt_profit_title: string;
+  rpt_profit_subtitle: string;
+  rpt_profit_net_final: string;
+  rpt_profit_total_sales: string;
+  rpt_profit_gross: string;
+  rpt_profit_item_expenses: string;
+  rpt_profit_general_expenses: string;
+  rpt_profit_summary: string;
+  rpt_profit_gross_label: string;
+  rpt_profit_formula_title: string;
+  rpt_profit_formula_desc: string;
+  rpt_profit_item_exp_desc: string;
+  rpt_profit_general_exp_desc: string;
+  rpt_profit_details: string;
+  rpt_profit_no_sales: string;
+  rpt_profit_general_table: string;
+  rpt_profit_col_date: string;
+  rpt_profit_col_item: string;
+  rpt_profit_col_sale_price: string;
+  rpt_profit_col_gross: string;
+  rpt_profit_col_expenses: string;
+  rpt_profit_col_net: string;
+  rpt_profit_col_desc: string;
+  rpt_profit_col_category: string;
+  rpt_profit_col_amount: string;
+  rpt_profit_no_category: string;
+
+  // Purchases Report
+  rpt_purch_title: string;
+  rpt_purch_subtitle: string;
+  rpt_purch_count: string;
+  rpt_purch_total: string;
+  rpt_purch_available: string;
+  rpt_purch_details: string;
+  rpt_purch_no_data: string;
+  rpt_purch_col_number: string;
+  rpt_purch_col_item: string;
+  rpt_purch_col_model: string;
+  rpt_purch_col_chassis: string;
+  rpt_purch_col_price: string;
+  rpt_purch_col_date: string;
+  rpt_purch_col_status: string;
+  rpt_purch_col_actions: string;
+
+  // Sales Report
+  rpt_sales_title: string;
+  rpt_sales_subtitle: string;
+  rpt_sales_total: string;
+  rpt_sales_total_profit: string;
+  rpt_sales_total_commissions: string;
+  rpt_sales_count: string;
+  rpt_sales_monthly: string;
+  rpt_sales_all: string;
+  rpt_sales_no_data: string;
+  rpt_sales_col_number: string;
+  rpt_sales_col_customer: string;
+  rpt_sales_col_item: string;
+  rpt_sales_col_chassis: string;
+  rpt_sales_col_price: string;
+  rpt_sales_col_commission: string;
+  rpt_sales_col_expenses: string;
+  rpt_sales_col_profit: string;
+  rpt_sales_col_date: string;
+  rpt_sales_col_month: string;
+
+  // Customers Report
+  rpt_cust_title: string;
+  rpt_cust_subtitle: string;
+  rpt_cust_total: string;
+  rpt_cust_purchases_count: string;
+  rpt_cust_purchases_total: string;
+  rpt_cust_active: string;
+  rpt_cust_all: string;
+  rpt_cust_select: string;
+  rpt_cust_select_all: string;
+  rpt_cust_no_data: string;
+  rpt_cust_data: string;
+  rpt_cust_purchases: string;
+  rpt_cust_no_purchases: string;
+  rpt_cust_total_profit: string;
+  rpt_cust_last_purchase: string;
+  rpt_cust_col_name: string;
+  rpt_cust_col_phone: string;
+  rpt_cust_col_id: string;
+  rpt_cust_col_address: string;
+
+  // Suppliers Report
+  rpt_supp_title: string;
+  rpt_supp_subtitle: string;
+  rpt_supp_total: string;
+  rpt_supp_items_count: string;
+  rpt_supp_purchases_total: string;
+  rpt_supp_active: string;
+  rpt_supp_all: string;
+  rpt_supp_select: string;
+  rpt_supp_select_all: string;
+  rpt_supp_no_data: string;
+  rpt_supp_data: string;
+  rpt_supp_items: string;
+  rpt_supp_no_items: string;
+  rpt_supp_last_supply: string;
+  rpt_supp_col_name: string;
+  rpt_supp_col_phone: string;
+  rpt_supp_col_available: string;
+  rpt_supp_col_sold: string;
+  rpt_supp_col_notes: string;
+
+  // Commissions Report
+  rpt_comm_title: string;
+  rpt_comm_subtitle: string;
+  rpt_comm_total: string;
+  rpt_comm_sellers_count: string;
+  rpt_comm_sales_count: string;
+  rpt_comm_average: string;
+  rpt_comm_select: string;
+  rpt_comm_select_all: string;
+  rpt_comm_summary: string;
+  rpt_comm_details: string;
+  rpt_comm_no_data: string;
+  rpt_comm_unassigned: string;
+  rpt_comm_col_seller: string;
+  rpt_comm_col_total_sales: string;
+  rpt_comm_col_total_comm: string;
+  rpt_comm_col_avg: string;
+  rpt_comm_col_total_profit: string;
+
+  // Transfers Report
+  rpt_trans_title: string;
+  rpt_trans_total: string;
+  rpt_trans_outgoing: string;
+  rpt_trans_incoming: string;
+  rpt_trans_pending: string;
+  rpt_trans_sold_count: string;
+  rpt_trans_total_comm: string;
+  rpt_trans_search: string;
+  rpt_trans_all_dealerships: string;
+  rpt_trans_all: string;
+  rpt_trans_no_data: string;
+  rpt_trans_col_item: string;
+  rpt_trans_col_chassis: string;
+  rpt_trans_col_dealership: string;
+  rpt_trans_col_type: string;
+  rpt_trans_col_date: string;
+  rpt_trans_col_return_date: string;
+  rpt_trans_col_commission: string;
+  rpt_trans_col_status: string;
+  rpt_trans_status_pending: string;
+  rpt_trans_status_sold: string;
+  rpt_trans_status_returned: string;
+  rpt_trans_type_outgoing: string;
+  rpt_trans_type_incoming: string;
+
+  // Partner Dealership Report
+  rpt_partner_title: string;
+  rpt_partner_select: string;
+  rpt_partner_select_prompt: string;
+  rpt_partner_dealerships: string;
+  rpt_partner_comm_earned: string;
+  rpt_partner_comm_owed: string;
+  rpt_partner_net_comm: string;
+  rpt_partner_in_our_favor: string;
+  rpt_partner_against_us: string;
+  rpt_partner_total_sales: string;
+  rpt_partner_log: string;
+  rpt_partner_no_data: string;
+  rpt_partner_col_sale_price: string;
+  rpt_partner_col_agreed_comm: string;
+  rpt_partner_col_actual_comm: string;
 }

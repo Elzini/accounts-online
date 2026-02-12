@@ -9,6 +9,7 @@ import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function ProfitReport() {
   const { data: sales = [], isLoading: salesLoading } = useSales();
@@ -18,12 +19,14 @@ export function ProfitReport() {
   const [endDate, setEndDate] = useState('');
   const { printReport } = usePrintReport();
   const labels = useIndustryLabels();
+  const { t, language } = useLanguage();
+
+  const locale = language === 'ar' ? 'ar-SA' : 'en-US';
+  const formatCurrency = (value: number) => new Intl.NumberFormat(locale).format(value);
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(locale);
 
   const filteredSales = useMemo(() => {
-    // First filter by fiscal year
     let result = filterByFiscalYear(sales, 'sale_date');
-    
-    // Then apply date range filter within fiscal year
     return result.filter(sale => {
       const saleDate = new Date(sale.sale_date);
       if (startDate && saleDate < new Date(startDate)) return false;
@@ -32,30 +35,18 @@ export function ProfitReport() {
     });
   }, [sales, startDate, endDate, filterByFiscalYear]);
 
-  // Calculate car expenses for each sale
   const salesWithCarExpenses = useMemo(() => {
     return filteredSales.map(sale => {
-      const carExpenses = expenses
-        .filter(exp => exp.car_id === sale.car_id)
-        .reduce((sum, exp) => sum + Number(exp.amount), 0);
-      
+      const carExpenses = expenses.filter(exp => exp.car_id === sale.car_id).reduce((sum, exp) => sum + Number(exp.amount), 0);
       const netProfit = Number(sale.profit) - carExpenses;
-      
-      return {
-        ...sale,
-        carExpenses,
-        netProfit
-      };
+      return { ...sale, carExpenses, netProfit };
     });
   }, [filteredSales, expenses]);
 
-  // Filter general expenses within fiscal year and date range
   const filteredGeneralExpenses = useMemo(() => {
-    // First filter expenses by fiscal year
     const fiscalYearExpenses = filterByFiscalYear(expenses, 'expense_date');
-    
     return fiscalYearExpenses.filter(exp => {
-      if (exp.car_id) return false; // Exclude car-linked expenses
+      if (exp.car_id) return false;
       const expDate = new Date(exp.expense_date);
       if (startDate && expDate < new Date(startDate)) return false;
       if (endDate && expDate > new Date(endDate + 'T23:59:59')) return false;
@@ -69,37 +60,32 @@ export function ProfitReport() {
   const totalGeneralExpenses = filteredGeneralExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
   const finalNetProfit = totalNetProfitFromSales - totalGeneralExpenses;
   const totalSales = salesWithCarExpenses.reduce((sum, sale) => sum + Number(sale.sale_price), 0);
-  const totalCommissions = salesWithCarExpenses.reduce((sum, sale) => sum + Number(sale.commission || 0), 0);
-  const totalOtherExpenses = salesWithCarExpenses.reduce((sum, sale) => sum + Number(sale.other_expenses || 0), 0);
-  
-  const formatCurrency = (value: number) => new Intl.NumberFormat('ar-SA').format(value);
-  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ar-SA');
 
   const handlePrint = () => {
     printReport({
-      title: 'تقرير الأرباح',
-      subtitle: 'تفاصيل الأرباح والمصاريف',
+      title: t.rpt_profit_title,
+      subtitle: t.rpt_profit_subtitle,
       columns: [
-        { header: 'التاريخ', key: 'date' },
+        { header: t.rpt_profit_col_date, key: 'date' },
         { header: labels.itemName, key: 'car' },
-        { header: 'سعر البيع', key: 'sale_price' },
-        { header: 'الربح الإجمالي', key: 'gross_profit' },
-        { header: `مصروفات ${labels.itemName}`, key: 'car_expenses' },
-        { header: 'صافي الربح', key: 'net_profit' },
+        { header: t.rpt_profit_col_sale_price, key: 'sale_price' },
+        { header: t.rpt_profit_col_gross, key: 'gross_profit' },
+        { header: `${t.rpt_profit_item_expenses} ${labels.itemName}`, key: 'car_expenses' },
+        { header: t.rpt_profit_col_net, key: 'net_profit' },
       ],
       data: salesWithCarExpenses.map(sale => ({
         date: formatDate(sale.sale_date),
         car: sale.car?.name || '-',
-        sale_price: `${formatCurrency(Number(sale.sale_price))} ريال`,
-        gross_profit: `${formatCurrency(Number(sale.profit))} ريال`,
-        car_expenses: `${formatCurrency(sale.carExpenses)} ريال`,
-        net_profit: `${formatCurrency(sale.netProfit)} ريال`,
+        sale_price: `${formatCurrency(Number(sale.sale_price))} ${t.rpt_currency}`,
+        gross_profit: `${formatCurrency(Number(sale.profit))} ${t.rpt_currency}`,
+        car_expenses: `${formatCurrency(sale.carExpenses)} ${t.rpt_currency}`,
+        net_profit: `${formatCurrency(sale.netProfit)} ${t.rpt_currency}`,
       })),
       summaryCards: [
-        { label: 'صافي الربح النهائي', value: `${formatCurrency(finalNetProfit)} ريال` },
-        { label: 'إجمالي المبيعات', value: `${formatCurrency(totalSales)} ريال` },
-        { label: `مصروفات ${labels.itemsName}`, value: `${formatCurrency(totalCarExpenses)} ريال` },
-        { label: 'المصروفات العامة', value: `${formatCurrency(totalGeneralExpenses)} ريال` },
+        { label: t.rpt_profit_net_final, value: `${formatCurrency(finalNetProfit)} ${t.rpt_currency}` },
+        { label: t.rpt_profit_total_sales, value: `${formatCurrency(totalSales)} ${t.rpt_currency}` },
+        { label: `${t.rpt_profit_item_expenses} ${labels.itemsName}`, value: `${formatCurrency(totalCarExpenses)} ${t.rpt_currency}` },
+        { label: t.rpt_profit_general_expenses, value: `${formatCurrency(totalGeneralExpenses)} ${t.rpt_currency}` },
       ],
     });
   };
@@ -110,140 +96,82 @@ export function ProfitReport() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">تقرير الأرباح</h1>
-          <p className="text-muted-foreground">تفاصيل الأرباح والمصاريف (شامل مصروفات {labels.itemsName})</p>
+          <h1 className="text-3xl font-bold text-foreground">{t.rpt_profit_title}</h1>
+          <p className="text-muted-foreground">{t.rpt_profit_subtitle} ({labels.itemsName})</p>
         </div>
         <div className="flex items-center gap-4">
-          <DateRangeFilter
-            startDate={startDate}
-            endDate={endDate}
-            onStartDateChange={setStartDate}
-            onEndDateChange={setEndDate}
-          />
-          <Button onClick={handlePrint} className="gap-2">
-            <Printer className="w-4 h-4" />
-            طباعة التقرير
-          </Button>
+          <DateRangeFilter startDate={startDate} endDate={endDate} onStartDateChange={setStartDate} onEndDateChange={setEndDate} />
+          <Button onClick={handlePrint} className="gap-2"><Printer className="w-4 h-4" />{t.rpt_print_report}</Button>
         </div>
       </div>
       
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-card rounded-2xl p-6 card-shadow border-2 border-primary">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl gradient-success flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">صافي الربح النهائي</p>
-              <p className={`text-2xl font-bold ${finalNetProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
-                {formatCurrency(finalNetProfit)} ريال
-              </p>
-            </div>
+            <div className="w-12 h-12 rounded-xl gradient-success flex items-center justify-center"><TrendingUp className="w-6 h-6 text-white" /></div>
+            <div><p className="text-sm text-muted-foreground">{t.rpt_profit_net_final}</p><p className={`text-2xl font-bold ${finalNetProfit >= 0 ? 'text-success' : 'text-destructive'}`}>{formatCurrency(finalNetProfit)} {t.rpt_currency}</p></div>
           </div>
         </div>
         <div className="bg-card rounded-2xl p-6 card-shadow">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">إجمالي المبيعات</p>
-              <p className="text-2xl font-bold">{formatCurrency(totalSales)} ريال</p>
-            </div>
+            <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center"><DollarSign className="w-6 h-6 text-white" /></div>
+            <div><p className="text-sm text-muted-foreground">{t.rpt_profit_total_sales}</p><p className="text-2xl font-bold">{formatCurrency(totalSales)} {t.rpt_currency}</p></div>
           </div>
         </div>
         <div className="bg-card rounded-2xl p-6 card-shadow">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">الربح الإجمالي</p>
-              <p className="text-2xl font-bold text-success">{formatCurrency(totalGrossProfit)} ريال</p>
-            </div>
+            <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center"><TrendingUp className="w-6 h-6 text-white" /></div>
+            <div><p className="text-sm text-muted-foreground">{t.rpt_profit_gross}</p><p className="text-2xl font-bold text-success">{formatCurrency(totalGrossProfit)} {t.rpt_currency}</p></div>
           </div>
         </div>
         <div className="bg-card rounded-2xl p-6 card-shadow">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-orange-500 flex items-center justify-center">
-              <Car className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">مصروفات {labels.itemsName}</p>
-              <p className="text-2xl font-bold text-orange-600">{formatCurrency(totalCarExpenses)} ريال</p>
-            </div>
+            <div className="w-12 h-12 rounded-xl bg-orange-500 flex items-center justify-center"><Car className="w-6 h-6 text-white" /></div>
+            <div><p className="text-sm text-muted-foreground">{t.rpt_profit_item_expenses} {labels.itemsName}</p><p className="text-2xl font-bold text-orange-600">{formatCurrency(totalCarExpenses)} {t.rpt_currency}</p></div>
           </div>
         </div>
         <div className="bg-card rounded-2xl p-6 card-shadow">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-destructive flex items-center justify-center">
-              <Receipt className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">المصروفات العامة</p>
-              <p className="text-2xl font-bold text-destructive">{formatCurrency(totalGeneralExpenses)} ريال</p>
-            </div>
+            <div className="w-12 h-12 rounded-xl bg-destructive flex items-center justify-center"><Receipt className="w-6 h-6 text-white" /></div>
+            <div><p className="text-sm text-muted-foreground">{t.rpt_profit_general_expenses}</p><p className="text-2xl font-bold text-destructive">{formatCurrency(totalGeneralExpenses)} {t.rpt_currency}</p></div>
           </div>
         </div>
       </div>
 
-      {/* Profit Breakdown */}
       <div className="bg-card rounded-2xl p-6 card-shadow">
-        <h3 className="font-bold mb-4">ملخص معادلة الربح</h3>
+        <h3 className="font-bold mb-4">{t.rpt_profit_summary}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <div className="flex justify-between py-2 border-b">
-              <span>الربح الإجمالي (سعر البيع - سعر الشراء)</span>
-              <span className="font-bold text-success">+ {formatCurrency(totalGrossProfit)} ريال</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span>مصروفات {labels.itemsName} (إصلاح، تجهيز، إلخ)</span>
-              <span className="font-bold text-orange-600">- {formatCurrency(totalCarExpenses)} ريال</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span>المصروفات العامة (إيجار، رواتب، إلخ)</span>
-              <span className="font-bold text-destructive">- {formatCurrency(totalGeneralExpenses)} ريال</span>
-            </div>
-            <div className="flex justify-between py-2 bg-muted rounded-lg px-3">
-              <span className="font-bold">صافي الربح النهائي</span>
-              <span className={`font-bold text-lg ${finalNetProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
-                = {formatCurrency(finalNetProfit)} ريال
-              </span>
-            </div>
+            <div className="flex justify-between py-2 border-b"><span>{t.rpt_profit_gross_label}</span><span className="font-bold text-success">+ {formatCurrency(totalGrossProfit)} {t.rpt_currency}</span></div>
+            <div className="flex justify-between py-2 border-b"><span>{t.rpt_profit_item_expenses} {labels.itemsName}</span><span className="font-bold text-orange-600">- {formatCurrency(totalCarExpenses)} {t.rpt_currency}</span></div>
+            <div className="flex justify-between py-2 border-b"><span>{t.rpt_profit_general_expenses}</span><span className="font-bold text-destructive">- {formatCurrency(totalGeneralExpenses)} {t.rpt_currency}</span></div>
+            <div className="flex justify-between py-2 bg-muted rounded-lg px-3"><span className="font-bold">{t.rpt_profit_net_final}</span><span className={`font-bold text-lg ${finalNetProfit >= 0 ? 'text-success' : 'text-destructive'}`}>= {formatCurrency(finalNetProfit)} {t.rpt_currency}</span></div>
           </div>
           <div className="bg-muted/50 rounded-lg p-4">
-            <h4 className="font-semibold mb-2">شرح المعادلة:</h4>
-            <p className="text-sm text-muted-foreground mb-2">
-               <strong>صافي الربح</strong> = الربح الإجمالي - مصروفات {labels.itemsName} - المصروفات العامة
-             </p>
-             <ul className="text-sm text-muted-foreground space-y-1">
-               <li>• <strong>مصروفات {labels.itemsName}:</strong> المصروفات المرتبطة بـ{labels.itemName} معينة (إصلاح، صيانة، تجهيز)</li>
-               <li>• <strong>المصروفات العامة:</strong> مصروفات الشركة غير المرتبطة بـ{labels.itemName} (إيجار، كهرباء، رواتب)</li>
-             </ul>
+            <h4 className="font-semibold mb-2">{t.rpt_profit_formula_title}</h4>
+            <p className="text-sm text-muted-foreground mb-2"><strong>{t.rpt_profit_formula_desc}</strong></p>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• <strong>{t.rpt_profit_item_expenses} {labels.itemsName}:</strong> {t.rpt_profit_item_exp_desc}</li>
+              <li>• <strong>{t.rpt_profit_general_expenses}:</strong> {t.rpt_profit_general_exp_desc}</li>
+            </ul>
           </div>
         </div>
       </div>
 
-      {/* Detailed Table */}
       <div className="bg-card rounded-2xl card-shadow overflow-hidden">
-        <div className="p-4 border-b">
-          <h3 className="font-bold">تفاصيل الأرباح لكل {labels.itemName}</h3>
-        </div>
+        <div className="p-4 border-b"><h3 className="font-bold">{t.rpt_profit_details} - {labels.itemName}</h3></div>
         {salesWithCarExpenses.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            لا توجد مبيعات في هذه الفترة
-          </div>
+          <div className="text-center py-8 text-muted-foreground">{t.rpt_profit_no_sales}</div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="text-right font-bold">التاريخ</TableHead>
+                <TableHead className="text-right font-bold">{t.rpt_profit_col_date}</TableHead>
                 <TableHead className="text-right font-bold">{labels.itemName}</TableHead>
-                <TableHead className="text-right font-bold">سعر البيع</TableHead>
-                <TableHead className="text-right font-bold">الربح الإجمالي</TableHead>
-                <TableHead className="text-right font-bold">مصروفات {labels.itemName}</TableHead>
-                <TableHead className="text-right font-bold">صافي الربح</TableHead>
+                <TableHead className="text-right font-bold">{t.rpt_profit_col_sale_price}</TableHead>
+                <TableHead className="text-right font-bold">{t.rpt_profit_col_gross}</TableHead>
+                <TableHead className="text-right font-bold">{t.rpt_profit_item_expenses} {labels.itemName}</TableHead>
+                <TableHead className="text-right font-bold">{t.rpt_profit_col_net}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -251,14 +179,10 @@ export function ProfitReport() {
                 <TableRow key={sale.id}>
                   <TableCell>{formatDate(sale.sale_date)}</TableCell>
                   <TableCell className="font-semibold">{sale.car?.name || '-'}</TableCell>
-                  <TableCell>{formatCurrency(Number(sale.sale_price))} ريال</TableCell>
-                  <TableCell className="text-success">{formatCurrency(Number(sale.profit))} ريال</TableCell>
-                  <TableCell className="text-orange-600">
-                    {sale.carExpenses > 0 ? `${formatCurrency(sale.carExpenses)} ريال` : '-'}
-                  </TableCell>
-                  <TableCell className={`font-bold ${sale.netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    {formatCurrency(sale.netProfit)} ريال
-                  </TableCell>
+                  <TableCell>{formatCurrency(Number(sale.sale_price))} {t.rpt_currency}</TableCell>
+                  <TableCell className="text-success">{formatCurrency(Number(sale.profit))} {t.rpt_currency}</TableCell>
+                  <TableCell className="text-orange-600">{sale.carExpenses > 0 ? `${formatCurrency(sale.carExpenses)} ${t.rpt_currency}` : '-'}</TableCell>
+                  <TableCell className={`font-bold ${sale.netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>{formatCurrency(sale.netProfit)} {t.rpt_currency}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -266,19 +190,16 @@ export function ProfitReport() {
         )}
       </div>
 
-      {/* General Expenses Table */}
       {filteredGeneralExpenses.length > 0 && (
         <div className="bg-card rounded-2xl card-shadow overflow-hidden">
-          <div className="p-4 border-b">
-            <h3 className="font-bold">المصروفات العامة (غير المرتبطة بـ{labels.itemsName})</h3>
-          </div>
+          <div className="p-4 border-b"><h3 className="font-bold">{t.rpt_profit_general_table}</h3></div>
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="text-right font-bold">التاريخ</TableHead>
-                <TableHead className="text-right font-bold">الوصف</TableHead>
-                <TableHead className="text-right font-bold">الفئة</TableHead>
-                <TableHead className="text-right font-bold">المبلغ</TableHead>
+                <TableHead className="text-right font-bold">{t.rpt_profit_col_date}</TableHead>
+                <TableHead className="text-right font-bold">{t.rpt_profit_col_desc}</TableHead>
+                <TableHead className="text-right font-bold">{t.rpt_profit_col_category}</TableHead>
+                <TableHead className="text-right font-bold">{t.rpt_profit_col_amount}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -286,10 +207,8 @@ export function ProfitReport() {
                 <TableRow key={expense.id}>
                   <TableCell>{formatDate(expense.expense_date)}</TableCell>
                   <TableCell>{expense.description}</TableCell>
-                  <TableCell>{expense.category?.name || 'بدون فئة'}</TableCell>
-                  <TableCell className="font-bold text-destructive">
-                    {formatCurrency(Number(expense.amount))} ريال
-                  </TableCell>
+                  <TableCell>{expense.category?.name || t.rpt_profit_no_category}</TableCell>
+                  <TableCell className="font-bold text-destructive">{formatCurrency(Number(expense.amount))} {t.rpt_currency}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
