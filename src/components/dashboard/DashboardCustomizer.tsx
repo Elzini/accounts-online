@@ -228,6 +228,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
         gradientTo: source.gradientTo,
         fontSize: source.fontSize,
         height: source.height,
+        width: source.width,
         enable3D: source.enable3D,
         showTrend: source.showTrend,
         trendColor: source.trendColor,
@@ -625,11 +626,33 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                     value={[selected.height || 0]}
                     onValueChange={([value]) => updateCard(selected.id, { height: value === 0 ? undefined : value })}
                     min={0}
-                    max={200}
+                    max={300}
                     step={10}
                     className="w-full"
                   />
                   <p className="text-xs text-muted-foreground">0 = ارتفاع تلقائي</p>
+                </div>
+
+                {/* Card Width */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm flex items-center gap-2">
+                      <Ruler className="w-4 h-4" />
+                      عرض البطاقة
+                    </Label>
+                    <span className="text-sm text-muted-foreground">
+                      {selected.width ? `${selected.width}px` : 'تلقائي'}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[selected.width || 0]}
+                    onValueChange={([value]) => updateCard(selected.id, { width: value === 0 ? undefined : value })}
+                    min={0}
+                    max={500}
+                    step={10}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">0 = عرض تلقائي (يملأ المساحة المتاحة)</p>
                 </div>
 
                 {/* 3D Effect */}
