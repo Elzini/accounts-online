@@ -15,13 +15,15 @@ import { Loader2, Plus, Edit, Trash2, RefreshCw, Search, ChevronDown, ChevronRig
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { AccountCategory, AccountType } from '@/services/accounting';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-const accountTypes: Array<{ value: AccountType; label: string; color: string; bgColor: string }> = [
-  { value: 'assets', label: 'أصول', color: 'bg-blue-500', bgColor: 'bg-blue-50 dark:bg-blue-950' },
-  { value: 'liabilities', label: 'خصوم', color: 'bg-red-500', bgColor: 'bg-red-50 dark:bg-red-950' },
-  { value: 'equity', label: 'حقوق الملكية', color: 'bg-purple-500', bgColor: 'bg-purple-50 dark:bg-purple-950' },
-  { value: 'revenue', label: 'إيرادات', color: 'bg-green-500', bgColor: 'bg-green-50 dark:bg-green-950' },
-  { value: 'expenses', label: 'مصروفات', color: 'bg-orange-500', bgColor: 'bg-orange-50 dark:bg-orange-950' },
+// Note: accountTypes labels will be localized in the component using t.*
+const accountTypes: Array<{ value: AccountType; labelKey: string; color: string; bgColor: string }> = [
+  { value: 'assets', labelKey: 'coa_type_assets', color: 'bg-blue-500', bgColor: 'bg-blue-50 dark:bg-blue-950' },
+  { value: 'liabilities', labelKey: 'coa_type_liabilities', color: 'bg-red-500', bgColor: 'bg-red-50 dark:bg-red-950' },
+  { value: 'equity', labelKey: 'coa_type_equity', color: 'bg-purple-500', bgColor: 'bg-purple-50 dark:bg-purple-950' },
+  { value: 'revenue', labelKey: 'coa_type_revenue', color: 'bg-green-500', bgColor: 'bg-green-50 dark:bg-green-950' },
+  { value: 'expenses', labelKey: 'coa_type_expenses', color: 'bg-orange-500', bgColor: 'bg-orange-50 dark:bg-orange-950' },
 ];
 
 interface TreeNodeProps {
@@ -35,10 +37,12 @@ interface TreeNodeProps {
 }
 
 function TreeNode({ account, accounts, level, onEdit, onDelete, expandedNodes, toggleNode }: TreeNodeProps) {
+  const { t } = useLanguage();
   const children = accounts.filter(a => a.parent_id === account.id);
   const hasChildren = children.length > 0;
   const isExpanded = expandedNodes.has(account.id);
-  const typeConfig = accountTypes.find(t => t.value === account.type);
+  const typeConfig = accountTypes.find(tc => tc.value === account.type);
+  const typeLabel = typeConfig ? (t as any)[typeConfig.labelKey] : account.type;
 
   return (
     <div>
@@ -76,11 +80,11 @@ function TreeNode({ account, accounts, level, onEdit, onDelete, expandedNodes, t
         <span className="flex-1">{account.name}</span>
         
         <Badge variant="outline" className={cn("text-xs", typeConfig?.bgColor)}>
-          {typeConfig?.label}
+          {typeLabel}
         </Badge>
         
         {account.is_system && (
-          <Badge variant="secondary" className="text-xs">نظام</Badge>
+          <Badge variant="secondary" className="text-xs">{t.coa_system}</Badge>
         )}
         
         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
@@ -106,16 +110,12 @@ function TreeNode({ account, accounts, level, onEdit, onDelete, expandedNodes, t
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
-                <AlertDialogDescription>
-                  هل أنت متأكد من حذف حساب "{account.name}"؟ لا يمكن التراجع عن هذا الإجراء.
-                </AlertDialogDescription>
+                <AlertDialogTitle>{t.coa_confirm_delete}</AlertDialogTitle>
+                <AlertDialogDescription>{t.coa_confirm_delete_desc}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                <AlertDialogAction onClick={() => onDelete(account.id)}>
-                  حذف
-                </AlertDialogAction>
+                <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onDelete(account.id)}>{t.delete}</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -145,6 +145,7 @@ function TreeNode({ account, accounts, level, onEdit, onDelete, expandedNodes, t
 }
 
 export function ChartOfAccountsPage() {
+  const { t, direction } = useLanguage();
   const { data: accounts = [], isLoading } = useAccounts();
   const addAccount = useAddAccount();
   const updateAccount = useUpdateAccount();
@@ -287,7 +288,8 @@ export function ChartOfAccountsPage() {
   };
 
   const getTypeLabel = (type: string) => {
-    return accountTypes.find(t => t.value === type)?.label || type;
+    const tc = accountTypes.find(at => at.value === type);
+    return tc ? (t as any)[tc.labelKey] : type;
   };
 
   const getTypeColor = (type: string) => {
@@ -349,12 +351,12 @@ export function ChartOfAccountsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={direction}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">شجرة الحسابات</h1>
-          <p className="text-muted-foreground">إدارة دليل الحسابات للشركة • {accounts.length} حساب</p>
+          <h1 className="text-2xl font-bold text-foreground">{t.coa_title}</h1>
+          <p className="text-muted-foreground">{t.coa_subtitle} • {accounts.length} {t.acc_account}</p>
         </div>
         <div className="flex gap-2">
           {accounts.length === 0 && (
@@ -364,7 +366,7 @@ export function ChartOfAccountsPage() {
               ) : (
                 <RefreshCw className="w-4 h-4 ml-2" />
               )}
-              إنشاء حسابات افتراضية
+              {t.coa_create_defaults}
             </Button>
           )}
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
@@ -374,20 +376,20 @@ export function ChartOfAccountsPage() {
             <DialogTrigger asChild>
               <Button>
                 <Plus className="w-4 h-4 ml-2" />
-                إضافة حساب
+                {t.coa_add_account}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>{editingAccount ? 'تعديل الحساب' : 'إضافة حساب جديد'}</DialogTitle>
+                <DialogTitle>{editingAccount ? t.coa_edit_account : t.coa_add_new}</DialogTitle>
                 <DialogDescription>
-                  {editingAccount ? 'تعديل بيانات الحساب' : 'إضافة حساب جديد إلى شجرة الحسابات'}
+                  {editingAccount ? t.coa_edit_desc : t.coa_add_desc}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid gap-4 grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="type">نوع الحساب *</Label>
+                    <Label htmlFor="type">{t.coa_account_type}</Label>
                     <Select 
                       value={formData.type} 
                       onValueChange={(value: AccountType) => {
@@ -405,7 +407,7 @@ export function ChartOfAccountsPage() {
                           <SelectItem key={type.value} value={type.value}>
                             <div className="flex items-center gap-2">
                               <div className={cn("w-2 h-2 rounded-full", type.color)} />
-                              {type.label}
+                              {(t as any)[type.labelKey]}
                             </div>
                           </SelectItem>
                         ))}
@@ -413,7 +415,7 @@ export function ChartOfAccountsPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="code">رمز الحساب *</Label>
+                    <Label htmlFor="code">{t.coa_account_code}</Label>
                     <Input
                       id="code"
                       value={formData.code}
@@ -424,7 +426,7 @@ export function ChartOfAccountsPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="name">اسم الحساب *</Label>
+                  <Label htmlFor="name">{t.coa_account_name}</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -433,7 +435,7 @@ export function ChartOfAccountsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="parent">الحساب الأب</Label>
+                  <Label htmlFor="parent">{t.coa_parent_account}</Label>
                   <Select 
                     value={formData.parent_id || 'none'} 
                     onValueChange={(value) => {
@@ -448,7 +450,7 @@ export function ChartOfAccountsPage() {
                       <SelectValue placeholder="بدون" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">بدون (حساب رئيسي)</SelectItem>
+                      <SelectItem value="none">{t.coa_no_parent}</SelectItem>
                       {accounts
                         .filter(a => a.id !== editingAccount?.id)
                         .sort((a, b) => a.code.localeCompare(b.code))
@@ -462,7 +464,7 @@ export function ChartOfAccountsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description">الوصف</Label>
+                  <Label htmlFor="description">{t.coa_description}</Label>
                   <Input
                     id="description"
                     value={formData.description}
@@ -478,7 +480,7 @@ export function ChartOfAccountsPage() {
                   {(addAccount.isPending || updateAccount.isPending) ? (
                     <Loader2 className="w-4 h-4 ml-2 animate-spin" />
                   ) : null}
-                  {editingAccount ? 'تحديث الحساب' : 'إضافة الحساب'}
+                  {editingAccount ? t.coa_update_btn : t.coa_add_btn}
                 </Button>
               </div>
             </DialogContent>
@@ -493,7 +495,7 @@ export function ChartOfAccountsPage() {
             <div className="relative flex-1">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="بحث بالاسم أو الرمز..."
+              placeholder={t.coa_search_placeholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pr-10"
@@ -504,12 +506,12 @@ export function ChartOfAccountsPage() {
                 <SelectValue placeholder="نوع الحساب" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">جميع الأنواع</SelectItem>
+                <SelectItem value="all">{t.coa_all_types}</SelectItem>
                 {accountTypes.map((type) => (
                   <SelectItem key={type.value} value={type.value}>
                     <div className="flex items-center gap-2">
                       <div className={cn("w-2 h-2 rounded-full", type.color)} />
-                      {type.label}
+                      {(t as any)[type.labelKey]}
                     </div>
                   </SelectItem>
                 ))}
@@ -544,14 +546,14 @@ export function ChartOfAccountsPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <TreesIcon className="w-5 h-5" />
-                العرض الشجري
+                {t.coa_tree_title}
               </CardTitle>
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" onClick={expandAll}>
-                  توسيع الكل
+                  {t.coa_expand_all}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={collapseAll}>
-                  طي الكل
+                  {t.coa_collapse_all}
                 </Button>
               </div>
             </div>
@@ -560,10 +562,10 @@ export function ChartOfAccountsPage() {
             {rootAccounts.length === 0 ? (
               <div className="text-center py-12">
                 <TreesIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">لا توجد حسابات</p>
+                <p className="text-muted-foreground">{t.coa_no_accounts}</p>
                 {accounts.length === 0 && (
                   <Button variant="outline" className="mt-4" onClick={handleCreateDefaults}>
-                    إنشاء حسابات افتراضية
+                    {t.coa_create_defaults}
                   </Button>
                 )}
               </div>
@@ -596,7 +598,7 @@ export function ChartOfAccountsPage() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2">
                     <div className={cn("w-3 h-3 rounded-full", group.color)} />
-                    {group.label}
+                    {(t as any)[group.labelKey]}
                     <Badge variant="secondary" className="mr-2">{group.accounts.length}</Badge>
                   </CardTitle>
                 </CardHeader>
@@ -604,11 +606,11 @@ export function ChartOfAccountsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-24">الرمز</TableHead>
-                        <TableHead>الاسم</TableHead>
-                        <TableHead>الحساب الأب</TableHead>
-                        <TableHead>الوصف</TableHead>
-                        <TableHead className="w-24 text-center">إجراءات</TableHead>
+                     <TableHead className="w-24">{t.coa_col_code}</TableHead>
+                        <TableHead>{t.coa_col_name}</TableHead>
+                        <TableHead>{t.coa_col_parent}</TableHead>
+                        <TableHead>{t.coa_col_desc}</TableHead>
+                        <TableHead className="w-24 text-center">{t.coa_col_actions}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -619,7 +621,7 @@ export function ChartOfAccountsPage() {
                             <div className="flex items-center gap-2">
                               {account.name}
                               {account.is_system && (
-                                <Badge variant="secondary" className="text-xs">نظام</Badge>
+                                <Badge variant="secondary" className="text-xs">{t.coa_system}</Badge>
                               )}
                             </div>
                           </TableCell>
@@ -647,16 +649,12 @@ export function ChartOfAccountsPage() {
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      هل أنت متأكد من حذف حساب "{account.name}"؟ لا يمكن التراجع عن هذا الإجراء.
-                                    </AlertDialogDescription>
+                                    <AlertDialogTitle>{t.coa_confirm_delete}</AlertDialogTitle>
+                                    <AlertDialogDescription>{t.coa_confirm_delete_desc}</AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(account.id)}>
-                                      حذف
-                                    </AlertDialogAction>
+                                    <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(account.id)}>{t.delete}</AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
@@ -676,7 +674,7 @@ export function ChartOfAccountsPage() {
               <CardContent className="py-12">
                 <div className="text-center">
                   <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">لا توجد حسابات مطابقة للبحث</p>
+                  <p className="text-muted-foreground">{t.coa_no_match}</p>
                 </div>
               </CardContent>
             </Card>
@@ -694,7 +692,7 @@ export function ChartOfAccountsPage() {
               <CardContent className="pt-4 pb-3">
                 <div className="flex items-center gap-2 mb-1">
                   <div className={cn("w-2 h-2 rounded-full", type.color)} />
-                  <span className="text-sm font-medium">{type.label}</span>
+                  <span className="text-sm font-medium">{(t as any)[type.labelKey]}</span>
                 </div>
                 <p className="text-2xl font-bold">{count}</p>
               </CardContent>
