@@ -8,8 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useUnits, useAddUnit, useUpdateUnit, useDeleteUnit } from '@/hooks/useInventory';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function UnitsPage() {
+  const { t, direction } = useLanguage();
   const { data: units = [], isLoading } = useUnits();
   const addMutation = useAddUnit();
   const updateMutation = useUpdateUnit();
@@ -26,36 +28,36 @@ export function UnitsPage() {
   };
 
   const handleSave = async () => {
-    if (!name.trim()) { toast.error('اسم الوحدة مطلوب'); return; }
+    if (!name.trim()) { toast.error(t.inv_units_name_required); return; }
     try {
-      if (editId) { await updateMutation.mutateAsync({ id: editId, name, abbreviation }); toast.success('تم التحديث'); }
-      else { await addMutation.mutateAsync({ name, abbreviation }); toast.success('تم الإضافة'); }
+      if (editId) { await updateMutation.mutateAsync({ id: editId, name, abbreviation }); toast.success(t.acc_updated); }
+      else { await addMutation.mutateAsync({ name, abbreviation }); toast.success(t.acc_added); }
       setDialogOpen(false);
-    } catch { toast.error('حدث خطأ'); }
+    } catch { toast.error(t.acc_error); }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('هل أنت متأكد؟')) return;
-    try { await deleteMutation.mutateAsync(id); toast.success('تم الحذف'); }
-    catch { toast.error('لا يمكن حذف الوحدة - قد تكون مرتبطة بأصناف'); }
+    if (!confirm(t.inv_units_confirm_delete)) return;
+    try { await deleteMutation.mutateAsync(id); toast.success(t.acc_deleted); }
+    catch { toast.error(t.inv_units_delete_error); }
   };
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6" dir={direction}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"><Ruler className="w-5 h-5 text-primary" /></div>
-          <div><h1 className="text-xl font-bold text-foreground">وحدات القياس</h1><p className="text-sm text-muted-foreground">إدارة وحدات القياس للأصناف</p></div>
+          <div><h1 className="text-xl font-bold text-foreground">{t.inv_units_title}</h1><p className="text-sm text-muted-foreground">{t.inv_units_subtitle}</p></div>
         </div>
-        <Button onClick={() => handleOpen()} className="gap-2"><Plus className="w-4 h-4" /> إضافة وحدة</Button>
+        <Button onClick={() => handleOpen()} className="gap-2"><Plus className="w-4 h-4" /> {t.inv_units_add}</Button>
       </div>
 
       <Card className="overflow-hidden">
-        {isLoading ? <div className="p-8 text-center text-muted-foreground">جاري التحميل...</div> : (units as any[]).length === 0 ? (
-          <div className="p-12 text-center"><Ruler className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" /><p className="text-muted-foreground">لا توجد وحدات قياس</p></div>
+        {isLoading ? <div className="p-8 text-center text-muted-foreground">{t.loading}</div> : (units as any[]).length === 0 ? (
+          <div className="p-12 text-center"><Ruler className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" /><p className="text-muted-foreground">{t.inv_units_none}</p></div>
         ) : (
           <Table>
-            <TableHeader><TableRow><TableHead className="text-right">الاسم</TableHead><TableHead className="text-right">الاختصار</TableHead><TableHead className="text-right">إجراءات</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="text-right">{t.inv_units_col_name}</TableHead><TableHead className="text-right">{t.inv_units_col_abbr}</TableHead><TableHead className="text-right">{t.inv_units_col_actions}</TableHead></TableRow></TableHeader>
             <TableBody>
               {(units as any[]).map(u => (
                 <TableRow key={u.id}>
@@ -75,15 +77,15 @@ export function UnitsPage() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-sm" dir="rtl">
-          <DialogHeader><DialogTitle>{editId ? 'تعديل الوحدة' : 'إضافة وحدة جديدة'}</DialogTitle></DialogHeader>
+        <DialogContent className="sm:max-w-sm" dir={direction}>
+          <DialogHeader><DialogTitle>{editId ? t.inv_units_edit : t.inv_units_add_new}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div><Label>الاسم *</Label><Input value={name} onChange={e => setName(e.target.value)} placeholder="كيلوجرام" /></div>
-            <div><Label>الاختصار</Label><Input value={abbreviation} onChange={e => setAbbreviation(e.target.value)} placeholder="كجم" /></div>
+            <div><Label>{t.name} *</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
+            <div><Label>{t.inv_units_abbreviation}</Label><Input value={abbreviation} onChange={e => setAbbreviation(e.target.value)} /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
-            <Button onClick={handleSave} disabled={addMutation.isPending || updateMutation.isPending}>{editId ? 'تحديث' : 'إضافة'}</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t.cancel}</Button>
+            <Button onClick={handleSave} disabled={addMutation.isPending || updateMutation.isPending}>{editId ? t.edit : t.add}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
