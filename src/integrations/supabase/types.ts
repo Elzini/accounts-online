@@ -6635,6 +6635,54 @@ export type Database = {
           },
         ]
       }
+      security_audit_trail: {
+        Row: {
+          blocked: boolean | null
+          created_at: string | null
+          db_user: string | null
+          details: Json | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          operation: string | null
+          schema_name: string | null
+          severity: string
+          table_name: string | null
+          tenant_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          blocked?: boolean | null
+          created_at?: string | null
+          db_user?: string | null
+          details?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          operation?: string | null
+          schema_name?: string | null
+          severity?: string
+          table_name?: string | null
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          blocked?: boolean | null
+          created_at?: string | null
+          db_user?: string | null
+          details?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          operation?: string | null
+          schema_name?: string | null
+          severity?: string
+          table_name?: string | null
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       security_events: {
         Row: {
           company_id: string | null
@@ -8480,6 +8528,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_security_audit: {
+        Args: {
+          p_blocked?: boolean
+          p_details?: Json
+          p_event_type: string
+          p_operation?: string
+          p_schema_name?: string
+          p_severity: string
+          p_table_name?: string
+          p_tenant_id?: string
+        }
+        Returns: undefined
+      }
       log_security_event: {
         Args: {
           p_company_id?: string
@@ -8500,6 +8561,7 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: Json
       }
+      provision_tenant_final: { Args: { p_company_id: string }; Returns: Json }
       rbac_check: { Args: { required_permission: string }; Returns: boolean }
       regenerate_journal_entries: {
         Args: { p_company_id: string }
@@ -8545,13 +8607,25 @@ export type Database = {
         Args: { p_company_id: string; p_encrypted: string }
         Returns: string
       }
+      tenant_decrypt_column: {
+        Args: { p_company_id: string; p_encrypted: string }
+        Returns: string
+      }
       tenant_encrypt: {
         Args: { p_company_id: string; p_data: string }
+        Returns: string
+      }
+      tenant_encrypt_column: {
+        Args: { p_company_id: string; p_value: string }
         Returns: string
       }
       user_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
+      }
+      validate_tenant_complete: {
+        Args: { p_company_id: string }
+        Returns: Json
       }
       validate_tenant_schema: { Args: { p_company_id: string }; Returns: Json }
       verify_audit_log_integrity: {
