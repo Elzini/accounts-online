@@ -60,6 +60,8 @@ interface StatCardConfig {
   order: number;
   size: 'small' | 'medium' | 'large';
   color?: string;
+  width?: number;
+  height?: number;
 }
 
 interface AnalyticsConfig {
@@ -242,7 +244,7 @@ export function DashboardConfigTab() {
                   >
                     <GripVertical className="w-5 h-5 text-muted-foreground cursor-grab" />
                     
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-4">
                       {/* Card Type */}
                       <div className="space-y-1">
                         <Label className="text-xs">نوع البطاقة</Label>
@@ -300,6 +302,39 @@ export function DashboardConfigTab() {
                             <SelectItem value="large">كبير</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+
+                      {/* Width */}
+                      <div className="space-y-1">
+                        <Label className="text-xs">العرض (col-span)</Label>
+                        <Select
+                          value={String(card.width || 1)}
+                          onValueChange={(value) => updateStatCard(card.id, { width: Number(value) })}
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1 عمود</SelectItem>
+                            <SelectItem value="2">2 عمود</SelectItem>
+                            <SelectItem value="3">3 أعمدة</SelectItem>
+                            <SelectItem value="4">4 أعمدة</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Height */}
+                      <div className="space-y-1">
+                        <Label className="text-xs">الارتفاع (px)</Label>
+                        <Input
+                          type="number"
+                          value={card.height || 160}
+                          onChange={(e) => updateStatCard(card.id, { height: Number(e.target.value) })}
+                          className="h-9"
+                          min={100}
+                          max={400}
+                          step={10}
+                        />
                       </div>
 
                       {/* Visibility */}
