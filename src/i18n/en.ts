@@ -885,4 +885,29 @@ export const en: TranslationKeys = {
   payment_recorded: 'Payment recorded successfully',
   select_sale: 'Please select a sale',
   down_payment_less: 'Down payment must be less than total amount',
+
+  // KPI labels
+  kpi_gross_profit_margin: 'Gross Profit Margin',
+  kpi_gross_profit_desc: 'Profit percentage of total revenue',
+  kpi_net_profit_margin: 'Net Profit Margin',
+  kpi_net_profit_desc: 'After deducting operating expenses',
+  kpi_opex_ratio: 'Operating Expense Ratio',
+  kpi_opex_desc: 'Expenses as percentage of revenue',
+  kpi_avg_days_to_sell: 'Avg Days to Sell',
+  kpi_avg_days_desc: 'Average time from purchase to sale',
+  kpi_avg_days_unit: 'days',
+  kpi_sales_efficiency: 'Sales Efficiency',
+  kpi_sales_efficiency_desc: 'Monthly sales to purchases ratio',
+  kpi_avg_deal_size: 'Avg Deal Size',
+  kpi_avg_deal_desc: 'Average value per sale',
+  kpi_advanced_title: 'Advanced Financial KPIs',
+
+  // Monthly expenses card
+  total_expenses_label: 'Total Expenses',
+  custody_short: 'Custody',
+  payroll_short: 'Payroll',
+  rent_short: 'Rent',
+  other_short: 'Other',
+  payroll_and_salaries: 'Payroll & Salaries',
+  rent_label: 'Rent',
 };

@@ -885,4 +885,29 @@ export const ar: TranslationKeys = {
   payment_recorded: 'تم تسجيل الدفعة بنجاح',
   select_sale: 'يرجى اختيار عملية البيع',
   down_payment_less: 'الدفعة المقدمة يجب أن تكون أقل من المبلغ الإجمالي',
+
+  // KPI labels
+  kpi_gross_profit_margin: 'هامش الربح الإجمالي',
+  kpi_gross_profit_desc: 'نسبة الربح من إجمالي الإيرادات',
+  kpi_net_profit_margin: 'هامش صافي الربح',
+  kpi_net_profit_desc: 'بعد خصم المصروفات التشغيلية',
+  kpi_opex_ratio: 'نسبة المصروفات التشغيلية',
+  kpi_opex_desc: 'المصروفات كنسبة من الإيرادات',
+  kpi_avg_days_to_sell: 'متوسط أيام البيع',
+  kpi_avg_days_desc: 'متوسط المدة من الشراء للبيع',
+  kpi_avg_days_unit: 'يوم',
+  kpi_sales_efficiency: 'كفاءة المبيعات',
+  kpi_sales_efficiency_desc: 'نسبة المبيعات إلى المشتريات الشهرية',
+  kpi_avg_deal_size: 'متوسط قيمة الصفقة',
+  kpi_avg_deal_desc: 'متوسط قيمة البيع الواحد',
+  kpi_advanced_title: 'مؤشرات الأداء المالي المتقدمة',
+
+  // Monthly expenses card
+  total_expenses_label: 'إجمالي المصروفات',
+  custody_short: 'عهد',
+  payroll_short: 'رواتب',
+  rent_short: 'إيجار',
+  other_short: 'أخرى',
+  payroll_and_salaries: 'الرواتب والأجور',
+  rent_label: 'الإيجارات',
 };
