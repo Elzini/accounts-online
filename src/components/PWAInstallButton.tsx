@@ -2,6 +2,7 @@ import { Download, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Tooltip,
   TooltipContent,
@@ -11,6 +12,7 @@ import {
 export function PWAInstallButton() {
   const { isInstallable, isInstalled, install } = usePWAInstall();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   // Don't show if already installed
   if (isInstalled) return null;
@@ -19,7 +21,6 @@ export function PWAInstallButton() {
     if (isInstallable) {
       await install();
     } else {
-      // Redirect to install page for manual instructions
       navigate('/install');
     }
   };
@@ -36,18 +37,18 @@ export function PWAInstallButton() {
           {isInstallable ? (
             <>
               <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">تثبيت التطبيق</span>
+              <span className="hidden sm:inline">{t.install_app}</span>
             </>
           ) : (
             <>
               <Smartphone className="w-4 h-4" />
-              <span className="hidden sm:inline">تثبيت</span>
+              <span className="hidden sm:inline">{t.install}</span>
             </>
           )}
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        <p>ثبّت التطبيق على جهازك للوصول السريع</p>
+        <p>{t.install_app_tooltip}</p>
       </TooltipContent>
     </Tooltip>
   );
