@@ -8001,6 +8001,10 @@ export type Database = {
         Returns: undefined
       }
       apply_defaults_to_existing_companies: { Args: never; Returns: Json }
+      backfill_tenant_schema: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       calculate_car_net_profit: {
         Args: {
           p_car_id: string
@@ -8059,6 +8063,10 @@ export type Database = {
           _user_id: string
         }
         Returns: string
+      }
+      create_tenant_schema: {
+        Args: { p_company_id: string }
+        Returns: undefined
       }
       decrypt_sensitive_data: {
         Args: { encrypted_text: string; encryption_key: string }
@@ -8201,6 +8209,15 @@ export type Database = {
       verify_company_permission: {
         Args: { _company_id: string; _permission: string; _user_id: string }
         Returns: boolean
+      }
+      verify_tenant_data_integrity: {
+        Args: { p_company_id: string }
+        Returns: {
+          is_matching: boolean
+          public_count: number
+          table_name: string
+          tenant_count: number
+        }[]
       }
       verify_user_company_access: {
         Args: { _company_id: string; _user_id: string }
