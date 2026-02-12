@@ -544,9 +544,9 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
             </div>
           </div>
 
-          {/* Dynamic Dashboard Grid - rendered in sorted order */}
+           {/* Dynamic Dashboard Grid - rendered in sorted order */}
           <div 
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5"
             onDrop={isEditMode ? handleGridDrop : undefined}
             onDragOver={isEditMode ? handleGridDragOver : undefined}
           >
