@@ -123,8 +123,12 @@ export function StatCard({
     return () => clearTimeout(timer);
   }, [progress, animationIndex]);
 
+  const { language } = useLanguage();
+
   const getArabicWords = () => {
     if (!showAsWords) return null;
+    // Only show number-to-words in Arabic
+    if (language !== 'ar') return null;
     let numericValue: number | null = null;
     if (typeof value === 'number') {
       numericValue = value;

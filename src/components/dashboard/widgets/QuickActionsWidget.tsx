@@ -1,6 +1,7 @@
 import { ShoppingCart, DollarSign, UserPlus, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ActivePage } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface QuickActionsWidgetProps {
   setActivePage: (page: ActivePage) => void;
@@ -9,9 +10,10 @@ interface QuickActionsWidgetProps {
 }
 
 export function QuickActionsWidget({ setActivePage, canSales, canPurchases }: QuickActionsWidgetProps) {
+  const { t } = useLanguage();
   return (
     <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 lg:p-6 shadow-sm border border-border">
-      <h2 className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-card-foreground mb-2 sm:mb-3 md:mb-4">الإجراءات السريعة</h2>
+      <h2 className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-card-foreground mb-2 sm:mb-3 md:mb-4">{t.quick_actions}</h2>
       <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
         <Button 
           onClick={() => setActivePage('purchases')}
@@ -19,7 +21,7 @@ export function QuickActionsWidget({ setActivePage, canSales, canPurchases }: Qu
           disabled={!canPurchases}
         >
           <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-          <span>المشتريات</span>
+          <span>{t.nav_purchases}</span>
         </Button>
         <Button 
           onClick={() => setActivePage('sales')}
@@ -27,7 +29,7 @@ export function QuickActionsWidget({ setActivePage, canSales, canPurchases }: Qu
           disabled={!canSales}
         >
           <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-          <span>المبيعات</span>
+          <span>{t.nav_sales}</span>
         </Button>
         <Button 
           onClick={() => setActivePage('add-customer')}
@@ -36,7 +38,7 @@ export function QuickActionsWidget({ setActivePage, canSales, canPurchases }: Qu
           disabled={!canSales}
         >
           <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-          <span>إضافة عميل</span>
+          <span>{t.add_customer}</span>
         </Button>
         <Button 
           onClick={() => setActivePage('add-supplier')}
@@ -45,7 +47,7 @@ export function QuickActionsWidget({ setActivePage, canSales, canPurchases }: Qu
           disabled={!canPurchases}
         >
           <Truck className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-          <span>إضافة مورد</span>
+          <span>{t.add_supplier}</span>
         </Button>
       </div>
     </div>

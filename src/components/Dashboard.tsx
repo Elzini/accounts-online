@@ -676,7 +676,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         value={formatCurrencyWithMode(allTimeStats.allTimePurchases)}
                         icon={Building2}
                         gradient="danger"
-                        subtitle={`${allTimeStats.totalCarsCount} ${industryLabels.allTimePurchasesSubUnit} - ${getDisplayModeLabel(amountDisplayMode)}`}
+                        subtitle={`${allTimeStats.totalCarsCount} ${industryLabels.allTimePurchasesSubUnit} - ${getDisplayModeLabel(amountDisplayMode, language)}`}
                         onClick={() => showStatDetail('allTimePurchases')}
                         showAsWords={showAmountAsWords}
                         {...getCardStyleProps('allTimePurchases')}
@@ -694,7 +694,7 @@ export function Dashboard({ stats, setActivePage }: DashboardProps) {
                         value={formatCurrencyWithMode(allTimeStats.allTimeSales)}
                         icon={TrendingUp}
                         gradient="success"
-                        subtitle={`${allTimeStats.allTimeSalesCount} ${industryLabels.allTimeSalesSubUnit} - ${getDisplayModeLabel(amountDisplayMode)}`}
+                        subtitle={`${allTimeStats.allTimeSalesCount} ${industryLabels.allTimeSalesSubUnit} - ${getDisplayModeLabel(amountDisplayMode, language)}`}
                         onClick={() => showStatDetail('allTimeSales')}
                         showAsWords={showAmountAsWords}
                         {...getCardStyleProps('allTimeSales')}
