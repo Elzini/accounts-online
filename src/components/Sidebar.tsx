@@ -597,8 +597,9 @@ export function Sidebar({
     return config?.isCollapsible === true;
   };
 
-  // Get section label
+  // Get section label - respect language setting
   const getSectionLabel = (sectionId: string, defaultLabel: string) => {
+    if (language !== 'ar') return defaultLabel;
     const config = getSectionConfig(sectionId);
     return config?.label || defaultLabel;
   };
@@ -616,8 +617,9 @@ export function Sidebar({
     return itemConfig ? itemConfig.visible !== false : true;
   };
 
-  // Get item label
+  // Get item label - respect language setting
   const getItemLabel = (sectionId: string, itemId: string, defaultLabel: string) => {
+    if (language !== 'ar') return defaultLabel;
     const itemConfig = getItemConfig(sectionId, itemId);
     return itemConfig?.label || defaultLabel;
   };
