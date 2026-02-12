@@ -5,12 +5,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Download, Users, Truck, Clock, AlertTriangle } from 'lucide-react';
+import { Search, Download, Users, Truck, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useExcelExport } from '@/hooks/useExcelExport';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AgingEntry {
   id: string;
@@ -25,6 +26,7 @@ interface AgingEntry {
 }
 
 export function AgingReportPage() {
+  const { t, language, direction } = useLanguage();
   const [tab, setTab] = useState<'customers' | 'suppliers'>('customers');
   const [search, setSearch] = useState('');
   const companyId = useCompanyId();
@@ -36,7 +38,6 @@ export function AgingReportPage() {
     queryFn: async () => {
       if (!companyId) return [];
       
-      // Get all sales with payment_status = 'deferred' or payment method آجل
       const { data: sales } = await supabase
         .from('sales' as any)
         .select(`
@@ -86,16 +87,6 @@ export function AgingReportPage() {
     queryKey: ['supplier-aging', companyId, selectedFiscalYear?.id],
     queryFn: async () => {
       if (!companyId) return [];
-
-      // Get journal entries with supplier-related accounts (payables)
-      const { data: entries } = await supabase
-        .from('journal_entry_lines')
-        .select(`
-          id, debit, credit, journal_entry_id,
-          journal_entries!inner(entry_date, company_id, description)
-        `)
-        .eq('journal_entries.company_id', companyId);
-
       // Simplified: return empty for now until we have proper payables tracking
       return [];
     },
@@ -122,21 +113,22 @@ export function AgingReportPage() {
     }), { total: 0, current: 0, days30: 0, days60: 0, days90: 0, over90: 0 });
   }, [filtered]);
 
-  const fmt = (n: number) => n.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const locale = language === 'ar' ? 'ar-SA' : 'en-US';
+  const fmt = (n: number) => n.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const handleExport = () => {
     const columns = [
-      { header: 'الاسم', key: 'name' },
-      { header: 'الهاتف', key: 'phone' },
-      { header: 'الإجمالي', key: 'total' },
-      { header: 'جاري', key: 'current' },
-      { header: '1-30 يوم', key: 'days30' },
-      { header: '31-60 يوم', key: 'days60' },
-      { header: '61-90 يوم', key: 'days90' },
-      { header: 'أكثر من 90', key: 'over90' },
+      { header: t.aging_col_name, key: 'name' },
+      { header: t.aging_col_phone, key: 'phone' },
+      { header: t.aging_total, key: 'total' },
+      { header: t.aging_current, key: 'current' },
+      { header: t.aging_days_1_30, key: 'days30' },
+      { header: t.aging_days_31_60, key: 'days60' },
+      { header: t.aging_days_61_90, key: 'days90' },
+      { header: t.aging_over_90, key: 'over90' },
     ];
     exportToExcel({
-      title: `تقرير أعمار الذمم - ${tab === 'customers' ? 'العملاء' : 'الموردين'}`,
+      title: `${t.aging_title} - ${tab === 'customers' ? t.aging_customers : t.aging_suppliers}`,
       columns,
       data: filtered,
       fileName: `aging-report-${tab}`,
@@ -144,15 +136,15 @@ export function AgingReportPage() {
   };
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6" dir={direction}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">تقرير أعمار الذمم</h1>
-          <p className="text-muted-foreground">تحليل المستحقات حسب فترات التأخير</p>
+          <h1 className="text-2xl font-bold">{t.aging_title}</h1>
+          <p className="text-muted-foreground">{t.aging_subtitle}</p>
         </div>
         <Button variant="outline" onClick={handleExport}>
           <Download className="w-4 h-4 ml-2" />
-          تصدير Excel
+          {t.aging_export}
         </Button>
       </div>
 
@@ -160,37 +152,37 @@ export function AgingReportPage() {
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-xs text-muted-foreground">الإجمالي</p>
+            <p className="text-xs text-muted-foreground">{t.aging_total}</p>
             <p className="text-lg font-bold">{fmt(totals.total)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-xs text-muted-foreground">جاري</p>
+            <p className="text-xs text-muted-foreground">{t.aging_current}</p>
             <p className="text-lg font-bold text-green-600">{fmt(totals.current)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-xs text-muted-foreground">1-30 يوم</p>
+            <p className="text-xs text-muted-foreground">{t.aging_days_1_30}</p>
             <p className="text-lg font-bold text-yellow-600">{fmt(totals.days30)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-xs text-muted-foreground">31-60 يوم</p>
+            <p className="text-xs text-muted-foreground">{t.aging_days_31_60}</p>
             <p className="text-lg font-bold text-orange-600">{fmt(totals.days60)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-xs text-muted-foreground">61-90 يوم</p>
+            <p className="text-xs text-muted-foreground">{t.aging_days_61_90}</p>
             <p className="text-lg font-bold text-red-500">{fmt(totals.days90)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-xs text-muted-foreground">أكثر من 90</p>
+            <p className="text-xs text-muted-foreground">{t.aging_over_90}</p>
             <p className="text-lg font-bold text-red-700">{fmt(totals.over90)}</p>
           </CardContent>
         </Card>
@@ -200,16 +192,16 @@ export function AgingReportPage() {
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <TabsList>
             <TabsTrigger value="customers" className="gap-2">
-              <Users className="w-4 h-4" /> ذمم العملاء
+              <Users className="w-4 h-4" /> {t.aging_customers}
             </TabsTrigger>
             <TabsTrigger value="suppliers" className="gap-2">
-              <Truck className="w-4 h-4" /> ذمم الموردين
+              <Truck className="w-4 h-4" /> {t.aging_suppliers}
             </TabsTrigger>
           </TabsList>
           <div className="relative w-64">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="بحث..."
+              placeholder={t.aging_search}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pr-9"
@@ -224,28 +216,28 @@ export function AgingReportPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-right">#</TableHead>
-                    <TableHead className="text-right">الاسم</TableHead>
-                    <TableHead className="text-right">الهاتف</TableHead>
-                    <TableHead className="text-right">الإجمالي</TableHead>
-                    <TableHead className="text-right">جاري</TableHead>
-                    <TableHead className="text-right">1-30 يوم</TableHead>
-                    <TableHead className="text-right">31-60 يوم</TableHead>
-                    <TableHead className="text-right">61-90 يوم</TableHead>
-                    <TableHead className="text-right">أكثر من 90</TableHead>
+                    <TableHead className="text-right">{t.aging_col_name}</TableHead>
+                    <TableHead className="text-right">{t.aging_col_phone}</TableHead>
+                    <TableHead className="text-right">{t.aging_total}</TableHead>
+                    <TableHead className="text-right">{t.aging_current}</TableHead>
+                    <TableHead className="text-right">{t.aging_days_1_30}</TableHead>
+                    <TableHead className="text-right">{t.aging_days_31_60}</TableHead>
+                    <TableHead className="text-right">{t.aging_days_61_90}</TableHead>
+                    <TableHead className="text-right">{t.aging_over_90}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                        جاري التحميل...
+                        {t.aging_loading}
                       </TableCell>
                     </TableRow>
                   ) : filtered.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        لا توجد ذمم مستحقة
+                        {t.aging_no_data}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -271,7 +263,7 @@ export function AgingReportPage() {
                       ))}
                       {/* Totals Row */}
                       <TableRow className="bg-muted/50 font-bold">
-                        <TableCell colSpan={3}>الإجمالي</TableCell>
+                        <TableCell colSpan={3}>{t.aging_total}</TableCell>
                         <TableCell>{fmt(totals.total)}</TableCell>
                         <TableCell className="text-green-600">{fmt(totals.current)}</TableCell>
                         <TableCell className="text-yellow-600">{fmt(totals.days30)}</TableCell>

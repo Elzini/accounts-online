@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Calculator, FileDown, Building2, TrendingDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, Calculator, TrendingDown, Building2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,28 +28,16 @@ import {
 import { useAccounts } from '@/hooks/useAccounting';
 import { AccountSearchSelect } from '@/components/accounting/AccountSearchSelect';
 import { toast } from 'sonner';
-
-const STATUS_LABELS: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  active: { label: 'نشط', variant: 'default' },
-  disposed: { label: 'تم التخلص', variant: 'destructive' },
-  fully_depreciated: { label: 'مهلك بالكامل', variant: 'secondary' },
-  under_maintenance: { label: 'تحت الصيانة', variant: 'outline' },
-};
-
-const DEPRECIATION_METHODS: Record<string, string> = {
-  straight_line: 'القسط الثابت',
-  declining_balance: 'القسط المتناقص',
-  units_of_production: 'وحدات الإنتاج',
-};
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function FixedAssetsPage() {
+  const { t, language, direction } = useLanguage();
   const { data: assets = [], isLoading } = useFixedAssets();
   const { data: summary } = useAssetsSummary();
   const { data: categories = [] } = useAssetCategories();
   const { data: depreciationEntries = [] } = useDepreciationEntries();
   const { data: accounts = [] } = useAccounts();
   
-  // Filter accounts by type for dropdowns (database uses plural: 'assets', 'expenses')
   const assetAccounts = useMemo(() => 
     accounts.filter(acc => acc.type === 'assets' && acc.code.startsWith('13')),
     [accounts]
@@ -99,6 +87,34 @@ export function FixedAssetsPage() {
     value: 0,
     notes: '',
   });
+
+  const locale = language === 'ar' ? 'ar-SA' : 'en-US';
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'SAR',
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      active: t.fa_status_active,
+      disposed: t.fa_status_disposed,
+      fully_depreciated: t.fa_status_fully_dep,
+      under_maintenance: t.fa_status_maintenance,
+    };
+    return labels[status] || status;
+  };
+
+  const getMethodLabel = (method: string) => {
+    const methods: Record<string, string> = {
+      straight_line: t.fa_method_straight,
+      declining_balance: t.fa_method_declining,
+      units_of_production: t.fa_method_units,
+    };
+    return methods[method] || method;
+  };
 
   const openCreateDialog = () => {
     setEditingAsset(null);
@@ -167,7 +183,7 @@ export function FixedAssetsPage() {
 
   const handleSave = async () => {
     if (!formData.name || !formData.purchase_price || !formData.useful_life_years) {
-      toast.error('يرجى ملء الحقول المطلوبة');
+      toast.error(t.fa_toast_required);
       return;
     }
 
@@ -184,7 +200,7 @@ export function FixedAssetsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الأصل؟')) return;
+    if (!confirm(t.fa_toast_confirm_delete)) return;
     try {
       await deleteAsset.mutateAsync(id);
     } catch (error) {
@@ -194,7 +210,7 @@ export function FixedAssetsPage() {
 
   const handleCalculateDepreciation = async () => {
     if (!selectedAssetId || !depreciationPeriod.start || !depreciationPeriod.end) {
-      toast.error('يرجى تحديد فترة الإهلاك');
+      toast.error(t.fa_toast_required);
       return;
     }
 
@@ -226,14 +242,6 @@ export function FixedAssetsPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -243,15 +251,15 @@ export function FixedAssetsPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6" dir={direction}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">الأصول الثابتة</h1>
-          <p className="text-muted-foreground">إدارة الأصول الثابتة وجدول الإهلاك</p>
+          <h1 className="text-3xl font-bold">{t.fa_title}</h1>
+          <p className="text-muted-foreground">{t.fa_subtitle}</p>
         </div>
         <Button onClick={openCreateDialog}>
           <Plus className="w-4 h-4 ml-2" />
-          إضافة أصل
+          {t.fa_add}
         </Button>
       </div>
 
@@ -261,13 +269,13 @@ export function FixedAssetsPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                إجمالي الأصول
+                {t.fa_total}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{summary.totalAssets}</div>
               <p className="text-xs text-muted-foreground">
-                {summary.activeAssets} نشط
+                {summary.activeAssets} {t.fa_active_count}
               </p>
             </CardContent>
           </Card>
@@ -275,7 +283,7 @@ export function FixedAssetsPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                قيمة الشراء
+                {t.fa_purchase_value}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -286,7 +294,7 @@ export function FixedAssetsPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                الإهلاك المتراكم
+                {t.fa_accumulated_dep}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -299,7 +307,7 @@ export function FixedAssetsPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                القيمة الدفترية
+                {t.fa_book_value}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -313,8 +321,8 @@ export function FixedAssetsPage() {
 
       <Tabs defaultValue="assets" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="assets">الأصول</TabsTrigger>
-          <TabsTrigger value="depreciation">سجل الإهلاك</TabsTrigger>
+          <TabsTrigger value="assets">{t.fa_tab_assets}</TabsTrigger>
+          <TabsTrigger value="depreciation">{t.fa_tab_depreciation}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="assets">
@@ -323,8 +331,8 @@ export function FixedAssetsPage() {
               <div className="flex items-center gap-3">
                 <Building2 className="w-6 h-6 text-primary" />
                 <div>
-                  <CardTitle>قائمة الأصول الثابتة</CardTitle>
-                  <CardDescription>جميع الأصول المسجلة في النظام</CardDescription>
+                  <CardTitle>{t.fa_list_title}</CardTitle>
+                  <CardDescription>{t.fa_list_subtitle}</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -332,21 +340,21 @@ export function FixedAssetsPage() {
               {assets.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Building2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>لا توجد أصول ثابتة مسجلة</p>
+                  <p>{t.fa_no_data}</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>رقم</TableHead>
-                      <TableHead>اسم الأصل</TableHead>
-                      <TableHead>التصنيف</TableHead>
-                      <TableHead>تاريخ الشراء</TableHead>
-                      <TableHead>قيمة الشراء</TableHead>
-                      <TableHead>الإهلاك المتراكم</TableHead>
-                      <TableHead>القيمة الدفترية</TableHead>
-                      <TableHead>الحالة</TableHead>
-                      <TableHead>الإجراءات</TableHead>
+                      <TableHead className="text-right">{t.fa_col_number}</TableHead>
+                      <TableHead className="text-right">{t.fa_col_name}</TableHead>
+                      <TableHead className="text-right">{t.fa_col_category}</TableHead>
+                      <TableHead className="text-right">{t.fa_col_purchase_date}</TableHead>
+                      <TableHead className="text-right">{t.fa_col_purchase_price}</TableHead>
+                      <TableHead className="text-right">{t.fa_col_accumulated}</TableHead>
+                      <TableHead className="text-right">{t.fa_col_book_value}</TableHead>
+                      <TableHead className="text-right">{t.fa_col_status}</TableHead>
+                      <TableHead className="text-right">{t.fa_col_actions}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -358,7 +366,7 @@ export function FixedAssetsPage() {
                           <TableCell className="font-medium">{asset.name}</TableCell>
                           <TableCell>{asset.category || '-'}</TableCell>
                           <TableCell>
-                            {format(new Date(asset.purchase_date), 'dd/MM/yyyy', { locale: ar })}
+                            {format(new Date(asset.purchase_date), 'dd/MM/yyyy')}
                           </TableCell>
                           <TableCell>{formatCurrency(asset.purchase_price)}</TableCell>
                           <TableCell className="text-destructive">
@@ -368,8 +376,8 @@ export function FixedAssetsPage() {
                             {formatCurrency(bookValue)}
                           </TableCell>
                           <TableCell>
-                            <Badge variant={STATUS_LABELS[asset.status]?.variant || 'default'}>
-                              {STATUS_LABELS[asset.status]?.label || asset.status}
+                            <Badge variant={asset.status === 'disposed' ? 'destructive' : asset.status === 'fully_depreciated' ? 'secondary' : asset.status === 'under_maintenance' ? 'outline' : 'default'}>
+                              {getStatusLabel(asset.status)}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -380,7 +388,7 @@ export function FixedAssetsPage() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => openDepreciationDialog(asset.id)}
-                                    title="حساب الإهلاك"
+                                    title={t.fa_tab_depreciation}
                                   >
                                     <Calculator className="w-4 h-4" />
                                   </Button>
@@ -388,7 +396,7 @@ export function FixedAssetsPage() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => openDisposeDialog(asset)}
-                                    title="التخلص من الأصل"
+                                    title={t.fa_status_disposed}
                                   >
                                     <TrendingDown className="w-4 h-4" />
                                   </Button>
@@ -427,8 +435,8 @@ export function FixedAssetsPage() {
               <div className="flex items-center gap-3">
                 <TrendingDown className="w-6 h-6 text-primary" />
                 <div>
-                  <CardTitle>سجل الإهلاك</CardTitle>
-                  <CardDescription>جميع قيود الإهلاك المسجلة</CardDescription>
+                  <CardTitle>{t.fa_dep_log_title}</CardTitle>
+                  <CardDescription>{t.fa_dep_log_subtitle}</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -436,19 +444,19 @@ export function FixedAssetsPage() {
               {depreciationEntries.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <TrendingDown className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>لا توجد قيود إهلاك مسجلة</p>
+                  <p>{t.fa_dep_no_data}</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>تاريخ القيد</TableHead>
-                      <TableHead>الأصل</TableHead>
-                      <TableHead>بداية الفترة</TableHead>
-                      <TableHead>نهاية الفترة</TableHead>
-                      <TableHead>مبلغ الإهلاك</TableHead>
-                      <TableHead>الإهلاك المتراكم</TableHead>
-                      <TableHead>القيمة الدفترية</TableHead>
+                      <TableHead className="text-right">{t.fa_dep_col_date}</TableHead>
+                      <TableHead className="text-right">{t.fa_dep_col_asset}</TableHead>
+                      <TableHead className="text-right">{t.fa_dep_col_period_start}</TableHead>
+                      <TableHead className="text-right">{t.fa_dep_col_period_end}</TableHead>
+                      <TableHead className="text-right">{t.fa_dep_col_amount}</TableHead>
+                      <TableHead className="text-right">{t.fa_dep_col_accumulated}</TableHead>
+                      <TableHead className="text-right">{t.fa_dep_col_book_value}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -457,16 +465,16 @@ export function FixedAssetsPage() {
                       return (
                         <TableRow key={entry.id}>
                           <TableCell>
-                            {format(new Date(entry.entry_date), 'dd/MM/yyyy', { locale: ar })}
+                            {format(new Date(entry.entry_date), 'dd/MM/yyyy')}
                           </TableCell>
                           <TableCell className="font-medium">
                             {asset?.name || '-'}
                           </TableCell>
                           <TableCell>
-                            {format(new Date(entry.period_start), 'dd/MM/yyyy', { locale: ar })}
+                            {format(new Date(entry.period_start), 'dd/MM/yyyy')}
                           </TableCell>
                           <TableCell>
-                            {format(new Date(entry.period_end), 'dd/MM/yyyy', { locale: ar })}
+                            {format(new Date(entry.period_end), 'dd/MM/yyyy')}
                           </TableCell>
                           <TableCell className="text-destructive">
                             {formatCurrency(entry.depreciation_amount)}
@@ -490,32 +498,32 @@ export function FixedAssetsPage() {
 
       {/* Asset Form Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" dir={direction}>
           <DialogHeader>
-            <DialogTitle>{editingAsset ? 'تعديل الأصل' : 'إضافة أصل جديد'}</DialogTitle>
+            <DialogTitle>{editingAsset ? t.fa_add : t.fa_add}</DialogTitle>
             <DialogDescription>
-              أدخل بيانات الأصل الثابت
+              {t.fa_subtitle}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>اسم الأصل *</Label>
+                <Label>{t.fa_col_name} *</Label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="مثال: سيارة تويوتا"
+                  placeholder={t.fa_col_name}
                 />
               </div>
               <div className="space-y-2">
-                <Label>التصنيف</Label>
+                <Label>{t.fa_col_category}</Label>
                 <Select
                   value={formData.category}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="اختر التصنيف" />
+                    <SelectValue placeholder={t.fa_col_category} />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((cat) => (
@@ -530,7 +538,7 @@ export function FixedAssetsPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>تاريخ الشراء *</Label>
+                <Label>{t.fa_col_purchase_date} *</Label>
                 <Input
                   type="date"
                   value={formData.purchase_date}
@@ -538,7 +546,7 @@ export function FixedAssetsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>قيمة الشراء *</Label>
+                <Label>{t.fa_col_purchase_price} *</Label>
                 <Input
                   type="number"
                   min="0"
@@ -582,11 +590,9 @@ export function FixedAssetsPage() {
                     <SelectValue placeholder="اختر طريقة الإهلاك" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(DEPRECIATION_METHODS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="straight_line">{t.fa_method_straight}</SelectItem>
+                    <SelectItem value="declining_balance">{t.fa_method_declining}</SelectItem>
+                    <SelectItem value="units_of_production">{t.fa_method_units}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -646,17 +652,6 @@ export function FixedAssetsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>الرقم التسلسلي</Label>
-                <Input
-                  value={formData.serial_number}
-                  onChange={(e) => setFormData(prev => ({ ...prev, serial_number: e.target.value }))}
-                  placeholder="اختياري"
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label>ملاحظات</Label>
               <Textarea
@@ -669,10 +664,10 @@ export function FixedAssetsPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              إلغاء
+              {t.cancel}
             </Button>
             <Button onClick={handleSave} disabled={createAsset.isPending || updateAsset.isPending}>
-              {editingAsset ? 'تحديث' : 'إضافة'}
+              {editingAsset ? t.save : t.add}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -680,7 +675,7 @@ export function FixedAssetsPage() {
 
       {/* Depreciation Calculation Dialog */}
       <Dialog open={depreciationDialogOpen} onOpenChange={setDepreciationDialogOpen}>
-        <DialogContent>
+        <DialogContent dir={direction}>
           <DialogHeader>
             <DialogTitle>حساب الإهلاك</DialogTitle>
             <DialogDescription>
@@ -690,7 +685,7 @@ export function FixedAssetsPage() {
 
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label>بداية الفترة</Label>
+              <Label>{t.fa_dep_col_period_start}</Label>
               <Input
                 type="date"
                 value={depreciationPeriod.start}
@@ -698,7 +693,7 @@ export function FixedAssetsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>نهاية الفترة</Label>
+              <Label>{t.fa_dep_col_period_end}</Label>
               <Input
                 type="date"
                 value={depreciationPeriod.end}
@@ -709,7 +704,7 @@ export function FixedAssetsPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDepreciationDialogOpen(false)}>
-              إلغاء
+              {t.cancel}
             </Button>
             <Button onClick={handleCalculateDepreciation} disabled={calculateDepreciation.isPending}>
               حساب الإهلاك
@@ -720,7 +715,7 @@ export function FixedAssetsPage() {
 
       {/* Dispose Asset Dialog */}
       <Dialog open={disposeDialogOpen} onOpenChange={setDisposeDialogOpen}>
-        <DialogContent>
+        <DialogContent dir={direction}>
           <DialogHeader>
             <DialogTitle>التخلص من الأصل</DialogTitle>
             <DialogDescription>
@@ -760,7 +755,7 @@ export function FixedAssetsPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDisposeDialogOpen(false)}>
-              إلغاء
+              {t.cancel}
             </Button>
             <Button 
               onClick={handleDispose} 
