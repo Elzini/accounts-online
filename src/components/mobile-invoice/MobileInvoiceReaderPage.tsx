@@ -35,6 +35,7 @@ export function MobileInvoiceReaderPage() {
   const [manualQR, setManualQR] = useState('');
   const [taxNumber, setTaxNumber] = useState('');
   const [taxLookupResult, setTaxLookupResult] = useState<TaxLookupResult | null>(null);
+  const [allTaxResults, setAllTaxResults] = useState<TaxLookupResult[]>([]);
   const [taxLookupLoading, setTaxLookupLoading] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<ScannedInvoice | null>(null);
   const [showDetail, setShowDetail] = useState(false);
@@ -171,44 +172,61 @@ export function MobileInvoiceReaderPage() {
 
     setTaxLookupLoading(true);
 
-    // Search in suppliers first
+    // Search in suppliers and customers - get ALL matches
     const [suppliersRes, customersRes] = await Promise.all([
       supabase
         .from('suppliers')
         .select('name, address')
         .eq('company_id', companyId || '')
-        .or(`registration_number.eq.${cleaned},id_number.eq.${cleaned}`)
-        .limit(1),
+        .or(`registration_number.eq.${cleaned},id_number.eq.${cleaned}`),
       supabase
         .from('customers')
         .select('name, address')
         .eq('company_id', companyId || '')
-        .or(`registration_number.eq.${cleaned},id_number.eq.${cleaned}`)
-        .limit(1),
+        .or(`registration_number.eq.${cleaned},id_number.eq.${cleaned}`),
     ]);
 
-    const supplier = suppliersRes.data?.[0];
-    const customer = customersRes.data?.[0];
-    const found = supplier || customer;
+    const allResults: TaxLookupResult[] = [];
 
-    if (found) {
-      setTaxLookupResult({
-        name: found.name,
+    // Add all suppliers
+    suppliersRes.data?.forEach(s => {
+      allResults.push({
+        name: s.name,
         vatNumber: cleaned,
-        address: found.address || 'لا يوجد عنوان مسجل',
+        address: s.address || 'لا يوجد عنوان مسجل',
         found: true,
       });
-      toast.success(`تم العثور على: ${found.name}`);
+    });
+
+    // Add all customers
+    customersRes.data?.forEach(c => {
+      allResults.push({
+        name: c.name,
+        vatNumber: cleaned,
+        address: c.address || 'لا يوجد عنوان مسجل',
+        found: true,
+      });
+    });
+
+    if (allResults.length > 0) {
+      // Prioritize result with address
+      const withAddress = allResults.find(r => r.address !== 'لا يوجد عنوان مسجل');
+      const primary = withAddress || allResults[0];
+      setTaxLookupResult(primary);
+      setAllTaxResults(allResults);
+      toast.success(`تم العثور على ${allResults.length} نتيجة لـ: ${primary.name}`);
     } else {
       // Check from scanned invoices
       const fromScanned = scannedInvoices.find(i => i.data.vatNumber === cleaned);
       if (fromScanned) {
-        setTaxLookupResult({
+        const result = {
           name: fromScanned.data.sellerName,
           vatNumber: cleaned,
           address: 'من فاتورة ممسوحة - لا يوجد عنوان',
           found: true,
-        });
+        };
+        setTaxLookupResult(result);
+        setAllTaxResults([result]);
       } else {
         setTaxLookupResult({
           name: 'غير مسجل في النظام',
@@ -216,6 +234,7 @@ export function MobileInvoiceReaderPage() {
           address: 'لم يتم العثور على بيانات',
           found: false,
         });
+        setAllTaxResults([]);
         toast.info('الرقم الضريبي غير مسجل في النظام');
       }
     }
@@ -331,14 +350,28 @@ export function MobileInvoiceReaderPage() {
             </Button>
 
             {taxLookupResult && (
-              <div className={`p-4 rounded-lg border ${taxLookupResult.found ? 'border-green-500/30 bg-green-50 dark:bg-green-950/20' : 'border-destructive/30 bg-destructive/5'}`}>
-                <div className="flex items-center gap-2 mb-2">
-                  {taxLookupResult.found ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertTriangle className="w-4 h-4 text-destructive" />}
-                  <span className="font-bold text-sm">{taxLookupResult.found ? 'تم العثور' : 'غير موجود'}</span>
-                </div>
-                <p className="text-sm font-medium">{taxLookupResult.name}</p>
-                <p className="text-xs text-muted-foreground mt-1">الرقم الضريبي: {taxLookupResult.vatNumber}</p>
-                <p className="text-xs text-muted-foreground">العنوان: {taxLookupResult.address}</p>
+              <div className="space-y-3">
+                {allTaxResults.length > 0 ? allTaxResults.map((result, idx) => (
+                  <div key={idx} className={`p-4 rounded-lg border ${result.found ? 'border-green-500/30 bg-green-50 dark:bg-green-950/20' : 'border-destructive/30 bg-destructive/5'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      {result.found ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertTriangle className="w-4 h-4 text-destructive" />}
+                      <span className="font-bold text-sm">{result.found ? `نتيجة ${idx + 1}` : 'غير موجود'}</span>
+                    </div>
+                    <p className="text-sm font-medium">{result.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">الرقم الضريبي: {result.vatNumber}</p>
+                    <p className="text-xs text-muted-foreground">العنوان: {result.address}</p>
+                  </div>
+                )) : (
+                  <div className="p-4 rounded-lg border border-destructive/30 bg-destructive/5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="w-4 h-4 text-destructive" />
+                      <span className="font-bold text-sm">غير موجود</span>
+                    </div>
+                    <p className="text-sm font-medium">{taxLookupResult.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">الرقم الضريبي: {taxLookupResult.vatNumber}</p>
+                    <p className="text-xs text-muted-foreground">العنوان: {taxLookupResult.address}</p>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
