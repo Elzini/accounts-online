@@ -3764,6 +3764,292 @@ export type Database = {
           },
         ]
       }
+      hr_employees: {
+        Row: {
+          bank_name: string | null
+          base_salary: number | null
+          company_id: string
+          contract_type: string | null
+          created_at: string
+          department: string | null
+          email: string | null
+          employee_number: string | null
+          full_name: string
+          full_name_en: string | null
+          hire_date: string | null
+          housing_allowance: number | null
+          iban: string | null
+          id: string
+          is_active: boolean | null
+          job_title: string | null
+          national_id: string | null
+          notes: string | null
+          other_allowances: number | null
+          phone: string | null
+          transport_allowance: number | null
+          updated_at: string
+        }
+        Insert: {
+          bank_name?: string | null
+          base_salary?: number | null
+          company_id: string
+          contract_type?: string | null
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          employee_number?: string | null
+          full_name: string
+          full_name_en?: string | null
+          hire_date?: string | null
+          housing_allowance?: number | null
+          iban?: string | null
+          id?: string
+          is_active?: boolean | null
+          job_title?: string | null
+          national_id?: string | null
+          notes?: string | null
+          other_allowances?: number | null
+          phone?: string | null
+          transport_allowance?: number | null
+          updated_at?: string
+        }
+        Update: {
+          bank_name?: string | null
+          base_salary?: number | null
+          company_id?: string
+          contract_type?: string | null
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          employee_number?: string | null
+          full_name?: string
+          full_name_en?: string | null
+          hire_date?: string | null
+          housing_allowance?: number | null
+          iban?: string | null
+          id?: string
+          is_active?: boolean | null
+          job_title?: string | null
+          national_id?: string | null
+          notes?: string | null
+          other_allowances?: number | null
+          phone?: string | null
+          transport_allowance?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hr_evaluations: {
+        Row: {
+          company_id: string
+          created_at: string
+          criteria: Json | null
+          employee_id: string
+          evaluation_date: string | null
+          evaluation_period: string | null
+          evaluator_name: string | null
+          goals: string | null
+          id: string
+          overall_score: number | null
+          status: string | null
+          strengths: string | null
+          updated_at: string
+          weaknesses: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          criteria?: Json | null
+          employee_id: string
+          evaluation_date?: string | null
+          evaluation_period?: string | null
+          evaluator_name?: string | null
+          goals?: string | null
+          id?: string
+          overall_score?: number | null
+          status?: string | null
+          strengths?: string | null
+          updated_at?: string
+          weaknesses?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          criteria?: Json | null
+          employee_id?: string
+          evaluation_date?: string | null
+          evaluation_period?: string | null
+          evaluator_name?: string | null
+          goals?: string | null
+          id?: string
+          overall_score?: number | null
+          status?: string | null
+          strengths?: string | null
+          updated_at?: string
+          weaknesses?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_evaluations_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_insurance_records: {
+        Row: {
+          company_id: string
+          contribution_rate: number | null
+          created_at: string
+          employee_id: string
+          employer_share: number | null
+          gosi_number: string | null
+          id: string
+          notes: string | null
+          registration_date: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          contribution_rate?: number | null
+          created_at?: string
+          employee_id: string
+          employer_share?: number | null
+          gosi_number?: string | null
+          id?: string
+          notes?: string | null
+          registration_date?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          contribution_rate?: number | null
+          created_at?: string
+          employee_id?: string
+          employer_share?: number | null
+          gosi_number?: string | null
+          id?: string
+          notes?: string | null
+          registration_date?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_insurance_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_training_attendees: {
+        Row: {
+          attendance_status: string | null
+          certificate_issued: boolean | null
+          company_id: string
+          course_id: string
+          created_at: string
+          employee_id: string
+          id: string
+          notes: string | null
+          score: number | null
+        }
+        Insert: {
+          attendance_status?: string | null
+          certificate_issued?: boolean | null
+          company_id: string
+          course_id: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          score?: number | null
+        }
+        Update: {
+          attendance_status?: string | null
+          certificate_issued?: boolean | null
+          company_id?: string
+          course_id?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_training_attendees_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "hr_training_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_training_attendees_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_training_courses: {
+        Row: {
+          company_id: string
+          cost: number | null
+          course_date: string | null
+          created_at: string
+          description: string | null
+          duration_hours: number | null
+          id: string
+          location: string | null
+          max_attendees: number | null
+          name: string
+          name_en: string | null
+          provider: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          cost?: number | null
+          course_date?: string | null
+          created_at?: string
+          description?: string | null
+          duration_hours?: number | null
+          id?: string
+          location?: string | null
+          max_attendees?: number | null
+          name: string
+          name_en?: string | null
+          provider?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          cost?: number | null
+          course_date?: string | null
+          created_at?: string
+          description?: string | null
+          duration_hours?: number | null
+          id?: string
+          location?: string | null
+          max_attendees?: number | null
+          name?: string
+          name_en?: string | null
+          provider?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       immutable_baselines: {
         Row: {
           baseline_key: string
@@ -8840,6 +9126,111 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      zatca_config: {
+        Row: {
+          api_base_url: string | null
+          certificate: string | null
+          company_id: string
+          compliance_csid: string | null
+          created_at: string
+          environment: string | null
+          id: string
+          last_sync_at: string | null
+          otp: string | null
+          private_key: string | null
+          production_csid: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_base_url?: string | null
+          certificate?: string | null
+          company_id: string
+          compliance_csid?: string | null
+          created_at?: string
+          environment?: string | null
+          id?: string
+          last_sync_at?: string | null
+          otp?: string | null
+          private_key?: string | null
+          production_csid?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_base_url?: string | null
+          certificate?: string | null
+          company_id?: string
+          compliance_csid?: string | null
+          created_at?: string
+          environment?: string | null
+          id?: string
+          last_sync_at?: string | null
+          otp?: string | null
+          private_key?: string | null
+          production_csid?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      zatca_invoices: {
+        Row: {
+          clearance_status: string | null
+          company_id: string
+          created_at: string
+          error_messages: Json | null
+          id: string
+          invoice_hash: string | null
+          invoice_id: string | null
+          invoice_type: string | null
+          qr_code: string | null
+          reporting_status: string | null
+          submission_status: string | null
+          submitted_at: string | null
+          uuid: string | null
+          warning_messages: Json | null
+          xml_content: string | null
+          zatca_response: Json | null
+        }
+        Insert: {
+          clearance_status?: string | null
+          company_id: string
+          created_at?: string
+          error_messages?: Json | null
+          id?: string
+          invoice_hash?: string | null
+          invoice_id?: string | null
+          invoice_type?: string | null
+          qr_code?: string | null
+          reporting_status?: string | null
+          submission_status?: string | null
+          submitted_at?: string | null
+          uuid?: string | null
+          warning_messages?: Json | null
+          xml_content?: string | null
+          zatca_response?: Json | null
+        }
+        Update: {
+          clearance_status?: string | null
+          company_id?: string
+          created_at?: string
+          error_messages?: Json | null
+          id?: string
+          invoice_hash?: string | null
+          invoice_id?: string | null
+          invoice_type?: string | null
+          qr_code?: string | null
+          reporting_status?: string | null
+          submission_status?: string | null
+          submitted_at?: string | null
+          uuid?: string | null
+          warning_messages?: Json | null
+          xml_content?: string | null
+          zatca_response?: Json | null
+        }
+        Relationships: []
       }
     }
     Views: {
