@@ -167,6 +167,8 @@ export type ActivePage =
    | 'plugin-pos'
    | 'plugin-whatsapp'
    | 'plugin-ifrs'
-   | 'plugin-project-mgmt'
-   // Subdomain Management
-   | 'subdomain-management';
+    | 'plugin-project-mgmt'
+    // Subdomain Management
+    | 'subdomain-management'
+    // Workflow Engine
+    | 'workflows';
