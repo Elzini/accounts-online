@@ -116,6 +116,60 @@ export type Database = {
           },
         ]
       }
+      advanced_projects: {
+        Row: {
+          budget: number | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          manager_name: string | null
+          name: string
+          progress: number
+          spent: number | null
+          start_date: string | null
+          status: string
+          team_size: number | null
+          updated_at: string
+        }
+        Insert: {
+          budget?: number | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          manager_name?: string | null
+          name: string
+          progress?: number
+          spent?: number | null
+          start_date?: string | null
+          status?: string
+          team_size?: number | null
+          updated_at?: string
+        }
+        Update: {
+          budget?: number | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          manager_name?: string | null
+          name?: string
+          progress?: number
+          spent?: number | null
+          start_date?: string | null
+          status?: string
+          team_size?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           company_id: string
@@ -7343,6 +7397,56 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_tasks: {
+        Row: {
+          assignee: string | null
+          company_id: string
+          created_at: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          priority: string
+          project_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee?: string | null
+          company_id: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          project_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee?: string | null
+          company_id?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          project_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "advanced_projects"
             referencedColumns: ["id"]
           },
         ]
