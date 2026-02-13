@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Ruler, Plus, Edit, Trash2 } from 'lucide-react';
+import { Ruler, Plus, Edit, Trash2, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -52,29 +53,39 @@ export function UnitsPage() {
         <Button onClick={() => handleOpen()} className="gap-2"><Plus className="w-4 h-4" /> {t.inv_units_add}</Button>
       </div>
 
-      <Card className="overflow-hidden">
-        {isLoading ? <div className="p-8 text-center text-muted-foreground">{t.loading}</div> : (units as any[]).length === 0 ? (
-          <div className="p-12 text-center"><Ruler className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" /><p className="text-muted-foreground">{t.inv_units_none}</p></div>
-        ) : (
-          <Table>
-            <TableHeader><TableRow><TableHead className="text-right">{t.inv_units_col_name}</TableHead><TableHead className="text-right">{t.inv_units_col_abbr}</TableHead><TableHead className="text-right">{t.inv_units_col_actions}</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {(units as any[]).map(u => (
-                <TableRow key={u.id}>
-                  <TableCell className="font-medium">{u.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{u.abbreviation || '-'}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => handleOpen(u)}><Edit className="w-4 h-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => handleDelete(u.id)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </Card>
+      <Collapsible defaultOpen>
+        <Card className="overflow-hidden">
+          <div className="p-4">
+            <CollapsibleTrigger className="flex items-center gap-2 cursor-pointer group">
+              <ChevronDown className="w-4 h-4 transition-transform group-data-[state=closed]:-rotate-90" />
+              <span className="font-semibold text-sm">{t.inv_units_title}</span>
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent>
+            {isLoading ? <div className="p-8 text-center text-muted-foreground">{t.loading}</div> : (units as any[]).length === 0 ? (
+              <div className="p-12 text-center"><Ruler className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" /><p className="text-muted-foreground">{t.inv_units_none}</p></div>
+            ) : (
+              <Table>
+                <TableHeader><TableRow><TableHead className="text-right">{t.inv_units_col_name}</TableHead><TableHead className="text-right">{t.inv_units_col_abbr}</TableHead><TableHead className="text-right">{t.inv_units_col_actions}</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {(units as any[]).map(u => (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium">{u.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{u.abbreviation || '-'}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button size="icon" variant="ghost" onClick={() => handleOpen(u)}><Edit className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => handleDelete(u.id)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-sm" dir={direction}>

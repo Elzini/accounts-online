@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Package, Plus, Edit, Trash2, Search, List, FolderTree, Filter } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, Search, List, FolderTree, Filter, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -125,34 +126,42 @@ export function ItemsPage() {
         <Button onClick={() => handleOpen()} className="gap-2"><Plus className="w-4 h-4" /> {t.items_add}</Button>
       </div>
 
-      <Card className="p-4">
-        <div className="flex flex-wrap gap-3 items-end">
-          <div className="flex-1 min-w-[200px]">
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={t.items_search_placeholder} className="pr-10" />
+      <Collapsible defaultOpen>
+        <Card className="p-4">
+          <CollapsibleTrigger className="flex items-center gap-2 cursor-pointer group w-full mb-3">
+            <ChevronDown className="w-4 h-4 transition-transform group-data-[state=closed]:-rotate-90" />
+            <span className="font-semibold text-sm">{t.items_search_placeholder}</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="flex flex-wrap gap-3 items-end">
+              <div className="flex-1 min-w-[200px]">
+                <div className="relative">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={t.items_search_placeholder} className="pr-10" />
+                </div>
+              </div>
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="w-[180px]"><Filter className="w-4 h-4 ml-2" /><SelectValue placeholder={t.items_category} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t.items_all_categories}</SelectItem>
+                  {(categories as any[]).map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-[150px]"><SelectValue placeholder={t.items_type} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t.items_all_types}</SelectItem>
+                  {ITEM_TYPES.map(t2 => <SelectItem key={t2.value} value={t2.value}>{t2.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <div className="flex gap-1 border rounded-lg p-1">
+                <Button size="sm" variant={viewMode === 'list' ? 'default' : 'ghost'} onClick={() => setViewMode('list')} className="gap-1.5 h-8"><List className="w-4 h-4" /> {t.items_list_view}</Button>
+                <Button size="sm" variant={viewMode === 'tree' ? 'default' : 'ghost'} onClick={() => setViewMode('tree')} className="gap-1.5 h-8"><FolderTree className="w-4 h-4" /> {t.items_tree_view}</Button>
+              </div>
             </div>
-          </div>
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-[180px]"><Filter className="w-4 h-4 ml-2" /><SelectValue placeholder={t.items_category} /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t.items_all_categories}</SelectItem>
-              {(categories as any[]).map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-[150px]"><SelectValue placeholder={t.items_type} /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t.items_all_types}</SelectItem>
-              {ITEM_TYPES.map(t2 => <SelectItem key={t2.value} value={t2.value}>{t2.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <div className="flex gap-1 border rounded-lg p-1">
-            <Button size="sm" variant={viewMode === 'list' ? 'default' : 'ghost'} onClick={() => setViewMode('list')} className="gap-1.5 h-8"><List className="w-4 h-4" /> {t.items_list_view}</Button>
-            <Button size="sm" variant={viewMode === 'tree' ? 'default' : 'ghost'} onClick={() => setViewMode('tree')} className="gap-1.5 h-8"><FolderTree className="w-4 h-4" /> {t.items_tree_view}</Button>
-          </div>
-        </div>
-      </Card>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {isLoading ? (
         <div className="text-center py-12 text-muted-foreground">{t.items_loading}</div>

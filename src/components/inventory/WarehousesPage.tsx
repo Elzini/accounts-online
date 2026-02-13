@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Warehouse, Plus, Edit, Trash2, MapPin, Phone, User } from 'lucide-react';
+import { Warehouse, Plus, Edit, Trash2, MapPin, Phone, User, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -72,26 +73,35 @@ export function WarehousesPage() {
           <Button onClick={() => handleOpen()} variant="outline" className="mt-4 gap-2"><Plus className="w-4 h-4" /> {t.wh_add_first}</Button>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {warehouses.map((w: any) => (
-            <Card key={w.id} className="p-5 space-y-3">
-              <div className="flex items-start justify-between">
-                <div><h3 className="font-semibold text-foreground">{w.warehouse_name}</h3>{w.warehouse_code && <p className="text-xs text-muted-foreground">{t.wh_code}: {w.warehouse_code}</p>}</div>
-                <div className="flex gap-1">
-                  {w.is_default && <Badge variant="secondary">{t.wh_default}</Badge>}
-                  {!w.is_active && <Badge variant="destructive">{t.wh_inactive}</Badge>}
-                </div>
-              </div>
-              {w.address && <div className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="w-3.5 h-3.5" />{w.address}</div>}
-              {w.manager && <div className="flex items-center gap-2 text-sm text-muted-foreground"><User className="w-3.5 h-3.5" />{w.manager}</div>}
-              {w.phone && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Phone className="w-3.5 h-3.5" />{w.phone}</div>}
-              <div className="flex gap-2 pt-2 border-t border-border">
-                <Button size="sm" variant="outline" onClick={() => handleOpen(w)} className="gap-1.5 flex-1"><Edit className="w-3.5 h-3.5" /> {t.edit}</Button>
-                <Button size="sm" variant="outline" onClick={() => handleDelete(w.id)} className="gap-1.5 text-destructive hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
-              </div>
-            </Card>
-          ))}
-        </div>
+        <Collapsible defaultOpen>
+          <CollapsibleTrigger className="flex items-center gap-2 cursor-pointer group mb-3">
+            <ChevronDown className="w-4 h-4 transition-transform group-data-[state=closed]:-rotate-90" />
+            <span className="font-semibold text-sm">{t.wh_title}</span>
+            <Badge variant="secondary" className="text-xs">{warehouses.length}</Badge>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {warehouses.map((w: any) => (
+                <Card key={w.id} className="p-5 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div><h3 className="font-semibold text-foreground">{w.warehouse_name}</h3>{w.warehouse_code && <p className="text-xs text-muted-foreground">{t.wh_code}: {w.warehouse_code}</p>}</div>
+                    <div className="flex gap-1">
+                      {w.is_default && <Badge variant="secondary">{t.wh_default}</Badge>}
+                      {!w.is_active && <Badge variant="destructive">{t.wh_inactive}</Badge>}
+                    </div>
+                  </div>
+                  {w.address && <div className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="w-3.5 h-3.5" />{w.address}</div>}
+                  {w.manager && <div className="flex items-center gap-2 text-sm text-muted-foreground"><User className="w-3.5 h-3.5" />{w.manager}</div>}
+                  {w.phone && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Phone className="w-3.5 h-3.5" />{w.phone}</div>}
+                  <div className="flex gap-2 pt-2 border-t border-border">
+                    <Button size="sm" variant="outline" onClick={() => handleOpen(w)} className="gap-1.5 flex-1"><Edit className="w-3.5 h-3.5" /> {t.edit}</Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDelete(w.id)} className="gap-1.5 text-destructive hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
