@@ -10,6 +10,7 @@ import { FiscalYearProvider } from "@/contexts/FiscalYearContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { NetworkStatusIndicator } from "@/components/pwa/NetworkStatusIndicator";
+import { useCartSync } from "@/hooks/useCartSync";
 import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
 import Index from "./pages/Index";
@@ -106,6 +107,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
+  useCartSync();
   return (
     <Routes>
       <Route 
