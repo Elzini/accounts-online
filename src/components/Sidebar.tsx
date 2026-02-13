@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle, Monitor, MessageCircle, Workflow } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle, Monitor, MessageCircle, Workflow, ArrowDownToLine, ArrowUpFromLine, RotateCcw, Star, RefreshCw, CalendarCheck, Play, FileSignature, Home, Award, Link2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -115,6 +115,22 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'bar-chart-3': BarChart3,
   'globe': Globe,
   'workflows': Workflow,
+  'purchase-orders': ShoppingCart,
+  'goods-receipt': ArrowDownToLine,
+  'stock-vouchers': ArrowUpFromLine,
+  'stocktaking': ClipboardList,
+  'credit-debit-notes': RotateCcw,
+  'crm': Users,
+  'loyalty': Star,
+  'subscriptions': RefreshCw,
+  'work-orders': Wrench,
+  'bookings': CalendarCheck,
+  'time-tracking': Play,
+  'employee-contracts': FileSignature,
+  'org-structure': GitFork,
+  'rentals': Home,
+  'sales-targets': Award,
+  'payment-gateway': Link2,
 };
 
 export function Sidebar({
@@ -322,6 +338,15 @@ export function Sidebar({
     label: s(settings?.car_transfers_title, t.nav_car_transfers),
     icon: ArrowLeftRight
   }];
+  const procurementItems = [{
+    id: 'purchase-orders' as ActivePage,
+    label: language === 'ar' ? 'أوامر الشراء' : 'Purchase Orders',
+    icon: ShoppingCart
+  }, {
+    id: 'goods-receipt' as ActivePage,
+    label: language === 'ar' ? 'أذون الاستلام' : 'Goods Receipt',
+    icon: ArrowDownToLine
+  }];
   const hrItems = [{
     id: 'employees' as ActivePage,
     label: t.nav_employees,
@@ -338,6 +363,14 @@ export function Sidebar({
     id: 'leaves' as ActivePage,
     label: t.nav_leaves,
     icon: CalendarDays
+  }, {
+    id: 'employee-contracts' as ActivePage,
+    label: language === 'ar' ? 'عقود الموظفين' : 'Employee Contracts',
+    icon: FileSignature
+  }, {
+    id: 'org-structure' as ActivePage,
+    label: language === 'ar' ? 'الهيكل التنظيمي' : 'Org Structure',
+    icon: GitFork
   }, {
     id: 'plugin-advanced-hr' as ActivePage,
     label: language === 'ar' ? 'التأمينات والتقييم والتدريب' : 'Insurance, Evaluation & Training',
@@ -391,6 +424,48 @@ export function Sidebar({
     id: 'workflows' as ActivePage,
     label: language === 'ar' ? 'الدورات المستندية' : 'Workflows',
     icon: Workflow
+  }, {
+    id: 'credit-debit-notes' as ActivePage,
+    label: language === 'ar' ? 'إشعارات دائنة/مدينة' : 'Credit/Debit Notes',
+    icon: RotateCcw
+  }, {
+    id: 'subscriptions' as ActivePage,
+    label: language === 'ar' ? 'الاشتراكات' : 'Subscriptions',
+    icon: RefreshCw
+  }, {
+    id: 'payment-gateway' as ActivePage,
+    label: language === 'ar' ? 'بوابة الدفع' : 'Payment Gateway',
+    icon: Link2
+  }];
+  const salesMarketingItems = [{
+    id: 'crm' as ActivePage,
+    label: language === 'ar' ? 'إدارة العملاء CRM' : 'CRM',
+    icon: Users
+  }, {
+    id: 'loyalty' as ActivePage,
+    label: language === 'ar' ? 'نقاط الولاء' : 'Loyalty Points',
+    icon: Star
+  }, {
+    id: 'sales-targets' as ActivePage,
+    label: language === 'ar' ? 'المبيعات المستهدفة' : 'Sales Targets',
+    icon: Award
+  }, {
+    id: 'bookings' as ActivePage,
+    label: language === 'ar' ? 'الحجوزات' : 'Bookings',
+    icon: CalendarCheck
+  }];
+  const operationsItems = [{
+    id: 'work-orders' as ActivePage,
+    label: language === 'ar' ? 'أوامر العمل' : 'Work Orders',
+    icon: Wrench
+  }, {
+    id: 'time-tracking' as ActivePage,
+    label: language === 'ar' ? 'تتبع الوقت' : 'Time Tracking',
+    icon: Play
+  }, {
+    id: 'rentals' as ActivePage,
+    label: language === 'ar' ? 'الإيجارات' : 'Rentals',
+    icon: Home
   }];
   const { activePlugins } = usePlugins();
 
@@ -430,6 +505,14 @@ export function Sidebar({
     id: 'units-of-measure' as ActivePage,
     label: t.nav_units,
     icon: Ruler
+  }, {
+    id: 'stock-vouchers' as ActivePage,
+    label: language === 'ar' ? 'الأذون المخزنية' : 'Stock Vouchers',
+    icon: ArrowUpFromLine
+  }, {
+    id: 'stocktaking' as ActivePage,
+    label: language === 'ar' ? 'الجرد' : 'Stocktaking',
+    icon: ClipboardList
   }];
   // Reports - filtered by company type
   const allReportItems = [{
@@ -733,6 +816,12 @@ export function Sidebar({
         {renderCollapsibleSection('finance', s(settings?.finance_section_title, t.nav_finance), financeItems, permissions.admin || permissions.sales || permissions.purchases)}
 
         {renderCollapsibleSection('inventory', t.nav_inventory, inventoryItems, permissions.admin || permissions.purchases)}
+
+        {renderCollapsibleSection('procurement', language === 'ar' ? 'المشتريات والتوريد' : 'Procurement', procurementItems, permissions.admin || permissions.purchases)}
+
+        {renderCollapsibleSection('sales-marketing', language === 'ar' ? 'المبيعات والتسويق' : 'Sales & Marketing', salesMarketingItems, permissions.admin || permissions.sales)}
+
+        {renderCollapsibleSection('operations', language === 'ar' ? 'العمليات' : 'Operations', operationsItems, true)}
 
         {renderCollapsibleSection('reports', s(settings?.reports_title, t.nav_reports), reportItems, hasAccess('reports'))}
 

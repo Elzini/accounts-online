@@ -90,6 +90,21 @@ import {
   BIAnalyticsPluginPage, POSPluginPage, WhatsAppPluginPage,
   IFRSPluginPage, ProjectMgmtPluginPage
 } from '@/components/plugins/pages';
+import { PurchaseOrdersPage, GoodsReceiptPage } from '@/components/procurement';
+import { StockVouchersPage } from '@/components/inventory/StockVouchersPage';
+import { StocktakingPage } from '@/components/inventory/StocktakingPage';
+import { CreditDebitNotesPage } from '@/components/returns/CreditDebitNotesPage';
+import { CRMPage } from '@/components/crm/CRMPage';
+import { LoyaltyPage } from '@/components/loyalty/LoyaltyPage';
+import { SubscriptionsPage } from '@/components/subscriptions/SubscriptionsPage';
+import { WorkOrdersPage } from '@/components/work-orders/WorkOrdersPage';
+import { BookingsPage } from '@/components/bookings/BookingsPage';
+import { TimeTrackingPage } from '@/components/time-tracking/TimeTrackingPage';
+import { EmployeeContractsPage } from '@/components/hr/ContractsPage';
+import { OrgStructurePage } from '@/components/hr/OrgStructurePage';
+import { RentalsPage } from '@/components/rentals/RentalsPage';
+import { SalesTargetsPage } from '@/components/sales-targets/SalesTargetsPage';
+import { PaymentGatewayPage } from '@/components/payment-gateway/PaymentGatewayPage';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -261,6 +276,35 @@ const Index = () => {
       case 'plugin-project-mgmt': return <ProjectMgmtPluginPage />;
       // Workflow Engine
       case 'workflows': return <WorkflowsPage />;
+      // Procurement
+      case 'purchase-orders': return <PurchaseOrdersPage />;
+      case 'goods-receipt': return <GoodsReceiptPage />;
+      // Inventory extensions
+      case 'stock-vouchers': return <StockVouchersPage />;
+      case 'stocktaking': return <StocktakingPage />;
+      // Returns
+      case 'credit-debit-notes': return <CreditDebitNotesPage />;
+      // CRM
+      case 'crm': return <CRMPage />;
+      // Loyalty
+      case 'loyalty': return <LoyaltyPage />;
+      // Subscriptions
+      case 'subscriptions': return <SubscriptionsPage />;
+      // Work Orders
+      case 'work-orders': return <WorkOrdersPage />;
+      // Bookings
+      case 'bookings': return <BookingsPage />;
+      // Time Tracking
+      case 'time-tracking': return <TimeTrackingPage />;
+      // HR extensions
+      case 'employee-contracts': return <EmployeeContractsPage />;
+      case 'org-structure': return <OrgStructurePage />;
+      // Rentals
+      case 'rentals': return <RentalsPage />;
+      // Sales Targets
+      case 'sales-targets': return <SalesTargetsPage />;
+      // Payment Gateway
+      case 'payment-gateway': return <PaymentGatewayPage />;
       default:
         return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} />;
     }
