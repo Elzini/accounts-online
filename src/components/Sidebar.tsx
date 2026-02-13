@@ -322,7 +322,7 @@ export function Sidebar({
     label: s(settings?.car_transfers_title, t.nav_car_transfers),
     icon: ArrowLeftRight
   }];
-  const financeItems = [{
+  const hrItems = [{
     id: 'employees' as ActivePage,
     label: t.nav_employees,
     icon: Users
@@ -338,7 +338,8 @@ export function Sidebar({
     id: 'leaves' as ActivePage,
     label: t.nav_leaves,
     icon: CalendarDays
-  }, {
+  }];
+  const financeItems = [{
     id: 'expenses' as ActivePage,
     label: s(settings?.expenses_title, t.nav_expenses),
     icon: Wallet
@@ -722,6 +723,8 @@ export function Sidebar({
         )}
 
         {companyType === 'car_dealership' && renderCollapsibleSection('transfers', s(settings?.transfers_section_title, t.nav_transfers), transferItems, permissions.admin || permissions.sales || permissions.purchases)}
+
+        {renderCollapsibleSection('hr', t.nav_hr, hrItems, permissions.admin || permissions.employees || permissions.payroll)}
 
         {renderCollapsibleSection('finance', s(settings?.finance_section_title, t.nav_finance), financeItems, permissions.admin || permissions.sales || permissions.purchases)}
 
