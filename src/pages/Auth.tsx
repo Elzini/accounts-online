@@ -446,26 +446,14 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
               </p>
             )}
 
-            <div className="flex items-center justify-center gap-4 text-xs">
-              {mode === 'company' ? (
-                getBaseDomain() ? (
-                  <a href={getAdminUrl() + '/auth/super-admin'} className="text-white/30 hover:text-white/50 inline-flex items-center gap-1 transition-colors">
-                    <Shield className="w-3 h-3" />
-                    {t.super_admin_login}
-                  </a>
-                ) : (
-                  <Link to="/auth/super-admin" className="text-white/30 hover:text-white/50 inline-flex items-center gap-1 transition-colors">
-                    <Shield className="w-3 h-3" />
-                    {t.super_admin_login}
-                  </Link>
-                )
-              ) : (
+            {mode === 'super_admin' && (
+              <div className="flex items-center justify-center gap-4 text-xs">
                 <Link to="/auth/company" className="text-white/30 hover:text-white/50 inline-flex items-center gap-1 transition-colors">
                   <Building2 className="w-3 h-3" />
                   {t.company_login}
                 </Link>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </form>
 

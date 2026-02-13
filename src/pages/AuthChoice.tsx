@@ -76,7 +76,7 @@ export default function AuthChoice() {
         </div>
 
         {/* Choice Cards */}
-        <div className={`grid grid-cols-1 ${!baseDomain ? 'md:grid-cols-2' : ''} gap-6 max-w-md mx-auto ${!baseDomain ? 'max-w-2xl' : ''}`}>
+        <div className="grid grid-cols-1 gap-6 max-w-md mx-auto">
           {/* Company Login */}
           <Link to="/auth/company" className="block">
             <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 text-center hover:bg-white/15 transition-all cursor-pointer group">
@@ -96,23 +96,6 @@ export default function AuthChoice() {
               </p>
             </div>
           </Link>
-
-          {/* Super Admin Login */}
-          {!baseDomain && (
-            <Link to="/auth/super-admin" className="block">
-              <div className="bg-white/10 backdrop-blur-sm border border-amber-400/20 rounded-xl p-6 text-center hover:bg-white/15 transition-all cursor-pointer group">
-                <div className="w-16 h-16 rounded-full bg-amber-400/20 flex items-center justify-center mx-auto mb-4 group-hover:bg-amber-400/30 transition-colors">
-                  <Shield className="w-8 h-8 text-amber-400" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-1">مدير النظام</h3>
-                <p className="text-white/50 text-sm mb-4">للوصول لإدارة جميع الشركات</p>
-                <Button variant="outline" className="w-full border-white/20 text-white hover:bg-white/10 font-bold">
-                  دخول مدير النظام
-                </Button>
-                <p className="text-xs text-white/40 mt-3">صلاحيات خاصة فقط</p>
-              </div>
-            </Link>
-          )}
         </div>
       </div>
 
