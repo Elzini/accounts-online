@@ -200,4 +200,12 @@ export type ActivePage =
     // Sales Targets
     | 'sales-targets'
     // Payment Gateway
-    | 'payment-gateway';
+    | 'payment-gateway'
+    // Low priority features
+    | 'bookkeeping-service'
+    | 'zatca-sandbox'
+    | 'customer-portal'
+    | 'advanced-projects'
+    | 'mobile-inventory'
+    | 'mobile-invoice-reader'
+    | 'developer-api';
