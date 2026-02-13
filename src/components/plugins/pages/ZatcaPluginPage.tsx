@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useZatcaConfig, useSaveZatcaConfig, useZatcaInvoices, useCallZatcaAPI } from '@/hooks/useZatcaIntegration';
+import { generateCSR, buildCSRConfigFromSettings, storeCSRData } from '@/lib/zatcaCSR';
 
 export function ZatcaPluginPage() {
   const { data: config, isLoading: configLoading } = useZatcaConfig();
@@ -23,8 +24,11 @@ export function ZatcaPluginPage() {
   const callApi = useCallZatcaAPI();
 
   const [otp, setOtp] = useState('');
+  const [csrPaste, setCsrPaste] = useState('');
   const [environment, setEnvironment] = useState(config?.environment || 'sandbox');
   const [autoSubmit, setAutoSubmit] = useState(true);
+  const [companyName, setCompanyName] = useState('');
+  const [vatNumber, setVatNumber] = useState('');
 
   const handleSaveConfig = () => {
     saveConfig.mutate({ environment, otp: otp || undefined }, {
@@ -32,13 +36,42 @@ export function ZatcaPluginPage() {
     });
   };
 
-  const handleGetCSID = () => {
+  const handleGetCSID = async () => {
     if (!otp) return toast.error('أدخل رمز OTP أولاً');
+    
+    let csrBase64 = csrPaste.trim();
+    
+    // If no CSR pasted, generate one
+    if (!csrBase64) {
+      try {
+        toast.info('جاري توليد CSR...');
+        const csrConfig = buildCSRConfigFromSettings({
+          companyName: companyName || 'Company',
+          vatNumber: vatNumber || '300000000000003',
+          solutionName: 'ERP-Solution',
+        });
+        const csrResult = await generateCSR(csrConfig);
+        // Extract Base64 content from PEM
+        csrBase64 = csrResult.csrPEM
+          .replace(/-----BEGIN CERTIFICATE REQUEST-----/g, '')
+          .replace(/-----END CERTIFICATE REQUEST-----/g, '')
+          .replace(/\s/g, '');
+        
+        // Store keys for later use
+        storeCSRData('current', csrResult);
+        
+        // Save private key in config
+        saveConfig.mutate({ private_key: csrResult.privateKeyPEM });
+      } catch (err: any) {
+        return toast.error(`فشل توليد CSR: ${err.message}`);
+      }
+    }
+    
     callApi.mutate({
       action: 'get-csid',
       environment,
       otp,
-      csr: 'auto-generated', // In production, CSR would be generated
+      csr: csrBase64,
     }, {
       onSuccess: (data) => {
         if (data.success) {
@@ -63,7 +96,7 @@ export function ZatcaPluginPage() {
       environment,
       csid: config.compliance_csid,
       csidSecret: config.private_key || '',
-      csr: 'auto-generated',
+      csr: config.compliance_csid, // Use the compliance CSID as the request token
     }, {
       onSuccess: (data) => {
         if (data.success) {
@@ -140,11 +173,21 @@ export function ZatcaPluginPage() {
                   <div className="flex-1 space-y-3">
                     <div>
                       <h3 className="font-semibold">الحصول على Compliance CSID</h3>
-                      <p className="text-sm text-muted-foreground">أدخل رمز OTP المُقدَّم من هيئة الزكاة والضريبة والجمارك لتوليد شهادة الامتثال</p>
+                      <p className="text-sm text-muted-foreground">أدخل رمز OTP المُقدَّم من هيئة الزكاة والضريبة والجمارك. يمكنك لصق CSR خاص بك أو سيتم توليده تلقائياً.</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <Label>اسم الشركة</Label>
+                        <Input placeholder="اسم المنشأة" value={companyName} onChange={e => setCompanyName(e.target.value)} />
+                      </div>
+                      <div>
+                        <Label>الرقم الضريبي (15 رقم)</Label>
+                        <Input placeholder="300000000000003" value={vatNumber} onChange={e => setVatNumber(e.target.value)} className="font-mono" />
+                      </div>
                     </div>
                     <div className="flex gap-3 items-end">
                       <div className="flex-1">
-                        <Label>رمز OTP من ZATCA</Label>
+                        <Label>رمز OTP من ZATCA *</Label>
                         <Input placeholder="123456" value={otp} onChange={e => setOtp(e.target.value)} className="font-mono" />
                       </div>
                       <div>
@@ -162,6 +205,15 @@ export function ZatcaPluginPage() {
                         {callApi.isPending ? <Loader2 className="w-4 h-4 animate-spin me-1" /> : <Upload className="w-4 h-4 me-1" />}
                         توليد CSID
                       </Button>
+                    </div>
+                    <div>
+                      <Label>CSR (اختياري - لصق CSR خاص)</Label>
+                      <Textarea 
+                        placeholder="الصق محتوى CSR هنا إذا كان لديك CSR من ZATCA SDK... أو اتركه فارغاً لتوليد تلقائي"
+                        value={csrPaste}
+                        onChange={e => setCsrPaste(e.target.value)}
+                        className="font-mono text-xs h-20"
+                      />
                     </div>
                   </div>
                 </div>
