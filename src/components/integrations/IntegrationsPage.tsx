@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Plug, ShoppingBag, CreditCard, Building, Globe } from 'lucide-react';
+import { Loader2, Plug, ShoppingBag, CreditCard, Building, Globe, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -92,42 +93,49 @@ export function IntegrationsPage() {
       </div>
 
       {categories.map((cat) => (
-        <div key={cat.key} className="space-y-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">{cat.icon}{cat.label}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {integrations.filter(i => i.category === cat.key).map((integration) => (
-              <Card key={integration.platform} className={isActive(integration.platform) ? 'border-primary/50 bg-primary/5' : ''}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      {integration.icon}
-                      <div>
-                        <CardTitle className="text-base">{integration.name}</CardTitle>
-                        <CardDescription className="text-xs mt-1">{integration.description}</CardDescription>
+        <Collapsible key={cat.key} defaultOpen>
+          <div className="space-y-4">
+            <CollapsibleTrigger className="flex items-center gap-2 cursor-pointer group w-full">
+              <ChevronDown className="w-4 h-4 transition-transform group-data-[state=closed]:-rotate-90" />
+              <h2 className="text-lg font-semibold flex items-center gap-2">{cat.icon}{cat.label}</h2>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {integrations.filter(i => i.category === cat.key).map((integration) => (
+                  <Card key={integration.platform} className={isActive(integration.platform) ? 'border-primary/50 bg-primary/5' : ''}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          {integration.icon}
+                          <div>
+                            <CardTitle className="text-base">{integration.name}</CardTitle>
+                            <CardDescription className="text-xs mt-1">{integration.description}</CardDescription>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={isActive(integration.platform)}
+                          onCheckedChange={(checked) => toggleIntegration.mutate({ platform: integration.platform, is_active: checked })}
+                        />
                       </div>
-                    </div>
-                    <Switch
-                      checked={isActive(integration.platform)}
-                      onCheckedChange={(checked) => toggleIntegration.mutate({ platform: integration.platform, is_active: checked })}
-                    />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <Badge variant={isActive(integration.platform) ? 'default' : 'secondary'}>
-                      {isActive(integration.platform) ? t.active : t.inactive}
-                    </Badge>
-                    {isActive(integration.platform) && (
-                      <Button size="sm" variant="outline" onClick={() => setConfigDialog(integration.platform)}>
-                        {t.integrations_settings}
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <Badge variant={isActive(integration.platform) ? 'default' : 'secondary'}>
+                          {isActive(integration.platform) ? t.active : t.inactive}
+                        </Badge>
+                        {isActive(integration.platform) && (
+                          <Button size="sm" variant="outline" onClick={() => setConfigDialog(integration.platform)}>
+                            {t.integrations_settings}
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CollapsibleContent>
           </div>
-        </div>
+        </Collapsible>
       ))}
 
       {/* Config Dialog */}

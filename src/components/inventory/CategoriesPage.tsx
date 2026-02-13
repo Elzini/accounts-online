@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FolderTree, Plus, Edit, Trash2, ChevronDown, ChevronRight, Folder, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -118,13 +119,21 @@ export function CategoriesPage() {
         </div>
       </div>
 
-      <Card className="p-4">
-        {isLoading ? <div className="p-8 text-center text-muted-foreground">{t.loading}</div> : tree.length === 0 ? (
-          <div className="p-12 text-center"><FolderTree className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" /><p className="text-muted-foreground">{t.inv_categories_none}</p></div>
-        ) : (
-          <div className="space-y-0.5">{tree.map(node => renderNode(node))}</div>
-        )}
-      </Card>
+      <Collapsible defaultOpen>
+        <Card className="p-4">
+          <CollapsibleTrigger className="flex items-center gap-2 cursor-pointer group mb-2">
+            <ChevronDown className="w-4 h-4 transition-transform group-data-[state=closed]:-rotate-90" />
+            <span className="font-semibold text-sm">{t.inv_categories_title}</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            {isLoading ? <div className="p-8 text-center text-muted-foreground">{t.loading}</div> : tree.length === 0 ? (
+              <div className="p-12 text-center"><FolderTree className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" /><p className="text-muted-foreground">{t.inv_categories_none}</p></div>
+            ) : (
+              <div className="space-y-0.5">{tree.map(node => renderNode(node))}</div>
+            )}
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-sm" dir={direction}>

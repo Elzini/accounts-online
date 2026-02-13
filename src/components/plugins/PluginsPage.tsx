@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Puzzle, Download, Settings, Star, Globe, Zap, Package } from 'lucide-react';
+import { Puzzle, Download, Settings, Star, Globe, Zap, Package, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { usePlugins, PluginInfo } from '@/hooks/usePlugins';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -157,9 +158,18 @@ export function PluginsPage({ setActivePage }: PluginsPageProps) {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {installedPlugins.map(renderPluginCard)}
-            </div>
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="flex items-center gap-2 cursor-pointer group mb-4">
+                <ChevronDown className="w-4 h-4 transition-transform group-data-[state=closed]:-rotate-90" />
+                <span className="font-semibold text-sm">{t.plugins_tab_installed}</span>
+                <Badge variant="secondary" className="text-xs">{installedPlugins.length}</Badge>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {installedPlugins.map(renderPluginCard)}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </TabsContent>
 
@@ -191,9 +201,18 @@ export function PluginsPage({ setActivePage }: PluginsPageProps) {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredMarketplace.map(renderPluginCard)}
-            </div>
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="flex items-center gap-2 cursor-pointer group mb-4">
+                <ChevronDown className="w-4 h-4 transition-transform group-data-[state=closed]:-rotate-90" />
+                <span className="font-semibold text-sm">{t.plugins_tab_marketplace}</span>
+                <Badge variant="secondary" className="text-xs">{filteredMarketplace.length}</Badge>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredMarketplace.map(renderPluginCard)}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </TabsContent>
       </Tabs>
