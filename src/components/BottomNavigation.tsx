@@ -2,6 +2,7 @@ import { LayoutDashboard, ShoppingCart, DollarSign, Users, Menu, HardHat, Ship, 
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
 import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface BottomNavigationProps {
   activePage: ActivePage;
@@ -12,6 +13,7 @@ interface BottomNavigationProps {
 interface NavItem {
   id: ActivePage;
   label: string;
+  label_en: string;
   icon: LucideIcon;
 }
 
@@ -19,37 +21,39 @@ function getNavItems(companyType: CompanyActivityType): NavItem[] {
   switch (companyType) {
     case 'construction':
       return [
-        { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
-        { id: 'projects', label: 'المشاريع', icon: HardHat },
-        { id: 'contracts', label: 'العقود', icon: DollarSign },
-        { id: 'customers', label: 'العملاء', icon: Users },
+        { id: 'dashboard', label: 'الرئيسية', label_en: 'Home', icon: LayoutDashboard },
+        { id: 'projects', label: 'المشاريع', label_en: 'Projects', icon: HardHat },
+        { id: 'contracts', label: 'العقود', label_en: 'Contracts', icon: DollarSign },
+        { id: 'customers', label: 'العملاء', label_en: 'Customers', icon: Users },
       ];
     case 'export_import':
       return [
-        { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
-        { id: 'shipments', label: 'الشحنات', icon: Ship },
-        { id: 'sales', label: 'الصادرات', icon: DollarSign },
-        { id: 'customers', label: 'العملاء', icon: Users },
+        { id: 'dashboard', label: 'الرئيسية', label_en: 'Home', icon: LayoutDashboard },
+        { id: 'shipments', label: 'الشحنات', label_en: 'Shipments', icon: Ship },
+        { id: 'sales', label: 'الصادرات', label_en: 'Exports', icon: DollarSign },
+        { id: 'customers', label: 'العملاء', label_en: 'Customers', icon: Users },
       ];
     case 'restaurant':
       return [
-        { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
-        { id: 'restaurant-orders', label: 'الطلبات', icon: UtensilsCrossed },
-        { id: 'sales', label: 'المبيعات', icon: DollarSign },
-        { id: 'customers', label: 'العملاء', icon: Users },
+        { id: 'dashboard', label: 'الرئيسية', label_en: 'Home', icon: LayoutDashboard },
+        { id: 'restaurant-orders', label: 'الطلبات', label_en: 'Orders', icon: UtensilsCrossed },
+        { id: 'sales', label: 'المبيعات', label_en: 'Sales', icon: DollarSign },
+        { id: 'customers', label: 'العملاء', label_en: 'Customers', icon: Users },
       ];
-    default: // car_dealership, general_trading
+    default:
       return [
-        { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
-        { id: 'purchases', label: 'المشتريات', icon: ShoppingCart },
-        { id: 'sales', label: 'المبيعات', icon: DollarSign },
-        { id: 'customers', label: 'العملاء', icon: Users },
+        { id: 'dashboard', label: 'الرئيسية', label_en: 'Home', icon: LayoutDashboard },
+        { id: 'purchases', label: 'المشتريات', label_en: 'Purchases', icon: ShoppingCart },
+        { id: 'sales', label: 'المبيعات', label_en: 'Sales', icon: DollarSign },
+        { id: 'customers', label: 'العملاء', label_en: 'Customers', icon: Users },
       ];
   }
 }
 
 export function BottomNavigation({ activePage, setActivePage, onMenuClick }: BottomNavigationProps) {
   const { company } = useCompany();
+  const { language } = useLanguage();
+  const isEn = language === 'en';
   const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
   const navItems = getNavItems(companyType);
 
@@ -75,7 +79,7 @@ export function BottomNavigation({ activePage, setActivePage, onMenuClick }: Bot
                 "text-[9px] sm:text-[10px] font-medium leading-tight",
                 isActive ? "text-primary" : "text-muted-foreground"
               )}>
-                {item.label}
+                {isEn ? item.label_en : item.label}
               </span>
             </button>
           );
@@ -87,7 +91,7 @@ export function BottomNavigation({ activePage, setActivePage, onMenuClick }: Bot
           className="flex flex-col items-center justify-center gap-0.5 py-1 sm:py-1.5 px-2 sm:px-3 rounded-lg transition-all duration-200 min-w-[50px] sm:min-w-[60px] text-muted-foreground hover:text-foreground hover:bg-muted/50"
         >
           <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="text-[9px] sm:text-[10px] font-medium leading-tight">المزيد</span>
+          <span className="text-[9px] sm:text-[10px] font-medium leading-tight">{isEn ? 'More' : 'المزيد'}</span>
         </button>
       </div>
     </nav>
