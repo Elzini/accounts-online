@@ -6,11 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { Smartphone, Camera, FileText, CheckCircle, QrCode, Upload, Eye, Search, Building2, Trash2, AlertTriangle, CameraOff } from 'lucide-react';
+import { Smartphone, Camera, FileText, CheckCircle, QrCode, Upload, Eye, Building2, Trash2, AlertTriangle, CameraOff, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { decodeZatcaQRData, type ZatcaQRData } from '@/lib/zatcaQR';
-import { supabase } from '@/integrations/supabase/client';
-import { useCompanyId } from '@/hooks/useCompanyId';
 import { Html5Qrcode } from 'html5-qrcode';
 
 interface ScannedInvoice {
@@ -30,13 +28,9 @@ interface TaxLookupResult {
 }
 
 export function MobileInvoiceReaderPage() {
-  const companyId = useCompanyId();
   const [scannedInvoices, setScannedInvoices] = useState<ScannedInvoice[]>([]);
   const [manualQR, setManualQR] = useState('');
   const [taxNumber, setTaxNumber] = useState('');
-  const [taxLookupResult, setTaxLookupResult] = useState<TaxLookupResult | null>(null);
-  const [allTaxResults, setAllTaxResults] = useState<TaxLookupResult[]>([]);
-  const [taxLookupLoading, setTaxLookupLoading] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<ScannedInvoice | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
@@ -162,7 +156,7 @@ export function MobileInvoiceReaderPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const lookupTaxNumber = async () => {
+  const lookupTaxNumber = () => {
     if (!taxNumber.trim()) return;
     const cleaned = taxNumber.replace(/\D/g, '');
     if (cleaned.length !== 15 || !cleaned.startsWith('3')) {
@@ -170,75 +164,10 @@ export function MobileInvoiceReaderPage() {
       return;
     }
 
-    setTaxLookupLoading(true);
-
-    // Search in suppliers and customers - get ALL matches
-    const [suppliersRes, customersRes] = await Promise.all([
-      supabase
-        .from('suppliers')
-        .select('name, address')
-        .eq('company_id', companyId || '')
-        .or(`registration_number.eq.${cleaned},id_number.eq.${cleaned}`),
-      supabase
-        .from('customers')
-        .select('name, address')
-        .eq('company_id', companyId || '')
-        .or(`registration_number.eq.${cleaned},id_number.eq.${cleaned}`),
-    ]);
-
-    const allResults: TaxLookupResult[] = [];
-
-    // Add all suppliers
-    suppliersRes.data?.forEach(s => {
-      allResults.push({
-        name: s.name,
-        vatNumber: cleaned,
-        address: s.address || 'لا يوجد عنوان مسجل',
-        found: true,
-      });
-    });
-
-    // Add all customers
-    customersRes.data?.forEach(c => {
-      allResults.push({
-        name: c.name,
-        vatNumber: cleaned,
-        address: c.address || 'لا يوجد عنوان مسجل',
-        found: true,
-      });
-    });
-
-    if (allResults.length > 0) {
-      // Prioritize result with address
-      const withAddress = allResults.find(r => r.address !== 'لا يوجد عنوان مسجل');
-      const primary = withAddress || allResults[0];
-      setTaxLookupResult(primary);
-      setAllTaxResults(allResults);
-      toast.success(`تم العثور على ${allResults.length} نتيجة لـ: ${primary.name}`);
-    } else {
-      // Check from scanned invoices
-      const fromScanned = scannedInvoices.find(i => i.data.vatNumber === cleaned);
-      if (fromScanned) {
-        const result = {
-          name: fromScanned.data.sellerName,
-          vatNumber: cleaned,
-          address: 'من فاتورة ممسوحة - لا يوجد عنوان',
-          found: true,
-        };
-        setTaxLookupResult(result);
-        setAllTaxResults([result]);
-      } else {
-        setTaxLookupResult({
-          name: 'غير مسجل في النظام',
-          vatNumber: cleaned,
-          address: 'لم يتم العثور على بيانات',
-          found: false,
-        });
-        setAllTaxResults([]);
-        toast.info('الرقم الضريبي غير مسجل في النظام');
-      }
-    }
-    setTaxLookupLoading(false);
+    // Open ZATCA official verification portal
+    const zatcaUrl = `https://zatca.gov.sa/ar/eServices/Pages/TaxpayerSearch.aspx`;
+    window.open(zatcaUrl, '_blank');
+    toast.success('تم فتح بوابة هيئة الزكاة والضريبة للتحقق من الرقم الضريبي');
   };
 
   const deleteInvoice = (id: string) => {
@@ -332,7 +261,7 @@ export function MobileInvoiceReaderPage() {
 
         {/* Tax Number Lookup */}
         <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Search className="w-4 h-4" />البحث بالرقم الضريبي</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><ExternalLink className="w-4 h-4" />التحقق من الرقم الضريبي - ZATCA</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div>
               <Label>الرقم الضريبي (15 رقم)</Label>
@@ -345,35 +274,10 @@ export function MobileInvoiceReaderPage() {
                 dir="ltr"
               />
             </div>
-            <Button className="w-full gap-2" onClick={lookupTaxNumber} disabled={taxLookupLoading}>
-              <Building2 className="w-4 h-4" />{taxLookupLoading ? 'جاري البحث...' : 'بحث عن الشركة'}
+            <Button className="w-full gap-2" onClick={lookupTaxNumber}>
+              <Building2 className="w-4 h-4" />تحقق من موقع هيئة الزكاة
             </Button>
-
-            {taxLookupResult && (
-              <div className="space-y-3">
-                {allTaxResults.length > 0 ? allTaxResults.map((result, idx) => (
-                  <div key={idx} className={`p-4 rounded-lg border ${result.found ? 'border-green-500/30 bg-green-50 dark:bg-green-950/20' : 'border-destructive/30 bg-destructive/5'}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      {result.found ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertTriangle className="w-4 h-4 text-destructive" />}
-                      <span className="font-bold text-sm">{result.found ? `نتيجة ${idx + 1}` : 'غير موجود'}</span>
-                    </div>
-                    <p className="text-sm font-medium">{result.name}</p>
-                    <p className="text-xs text-muted-foreground mt-1">الرقم الضريبي: {result.vatNumber}</p>
-                    <p className="text-xs text-muted-foreground">العنوان: {result.address}</p>
-                  </div>
-                )) : (
-                  <div className="p-4 rounded-lg border border-destructive/30 bg-destructive/5">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="w-4 h-4 text-destructive" />
-                      <span className="font-bold text-sm">غير موجود</span>
-                    </div>
-                    <p className="text-sm font-medium">{taxLookupResult.name}</p>
-                    <p className="text-xs text-muted-foreground mt-1">الرقم الضريبي: {taxLookupResult.vatNumber}</p>
-                    <p className="text-xs text-muted-foreground">العنوان: {taxLookupResult.address}</p>
-                  </div>
-                )}
-              </div>
-            )}
+            <p className="text-xs text-center text-muted-foreground">سيتم فتح بوابة التحقق الرسمية لهيئة الزكاة والضريبة والجمارك</p>
           </CardContent>
         </Card>
       </div>
