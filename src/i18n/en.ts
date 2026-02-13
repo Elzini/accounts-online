@@ -57,6 +57,8 @@ export const en: TranslationKeys = {
   password_confirm: 'Confirm Password',
   full_name: 'Full Name',
   forgot_password: 'Forgot Password?',
+  welcome_back: 'Welcome Back',
+  login_to_continue: 'Sign in to continue',
   company_login: 'Company Login',
   super_admin_login: 'Super Admin Login',
   choose_login_type: 'Choose Login Type',

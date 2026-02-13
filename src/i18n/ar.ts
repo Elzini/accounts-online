@@ -57,6 +57,8 @@ export const ar: TranslationKeys = {
   password_confirm: 'تأكيد كلمة المرور',
   full_name: 'الاسم الكامل',
   forgot_password: 'نسيت كلمة المرور؟',
+  welcome_back: 'مرحباً بعودتك',
+  login_to_continue: 'سجّل دخولك للمتابعة',
   company_login: 'دخول الشركات',
   super_admin_login: 'دخول مدير النظام',
   choose_login_type: 'اختر نوع الدخول',
