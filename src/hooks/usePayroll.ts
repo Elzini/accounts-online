@@ -23,14 +23,42 @@ import {
   EmployeeAdvance,
   PayrollItem,
 } from '@/services/payroll';
+import { fetchHREmployees, HREmployee } from '@/services/hr';
 
-// Employees
+// Map HR employees to payroll Employee interface for backward compatibility
+function mapHRToPayrollEmployee(hr: HREmployee): Employee {
+  return {
+    id: hr.id,
+    company_id: hr.company_id,
+    employee_number: parseInt(hr.employee_number || '0') || 0,
+    name: hr.full_name,
+    job_title: hr.job_title || '',
+    base_salary: hr.base_salary,
+    housing_allowance: hr.housing_allowance,
+    transport_allowance: hr.transport_allowance,
+    phone: hr.phone,
+    id_number: hr.national_id,
+    bank_name: hr.bank_name,
+    iban: hr.iban,
+    hire_date: hr.hire_date,
+    is_active: hr.is_active,
+    notes: hr.notes,
+    created_at: hr.created_at,
+    updated_at: hr.updated_at,
+  };
+}
+
+// Employees - now reads from hr_employees for unified HR system
 export function useEmployees() {
   const { companyId } = useCompany();
 
   return useQuery({
-    queryKey: ['employees', companyId],
-    queryFn: () => (companyId ? fetchEmployees(companyId) : []),
+    queryKey: ['hr-employees', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const hrEmployees = await fetchHREmployees(companyId);
+      return hrEmployees.map(mapHRToPayrollEmployee);
+    },
     enabled: !!companyId,
   });
 }
