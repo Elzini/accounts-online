@@ -112,6 +112,10 @@ import { AdvancedProjectsPage } from '@/components/advanced-projects/AdvancedPro
 import { MobileInventoryPage } from '@/components/mobile-inventory/MobileInventoryPage';
 import { MobileInvoiceReaderPage } from '@/components/mobile-invoice/MobileInvoiceReaderPage';
 import { DeveloperApiPage } from '@/components/developer-api/DeveloperApiPage';
+import { EcommercePage } from '@/components/ecommerce/EcommercePage';
+import { EmailMarketingPage } from '@/components/email-marketing/EmailMarketingPage';
+import { HelpdeskPage } from '@/components/helpdesk/HelpdeskPage';
+import { CMSPage } from '@/components/cms/CMSPage';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -320,6 +324,11 @@ const Index = () => {
       case 'mobile-inventory': return <MobileInventoryPage />;
       case 'mobile-invoice-reader': return <MobileInvoiceReaderPage />;
       case 'developer-api': return <DeveloperApiPage />;
+      // New modules
+      case 'ecommerce': return <EcommercePage />;
+      case 'email-marketing': return <EmailMarketingPage />;
+      case 'helpdesk': return <HelpdeskPage />;
+      case 'cms': return <CMSPage />;
       default:
         return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} />;
     }

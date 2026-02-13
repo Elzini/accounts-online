@@ -207,5 +207,10 @@ export type ActivePage =
     | 'customer-portal'
     | 'advanced-projects'
     | 'mobile-inventory'
-    | 'mobile-invoice-reader'
-    | 'developer-api';
+     | 'mobile-invoice-reader'
+     | 'developer-api'
+     // New modules
+     | 'ecommerce'
+     | 'email-marketing'
+     | 'helpdesk'
+     | 'cms';
