@@ -115,12 +115,12 @@ export function CompanyAdminDashboard() {
           hasSchema = !!schemaCheck;
         } catch { hasSchema = false; }
 
-        const { data: encKey } = await supabase
-          .from('tenant_encryption_keys')
-          .select('id')
-          .eq('company_id', company.id)
-          .maybeSingle();
-        hasEncryption = !!encKey;
+        try {
+          const { data: encCheck } = await supabase.rpc('check_tenant_encryption_exists', {
+            p_company_id: company.id
+          });
+          hasEncryption = !!encCheck;
+        } catch { hasEncryption = false; }
 
         const recentRequests = (rateLimitRes.data || []).reduce((sum, r) => sum + (r.request_count || 0), 0);
 

@@ -11772,6 +11772,10 @@ export type Database = {
             Args: { p_company_id: string; p_endpoint?: string }
             Returns: boolean
           }
+      check_tenant_encryption_exists: {
+        Args: { p_company_id: string }
+        Returns: boolean
+      }
       check_tenant_ip_access: {
         Args: {
           p_ip_address: string
