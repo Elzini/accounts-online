@@ -171,4 +171,33 @@ export type ActivePage =
     // Subdomain Management
     | 'subdomain-management'
     // Workflow Engine
-    | 'workflows';
+    | 'workflows'
+    // Procurement
+    | 'purchase-orders'
+    | 'goods-receipt'
+    // Inventory extensions
+    | 'stock-vouchers'
+    | 'stocktaking'
+    // Returns
+    | 'credit-debit-notes'
+    // CRM
+    | 'crm'
+    // Loyalty
+    | 'loyalty'
+    // Subscriptions
+    | 'subscriptions'
+    // Work Orders
+    | 'work-orders'
+    // Bookings
+    | 'bookings'
+    // Time Tracking
+    | 'time-tracking'
+    // HR extensions
+    | 'employee-contracts'
+    | 'org-structure'
+    // Rentals
+    | 'rentals'
+    // Sales Targets
+    | 'sales-targets'
+    // Payment Gateway
+    | 'payment-gateway';
