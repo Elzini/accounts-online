@@ -1,76 +1,366 @@
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Smartphone, Camera, FileText, CheckCircle, QrCode, Upload, Eye } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { Smartphone, Camera, FileText, CheckCircle, QrCode, Upload, Eye, Search, Building2, Trash2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { decodeZatcaQRData, type ZatcaQRData } from '@/lib/zatcaQR';
+import { supabase } from '@/integrations/supabase/client';
+import { useCompanyId } from '@/hooks/useCompanyId';
+
+interface ScannedInvoice {
+  id: string;
+  data: ZatcaQRData;
+  rawBase64: string;
+  scannedAt: string;
+  isValid: boolean;
+  phase2: boolean;
+}
+
+interface TaxLookupResult {
+  name: string;
+  vatNumber: string;
+  address: string;
+  found: boolean;
+}
 
 export function MobileInvoiceReaderPage() {
-  const scannedInvoices = [
-    { id: '1', vendor: 'شركة الأمل للتجارة', amount: 8500, date: '2024-01-18', vatNumber: '300123456789003', status: 'verified', items: 5 },
-    { id: '2', vendor: 'مؤسسة النجاح', amount: 2250, date: '2024-01-17', vatNumber: '300987654321003', status: 'verified', items: 3 },
-    { id: '3', vendor: 'متجر البركة', amount: 450, date: '2024-01-16', vatNumber: '300111222333003', status: 'pending', items: 2 },
-  ];
+  const companyId = useCompanyId();
+  const [scannedInvoices, setScannedInvoices] = useState<ScannedInvoice[]>([]);
+  const [manualQR, setManualQR] = useState('');
+  const [taxNumber, setTaxNumber] = useState('');
+  const [taxLookupResult, setTaxLookupResult] = useState<TaxLookupResult | null>(null);
+  const [taxLookupLoading, setTaxLookupLoading] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<ScannedInvoice | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const processQRData = (base64Data: string) => {
+    const trimmed = base64Data.trim();
+    const decoded = decodeZatcaQRData(trimmed);
+    if (!decoded) {
+      toast.error('لا يمكن قراءة بيانات QR - تأكد أنها فاتورة ZATCA صالحة');
+      return;
+    }
+
+    const isValidVat = decoded.vatNumber?.length === 15 && decoded.vatNumber.startsWith('3');
+    const phase2 = !!(decoded.invoiceHash || decoded.ecdsaSignature);
+
+    const invoice: ScannedInvoice = {
+      id: crypto.randomUUID(),
+      data: decoded,
+      rawBase64: trimmed,
+      scannedAt: new Date().toISOString(),
+      isValid: isValidVat && !!decoded.sellerName && decoded.invoiceTotal > 0,
+      phase2,
+    };
+
+    setScannedInvoices(prev => [invoice, ...prev]);
+    toast.success(`تم قراءة فاتورة ${decoded.sellerName || 'غير معروف'} بنجاح`);
+    setManualQR('');
+  };
+
+  const handleManualScan = () => {
+    if (!manualQR.trim()) return;
+    processQRData(manualQR);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Read as text (for Base64 QR data files)
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      if (text) {
+        // Try to extract Base64 from the text
+        const lines = text.split('\n').filter(l => l.trim());
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.length > 20) {
+            try {
+              atob(trimmed); // Validate it's Base64
+              processQRData(trimmed);
+              return;
+            } catch {
+              // Not valid Base64, continue
+            }
+          }
+        }
+        toast.error('لم يتم العثور على بيانات QR صالحة في الملف');
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const lookupTaxNumber = async () => {
+    if (!taxNumber.trim()) return;
+    const cleaned = taxNumber.replace(/\D/g, '');
+    if (cleaned.length !== 15 || !cleaned.startsWith('3')) {
+      toast.error('الرقم الضريبي يجب أن يكون 15 رقماً ويبدأ بـ 3');
+      return;
+    }
+
+    setTaxLookupLoading(true);
+
+    // Search in suppliers first
+    const [suppliersRes, customersRes] = await Promise.all([
+      supabase
+        .from('suppliers')
+        .select('name, address')
+        .eq('company_id', companyId || '')
+        .or(`registration_number.eq.${cleaned},id_number.eq.${cleaned}`)
+        .limit(1),
+      supabase
+        .from('customers')
+        .select('name, address')
+        .eq('company_id', companyId || '')
+        .or(`registration_number.eq.${cleaned},id_number.eq.${cleaned}`)
+        .limit(1),
+    ]);
+
+    const supplier = suppliersRes.data?.[0];
+    const customer = customersRes.data?.[0];
+    const found = supplier || customer;
+
+    if (found) {
+      setTaxLookupResult({
+        name: found.name,
+        vatNumber: cleaned,
+        address: found.address || 'لا يوجد عنوان مسجل',
+        found: true,
+      });
+      toast.success(`تم العثور على: ${found.name}`);
+    } else {
+      // Check from scanned invoices
+      const fromScanned = scannedInvoices.find(i => i.data.vatNumber === cleaned);
+      if (fromScanned) {
+        setTaxLookupResult({
+          name: fromScanned.data.sellerName,
+          vatNumber: cleaned,
+          address: 'من فاتورة ممسوحة - لا يوجد عنوان',
+          found: true,
+        });
+      } else {
+        setTaxLookupResult({
+          name: 'غير مسجل في النظام',
+          vatNumber: cleaned,
+          address: 'لم يتم العثور على بيانات',
+          found: false,
+        });
+        toast.info('الرقم الضريبي غير مسجل في النظام');
+      }
+    }
+    setTaxLookupLoading(false);
+  };
+
+  const deleteInvoice = (id: string) => {
+    setScannedInvoices(prev => prev.filter(i => i.id !== id));
+    toast.success('تم حذف الفاتورة');
+  };
+
+  const viewInvoice = (inv: ScannedInvoice) => {
+    setSelectedInvoice(inv);
+    setShowDetail(true);
+  };
+
+  const verifiedCount = scannedInvoices.filter(i => i.isValid).length;
+  const totalAmount = scannedInvoices.reduce((s, i) => s + (i.data.invoiceTotal || 0), 0);
+  const totalVat = scannedInvoices.reduce((s, i) => s + (i.data.vatAmount || 0), 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">قراءة الفاتورة الإلكترونية</h1>
-          <p className="text-muted-foreground">مسح وقراءة الفواتير الإلكترونية بكاميرا الجوال أو QR Code</p>
+          <p className="text-muted-foreground">مسح QR Code المطابق لنظام فاتورة (ZATCA) والبحث بالرقم الضريبي</p>
         </div>
-        <Badge variant="outline" className="gap-1"><Smartphone className="w-3 h-3" />متوافق مع الجوال</Badge>
+        <Badge variant="outline" className="gap-1"><Smartphone className="w-3 h-3" />ZATCA متوافق</Badge>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card><CardContent className="pt-4 text-center"><FileText className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{scannedInvoices.length}</div><p className="text-sm text-muted-foreground">فواتير ممسوحة</p></CardContent></Card>
-        <Card><CardContent className="pt-4 text-center"><CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-600" /><div className="text-2xl font-bold">{scannedInvoices.filter(i => i.status === 'verified').length}</div><p className="text-sm text-muted-foreground">تم التحقق</p></CardContent></Card>
-        <Card><CardContent className="pt-4 text-center"><div className="text-2xl font-bold">{scannedInvoices.reduce((s, i) => s + i.amount, 0).toLocaleString()} ر.س</div><p className="text-sm text-muted-foreground">إجمالي المبالغ</p></CardContent></Card>
+        <Card><CardContent className="pt-4 text-center"><CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-600" /><div className="text-2xl font-bold">{verifiedCount}</div><p className="text-sm text-muted-foreground">تم التحقق</p></CardContent></Card>
+        <Card><CardContent className="pt-4 text-center"><div className="text-2xl font-bold">{totalAmount.toLocaleString()} ر.س</div><p className="text-sm text-muted-foreground">إجمالي الفواتير</p></CardContent></Card>
+        <Card><CardContent className="pt-4 text-center"><div className="text-2xl font-bold">{totalVat.toLocaleString()} ر.س</div><p className="text-sm text-muted-foreground">إجمالي الضريبة</p></CardContent></Card>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* QR Scanner */}
         <Card>
-          <CardHeader><CardTitle className="text-base">مسح QR Code</CardTitle></CardHeader>
-          <CardContent>
-            <div className="border-2 border-dashed border-muted-foreground/30 rounded-xl p-8 text-center">
-              <QrCode className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
-              <p className="text-muted-foreground mb-4">امسح رمز QR الموجود على الفاتورة الإلكترونية</p>
-              <Button className="gap-2" onClick={() => toast.info('يتطلب فتح التطبيق من الجوال')}><Camera className="w-4 h-4" />فتح الماسح</Button>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><QrCode className="w-4 h-4" />مسح QR Code - ZATCA</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>الصق بيانات QR (Base64)</Label>
+              <Input
+                placeholder="الصق بيانات QR المشفرة هنا..."
+                value={manualQR}
+                onChange={e => setManualQR(e.target.value)}
+                className="font-mono text-xs"
+              />
+            </div>
+            <Button className="w-full gap-2" onClick={handleManualScan} disabled={!manualQR.trim()}>
+              <QrCode className="w-4 h-4" />قراءة بيانات QR
+            </Button>
+            <Separator />
+            <div className="text-center">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt,.csv"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+              <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="w-4 h-4" />رفع ملف QR
+              </Button>
             </div>
           </CardContent>
         </Card>
+
+        {/* Tax Number Lookup */}
         <Card>
-          <CardHeader><CardTitle className="text-base">رفع صورة فاتورة</CardTitle></CardHeader>
-          <CardContent>
-            <div className="border-2 border-dashed border-muted-foreground/30 rounded-xl p-8 text-center">
-              <Upload className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
-              <p className="text-muted-foreground mb-4">ارفع صورة الفاتورة لقراءتها تلقائياً عبر OCR</p>
-              <Button variant="outline" className="gap-2" onClick={() => toast.info('رفع صورة الفاتورة')}><Upload className="w-4 h-4" />اختر صورة</Button>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Search className="w-4 h-4" />البحث بالرقم الضريبي</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>الرقم الضريبي (15 رقم)</Label>
+              <Input
+                placeholder="3XXXXXXXXXXXXXX"
+                value={taxNumber}
+                onChange={e => setTaxNumber(e.target.value)}
+                maxLength={15}
+                className="font-mono tracking-wider"
+                dir="ltr"
+              />
             </div>
+            <Button className="w-full gap-2" onClick={lookupTaxNumber} disabled={taxLookupLoading}>
+              <Building2 className="w-4 h-4" />{taxLookupLoading ? 'جاري البحث...' : 'بحث عن الشركة'}
+            </Button>
+
+            {taxLookupResult && (
+              <div className={`p-4 rounded-lg border ${taxLookupResult.found ? 'border-green-500/30 bg-green-50 dark:bg-green-950/20' : 'border-destructive/30 bg-destructive/5'}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  {taxLookupResult.found ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertTriangle className="w-4 h-4 text-destructive" />}
+                  <span className="font-bold text-sm">{taxLookupResult.found ? 'تم العثور' : 'غير موجود'}</span>
+                </div>
+                <p className="text-sm font-medium">{taxLookupResult.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">الرقم الضريبي: {taxLookupResult.vatNumber}</p>
+                <p className="text-xs text-muted-foreground">العنوان: {taxLookupResult.address}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
+      {/* Scanned Invoices List */}
       <Card>
         <CardHeader><CardTitle className="text-base">الفواتير الممسوحة</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          {scannedInvoices.map(inv => (
-            <div key={inv.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-              <div>
-                <p className="font-medium">{inv.vendor}</p>
-                <p className="text-xs text-muted-foreground">الرقم الضريبي: {inv.vatNumber} • {inv.items} أصناف</p>
-                <p className="text-xs text-muted-foreground">{inv.date}</p>
-              </div>
-              <div className="text-left flex items-center gap-3">
-                <div>
-                  <p className="font-bold">{inv.amount.toLocaleString()} ر.س</p>
-                  <Badge variant={inv.status === 'verified' ? 'default' : 'secondary'} className="text-xs">{inv.status === 'verified' ? 'تم التحقق' : 'قيد المراجعة'}</Badge>
+        <CardContent>
+          {scannedInvoices.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">لا توجد فواتير ممسوحة. امسح QR Code لبدء القراءة.</p>
+          ) : (
+            <div className="space-y-3">
+              {scannedInvoices.map(inv => (
+                <div key={inv.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{inv.data.sellerName || 'غير معروف'}</p>
+                      {inv.phase2 && <Badge variant="outline" className="text-[10px]">Phase 2</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      الرقم الضريبي: <span dir="ltr" className="font-mono">{inv.data.vatNumber}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {inv.data.invoiceDateTime} • الضريبة: {(inv.data.vatAmount || 0).toLocaleString()} ر.س
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-left">
+                      <p className="font-bold">{(inv.data.invoiceTotal || 0).toLocaleString()} ر.س</p>
+                      <Badge variant={inv.isValid ? 'default' : 'destructive'} className="text-xs">
+                        {inv.isValid ? 'صالحة' : 'غير صالحة'}
+                      </Badge>
+                    </div>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => viewInvoice(inv)}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteInvoice(inv.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                <Button size="icon" variant="ghost" className="h-8 w-8"><Eye className="w-4 h-4" /></Button>
-              </div>
+              ))}
             </div>
-          ))}
+          )}
         </CardContent>
       </Card>
+
+      {/* Invoice Detail Dialog */}
+      <Dialog open={showDetail} onOpenChange={setShowDetail}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>تفاصيل الفاتورة - ZATCA</DialogTitle></DialogHeader>
+          {selectedInvoice && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">اسم البائع (Tag 1)</Label>
+                  <p className="font-medium">{selectedInvoice.data.sellerName}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">الرقم الضريبي (Tag 2)</Label>
+                  <p className="font-mono" dir="ltr">{selectedInvoice.data.vatNumber}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">تاريخ الفاتورة (Tag 3)</Label>
+                  <p>{selectedInvoice.data.invoiceDateTime}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">الإجمالي شامل الضريبة (Tag 4)</Label>
+                  <p className="font-bold">{(selectedInvoice.data.invoiceTotal || 0).toLocaleString()} ر.س</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">مبلغ الضريبة (Tag 5)</Label>
+                  <p>{(selectedInvoice.data.vatAmount || 0).toLocaleString()} ر.س</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">الحالة</Label>
+                  <Badge variant={selectedInvoice.isValid ? 'default' : 'destructive'}>
+                    {selectedInvoice.isValid ? 'فاتورة صالحة' : 'فاتورة غير صالحة'}
+                  </Badge>
+                </div>
+              </div>
+
+              {selectedInvoice.phase2 && (
+                <>
+                  <Separator />
+                  <div>
+                    <Badge variant="outline" className="mb-2">Phase 2 - المرحلة الثانية</Badge>
+                    {selectedInvoice.data.invoiceHash && (
+                      <div className="mt-2">
+                        <Label className="text-xs text-muted-foreground">Hash (Tag 6)</Label>
+                        <p className="font-mono text-[10px] break-all" dir="ltr">{selectedInvoice.data.invoiceHash}</p>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              <Separator />
+              <div>
+                <Label className="text-xs text-muted-foreground">تاريخ المسح</Label>
+                <p className="text-sm">{new Date(selectedInvoice.scannedAt).toLocaleString('ar-SA')}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
