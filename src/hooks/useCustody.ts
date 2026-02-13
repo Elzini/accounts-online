@@ -271,17 +271,19 @@ export function useCustodyDetails(custodyId: string | null) {
       
       let journalEntryId: string | null = null;
 
-      // Auto-create journal entry if expense account is provided and custody has a custody_account
-      if (data.account_id && custody?.custody_account_id) {
+      // Auto-create journal entry if expense account is provided
+      // Use custody_account_id if available, otherwise try cash_account_id as the credit side
+      const creditAccountId = custody?.custody_account_id || custody?.cash_account_id;
+      if (data.account_id && creditAccountId) {
         journalEntryId = await createTransactionJournalEntry(
           companyId,
-          custody.custody_name,
+          custody!.custody_name,
           data.description,
           data.amount,
           data.account_id,
-          custody.custody_account_id,
+          creditAccountId,
           data.transaction_date,
-          custody.fiscal_year_id || null,
+          custody!.fiscal_year_id || null,
         );
       }
 
@@ -322,16 +324,17 @@ export function useCustodyDetails(custodyId: string | null) {
       const existingTx = custody?.transactions?.find(t => t.id === id);
       
       // Auto-create journal entry if account added to a transaction that didn't have one
-      if (updates.account_id && custody?.custody_account_id && existingTx && !existingTx.journal_entry_id) {
+      const creditAccountId = custody?.custody_account_id || custody?.cash_account_id;
+      if (updates.account_id && creditAccountId && existingTx && !existingTx.journal_entry_id) {
         const journalEntryId = await createTransactionJournalEntry(
           companyId!,
-          custody.custody_name,
+          custody!.custody_name,
           updates.description || existingTx.description,
           updates.amount || existingTx.amount,
           updates.account_id,
-          custody.custody_account_id,
+          creditAccountId,
           updates.transaction_date || existingTx.transaction_date,
-          custody.fiscal_year_id || null,
+          custody!.fiscal_year_id || null,
         );
         updates = { ...updates, journal_entry_id: journalEntryId };
       }
