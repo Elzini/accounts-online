@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { Smartphone, Camera, FileText, CheckCircle, QrCode, Upload, Eye, Search, Building2, Trash2, AlertTriangle } from 'lucide-react';
+import { Smartphone, Camera, FileText, CheckCircle, QrCode, Upload, Eye, Search, Building2, Trash2, AlertTriangle, CameraOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { decodeZatcaQRData, type ZatcaQRData } from '@/lib/zatcaQR';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompanyId } from '@/hooks/useCompanyId';
+import { Html5Qrcode } from 'html5-qrcode';
 
 interface ScannedInvoice {
   id: string;
@@ -37,9 +38,13 @@ export function MobileInvoiceReaderPage() {
   const [taxLookupLoading, setTaxLookupLoading] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<ScannedInvoice | null>(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerContainerId = 'qr-camera-reader';
 
-  const processQRData = (base64Data: string) => {
+  const processQRData = useCallback((base64Data: string) => {
     const trimmed = base64Data.trim();
     const decoded = decodeZatcaQRData(trimmed);
     if (!decoded) {
@@ -62,7 +67,64 @@ export function MobileInvoiceReaderPage() {
     setScannedInvoices(prev => [invoice, ...prev]);
     toast.success(`تم قراءة فاتورة ${decoded.sellerName || 'غير معروف'} بنجاح`);
     setManualQR('');
-  };
+  }, []);
+
+  const stopCamera = useCallback(async () => {
+    if (scannerRef.current) {
+      try {
+        const state = scannerRef.current.getState();
+        if (state === 2) { // SCANNING
+          await scannerRef.current.stop();
+        }
+      } catch (e) {
+        // ignore
+      }
+      scannerRef.current = null;
+    }
+    setCameraActive(false);
+    setCameraError(null);
+  }, []);
+
+  const startCamera = useCallback(async () => {
+    setCameraError(null);
+    try {
+      const html5Qrcode = new Html5Qrcode(scannerContainerId);
+      scannerRef.current = html5Qrcode;
+
+      await html5Qrcode.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          processQRData(decodedText);
+          // Don't stop camera - allow continuous scanning
+        },
+        () => {
+          // Ignore scan failures (no QR in frame)
+        }
+      );
+      setCameraActive(true);
+    } catch (err: any) {
+      console.error('Camera error:', err);
+      setCameraError(err?.message || 'تعذر الوصول إلى الكاميرا. تأكد من منح إذن الكاميرا.');
+      setCameraActive(false);
+    }
+  }, [processQRData]);
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      if (scannerRef.current) {
+        try {
+          const state = scannerRef.current.getState();
+          if (state === 2) {
+            scannerRef.current.stop();
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+    };
+  }, []);
 
   const handleManualScan = () => {
     if (!manualQR.trim()) return;
@@ -197,8 +259,32 @@ export function MobileInvoiceReaderPage() {
         <Card>
           <CardHeader><CardTitle className="text-base flex items-center gap-2"><QrCode className="w-4 h-4" />مسح QR Code - ZATCA</CardTitle></CardHeader>
           <CardContent className="space-y-4">
+            {/* Camera Scanner */}
+            <div className="space-y-2">
+              <div id={scannerContainerId} className={`w-full rounded-lg overflow-hidden ${cameraActive ? '' : 'hidden'}`} />
+              {cameraError && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                  <CameraOff className="w-4 h-4 shrink-0" />
+                  <span>{cameraError}</span>
+                </div>
+              )}
+              <div className="flex gap-2">
+                {!cameraActive ? (
+                  <Button className="w-full gap-2" variant="default" onClick={startCamera}>
+                    <Camera className="w-4 h-4" />فتح الكاميرا للمسح
+                  </Button>
+                ) : (
+                  <Button className="w-full gap-2" variant="destructive" onClick={stopCamera}>
+                    <CameraOff className="w-4 h-4" />إيقاف الكاميرا
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
             <div>
-              <Label>الصق بيانات QR (Base64)</Label>
+              <Label>أو الصق بيانات QR (Base64)</Label>
               <Input
                 placeholder="الصق بيانات QR المشفرة هنا..."
                 value={manualQR}
