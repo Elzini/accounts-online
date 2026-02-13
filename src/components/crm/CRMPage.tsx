@@ -12,15 +12,18 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-const stageLabels: Record<string, string> = { new: 'جديد', qualified: 'مؤهل', proposal: 'عرض سعر', negotiation: 'تفاوض', won: 'مكسوب', lost: 'خسارة' };
 const stageColors: Record<string, string> = { new: 'bg-blue-100 text-blue-800', qualified: 'bg-purple-100 text-purple-800', proposal: 'bg-orange-100 text-orange-800', negotiation: 'bg-yellow-100 text-yellow-800', won: 'bg-green-100 text-green-800', lost: 'bg-red-100 text-red-800' };
 
 export function CRMPage() {
+  const { t } = useLanguage();
   const companyId = useCompanyId();
   const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', phone: '', source: '', expectedValue: '' });
+
+  const stageLabels: Record<string, string> = { new: t.crm_stage_new, qualified: t.crm_stage_qualified, proposal: t.crm_stage_proposal, negotiation: t.crm_stage_negotiation, won: t.crm_stage_won, lost: t.crm_stage_lost };
 
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ['crm-leads', companyId],
@@ -37,8 +40,8 @@ export function CRMPage() {
       const { error } = await supabase.from('crm_leads').insert({ company_id: companyId!, name: form.name, email: form.email || null, phone: form.phone || null, source: form.source || null, expected_value: Number(form.expectedValue) || 0, status: 'new' });
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['crm-leads'] }); toast.success('تم إضافة الفرصة'); setShowAdd(false); setForm({ name: '', email: '', phone: '', source: '', expectedValue: '' }); },
-    onError: () => toast.error('حدث خطأ'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['crm-leads'] }); toast.success(t.crm_added); setShowAdd(false); setForm({ name: '', email: '', phone: '', source: '', expectedValue: '' }); },
+    onError: () => toast.error(t.mod_error),
   });
 
   const updateStage = useMutation({
@@ -46,12 +49,12 @@ export function CRMPage() {
       const { error } = await supabase.from('crm_leads').update({ status }).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['crm-leads'] }); toast.success('تم التحديث'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['crm-leads'] }); toast.success(t.crm_updated); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from('crm_leads').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['crm-leads'] }); toast.success('تم الحذف'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['crm-leads'] }); toast.success(t.mod_deleted); },
   });
 
   const stages = ['new', 'qualified', 'proposal', 'negotiation', 'won'];
@@ -60,22 +63,22 @@ export function CRMPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-3xl font-bold text-foreground">إدارة علاقات العملاء CRM</h1><p className="text-muted-foreground">تتبع فرص البيع وإدارة العملاء المحتملين</p></div>
+        <div><h1 className="text-3xl font-bold text-foreground">{t.crm_title}</h1><p className="text-muted-foreground">{t.crm_subtitle}</p></div>
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
-          <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />فرصة جديدة</Button></DialogTrigger>
+          <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />{t.crm_new}</Button></DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>فرصة بيع جديدة</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t.crm_new_title}</DialogTitle></DialogHeader>
             <div className="space-y-4">
-              <div><Label>الاسم</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
+              <div><Label>{t.name}</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>البريد</Label><Input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
-                <div><Label>الهاتف</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
+                <div><Label>{t.email}</Label><Input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
+                <div><Label>{t.phone}</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>المصدر</Label><Input value={form.source} onChange={e => setForm(p => ({ ...p, source: e.target.value }))} placeholder="موقع، إحالة..." /></div>
-                <div><Label>القيمة المتوقعة</Label><Input type="number" value={form.expectedValue} onChange={e => setForm(p => ({ ...p, expectedValue: e.target.value }))} /></div>
+                <div><Label>{t.crm_source}</Label><Input value={form.source} onChange={e => setForm(p => ({ ...p, source: e.target.value }))} placeholder={t.crm_source_placeholder} /></div>
+                <div><Label>{t.crm_expected_value}</Label><Input type="number" value={form.expectedValue} onChange={e => setForm(p => ({ ...p, expectedValue: e.target.value }))} /></div>
               </div>
-              <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending || !form.name}>حفظ</Button>
+              <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending || !form.name}>{t.save}</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -86,15 +89,15 @@ export function CRMPage() {
           <Card key={p.stage}><CardContent className="pt-4 text-center">
             <p className="text-xs text-muted-foreground mb-1">{stageLabels[p.stage]}</p>
             <div className="text-xl font-bold">{p.count}</div>
-            <p className="text-xs text-muted-foreground">{p.value.toLocaleString()} ر.س</p>
+            <p className="text-xs text-muted-foreground">{p.value.toLocaleString()} {t.mod_currency}</p>
           </CardContent></Card>
         ))}
       </div>
 
       <Card><CardContent className="pt-6">
-        {isLoading ? <p className="text-center py-8 text-muted-foreground">جاري التحميل...</p> : leads.length === 0 ? <p className="text-center py-8 text-muted-foreground">لا توجد فرص بيع</p> : (
+        {isLoading ? <p className="text-center py-8 text-muted-foreground">{t.loading}</p> : leads.length === 0 ? <p className="text-center py-8 text-muted-foreground">{t.crm_no_leads}</p> : (
           <Table>
-            <TableHeader><TableRow><TableHead>الاسم</TableHead><TableHead>الهاتف</TableHead><TableHead>المرحلة</TableHead><TableHead>القيمة</TableHead><TableHead>المصدر</TableHead><TableHead>إجراءات</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>{t.name}</TableHead><TableHead>{t.phone}</TableHead><TableHead>{t.crm_stage}</TableHead><TableHead>{t.crm_value}</TableHead><TableHead>{t.crm_source}</TableHead><TableHead>{t.actions}</TableHead></TableRow></TableHeader>
             <TableBody>
               {leads.map((l: any) => (
                 <TableRow key={l.id}>
@@ -106,7 +109,7 @@ export function CRMPage() {
                       <SelectContent>{Object.entries(stageLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell>{Number(l.expected_value || 0).toLocaleString()} ر.س</TableCell>
+                  <TableCell>{Number(l.expected_value || 0).toLocaleString()} {t.mod_currency}</TableCell>
                   <TableCell>{l.source || '-'}</TableCell>
                   <TableCell><Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(l.id)}><Trash2 className="w-3 h-3" /></Button></TableCell>
                 </TableRow>
