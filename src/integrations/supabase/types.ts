@@ -8504,6 +8504,7 @@ export type Database = {
           address: string | null
           company_id: string | null
           created_at: string | null
+          credit_limit: number | null
           id: string | null
           id_number: string | null
           managed_by: string | null
@@ -8516,24 +8517,26 @@ export type Database = {
           address?: never
           company_id?: string | null
           created_at?: string | null
+          credit_limit?: number | null
           id?: string | null
           id_number?: never
           managed_by?: string | null
           name?: string | null
           phone?: never
-          registration_number?: string | null
+          registration_number?: never
           updated_at?: string | null
         }
         Update: {
           address?: never
           company_id?: string | null
           created_at?: string | null
+          credit_limit?: number | null
           id?: string | null
           id_number?: never
           managed_by?: string | null
           name?: string | null
           phone?: never
-          registration_number?: string | null
+          registration_number?: never
           updated_at?: string | null
         }
         Relationships: [
