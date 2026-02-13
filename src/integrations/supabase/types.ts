@@ -7028,6 +7028,42 @@ export type Database = {
           },
         ]
       }
+      storage_access_log: {
+        Row: {
+          allowed: boolean
+          block_reason: string | null
+          bucket_name: string | null
+          created_at: string | null
+          file_path: string | null
+          id: string
+          operation: string
+          tenant_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          allowed?: boolean
+          block_reason?: string | null
+          bucket_name?: string | null
+          created_at?: string | null
+          file_path?: string | null
+          id?: string
+          operation: string
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          allowed?: boolean
+          block_reason?: string | null
+          bucket_name?: string | null
+          created_at?: string | null
+          file_path?: string | null
+          id?: string
+          operation?: string
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           address: string | null
@@ -7532,6 +7568,103 @@ export type Database = {
             foreignKeyName: "tenant_resource_quotas_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_storage_config: {
+        Row: {
+          bucket_name: string
+          created_at: string | null
+          encryption_enabled: boolean | null
+          id: string
+          immutable_snapshots_enabled: boolean | null
+          storage_quota_mb: number | null
+          tenant_id: string
+          updated_at: string | null
+          used_storage_mb: number | null
+        }
+        Insert: {
+          bucket_name: string
+          created_at?: string | null
+          encryption_enabled?: boolean | null
+          id?: string
+          immutable_snapshots_enabled?: boolean | null
+          storage_quota_mb?: number | null
+          tenant_id: string
+          updated_at?: string | null
+          used_storage_mb?: number | null
+        }
+        Update: {
+          bucket_name?: string
+          created_at?: string | null
+          encryption_enabled?: boolean | null
+          id?: string
+          immutable_snapshots_enabled?: boolean | null
+          storage_quota_mb?: number | null
+          tenant_id?: string
+          updated_at?: string | null
+          used_storage_mb?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_storage_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_storage_snapshots: {
+        Row: {
+          bucket_name: string
+          checksum: string | null
+          created_at: string | null
+          created_by: string | null
+          file_count: number | null
+          file_paths: string[]
+          id: string
+          is_immutable: boolean | null
+          locked_at: string | null
+          snapshot_name: string
+          tenant_id: string
+          total_size_bytes: number | null
+        }
+        Insert: {
+          bucket_name: string
+          checksum?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          file_count?: number | null
+          file_paths?: string[]
+          id?: string
+          is_immutable?: boolean | null
+          locked_at?: string | null
+          snapshot_name: string
+          tenant_id: string
+          total_size_bytes?: number | null
+        }
+        Update: {
+          bucket_name?: string
+          checksum?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          file_count?: number | null
+          file_paths?: string[]
+          id?: string
+          is_immutable?: boolean | null
+          locked_at?: string | null
+          snapshot_name?: string
+          tenant_id?: string
+          total_size_bytes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_storage_snapshots_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
@@ -8752,6 +8885,10 @@ export type Database = {
         Returns: Json
       }
       provision_tenant_final: { Args: { p_company_id: string }; Returns: Json }
+      provision_tenant_storage: {
+        Args: { p_company_id: string }
+        Returns: string
+      }
       rbac_check: { Args: { required_permission: string }; Returns: boolean }
       regenerate_journal_entries: {
         Args: { p_company_id: string }
