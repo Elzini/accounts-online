@@ -52,7 +52,7 @@ export const ar: TranslationKeys = {
   signup_button: 'إنشاء حساب',
   login_switch: 'ليس لديك حساب؟ إنشاء حساب جديد',
   signup_switch: 'لديك حساب؟ تسجيل الدخول',
-  email_placeholder: 'البريد الإلكتروني',
+  email_placeholder: '          البريد الإلكتروني',
   password_placeholder: 'كلمة المرور',
   password_confirm: 'تأكيد كلمة المرور',
   full_name: 'الاسم الكامل',
