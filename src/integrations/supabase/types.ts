@@ -5018,6 +5018,42 @@ export type Database = {
           },
         ]
       }
+      network_access_log: {
+        Row: {
+          allowed: boolean
+          block_reason: string | null
+          created_at: string | null
+          id: string
+          ip_address: string
+          request_method: string | null
+          request_path: string | null
+          tenant_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          allowed: boolean
+          block_reason?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address: string
+          request_method?: string | null
+          request_path?: string | null
+          tenant_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          allowed?: boolean
+          block_reason?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string
+          request_method?: string | null
+          request_path?: string | null
+          tenant_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           company_id: string
@@ -7337,6 +7373,94 @@ export type Database = {
           },
         ]
       }
+      tenant_ip_whitelist: {
+        Row: {
+          cidr_range: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          ip_address: string
+          is_active: boolean | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          cidr_range?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          ip_address: string
+          is_active?: boolean | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          cidr_range?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          ip_address?: string
+          is_active?: boolean | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_ip_whitelist_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_network_config: {
+        Row: {
+          allowed_countries: string[] | null
+          block_foreign_ips: boolean | null
+          created_at: string | null
+          id: string
+          ip_whitelist_enabled: boolean | null
+          max_requests_per_ip_per_minute: number | null
+          tenant_id: string
+          updated_at: string | null
+          vpn_required: boolean | null
+        }
+        Insert: {
+          allowed_countries?: string[] | null
+          block_foreign_ips?: boolean | null
+          created_at?: string | null
+          id?: string
+          ip_whitelist_enabled?: boolean | null
+          max_requests_per_ip_per_minute?: number | null
+          tenant_id: string
+          updated_at?: string | null
+          vpn_required?: boolean | null
+        }
+        Update: {
+          allowed_countries?: string[] | null
+          block_foreign_ips?: boolean | null
+          created_at?: string | null
+          id?: string
+          ip_whitelist_enabled?: boolean | null
+          max_requests_per_ip_per_minute?: number | null
+          tenant_id?: string
+          updated_at?: string | null
+          vpn_required?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_network_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_rate_limits: {
         Row: {
           company_id: string
@@ -8458,6 +8582,16 @@ export type Database = {
             Args: { p_company_id: string; p_endpoint?: string }
             Returns: boolean
           }
+      check_tenant_ip_access: {
+        Args: {
+          p_ip_address: string
+          p_request_method?: string
+          p_request_path?: string
+          p_tenant_id: string
+          p_user_agent?: string
+        }
+        Returns: Json
+      }
       check_tenant_schema_exists: {
         Args: { p_company_id: string }
         Returns: boolean

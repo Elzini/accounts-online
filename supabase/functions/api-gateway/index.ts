@@ -102,6 +102,24 @@ serve(async (req) => {
       return errorResponse('No company associated with this authentication', 403);
     }
 
+    // IP Whitelisting Check
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() 
+      || req.headers.get('cf-connecting-ip') 
+      || req.headers.get('x-real-ip') 
+      || 'unknown';
+
+    const { data: ipCheck } = await supabase.rpc('check_tenant_ip_access', {
+      p_tenant_id: companyId,
+      p_ip_address: clientIp,
+      p_request_path: url.pathname,
+      p_request_method: req.method,
+      p_user_agent: req.headers.get('user-agent'),
+    });
+
+    if (ipCheck && !ipCheck.allowed) {
+      return errorResponse(`Access denied from IP: ${clientIp}. ${ipCheck.reason || ''}`, 403);
+    }
+
     // Route to handler
     const method = req.method;
     const body = ['POST', 'PUT', 'PATCH'].includes(method) ? await req.json() : null;
