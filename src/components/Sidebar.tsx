@@ -601,10 +601,10 @@ export function Sidebar({
     return config ? config.visible !== false : true;
   };
 
-  // Check if section is collapsible
+  // Check if section is collapsible - default to true (all sections collapsible)
   const isSectionCollapsible = (sectionId: string) => {
     const config = getSectionConfig(sectionId);
-    return config?.isCollapsible === true;
+    return config?.isCollapsible !== false;
   };
 
   // Get section label - respect language setting
