@@ -338,6 +338,10 @@ export function Sidebar({
     id: 'leaves' as ActivePage,
     label: t.nav_leaves,
     icon: CalendarDays
+  }, {
+    id: 'plugin-advanced-hr' as ActivePage,
+    label: language === 'ar' ? 'التأمينات والتقييم والتدريب' : 'Insurance, Evaluation & Training',
+    icon: Shield
   }];
   const financeItems = [{
     id: 'expenses' as ActivePage,
