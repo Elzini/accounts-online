@@ -543,51 +543,69 @@ export type Database = {
         Row: {
           backup_data: Json | null
           backup_type: string
+          checksum: string | null
           company_id: string
           completed_at: string | null
           created_at: string
           created_by: string | null
           description: string | null
+          encryption_algorithm: string | null
+          encryption_key_version: number | null
           error_message: string | null
           file_path: string | null
           file_size: number | null
           id: string
+          is_encrypted: boolean | null
           name: string
           records_count: Json | null
+          restore_test_status: string | null
+          restore_tested_at: string | null
           status: string
           tables_included: string[]
         }
         Insert: {
           backup_data?: Json | null
           backup_type?: string
+          checksum?: string | null
           company_id: string
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          encryption_algorithm?: string | null
+          encryption_key_version?: number | null
           error_message?: string | null
           file_path?: string | null
           file_size?: number | null
           id?: string
+          is_encrypted?: boolean | null
           name: string
           records_count?: Json | null
+          restore_test_status?: string | null
+          restore_tested_at?: string | null
           status?: string
           tables_included?: string[]
         }
         Update: {
           backup_data?: Json | null
           backup_type?: string
+          checksum?: string | null
           company_id?: string
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          encryption_algorithm?: string | null
+          encryption_key_version?: number | null
           error_message?: string | null
           file_path?: string | null
           file_size?: number | null
           id?: string
+          is_encrypted?: boolean | null
           name?: string
           records_count?: Json | null
+          restore_test_status?: string | null
+          restore_tested_at?: string | null
           status?: string
           tables_included?: string[]
         }
@@ -2899,6 +2917,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "employees_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      encryption_key_registry: {
+        Row: {
+          algorithm: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          key_hash: string
+          key_version: number
+          rotated_at: string | null
+          rotation_reason: string | null
+          status: string
+        }
+        Insert: {
+          algorithm?: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          key_version?: number
+          rotated_at?: string | null
+          rotation_reason?: string | null
+          status?: string
+        }
+        Update: {
+          algorithm?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          key_version?: number
+          rotated_at?: string | null
+          rotation_reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encryption_key_registry_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -6334,6 +6402,50 @@ export type Database = {
           },
         ]
       }
+      rate_limit_config: {
+        Row: {
+          block_duration_seconds: number | null
+          company_id: string
+          created_at: string
+          endpoint: string
+          id: string
+          is_active: boolean | null
+          max_requests: number
+          updated_at: string
+          window_seconds: number
+        }
+        Insert: {
+          block_duration_seconds?: number | null
+          company_id: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          is_active?: boolean | null
+          max_requests?: number
+          updated_at?: string
+          window_seconds?: number
+        }
+        Update: {
+          block_duration_seconds?: number | null
+          company_id?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          is_active?: boolean | null
+          max_requests?: number
+          updated_at?: string
+          window_seconds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_limit_config_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rate_limit_log: {
         Row: {
           company_id: string
@@ -6703,6 +6815,109 @@ export type Database = {
             columns: ["payment_account_id"]
             isOneToOne: false
             referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      security_alerts: {
+        Row: {
+          alert_type: string
+          company_id: string
+          created_at: string
+          event_data: Json | null
+          id: string
+          is_dismissed: boolean | null
+          is_read: boolean | null
+          message: string
+          severity: string
+          title: string
+          triggered_by: string | null
+        }
+        Insert: {
+          alert_type: string
+          company_id: string
+          created_at?: string
+          event_data?: Json | null
+          id?: string
+          is_dismissed?: boolean | null
+          is_read?: boolean | null
+          message: string
+          severity?: string
+          title: string
+          triggered_by?: string | null
+        }
+        Update: {
+          alert_type?: string
+          company_id?: string
+          created_at?: string
+          event_data?: Json | null
+          id?: string
+          is_dismissed?: boolean | null
+          is_read?: boolean | null
+          message?: string
+          severity?: string
+          title?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_alerts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      security_anomalies: {
+        Row: {
+          anomaly_type: string
+          company_id: string
+          created_at: string
+          description: string
+          detection_source: string
+          event_data: Json | null
+          id: string
+          is_resolved: boolean | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+        }
+        Insert: {
+          anomaly_type: string
+          company_id: string
+          created_at?: string
+          description: string
+          detection_source?: string
+          event_data?: Json | null
+          id?: string
+          is_resolved?: boolean | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+        }
+        Update: {
+          anomaly_type?: string
+          company_id?: string
+          created_at?: string
+          description?: string
+          detection_source?: string
+          event_data?: Json | null
+          id?: string
+          is_resolved?: boolean | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_anomalies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -8855,6 +9070,10 @@ export type Database = {
         Args: { _ciphertext: string; _company_id: string }
         Returns: string
       }
+      detect_security_anomalies: {
+        Args: { p_company_id: string }
+        Returns: Json
+      }
       encrypt_sensitive_data: {
         Args: { encryption_key: string; plain_text: string }
         Returns: string
@@ -8994,10 +9213,9 @@ export type Database = {
         Args: { _company_id: string }
         Returns: undefined
       }
-      rotate_tenant_encryption_key: {
-        Args: { p_company_id: string }
-        Returns: undefined
-      }
+      rotate_tenant_encryption_key:
+        | { Args: { p_company_id: string }; Returns: undefined }
+        | { Args: { p_company_id: string; p_reason?: string }; Returns: Json }
       run_all_tenants_pentest: { Args: never; Returns: Json }
       run_tenant_isolation_pentest: {
         Args: { p_tenant_id: string }
