@@ -105,6 +105,13 @@ import { OrgStructurePage } from '@/components/hr/OrgStructurePage';
 import { RentalsPage } from '@/components/rentals/RentalsPage';
 import { SalesTargetsPage } from '@/components/sales-targets/SalesTargetsPage';
 import { PaymentGatewayPage } from '@/components/payment-gateway/PaymentGatewayPage';
+import { BookkeepingServicePage } from '@/components/bookkeeping/BookkeepingServicePage';
+import { ZatcaSandboxPage } from '@/components/zatca-sandbox/ZatcaSandboxPage';
+import { CustomerPortalPage } from '@/components/customer-portal/CustomerPortalPage';
+import { AdvancedProjectsPage } from '@/components/advanced-projects/AdvancedProjectsPage';
+import { MobileInventoryPage } from '@/components/mobile-inventory/MobileInventoryPage';
+import { MobileInvoiceReaderPage } from '@/components/mobile-invoice/MobileInvoiceReaderPage';
+import { DeveloperApiPage } from '@/components/developer-api/DeveloperApiPage';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -305,6 +312,14 @@ const Index = () => {
       case 'sales-targets': return <SalesTargetsPage />;
       // Payment Gateway
       case 'payment-gateway': return <PaymentGatewayPage />;
+      // Low priority features
+      case 'bookkeeping-service': return <BookkeepingServicePage />;
+      case 'zatca-sandbox': return <ZatcaSandboxPage />;
+      case 'customer-portal': return <CustomerPortalPage />;
+      case 'advanced-projects': return <AdvancedProjectsPage />;
+      case 'mobile-inventory': return <MobileInventoryPage />;
+      case 'mobile-invoice-reader': return <MobileInvoiceReaderPage />;
+      case 'developer-api': return <DeveloperApiPage />;
       default:
         return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} />;
     }
