@@ -84,6 +84,7 @@ import { AIChatWidget } from '@/components/chat/AIChatWidget';
 import { ApiManagementPage } from '@/components/api/ApiManagementPage';
 import { PluginsPage } from '@/components/plugins/PluginsPage';
 import { ALL_PLUGINS } from '@/hooks/usePlugins';
+import { WorkflowsPage } from '@/components/workflows';
 import {
   ZatcaPluginPage, AdvancedHRPluginPage, MultiWarehousePluginPage,
   BIAnalyticsPluginPage, POSPluginPage, WhatsAppPluginPage,
@@ -258,6 +259,8 @@ const Index = () => {
       case 'plugin-whatsapp': return <WhatsAppPluginPage />;
       case 'plugin-ifrs': return <IFRSPluginPage />;
       case 'plugin-project-mgmt': return <ProjectMgmtPluginPage />;
+      // Workflow Engine
+      case 'workflows': return <WorkflowsPage />;
       default:
         return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} />;
     }

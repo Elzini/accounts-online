@@ -8438,6 +8438,409 @@ export type Database = {
           },
         ]
       }
+      workflow_accounting_rules: {
+        Row: {
+          amount_field_name: string | null
+          amount_fixed: number | null
+          amount_formula: string | null
+          amount_source: string | null
+          cost_center_id: string | null
+          created_at: string
+          credit_account_id: string | null
+          debit_account_id: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          stage_id: string
+          trigger_on: string
+        }
+        Insert: {
+          amount_field_name?: string | null
+          amount_fixed?: number | null
+          amount_formula?: string | null
+          amount_source?: string | null
+          cost_center_id?: string | null
+          created_at?: string
+          credit_account_id?: string | null
+          debit_account_id?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          stage_id: string
+          trigger_on?: string
+        }
+        Update: {
+          amount_field_name?: string | null
+          amount_fixed?: number | null
+          amount_formula?: string | null
+          amount_source?: string | null
+          cost_center_id?: string | null
+          created_at?: string
+          credit_account_id?: string | null
+          debit_account_id?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          stage_id?: string
+          trigger_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_accounting_rules_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_instance_stages: {
+        Row: {
+          approval_at: string | null
+          approval_by: string | null
+          approval_notes: string | null
+          approval_status: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          entered_at: string | null
+          id: string
+          instance_id: string
+          journal_entry_ids: string[] | null
+          notes: string | null
+          stage_data: Json | null
+          stage_id: string
+          status: string
+        }
+        Insert: {
+          approval_at?: string | null
+          approval_by?: string | null
+          approval_notes?: string | null
+          approval_status?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          entered_at?: string | null
+          id?: string
+          instance_id: string
+          journal_entry_ids?: string[] | null
+          notes?: string | null
+          stage_data?: Json | null
+          stage_id: string
+          status?: string
+        }
+        Update: {
+          approval_at?: string | null
+          approval_by?: string | null
+          approval_notes?: string | null
+          approval_status?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          entered_at?: string | null
+          id?: string
+          instance_id?: string
+          journal_entry_ids?: string[] | null
+          notes?: string | null
+          stage_data?: Json | null
+          stage_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_instance_stages_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_instance_stages_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_instances: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          current_stage_id: string | null
+          id: string
+          metadata: Json | null
+          reference_number: string | null
+          started_at: string
+          started_by: string | null
+          status: string
+          title: string
+          updated_at: string
+          workflow_id: string
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          created_at?: string
+          current_stage_id?: string | null
+          id?: string
+          metadata?: Json | null
+          reference_number?: string | null
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          workflow_id: string
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          current_stage_id?: string | null
+          id?: string
+          metadata?: Json | null
+          reference_number?: string | null
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_instances_current_stage_id_fkey"
+            columns: ["current_stage_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_instances_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_stage_fields: {
+        Row: {
+          created_at: string
+          default_value: string | null
+          field_label: string
+          field_label_en: string | null
+          field_name: string
+          field_options: Json | null
+          field_order: number
+          field_type: string
+          id: string
+          is_required: boolean | null
+          stage_id: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          created_at?: string
+          default_value?: string | null
+          field_label: string
+          field_label_en?: string | null
+          field_name: string
+          field_options?: Json | null
+          field_order?: number
+          field_type?: string
+          id?: string
+          is_required?: boolean | null
+          stage_id: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          created_at?: string
+          default_value?: string | null
+          field_label?: string
+          field_label_en?: string | null
+          field_name?: string
+          field_options?: Json | null
+          field_order?: number
+          field_type?: string
+          id?: string
+          is_required?: boolean | null
+          stage_id?: string
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_stage_fields_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_stages: {
+        Row: {
+          approval_roles: string[] | null
+          auto_advance: boolean | null
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          name_en: string | null
+          requires_approval: boolean | null
+          stage_order: number
+          stage_type: string
+          time_limit_hours: number | null
+          workflow_id: string
+        }
+        Insert: {
+          approval_roles?: string[] | null
+          auto_advance?: boolean | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          name_en?: string | null
+          requires_approval?: boolean | null
+          stage_order?: number
+          stage_type?: string
+          time_limit_hours?: number | null
+          workflow_id: string
+        }
+        Update: {
+          approval_roles?: string[] | null
+          auto_advance?: boolean | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          name_en?: string | null
+          requires_approval?: boolean | null
+          stage_order?: number
+          stage_type?: string
+          time_limit_hours?: number | null
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_stages_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_templates: {
+        Row: {
+          color: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_system: boolean | null
+          name: string
+          name_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system?: boolean | null
+          name: string
+          name_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system?: boolean | null
+          name?: string
+          name_en?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      workflow_transitions: {
+        Row: {
+          condition_config: Json | null
+          condition_type: string | null
+          created_at: string
+          from_stage_id: string | null
+          id: string
+          label: string | null
+          label_en: string | null
+          to_stage_id: string
+          workflow_id: string
+        }
+        Insert: {
+          condition_config?: Json | null
+          condition_type?: string | null
+          created_at?: string
+          from_stage_id?: string | null
+          id?: string
+          label?: string | null
+          label_en?: string | null
+          to_stage_id: string
+          workflow_id: string
+        }
+        Update: {
+          condition_config?: Json | null
+          condition_type?: string | null
+          created_at?: string
+          from_stage_id?: string | null
+          id?: string
+          label?: string | null
+          label_en?: string | null
+          to_stage_id?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_transitions_from_stage_id_fkey"
+            columns: ["from_stage_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_transitions_to_stage_id_fkey"
+            columns: ["to_stage_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_transitions_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       bank_accounts_safe: {
