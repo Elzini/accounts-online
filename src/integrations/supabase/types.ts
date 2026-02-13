@@ -5314,6 +5314,42 @@ export type Database = {
           },
         ]
       }
+      penetration_test_results: {
+        Row: {
+          created_at: string | null
+          details: Json | null
+          id: string
+          passed: boolean
+          severity: string | null
+          target_tenant_id: string | null
+          test_description: string
+          test_type: string
+          tested_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          passed: boolean
+          severity?: string | null
+          target_tenant_id?: string | null
+          test_description: string
+          test_type: string
+          tested_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          passed?: boolean
+          severity?: string | null
+          target_tenant_id?: string | null
+          test_description?: string
+          test_type?: string
+          tested_by?: string | null
+        }
+        Relationships: []
+      }
       prepaid_expense_amortizations: {
         Row: {
           amortization_date: string
@@ -6911,6 +6947,56 @@ export type Database = {
           {
             foreignKeyName: "shipments_company_id_fkey"
             columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      siem_integrations: {
+        Row: {
+          api_key_hash: string | null
+          created_at: string | null
+          endpoint_url: string
+          event_types: string[] | null
+          failure_count: number | null
+          id: string
+          is_active: boolean | null
+          last_sent_at: string | null
+          name: string
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_key_hash?: string | null
+          created_at?: string | null
+          endpoint_url: string
+          event_types?: string[] | null
+          failure_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_sent_at?: string | null
+          name: string
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_key_hash?: string | null
+          created_at?: string | null
+          endpoint_url?: string
+          event_types?: string[] | null
+          failure_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_sent_at?: string | null
+          name?: string
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "siem_integrations_tenant_id_fkey"
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
@@ -8911,6 +8997,11 @@ export type Database = {
       rotate_tenant_encryption_key: {
         Args: { p_company_id: string }
         Returns: undefined
+      }
+      run_all_tenants_pentest: { Args: never; Returns: Json }
+      run_tenant_isolation_pentest: {
+        Args: { p_tenant_id: string }
+        Returns: Json
       }
       secure_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }
