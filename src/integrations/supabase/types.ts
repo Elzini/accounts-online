@@ -11304,59 +11304,59 @@ export type Database = {
       }
       employees_safe: {
         Row: {
-          bank_name: string | null
           base_salary: number | null
           company_id: string | null
           created_at: string | null
           employee_number: number | null
           hire_date: string | null
           housing_allowance: number | null
+          iban_encrypted: string | null
           iban_masked: string | null
           id: string | null
-          id_number_masked: string | null
+          id_number_encrypted: string | null
           is_active: boolean | null
           job_title: string | null
           name: string | null
           notes: string | null
-          phone: string | null
+          phone_masked: string | null
           transport_allowance: number | null
           updated_at: string | null
         }
         Insert: {
-          bank_name?: string | null
           base_salary?: number | null
           company_id?: string | null
           created_at?: string | null
           employee_number?: number | null
           hire_date?: string | null
           housing_allowance?: number | null
+          iban_encrypted?: never
           iban_masked?: never
           id?: string | null
-          id_number_masked?: never
+          id_number_encrypted?: never
           is_active?: boolean | null
           job_title?: string | null
           name?: string | null
           notes?: string | null
-          phone?: string | null
+          phone_masked?: never
           transport_allowance?: number | null
           updated_at?: string | null
         }
         Update: {
-          bank_name?: string | null
           base_salary?: number | null
           company_id?: string | null
           created_at?: string | null
           employee_number?: number | null
           hire_date?: string | null
           housing_allowance?: number | null
+          iban_encrypted?: never
           iban_masked?: never
           id?: string | null
-          id_number_masked?: never
+          id_number_encrypted?: never
           is_active?: boolean | null
           job_title?: string | null
           name?: string | null
           notes?: string | null
-          phone?: string | null
+          phone_masked?: never
           transport_allowance?: number | null
           updated_at?: string | null
         }

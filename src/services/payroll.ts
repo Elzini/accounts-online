@@ -125,12 +125,13 @@ export async function fetchEmployees(companyId: string): Promise<Employee[]> {
   // Map the masked fields back to expected field names for UI compatibility
   return (data || []).map(employee => ({
     ...employee,
-    id_number: employee.id_number_masked,
+    phone: employee.phone_masked || null,
+    id_number: null,
+    bank_name: null,
     iban: employee.iban_masked,
-    // Not exposed in safe view - provide null for type compatibility
     id_number_encrypted: null as string | null,
     iban_encrypted: null as string | null,
-  })) as Employee[];
+  })) as unknown as Employee[];
 }
 
 export async function addEmployee(employee: Omit<Employee, 'id' | 'employee_number' | 'created_at' | 'updated_at'>): Promise<Employee> {
