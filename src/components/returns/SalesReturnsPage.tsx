@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Search, Trash2, RotateCcw, Printer, Save, FileText, Loader2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Search, Trash2, RotateCcw, Printer, Save, FileText, Loader2, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -53,7 +53,7 @@ export function SalesReturnsPage() {
   const companyId = useCompanyId();
   const queryClient = useQueryClient();
   const [searchList, setSearchList] = useState('');
-  const [showAdd, setShowAdd] = useState(false);
+  const [activeTab, setActiveTab] = useState('form');
   const [invoiceSearch, setInvoiceSearch] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [foundSale, setFoundSale] = useState<SaleData | null>(null);
@@ -63,6 +63,9 @@ export function SalesReturnsPage() {
     fullInvoice: true,
     returnDate: new Date().toISOString().split('T')[0],
     notes: '',
+    costCenter: '',
+    salesman: '',
+    reference: '',
   });
   const [items, setItems] = useState<ReturnItem[]>([]);
 
@@ -105,7 +108,6 @@ export function SalesReturnsPage() {
 
       setFoundSale(sale as any);
 
-      // Build items from sale
       const saleItems = (sale as any).sale_items || [];
       if (saleItems.length > 0) {
         setItems(saleItems.map((item: any, idx: number) => {
@@ -182,7 +184,6 @@ export function SalesReturnsPage() {
     mutationFn: async () => {
       if (!foundSale) throw new Error('No sale found');
 
-      // 1. Return cars to available status
       const returnedItems = items.filter(i => i.returnedQty > 0);
       for (const item of returnedItems) {
         const { error: carErr } = await supabase
@@ -192,20 +193,17 @@ export function SalesReturnsPage() {
         if (carErr) throw carErr;
       }
 
-      // 2. Delete journal entry for this sale
       await supabase
         .from('journal_entries')
         .delete()
         .eq('reference_type', 'sale')
         .eq('reference_id', foundSale.id);
 
-      // 3. If full return, delete the sale and sale_items
       if (form.fullInvoice) {
         await supabase.from('sale_items').delete().eq('sale_id', foundSale.id);
         await supabase.from('sales').delete().eq('id', foundSale.id);
       }
 
-      // 4. Save credit note record
       const num = `SR-${String(returns.length + 1).padStart(4, '0')}`;
       const { error } = await supabase.from('credit_debit_notes').insert({
         company_id: companyId!,
@@ -225,10 +223,7 @@ export function SalesReturnsPage() {
       queryClient.invalidateQueries({ queryKey: ['cars'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
       toast.success(language === 'ar' ? 'تم اعتماد مرتجع المبيعات وإعادة السيارات للمخزون' : 'Sales return approved, cars returned to inventory');
-      setShowAdd(false);
-      setFoundSale(null);
-      setItems([]);
-      setInvoiceSearch('');
+      resetForm();
     },
     onError: (e) => {
       console.error(e);
@@ -247,221 +242,302 @@ export function SalesReturnsPage() {
     },
   });
 
+  const resetForm = () => {
+    setFoundSale(null);
+    setItems([]);
+    setInvoiceSearch('');
+    setForm({
+      invoiceType: 'normal',
+      paymentMethod: 'cash',
+      fullInvoice: true,
+      returnDate: new Date().toISOString().split('T')[0],
+      notes: '',
+      costCenter: '',
+      salesman: '',
+      reference: '',
+    });
+  };
+
   const filtered = returns.filter((r: any) => r.note_number?.includes(searchList) || r.reason?.includes(searchList));
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in" dir="rtl">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            {language === 'ar' ? 'مرتجع مبيعات / إشعار دائن' : 'Sales Returns / Credit Note'}
-          </h1>
-          <p className="text-muted-foreground">
-            {language === 'ar' ? 'إدارة مرتجعات المبيعات وإشعارات الدائن' : 'Manage sales returns and credit notes'}
-          </p>
-        </div>
-        <Dialog open={showAdd} onOpenChange={(v) => { setShowAdd(v); if (!v) { setFoundSale(null); setItems([]); setInvoiceSearch(''); } }}>
-          <DialogTrigger asChild>
-            <Button className="gap-2"><Plus className="w-4 h-4" />{language === 'ar' ? 'مرتجع جديد' : 'New Return'}</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto" dir="rtl">
-            <DialogHeader>
-              <DialogTitle>{language === 'ar' ? 'مرتجع مبيعات / إشعار دائن' : 'Sales Return / Credit Note'}</DialogTitle>
-            </DialogHeader>
-
-            {/* Invoice Search */}
-            <div className="p-4 bg-primary/5 rounded-lg border-2 border-primary/20 space-y-3">
-              <Label className="font-bold text-base">{language === 'ar' ? 'بحث عن فاتورة البيع' : 'Search Sales Invoice'}</Label>
-              <div className="flex gap-2">
-                <Input
-                  className="h-10 text-base font-mono"
-                  placeholder={language === 'ar' ? 'أدخل رقم فاتورة البيع...' : 'Enter sale invoice number...'}
-                  value={invoiceSearch}
-                  onChange={e => setInvoiceSearch(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && searchInvoice()}
-                  type="number"
-                />
-                <Button onClick={searchInvoice} disabled={isSearching} className="gap-2 min-w-[120px]">
-                  {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                  {language === 'ar' ? 'بحث' : 'Search'}
-                </Button>
-              </div>
-
-              {foundSale && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-card rounded-lg border">
-                  <div>
-                    <span className="text-xs text-muted-foreground">{language === 'ar' ? 'رقم الفاتورة' : 'Invoice #'}</span>
-                    <p className="font-bold text-primary">{foundSale.sale_number}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-muted-foreground">{language === 'ar' ? 'العميل' : 'Customer'}</span>
-                    <p className="font-medium">{foundSale.customer?.name || '-'}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-muted-foreground">{language === 'ar' ? 'المبلغ' : 'Amount'}</span>
-                    <p className="font-bold">{Number(foundSale.sale_price).toLocaleString()} ر.س</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-muted-foreground">{language === 'ar' ? 'تاريخ البيع' : 'Sale Date'}</span>
-                    <p className="font-medium">{foundSale.sale_date}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Form Options */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-muted/30 rounded-lg border">
-              <div className="flex items-center gap-2">
-                <Label className="text-xs shrink-0">{language === 'ar' ? 'تاريخ الإرجاع' : 'Return Date'}</Label>
-                <Input type="date" className="h-8 text-sm" value={form.returnDate} onChange={e => setForm(p => ({ ...p, returnDate: e.target.value }))} />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs shrink-0">{language === 'ar' ? 'طريقة الدفع' : 'Payment'}</Label>
-                <Select value={form.paymentMethod} onValueChange={v => setForm(p => ({ ...p, paymentMethod: v }))}>
-                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">{language === 'ar' ? 'نقدية' : 'Cash'}</SelectItem>
-                    <SelectItem value="credit">{language === 'ar' ? 'آجل' : 'Credit'}</SelectItem>
-                    <SelectItem value="bank">{language === 'ar' ? 'تحويل بنكي' : 'Bank Transfer'}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="fullInvoice" checked={form.fullInvoice} onCheckedChange={(v) => setForm(p => ({ ...p, fullInvoice: !!v }))} />
-                <Label htmlFor="fullInvoice" className="text-xs">{language === 'ar' ? 'إرجاع كامل الفاتورة' : 'Full Invoice Return'}</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs shrink-0">{language === 'ar' ? 'ملاحظات' : 'Notes'}</Label>
-                <Input className="h-8 text-sm" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
-              </div>
-            </div>
-
-            {/* Items Table */}
-            {items.length > 0 && (
-              <>
-                <div className="border rounded-lg overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead className="w-8 text-xs">#</TableHead>
-                        <TableHead className="text-xs">{language === 'ar' ? 'الصنف / السيارة' : 'Item / Car'}</TableHead>
-                        <TableHead className="text-xs w-16">{language === 'ar' ? 'الكمية' : 'Qty'}</TableHead>
-                        <TableHead className="text-xs w-16">{language === 'ar' ? 'مرتجع' : 'Return'}</TableHead>
-                        <TableHead className="text-xs w-24">{language === 'ar' ? 'السعر' : 'Price'}</TableHead>
-                        <TableHead className="text-xs w-24">{language === 'ar' ? 'المجموع' : 'Total'}</TableHead>
-                        <TableHead className="text-xs w-20">VAT 15%</TableHead>
-                        <TableHead className="text-xs w-24">{language === 'ar' ? 'الإجمالي' : 'Grand'}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {items.map((item, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell className="text-xs">{idx + 1}</TableCell>
-                          <TableCell className="text-xs font-medium">{item.description}</TableCell>
-                          <TableCell className="text-xs text-center">{item.quantity}</TableCell>
-                          <TableCell>
-                            <Input type="number" className="h-7 text-xs w-16" value={item.returnedQty || ''} 
-                              onChange={e => updateItem(idx, 'returnedQty', Math.min(Number(e.target.value), item.quantity))} 
-                              max={item.quantity} min={0}
-                            />
-                          </TableCell>
-                          <TableCell className="text-xs font-mono">{item.price.toLocaleString()}</TableCell>
-                          <TableCell className="text-xs font-mono">{item.total.toLocaleString()}</TableCell>
-                          <TableCell className="text-xs font-mono text-orange-600">{item.vat.toFixed(2)}</TableCell>
-                          <TableCell className="text-xs font-mono font-bold">{item.grandTotal.toFixed(2)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Totals */}
-                <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg border text-sm">
-                  <div className="flex gap-6">
-                    <span>{language === 'ar' ? 'المجموع' : 'Total'}: <strong>{totals.total.toLocaleString()}</strong></span>
-                    <span>{language === 'ar' ? 'الكمية' : 'Qty'}: <strong>{totals.quantity}</strong></span>
-                  </div>
-                  <div className="flex gap-6">
-                    <span>{language === 'ar' ? 'الضريبة' : 'VAT'}: <strong className="text-orange-600">{totals.vat.toFixed(2)}</strong></span>
-                    <span className="text-primary font-bold text-lg">{language === 'ar' ? 'الإجمالي' : 'Total'}: {totals.grandTotal.toFixed(2)} ر.س</span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 justify-end">
-                  <Button 
-                    size="sm" 
-                    className="gap-2 bg-orange-600 hover:bg-orange-700" 
-                    onClick={() => saveMutation.mutate()} 
-                    disabled={saveMutation.isPending || items.filter(i => i.returnedQty > 0).length === 0}
-                  >
-                    {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-                    {language === 'ar' ? 'اعتماد المرتجع وإرجاع للمخزون' : 'Approve & Return to Inventory'}
-                  </Button>
-                </div>
-              </>
-            )}
-
-            {!foundSale && items.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                <Search className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>{language === 'ar' ? 'أدخل رقم فاتورة البيع للبحث عنها' : 'Enter sale invoice number to search'}</p>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        <h1 className="text-2xl font-bold text-foreground">
+          {language === 'ar' ? 'مرتجع مبيعات / إشعار دائن' : 'Sales Returns / Credit Note'}
+        </h1>
       </div>
 
-      {/* Returns List */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex gap-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input className="pr-9" placeholder={language === 'ar' ? 'بحث...' : 'Search...'} value={searchList} onChange={e => setSearchList(e.target.value)} />
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="form">{language === 'ar' ? 'بيانات أساسية' : 'Basic Data'}</TabsTrigger>
+          <TabsTrigger value="list">{language === 'ar' ? 'السجلات' : 'Records'}</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="form" className="space-y-3 mt-3">
+          {/* Header Fields - matching desktop layout */}
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              {/* Row 1 */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0 min-w-[80px]">{language === 'ar' ? 'الرقم' : 'Number'}</Label>
+                  <Input className="h-8 text-sm bg-muted/50" value={`SR-${String(returns.length + 1).padStart(4, '0')}`} readOnly />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0">{language === 'ar' ? 'نوع الفاتورة' : 'Invoice Type'}</Label>
+                  <Select value={form.invoiceType} onValueChange={v => setForm(p => ({ ...p, invoiceType: v }))}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">{language === 'ar' ? 'عادية' : 'Normal'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0">{language === 'ar' ? 'رقم القيد' : 'Entry #'}</Label>
+                  <Input className="h-8 text-sm bg-muted/50" readOnly />
+                </div>
+              </div>
+
+              {/* Row 2 */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0 min-w-[80px]">{language === 'ar' ? 'رقم فاتورة البيع' : 'Sale Invoice #'}</Label>
+                  <div className="flex gap-1 flex-1">
+                    <Input
+                      className="h-8 text-sm font-mono flex-1"
+                      placeholder={language === 'ar' ? 'رقم الفاتورة' : 'Invoice #'}
+                      value={invoiceSearch}
+                      onChange={e => setInvoiceSearch(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && searchInvoice()}
+                      type="number"
+                    />
+                    <Button size="sm" variant="outline" className="h-8 px-2" onClick={searchInvoice} disabled={isSearching}>
+                      {isSearching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="fullInvoice" checked={form.fullInvoice} onCheckedChange={(v) => setForm(p => ({ ...p, fullInvoice: !!v }))} />
+                  <Label htmlFor="fullInvoice" className="text-xs">{language === 'ar' ? 'كامل الفاتورة' : 'Full Invoice'}</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0">{language === 'ar' ? 'طريقة الدفع' : 'Payment'}</Label>
+                  <Select value={form.paymentMethod} onValueChange={v => setForm(p => ({ ...p, paymentMethod: v }))}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">{language === 'ar' ? 'نقدية' : 'Cash'}</SelectItem>
+                      <SelectItem value="credit">{language === 'ar' ? 'آجل' : 'Credit'}</SelectItem>
+                      <SelectItem value="bank">{language === 'ar' ? 'تحويل بنكي' : 'Bank Transfer'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0">{language === 'ar' ? 'تاريخ الإرجاع' : 'Return Date'}</Label>
+                  <Input type="date" className="h-8 text-sm" value={form.returnDate} onChange={e => setForm(p => ({ ...p, returnDate: e.target.value }))} />
+                </div>
+              </div>
+
+              {/* Row 3 */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0 min-w-[80px]">{language === 'ar' ? 'رقم العميل' : 'Customer #'}</Label>
+                  <Input className="h-8 text-sm bg-muted/50" value={foundSale?.customer?.name || ''} readOnly />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0">{language === 'ar' ? 'م. التكلفة' : 'Cost Center'}</Label>
+                  <Input className="h-8 text-sm" value={form.costCenter} onChange={e => setForm(p => ({ ...p, costCenter: e.target.value }))} />
+                </div>
+              </div>
+
+              {/* Row 4 */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0 min-w-[80px]">{language === 'ar' ? 'حساب النقدية' : 'Cash Account'}</Label>
+                  <Input className="h-8 text-sm bg-muted/50" value="12051 الصندوق - نقدية" readOnly />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0">{language === 'ar' ? 'المرجع' : 'Reference'}</Label>
+                  <Input className="h-8 text-sm" value={form.reference} onChange={e => setForm(p => ({ ...p, reference: e.target.value }))} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0">{language === 'ar' ? 'المندوب' : 'Salesman'}</Label>
+                  <Input className="h-8 text-sm" value={form.salesman} onChange={e => setForm(p => ({ ...p, salesman: e.target.value }))} />
+                </div>
+              </div>
+
+              {/* Row 5 */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="flex items-center gap-2 col-span-2">
+                  <Label className="text-xs shrink-0 min-w-[80px]">{language === 'ar' ? 'المستودع' : 'Warehouse'}</Label>
+                  <Input className="h-8 text-sm bg-muted/50" value={language === 'ar' ? '1 - الرئيسي' : '1 - Main'} readOnly />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0">{language === 'ar' ? 'الضريبة' : 'Tax'}</Label>
+                  <Input className="h-8 text-sm bg-muted/50" value={language === 'ar' ? 'مرتجع مبيعات' : 'Sales Return'} readOnly />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0">{language === 'ar' ? 'ملاحظات' : 'Notes'}</Label>
+                  <Input className="h-8 text-sm" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Items Table */}
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-8 text-xs text-center">م</TableHead>
+                      <TableHead className="text-xs">{language === 'ar' ? 'الصنف' : 'Item'}</TableHead>
+                      <TableHead className="text-xs">{language === 'ar' ? 'البيان' : 'Description'}</TableHead>
+                      <TableHead className="text-xs w-16 text-center">{language === 'ar' ? 'الكمية' : 'Qty'}</TableHead>
+                      <TableHead className="text-xs w-20 text-center">{language === 'ar' ? 'كمية صادرة' : 'Issued'}</TableHead>
+                      <TableHead className="text-xs w-20 text-center">{language === 'ar' ? 'كمية مرتجعة' : 'Returned'}</TableHead>
+                      <TableHead className="text-xs w-16 text-center">{language === 'ar' ? 'الوحدة' : 'Unit'}</TableHead>
+                      <TableHead className="text-xs w-24 text-center">{language === 'ar' ? 'السعر' : 'Price'}</TableHead>
+                      <TableHead className="text-xs w-24 text-center">{language === 'ar' ? 'المجموع' : 'Total'}</TableHead>
+                      <TableHead className="text-xs w-14 text-center">% {language === 'ar' ? 'الخصم' : 'Disc'}</TableHead>
+                      <TableHead className="text-xs w-20 text-center">{language === 'ar' ? 'الخصم' : 'Discount'}</TableHead>
+                      <TableHead className="text-xs w-24 text-center">{language === 'ar' ? 'الصافي' : 'Net'}</TableHead>
+                      <TableHead className="text-xs w-20 text-center">VAT</TableHead>
+                      <TableHead className="text-xs w-24 text-center">{language === 'ar' ? 'المجموع' : 'Grand'}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {items.map((item, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell className="text-xs text-center">{idx + 1}</TableCell>
+                        <TableCell className="text-xs font-medium">{item.description.split(' - ')[0]}</TableCell>
+                        <TableCell className="text-xs">{item.description}</TableCell>
+                        <TableCell className="text-xs text-center">{item.quantity}</TableCell>
+                        <TableCell className="text-xs text-center">{item.quantity}</TableCell>
+                        <TableCell className="p-1">
+                          <Input type="number" className="h-7 text-xs w-16 text-center" value={item.returnedQty || ''}
+                            onChange={e => updateItem(idx, 'returnedQty', Math.min(Number(e.target.value), item.quantity))}
+                            max={item.quantity} min={0}
+                          />
+                        </TableCell>
+                        <TableCell className="text-xs text-center">{item.unit}</TableCell>
+                        <TableCell className="text-xs font-mono text-center">{item.price.toLocaleString()}</TableCell>
+                        <TableCell className="text-xs font-mono text-center">{item.total.toLocaleString()}</TableCell>
+                        <TableCell className="p-1">
+                          <Input type="number" className="h-7 text-xs w-14 text-center" value={item.discountPercent || ''}
+                            onChange={e => updateItem(idx, 'discountPercent', Number(e.target.value))}
+                            min={0} max={100}
+                          />
+                        </TableCell>
+                        <TableCell className="text-xs font-mono text-center">{item.discount.toFixed(2)}</TableCell>
+                        <TableCell className="text-xs font-mono text-center">{item.net.toLocaleString()}</TableCell>
+                        <TableCell className="text-xs font-mono text-center text-orange-600">{item.vat.toFixed(2)}</TableCell>
+                        <TableCell className="text-xs font-mono font-bold text-center">{item.grandTotal.toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))}
+                    {items.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={14} className="text-center text-muted-foreground py-8">
+                          {language === 'ar' ? 'أدخل رقم فاتورة البيع للبحث عنها' : 'Enter sale invoice number to search'}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Totals Bar */}
+          <Card>
+            <CardContent className="p-3">
+              <div className="flex flex-wrap gap-4 justify-between items-center text-sm">
+                <span>{language === 'ar' ? 'المجموع' : 'Total'}: <strong>{totals.total.toLocaleString()}</strong></span>
+                <span>{language === 'ar' ? 'الكمية' : 'Qty'}: <strong>{totals.quantity}</strong></span>
+                <span>{language === 'ar' ? 'الخصم' : 'Discount'}: <strong>{totals.discount.toFixed(2)}</strong></span>
+                <span>% {language === 'ar' ? 'الإجمالي' : 'Subtotal'}: <strong>{totals.net.toLocaleString()}</strong></span>
+                <span>{language === 'ar' ? 'الضريبة' : 'VAT'}: <strong className="text-orange-600">{totals.vat.toFixed(2)}</strong></span>
+                <span className="text-primary font-bold text-base">{language === 'ar' ? 'الصافي' : 'Net'}: {totals.grandTotal.toFixed(2)}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Bottom Actions */}
+          <div className="flex gap-2 flex-wrap justify-between">
+            <div className="flex gap-2">
+              <Button
+                className="gap-2"
+                onClick={() => saveMutation.mutate()}
+                disabled={saveMutation.isPending || items.filter(i => i.returnedQty > 0).length === 0}
+              >
+                {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {language === 'ar' ? 'اعتماد' : 'Approve'}
+              </Button>
+              <Button variant="outline" className="gap-2" onClick={resetForm}>
+                <Plus className="w-4 h-4" />
+                {language === 'ar' ? 'سند جديد' : 'New'}
+              </Button>
+              <Button variant="outline" className="gap-2" disabled>
+                <Printer className="w-4 h-4" />
+                {language === 'ar' ? 'طباعة' : 'Print'}
+              </Button>
             </div>
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{language === 'ar' ? 'رقم السند' : 'Note #'}</TableHead>
-                <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
-                <TableHead>{language === 'ar' ? 'المبلغ' : 'Amount'}</TableHead>
-                <TableHead>{language === 'ar' ? 'السبب' : 'Reason'}</TableHead>
-                <TableHead>{language === 'ar' ? 'الحالة' : 'Status'}</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((r: any) => (
-                <TableRow key={r.id}>
-                  <TableCell className="font-mono font-bold">{r.note_number}</TableCell>
-                  <TableCell>{r.note_date}</TableCell>
-                  <TableCell className="font-bold">{Number(r.total_amount).toLocaleString()} ر.س</TableCell>
-                  <TableCell className="text-sm">{r.reason || '-'}</TableCell>
-                  <TableCell>
-                    <Badge variant={r.status === 'approved' ? 'default' : 'secondary'}>
-                      {r.status === 'approved' ? (language === 'ar' ? 'معتمد' : 'Approved') : (language === 'ar' ? 'مسودة' : 'Draft')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(r.id)}>
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    {language === 'ar' ? 'لا توجد مرتجعات' : 'No returns found'}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        </TabsContent>
+
+        <TabsContent value="list" className="mt-3">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex gap-2 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input className="pr-9" placeholder={language === 'ar' ? 'بحث...' : 'Search...'} value={searchList} onChange={e => setSearchList(e.target.value)} />
+                </div>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{language === 'ar' ? 'رقم السند' : 'Note #'}</TableHead>
+                    <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
+                    <TableHead>{language === 'ar' ? 'المبلغ' : 'Amount'}</TableHead>
+                    <TableHead>{language === 'ar' ? 'السبب' : 'Reason'}</TableHead>
+                    <TableHead>{language === 'ar' ? 'الحالة' : 'Status'}</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((r: any) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-mono font-bold">{r.note_number}</TableCell>
+                      <TableCell>{r.note_date}</TableCell>
+                      <TableCell className="font-bold">{Number(r.total_amount).toLocaleString()} ر.س</TableCell>
+                      <TableCell className="text-sm">{r.reason || '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant={r.status === 'approved' ? 'default' : 'secondary'}>
+                          {r.status === 'approved' ? (language === 'ar' ? 'معتمد' : 'Approved') : (language === 'ar' ? 'مسودة' : 'Draft')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(r.id)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filtered.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        {language === 'ar' ? 'لا توجد مرتجعات' : 'No returns found'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
