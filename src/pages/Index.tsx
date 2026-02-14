@@ -90,10 +90,11 @@ import {
   BIAnalyticsPluginPage, POSPluginPage, WhatsAppPluginPage,
   IFRSPluginPage, ProjectMgmtPluginPage
 } from '@/components/plugins/pages';
-import { PurchaseOrdersPage, GoodsReceiptPage } from '@/components/procurement';
+import { PurchaseOrdersPage, GoodsReceiptPage, PurchaseReturnsPage, MaterialsRequestPage, ContractorPaymentPage } from '@/components/procurement';
 import { StockVouchersPage } from '@/components/inventory/StockVouchersPage';
 import { StocktakingPage } from '@/components/inventory/StocktakingPage';
 import { CreditDebitNotesPage } from '@/components/returns/CreditDebitNotesPage';
+import { SalesReturnsPage } from '@/components/returns/SalesReturnsPage';
 import { CRMPage } from '@/components/crm/CRMPage';
 import { LoyaltyPage } from '@/components/loyalty/LoyaltyPage';
 import { SubscriptionsPage } from '@/components/subscriptions/SubscriptionsPage';
@@ -291,11 +292,14 @@ const Index = () => {
       // Procurement
       case 'purchase-orders': return <PurchaseOrdersPage />;
       case 'goods-receipt': return <GoodsReceiptPage />;
+      case 'purchase-returns': return <PurchaseReturnsPage />;
+      case 'materials-request': return <MaterialsRequestPage />;
+      case 'contractor-payment': return <ContractorPaymentPage />;
       // Inventory extensions
       case 'stock-vouchers': return <StockVouchersPage />;
       case 'stocktaking': return <StocktakingPage />;
       // Returns
-      case 'credit-debit-notes': return <CreditDebitNotesPage />;
+      case 'credit-debit-notes': return <SalesReturnsPage />;
       // CRM
       case 'crm': return <CRMPage />;
       // Loyalty

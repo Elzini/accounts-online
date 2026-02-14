@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle, Monitor, MessageCircle, Workflow, ArrowDownToLine, ArrowUpFromLine, RotateCcw, Star, RefreshCw, CalendarCheck, Play, FileSignature, Home, Award, Link2, BookMarked, TestTube, LayoutGrid, Smartphone, QrCode, Code } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle, Monitor, MessageCircle, Workflow, ArrowDownToLine, ArrowUpFromLine, RotateCcw, RotateCw, Star, RefreshCw, CalendarCheck, Play, FileSignature, Home, Award, Link2, BookMarked, TestTube, LayoutGrid, Smartphone, QrCode, Code, Banknote } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -120,6 +120,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'stock-vouchers': ArrowUpFromLine,
   'stocktaking': ClipboardList,
   'credit-debit-notes': RotateCcw,
+  'purchase-returns': RotateCw,
+  'materials-request': Package,
+  'contractor-payment': Banknote,
   'crm': Users,
   'loyalty': Star,
   'subscriptions': RefreshCw,
@@ -317,19 +320,14 @@ export function Sidebar({
     icon: DollarSign,
     permission: 'sales' as const
   }, {
-    id: 'quotations' as ActivePage,
-    label: s(settings?.quotations_title, t.nav_quotations),
-    icon: FileCheck,
-    permission: 'sales' as const
-  }, {
-    id: 'quotations' as ActivePage,
-    label: s(settings?.quotations_title, t.nav_quotations),
-    icon: FileCheck,
-    permission: 'sales' as const
-  }, {
     id: 'credit-debit-notes' as ActivePage,
-    label: language === 'ar' ? 'مرتجع/إشعار دائن' : 'Returns/Credit Notes',
+    label: language === 'ar' ? 'مرتجع مبيعات / إشعار دائن' : 'Sales Returns / Credit Note',
     icon: RotateCcw,
+    permission: 'sales' as const
+  }, {
+    id: 'quotations' as ActivePage,
+    label: s(settings?.quotations_title, t.nav_quotations),
+    icon: FileCheck,
     permission: 'sales' as const
   }, {
     id: 'installments' as ActivePage,
@@ -397,14 +395,24 @@ export function Sidebar({
     icon: ShoppingCart,
     permission: 'purchases' as const
   }, {
-    id: 'purchase-orders' as ActivePage,
-    label: s(settings?.purchases_title, t.nav_purchases),
-    icon: ShoppingCart,
+    id: 'purchase-returns' as ActivePage,
+    label: language === 'ar' ? 'مرتجع مشتريات / إشعار مدين' : 'Purchase Returns / Debit Note',
+    icon: RotateCw,
+    permission: 'purchases' as const
+  }, {
+    id: 'materials-request' as ActivePage,
+    label: language === 'ar' ? 'طلب مواد' : 'Materials Request',
+    icon: Package,
     permission: 'purchases' as const
   }, {
     id: 'purchase-orders' as ActivePage,
-    label: language === 'ar' ? 'أوامر الشراء' : 'Purchase Orders',
+    label: language === 'ar' ? 'طلب شراء' : 'Purchase Request',
     icon: ShoppingCart,
+    permission: 'purchases' as const
+  }, {
+    id: 'contractor-payment' as ActivePage,
+    label: language === 'ar' ? 'سند صرف مقاول' : 'Contractor Payment',
+    icon: Banknote,
     permission: 'purchases' as const
   }, {
     id: 'goods-receipt' as ActivePage,
@@ -413,8 +421,13 @@ export function Sidebar({
     permission: 'purchases' as const
   }, {
     id: 'suppliers' as ActivePage,
-    label: s(settings?.suppliers_title, t.nav_suppliers),
+    label: language === 'ar' ? 'ملف الموردين' : 'Suppliers File',
     icon: Truck,
+    permission: 'purchases' as const
+  }, {
+    id: 'currencies' as ActivePage,
+    label: language === 'ar' ? 'ملف العملات' : 'Currencies File',
+    icon: Coins,
     permission: 'purchases' as const
   }, {
     id: 'expenses' as ActivePage,
@@ -428,7 +441,7 @@ export function Sidebar({
     permission: 'purchases' as const
   }, {
     id: 'purchases-report' as ActivePage,
-    label: s(settings?.purchases_report_title, t.nav_purchases_report),
+    label: language === 'ar' ? 'تقارير المشتريات' : 'Purchases Reports',
     icon: FileText,
     permission: 'reports' as const
   }, {
