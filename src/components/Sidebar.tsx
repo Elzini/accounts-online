@@ -310,315 +310,139 @@ export function Sidebar({
     permission: 'sales' as const
   }];
 
-  // Default menu structure (car dealership / general trading)
-  const defaultMenuItems = [{
-    id: 'dashboard' as ActivePage,
-    label: s(settings?.dashboard_title, t.nav_dashboard),
-    icon: LayoutDashboard
+  // ===== مبيعات (Sales) =====
+  const salesMenuItems = [{
+    id: 'sales' as ActivePage,
+    label: language === 'ar' ? 'فاتورة مبيعات' : 'Sales Invoice',
+    icon: DollarSign,
+    permission: 'sales' as const
+  }, {
+    id: 'quotations' as ActivePage,
+    label: s(settings?.quotations_title, t.nav_quotations),
+    icon: FileCheck,
+    permission: 'sales' as const
+  }, {
+    id: 'quotations' as ActivePage,
+    label: s(settings?.quotations_title, t.nav_quotations),
+    icon: FileCheck,
+    permission: 'sales' as const
+  }, {
+    id: 'credit-debit-notes' as ActivePage,
+    label: language === 'ar' ? 'مرتجع/إشعار دائن' : 'Returns/Credit Notes',
+    icon: RotateCcw,
+    permission: 'sales' as const
+  }, {
+    id: 'installments' as ActivePage,
+    label: s(settings?.installments_title, t.nav_installments),
+    icon: CreditCard,
+    permission: 'sales' as const
   }, {
     id: 'customers' as ActivePage,
     label: s(settings?.customers_title, t.nav_customers),
     icon: Users,
     permission: 'sales' as const
   }, {
+    id: 'crm' as ActivePage,
+    label: language === 'ar' ? 'إدارة العملاء CRM' : 'CRM',
+    icon: Users,
+    permission: 'sales' as const
+  }, {
+    id: 'loyalty' as ActivePage,
+    label: language === 'ar' ? 'نقاط الولاء' : 'Loyalty Points',
+    icon: Star,
+    permission: 'sales' as const
+  }, {
+    id: 'sales-targets' as ActivePage,
+    label: language === 'ar' ? 'المبيعات المستهدفة' : 'Sales Targets',
+    icon: Award,
+    permission: 'sales' as const
+  }, {
+    id: 'bookings' as ActivePage,
+    label: language === 'ar' ? 'الحجوزات' : 'Bookings',
+    icon: CalendarCheck,
+    permission: 'sales' as const
+  }, {
+    id: 'sales-report' as ActivePage,
+    label: s(settings?.sales_report_title, t.nav_sales_report),
+    icon: DollarSign,
+    permission: 'reports' as const
+  }, {
+    id: 'customers-report' as ActivePage,
+    label: s(settings?.customers_report_title, t.nav_customers_report),
+    icon: Users,
+    permission: 'reports' as const
+  }, {
+    id: 'commissions-report' as ActivePage,
+    label: s(settings?.commissions_report_title, t.nav_commissions_report),
+    icon: DollarSign,
+    permission: 'reports' as const
+  }];
+
+  // Car dealership extras in sales
+  if (companyType === 'car_dealership') {
+    salesMenuItems.splice(6, 0, 
+      { id: 'partner-dealerships' as ActivePage, label: s(settings?.partner_dealerships_title, t.nav_partner_dealerships), icon: Building2, permission: 'sales' as const },
+      { id: 'car-transfers' as ActivePage, label: s(settings?.car_transfers_title, t.nav_car_transfers), icon: ArrowLeftRight, permission: 'sales' as const },
+    );
+    salesMenuItems.push(
+      { id: 'transfers-report' as ActivePage, label: s(settings?.transfers_report_title, t.nav_transfers_report), icon: ArrowLeftRight, permission: 'reports' as const },
+      { id: 'partner-report' as ActivePage, label: s(settings?.partner_report_title, t.nav_partner_report), icon: Building2, permission: 'reports' as const },
+    );
+  }
+
+  // ===== مشتريات (Purchases) =====
+  const purchasesMenuItems = [{
+    id: 'purchases' as ActivePage,
+    label: language === 'ar' ? 'فاتورة مشتريات' : 'Purchase Invoice',
+    icon: ShoppingCart,
+    permission: 'purchases' as const
+  }, {
+    id: 'purchase-orders' as ActivePage,
+    label: s(settings?.purchases_title, t.nav_purchases),
+    icon: ShoppingCart,
+    permission: 'purchases' as const
+  }, {
+    id: 'purchase-orders' as ActivePage,
+    label: language === 'ar' ? 'أوامر الشراء' : 'Purchase Orders',
+    icon: ShoppingCart,
+    permission: 'purchases' as const
+  }, {
+    id: 'goods-receipt' as ActivePage,
+    label: language === 'ar' ? 'سند استلام مواد' : 'Goods Receipt',
+    icon: ArrowDownToLine,
+    permission: 'purchases' as const
+  }, {
     id: 'suppliers' as ActivePage,
     label: s(settings?.suppliers_title, t.nav_suppliers),
     icon: Truck,
     permission: 'purchases' as const
   }, {
-    id: 'purchases' as ActivePage,
-    label: s(settings?.purchases_title, t.nav_purchases),
-    icon: ShoppingCart,
-    permission: 'purchases' as const
-  }, {
-    id: 'sales' as ActivePage,
-    label: s(settings?.sales_title, t.nav_sales),
-    icon: DollarSign,
-    permission: 'sales' as const
-  }];
-  const transferItems = [{
-    id: 'partner-dealerships' as ActivePage,
-    label: s(settings?.partner_dealerships_title, t.nav_partner_dealerships),
-    icon: Building2
-  }, {
-    id: 'car-transfers' as ActivePage,
-    label: s(settings?.car_transfers_title, t.nav_car_transfers),
-    icon: ArrowLeftRight
-  }];
-  const procurementItems = [{
-    id: 'purchase-orders' as ActivePage,
-    label: language === 'ar' ? 'أوامر الشراء' : 'Purchase Orders',
-    icon: ShoppingCart
-  }, {
-    id: 'goods-receipt' as ActivePage,
-    label: language === 'ar' ? 'أذون الاستلام' : 'Goods Receipt',
-    icon: ArrowDownToLine
-  }];
-  const hrItems = [{
-    id: 'employees' as ActivePage,
-    label: t.nav_employees,
-    icon: Users
-  }, {
-    id: 'payroll' as ActivePage,
-    label: t.nav_payroll,
-    icon: CreditCard
-  }, {
-    id: 'attendance' as ActivePage,
-    label: t.nav_attendance,
-    icon: Clock
-  }, {
-    id: 'leaves' as ActivePage,
-    label: t.nav_leaves,
-    icon: CalendarDays
-  }, {
-    id: 'employee-contracts' as ActivePage,
-    label: language === 'ar' ? 'عقود الموظفين' : 'Employee Contracts',
-    icon: FileSignature
-  }, {
-    id: 'org-structure' as ActivePage,
-    label: language === 'ar' ? 'الهيكل التنظيمي' : 'Org Structure',
-    icon: GitFork
-  }, {
-    id: 'plugin-advanced-hr' as ActivePage,
-    label: language === 'ar' ? 'التأمينات والتقييم والتدريب' : 'Insurance, Evaluation & Training',
-    icon: Shield
-  }];
-  const financeItems = [{
     id: 'expenses' as ActivePage,
     label: s(settings?.expenses_title, t.nav_expenses),
-    icon: Wallet
+    icon: Wallet,
+    permission: 'purchases' as const
   }, {
     id: 'prepaid-expenses' as ActivePage,
     label: s(settings?.prepaid_expenses_title, t.nav_prepaid_expenses),
-    icon: Clock
-  }, {
-    id: 'quotations' as ActivePage,
-    label: s(settings?.quotations_title, t.nav_quotations),
-    icon: FileCheck
-  }, {
-    id: 'installments' as ActivePage,
-    label: s(settings?.installments_title, t.nav_installments),
-    icon: CreditCard
-  }, {
-    id: 'vouchers' as ActivePage,
-    label: s(settings?.vouchers_title, t.nav_vouchers),
-    icon: Receipt
-  }, {
-    id: 'financing' as ActivePage,
-    label: s(settings?.financing_title, t.nav_financing),
-    icon: Landmark
-  }, {
-    id: 'banking' as ActivePage,
-    label: s(settings?.banking_title, t.nav_banking),
-    icon: Scale
-  }, {
-    id: 'custody' as ActivePage,
-    label: t.nav_custody,
-    icon: HandCoins
-  }, {
-    id: 'trips' as ActivePage,
-    label: t.nav_trips,
-    icon: MapPin
-  }, {
-    id: 'tasks' as ActivePage,
-    label: t.nav_tasks,
-    icon: ListTodo
-  }, {
-    id: 'manufacturing' as ActivePage,
-    label: t.nav_manufacturing,
-    icon: Factory
-  }, {
-    id: 'workflows' as ActivePage,
-    label: language === 'ar' ? 'الدورات المستندية' : 'Workflows',
-    icon: Workflow
-  }, {
-    id: 'credit-debit-notes' as ActivePage,
-    label: language === 'ar' ? 'إشعارات دائنة/مدينة' : 'Credit/Debit Notes',
-    icon: RotateCcw
-  }, {
-    id: 'subscriptions' as ActivePage,
-    label: language === 'ar' ? 'الاشتراكات' : 'Subscriptions',
-    icon: RefreshCw
-  }, {
-    id: 'payment-gateway' as ActivePage,
-    label: language === 'ar' ? 'بوابة الدفع' : 'Payment Gateway',
-    icon: Link2
-  }];
-  const salesMarketingItems = [{
-    id: 'crm' as ActivePage,
-    label: language === 'ar' ? 'إدارة العملاء CRM' : 'CRM',
-    icon: Users
-  }, {
-    id: 'loyalty' as ActivePage,
-    label: language === 'ar' ? 'نقاط الولاء' : 'Loyalty Points',
-    icon: Star
-  }, {
-    id: 'sales-targets' as ActivePage,
-    label: language === 'ar' ? 'المبيعات المستهدفة' : 'Sales Targets',
-    icon: Award
-  }, {
-    id: 'bookings' as ActivePage,
-    label: language === 'ar' ? 'الحجوزات' : 'Bookings',
-    icon: CalendarCheck
-  }];
-  const operationsItems = [{
-    id: 'work-orders' as ActivePage,
-    label: language === 'ar' ? 'أوامر العمل' : 'Work Orders',
-    icon: Wrench
-  }, {
-    id: 'time-tracking' as ActivePage,
-    label: language === 'ar' ? 'تتبع الوقت' : 'Time Tracking',
-    icon: Play
-  }, {
-    id: 'rentals' as ActivePage,
-    label: language === 'ar' ? 'الإيجارات' : 'Rentals',
-    icon: Home
-  }, {
-    id: 'advanced-projects' as ActivePage,
-    label: language === 'ar' ? 'إدارة مشاريع متقدمة' : 'Advanced Projects',
-    icon: LayoutGrid
-  }, {
-    id: 'customer-portal' as ActivePage,
-    label: language === 'ar' ? 'بوابة العملاء' : 'Customer Portal',
-    icon: Globe
-  }, {
-    id: 'bookkeeping-service' as ActivePage,
-    label: language === 'ar' ? 'مسك الدفاتر كخدمة' : 'Bookkeeping Service',
-    icon: BookMarked
-  }];
-  const { activePlugins } = usePlugins();
-
-  const pluginMenuItems = activePlugins.map(p => ({
-    id: p.pageId as ActivePage,
-    label: language === 'ar' ? p.menuLabel : p.menuLabel_en,
-    icon: ICON_MAP[p.menuIcon] || Puzzle,
-  }));
-
-  const integrationItems = [{
-    id: 'integrations' as ActivePage,
-    label: t.nav_integrations,
-    icon: Plug
-  }, {
-    id: 'api-management' as ActivePage,
-    label: t.nav_api_management,
-    icon: Globe
-  }, {
-    id: 'developer-api' as ActivePage,
-    label: language === 'ar' ? 'API للمطورين' : 'Developer API',
-    icon: Code
-  }, {
-    id: 'plugins' as ActivePage,
-    label: t.nav_plugins,
-    icon: Puzzle
-  }, ...pluginMenuItems];
-  // Inventory items
-  const inventoryItems = [{
-    id: 'warehouses' as ActivePage,
-    label: t.nav_warehouses,
-    icon: Warehouse
-  }, {
-    id: 'items-catalog' as ActivePage,
-    label: t.nav_items,
-    icon: Package
-  }, {
-    id: 'item-categories' as ActivePage,
-    label: t.nav_categories,
-    icon: FolderTree
-  }, {
-    id: 'units-of-measure' as ActivePage,
-    label: t.nav_units,
-    icon: Ruler
-  }, {
-    id: 'stock-vouchers' as ActivePage,
-    label: language === 'ar' ? 'الأذون المخزنية' : 'Stock Vouchers',
-    icon: ArrowUpFromLine
-  }, {
-    id: 'stocktaking' as ActivePage,
-    label: language === 'ar' ? 'الجرد' : 'Stocktaking',
-    icon: ClipboardList
-  }, {
-    id: 'mobile-inventory' as ActivePage,
-    label: language === 'ar' ? 'جرد بالجوال' : 'Mobile Inventory',
-    icon: Smartphone
-  }];
-  // Reports - filtered by company type
-  const allReportItems = [{
-    id: 'inventory-report' as ActivePage,
-    label: s(settings?.inventory_report_title, t.nav_inventory_report),
-    icon: Package,
-    permission: 'reports' as const,
-    types: ['car_dealership', 'general_trading', 'restaurant'] as string[],
-  }, {
-    id: 'profit-report' as ActivePage,
-    label: s(settings?.profit_report_title, t.nav_profit_report),
-    icon: TrendingUp,
-    permission: 'reports' as const,
-    types: null,
+    icon: Clock,
+    permission: 'purchases' as const
   }, {
     id: 'purchases-report' as ActivePage,
     label: s(settings?.purchases_report_title, t.nav_purchases_report),
     icon: FileText,
-    permission: 'reports' as const,
-    types: null,
-  }, {
-    id: 'sales-report' as ActivePage,
-    label: s(settings?.sales_report_title, t.nav_sales_report),
-    icon: DollarSign,
-    permission: 'reports' as const,
-    types: null,
-  }, {
-    id: 'customers-report' as ActivePage,
-    label: s(settings?.customers_report_title, t.nav_customers_report),
-    icon: Users,
-    permission: 'reports' as const,
-    types: null,
+    permission: 'reports' as const
   }, {
     id: 'suppliers-report' as ActivePage,
     label: s(settings?.suppliers_report_title, t.nav_suppliers_report),
     icon: Truck,
-    permission: 'reports' as const,
-    types: null,
-  }, {
-    id: 'commissions-report' as ActivePage,
-    label: s(settings?.commissions_report_title, t.nav_commissions_report),
-    icon: DollarSign,
-    permission: 'reports' as const,
-    types: ['car_dealership', 'general_trading'] as string[],
-  }, {
-    id: 'transfers-report' as ActivePage,
-    label: s(settings?.transfers_report_title, t.nav_transfers_report),
-    icon: ArrowLeftRight,
-    permission: 'reports' as const,
-    types: ['car_dealership'] as string[],
-  }, {
-    id: 'partner-report' as ActivePage,
-    label: s(settings?.partner_report_title, t.nav_partner_report),
-    icon: Building2,
-    permission: 'reports' as const,
-    types: ['car_dealership'] as string[],
-  }, {
-    id: 'account-movement' as ActivePage,
-    label: t.nav_account_movement,
-    icon: ClipboardList,
-    permission: 'reports' as const,
-    types: null,
+    permission: 'reports' as const
   }];
-  
-  const reportItems = allReportItems
-    .filter(item => !item.types || item.types.includes(companyType))
-    .map(({ types, ...rest }) => rest);
-  const accountingItems = [{
-    id: 'fiscal-years' as ActivePage,
-    label: t.nav_fiscal_years,
-    icon: Calendar
-  }, {
-    id: 'tax-settings' as ActivePage,
-    label: s(settings?.tax_settings_title, t.nav_tax_settings),
-    icon: Percent
-  }, {
-    id: 'chart-of-accounts' as ActivePage,
-    label: s(settings?.chart_of_accounts_title, t.nav_chart_of_accounts),
-    icon: BookOpen
+
+  // ===== حسابات (Accounts) =====
+  const accountsMenuItems = [{
+    id: 'vouchers' as ActivePage,
+    label: s(settings?.vouchers_title, t.nav_vouchers),
+    icon: Receipt
   }, {
     id: 'journal-entries' as ActivePage,
     label: s(settings?.journal_entries_title, t.nav_journal_entries),
@@ -631,6 +455,38 @@ export function Sidebar({
     id: 'account-statement' as ActivePage,
     label: t.nav_account_statement,
     icon: ClipboardList
+  }, {
+    id: 'banking' as ActivePage,
+    label: s(settings?.banking_title, t.nav_banking),
+    icon: Scale
+  }, {
+    id: 'checks' as ActivePage,
+    label: t.nav_checks,
+    icon: ClipboardCheck
+  }, {
+    id: 'financing' as ActivePage,
+    label: s(settings?.financing_title, t.nav_financing),
+    icon: Landmark
+  }, {
+    id: 'custody' as ActivePage,
+    label: t.nav_custody,
+    icon: HandCoins
+  }, {
+    id: 'chart-of-accounts' as ActivePage,
+    label: s(settings?.chart_of_accounts_title, t.nav_chart_of_accounts),
+    icon: BookOpen
+  }, {
+    id: 'cost-centers' as ActivePage,
+    label: t.nav_cost_centers,
+    icon: Target
+  }, {
+    id: 'tax-settings' as ActivePage,
+    label: s(settings?.tax_settings_title, t.nav_tax_settings),
+    icon: Percent
+  }, {
+    id: 'currencies' as ActivePage,
+    label: t.nav_currencies,
+    icon: Coins
   }, {
     id: 'vat-return-report' as ActivePage,
     label: t.nav_vat_return,
@@ -656,21 +512,9 @@ export function Sidebar({
     label: t.nav_fixed_assets,
     icon: Boxes
   }, {
-    id: 'cost-centers' as ActivePage,
-    label: t.nav_cost_centers,
-    icon: Target
-  }, {
-    id: 'medad-import' as ActivePage,
-    label: t.nav_medad_import,
-    icon: FileUp
-  }, {
     id: 'aging-report' as ActivePage,
     label: t.nav_aging_report,
     icon: Clock
-  }, {
-    id: 'checks' as ActivePage,
-    label: t.nav_checks,
-    icon: ClipboardCheck
   }, {
     id: 'budgets' as ActivePage,
     label: t.nav_budgets,
@@ -680,17 +524,110 @@ export function Sidebar({
     label: t.nav_financial_kpis,
     icon: Activity
   }, {
-    id: 'approvals' as ActivePage,
-    label: t.nav_approvals,
-    icon: GitBranch
+    id: 'profit-report' as ActivePage,
+    label: s(settings?.profit_report_title, t.nav_profit_report),
+    icon: TrendingUp,
+    permission: 'reports' as const
   }, {
-    id: 'currencies' as ActivePage,
-    label: t.nav_currencies,
-    icon: Coins
+    id: 'account-movement' as ActivePage,
+    label: t.nav_account_movement,
+    icon: ClipboardList,
+    permission: 'reports' as const
+  }];
+
+  // ===== مستودعات (Warehouses/Inventory) =====
+  const warehouseMenuItems = [{
+    id: 'items-catalog' as ActivePage,
+    label: t.nav_items,
+    icon: Package
+  }, {
+    id: 'stock-vouchers' as ActivePage,
+    label: language === 'ar' ? 'الأذون المخزنية' : 'Stock Vouchers',
+    icon: ArrowUpFromLine
+  }, {
+    id: 'warehouses' as ActivePage,
+    label: t.nav_warehouses,
+    icon: Warehouse
+  }, {
+    id: 'item-categories' as ActivePage,
+    label: t.nav_categories,
+    icon: FolderTree
+  }, {
+    id: 'units-of-measure' as ActivePage,
+    label: t.nav_units,
+    icon: Ruler
+  }, {
+    id: 'stocktaking' as ActivePage,
+    label: language === 'ar' ? 'الجرد' : 'Stocktaking',
+    icon: ClipboardList
+  }, {
+    id: 'manufacturing' as ActivePage,
+    label: t.nav_manufacturing,
+    icon: Factory
+  }, {
+    id: 'mobile-inventory' as ActivePage,
+    label: language === 'ar' ? 'جرد بالجوال' : 'Mobile Inventory',
+    icon: Smartphone
+  }, {
+    id: 'inventory-report' as ActivePage,
+    label: s(settings?.inventory_report_title, t.nav_inventory_report),
+    icon: Package,
+    permission: 'reports' as const
+  }];
+
+  // ===== النظام (System) =====
+  const systemMenuItems = [{
+    id: 'users-management' as ActivePage,
+    label: s(settings?.users_management_title, t.nav_users_management),
+    icon: UserCog
   }, {
     id: 'branches' as ActivePage,
     label: t.nav_branches,
     icon: GitFork
+  }, {
+    id: 'fiscal-years' as ActivePage,
+    label: t.nav_fiscal_years,
+    icon: Calendar
+  }, {
+    id: 'tasks' as ActivePage,
+    label: t.nav_tasks,
+    icon: ListTodo
+  }, {
+    id: 'approvals' as ActivePage,
+    label: t.nav_approvals,
+    icon: GitBranch
+  }, {
+    id: 'workflows' as ActivePage,
+    label: language === 'ar' ? 'الدورات المستندية' : 'Workflows',
+    icon: Workflow
+  }, {
+    id: 'app-settings' as ActivePage,
+    label: s(settings?.app_settings_title, t.nav_app_settings),
+    icon: Settings
+  }, {
+    id: 'theme-settings' as ActivePage,
+    label: t.nav_theme_settings,
+    icon: Palette
+  }, {
+    id: 'control-center' as ActivePage,
+    label: t.nav_control_center,
+    icon: Settings2
+  }, {
+    id: 'audit-logs' as ActivePage,
+    label: s(settings?.audit_logs_title, t.nav_audit_logs),
+    icon: ClipboardList
+  }, {
+    id: 'accounting-audit' as ActivePage,
+    label: t.nav_accounting_audit,
+    icon: ShieldCheck
+  }, {
+    id: 'backups' as ActivePage,
+    label: s(settings?.backups_title, t.nav_backups),
+    icon: Database
+  }, {
+    id: 'medad-import' as ActivePage,
+    label: t.nav_medad_import,
+    icon: FileUp
   }, {
     id: 'zatca-sandbox' as ActivePage,
     label: language === 'ar' ? 'بيئة محاكاة ZATCA' : 'ZATCA Sandbox',
@@ -704,6 +641,100 @@ export function Sidebar({
     label: language === 'ar' ? 'قراءة فاتورة بالجوال' : 'Mobile Invoice Reader',
     icon: QrCode
   }];
+
+  // ===== HR =====
+  const hrItems = [{
+    id: 'employees' as ActivePage,
+    label: t.nav_employees,
+    icon: Users
+  }, {
+    id: 'payroll' as ActivePage,
+    label: t.nav_payroll,
+    icon: CreditCard
+  }, {
+    id: 'attendance' as ActivePage,
+    label: t.nav_attendance,
+    icon: Clock
+  }, {
+    id: 'leaves' as ActivePage,
+    label: t.nav_leaves,
+    icon: CalendarDays
+  }, {
+    id: 'employee-contracts' as ActivePage,
+    label: language === 'ar' ? 'عقود الموظفين' : 'Employee Contracts',
+    icon: FileSignature
+  }, {
+    id: 'org-structure' as ActivePage,
+    label: language === 'ar' ? 'الهيكل التنظيمي' : 'Org Structure',
+    icon: GitFork
+  }];
+
+  // ===== Operations =====
+  const operationsItems = [{
+    id: 'work-orders' as ActivePage,
+    label: language === 'ar' ? 'أوامر العمل' : 'Work Orders',
+    icon: Wrench
+  }, {
+    id: 'time-tracking' as ActivePage,
+    label: language === 'ar' ? 'تتبع الوقت' : 'Time Tracking',
+    icon: Play
+  }, {
+    id: 'rentals' as ActivePage,
+    label: language === 'ar' ? 'الإيجارات' : 'Rentals',
+    icon: Home
+  }, {
+    id: 'trips' as ActivePage,
+    label: t.nav_trips,
+    icon: MapPin
+  }, {
+    id: 'advanced-projects' as ActivePage,
+    label: language === 'ar' ? 'إدارة مشاريع متقدمة' : 'Advanced Projects',
+    icon: LayoutGrid
+  }, {
+    id: 'customer-portal' as ActivePage,
+    label: language === 'ar' ? 'بوابة العملاء' : 'Customer Portal',
+    icon: Globe
+  }, {
+    id: 'bookkeeping-service' as ActivePage,
+    label: language === 'ar' ? 'مسك الدفاتر كخدمة' : 'Bookkeeping Service',
+    icon: BookMarked
+  }, {
+    id: 'subscriptions' as ActivePage,
+    label: language === 'ar' ? 'الاشتراكات' : 'Subscriptions',
+    icon: RefreshCw
+  }, {
+    id: 'payment-gateway' as ActivePage,
+    label: language === 'ar' ? 'بوابة الدفع' : 'Payment Gateway',
+    icon: Link2
+  }];
+
+  // ===== Integrations =====
+  const { activePlugins } = usePlugins();
+
+  const pluginMenuItems = activePlugins.map(p => ({
+    id: p.pageId as ActivePage,
+    label: language === 'ar' ? p.menuLabel : p.menuLabel_en,
+    icon: ICON_MAP[p.menuIcon] || Puzzle,
+  }));
+
+  const integrationItems = [{
+    id: 'integrations' as ActivePage,
+    label: t.nav_integrations,
+    icon: Plug
+  }, {
+    id: 'api-management' as ActivePage,
+    label: t.nav_api_management,
+    icon: Globe
+  }, {
+    id: 'developer-api' as ActivePage,
+    label: language === 'ar' ? 'API للمطورين' : 'Developer API',
+    icon: Code
+  }, {
+    id: 'plugins' as ActivePage,
+    label: t.nav_plugins,
+    icon: Puzzle
+  }, ...pluginMenuItems];
+  
   const hasAccess = (permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users') => {
     if (!permission) return true;
     return permissions.admin || permissions[permission];
@@ -841,32 +872,36 @@ export function Sidebar({
 
       {/* Main Menu */}
       <nav className="flex-1 min-h-0 p-3 overflow-y-auto">
-        {renderCollapsibleSection('main', t.nav_main_menu, 
-          companyType === 'construction' ? constructionMenuItems :
-          companyType === 'restaurant' ? restaurantMenuItems :
-          companyType === 'export_import' ? exportImportMenuItems :
-          defaultMenuItems
-        )}
+        {/* Dashboard */}
+        {renderCollapsibleSection('main', t.nav_main_menu, [{
+          id: 'dashboard' as ActivePage,
+          label: s(settings?.dashboard_title, t.nav_dashboard),
+          icon: LayoutDashboard
+        }])}
 
-        {companyType === 'car_dealership' && renderCollapsibleSection('transfers', s(settings?.transfers_section_title, t.nav_transfers), transferItems, permissions.admin || permissions.sales || permissions.purchases)}
+        {/* مبيعات - Sales */}
+        {renderCollapsibleSection('sales', language === 'ar' ? 'مبيعات' : 'Sales', salesMenuItems, permissions.admin || permissions.sales)}
 
+        {/* مشتريات - Purchases */}
+        {renderCollapsibleSection('purchases', language === 'ar' ? 'مشتريات' : 'Purchases', purchasesMenuItems, permissions.admin || permissions.purchases)}
+
+        {/* حسابات - Accounts */}
+        {renderCollapsibleSection('accounting', language === 'ar' ? 'حسابات' : 'Accounts', accountsMenuItems, permissions.admin || permissions.reports || permissions.financial_accounting)}
+
+        {/* مستودعات - Warehouses */}
+        {renderCollapsibleSection('inventory', language === 'ar' ? 'مستودعات' : 'Warehouses', warehouseMenuItems, permissions.admin || permissions.purchases || permissions.warehouses)}
+
+        {/* الموارد البشرية - HR */}
         {renderCollapsibleSection('hr', t.nav_hr, hrItems, permissions.admin || permissions.employees || permissions.payroll)}
 
-        {renderCollapsibleSection('finance', s(settings?.finance_section_title, t.nav_finance), financeItems, permissions.admin || permissions.sales || permissions.purchases)}
-
-        {renderCollapsibleSection('inventory', t.nav_inventory, inventoryItems, permissions.admin || permissions.purchases)}
-
-        {renderCollapsibleSection('procurement', language === 'ar' ? 'المشتريات والتوريد' : 'Procurement', procurementItems, permissions.admin || permissions.purchases)}
-
-        {renderCollapsibleSection('sales-marketing', language === 'ar' ? 'المبيعات والتسويق' : 'Sales & Marketing', salesMarketingItems, permissions.admin || permissions.sales)}
-
+        {/* العمليات - Operations */}
         {renderCollapsibleSection('operations', language === 'ar' ? 'العمليات' : 'Operations', operationsItems, true)}
 
-        {renderCollapsibleSection('reports', s(settings?.reports_title, t.nav_reports), reportItems, hasAccess('reports'))}
-
-        {renderCollapsibleSection('accounting', s(settings?.accounting_section_title, t.nav_accounting), accountingItems, permissions.admin || permissions.reports)}
-
+        {/* التكامل - Integrations */}
         {renderCollapsibleSection('integrations', t.nav_integrations_section, integrationItems, true)}
+
+        {/* النظام - System */}
+        {renderCollapsibleSection('system', language === 'ar' ? 'النظام' : 'System', systemMenuItems, canManageUsers)}
 
         {isSuperAdmin && <div className="mb-5">
             <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-warning/50 mb-2 px-3">{t.nav_super_admin}</p>
@@ -885,35 +920,6 @@ export function Sidebar({
             </ul>
           </div>}
 
-        {canManageUsers && renderCollapsibleSection('admin', s(settings?.admin_section_title, t.nav_admin), [{
-        id: 'users-management' as ActivePage,
-        label: s(settings?.users_management_title, t.nav_users_management),
-        icon: UserCog
-      }, {
-        id: 'app-settings' as ActivePage,
-        label: s(settings?.app_settings_title, t.nav_app_settings),
-        icon: Settings
-      }, {
-        id: 'theme-settings' as ActivePage,
-        label: t.nav_theme_settings,
-        icon: Palette
-      }, {
-        id: 'audit-logs' as ActivePage,
-        label: s(settings?.audit_logs_title, t.nav_audit_logs),
-        icon: ClipboardList
-      }, {
-        id: 'backups' as ActivePage,
-        label: s(settings?.backups_title, t.nav_backups),
-        icon: Database
-      }, {
-        id: 'control-center' as ActivePage,
-        label: t.nav_control_center,
-        icon: Settings2
-      }, {
-        id: 'accounting-audit' as ActivePage,
-        label: t.nav_accounting_audit,
-        icon: ShieldCheck
-      }], canManageUsers)}
       </nav>
 
       {/* Language Switcher & Footer */}
