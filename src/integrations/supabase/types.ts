@@ -4811,6 +4811,13 @@ export type Database = {
             referencedRelation: "hr_employees"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "hr_evaluations_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       hr_insurance_records: {
@@ -4859,6 +4866,13 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_insurance_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -4910,6 +4924,13 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_training_attendees_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -11502,6 +11523,81 @@ export type Database = {
         }
         Relationships: []
       }
+      hr_employees_safe: {
+        Row: {
+          bank_name: string | null
+          base_salary: number | null
+          company_id: string | null
+          contract_type: string | null
+          created_at: string | null
+          department: string | null
+          email: string | null
+          employee_number: string | null
+          full_name: string | null
+          full_name_en: string | null
+          hire_date: string | null
+          housing_allowance: number | null
+          iban: string | null
+          id: string | null
+          is_active: boolean | null
+          job_title: string | null
+          national_id: string | null
+          notes: string | null
+          other_allowances: number | null
+          phone: string | null
+          transport_allowance: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          bank_name?: never
+          base_salary?: never
+          company_id?: string | null
+          contract_type?: string | null
+          created_at?: string | null
+          department?: string | null
+          email?: never
+          employee_number?: string | null
+          full_name?: string | null
+          full_name_en?: string | null
+          hire_date?: string | null
+          housing_allowance?: never
+          iban?: never
+          id?: string | null
+          is_active?: boolean | null
+          job_title?: string | null
+          national_id?: never
+          notes?: string | null
+          other_allowances?: never
+          phone?: never
+          transport_allowance?: never
+          updated_at?: string | null
+        }
+        Update: {
+          bank_name?: never
+          base_salary?: never
+          company_id?: string | null
+          contract_type?: string | null
+          created_at?: string | null
+          department?: string | null
+          email?: never
+          employee_number?: string | null
+          full_name?: string | null
+          full_name_en?: string | null
+          hire_date?: string | null
+          housing_allowance?: never
+          iban?: never
+          id?: string | null
+          is_active?: boolean | null
+          job_title?: string | null
+          national_id?: never
+          notes?: string | null
+          other_allowances?: never
+          phone?: never
+          transport_allowance?: never
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       invoices_safe: {
         Row: {
           amount_paid: number | null
@@ -11886,6 +11982,7 @@ export type Database = {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
       }
+      has_hr_access: { Args: { check_company_id: string }; Returns: boolean }
       has_permission:
         | { Args: { _permission: string }; Returns: boolean }
         | {
