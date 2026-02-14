@@ -210,6 +210,10 @@ export type ActivePage =
     | 'mobile-inventory'
      | 'mobile-invoice-reader'
      | 'developer-api'
+     // Purchase extensions
+     | 'purchase-returns'
+     | 'materials-request'
+     | 'contractor-payment'
      // New modules
      | 'ecommerce'
      | 'email-marketing'
