@@ -28,20 +28,18 @@ interface ReturnItem {
   grandTotal: number;
 }
 
-interface BatchData {
+interface FoundCarData {
   id: string;
-  batch_number: number;
+  inventory_number: number;
+  name: string;
+  model: string | null;
+  color: string | null;
+  chassis_number: string;
+  purchase_price: number;
   purchase_date: string;
+  status: string;
   supplier?: { name: string } | null;
-  cars?: Array<{
-    id: string;
-    name: string;
-    model: string | null;
-    color: string | null;
-    chassis_number: string;
-    purchase_price: number;
-    status: string;
-  }> | null;
+  batch_id: string | null;
 }
 
 export function PurchaseReturnsPage() {
@@ -50,9 +48,9 @@ export function PurchaseReturnsPage() {
   const queryClient = useQueryClient();
   const [searchList, setSearchList] = useState('');
   const [showAdd, setShowAdd] = useState(false);
-  const [batchSearch, setBatchSearch] = useState('');
+  const [carSearch, setCarSearch] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [foundBatch, setFoundBatch] = useState<BatchData | null>(null);
+  const [foundCar, setFoundCar] = useState<FoundCarData | null>(null);
   const [form, setForm] = useState({
     paymentMethod: 'cash',
     fullInvoice: true,
@@ -75,75 +73,65 @@ export function PurchaseReturnsPage() {
     enabled: !!companyId,
   });
 
-  const searchBatch = useCallback(async () => {
-    if (!batchSearch.trim() || !companyId) return;
+  const searchCar = useCallback(async () => {
+    if (!carSearch.trim() || !companyId) return;
     setIsSearching(true);
     try {
-      // Fetch batch separately to avoid deep type issues
-      const { data: batchArr, error: bErr } = await (supabase
-        .from('purchase_batches') as any)
-        .select('*')
+      const { data: car, error: cErr } = await supabase
+        .from('cars')
+        .select('id, inventory_number, name, model, color, chassis_number, purchase_price, purchase_date, status, batch_id, supplier_id')
         .eq('company_id', companyId)
-        .eq('batch_number', parseInt(batchSearch))
-        .limit(1);
+        .eq('inventory_number', parseInt(carSearch))
+        .single();
 
-      if (bErr || !batchArr || batchArr.length === 0) {
-        toast.error(language === 'ar' ? 'لم يتم العثور على فاتورة الشراء' : 'Purchase invoice not found');
-        setFoundBatch(null);
+      if (cErr || !car) {
+        toast.error(language === 'ar' ? 'لم يتم العثور على السيارة بهذا الرقم' : 'Car not found with this number');
+        setFoundCar(null);
         setItems([]);
         return;
       }
 
-      const batch = batchArr[0];
+      if (car.status !== 'available') {
+        toast.error(language === 'ar' ? 'السيارة غير متاحة للإرجاع (قد تكون مباعة أو مرتجعة)' : 'Car not available for return');
+        setFoundCar(null);
+        setItems([]);
+        return;
+      }
 
       // Fetch supplier name
       let supplierName = '-';
-      if (batch.supplier_id) {
-        const { data: sup } = await supabase.from('suppliers').select('name').eq('id', batch.supplier_id).single();
+      if (car.supplier_id) {
+        const { data: sup } = await supabase.from('suppliers').select('name').eq('id', car.supplier_id).single();
         if (sup) supplierName = sup.name;
       }
 
-      // Fetch cars for this batch
-      const { data: batchCars } = await supabase
-        .from('cars')
-        .select('id, name, model, color, chassis_number, purchase_price, status')
-        .eq('batch_id', batch.id);
+      const foundCarData: FoundCarData = {
+        ...car,
+        supplier: { name: supplierName },
+      };
+      setFoundCar(foundCarData);
 
-      setFoundBatch({ ...batch, supplier: { name: supplierName } } as any);
-      const carsArr = batchCars || [];
-
-      // Only show available cars (already in inventory)
-      const availableCars = carsArr.filter((c: any) => c.status === 'available');
-      
-      if (availableCars.length === 0) {
-        toast.error(language === 'ar' ? 'لا توجد سيارات متاحة للإرجاع (قد تكون مباعة)' : 'No available cars to return');
-        setItems([]);
-        return;
-      }
-
-      setItems(availableCars.map((car: any, idx: number) => {
-        const cost = Number(car.purchase_price);
-        const vat = cost * 0.15;
-        return {
-          id: String(idx + 1),
-          car_id: car.id,
-          description: `${car.name || ''} ${car.model || ''} - ${car.color || ''} - شاسيه: ${car.chassis_number || ''}`,
-          quantity: 1,
-          returnedQty: 1,
-          unit: 'سيارة',
-          cost,
-          total: cost,
-          vat,
-          grandTotal: cost + vat,
-        };
-      }));
-      toast.success(language === 'ar' ? `تم العثور على ${availableCars.length} سيارة متاحة للإرجاع` : `Found ${availableCars.length} available cars`);
+      const cost = Number(car.purchase_price);
+      const vat = cost * 0.15;
+      setItems([{
+        id: '1',
+        car_id: car.id,
+        description: `${car.name || ''} ${car.model || ''} - ${car.color || ''} - شاسيه: ${car.chassis_number || ''}`,
+        quantity: 1,
+        returnedQty: 1,
+        unit: 'سيارة',
+        cost,
+        total: cost,
+        vat,
+        grandTotal: cost + vat,
+      }]);
+      toast.success(language === 'ar' ? 'تم العثور على السيارة' : 'Car found');
     } catch (e) {
       toast.error(language === 'ar' ? 'خطأ في البحث' : 'Search error');
     } finally {
       setIsSearching(false);
     }
-  }, [batchSearch, companyId, language]);
+  }, [carSearch, companyId, language]);
 
   const updateItem = (index: number, field: keyof ReturnItem, value: string | number) => {
     setItems(prev => {
@@ -166,7 +154,7 @@ export function PurchaseReturnsPage() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!foundBatch) throw new Error('No batch found');
+      if (!foundCar) throw new Error('No car found');
 
       // 1. Remove returned cars from inventory (mark as returned)
       const returnedItems = items.filter(i => i.returnedQty > 0);
@@ -179,12 +167,12 @@ export function PurchaseReturnsPage() {
       }
 
       // 2. Delete journal entry for this purchase if full return
-      if (form.fullInvoice) {
+      if (form.fullInvoice && foundCar.batch_id) {
         await supabase
           .from('journal_entries')
           .delete()
           .eq('reference_type', 'purchase')
-          .eq('reference_id', foundBatch.id);
+          .eq('reference_id', foundCar.batch_id);
       }
 
       // 3. Save debit note record
@@ -195,7 +183,7 @@ export function PurchaseReturnsPage() {
         note_type: 'debit',
         note_date: form.returnDate,
         total_amount: totals.grandTotal,
-        reason: `مرتجع فاتورة شراء رقم ${foundBatch.batch_number}${form.notes ? ' - ' + form.notes : ''}`,
+        reason: `مرتجع شراء سيارة رقم مخزون ${foundCar.inventory_number}${form.notes ? ' - ' + form.notes : ''}`,
         status: 'approved',
       });
       if (error) throw error;
@@ -206,11 +194,11 @@ export function PurchaseReturnsPage() {
       queryClient.invalidateQueries({ queryKey: ['purchase-batches'] });
       queryClient.invalidateQueries({ queryKey: ['cars'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
-      toast.success(language === 'ar' ? 'تم اعتماد مرتجع المشتريات وخصم السيارات من المخزون' : 'Purchase return approved, cars removed from inventory');
+      toast.success(language === 'ar' ? 'تم اعتماد مرتجع المشتريات وخصم السيارة من المخزون' : 'Purchase return approved, car removed from inventory');
       setShowAdd(false);
-      setFoundBatch(null);
+      setFoundCar(null);
       setItems([]);
-      setBatchSearch('');
+      setCarSearch('');
     },
     onError: (e) => {
       console.error(e);
@@ -242,7 +230,7 @@ export function PurchaseReturnsPage() {
             {language === 'ar' ? 'إدارة مرتجعات المشتريات وإشعارات المدين' : 'Manage purchase returns and debit notes'}
           </p>
         </div>
-        <Dialog open={showAdd} onOpenChange={(v) => { setShowAdd(v); if (!v) { setFoundBatch(null); setItems([]); setBatchSearch(''); } }}>
+        <Dialog open={showAdd} onOpenChange={(v) => { setShowAdd(v); if (!v) { setFoundCar(null); setItems([]); setCarSearch(''); } }}>
           <DialogTrigger asChild>
             <Button className="gap-2"><Plus className="w-4 h-4" />{language === 'ar' ? 'مرتجع جديد' : 'New Return'}</Button>
           </DialogTrigger>
@@ -251,41 +239,41 @@ export function PurchaseReturnsPage() {
               <DialogTitle>{language === 'ar' ? 'مرتجع مشتريات / إشعار مدين' : 'Purchase Return / Debit Note'}</DialogTitle>
             </DialogHeader>
 
-            {/* Batch Search */}
+            {/* Car Search by Inventory Number */}
             <div className="p-4 bg-primary/5 rounded-lg border-2 border-primary/20 space-y-3">
-              <Label className="font-bold text-base">{language === 'ar' ? 'بحث عن فاتورة الشراء' : 'Search Purchase Invoice'}</Label>
+              <Label className="font-bold text-base">{language === 'ar' ? 'بحث عن السيارة برقم المخزون' : 'Search Car by Inventory Number'}</Label>
               <div className="flex gap-2">
                 <Input
                   className="h-10 text-base font-mono"
-                  placeholder={language === 'ar' ? 'أدخل رقم فاتورة الشراء (رقم الدفعة)...' : 'Enter purchase batch number...'}
-                  value={batchSearch}
-                  onChange={e => setBatchSearch(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && searchBatch()}
+                  placeholder={language === 'ar' ? 'أدخل رقم المخزون...' : 'Enter inventory number...'}
+                  value={carSearch}
+                  onChange={e => setCarSearch(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && searchCar()}
                   type="number"
                 />
-                <Button onClick={searchBatch} disabled={isSearching} className="gap-2 min-w-[120px]">
+                <Button onClick={searchCar} disabled={isSearching} className="gap-2 min-w-[120px]">
                   {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                   {language === 'ar' ? 'بحث' : 'Search'}
                 </Button>
               </div>
 
-              {foundBatch && (
+              {foundCar && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-card rounded-lg border">
                   <div>
-                    <span className="text-xs text-muted-foreground">{language === 'ar' ? 'رقم الدفعة' : 'Batch #'}</span>
-                    <p className="font-bold text-primary">{foundBatch.batch_number}</p>
+                    <span className="text-xs text-muted-foreground">{language === 'ar' ? 'رقم المخزون' : 'Inventory #'}</span>
+                    <p className="font-bold text-primary">{foundCar.inventory_number}</p>
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground">{language === 'ar' ? 'المورد' : 'Supplier'}</span>
-                    <p className="font-medium">{foundBatch.supplier?.name || '-'}</p>
+                    <p className="font-medium">{foundCar.supplier?.name || '-'}</p>
                   </div>
                   <div>
-                    <span className="text-xs text-muted-foreground">{language === 'ar' ? 'عدد السيارات المتاحة' : 'Available Cars'}</span>
-                    <p className="font-bold">{items.length}</p>
+                    <span className="text-xs text-muted-foreground">{language === 'ar' ? 'السيارة' : 'Car'}</span>
+                    <p className="font-bold">{foundCar.name} {foundCar.model || ''}</p>
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground">{language === 'ar' ? 'تاريخ الشراء' : 'Purchase Date'}</span>
-                    <p className="font-medium">{foundBatch.purchase_date}</p>
+                    <p className="font-medium">{foundCar.purchase_date}</p>
                   </div>
                 </div>
               )}
@@ -384,10 +372,10 @@ export function PurchaseReturnsPage() {
               </>
             )}
 
-            {!foundBatch && items.length === 0 && (
+            {!foundCar && items.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
                 <Search className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>{language === 'ar' ? 'أدخل رقم فاتورة الشراء للبحث عنها' : 'Enter purchase invoice number to search'}</p>
+                <p>{language === 'ar' ? 'أدخل رقم المخزون للبحث عن السيارة' : 'Enter inventory number to search'}</p>
               </div>
             )}
           </DialogContent>
