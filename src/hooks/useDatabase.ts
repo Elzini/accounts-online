@@ -119,8 +119,7 @@ export function useCars() {
     queryKey: ['cars', companyId],
     queryFn: db.fetchCars,
     enabled: !!companyId,
-    staleTime: 0, // Always refetch on mount to get latest data
-    refetchOnMount: 'always',
+    staleTime: 1000 * 60 * 2, // 2 minutes cache
   });
 }
 
@@ -177,8 +176,7 @@ export function useSales() {
     queryKey: ['sales', companyId],
     queryFn: db.fetchSales,
     enabled: !!companyId,
-    staleTime: 0, // Always refetch to get latest data
-    refetchOnMount: 'always',
+    staleTime: 1000 * 60 * 2, // 2 minutes cache
   });
 }
 
@@ -300,6 +298,7 @@ export function useStats() {
     queryKey: ['stats', companyId, selectedFiscalYear?.id],
     queryFn: () => db.fetchStats(selectedFiscalYear?.id),
     enabled: !!companyId,
+    staleTime: 1000 * 60 * 3, // 3 minutes
   });
 }
 
@@ -311,6 +310,7 @@ export function useAllTimeStats() {
     queryKey: ['all-time-stats', companyId],
     queryFn: () => db.fetchAllTimeStats(),
     enabled: !!companyId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 
@@ -323,6 +323,7 @@ export function useMonthlyChartData() {
     queryKey: ['monthly-chart-data', companyId, selectedFiscalYear?.id],
     queryFn: () => db.fetchMonthlyChartData(selectedFiscalYear?.id),
     enabled: !!companyId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 

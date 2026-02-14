@@ -91,23 +91,24 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Check if user is super admin
-      const { data: roles } = await supabase
-        .from('user_roles')
-        .select('permission')
-        .eq('user_id', user.id);
+      // Run role check and company resolution in parallel
+      const [rolesResult, subdomainResult] = await Promise.all([
+        supabase
+          .from('user_roles')
+          .select('permission')
+          .eq('user_id', user.id),
+        tenantSubdomain ? resolveCompanyBySubdomain() : Promise.resolve(null),
+      ]);
       
+      const roles = rolesResult.data;
       const superAdmin = roles?.some(r => r.permission === 'super_admin') || false;
       setIsSuperAdmin(superAdmin);
 
-      // If subdomain is present, resolve company from subdomain first
+      // Use subdomain result from parallel call
       let resolvedCompanyId: string | null = null;
       
-      if (tenantSubdomain) {
-        const subdomainCompany = await resolveCompanyBySubdomain();
-        if (subdomainCompany) {
-          resolvedCompanyId = subdomainCompany.id;
-        }
+      if (subdomainResult) {
+        resolvedCompanyId = subdomainResult.id;
       }
 
       // Fallback: Get user's profile with company_id
