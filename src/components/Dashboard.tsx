@@ -99,7 +99,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
   }, [getFormula, formulaVariables]);
   
   // Dashboard customization
-  const { data: dashboardConfig } = useDashboardConfig();
+  const { data: dashboardConfig, isLoading: isDashboardConfigLoading } = useDashboardConfig();
   const saveDashboardConfig = useSaveDashboardConfig();
   const [cardConfigs, setCardConfigs] = useState<CardConfig[]>(DEFAULT_STAT_CARDS);
   
@@ -557,7 +557,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
             </div>
           </div>
 
-          {isLoading ? (
+          {isLoading || isDashboardConfigLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="rounded-xl border border-border/50 overflow-hidden animate-pulse">
