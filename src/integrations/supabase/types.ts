@@ -8391,6 +8391,8 @@ export type Database = {
       }
       sales: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           car_id: string
           commission: number | null
           company_id: string | null
@@ -8407,9 +8409,12 @@ export type Database = {
           sale_number: number
           sale_price: number
           seller_name: string | null
+          status: string
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           car_id: string
           commission?: number | null
           company_id?: string | null
@@ -8426,9 +8431,12 @@ export type Database = {
           sale_number?: number
           sale_price: number
           seller_name?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           car_id?: string
           commission?: number | null
           company_id?: string | null
@@ -8445,6 +8453,7 @@ export type Database = {
           sale_number?: number
           sale_price?: number
           seller_name?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: [
