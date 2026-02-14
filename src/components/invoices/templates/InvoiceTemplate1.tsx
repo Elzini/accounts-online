@@ -72,6 +72,7 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
         </div>
         <div className="p-2">
           <div className="flex justify-between"><span className="text-gray-500">Trans. No. رقم الفاتورة</span><span className="font-bold">{invoiceNumber}</span></div>
+          <div className="flex justify-between mt-1"><span className="text-gray-500">Voucher No. رقم السند</span><span className="font-bold">{data.voucherNumber || invoiceNumber}</span></div>
           <div className="flex justify-between mt-1"><span className="text-gray-500">Address العنوان</span><span className="font-medium">{buyerAddress || '-'}</span></div>
         </div>
       </div>

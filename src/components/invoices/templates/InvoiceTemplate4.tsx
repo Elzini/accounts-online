@@ -59,6 +59,10 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
           <span className="border border-gray-300 px-2 py-0.5">{formattedDate}</span>
         </div>
         <div className="flex gap-2 items-center">
+          <span className="text-gray-500">Voucher No. رقم السند</span>
+          <span className="border border-gray-300 px-2 py-0.5 font-bold">{data.voucherNumber || invoiceNumber}</span>
+        </div>
+        <div className="flex gap-2 items-center">
           <span className="text-gray-500">Invoice No. رقم الفاتورة</span>
           <span className="border border-gray-300 px-2 py-0.5 font-bold">{invoiceNumber}</span>
         </div>
