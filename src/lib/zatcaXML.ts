@@ -58,6 +58,9 @@ export interface ZatcaXMLInvoiceData {
   
   // Notes
   notes?: string;
+  
+  // Previous Invoice Hash (for invoice chaining - Phase 2)
+  previousInvoiceHash?: string;
 }
 
 export interface ZatcaXMLItem {
@@ -176,10 +179,7 @@ export function generateZatcaXML(data: ZatcaXMLInvoiceData): string {
   <cac:AdditionalDocumentReference>
     <cbc:ID>PIH</cbc:ID>
     <cac:Attachment>
-      <cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">
-        <!-- Previous Invoice Hash - to be populated for chaining -->
-        NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==
-      </cbc:EmbeddedDocumentBinaryObject>
+      <cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">${escapeXml(data.previousInvoiceHash || 'NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==')}</cbc:EmbeddedDocumentBinaryObject>
     </cac:Attachment>
   </cac:AdditionalDocumentReference>
 

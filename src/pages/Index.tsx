@@ -107,6 +107,7 @@ import { SalesTargetsPage } from '@/components/sales-targets/SalesTargetsPage';
 import { PaymentGatewayPage } from '@/components/payment-gateway/PaymentGatewayPage';
 import { BookkeepingServicePage } from '@/components/bookkeeping/BookkeepingServicePage';
 import { ZatcaSandboxPage } from '@/components/zatca-sandbox/ZatcaSandboxPage';
+import { ZatcaTechnicalDocPage } from '@/components/zatca-sandbox/ZatcaTechnicalDocPage';
 import { CustomerPortalPage } from '@/components/customer-portal/CustomerPortalPage';
 import { AdvancedProjectsPage } from '@/components/advanced-projects/AdvancedProjectsPage';
 import { MobileInventoryPage } from '@/components/mobile-inventory/MobileInventoryPage';
@@ -319,6 +320,7 @@ const Index = () => {
       // Low priority features
       case 'bookkeeping-service': return <BookkeepingServicePage />;
       case 'zatca-sandbox': return <ZatcaSandboxPage />;
+      case 'zatca-technical-doc': return <ZatcaTechnicalDocPage />;
       case 'customer-portal': return <CustomerPortalPage />;
       case 'advanced-projects': return <AdvancedProjectsPage />;
       case 'mobile-inventory': return <MobileInventoryPage />;

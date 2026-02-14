@@ -203,7 +203,8 @@ export type ActivePage =
     | 'payment-gateway'
     // Low priority features
     | 'bookkeeping-service'
-    | 'zatca-sandbox'
+     | 'zatca-sandbox'
+     | 'zatca-technical-doc'
     | 'customer-portal'
     | 'advanced-projects'
     | 'mobile-inventory'

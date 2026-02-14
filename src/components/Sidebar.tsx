@@ -696,6 +696,10 @@ export function Sidebar({
     label: language === 'ar' ? 'بيئة محاكاة ZATCA' : 'ZATCA Sandbox',
     icon: TestTube
   }, {
+    id: 'zatca-technical-doc' as ActivePage,
+    label: language === 'ar' ? 'وثائق ZATCA التقنية' : 'ZATCA Technical Docs',
+    icon: FileText
+  }, {
     id: 'mobile-invoice-reader' as ActivePage,
     label: language === 'ar' ? 'قراءة فاتورة بالجوال' : 'Mobile Invoice Reader',
     icon: QrCode
