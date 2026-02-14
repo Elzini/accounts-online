@@ -80,6 +80,7 @@ export const InvoiceTemplate3 = forwardRef<HTMLDivElement, Props>(({ data }, ref
         <div className="border border-gray-200 rounded-sm p-2 mr-1">
           <div className="space-y-0.5 text-[10px]">
             <div className="flex justify-between"><span className="text-gray-500">Invoice Number رقم الفاتورة:</span><span className="font-bold">{invoiceNumber}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Voucher No. رقم السند:</span><span className="font-bold">{data.voucherNumber || invoiceNumber}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Invoice Date تاريخ الفاتورة:</span><span>{formattedDate}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Branch الفرع:</span><span>{branchName || 'SHOWROOM'}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">SalesMan مندوب المبيعات:</span><span>{salesmanName || '-'}</span></div>

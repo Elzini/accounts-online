@@ -393,6 +393,7 @@ export function SaleActions({ sale }: SaleActionsProps) {
     taxSettings,
     companyLogoUrl: invoiceLogoUrl,
     invoiceSettings,
+    voucherNumber: sale.sale_number,
   };
 
   return (

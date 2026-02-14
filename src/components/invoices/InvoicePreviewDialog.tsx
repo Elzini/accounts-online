@@ -140,6 +140,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     items: data.items, subtotal: data.subtotal, taxAmount: data.taxAmount, total: data.total,
     taxSettings: data.taxSettings, companyLogoUrl: data.companyLogoUrl, uuid: invoiceUUID,
     sellerCommercialRegister: data.taxSettings?.commercial_register,
+    voucherNumber: (data as any).voucherNumber,
   };
 
   const renderTemplate = () => {

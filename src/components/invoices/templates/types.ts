@@ -41,6 +41,7 @@ export interface InvoiceTemplateData {
   branchName?: string;
   salesmanName?: string;
   paymentMethod?: string;
+  voucherNumber?: string | number;
 }
 
 export type InvoiceTemplateName = 'template1' | 'template2' | 'template3' | 'template4' | 'default';

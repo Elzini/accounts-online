@@ -62,6 +62,7 @@ export const InvoiceTemplate2 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       <div className="grid grid-cols-2 gap-0 border-b text-[10px]">
         <div className="p-2 border-l space-y-1">
           <div className="flex gap-2"><span className="text-gray-500 w-24">رقم الفاتورة:</span><span className="font-bold">{invoiceNumber}</span></div>
+          <div className="flex gap-2"><span className="text-gray-500 w-24">رقم السند:</span><span className="font-bold">{data.voucherNumber || invoiceNumber}</span></div>
           <div className="flex gap-2"><span className="text-gray-500 w-24">تاريخ الفاتورة:</span><span>{formattedDate}</span></div>
           <div className="flex gap-2"><span className="text-gray-500 w-24">طريقة الدفع:</span><span>{paymentMethod === 'cash' ? 'نقدي / Cash' : 'آجل / Credit'}</span></div>
         </div>
