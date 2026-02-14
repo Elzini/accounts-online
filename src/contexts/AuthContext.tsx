@@ -59,6 +59,7 @@ interface UserPermissions {
   partner_dealerships: boolean;
   customers: boolean;
   suppliers: boolean;
+  edit_sales_invoice: boolean;
 }
 
 const DEFAULT_PERMISSIONS: UserPermissions = {
@@ -73,7 +74,7 @@ const DEFAULT_PERMISSIONS: UserPermissions = {
   manufacturing: false, tasks: false, custody: false, banking: false, financing: false, vouchers: false,
   installments: false, quotations: false, prepaid_expenses: false, expenses: false, leaves: false,
   attendance: false, payroll: false, employees: false, car_transfers: false, partner_dealerships: false,
-  customers: false, suppliers: false,
+  customers: false, suppliers: false, edit_sales_invoice: false,
 };
 
 interface AuthContextType {

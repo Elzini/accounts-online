@@ -27,6 +27,7 @@ function usePermissionGroups(): PermissionGroup[] {
       { key: 'sales', label: t.perm_sales }, { key: 'purchases', label: t.perm_purchases }, { key: 'customers', label: t.perm_customers },
       { key: 'suppliers', label: t.perm_suppliers }, { key: 'sales_invoices', label: t.perm_sales_invoices }, { key: 'purchase_invoices', label: t.perm_purchase_invoices },
       { key: 'quotations', label: t.perm_quotations }, { key: 'partner_dealerships', label: t.perm_partner_dealerships }, { key: 'car_transfers', label: t.perm_car_transfers },
+      { key: 'edit_sales_invoice', label: t.perm_edit_sales_invoice },
     ]},
     { label: t.perm_accounting, permissions: [
       { key: 'financial_accounting', label: t.perm_financial_accounting }, { key: 'chart_of_accounts', label: t.perm_chart_of_accounts },

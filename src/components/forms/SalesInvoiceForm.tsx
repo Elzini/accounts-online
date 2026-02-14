@@ -56,6 +56,7 @@ import { InvoiceSearchBar } from './InvoiceSearchBar';
 import { useItems, useUnits } from '@/hooks/useInventory';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SalesInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -105,7 +106,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const addInstallmentSale = useAddInstallmentSale();
   const companyId = useCompanyId();
   const { t, language } = useLanguage();
-
+  const { permissions } = useAuth();
+  const canEditInvoice = permissions.edit_sales_invoice || permissions.admin || permissions.super_admin;
   // Inventory hooks
   const { data: inventoryItems = [] } = useItems();
   const { data: units = [] } = useUnits();
@@ -836,6 +838,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   onChange={(e) => setInvoiceData({ ...invoiceData, sale_date: e.target.value })}
                   className="h-9 text-sm"
                   dir="ltr"
+                  disabled={isViewingExisting && !canEditInvoice}
                 />
               </div>
               <div className="space-y-1">
@@ -880,6 +883,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   id="price_includes_tax"
                   checked={invoiceData.price_includes_tax}
                   onCheckedChange={(checked) => setInvoiceData({ ...invoiceData, price_includes_tax: !!checked })}
+                  disabled={isViewingExisting && !canEditInvoice}
                 />
                 <Label htmlFor="price_includes_tax" className="text-xs cursor-pointer">
                   {t.inv_price_includes_tax}
@@ -1061,7 +1065,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                           <TableCell className="text-center text-sm">1</TableCell>
                           <TableCell className="text-center text-sm">{t.inv_car_unit}</TableCell>
                           <TableCell>
-                            <Input type="number" value={car.sale_price} onChange={(e) => handleCarChange(car.id, 'sale_price', e.target.value)} placeholder="0" className="h-8 text-sm text-center w-24" dir="ltr" />
+                            <Input type="number" value={car.sale_price} onChange={(e) => handleCarChange(car.id, 'sale_price', e.target.value)} placeholder="0" className="h-8 text-sm text-center w-24" dir="ltr" disabled={isViewingExisting && !canEditInvoice} />
                           </TableCell>
                           <TableCell className="text-center text-sm font-medium">{formatCurrency(calcItem?.baseAmount || 0)}</TableCell>
                           <TableCell className="text-center text-sm text-warning">{taxRate}%</TableCell>
@@ -1166,6 +1170,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                               value={item.quantity}
                               onChange={(e) => handleInventoryItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)}
                               className="h-8 text-sm text-center w-20"
+                              disabled={isViewingExisting && !canEditInvoice}
                             />
                           </TableCell>
                           <TableCell className="text-center text-sm text-muted-foreground">{item.available_quantity}</TableCell>
@@ -1178,6 +1183,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                               placeholder="0"
                               className="h-8 text-sm text-center w-24"
                               dir="ltr"
+                              disabled={isViewingExisting && !canEditInvoice}
                             />
                           </TableCell>
                           <TableCell className="text-center text-sm font-medium">{formatCurrency(calcItem?.baseAmount || 0)}</TableCell>
@@ -1289,9 +1295,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           <div className="p-4 bg-muted/50 border-t flex flex-wrap gap-2 justify-between">
             <div className="flex flex-wrap gap-2">
               {isViewingExisting ? (
-                <Button onClick={handleUpdateSale} className="gap-2 gradient-success" disabled={updateSale.isPending}>
+                <Button onClick={handleUpdateSale} className="gap-2 gradient-success" disabled={updateSale.isPending || !canEditInvoice}>
                   <Save className="w-4 h-4" />
-                  {updateSale.isPending ? t.inv_saving : t.inv_save_changes}
+                  {!canEditInvoice ? t.inv_no_edit_permission || 'لا تملك صلاحية التعديل' : updateSale.isPending ? t.inv_saving : t.inv_save_changes}
                 </Button>
               ) : (
                 <Button onClick={handleSubmit} className="gap-2 gradient-success" disabled={addMultiCarSale.isPending}>
