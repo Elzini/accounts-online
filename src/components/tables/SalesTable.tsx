@@ -193,7 +193,7 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
             return (
               <MobileCard key={sale.id}>
                 <MobileCardHeader
-                  title={`${t.th_sale_number} ${sale.sale_number}`}
+                  title={`INV-${sale.sale_number}`}
                   subtitle={sale.customer?.name || t.unspecified_customer}
                   actions={<SaleActions sale={sale} />}
                 />
@@ -311,7 +311,15 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
                 
                 return (
                 <TableRow key={sale.id} className="hover:bg-muted/30 transition-colors">
-                  <TableCell className="font-medium">{sale.sale_number}</TableCell>
+                  <TableCell>
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <Hash className="w-3.5 h-3.5 text-primary" />
+                        <span className="font-bold text-primary">INV-{sale.sale_number}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{t.th_voucher || 'سند'}: {sale.sale_number}</p>
+                    </div>
+                  </TableCell>
                   <TableCell className="font-semibold">{sale.customer?.name || '-'}</TableCell>
                   <TableCell>
                     {isMultiCar ? (
