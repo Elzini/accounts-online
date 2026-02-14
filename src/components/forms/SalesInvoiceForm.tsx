@@ -14,7 +14,9 @@ import {
   ChevronDown,
   MessageSquare,
   RotateCcw,
-  Package
+  Package,
+  CheckCircle,
+  FileEdit
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,7 +43,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
-import { useCustomers, useCars, useAddMultiCarSale, useSales, useDeleteSale, useReverseSale, useUpdateSale, useSalesWithItems, useUpdateSaleWithItems } from '@/hooks/useDatabase';
+import { useCustomers, useCars, useAddMultiCarSale, useSales, useDeleteSale, useReverseSale, useUpdateSale, useSalesWithItems, useUpdateSaleWithItems, useApproveSale } from '@/hooks/useDatabase';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -104,10 +106,11 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const updateSale = useUpdateSale();
   const updateSaleWithItems = useUpdateSaleWithItems();
   const addInstallmentSale = useAddInstallmentSale();
+  const approveSale = useApproveSale();
   const companyId = useCompanyId();
   const { t, language } = useLanguage();
   const { permissions } = useAuth();
-  const canEditInvoice = permissions.edit_sales_invoice || permissions.admin || permissions.super_admin;
+  // Draft/approved status tracking (moved after isViewingExisting state below)
   // Inventory hooks
   const { data: inventoryItems = [] } = useItems();
   const { data: units = [] } = useUnits();
@@ -178,6 +181,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const [currentSaleId, setCurrentSaleId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [currentSaleStatus, setCurrentSaleStatus] = useState<'draft' | 'approved'>('draft');
+  const isApproved = isViewingExisting && currentSaleStatus === 'approved';
 
   // Inventory items state (for non-car companies)
   const [selectedInventoryItems, setSelectedInventoryItems] = useState<SelectedInventoryItem[]>([]);
@@ -400,8 +406,11 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
         }
 
         setSavedSaleData({ ...sale, customer: selectedCustomer, cars: selectedCars });
-        toast.success(t.inv_toast_sale_success);
-        setInvoiceOpen(true);
+        toast.success(t.inv_draft_saved);
+        // Load the saved draft for viewing/approving
+        setIsViewingExisting(true);
+        setCurrentSaleId(sale.id);
+        setCurrentSaleStatus('draft');
       } catch (error: any) {
         console.error('Sale error:', error);
         toast.error(t.inv_toast_sale_error);
@@ -499,6 +508,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     setSavedSaleData(null);
     setIsViewingExisting(false);
     setCurrentSaleId(null);
+    setCurrentSaleStatus('draft');
   };
 
   const handleCloseInvoice = (open: boolean) => {
@@ -543,6 +553,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const loadSaleData = async (sale: any) => {
     setIsViewingExisting(true);
     setCurrentSaleId(sale.id);
+    setCurrentSaleStatus(sale.status === 'approved' ? 'approved' : 'draft');
     
     setInvoiceData({
       invoice_number: sale.sale_number || '',
@@ -677,6 +688,19 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     }
   };
 
+  const handleApproveSale = async () => {
+    if (!currentSaleId) return;
+    try {
+      await approveSale.mutateAsync(currentSaleId);
+      setCurrentSaleStatus('approved');
+      toast.success(t.inv_approved_success);
+      setApproveDialogOpen(false);
+    } catch (error) {
+      console.error('Approve sale error:', error);
+      toast.error(t.inv_approved_error);
+    }
+  };
+
   const handlePrintExisting = () => {
     if (!currentSaleId) return;
     const sale = salesWithItems.find(s => s.id === currentSaleId) || existingSales.find(s => s.id === currentSaleId);
@@ -731,6 +755,11 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             <div className="flex items-center gap-3">
               <FileText className="w-6 h-6" />
               <h1 className="text-xl font-bold">{t.inv_sales_invoice}</h1>
+              {isViewingExisting && (
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${currentSaleStatus === 'approved' ? 'bg-success-foreground/20 text-success-foreground' : 'bg-warning/20 text-warning-foreground'}`}>
+                  {currentSaleStatus === 'approved' ? t.inv_status_approved : t.inv_status_draft}
+                </span>
+              )}
             </div>
             <Button 
               variant="ghost" 
@@ -838,7 +867,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   onChange={(e) => setInvoiceData({ ...invoiceData, sale_date: e.target.value })}
                   className="h-9 text-sm"
                   dir="ltr"
-                  disabled={isViewingExisting && !canEditInvoice}
+                  disabled={isApproved}
                 />
               </div>
               <div className="space-y-1">
@@ -883,7 +912,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   id="price_includes_tax"
                   checked={invoiceData.price_includes_tax}
                   onCheckedChange={(checked) => setInvoiceData({ ...invoiceData, price_includes_tax: !!checked })}
-                  disabled={isViewingExisting && !canEditInvoice}
+                  disabled={isApproved}
                 />
                 <Label htmlFor="price_includes_tax" className="text-xs cursor-pointer">
                   {t.inv_price_includes_tax}
@@ -1065,7 +1094,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                           <TableCell className="text-center text-sm">1</TableCell>
                           <TableCell className="text-center text-sm">{t.inv_car_unit}</TableCell>
                           <TableCell>
-                            <Input type="number" value={car.sale_price} onChange={(e) => handleCarChange(car.id, 'sale_price', e.target.value)} placeholder="0" className="h-8 text-sm text-center w-24" dir="ltr" disabled={isViewingExisting && !canEditInvoice} />
+                            <Input type="number" value={car.sale_price} onChange={(e) => handleCarChange(car.id, 'sale_price', e.target.value)} placeholder="0" className="h-8 text-sm text-center w-24" dir="ltr" disabled={isApproved} />
                           </TableCell>
                           <TableCell className="text-center text-sm font-medium">{formatCurrency(calcItem?.baseAmount || 0)}</TableCell>
                           <TableCell className="text-center text-sm text-warning">{taxRate}%</TableCell>
@@ -1170,7 +1199,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                               value={item.quantity}
                               onChange={(e) => handleInventoryItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)}
                               className="h-8 text-sm text-center w-20"
-                              disabled={isViewingExisting && !canEditInvoice}
+                              disabled={isApproved}
                             />
                           </TableCell>
                           <TableCell className="text-center text-sm text-muted-foreground">{item.available_quantity}</TableCell>
@@ -1183,7 +1212,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                               placeholder="0"
                               className="h-8 text-sm text-center w-24"
                               dir="ltr"
-                              disabled={isViewingExisting && !canEditInvoice}
+                              disabled={isApproved}
                             />
                           </TableCell>
                           <TableCell className="text-center text-sm font-medium">{formatCurrency(calcItem?.baseAmount || 0)}</TableCell>
@@ -1295,14 +1324,30 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           <div className="p-4 bg-muted/50 border-t flex flex-wrap gap-2 justify-between">
             <div className="flex flex-wrap gap-2">
               {isViewingExisting ? (
-                <Button onClick={handleUpdateSale} className="gap-2 gradient-success" disabled={updateSale.isPending || !canEditInvoice}>
-                  <Save className="w-4 h-4" />
-                  {!canEditInvoice ? t.inv_no_edit_permission || 'لا تملك صلاحية التعديل' : updateSale.isPending ? t.inv_saving : t.inv_save_changes}
-                </Button>
+                <>
+                  {!isApproved && (
+                    <Button onClick={handleUpdateSale} className="gap-2 gradient-success" disabled={updateSale.isPending}>
+                      <Save className="w-4 h-4" />
+                      {updateSale.isPending ? t.inv_saving : t.inv_save_changes}
+                    </Button>
+                  )}
+                  {!isApproved && (
+                    <Button onClick={() => setApproveDialogOpen(true)} className="gap-2 bg-primary hover:bg-primary/90" disabled={approveSale.isPending}>
+                      <CheckCircle className="w-4 h-4" />
+                      {approveSale.isPending ? t.inv_approving : t.inv_approve_invoice}
+                    </Button>
+                  )}
+                  {isApproved && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-success/10 text-success rounded-md border border-success/20">
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="text-sm font-medium">{t.inv_status_approved}</span>
+                    </div>
+                  )}
+                </>
               ) : (
                 <Button onClick={handleSubmit} className="gap-2 gradient-success" disabled={addMultiCarSale.isPending}>
-                  <Save className="w-4 h-4" />
-                  {addMultiCarSale.isPending ? t.inv_saving : t.inv_approve}
+                  <FileEdit className="w-4 h-4" />
+                  {addMultiCarSale.isPending ? t.inv_saving : t.inv_save_draft}
                 </Button>
               )}
               <Button variant="outline" onClick={handleNewInvoice} className="gap-2">
@@ -1434,6 +1479,30 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               className="bg-orange-600 text-white hover:bg-orange-700"
             >
               {reverseSale.isPending ? t.inv_returning : t.inv_return_invoice_btn}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Approve Confirmation Dialog */}
+      <AlertDialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
+        <AlertDialogContent dir={dir}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-success" />
+              {t.inv_approve_confirm}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.inv_approve_confirm_desc}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleApproveSale}
+              className="bg-success text-success-foreground hover:bg-success/90"
+            >
+              {approveSale.isPending ? t.inv_approving : t.inv_approve_invoice}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

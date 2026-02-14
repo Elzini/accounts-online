@@ -401,3 +401,21 @@ export function useDeleteMultiCarSale() {
     },
   });
 }
+
+export function useApproveSale() {
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+  
+  return useMutation({
+    mutationFn: (saleId: string) => db.approveSale(saleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['sales-with-items', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['cars', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['stats', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
+    },
+  });
+}

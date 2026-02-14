@@ -1108,7 +1108,7 @@ export async function addMultiCarSale(saleData: MultiCarSaleData) {
   // Use the first car as the primary car for the sale record
   const primaryCar = saleData.cars[0];
 
-  // Create the main sale record
+  // Create the main sale record as DRAFT
   const { data: sale, error: saleError } = await supabase
     .from('sales')
     .insert({
@@ -1122,6 +1122,7 @@ export async function addMultiCarSale(saleData: MultiCarSaleData) {
       sale_date: saleData.sale_date,
       company_id: companyId,
       payment_account_id: saleData.payment_account_id || null,
+      status: 'draft',
     })
     .select()
     .single();
@@ -1148,6 +1149,25 @@ export async function addMultiCarSale(saleData: MultiCarSaleData) {
   }
 
   return sale;
+}
+
+// Approve a draft sale (changes status to approved, triggers journal entry)
+export async function approveSale(saleId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  const { data, error } = await supabase
+    .from('sales')
+    .update({ 
+      status: 'approved',
+      approved_at: new Date().toISOString(),
+      approved_by: user?.id || null,
+    })
+    .eq('id', saleId)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
 }
 
 export async function fetchSalesWithItems() {
