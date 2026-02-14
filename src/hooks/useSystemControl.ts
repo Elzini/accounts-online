@@ -203,6 +203,7 @@ export function useDashboardConfig() {
     queryKey: ['dashboard-config', companyId],
     queryFn: () => companyId ? fetchDashboardConfig(companyId) : null,
     enabled: !!companyId,
+    staleTime: 1000 * 60 * 10, // 10 minutes - config rarely changes
   });
 }
 

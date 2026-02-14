@@ -21,7 +21,16 @@ import Register from "./pages/Register";
 import Companies from "./pages/Companies";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2, // 2 minutes - avoid redundant refetches
+      gcTime: 1000 * 60 * 10, // 10 minutes garbage collection
+      refetchOnWindowFocus: false, // Don't refetch on tab switch
+      retry: 1, // Only retry once on failure
+    },
+  },
+});
 
 function LoadingSpinner() {
   return (
