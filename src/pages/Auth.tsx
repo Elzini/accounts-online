@@ -344,7 +344,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
           {/* Company Name Display */}
           {mode === 'company' && companyName && emailConfirmed && (
-            <div className="bg-white/[0.05] backdrop-blur-sm border border-white/10 rounded-xl p-3.5 text-center mb-3">
+            <div className="bg-[hsl(215,30%,20%)] border-2 border-white/20 rounded-xl p-3.5 text-center mb-3">
               <p className="text-[11px] text-white/40 mb-0.5">{t.company_label}</p>
               <p className="text-sm font-semibold text-white">{companyName}</p>
             </div>
@@ -354,12 +354,12 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           {showPasswordAndFiscalYear && mode === 'company' && fiscalYears.length > 0 && (
             <div className="mb-3">
               <div className="relative">
-                <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 z-10 pointer-events-none" />
+                <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 z-10 pointer-events-none" />
                 <Select
                   value={selectedFiscalYearId}
                   onValueChange={setSelectedFiscalYearId}
                 >
-                  <SelectTrigger className="h-12 pr-10 text-right bg-white/[0.07] backdrop-blur-sm border-white/10 text-white hover:bg-white/[0.1] rounded-xl">
+                  <SelectTrigger className="h-12 pr-10 text-right bg-[hsl(215,30%,20%)] border-2 border-white/20 text-white hover:border-white/30 rounded-xl focus:outline-none focus:ring-0">
                     <SelectValue placeholder={t.fiscal_year_select} />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
@@ -403,7 +403,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             <Button
               type="button"
               onClick={fetchFiscalYearsForEmail}
-              className="w-full h-12 bg-[hsl(210,70%,50%)] hover:bg-[hsl(210,70%,45%)] text-white font-bold tracking-wider rounded-xl shadow-lg shadow-[hsl(210,70%,50%)]/20 transition-all"
+              className="w-full h-12 bg-[hsl(210,70%,50%)] hover:bg-[hsl(210,70%,45%)] text-white font-bold tracking-wider rounded-xl border-2 border-[hsl(210,70%,60%)] shadow-none transition-all"
               disabled={fetchingFiscalYears || !email}
             >
               {fetchingFiscalYears ? (
@@ -421,7 +421,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           {showPasswordAndFiscalYear && (
             <Button
               type="submit"
-              className="w-full h-12 bg-[hsl(210,70%,50%)] hover:bg-[hsl(210,70%,45%)] text-white font-bold tracking-wider rounded-xl shadow-lg shadow-[hsl(210,70%,50%)]/20 transition-all"
+              className="w-full h-12 bg-[hsl(210,70%,50%)] hover:bg-[hsl(210,70%,45%)] text-white font-bold tracking-wider rounded-xl border-2 border-[hsl(210,70%,60%)] shadow-none transition-all"
               disabled={loading}
             >
               {loading ? (
