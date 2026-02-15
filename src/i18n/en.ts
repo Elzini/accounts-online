@@ -417,6 +417,13 @@ export const en: TranslationKeys = {
   industry_sale_operation: 'sale',
   industry_materials: 'Materials',
   industry_inventory: 'Inventory',
+  industry_medicine: 'Medicine',
+  industry_medicines: 'Medicines',
+  industry_medicine_unit: 'medicine',
+  industry_available_medicines: 'Available Medicines',
+  industry_medicine_in_stock: 'medicine in stock',
+  industry_total_medical_purchases: 'Total Medical Purchases',
+  industry_medical_inventory: 'Medical Inventory',
 
   // Riyal
   riyal: 'SAR',
