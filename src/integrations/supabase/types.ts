@@ -1862,43 +1862,64 @@ export type Database = {
       companies: {
         Row: {
           address: string | null
+          api_calls_count: number | null
           company_type: Database["public"]["Enums"]["company_activity_type"]
+          country: string | null
           created_at: string
+          database_size_mb: number | null
+          employee_count: number | null
           id: string
+          industry: string | null
           invoice_logo_url: string | null
           invoice_settings: Json | null
           is_active: boolean
+          last_activity_at: string | null
           logo_url: string | null
           name: string
           phone: string | null
+          risk_level: string | null
           subdomain: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
+          api_calls_count?: number | null
           company_type?: Database["public"]["Enums"]["company_activity_type"]
+          country?: string | null
           created_at?: string
+          database_size_mb?: number | null
+          employee_count?: number | null
           id?: string
+          industry?: string | null
           invoice_logo_url?: string | null
           invoice_settings?: Json | null
           is_active?: boolean
+          last_activity_at?: string | null
           logo_url?: string | null
           name: string
           phone?: string | null
+          risk_level?: string | null
           subdomain?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
+          api_calls_count?: number | null
           company_type?: Database["public"]["Enums"]["company_activity_type"]
+          country?: string | null
           created_at?: string
+          database_size_mb?: number | null
+          employee_count?: number | null
           id?: string
+          industry?: string | null
           invoice_logo_url?: string | null
           invoice_settings?: Json | null
           is_active?: boolean
+          last_activity_at?: string | null
           logo_url?: string | null
           name?: string
           phone?: string | null
+          risk_level?: string | null
           subdomain?: string | null
           updated_at?: string
         }
@@ -6583,6 +6604,84 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          billing_period_end: string | null
+          billing_period_start: string | null
+          company_id: string
+          created_at: string
+          currency: string
+          gateway_fee: number | null
+          id: string
+          invoice_number: string | null
+          net_amount: number | null
+          notes: string | null
+          paid_at: string | null
+          payment_method: string | null
+          payment_reference: string | null
+          status: string
+          subscription_id: string | null
+          tax_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          billing_period_end?: string | null
+          billing_period_start?: string | null
+          company_id: string
+          created_at?: string
+          currency?: string
+          gateway_fee?: number | null
+          id?: string
+          invoice_number?: string | null
+          net_amount?: number | null
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          status?: string
+          subscription_id?: string | null
+          tax_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          billing_period_end?: string | null
+          billing_period_start?: string | null
+          company_id?: string
+          created_at?: string
+          currency?: string
+          gateway_fee?: number | null
+          id?: string
+          invoice_number?: string | null
+          net_amount?: number | null
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          status?: string
+          subscription_id?: string | null
+          tax_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payroll_items: {
         Row: {
           absence_amount: number
@@ -6785,6 +6884,72 @@ export type Database = {
           test_description?: string
           test_type?: string
           tested_by?: string | null
+        }
+        Relationships: []
+      }
+      plans: {
+        Row: {
+          created_at: string
+          currency: string
+          description: string | null
+          feature_flags: Json | null
+          features: Json | null
+          id: string
+          is_active: boolean
+          is_trial: boolean
+          max_invoices: number | null
+          max_storage_mb: number
+          max_users: number
+          module_limits: Json | null
+          name: string
+          name_en: string | null
+          price_monthly: number
+          price_yearly: number
+          sort_order: number | null
+          trial_days: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          description?: string | null
+          feature_flags?: Json | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          is_trial?: boolean
+          max_invoices?: number | null
+          max_storage_mb?: number
+          max_users?: number
+          module_limits?: Json | null
+          name: string
+          name_en?: string | null
+          price_monthly?: number
+          price_yearly?: number
+          sort_order?: number | null
+          trial_days?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          description?: string | null
+          feature_flags?: Json | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          is_trial?: boolean
+          max_invoices?: number | null
+          max_storage_mb?: number
+          max_users?: number
+          module_limits?: Json | null
+          name?: string
+          name_en?: string | null
+          price_monthly?: number
+          price_yearly?: number
+          sort_order?: number | null
+          trial_days?: number | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -9322,47 +9487,65 @@ export type Database = {
       subscriptions: {
         Row: {
           amount: number
+          auto_renew: boolean | null
           billing_cycle: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
           company_id: string
           created_at: string
           customer_id: string | null
           end_date: string | null
           id: string
+          mrr: number | null
           next_billing_date: string | null
           notes: string | null
+          plan_id: string | null
           plan_name: string
           start_date: string
           status: string
+          trial_end_date: string | null
           updated_at: string
         }
         Insert: {
           amount?: number
+          auto_renew?: boolean | null
           billing_cycle?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           company_id: string
           created_at?: string
           customer_id?: string | null
           end_date?: string | null
           id?: string
+          mrr?: number | null
           next_billing_date?: string | null
           notes?: string | null
+          plan_id?: string | null
           plan_name: string
           start_date?: string
           status?: string
+          trial_end_date?: string | null
           updated_at?: string
         }
         Update: {
           amount?: number
+          auto_renew?: boolean | null
           billing_cycle?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           company_id?: string
           created_at?: string
           customer_id?: string | null
           end_date?: string | null
           id?: string
+          mrr?: number | null
           next_billing_date?: string | null
           notes?: string | null
+          plan_id?: string | null
           plan_name?: string
           start_date?: string
           status?: string
+          trial_end_date?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -9371,6 +9554,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
             referencedColumns: ["id"]
           },
         ]
@@ -9418,6 +9608,41 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_ticket_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          sender_id: string
+          sender_type: string
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          sender_id: string
+          sender_type?: string
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          sender_id?: string
+          sender_type?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
             referencedColumns: ["id"]
           },
         ]
@@ -9477,6 +9702,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "support_tickets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_activity_logs: {
+        Row: {
+          activity_type: string
+          company_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          activity_type: string
+          company_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          activity_type?: string
+          company_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_activity_logs_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
