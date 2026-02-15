@@ -162,9 +162,15 @@ serve(async (req) => {
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100);
     const offset = (page - 1) * limit;
-    const orderBy = url.searchParams.get('order_by') || 'created_at';
+    // Validate order_by against allowed columns
+    const ALLOWED_ORDER_COLUMNS = ['created_at', 'updated_at', 'name', 'id', 'status', 'amount', 'date'];
+    const rawOrderBy = url.searchParams.get('order_by') || 'created_at';
+    const orderBy = ALLOWED_ORDER_COLUMNS.includes(rawOrderBy) ? rawOrderBy : 'created_at';
     const orderDir = url.searchParams.get('order_dir') === 'asc' ? true : false;
-    const searchQuery = url.searchParams.get('search') || '';
+    
+    // Sanitize search query: allow letters, digits, spaces, hyphens, Arabic chars only
+    const rawSearch = url.searchParams.get('search') || '';
+    const searchQuery = rawSearch.replace(/[^a-zA-Z0-9\s\-\u0600-\u06FF]/g, '').slice(0, 100);
 
     switch (method) {
       case 'GET': {
@@ -193,8 +199,7 @@ serve(async (req) => {
 
         // Apply search if provided
         if (searchQuery) {
-          // Search across common text fields
-          query = query.or(`name.ilike.%${searchQuery}%`);
+          query = query.ilike('name', `%${searchQuery}%`);
         }
 
         const { data, error, count } = await query;
