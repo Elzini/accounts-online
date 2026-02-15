@@ -315,7 +315,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={handleEmailKeyDown}
                 placeholder={t.email_placeholder || "Login ID"}
-                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/40 bg-transparent outline-none border-none"
+                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/40 bg-transparent outline-none border-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                 dir="ltr"
                 required
               />
@@ -332,7 +332,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={t.password_placeholder || "Password"}
-                  className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/40 bg-transparent outline-none border-none"
+                  className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/40 bg-transparent outline-none border-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                   dir="ltr"
                   required
                   minLength={6}
