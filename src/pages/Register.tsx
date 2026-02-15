@@ -19,7 +19,7 @@ const companyTypes: { value: CompanyActivityType; label: string; icon: React.Rea
   { value: 'general_trading', label: 'تجارة عامة', icon: <Package className="w-4 h-4" /> },
   { value: 'restaurant', label: 'مطاعم وكافيهات', icon: <Package className="w-4 h-4" /> },
   { value: 'export_import', label: 'تصدير واستيراد', icon: <Package className="w-4 h-4" /> },
-  { value: 'medical', label: 'طبية / صيدلية', icon: <Package className="w-4 h-4" /> },
+  { value: 'medical', label: 'تجارة أدوية وأدوات طبية', icon: <Package className="w-4 h-4" /> },
 ];
 
 export default function Register() {

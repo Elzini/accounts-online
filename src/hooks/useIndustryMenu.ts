@@ -85,13 +85,13 @@ export function getIndustryLabels(companyType: CompanyActivityType) {
       itemsName: 'الشحنات',
     },
     medical: {
-      purchases: 'الأدوية والمنتجات',
+      purchases: 'الأدوية والأدوات الطبية',
       sales: 'المبيعات',
       inventory: 'المخزون الطبي',
-      purchasesDescription: 'إضافة أدوية / مستلزمات',
+      purchasesDescription: 'إضافة أدوية / أدوات طبية',
       salesDescription: 'إضافة فاتورة مبيعات',
-      itemName: 'الدواء',
-      itemsName: 'الأدوية',
+      itemName: 'المنتج الطبي',
+      itemsName: 'المنتجات الطبية',
     },
   };
 
