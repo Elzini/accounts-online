@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Lock, Shield, Building2, Calendar, Loader2 } from 'lucide-react';
+import { Mail, Lock, Shield, Building2, Calendar, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -305,9 +305,9 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           {/* Input Fields */}
           <div className="space-y-3 mb-4">
             {/* Email Input */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors focus-within:border-[hsl(210,70%,50%)]/50 focus-within:ring-1 focus-within:ring-[hsl(210,70%,50%)]/20">
+            <div className="bg-[hsl(215,30%,20%)] border-2 border-white/20 rounded-xl flex items-center hover:border-white/30 transition-colors focus-within:border-[hsl(210,70%,50%)] focus-within:ring-2 focus-within:ring-[hsl(210,70%,50%)]/30">
               <div className="px-4 py-3.5">
-                <User className="w-5 h-5 text-white/30" />
+                <Mail className="w-5 h-5 text-white/50" />
               </div>
               <input
                 type="email"
@@ -315,7 +315,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={handleEmailKeyDown}
                 placeholder={t.email_placeholder || "Login ID"}
-                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none"
+                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/40 bg-transparent outline-none border-none"
                 dir="ltr"
                 required
               />
@@ -323,16 +323,16 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
             {/* Password Input */}
             {showPasswordAndFiscalYear && (
-              <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors focus-within:border-[hsl(210,70%,50%)]/50 focus-within:ring-1 focus-within:ring-[hsl(210,70%,50%)]/20">
+              <div className="bg-[hsl(215,30%,20%)] border-2 border-white/20 rounded-xl flex items-center hover:border-white/30 transition-colors focus-within:border-[hsl(210,70%,50%)] focus-within:ring-2 focus-within:ring-[hsl(210,70%,50%)]/30">
                 <div className="px-4 py-3.5">
-                  <Lock className="w-5 h-5 text-white/30" />
+                  <Lock className="w-5 h-5 text-white/50" />
                 </div>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={t.password_placeholder || "Password"}
-                  className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none"
+                  className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/40 bg-transparent outline-none border-none"
                   dir="ltr"
                   required
                   minLength={6}
