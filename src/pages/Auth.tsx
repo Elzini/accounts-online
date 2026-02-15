@@ -305,9 +305,9 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           {/* Input Fields */}
           <div className="space-y-3 mb-4">
             {/* Email Input */}
-            <div className="bg-[hsl(215,30%,20%)] border-2 border-white/20 rounded-xl flex items-center hover:border-white/30 transition-colors">
-              <div className="px-4 py-3.5">
-                <Mail className="w-5 h-5 text-white/50" />
+            <div className="border-b-2 border-white/20 flex items-center hover:border-white/30 transition-colors">
+              <div className="px-3 py-3">
+                <Mail className="w-5 h-5 text-white/40" />
               </div>
               <input
                 type="email"
@@ -315,7 +315,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={handleEmailKeyDown}
                 placeholder={t.email_placeholder || "Login ID"}
-                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/40 bg-transparent outline-none border-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                className="flex-1 py-3 pr-3 text-sm text-white placeholder:text-white/40 bg-transparent outline-none border-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                 dir="ltr"
                 required
               />
@@ -323,16 +323,16 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
             {/* Password Input */}
             {showPasswordAndFiscalYear && (
-              <div className="bg-[hsl(215,30%,20%)] border-2 border-white/20 rounded-xl flex items-center hover:border-white/30 transition-colors">
-                <div className="px-4 py-3.5">
-                  <Lock className="w-5 h-5 text-white/50" />
+              <div className="border-b-2 border-white/20 flex items-center hover:border-white/30 transition-colors">
+                <div className="px-3 py-3">
+                  <Lock className="w-5 h-5 text-white/40" />
                 </div>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={t.password_placeholder || "Password"}
-                  className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/40 bg-transparent outline-none border-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                  className="flex-1 py-3 pr-3 text-sm text-white placeholder:text-white/40 bg-transparent outline-none border-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                   dir="ltr"
                   required
                   minLength={6}
