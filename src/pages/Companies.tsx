@@ -383,7 +383,7 @@ export default function Companies() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="companies" className="space-y-6">
+        <Tabs defaultValue="admin-dashboard" className="space-y-6">
           <TabsList className="grid w-full grid-cols-9 lg:w-auto lg:inline-grid">
             <TabsTrigger value="companies" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
