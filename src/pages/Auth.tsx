@@ -284,7 +284,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={handleEmailKeyDown}
                 placeholder={t.email_placeholder || "أدخل اسم المستخدم"}
-                className="flex-1 border-b-2 border-[hsl(210,15%,80%)] py-2.5 px-1 text-sm text-[hsl(215,30%,20%)] placeholder:text-[hsl(210,15%,70%)] bg-transparent outline-none focus:border-[hsl(210,70%,50%)] transition-colors"
+                className="flex-1 border-b-2 border-[hsl(210,15%,80%)] py-2.5 px-1 text-sm text-[hsl(215,30%,20%)] placeholder:text-[hsl(210,15%,70%)] bg-transparent outline-none focus:border-[hsl(210,70%,50%)] focus:bg-[hsl(210,50%,97%)] transition-colors"
                 dir="rtl"
                 required
               />
@@ -301,7 +301,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={t.password_placeholder || "أدخل كلمة المرور"}
-                  className="flex-1 border-b-2 border-[hsl(210,15%,80%)] py-2.5 px-1 text-sm text-[hsl(215,30%,20%)] placeholder:text-[hsl(210,15%,70%)] bg-transparent outline-none focus:border-[hsl(210,70%,50%)] transition-colors"
+                  className="flex-1 border-b-2 border-[hsl(210,15%,80%)] py-2.5 px-1 text-sm text-[hsl(215,30%,20%)] placeholder:text-[hsl(210,15%,70%)] bg-transparent outline-none focus:border-[hsl(210,70%,50%)] focus:bg-[hsl(210,50%,97%)] transition-colors"
                   dir="rtl"
                   required
                   minLength={6}
@@ -329,7 +329,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                   value={selectedFiscalYearId}
                   onValueChange={setSelectedFiscalYearId}
                 >
-                  <SelectTrigger className="flex-1 h-10 text-right bg-transparent border-b-2 border-[hsl(210,15%,80%)] rounded-none text-[hsl(215,30%,20%)] focus:outline-none focus:ring-0 focus:border-[hsl(210,70%,50%)] shadow-none">
+                  <SelectTrigger className="flex-1 h-10 text-right bg-transparent border-b-2 border-[hsl(210,15%,80%)] rounded-none text-[hsl(215,30%,20%)] focus:ring-2 focus:ring-[hsl(210,70%,50%)]/30 focus:border-[hsl(210,70%,50%)] shadow-none">
                     <SelectValue placeholder={t.fiscal_year_select} />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
