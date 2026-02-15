@@ -7,6 +7,7 @@ export interface Trip {
   trip_number: number;
   customer_name: string;
   customer_phone: string;
+  customer_email?: string;
   destination: string;
   departure_point: string;
   trip_date: string;
@@ -29,6 +30,7 @@ export interface TripPassenger {
   trip_id: string;
   passenger_name: string;
   passenger_phone?: string;
+  passenger_email?: string;
   notes?: string;
   created_at: string;
 }
@@ -38,6 +40,7 @@ export interface CreateTripData {
   fiscal_year_id?: string;
   customer_name: string;
   customer_phone: string;
+  customer_email?: string;
   destination: string;
   departure_point: string;
   trip_date: string;

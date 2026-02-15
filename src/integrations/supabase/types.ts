@@ -10186,6 +10186,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          passenger_email: string | null
           passenger_name: string
           passenger_phone: string | null
           trip_id: string
@@ -10194,6 +10195,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          passenger_email?: string | null
           passenger_name: string
           passenger_phone?: string | null
           trip_id: string
@@ -10202,6 +10204,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          passenger_email?: string | null
           passenger_name?: string
           passenger_phone?: string | null
           trip_id?: string
@@ -10221,6 +10224,7 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string | null
+          customer_email: string | null
           customer_name: string
           customer_phone: string
           departure_point: string
@@ -10244,6 +10248,7 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by?: string | null
+          customer_email?: string | null
           customer_name: string
           customer_phone: string
           departure_point: string
@@ -10267,6 +10272,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string | null
+          customer_email?: string | null
           customer_name?: string
           customer_phone?: string
           departure_point?: string
