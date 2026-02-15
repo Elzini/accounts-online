@@ -14,31 +14,42 @@ export default function AuthChoice() {
 
   if (onAdminSubdomain) {
     return (
-      <div
-        className="min-h-screen flex flex-col items-center justify-center relative"
-        style={{
-          backgroundImage: `url(${loginBg})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        <div className="absolute inset-0 bg-[hsl(215,50%,15%)]/75" />
-        <div className="relative z-10 w-full max-w-md px-4 text-center">
-          <div className="w-24 h-24 rounded-full border-2 border-white/30 flex items-center justify-center mx-auto mb-6 bg-white/5 backdrop-blur-sm">
-            <Shield className="w-10 h-10 text-amber-400" />
+      <div className="min-h-screen bg-[hsl(210,15%,90%)] flex items-center justify-center p-4">
+        <div className="w-full max-w-lg bg-white rounded-lg shadow-xl overflow-hidden">
+          {/* Header */}
+          <div
+            className="relative h-40 flex items-center justify-center"
+            style={{
+              backgroundImage: `url(${loginBg})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            <div className="absolute inset-0 bg-[hsl(215,50%,35%)]/40" />
+            <div className="relative z-10 flex flex-col items-center gap-2">
+              <Shield className="w-10 h-10 text-amber-400" />
+              <h1 className="text-2xl font-bold text-white tracking-wide uppercase">مدير النظام</h1>
+              <p className="text-white/70 text-sm">لوحة تحكم مدير النظام</p>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">مدير النظام</h1>
-          <p className="text-white/60 mb-6">لوحة تحكم مدير النظام</p>
-          <Link to="/auth/super-admin">
-            <Button className="w-full h-12 bg-[hsl(210,70%,50%)] hover:bg-[hsl(210,70%,45%)] text-white font-bold uppercase tracking-wider">
-              تسجيل الدخول
-            </Button>
-          </Link>
-        </div>
-        <div className="absolute bottom-4 left-0 right-0 text-center z-10">
-          <p className="text-xs text-white/30">
-            © Copyright {new Date().getFullYear()} by <span className="text-blue-300/50">Elzini SaaS</span>. All Rights Reserved.
-          </p>
+
+          {/* Content */}
+          <div className="p-8">
+            <div className="flex justify-center">
+              <Link to="/auth/super-admin">
+                <Button className="px-12 h-11 bg-[hsl(140,50%,45%)] hover:bg-[hsl(140,50%,40%)] text-white font-bold tracking-wider rounded-full border-none shadow-md transition-all">
+                  تسجيل الدخول
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="py-3 text-center border-t border-[hsl(210,15%,90%)]">
+            <p className="text-[11px] text-[hsl(215,15%,65%)]">
+              © Copyright {new Date().getFullYear()} by <span className="text-[hsl(210,70%,50%)]">Elzini SaaS</span>. All Rights Reserved.
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -51,59 +62,59 @@ export default function AuthChoice() {
   };
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center relative"
-      style={{
-        backgroundImage: `url(${loginBg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    >
-      <div className="absolute inset-0 bg-[hsl(215,50%,15%)]/75" />
-
-      <div className="relative z-10 w-full max-w-2xl px-4">
-        {/* Logo & Title */}
-        <div className="text-center mb-8">
-          <div className="w-24 h-24 rounded-full border-2 border-white/30 flex items-center justify-center mx-auto mb-4 overflow-hidden bg-white/5 backdrop-blur-sm">
-            {!logoLoading ? (
-              <img src={settings.login_logo_url || logo} alt="Logo" className="w-16 h-16 object-contain" />
-            ) : (
-              <div className="w-16 h-16 animate-pulse bg-white/20 rounded-lg" />
+    <div className="min-h-screen bg-[hsl(210,15%,90%)] flex items-center justify-center p-4">
+      {/* Card */}
+      <div className="w-full max-w-lg bg-white rounded-lg shadow-xl overflow-hidden">
+        {/* Header with background image */}
+        <div
+          className="relative h-40 flex items-center justify-center"
+          style={{
+            backgroundImage: `url(${loginBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div className="absolute inset-0 bg-[hsl(215,50%,35%)]/40" />
+          <div className="relative z-10 flex flex-col items-center gap-2">
+            {!logoLoading && (
+              <img src={settings.login_logo_url || logo} alt="Logo" className="w-12 h-12 object-contain" />
             )}
+            <h1 className="text-2xl font-bold text-white tracking-wide">مرحباً بك</h1>
+            <p className="text-white/70 text-sm">اختر طريقة الدخول المناسبة</p>
           </div>
-          <h1 className="text-3xl font-bold text-white">مرحباً بك</h1>
-          <p className="text-white/60 mt-2">اختر طريقة الدخول المناسبة</p>
         </div>
 
-        {/* Choice Cards */}
-        <div className="grid grid-cols-1 gap-6 max-w-md mx-auto">
-          {/* Company Login */}
-          <Link to="/auth/company" className="block">
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 text-center cursor-pointer">
-              <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-4">
-                <Building2 className="w-8 h-8 text-blue-300" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-1">دخول الشركات</h3>
-              <p className="text-white/50 text-sm mb-4">للموظفين ومديري الشركات</p>
-              <Button className="w-full bg-[hsl(210,70%,50%)] hover:bg-[hsl(210,70%,45%)] text-white font-bold">
-                تسجيل الدخول
-              </Button>
-              <p className="text-xs text-white/40 mt-3">
-                أو{' '}
-                <Link to="/register" className="text-blue-300 hover:text-blue-200">
-                  تسجيل شركة جديدة
-                </Link>
-              </p>
+        {/* Content */}
+        <div className="p-8">
+          {/* Company Login Card */}
+          <div className="bg-[hsl(210,15%,96%)] rounded-lg p-6 text-center border border-[hsl(210,15%,88%)]">
+            <div className="w-14 h-14 rounded-full bg-[hsl(210,70%,50%)]/10 flex items-center justify-center mx-auto mb-3">
+              <Building2 className="w-7 h-7 text-[hsl(210,70%,50%)]" />
             </div>
-          </Link>
+            <h3 className="text-lg font-bold text-[hsl(215,40%,25%)] mb-1">دخول الشركات</h3>
+            <p className="text-xs text-[hsl(215,20%,55%)] mb-4">للموظفين ومديري الشركات</p>
+            <div className="flex justify-center">
+              <Link to="/auth/company">
+                <Button className="px-12 h-11 bg-[hsl(140,50%,45%)] hover:bg-[hsl(140,50%,40%)] text-white font-bold tracking-wider rounded-full border-none shadow-md transition-all">
+                  تسجيل الدخول
+                </Button>
+              </Link>
+            </div>
+            <p className="text-xs text-[hsl(215,20%,55%)] mt-4">
+              أو{' '}
+              <Link to="/register" className="text-[hsl(210,70%,50%)] hover:text-[hsl(210,70%,40%)] font-medium">
+                تسجيل شركة جديدة
+              </Link>
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Footer */}
-      <div className="absolute bottom-4 left-0 right-0 text-center z-10">
-        <p className="text-xs text-white/30">
-          © Copyright {new Date().getFullYear()} by <span className="text-blue-300/50">Elzini SaaS</span>. All Rights Reserved.
-        </p>
+        {/* Footer */}
+        <div className="py-3 text-center border-t border-[hsl(210,15%,90%)]">
+          <p className="text-[11px] text-[hsl(215,15%,65%)]">
+            © Copyright {new Date().getFullYear()} by <span className="text-[hsl(210,70%,50%)]">Elzini SaaS</span>. All Rights Reserved.
+          </p>
+        </div>
       </div>
     </div>
   );
