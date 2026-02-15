@@ -84,6 +84,15 @@ export function getIndustryLabels(companyType: CompanyActivityType) {
       itemName: 'الشحنة',
       itemsName: 'الشحنات',
     },
+    medical: {
+      purchases: 'الأدوية والمنتجات',
+      sales: 'المبيعات',
+      inventory: 'المخزون الطبي',
+      purchasesDescription: 'إضافة أدوية / مستلزمات',
+      salesDescription: 'إضافة فاتورة مبيعات',
+      itemName: 'الدواء',
+      itemsName: 'الأدوية',
+    },
   };
 
   return labels[companyType] || labels.car_dealership;

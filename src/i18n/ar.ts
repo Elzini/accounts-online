@@ -417,6 +417,13 @@ export const ar: TranslationKeys = {
   industry_sale_operation: 'عملية بيع',
   industry_materials: 'المواد',
   industry_inventory: 'المخزون',
+  industry_medicine: 'الدواء',
+  industry_medicines: 'الأدوية',
+  industry_medicine_unit: 'دواء',
+  industry_available_medicines: 'الأدوية المتاحة',
+  industry_medicine_in_stock: 'دواء في المخزون',
+  industry_total_medical_purchases: 'إجمالي المشتريات الطبية',
+  industry_medical_inventory: 'المخزون الطبي',
 
   // Riyal
   riyal: 'ريال',

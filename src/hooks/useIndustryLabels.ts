@@ -119,6 +119,25 @@ function buildLabels(companyType: CompanyActivityType, t: TranslationKeys): Reco
       showCommissionsReport: false,
       showInventoryReport: false,
     },
+    medical: {
+      itemName: t.industry_medicine || 'الدواء',
+      itemsName: t.industry_medicines || 'الأدوية',
+      itemUnit: t.industry_medicine_unit || 'دواء',
+      availableItems: t.industry_available_medicines || 'الأدوية المتاحة',
+      availableSubtitle: t.industry_medicine_in_stock || 'دواء في المخزون',
+      totalPurchasesLabel: t.industry_total_medical_purchases || 'إجمالي المشتريات الطبية',
+      allTimePurchasesSubUnit: t.industry_medicine_unit || 'دواء',
+      allTimeSalesSubUnit: t.industry_sale_operation,
+      inventoryLabel: t.industry_medical_inventory || 'المخزون الطبي',
+      inventoryActions: [
+        { label: t.industry_medicines || 'الأدوية', page: 'purchases' },
+        { label: t.inventory_report, page: 'inventory-report' },
+      ],
+      showTransfersReport: false,
+      showPartnerReport: false,
+      showCommissionsReport: false,
+      showInventoryReport: true,
+    },
   };
 }
 
