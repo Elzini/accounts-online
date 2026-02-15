@@ -11525,6 +11525,7 @@ export type Database = {
           iban_masked: string | null
           id: string | null
           id_number_encrypted: string | null
+          id_number_masked: string | null
           is_active: boolean | null
           job_title: string | null
           name: string | null
@@ -11534,41 +11535,43 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          base_salary?: number | null
+          base_salary?: never
           company_id?: string | null
           created_at?: string | null
           employee_number?: number | null
           hire_date?: string | null
-          housing_allowance?: number | null
+          housing_allowance?: never
           iban_encrypted?: never
           iban_masked?: never
           id?: string | null
           id_number_encrypted?: never
+          id_number_masked?: never
           is_active?: boolean | null
           job_title?: string | null
           name?: string | null
           notes?: string | null
           phone_masked?: never
-          transport_allowance?: number | null
+          transport_allowance?: never
           updated_at?: string | null
         }
         Update: {
-          base_salary?: number | null
+          base_salary?: never
           company_id?: string | null
           created_at?: string | null
           employee_number?: number | null
           hire_date?: string | null
-          housing_allowance?: number | null
+          housing_allowance?: never
           iban_encrypted?: never
           iban_masked?: never
           id?: string | null
           id_number_encrypted?: never
+          id_number_masked?: never
           is_active?: boolean | null
           job_title?: string | null
           name?: string | null
           notes?: string | null
           phone_masked?: never
-          transport_allowance?: number | null
+          transport_allowance?: never
           updated_at?: string | null
         }
         Relationships: [
@@ -12125,6 +12128,36 @@ export type Database = {
       }
       get_car_expenses: { Args: { p_car_id: string }; Returns: number }
       get_current_company_id: { Args: never; Returns: string }
+      get_employee_full_details: {
+        Args: { p_employee_id: string }
+        Returns: {
+          bank_name: string | null
+          base_salary: number
+          company_id: string
+          created_at: string
+          employee_number: number
+          hire_date: string | null
+          housing_allowance: number
+          iban: string | null
+          iban_encrypted: string | null
+          id: string
+          id_number: string | null
+          id_number_encrypted: string | null
+          is_active: boolean
+          job_title: string
+          name: string
+          notes: string | null
+          phone: string | null
+          transport_allowance: number
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "employees"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_my_company_id: { Args: never; Returns: string }
       get_next_invoice_number: {
         Args: { _company_id: string; _invoice_type: string }
