@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { 
   Building2, TrendingUp, TrendingDown, Users, AlertTriangle,
-  DollarSign, BarChart3, PieChart as PieChartIcon, Globe
+  DollarSign, BarChart3, PieChart as PieChartIcon, Globe, Clock, Bell
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -63,6 +63,46 @@ export function SaaSExecutiveDashboard() {
       });
 
       return Object.entries(planMap).map(([name, value]) => ({ name, value }));
+    },
+  });
+
+  // Expiring subscriptions (within 7 days)
+  const { data: expiringSubs = [] } = useQuery({
+    queryKey: ['saas-expiring-subscriptions'],
+    queryFn: async () => {
+      const now = new Date();
+      const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      
+      const { data } = await supabase
+        .from('subscriptions')
+        .select('id, company_id, plan_name, end_date, status')
+        .lte('end_date', sevenDaysLater.toISOString().split('T')[0])
+        .gte('end_date', now.toISOString().split('T')[0])
+        .in('status', ['active', 'trial']);
+      
+      if (!data) return [];
+
+      // Get company names
+      const companyIds = data.map(s => s.company_id);
+      const { data: companies } = await supabase
+        .from('companies')
+        .select('id, name')
+        .in('id', companyIds);
+      
+      const companyMap = new Map((companies || []).map(c => [c.id, c.name]));
+      
+      return data.map(s => {
+        const endDate = new Date(s.end_date!);
+        const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        return {
+          id: s.id,
+          companyName: companyMap.get(s.company_id) || 'غير معروف',
+          planName: s.plan_name || 'بدون باقة',
+          endDate: s.end_date,
+          daysLeft,
+          status: s.status,
+        };
+      }).sort((a, b) => a.daysLeft - b.daysLeft);
     },
   });
 
@@ -135,6 +175,39 @@ export function SaaSExecutiveDashboard() {
           </Card>
         ))}
       </div>
+
+      {/* Expiring Subscriptions Alert */}
+      {expiringSubs.length > 0 && (
+        <Card className="border-amber-500/50 bg-amber-500/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2 text-amber-600">
+              <Bell className="w-4 h-4" />
+              اشتراكات قاربت على الانتهاء ({expiringSubs.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {expiringSubs.map((sub) => (
+                <div key={sub.id} className="flex items-center justify-between p-3 rounded-lg bg-background border">
+                  <div className="flex items-center gap-3">
+                    <Clock className={`w-4 h-4 ${sub.daysLeft <= 2 ? 'text-destructive' : 'text-amber-500'}`} />
+                    <div>
+                      <p className="font-medium text-sm">{sub.companyName}</p>
+                      <p className="text-xs text-muted-foreground">باقة: {sub.planName}</p>
+                    </div>
+                  </div>
+                  <div className="text-left">
+                    <Badge variant={sub.daysLeft <= 2 ? 'destructive' : 'secondary'}>
+                      {sub.daysLeft === 0 ? 'ينتهي اليوم' : `${sub.daysLeft} يوم متبقي`}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">{sub.endDate}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
