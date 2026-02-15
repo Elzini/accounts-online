@@ -12110,6 +12110,19 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      get_bank_account_full_details: {
+        Args: { p_account_id: string }
+        Returns: {
+          account_name: string
+          account_number_encrypted: string
+          bank_name: string
+          current_balance: number
+          iban_encrypted: string
+          id: string
+          is_active: boolean
+          swift_code: string
+        }[]
+      }
       get_car_expenses: { Args: { p_car_id: string }; Returns: number }
       get_current_company_id: { Args: never; Returns: string }
       get_my_company_id: { Args: never; Returns: string }
