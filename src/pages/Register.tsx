@@ -249,7 +249,7 @@ export default function Register() {
         <form onSubmit={handleSubmit} className="w-full max-w-sm">
           <div className="space-y-3 mb-4">
             {/* Company Name */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors">
+            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center">
               <div className="px-4 py-3.5">
                 <Building2 className="w-5 h-5 text-white/30" />
               </div>
@@ -264,7 +264,7 @@ export default function Register() {
             </div>
 
             {/* Company Type */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl hover:border-white/20 transition-colors">
+            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl">
               <Select value={companyType} onValueChange={(v) => setCompanyType(v as CompanyActivityType)}>
                 <SelectTrigger className="h-12 bg-transparent border-none text-white hover:bg-transparent rounded-xl [&>span]:text-white focus:outline-none focus:ring-0">
                   <SelectValue placeholder="نوع النشاط" />
@@ -283,7 +283,7 @@ export default function Register() {
             </div>
 
             {/* Email */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors">
+            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center">
               <div className="px-4 py-3.5">
                 <Mail className="w-5 h-5 text-white/30" />
               </div>
@@ -299,7 +299,7 @@ export default function Register() {
             </div>
 
             {/* Phone */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors">
+            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center">
               <div className="px-4 py-3.5">
                 <Phone className="w-5 h-5 text-white/30" />
               </div>
@@ -315,7 +315,7 @@ export default function Register() {
             </div>
 
             {/* Password */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors">
+            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center">
               <div className="px-4 py-3.5">
                 <Lock className="w-5 h-5 text-white/30" />
               </div>
@@ -353,7 +353,7 @@ export default function Register() {
             )}
 
             {/* Confirm Password */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors">
+            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center">
               <div className="px-4 py-3.5">
                 <Lock className="w-5 h-5 text-white/30" />
               </div>

@@ -79,8 +79,8 @@ export default function AuthChoice() {
         <div className="grid grid-cols-1 gap-6 max-w-md mx-auto">
           {/* Company Login */}
           <Link to="/auth/company" className="block">
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 text-center hover:bg-white/15 transition-all cursor-pointer group">
-              <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-500/30 transition-colors">
+            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 text-center cursor-pointer">
+              <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-4">
                 <Building2 className="w-8 h-8 text-blue-300" />
               </div>
               <h3 className="text-xl font-bold text-white mb-1">دخول الشركات</h3>
