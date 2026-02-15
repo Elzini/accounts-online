@@ -305,7 +305,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           {/* Input Fields */}
           <div className="space-y-3 mb-4">
             {/* Email Input */}
-            <div className="bg-[hsl(215,30%,20%)] border-2 border-white/20 rounded-xl flex items-center hover:border-white/30 transition-colors focus-within:border-[hsl(210,70%,50%)] focus-within:ring-2 focus-within:ring-[hsl(210,70%,50%)]/30">
+            <div className="bg-[hsl(215,30%,20%)] border-2 border-white/20 rounded-xl flex items-center hover:border-white/30 transition-colors">
               <div className="px-4 py-3.5">
                 <Mail className="w-5 h-5 text-white/50" />
               </div>
@@ -323,7 +323,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
             {/* Password Input */}
             {showPasswordAndFiscalYear && (
-              <div className="bg-[hsl(215,30%,20%)] border-2 border-white/20 rounded-xl flex items-center hover:border-white/30 transition-colors focus-within:border-[hsl(210,70%,50%)] focus-within:ring-2 focus-within:ring-[hsl(210,70%,50%)]/30">
+              <div className="bg-[hsl(215,30%,20%)] border-2 border-white/20 rounded-xl flex items-center hover:border-white/30 transition-colors">
                 <div className="px-4 py-3.5">
                   <Lock className="w-5 h-5 text-white/50" />
                 </div>
