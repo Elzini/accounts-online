@@ -126,59 +126,50 @@ export default function Register() {
 
   if (emailSent) {
     return (
-      <div className="min-h-screen flex relative overflow-hidden">
-        {/* Background Image - Right Side */}
-        <div
-          className="hidden lg:block lg:w-[55%] relative"
-          style={{
-            backgroundImage: `url(${loginBg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-l from-[hsl(215,50%,8%)]/60 to-[hsl(215,50%,12%)]/40" />
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-12">
-            <div className="w-28 h-28 rounded-full border-2 border-white/20 flex items-center justify-center mb-6 overflow-hidden bg-white/10 backdrop-blur-md shadow-2xl">
-              <CheckCircle className="w-16 h-16 text-green-400" />
+      <div className="min-h-screen bg-[hsl(210,15%,90%)] flex items-center justify-center p-4">
+        <div className="w-full max-w-lg bg-white rounded-lg shadow-xl overflow-hidden">
+          {/* Header */}
+          <div
+            className="relative h-40 flex items-center justify-center"
+            style={{
+              backgroundImage: `url(${loginBg})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            <div className="absolute inset-0 bg-[hsl(215,50%,35%)]/40" />
+            <div className="relative z-10 flex flex-col items-center gap-2">
+              <CheckCircle className="w-12 h-12 text-green-400" />
+              <h1 className="text-2xl font-bold text-white tracking-wide">تم إرسال رابط التفعيل</h1>
             </div>
-            <h1 className="text-4xl font-bold text-white tracking-tight">تم إرسال رابط التفعيل</h1>
-            <p className="text-white/50 text-base mt-3 max-w-sm">تحقق من بريدك الإلكتروني لتفعيل حسابك</p>
-          </div>
-        </div>
-
-        {/* Content Side */}
-        <div className="w-full lg:w-[45%] bg-[hsl(215,40%,10%)] flex flex-col items-center justify-center relative px-6 py-8">
-          {/* Mobile Logo */}
-          <div className="lg:hidden mb-8 flex flex-col items-center">
-            <CheckCircle className="w-16 h-16 text-green-400 mb-4" />
-            <h1 className="text-2xl font-bold text-white">تم إرسال رابط التفعيل</h1>
           </div>
 
-          <div className="w-full max-w-sm space-y-6">
-            <div className="bg-white/[0.05] backdrop-blur-sm border border-green-500/20 rounded-xl p-5 text-center">
-              <p className="text-white text-sm">
-                تم إرسال رابط التفعيل إلى <strong dir="ltr" className="text-[hsl(210,70%,60%)]">{email}</strong>
+          {/* Content */}
+          <div className="p-8 text-center space-y-5">
+            <div className="bg-[hsl(210,15%,96%)] rounded-lg p-4 border border-[hsl(210,15%,88%)]">
+              <p className="text-sm text-[hsl(215,30%,30%)]">
+                تم إرسال رابط التفعيل إلى <strong dir="ltr" className="text-[hsl(210,70%,50%)]">{email}</strong>
               </p>
-              <p className="text-white/40 text-xs mt-2">
+              <p className="text-xs text-[hsl(215,20%,55%)] mt-2">
                 يرجى النقر على الرابط في البريد الإلكتروني لتفعيل حسابك
               </p>
             </div>
 
-            <p className="text-white/30 text-xs text-center">
+            <p className="text-xs text-[hsl(215,20%,55%)]">
               لم تستلم البريد؟ تحقق من مجلد الرسائل غير المرغوب فيها
             </p>
 
             <Link to="/auth">
-              <Button className="w-full h-12 bg-[hsl(210,70%,50%)] hover:bg-[hsl(210,70%,45%)] text-white font-bold tracking-wider rounded-xl shadow-lg shadow-[hsl(210,70%,50%)]/20 transition-all">
+              <Button className="px-12 h-11 bg-[hsl(140,50%,45%)] hover:bg-[hsl(140,50%,40%)] text-white font-bold tracking-wider rounded-full border-none shadow-md transition-all">
                 العودة لتسجيل الدخول
               </Button>
             </Link>
           </div>
 
           {/* Footer */}
-          <div className="absolute bottom-4 left-0 right-0 text-center">
-            <p className="text-[11px] text-white/20">
-              © Copyright {new Date().getFullYear()} by <span className="text-[hsl(210,70%,50%)]/40">Elzini SaaS</span>. All Rights Reserved.
+          <div className="py-3 text-center border-t border-[hsl(210,15%,90%)]">
+            <p className="text-[11px] text-[hsl(215,15%,65%)]">
+              © Copyright {new Date().getFullYear()} by <span className="text-[hsl(210,70%,50%)]">Elzini SaaS</span>. All Rights Reserved.
             </p>
           </div>
         </div>
@@ -187,86 +178,64 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden">
-      {/* Background Image - Right Side */}
-      <div
-        className="hidden lg:block lg:w-[55%] relative"
-        style={{
-          backgroundImage: `url(${loginBg})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-l from-[hsl(215,50%,8%)]/60 to-[hsl(215,50%,12%)]/40" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-12">
-          <div className="w-28 h-28 rounded-full border-2 border-white/20 flex items-center justify-center mb-6 overflow-hidden bg-white/10 backdrop-blur-md shadow-2xl">
-            {!settingsLoading ? (
-              <img
-                src={globalSettings.login_logo_url || logo}
-                alt="Logo"
-                className="w-20 h-20 object-contain"
-              />
-            ) : (
-              <div className="w-20 h-20 animate-pulse bg-white/20 rounded-lg" />
-            )}
-          </div>
-          <h1 className="text-4xl font-bold text-white tracking-tight">{pageTitle}</h1>
-          <p className="text-white/50 text-base mt-3 max-w-sm">{pageSubtitle}</p>
-        </div>
+    <div className="min-h-screen bg-[hsl(210,15%,90%)] flex items-center justify-center p-4">
+      {/* Language Switcher */}
+      <div className="absolute top-4 left-4 z-20">
+        <LanguageSwitcher variant="compact" />
       </div>
 
-      {/* Form Side */}
-      <div className="w-full lg:w-[45%] bg-[hsl(215,40%,10%)] flex flex-col items-center justify-center relative px-6 py-8">
-        {/* Language Switcher */}
-        <div className="absolute top-5 left-5 z-20">
-          <LanguageSwitcher variant="compact" />
-        </div>
-
-        {/* Mobile Logo */}
-        <div className="lg:hidden mb-8 flex flex-col items-center">
-          <div className="w-20 h-20 rounded-full border-2 border-white/20 flex items-center justify-center mb-4 overflow-hidden bg-white/10 backdrop-blur-md">
-            {!settingsLoading ? (
+      {/* Card */}
+      <div className="w-full max-w-lg bg-white rounded-lg shadow-xl overflow-hidden">
+        {/* Header with background image */}
+        <div
+          className="relative h-40 flex items-center justify-center"
+          style={{
+            backgroundImage: `url(${loginBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div className="absolute inset-0 bg-[hsl(215,50%,35%)]/40" />
+          <div className="relative z-10 flex flex-col items-center gap-1">
+            {!settingsLoading && (
               <img
                 src={globalSettings.login_logo_url || logo}
                 alt="Logo"
-                className="w-14 h-14 object-contain"
+                className="w-12 h-12 object-contain"
               />
-            ) : (
-              <div className="w-14 h-14 animate-pulse bg-white/20 rounded-lg" />
             )}
+            <h1 className="text-2xl font-bold text-white tracking-wide uppercase">{pageTitle}</h1>
+            <p className="text-white/70 text-sm">{pageSubtitle}</p>
           </div>
-          <h1 className="text-2xl font-bold text-white">{pageTitle}</h1>
-          <p className="text-white/50 text-sm mt-1">{pageSubtitle}</p>
         </div>
 
-        {/* Desktop Welcome Text */}
-        <div className="hidden lg:block text-center mb-6">
-          <h2 className="text-2xl font-bold text-white mb-1">{pageTitle}</h2>
-          <p className="text-white/40 text-sm">{pageSubtitle}</p>
-        </div>
-
-        {/* Register Form */}
-        <form onSubmit={handleSubmit} className="w-full max-w-sm">
-          <div className="space-y-3 mb-4">
+        {/* Form Body */}
+        <div className="p-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Company Name */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center">
-              <div className="px-4 py-3.5">
-                <Building2 className="w-5 h-5 text-white/30" />
-              </div>
+            <div className="flex items-center gap-4">
+              <label className="text-xs font-bold text-[hsl(215,30%,40%)] uppercase tracking-wide w-24 shrink-0 text-right">
+                <Building2 className="w-4 h-4 inline-block ml-1" />
+                اسم الشركة
+              </label>
               <input
                 type="text"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="اسم الشركة"
-                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:outline-none focus:ring-0"
+                className="flex-1 border-b-2 border-[hsl(210,15%,80%)] py-2.5 px-1 text-sm text-[hsl(215,30%,20%)] placeholder:text-[hsl(210,15%,70%)] bg-transparent outline-none focus:outline-none focus:ring-0 focus:border-[hsl(210,15%,80%)] transition-colors"
+                dir="rtl"
                 required
               />
             </div>
 
             {/* Company Type */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl">
+            <div className="flex items-center gap-4">
+              <label className="text-xs font-bold text-[hsl(215,30%,40%)] uppercase tracking-wide w-24 shrink-0 text-right">
+                نوع النشاط
+              </label>
               <Select value={companyType} onValueChange={(v) => setCompanyType(v as CompanyActivityType)}>
-                <SelectTrigger className="h-12 bg-transparent border-none text-white hover:bg-transparent rounded-xl [&>span]:text-white focus:outline-none focus:ring-0">
+                <SelectTrigger className="flex-1 h-10 text-right bg-transparent border-b-2 border-[hsl(210,15%,80%)] rounded-none text-[hsl(215,30%,20%)] outline-none focus:outline-none focus:ring-0 focus:border-[hsl(210,15%,80%)] shadow-none">
                   <SelectValue placeholder="نوع النشاط" />
                 </SelectTrigger>
                 <SelectContent className="bg-background border z-50">
@@ -283,48 +252,51 @@ export default function Register() {
             </div>
 
             {/* Email */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center">
-              <div className="px-4 py-3.5">
-                <Mail className="w-5 h-5 text-white/30" />
-              </div>
+            <div className="flex items-center gap-4">
+              <label className="text-xs font-bold text-[hsl(215,30%,40%)] uppercase tracking-wide w-24 shrink-0 text-right">
+                <Mail className="w-4 h-4 inline-block ml-1" />
+                البريد
+              </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="البريد الإلكتروني"
-                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:outline-none focus:ring-0"
+                className="flex-1 border-b-2 border-[hsl(210,15%,80%)] py-2.5 px-1 text-sm text-[hsl(215,30%,20%)] placeholder:text-[hsl(210,15%,70%)] bg-transparent outline-none focus:outline-none focus:ring-0 focus:border-[hsl(210,15%,80%)] transition-colors"
                 dir="ltr"
                 required
               />
             </div>
 
             {/* Phone */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center">
-              <div className="px-4 py-3.5">
-                <Phone className="w-5 h-5 text-white/30" />
-              </div>
+            <div className="flex items-center gap-4">
+              <label className="text-xs font-bold text-[hsl(215,30%,40%)] uppercase tracking-wide w-24 shrink-0 text-right">
+                <Phone className="w-4 h-4 inline-block ml-1" />
+                الهاتف
+              </label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="05xxxxxxxx"
-                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:outline-none focus:ring-0"
+                className="flex-1 border-b-2 border-[hsl(210,15%,80%)] py-2.5 px-1 text-sm text-[hsl(215,30%,20%)] placeholder:text-[hsl(210,15%,70%)] bg-transparent outline-none focus:outline-none focus:ring-0 focus:border-[hsl(210,15%,80%)] transition-colors"
                 dir="ltr"
                 required
               />
             </div>
 
             {/* Password */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center">
-              <div className="px-4 py-3.5">
-                <Lock className="w-5 h-5 text-white/30" />
-              </div>
+            <div className="flex items-center gap-4">
+              <label className="text-xs font-bold text-[hsl(215,30%,40%)] uppercase tracking-wide w-24 shrink-0 text-right">
+                <Lock className="w-4 h-4 inline-block ml-1" />
+                كلمة المرور
+              </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="كلمة المرور"
-                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:outline-none focus:ring-0"
+                className="flex-1 border-b-2 border-[hsl(210,15%,80%)] py-2.5 px-1 text-sm text-[hsl(215,30%,20%)] placeholder:text-[hsl(210,15%,70%)] bg-transparent outline-none focus:outline-none focus:ring-0 focus:border-[hsl(210,15%,80%)] transition-colors"
                 dir="ltr"
                 required
                 minLength={8}
@@ -341,66 +313,69 @@ export default function Register() {
                       className={`h-1.5 flex-1 rounded-full transition-colors ${
                         i <= getPasswordStrength(password).level
                           ? getPasswordStrength(password).color
-                          : 'bg-white/10'
+                          : 'bg-[hsl(210,15%,88%)]'
                       }`}
                     />
                   ))}
                 </div>
-                <p className="text-xs text-white/40 text-right">
-                  قوة كلمة المرور: <span className="font-medium text-white/60">{getPasswordStrength(password).label}</span>
+                <p className="text-xs text-[hsl(215,20%,55%)] text-right">
+                  قوة كلمة المرور: <span className="font-medium text-[hsl(215,30%,30%)]">{getPasswordStrength(password).label}</span>
                 </p>
               </div>
             )}
 
             {/* Confirm Password */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center">
-              <div className="px-4 py-3.5">
-                <Lock className="w-5 h-5 text-white/30" />
-              </div>
+            <div className="flex items-center gap-4">
+              <label className="text-xs font-bold text-[hsl(215,30%,40%)] uppercase tracking-wide w-24 shrink-0 text-right">
+                <Lock className="w-4 h-4 inline-block ml-1" />
+                تأكيد المرور
+              </label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="تأكيد كلمة المرور"
-                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:outline-none focus:ring-0"
+                className="flex-1 border-b-2 border-[hsl(210,15%,80%)] py-2.5 px-1 text-sm text-[hsl(215,30%,20%)] placeholder:text-[hsl(210,15%,70%)] bg-transparent outline-none focus:outline-none focus:ring-0 focus:border-[hsl(210,15%,80%)] transition-colors"
                 dir="ltr"
                 required
                 minLength={8}
               />
             </div>
-          </div>
 
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            className="w-full h-12 bg-[hsl(210,70%,50%)] hover:bg-[hsl(210,70%,45%)] text-white font-bold tracking-wider rounded-xl shadow-lg shadow-[hsl(210,70%,50%)]/20 transition-all"
-            disabled={loading}
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                جاري التسجيل...
-              </span>
-            ) : (
-              globalSettings.register_button_text || 'تسجيل الشركة'
-            )}
-          </Button>
+            {/* Submit Button */}
+            <div className="flex justify-center pt-2">
+              <Button
+                type="submit"
+                className="px-12 h-11 bg-[hsl(140,50%,45%)] hover:bg-[hsl(140,50%,40%)] text-white font-bold tracking-wider rounded-full border-none shadow-md transition-all"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    جاري التسجيل...
+                  </span>
+                ) : (
+                  globalSettings.register_button_text || 'تسجيل الشركة'
+                )}
+              </Button>
+            </div>
+          </form>
 
           {/* Bottom links */}
           <div className="mt-6 text-center space-y-3">
-            <p className="text-sm text-white/50">
+            <p className="text-sm text-[hsl(215,20%,55%)]">
               لديك حساب بالفعل؟{' '}
-              <Link to="/auth" className="text-[hsl(210,70%,60%)] hover:text-[hsl(210,70%,70%)] font-medium transition-colors">
+              <Link to="/auth" className="text-[hsl(210,70%,50%)] hover:text-[hsl(210,70%,40%)] font-medium transition-colors">
                 تسجيل الدخول
               </Link>
             </p>
           </div>
-        </form>
+        </div>
 
         {/* Footer */}
-        <div className="absolute bottom-4 left-0 right-0 text-center">
-          <p className="text-[11px] text-white/20">
-            © Copyright {new Date().getFullYear()} by <span className="text-[hsl(210,70%,50%)]/40">Elzini SaaS</span>. All Rights Reserved.
+        <div className="py-3 text-center border-t border-[hsl(210,15%,90%)]">
+          <p className="text-[11px] text-[hsl(215,15%,65%)]">
+            © Copyright {new Date().getFullYear()} by <span className="text-[hsl(210,70%,50%)]">Elzini SaaS</span>. All Rights Reserved.
           </p>
         </div>
       </div>
