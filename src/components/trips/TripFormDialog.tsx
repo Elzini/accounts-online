@@ -31,6 +31,7 @@ interface TripFormDialogProps {
 interface PassengerInput {
   passenger_name: string;
   passenger_phone: string;
+  passenger_email: string;
   notes: string;
 }
 
@@ -44,6 +45,7 @@ const TripFormDialog: React.FC<TripFormDialogProps> = ({
   const [formData, setFormData] = useState<{
     customer_name: string;
     customer_phone: string;
+    customer_email: string;
     destination: string;
     departure_point: string;
     trip_date: string;
@@ -56,6 +58,7 @@ const TripFormDialog: React.FC<TripFormDialogProps> = ({
   }>({
     customer_name: '',
     customer_phone: '',
+    customer_email: '',
     destination: '',
     departure_point: '',
     trip_date: '',
@@ -97,6 +100,7 @@ const TripFormDialog: React.FC<TripFormDialogProps> = ({
       setFormData({
         customer_name: trip.customer_name,
         customer_phone: trip.customer_phone,
+        customer_email: (trip as any).customer_email || '',
         destination: trip.destination,
         departure_point: trip.departure_point,
         trip_date: trip.trip_date,
@@ -125,6 +129,7 @@ const TripFormDialog: React.FC<TripFormDialogProps> = ({
       setFormData({
         customer_name: '',
         customer_phone: '',
+        customer_email: '',
         destination: '',
         departure_point: '',
         trip_date: '',
@@ -168,7 +173,7 @@ const TripFormDialog: React.FC<TripFormDialogProps> = ({
   };
 
   const addPassenger = () => {
-    setPassengers([...passengers, { passenger_name: '', passenger_phone: '', notes: '' }]);
+    setPassengers([...passengers, { passenger_name: '', passenger_phone: '', passenger_email: '', notes: '' }]);
   };
 
   const removePassenger = (index: number) => {
@@ -210,6 +215,18 @@ const TripFormDialog: React.FC<TripFormDialogProps> = ({
                 onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
                 placeholder="05xxxxxxxx"
                 required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="customer_email">البريد الإلكتروني</Label>
+              <Input
+                id="customer_email"
+                type="email"
+                value={formData.customer_email}
+                onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
+                placeholder="example@email.com"
+                dir="ltr"
               />
             </div>
 
@@ -420,6 +437,13 @@ const TripFormDialog: React.FC<TripFormDialogProps> = ({
                       placeholder="رقم الجوال (اختياري)"
                       value={passenger.passenger_phone}
                       onChange={(e) => updatePassenger(index, 'passenger_phone', e.target.value)}
+                    />
+                    <Input
+                      placeholder="البريد الإلكتروني (اختياري)"
+                      type="email"
+                      dir="ltr"
+                      value={passenger.passenger_email}
+                      onChange={(e) => updatePassenger(index, 'passenger_email', e.target.value)}
                     />
                     <Input
                       placeholder="ملاحظات"
