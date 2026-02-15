@@ -12496,6 +12496,9 @@ export type Database = {
         | "customers"
         | "suppliers"
         | "edit_sales_invoice"
+        | "support_admin"
+        | "finance_admin"
+        | "technical_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -12689,6 +12692,9 @@ export const Constants = {
         "customers",
         "suppliers",
         "edit_sales_invoice",
+        "support_admin",
+        "finance_admin",
+        "technical_admin",
       ],
     },
   },
