@@ -40,17 +40,17 @@ export function TrendCard({ title, value, trend, icon: Icon, gradient }: TrendCa
 
   return (
     <div
-      className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-3 md:p-5 border border-border/60 hover:shadow-lg transition-all duration-300"
+      className="relative overflow-hidden bg-card rounded-lg p-3 md:p-5 border border-border/50 hover:shadow-md transition-all duration-300"
     >
       {/* Colored top border stripe */}
       <div
-        className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl"
+        className="absolute top-0 left-0 right-0 h-1 rounded-t-lg"
         style={{ backgroundColor: theme.border }}
       />
 
       <div className="flex items-start justify-between gap-2 mb-3">
         <div
-          className="w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl flex items-center justify-center"
+          className="w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center"
           style={{ backgroundColor: theme.iconBg }}
         >
           <Icon className="w-5 h-5 md:w-6 md:h-6" style={{ color: theme.iconColor }} />

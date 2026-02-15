@@ -37,15 +37,15 @@ export function WelcomeHeader({
   const currentTime = new Date().toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-l from-slate-900 via-slate-800 to-slate-900 p-3 sm:p-4 md:p-6 min-w-0">
+    <div className="relative overflow-hidden rounded-lg bg-gradient-to-l from-sidebar to-sidebar-accent p-3 sm:p-4 md:p-6 min-w-0">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-40 sm:w-64 h-40 sm:h-64 bg-primary/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 right-0 w-32 sm:w-48 h-32 sm:h-48 bg-purple-500/20 rounded-full blur-3xl translate-x-1/4 translate-y-1/4" />
+      <div className="absolute bottom-0 right-0 w-32 sm:w-48 h-32 sm:h-48 bg-info/20 rounded-full blur-3xl translate-x-1/4 translate-y-1/4" />
       
       <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         {/* Right side - Welcome message */}
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/25 shrink-0">
+          <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg sm:rounded-xl bg-gradient-to-br from-warning to-warning/70 flex items-center justify-center shadow-lg shadow-warning/25 shrink-0">
             <span className="text-lg sm:text-2xl md:text-3xl">👋</span>
           </div>
           <div className="text-right min-w-0">
@@ -56,10 +56,10 @@ export function WelcomeHeader({
               </span>
               <span>•</span>
               <span className="hidden xs:inline">{t.online_now}</span>
-              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-success animate-pulse" />
             </div>
             <h1 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-bold text-white truncate">
-              {t.hello}, {userName} <greeting.icon className="inline-block w-4 h-4 sm:w-6 sm:h-6 text-amber-400" />
+              {t.hello}, {userName} <greeting.icon className="inline-block w-4 h-4 sm:w-6 sm:h-6 text-warning" />
             </h1>
             <p className="text-white/70 text-[10px] sm:text-sm mt-0.5 sm:mt-1 truncate">
               {settings?.welcome_message || t.dashboard_default_subtitle}

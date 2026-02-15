@@ -70,9 +70,9 @@ export function FinancialKPICards({
       value: `${grossProfitMargin.toFixed(1)}%`,
       description: t.kpi_gross_profit_desc,
       icon: Percent,
-      color: 'hsl(160 84% 39%)',
-      bgColor: 'hsl(160 84% 39% / 0.12)',
-      borderColor: 'hsl(160 84% 39%)',
+      color: 'hsl(var(--success))',
+      bgColor: 'hsl(var(--success) / 0.12)',
+      borderColor: 'hsl(var(--success))',
       trend: grossProfitMargin > 15 ? 'up' : grossProfitMargin > 5 ? 'neutral' : 'down',
     },
     {
@@ -80,9 +80,9 @@ export function FinancialKPICards({
       value: `${netProfitMargin.toFixed(1)}%`,
       description: t.kpi_net_profit_desc,
       icon: DollarSign,
-      color: netProfitMargin >= 0 ? 'hsl(217 91% 60%)' : 'hsl(0 84% 60%)',
-      bgColor: netProfitMargin >= 0 ? 'hsl(217 91% 60% / 0.12)' : 'hsl(0 84% 60% / 0.12)',
-      borderColor: netProfitMargin >= 0 ? 'hsl(217 91% 60%)' : 'hsl(0 84% 60%)',
+      color: netProfitMargin >= 0 ? 'hsl(var(--info))' : 'hsl(var(--destructive))',
+      bgColor: netProfitMargin >= 0 ? 'hsl(var(--info) / 0.12)' : 'hsl(var(--destructive) / 0.12)',
+      borderColor: netProfitMargin >= 0 ? 'hsl(var(--info))' : 'hsl(var(--destructive))',
       trend: netProfitMargin > 10 ? 'up' : netProfitMargin >= 0 ? 'neutral' : 'down',
     },
     {
@@ -90,9 +90,9 @@ export function FinancialKPICards({
       value: `${opexRatio.toFixed(1)}%`,
       description: t.kpi_opex_desc,
       icon: BarChart3,
-      color: 'hsl(38 92% 50%)',
-      bgColor: 'hsl(38 92% 50% / 0.12)',
-      borderColor: 'hsl(38 92% 50%)',
+      color: 'hsl(var(--warning))',
+      bgColor: 'hsl(var(--warning) / 0.12)',
+      borderColor: 'hsl(var(--warning))',
       trend: opexRatio < 30 ? 'up' : opexRatio < 60 ? 'neutral' : 'down',
     },
     {
@@ -100,9 +100,9 @@ export function FinancialKPICards({
       value: `${averageDaysToSell} ${t.kpi_avg_days_unit}`,
       description: t.kpi_avg_days_desc,
       icon: Clock,
-      color: 'hsl(270 75% 55%)',
-      bgColor: 'hsl(270 75% 55% / 0.12)',
-      borderColor: 'hsl(270 75% 55%)',
+      color: 'hsl(var(--primary))',
+      bgColor: 'hsl(var(--primary) / 0.12)',
+      borderColor: 'hsl(var(--primary))',
       trend: averageDaysToSell < 30 ? 'up' : averageDaysToSell < 90 ? 'neutral' : 'down',
     },
     {
@@ -110,9 +110,9 @@ export function FinancialKPICards({
       value: `${salesEfficiency.toFixed(0)}%`,
       description: t.kpi_sales_efficiency_desc,
       icon: Target,
-      color: 'hsl(190 85% 45%)',
-      bgColor: 'hsl(190 85% 45% / 0.12)',
-      borderColor: 'hsl(190 85% 45%)',
+      color: 'hsl(var(--info))',
+      bgColor: 'hsl(var(--info) / 0.12)',
+      borderColor: 'hsl(var(--info))',
       trend: salesEfficiency > 80 ? 'up' : salesEfficiency > 40 ? 'neutral' : 'down',
     },
     {
@@ -120,16 +120,16 @@ export function FinancialKPICards({
       value: formatCurrency(avgDealSize),
       description: t.kpi_avg_deal_desc,
       icon: Layers,
-      color: 'hsl(240 60% 60%)',
-      bgColor: 'hsl(240 60% 60% / 0.12)',
-      borderColor: 'hsl(240 60% 60%)',
+      color: 'hsl(var(--primary))',
+      bgColor: 'hsl(var(--primary) / 0.12)',
+      borderColor: 'hsl(var(--primary))',
       trend: 'neutral',
     },
   ];
 
   return (
-    <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-4 md:p-6 border border-border/60">
-      <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--primary))' }} />
+    <div className="relative overflow-hidden bg-card rounded-lg p-4 md:p-6 border border-border/50">
+      <div className="absolute top-0 left-0 right-0 h-1 rounded-t-lg" style={{ backgroundColor: 'hsl(var(--primary))' }} />
       <h3 className="text-sm sm:text-lg font-bold text-card-foreground mb-4">{t.kpi_advanced_title}</h3>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
         {kpis.map((kpi) => {
@@ -138,9 +138,9 @@ export function FinancialKPICards({
           return (
             <div
               key={kpi.label}
-              className="relative overflow-hidden p-3 sm:p-4 rounded-xl bg-card border border-border/50 hover:shadow-md transition-all"
+              className="relative overflow-hidden p-3 sm:p-4 rounded-lg bg-card border border-border/50 hover:shadow-md transition-all"
             >
-              <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-xl" style={{ backgroundColor: kpi.borderColor }} />
+              <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-lg" style={{ backgroundColor: kpi.borderColor }} />
               <div className="flex items-center justify-between mb-2">
                 <div
                   className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center"
