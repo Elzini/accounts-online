@@ -1349,13 +1349,6 @@ export type Database = {
             referencedRelation: "fiscal_years"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "budgets_fiscal_year_id_fkey"
-            columns: ["fiscal_year_id"]
-            isOneToOne: false
-            referencedRelation: "fiscal_years_public"
-            referencedColumns: ["id"]
-          },
         ]
       }
       car_transfers: {
@@ -1522,13 +1515,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "cars_fiscal_year_id_fkey"
-            columns: ["fiscal_year_id"]
-            isOneToOne: false
-            referencedRelation: "fiscal_years_public"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "cars_payment_account_id_fkey"
             columns: ["payment_account_id"]
             isOneToOne: false
@@ -1675,13 +1661,6 @@ export type Database = {
             columns: ["fiscal_year_id"]
             isOneToOne: false
             referencedRelation: "fiscal_years"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "checks_fiscal_year_id_fkey"
-            columns: ["fiscal_year_id"]
-            isOneToOne: false
-            referencedRelation: "fiscal_years_public"
             referencedColumns: ["id"]
           },
           {
@@ -2219,13 +2198,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "contracts_fiscal_year_id_fkey"
-            columns: ["fiscal_year_id"]
-            isOneToOne: false
-            referencedRelation: "fiscal_years_public"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "contracts_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
@@ -2656,13 +2628,6 @@ export type Database = {
             columns: ["fiscal_year_id"]
             isOneToOne: false
             referencedRelation: "fiscal_years"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "custodies_fiscal_year_id_fkey"
-            columns: ["fiscal_year_id"]
-            isOneToOne: false
-            referencedRelation: "fiscal_years_public"
             referencedColumns: ["id"]
           },
           {
@@ -4015,13 +3980,6 @@ export type Database = {
             columns: ["fiscal_year_id"]
             isOneToOne: false
             referencedRelation: "fiscal_years"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "expenses_fiscal_year_id_fkey"
-            columns: ["fiscal_year_id"]
-            isOneToOne: false
-            referencedRelation: "fiscal_years_public"
             referencedColumns: ["id"]
           },
         ]
@@ -5723,13 +5681,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "invoices_fiscal_year_id_fkey"
-            columns: ["fiscal_year_id"]
-            isOneToOne: false
-            referencedRelation: "fiscal_years_public"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "invoices_journal_entry_id_fkey"
             columns: ["journal_entry_id"]
             isOneToOne: false
@@ -6036,13 +5987,6 @@ export type Database = {
             columns: ["fiscal_year_id"]
             isOneToOne: false
             referencedRelation: "fiscal_years"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "journal_entries_fiscal_year_id_fkey"
-            columns: ["fiscal_year_id"]
-            isOneToOne: false
-            referencedRelation: "fiscal_years_public"
             referencedColumns: ["id"]
           },
         ]
@@ -7313,13 +7257,6 @@ export type Database = {
             referencedRelation: "fiscal_years"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "profiles_current_fiscal_year_id_fkey"
-            columns: ["current_fiscal_year_id"]
-            isOneToOne: false
-            referencedRelation: "fiscal_years_public"
-            referencedColumns: ["id"]
-          },
         ]
       }
       progress_billings: {
@@ -7415,13 +7352,6 @@ export type Database = {
             columns: ["fiscal_year_id"]
             isOneToOne: false
             referencedRelation: "fiscal_years"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "progress_billings_fiscal_year_id_fkey"
-            columns: ["fiscal_year_id"]
-            isOneToOne: false
-            referencedRelation: "fiscal_years_public"
             referencedColumns: ["id"]
           },
           {
@@ -7828,13 +7758,6 @@ export type Database = {
             columns: ["fiscal_year_id"]
             isOneToOne: false
             referencedRelation: "fiscal_years"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "projects_fiscal_year_id_fkey"
-            columns: ["fiscal_year_id"]
-            isOneToOne: false
-            referencedRelation: "fiscal_years_public"
             referencedColumns: ["id"]
           },
           {
@@ -8676,13 +8599,6 @@ export type Database = {
             columns: ["fiscal_year_id"]
             isOneToOne: false
             referencedRelation: "fiscal_years"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sales_fiscal_year_id_fkey"
-            columns: ["fiscal_year_id"]
-            isOneToOne: false
-            referencedRelation: "fiscal_years_public"
             referencedColumns: ["id"]
           },
           {
@@ -10573,13 +10489,6 @@ export type Database = {
             referencedRelation: "fiscal_years"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "trips_fiscal_year_id_fkey"
-            columns: ["fiscal_year_id"]
-            isOneToOne: false
-            referencedRelation: "fiscal_years_public"
-            referencedColumns: ["id"]
-          },
         ]
       }
       units_of_measure: {
@@ -11771,30 +11680,6 @@ export type Database = {
         }
         Relationships: []
       }
-      fiscal_years_public: {
-        Row: {
-          end_date: string | null
-          id: string | null
-          is_current: boolean | null
-          name: string | null
-          start_date: string | null
-        }
-        Insert: {
-          end_date?: string | null
-          id?: string | null
-          is_current?: boolean | null
-          name?: string | null
-          start_date?: string | null
-        }
-        Update: {
-          end_date?: string | null
-          id?: string | null
-          is_current?: boolean | null
-          name?: string | null
-          start_date?: string | null
-        }
-        Relationships: []
-      }
       hr_employees_safe: {
         Row: {
           bank_name: string | null
@@ -12003,13 +11888,6 @@ export type Database = {
             columns: ["fiscal_year_id"]
             isOneToOne: false
             referencedRelation: "fiscal_years"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoices_fiscal_year_id_fkey"
-            columns: ["fiscal_year_id"]
-            isOneToOne: false
-            referencedRelation: "fiscal_years_public"
             referencedColumns: ["id"]
           },
           {
