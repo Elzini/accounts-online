@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Shield, Building2, Calendar, Loader2, User } from 'lucide-react';
+import { Building2, Calendar, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
@@ -60,9 +60,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
   const { settings: globalSettings, loading: settingsLoading } = usePublicAuthSettings();
 
-  const pageTitle = mode === 'super_admin' ? t.super_admin_login : globalSettings.login_title;
-  const pageSubtitle = mode === 'super_admin' ? t.super_admin_only : globalSettings.login_subtitle;
-  const primaryButtonText = mode === 'super_admin' ? t.super_admin_enter : globalSettings.login_button_text;
+  const pageTitle = mode === 'super_admin' ? t.super_admin_login : (globalSettings.login_title || 'تسجيل الدخول');
+  const primaryButtonText = mode === 'super_admin' ? t.super_admin_enter : (globalSettings.login_button_text || 'دخول');
 
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMM yyyy', { locale: ar });
@@ -241,69 +240,68 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const showPasswordAndFiscalYear = mode === 'super_admin' || emailConfirmed;
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center relative"
-      style={{
-        backgroundImage: `url(${loginBg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    >
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-[hsl(215,50%,15%)]/70" />
-
+    <div className="min-h-screen bg-[hsl(210,15%,90%)] flex items-center justify-center p-4">
       {/* Language Switcher */}
-      <div className="absolute top-5 left-5 z-20">
+      <div className="absolute top-4 left-4 z-20">
         <LanguageSwitcher variant="compact" />
       </div>
 
-      {/* Centered Login Card */}
-      <div className="relative z-10 w-full max-w-md mx-4">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-24 h-24 rounded-full border-2 border-white/20 flex items-center justify-center overflow-hidden bg-white/10 backdrop-blur-md shadow-2xl mb-4">
-            {!settingsLoading ? (
+      {/* Card */}
+      <div className="w-full max-w-lg bg-white rounded-lg shadow-xl overflow-hidden">
+        {/* Header with background image */}
+        <div
+          className="relative h-40 flex items-center justify-center"
+          style={{
+            backgroundImage: `url(${loginBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div className="absolute inset-0 bg-[hsl(215,50%,25%)]/60" />
+          <div className="relative z-10 flex flex-col items-center gap-2">
+            {!settingsLoading && (
               <img
                 src={globalSettings.login_logo_url || logo}
                 alt="Logo"
-                className="w-16 h-16 object-contain"
+                className="w-12 h-12 object-contain"
               />
-            ) : (
-              <div className="w-16 h-16 animate-pulse bg-white/20 rounded-lg" />
             )}
+            <h1 className="text-2xl font-bold text-white tracking-wide uppercase">{pageTitle}</h1>
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">{pageTitle}</h1>
-          <p className="text-white/50 text-sm mt-1">{pageSubtitle}</p>
         </div>
 
-        {/* Form Card */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/10 shadow-2xl">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email Input */}
-            <div className="bg-white/90 rounded-full flex items-center px-4 shadow-sm">
-              <User className="w-5 h-5 text-[hsl(215,50%,40%)] shrink-0" />
+        {/* Form Body */}
+        <div className="p-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Email Row */}
+            <div className="flex items-center gap-4">
+              <label className="text-xs font-bold text-[hsl(215,30%,40%)] uppercase tracking-wide w-24 shrink-0 text-right">
+                {t.email_placeholder || 'اسم المستخدم'}
+              </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={handleEmailKeyDown}
                 placeholder={t.email_placeholder || "أدخل اسم المستخدم"}
-                className="flex-1 py-3.5 px-3 text-sm text-[hsl(215,50%,20%)] placeholder:text-[hsl(215,20%,60%)] bg-transparent outline-none border-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                className="flex-1 border-b-2 border-[hsl(210,15%,80%)] py-2.5 px-1 text-sm text-[hsl(215,30%,20%)] placeholder:text-[hsl(210,15%,70%)] bg-transparent outline-none focus:border-[hsl(210,70%,50%)] transition-colors"
                 dir="rtl"
                 required
               />
             </div>
 
-            {/* Password Input */}
+            {/* Password Row */}
             {showPasswordAndFiscalYear && (
-              <div className="bg-white/90 rounded-full flex items-center px-4 shadow-sm">
-                <Lock className="w-5 h-5 text-[hsl(215,50%,40%)] shrink-0" />
+              <div className="flex items-center gap-4">
+                <label className="text-xs font-bold text-[hsl(215,30%,40%)] uppercase tracking-wide w-24 shrink-0 text-right">
+                  {t.password_placeholder || 'كلمة المرور'}
+                </label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={t.password_placeholder || "أدخل كلمة المرور"}
-                  className="flex-1 py-3.5 px-3 text-sm text-[hsl(215,50%,20%)] placeholder:text-[hsl(215,20%,60%)] bg-transparent outline-none border-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                  className="flex-1 border-b-2 border-[hsl(210,15%,80%)] py-2.5 px-1 text-sm text-[hsl(215,30%,20%)] placeholder:text-[hsl(210,15%,70%)] bg-transparent outline-none focus:border-[hsl(210,70%,50%)] transition-colors"
                   dir="rtl"
                   required
                   minLength={6}
@@ -312,23 +310,26 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
               </div>
             )}
 
-            {/* Company Name Display */}
+            {/* Company Name */}
             {mode === 'company' && companyName && emailConfirmed && (
-              <div className="bg-white/90 rounded-2xl p-3 text-center">
-                <p className="text-[11px] text-[hsl(215,20%,50%)] mb-0.5">{t.company_label}</p>
-                <p className="text-sm font-semibold text-[hsl(215,50%,20%)]">{companyName}</p>
+              <div className="bg-[hsl(210,15%,96%)] rounded-lg p-3 text-center border border-[hsl(210,15%,88%)]">
+                <p className="text-[11px] text-[hsl(215,20%,55%)] mb-0.5">{t.company_label}</p>
+                <p className="text-sm font-semibold text-[hsl(215,40%,25%)]">{companyName}</p>
               </div>
             )}
 
             {/* Fiscal Year Selector */}
             {showPasswordAndFiscalYear && mode === 'company' && fiscalYears.length > 0 && (
-              <div className="relative">
-                <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(215,50%,40%)] z-10 pointer-events-none" />
+              <div className="flex items-center gap-4">
+                <label className="text-xs font-bold text-[hsl(215,30%,40%)] uppercase tracking-wide w-24 shrink-0 text-right">
+                  <Calendar className="w-4 h-4 inline-block ml-1" />
+                  {t.fiscal_year_select || 'السنة المالية'}
+                </label>
                 <Select
                   value={selectedFiscalYearId}
                   onValueChange={setSelectedFiscalYearId}
                 >
-                  <SelectTrigger className="h-12 pr-10 text-right bg-white/90 border-none text-[hsl(215,50%,20%)] rounded-full focus:outline-none focus:ring-0 shadow-sm">
+                  <SelectTrigger className="flex-1 h-10 text-right bg-transparent border-b-2 border-[hsl(210,15%,80%)] rounded-none text-[hsl(215,30%,20%)] focus:outline-none focus:ring-0 focus:border-[hsl(210,70%,50%)] shadow-none">
                     <SelectValue placeholder={t.fiscal_year_select} />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
@@ -359,8 +360,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
             {/* Forgot password */}
             {showPasswordAndFiscalYear && (
-              <div className="text-left">
-                <span className="text-xs text-white/60 hover:text-white/80 cursor-pointer transition-colors">
+              <div className="text-right pr-0">
+                <span className="text-xs text-[hsl(210,70%,50%)] hover:text-[hsl(210,70%,40%)] cursor-pointer transition-colors">
                   {t.forgot_password || "نسيت كلمة المرور؟"}
                 </span>
               </div>
@@ -368,48 +369,52 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
             {/* Fetch Fiscal Years Button */}
             {mode === 'company' && !emailConfirmed && (
-              <Button
-                type="button"
-                onClick={fetchFiscalYearsForEmail}
-                className="w-full h-12 bg-[hsl(210,70%,50%)] hover:bg-[hsl(210,70%,45%)] text-white font-bold tracking-wider rounded-full border-none shadow-lg shadow-[hsl(210,70%,50%)]/30 transition-all"
-                disabled={fetchingFiscalYears || !email}
-              >
-                {fetchingFiscalYears ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {t.checking}
-                  </span>
-                ) : (
-                  t.next
-                )}
-              </Button>
+              <div className="flex justify-center pt-2">
+                <Button
+                  type="button"
+                  onClick={fetchFiscalYearsForEmail}
+                  className="px-12 h-11 bg-[hsl(140,50%,45%)] hover:bg-[hsl(140,50%,40%)] text-white font-bold tracking-wider rounded-full border-none shadow-md transition-all"
+                  disabled={fetchingFiscalYears || !email}
+                >
+                  {fetchingFiscalYears ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {t.checking}
+                    </span>
+                  ) : (
+                    t.next
+                  )}
+                </Button>
+              </div>
             )}
 
             {/* Login Button */}
             {showPasswordAndFiscalYear && (
-              <Button
-                type="submit"
-                className="w-full h-12 bg-[hsl(210,70%,50%)] hover:bg-[hsl(210,70%,45%)] text-white font-bold tracking-wider rounded-full border-none shadow-lg shadow-[hsl(210,70%,50%)]/30 transition-all"
-                disabled={loading}
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {t.loading}
-                  </span>
-                ) : (
-                  primaryButtonText
-                )}
-              </Button>
+              <div className="flex justify-center pt-2">
+                <Button
+                  type="submit"
+                  className="px-12 h-11 bg-[hsl(140,50%,45%)] hover:bg-[hsl(140,50%,40%)] text-white font-bold tracking-wider rounded-full border-none shadow-md transition-all"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {t.loading}
+                    </span>
+                  ) : (
+                    primaryButtonText
+                  )}
+                </Button>
+              </div>
             )}
           </form>
 
           {/* Bottom links */}
           <div className="mt-6 text-center space-y-3">
             {mode === 'company' && (
-              <p className="text-sm text-white/50">
+              <p className="text-sm text-[hsl(215,20%,55%)]">
                 {t.no_account}{' '}
-                <Link to="/register" className="text-white/80 hover:text-white font-medium transition-colors">
+                <Link to="/register" className="text-[hsl(210,70%,50%)] hover:text-[hsl(210,70%,40%)] font-medium transition-colors">
                   {t.register_company || 'تسجيل'}
                 </Link>
               </p>
@@ -417,7 +422,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
             {mode === 'super_admin' && (
               <div className="flex items-center justify-center gap-4 text-xs">
-                <Link to="/auth/company" className="text-white/40 hover:text-white/60 inline-flex items-center gap-1 transition-colors">
+                <Link to="/auth/company" className="text-[hsl(215,20%,55%)] hover:text-[hsl(215,20%,40%)] inline-flex items-center gap-1 transition-colors">
                   <Building2 className="w-3 h-3" />
                   {t.company_login}
                 </Link>
@@ -427,9 +432,9 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         </div>
 
         {/* Footer */}
-        <div className="mt-6 text-center">
-          <p className="text-[11px] text-white/30">
-            © Copyright {new Date().getFullYear()} by <span className="text-white/40">Elzini SaaS</span>. All Rights Reserved.
+        <div className="py-3 text-center border-t border-[hsl(210,15%,90%)]">
+          <p className="text-[11px] text-[hsl(215,15%,65%)]">
+            © Copyright {new Date().getFullYear()} by <span className="text-[hsl(210,70%,50%)]">Elzini SaaS</span>. All Rights Reserved.
           </p>
         </div>
       </div>
