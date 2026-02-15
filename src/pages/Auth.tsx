@@ -257,7 +257,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             backgroundPosition: 'center',
           }}
         >
-          <div className="absolute inset-0 bg-[hsl(215,50%,25%)]/60" />
+          <div className="absolute inset-0 bg-[hsl(215,50%,35%)]/40" />
           <div className="relative z-10 flex flex-col items-center gap-2">
             {!settingsLoading && (
               <img
