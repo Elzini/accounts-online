@@ -22,7 +22,12 @@ import {
   FileBarChart,
   Cog,
   Globe,
-  Activity
+  Activity,
+  BarChart3,
+  Package,
+  Monitor,
+  Headphones,
+  Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,6 +74,13 @@ import { DefaultCompanySettings } from '@/components/super-admin/DefaultCompanyS
 import { SystemLabelsManagement } from '@/components/super-admin/SystemLabelsManagement';
 import { SubdomainManagement } from '@/components/super-admin/SubdomainManagement';
 import { CompanyAdminDashboard } from '@/components/super-admin/CompanyAdminDashboard';
+import { SaaSExecutiveDashboard } from '@/components/super-admin/SaaSExecutiveDashboard';
+import { PlansManagement } from '@/components/super-admin/PlansManagement';
+import { RevenueControl } from '@/components/super-admin/RevenueControl';
+import { SystemControlCenter } from '@/components/super-admin/SystemControlCenter';
+import { SystemMonitoring } from '@/components/super-admin/SystemMonitoring';
+import { SupportCenter } from '@/components/super-admin/SupportCenter';
+import { RBACManagement } from '@/components/super-admin/RBACManagement';
 import { MenuConfigurationTab } from '@/components/control-center/tabs/MenuConfigurationTab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -383,11 +395,39 @@ export default function Companies() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="companies" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-9 lg:w-auto lg:inline-grid">
+        <Tabs defaultValue="executive-dashboard" className="space-y-6">
+          <TabsList className="flex flex-wrap gap-1 h-auto p-1">
+            <TabsTrigger value="executive-dashboard" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span>لوحة المؤشرات</span>
+            </TabsTrigger>
             <TabsTrigger value="companies" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               <span>الشركات</span>
+            </TabsTrigger>
+            <TabsTrigger value="plans" className="flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              <span>الباقات</span>
+            </TabsTrigger>
+            <TabsTrigger value="revenue" className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              <span>الإيرادات</span>
+            </TabsTrigger>
+            <TabsTrigger value="system-control" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              <span>التحكم</span>
+            </TabsTrigger>
+            <TabsTrigger value="monitoring" className="flex items-center gap-2">
+              <Monitor className="w-4 h-4" />
+              <span>المراقبة</span>
+            </TabsTrigger>
+            <TabsTrigger value="support" className="flex items-center gap-2">
+              <Headphones className="w-4 h-4" />
+              <span>الدعم</span>
+            </TabsTrigger>
+            <TabsTrigger value="rbac" className="flex items-center gap-2">
+              <Lock className="w-4 h-4" />
+              <span>الصلاحيات</span>
             </TabsTrigger>
             <TabsTrigger value="admin-dashboard" className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
@@ -397,31 +437,59 @@ export default function Companies() {
               <Globe className="w-4 h-4" />
               <span>النطاقات</span>
             </TabsTrigger>
+            <TabsTrigger value="all-users" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span>المستخدمين</span>
+            </TabsTrigger>
             <TabsTrigger value="menu-config" className="flex items-center gap-2">
               <PanelLeft className="w-4 h-4" />
               <span>القائمة</span>
             </TabsTrigger>
             <TabsTrigger value="system-labels" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
+              <Cog className="w-4 h-4" />
               <span>المسميات</span>
             </TabsTrigger>
             <TabsTrigger value="default-settings" className="flex items-center gap-2">
               <Cog className="w-4 h-4" />
-              <span>الإعدادات الافتراضية</span>
+              <span>الإعدادات</span>
             </TabsTrigger>
             <TabsTrigger value="report" className="flex items-center gap-2">
               <FileBarChart className="w-4 h-4" />
-              <span>التقرير الشامل</span>
-            </TabsTrigger>
-            <TabsTrigger value="all-users" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span>المستخدمين</span>
+              <span>التقرير</span>
             </TabsTrigger>
             <TabsTrigger value="login-settings" className="flex items-center gap-2">
               <LogIn className="w-4 h-4" />
               <span>شاشة الدخول</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="executive-dashboard">
+            <SaaSExecutiveDashboard />
+          </TabsContent>
+
+          <TabsContent value="plans">
+            <PlansManagement />
+          </TabsContent>
+
+          <TabsContent value="revenue">
+            <RevenueControl />
+          </TabsContent>
+
+          <TabsContent value="system-control">
+            <SystemControlCenter />
+          </TabsContent>
+
+          <TabsContent value="monitoring">
+            <SystemMonitoring />
+          </TabsContent>
+
+          <TabsContent value="support">
+            <SupportCenter />
+          </TabsContent>
+
+          <TabsContent value="rbac">
+            <RBACManagement />
+          </TabsContent>
 
           <TabsContent value="admin-dashboard">
             <CompanyAdminDashboard />
