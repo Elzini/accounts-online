@@ -487,6 +487,33 @@ export type Database = {
           },
         ]
       }
+      audit_hash_chain: {
+        Row: {
+          audit_log_id: string
+          created_at: string
+          id: number
+          integrity_hash: string
+          previous_hash: string | null
+          sequence_number: number
+        }
+        Insert: {
+          audit_log_id: string
+          created_at?: string
+          id?: never
+          integrity_hash: string
+          previous_hash?: string | null
+          sequence_number: number
+        }
+        Update: {
+          audit_log_id?: string
+          created_at?: string
+          id?: never
+          integrity_hash?: string
+          previous_hash?: string | null
+          sequence_number?: number
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -12327,6 +12354,16 @@ export type Database = {
         Returns: Json
       }
       validate_tenant_schema: { Args: { p_company_id: string }; Returns: Json }
+      verify_audit_chain_integrity: {
+        Args: { p_company_id?: string }
+        Returns: {
+          is_valid: boolean
+          mismatches: number
+          missing_hashes: number
+          total_hashes: number
+          total_logs: number
+        }[]
+      }
       verify_audit_log_integrity: {
         Args: { _company_id: string }
         Returns: {
