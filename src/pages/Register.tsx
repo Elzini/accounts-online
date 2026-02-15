@@ -249,7 +249,7 @@ export default function Register() {
         <form onSubmit={handleSubmit} className="w-full max-w-sm">
           <div className="space-y-3 mb-4">
             {/* Company Name */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors focus-within:border-[hsl(210,70%,50%)]/50 focus-within:ring-1 focus-within:ring-[hsl(210,70%,50%)]/20">
+            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors">
               <div className="px-4 py-3.5">
                 <Building2 className="w-5 h-5 text-white/30" />
               </div>
@@ -258,15 +258,15 @@ export default function Register() {
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="اسم الشركة"
-                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:bg-white/[0.05]"
+                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:outline-none focus:ring-0"
                 required
               />
             </div>
 
             {/* Company Type */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl hover:border-white/20 transition-colors focus-within:border-[hsl(210,70%,50%)]/50 focus-within:ring-1 focus-within:ring-[hsl(210,70%,50%)]/20">
+            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl hover:border-white/20 transition-colors">
               <Select value={companyType} onValueChange={(v) => setCompanyType(v as CompanyActivityType)}>
-                <SelectTrigger className="h-12 bg-transparent border-none text-white hover:bg-transparent rounded-xl [&>span]:text-white focus:ring-1 focus:ring-[hsl(210,70%,50%)]/30">
+                <SelectTrigger className="h-12 bg-transparent border-none text-white hover:bg-transparent rounded-xl [&>span]:text-white focus:outline-none focus:ring-0">
                   <SelectValue placeholder="نوع النشاط" />
                 </SelectTrigger>
                 <SelectContent className="bg-background border z-50">
@@ -283,7 +283,7 @@ export default function Register() {
             </div>
 
             {/* Email */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors focus-within:border-[hsl(210,70%,50%)]/50 focus-within:ring-1 focus-within:ring-[hsl(210,70%,50%)]/20">
+            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors">
               <div className="px-4 py-3.5">
                 <Mail className="w-5 h-5 text-white/30" />
               </div>
@@ -292,14 +292,14 @@ export default function Register() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="البريد الإلكتروني"
-                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:bg-white/[0.05]"
+                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:outline-none focus:ring-0"
                 dir="ltr"
                 required
               />
             </div>
 
             {/* Phone */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors focus-within:border-[hsl(210,70%,50%)]/50 focus-within:ring-1 focus-within:ring-[hsl(210,70%,50%)]/20">
+            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors">
               <div className="px-4 py-3.5">
                 <Phone className="w-5 h-5 text-white/30" />
               </div>
@@ -308,14 +308,14 @@ export default function Register() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="05xxxxxxxx"
-                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:bg-white/[0.05]"
+                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:outline-none focus:ring-0"
                 dir="ltr"
                 required
               />
             </div>
 
             {/* Password */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors focus-within:border-[hsl(210,70%,50%)]/50 focus-within:ring-1 focus-within:ring-[hsl(210,70%,50%)]/20">
+            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors">
               <div className="px-4 py-3.5">
                 <Lock className="w-5 h-5 text-white/30" />
               </div>
@@ -324,7 +324,7 @@ export default function Register() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="كلمة المرور"
-                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:bg-white/[0.05]"
+                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:outline-none focus:ring-0"
                 dir="ltr"
                 required
                 minLength={8}
@@ -353,7 +353,7 @@ export default function Register() {
             )}
 
             {/* Confirm Password */}
-            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors focus-within:border-[hsl(210,70%,50%)]/50 focus-within:ring-1 focus-within:ring-[hsl(210,70%,50%)]/20">
+            <div className="bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:border-white/20 transition-colors">
               <div className="px-4 py-3.5">
                 <Lock className="w-5 h-5 text-white/30" />
               </div>
@@ -362,7 +362,7 @@ export default function Register() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="تأكيد كلمة المرور"
-                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:bg-white/[0.05]"
+                className="flex-1 py-3.5 pr-3 text-sm text-white placeholder:text-white/30 bg-transparent outline-none border-none focus:outline-none focus:ring-0"
                 dir="ltr"
                 required
                 minLength={8}
