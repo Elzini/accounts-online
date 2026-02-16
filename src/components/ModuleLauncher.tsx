@@ -12,7 +12,10 @@ import {
   GitBranch, GitFork, Palette, Settings2, ShieldCheck, Database, FileUp,
   TestTube, QrCode, CalendarDays, FileSignature, Calendar, UserCog, ListTodo,
   ArrowRight, ArrowLeft, Search, Bell, Users2 as UsersIcon, Fingerprint, Shield,
-  Edit3, Sparkles, LayoutGrid as LayoutGridIcon
+  Edit3, Sparkles, LayoutGrid as LayoutGridIcon,
+  Monitor, Car, Hammer, SquareCheck, Mail, MessageSquare, Phone,
+  Share2, PartyPopper, ClipboardPenLine, GraduationCap, BookOpenCheck,
+  MessagesSquare, PenTool, CalendarRange, MapPinned, Layers, ScanBarcode
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -253,6 +256,146 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
         { id: 'zatca-sandbox', label: 'بيئة محاكاة ZATCA', labelEn: 'ZATCA Sandbox', icon: TestTube, permission: 'admin' },
         { id: 'zatca-technical-doc', label: 'وثائق ZATCA', labelEn: 'ZATCA Docs', icon: FileText, permission: 'admin' },
         { id: 'mobile-invoice-reader', label: 'قراءة فاتورة بالجوال', labelEn: 'Invoice Reader', icon: QrCode, permission: 'admin' },
+      ],
+    },
+    {
+      id: 'pos-mod', label: 'نقطة البيع', labelEn: 'Point of Sale', icon: Monitor,
+      color: 'bg-red-500', gradient: 'from-red-400 to-red-600', permission: 'sales',
+      items: [
+        { id: 'pos', label: 'شاشة البيع', labelEn: 'POS Screen', icon: Monitor, permission: 'sales' },
+      ],
+    },
+    {
+      id: 'recruitment-mod', label: 'التوظيف', labelEn: 'Recruitment', icon: Users,
+      color: 'bg-cyan-500', gradient: 'from-cyan-400 to-cyan-600', permission: 'employees',
+      items: [
+        { id: 'recruitment', label: 'إدارة التوظيف', labelEn: 'Recruitment', icon: Users, permission: 'employees' },
+      ],
+    },
+    {
+      id: 'appraisals-mod', label: 'تقييم الأداء', labelEn: 'Appraisals', icon: ClipboardPenLine,
+      color: 'bg-yellow-500', gradient: 'from-yellow-400 to-yellow-600', permission: 'employees',
+      items: [
+        { id: 'appraisals', label: 'تقييمات الموظفين', labelEn: 'Appraisals', icon: ClipboardPenLine, permission: 'employees' },
+      ],
+    },
+    {
+      id: 'fleet-mod', label: 'إدارة الأسطول', labelEn: 'Fleet', icon: Car,
+      color: 'bg-sky-500', gradient: 'from-sky-400 to-sky-600',
+      items: [
+        { id: 'fleet', label: 'إدارة المركبات', labelEn: 'Fleet Management', icon: Car },
+      ],
+    },
+    {
+      id: 'maintenance-mod', label: 'الصيانة', labelEn: 'Maintenance', icon: Hammer,
+      color: 'bg-stone-500', gradient: 'from-stone-400 to-stone-600',
+      items: [
+        { id: 'maintenance', label: 'جدولة الصيانة', labelEn: 'Maintenance', icon: Hammer },
+      ],
+    },
+    {
+      id: 'quality-mod', label: 'مراقبة الجودة', labelEn: 'Quality Control', icon: SquareCheck,
+      color: 'bg-lime-500', gradient: 'from-lime-400 to-lime-600',
+      items: [
+        { id: 'quality-control', label: 'فحوصات الجودة', labelEn: 'Quality Control', icon: SquareCheck },
+      ],
+    },
+    {
+      id: 'email-marketing-mod', label: 'التسويق بالبريد', labelEn: 'Email Marketing', icon: Mail,
+      color: 'bg-rose-400', gradient: 'from-rose-300 to-rose-500',
+      items: [
+        { id: 'email-marketing', label: 'حملات البريد', labelEn: 'Email Campaigns', icon: Mail },
+      ],
+    },
+    {
+      id: 'sms-marketing-mod', label: 'التسويق SMS', labelEn: 'SMS Marketing', icon: Phone,
+      color: 'bg-green-500', gradient: 'from-green-400 to-green-600',
+      items: [
+        { id: 'sms-marketing', label: 'رسائل SMS', labelEn: 'SMS Marketing', icon: Phone },
+      ],
+    },
+    {
+      id: 'social-mod', label: 'التسويق الاجتماعي', labelEn: 'Social Marketing', icon: Share2,
+      color: 'bg-blue-400', gradient: 'from-blue-300 to-blue-500',
+      items: [
+        { id: 'social-marketing', label: 'وسائل التواصل', labelEn: 'Social Marketing', icon: Share2 },
+      ],
+    },
+    {
+      id: 'events-mod', label: 'الأحداث', labelEn: 'Events', icon: PartyPopper,
+      color: 'bg-fuchsia-500', gradient: 'from-fuchsia-400 to-fuchsia-600',
+      items: [
+        { id: 'events', label: 'إدارة الفعاليات', labelEn: 'Events', icon: PartyPopper },
+      ],
+    },
+    {
+      id: 'surveys-mod', label: 'الاستبيانات', labelEn: 'Surveys', icon: ClipboardList,
+      color: 'bg-violet-400', gradient: 'from-violet-300 to-violet-500',
+      items: [
+        { id: 'surveys', label: 'استطلاعات الرأي', labelEn: 'Surveys', icon: ClipboardList },
+      ],
+    },
+    {
+      id: 'elearning-mod', label: 'التعلم الإلكتروني', labelEn: 'eLearning', icon: GraduationCap,
+      color: 'bg-indigo-400', gradient: 'from-indigo-300 to-indigo-500',
+      items: [
+        { id: 'elearning', label: 'الدورات التدريبية', labelEn: 'eLearning', icon: GraduationCap },
+      ],
+    },
+    {
+      id: 'knowledge-mod', label: 'قاعدة المعرفة', labelEn: 'Knowledge', icon: BookOpenCheck,
+      color: 'bg-emerald-400', gradient: 'from-emerald-300 to-emerald-500',
+      items: [
+        { id: 'knowledge-base', label: 'ويكي داخلي', labelEn: 'Knowledge Base', icon: BookOpenCheck },
+      ],
+    },
+    {
+      id: 'chat-mod', label: 'المحادثات', labelEn: 'Discuss', icon: MessagesSquare,
+      color: 'bg-blue-600', gradient: 'from-blue-500 to-blue-700',
+      items: [
+        { id: 'internal-chat', label: 'الدردشة الداخلية', labelEn: 'Internal Chat', icon: MessagesSquare },
+      ],
+    },
+    {
+      id: 'sign-mod', label: 'التوقيع الإلكتروني', labelEn: 'Sign', icon: PenTool,
+      color: 'bg-amber-500', gradient: 'from-amber-400 to-amber-600',
+      items: [
+        { id: 'e-signature', label: 'توقيع المستندات', labelEn: 'E-Signature', icon: PenTool },
+      ],
+    },
+    {
+      id: 'planning-mod', label: 'التخطيط', labelEn: 'Planning', icon: CalendarRange,
+      color: 'bg-teal-400', gradient: 'from-teal-300 to-teal-500', permission: 'employees',
+      items: [
+        { id: 'planning', label: 'جدولة الورديات', labelEn: 'Planning', icon: CalendarRange, permission: 'employees' },
+      ],
+    },
+    {
+      id: 'appointments-mod', label: 'المواعيد', labelEn: 'Appointments', icon: CalendarCheck,
+      color: 'bg-orange-400', gradient: 'from-orange-300 to-orange-500',
+      items: [
+        { id: 'appointments', label: 'حجز المواعيد', labelEn: 'Appointments', icon: CalendarCheck },
+      ],
+    },
+    {
+      id: 'field-service-mod', label: 'خدمة ميدانية', labelEn: 'Field Service', icon: MapPinned,
+      color: 'bg-red-400', gradient: 'from-red-300 to-red-500',
+      items: [
+        { id: 'field-service', label: 'الفنيين الميدانيين', labelEn: 'Field Service', icon: MapPinned },
+      ],
+    },
+    {
+      id: 'plm-mod', label: 'دورة حياة المنتج', labelEn: 'PLM', icon: Layers,
+      color: 'bg-gray-500', gradient: 'from-gray-400 to-gray-600',
+      items: [
+        { id: 'plm', label: 'إدارة PLM', labelEn: 'PLM', icon: Layers },
+      ],
+    },
+    {
+      id: 'barcode-mod', label: 'الباركود', labelEn: 'Barcode', icon: ScanBarcode,
+      color: 'bg-neutral-600', gradient: 'from-neutral-500 to-neutral-700',
+      items: [
+        { id: 'barcode-scanner', label: 'ماسح الباركود', labelEn: 'Barcode Scanner', icon: ScanBarcode },
       ],
     },
   ];
