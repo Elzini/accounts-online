@@ -614,19 +614,42 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
             }
           };
 
+          const iconSize = config.iconSize || (config.size === 'large' ? 72 : config.size === 'small' ? 48 : 64);
+          const gradientClass = config.gradient || mod.gradient;
+
+          const handleWheel = (e: React.WheelEvent) => {
+            if (!e.ctrlKey) return;
+            e.preventDefault();
+            const current = config.iconSize || iconSize;
+            const newSize = Math.max(32, Math.min(120, current + (e.deltaY > 0 ? -4 : 4)));
+            const updated = currentConfigs.map(c => c.id === config.id ? { ...c, iconSize: newSize } : c);
+            if (isEditMode) {
+              setEditConfigs(updated);
+            } else {
+              setModuleConfigs(updated);
+              localStorage.setItem(LAUNCHER_CONFIG_KEY, JSON.stringify(updated));
+            }
+          };
+
           const cardContent = (
             <button
               key={mod.id}
               onClick={handleClick}
-              className={`group flex flex-col items-center gap-3 p-6 sm:p-8 rounded-2xl bg-card shadow-sm hover:shadow-lg transition-all duration-300 w-full ${
+              onWheel={handleWheel}
+              className={`group flex flex-col items-center gap-3 p-6 sm:p-8 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 w-full ${
                 config.size === 'large' ? 'col-span-2' : ''
               } ${!config.visible ? 'opacity-40' : ''}`}
+              style={{ background: config.bgColor || undefined }}
             >
-              <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${mod.gradient} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
-                <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              <div
+                className={`rounded-2xl bg-gradient-to-br ${gradientClass} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}
+                style={{ width: iconSize, height: iconSize }}
+              >
+                <Icon className="text-white" style={{ width: iconSize * 0.45, height: iconSize * 0.45 }} />
               </div>
-              <span className="text-sm sm:text-base text-foreground/80 font-semibold leading-tight text-center group-hover:text-foreground transition-colors">
-                {isRtl ? mod.label : mod.labelEn}
+              <span className="text-sm sm:text-base font-semibold leading-tight text-center group-hover:text-foreground transition-colors"
+                style={{ color: config.textColor || undefined }}>
+                {config.label || (isRtl ? mod.label : mod.labelEn)}
               </span>
             </button>
           );
