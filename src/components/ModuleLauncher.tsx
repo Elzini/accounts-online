@@ -333,9 +333,60 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
           />
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{getAppName()}</h1>
+
+        {/* Search Bar */}
+        <div className="relative mt-5 max-w-md mx-auto">
+          <Search className="absolute top-1/2 -translate-y-1/2 start-4 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={isRtl ? 'ابحث في النظام...' : 'Search the system...'}
+            className="w-full bg-card border border-border/50 rounded-full py-2.5 ps-11 pe-4 text-sm text-foreground placeholder:text-muted-foreground/60 shadow-sm focus:outline-none focus:shadow-md transition-shadow"
+          />
+        </div>
       </div>
 
+      {/* Search Results */}
+      {searchQuery.trim() ? (
+        <div className="max-w-5xl w-full mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+            {visibleModules.flatMap(mod => 
+              mod.items.filter(i => hasAccess(i.permission)).filter(i => {
+                const q = searchQuery.toLowerCase();
+                return i.label.includes(q) || i.labelEn.toLowerCase().includes(q);
+              }).map(item => {
+                const ItemIcon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActivePage(item.id)}
+                    className="group flex flex-col items-center gap-3 p-5 rounded-2xl bg-card shadow-sm hover:shadow-lg transition-all duration-300"
+                  >
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${mod.gradient} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                      <ItemIcon className="w-6 h-6 text-white" />
+                    </div>
+                    <span className="text-xs sm:text-sm text-center text-foreground/80 group-hover:text-foreground leading-tight line-clamp-2 font-medium">
+                      {isRtl ? item.label : item.labelEn}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+          {visibleModules.flatMap(mod => mod.items.filter(i => hasAccess(i.permission)).filter(i => {
+            const q = searchQuery.toLowerCase();
+            return i.label.includes(q) || i.labelEn.toLowerCase().includes(q);
+          })).length === 0 && (
+            <div className="text-center py-12 text-muted-foreground">
+              {isRtl ? 'لا توجد نتائج' : 'No results found'}
+            </div>
+          )}
+        </div>
+      ) : null}
+
       {/* Main Modules Grid */}
+      {!searchQuery.trim() && (
       <div className="max-w-4xl w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5">
         {visibleModules.map((mod) => {
           const Icon = mod.icon;
@@ -362,6 +413,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
           );
         })}
       </div>
+      )}
 
       {/* Footer */}
       <div className="mt-10 sm:mt-14 flex flex-col items-center gap-3">
