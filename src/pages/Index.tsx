@@ -352,9 +352,7 @@ const Index = () => {
   // Wrap setActivePage to exit launcher mode
   const handleSetActivePage = (page: ActivePage) => {
     setActivePage(page);
-    if (page !== 'dashboard') {
-      setShowModuleLauncher(false);
-    }
+    setShowModuleLauncher(false);
   };
 
   // Handle module selection from launcher
