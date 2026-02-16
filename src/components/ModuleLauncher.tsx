@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   LucideIcon, LayoutDashboard, Users, ShoppingCart, DollarSign, BookOpen, 
   Warehouse, Users2, Wrench, Plug, Settings, FileText, Factory, 
@@ -11,7 +11,8 @@ import {
   BookMarked, RefreshCw, Link2, LayoutGrid, Code, Puzzle, Workflow,
   GitBranch, GitFork, Palette, Settings2, ShieldCheck, Database, FileUp,
   TestTube, QrCode, CalendarDays, FileSignature, Calendar, UserCog, ListTodo,
-  ArrowRight, ArrowLeft, Search, Bell, Users2 as UsersIcon, Fingerprint, Shield
+  ArrowRight, ArrowLeft, Search, Bell, Users2 as UsersIcon, Fingerprint, Shield,
+  Edit3
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +21,9 @@ import { useAppSettings } from '@/hooks/useSettings';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePlugins } from '@/hooks/usePlugins';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { LauncherEditToolbar, EditableModuleCard, useLauncherDragDrop, LauncherModuleConfig } from '@/components/launcher/LauncherEditMode';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import defaultLogo from '@/assets/logo.png';
 
 interface ModuleLauncherProps {
@@ -46,6 +50,8 @@ interface MainModule {
   items: SubItem[];
 }
 
+const LAUNCHER_CONFIG_KEY = 'launcher_module_config';
+
 export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncherProps) {
   const { permissions, user } = useAuth();
   const { company } = useCompany();
@@ -56,6 +62,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   const [searchQuery, setSearchQuery] = useState('');
   const [showUsers, setShowUsers] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const usersRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
@@ -248,6 +255,64 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   const visibleModules = modules.filter(m => hasAccess(m.permission));
   const BackIcon = isRtl ? ArrowRight : ArrowLeft;
 
+  // === Launcher customization config ===
+  const defaultModuleConfigs: LauncherModuleConfig[] = useMemo(() =>
+    visibleModules.map((m, i) => ({
+      id: m.id,
+      label: isRtl ? m.label : m.labelEn,
+      visible: true,
+      order: i,
+      size: 'normal' as const,
+    })),
+    [visibleModules.length, isRtl]
+  );
+
+  const [moduleConfigs, setModuleConfigs] = useState<LauncherModuleConfig[]>(() => {
+    try {
+      const saved = localStorage.getItem(LAUNCHER_CONFIG_KEY);
+      if (saved) {
+        const parsed: LauncherModuleConfig[] = JSON.parse(saved);
+        // Merge with current modules (handle new/removed modules)
+        const merged = visibleModules.map((m, i) => {
+          const existing = parsed.find(p => p.id === m.id);
+          return existing || {
+            id: m.id,
+            label: isRtl ? m.label : m.labelEn,
+            visible: true,
+            order: existing?.order ?? i,
+            size: 'normal' as const,
+          };
+        });
+        return merged.sort((a, b) => a.order - b.order).map((m, i) => ({ ...m, order: i }));
+      }
+    } catch {}
+    return defaultModuleConfigs;
+  });
+
+  const [editConfigs, setEditConfigs] = useState<LauncherModuleConfig[]>(moduleConfigs);
+
+  const handleStartEdit = () => {
+    setEditConfigs([...moduleConfigs]);
+    setIsEditMode(true);
+  };
+
+  const handleSave = (configs: LauncherModuleConfig[]) => {
+    setModuleConfigs(configs);
+    localStorage.setItem(LAUNCHER_CONFIG_KEY, JSON.stringify(configs));
+    setIsEditMode(false);
+    toast.success(isRtl ? 'تم حفظ تخصيص الواجهة' : 'Layout saved');
+  };
+
+  const handleCancel = () => {
+    setEditConfigs([...moduleConfigs]);
+    setIsEditMode(false);
+  };
+
+  const dragDrop = useLauncherDragDrop(editConfigs, setEditConfigs);
+
+  const currentConfigs = isEditMode ? editConfigs : moduleConfigs;
+  const sortedConfigs = [...currentConfigs].sort((a, b) => a.order - b.order);
+
   // Filter items by search
   const filterBySearch = (items: SubItem[]) => {
     if (!searchQuery.trim()) return items.filter(i => hasAccess(i.permission));
@@ -341,8 +406,27 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   // === Main modules view ===
   return (
     <div className="min-h-[calc(100vh-60px)] bg-muted/40 flex flex-col items-center p-4 sm:p-8">
-      {/* Top Bar: Search */}
-      <div className="w-full max-w-4xl mb-4 flex justify-end">
+      {/* Edit Mode Toolbar */}
+      <LauncherEditToolbar
+        isEditMode={isEditMode}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        modules={editConfigs}
+        onModulesChange={setEditConfigs}
+        defaultModules={defaultModuleConfigs}
+      />
+
+      {/* Top Bar: Search + Edit button */}
+      <div className="w-full max-w-4xl mb-4 flex justify-between items-center">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleStartEdit}
+          className="gap-1.5 text-xs h-8 px-3 rounded-full"
+        >
+          <Edit3 className="w-3.5 h-3.5" />
+          {isRtl ? 'تخصيص الواجهة' : 'Customize'}
+        </Button>
         <div className="relative">
           <Search className="absolute top-1/2 -translate-y-1/2 start-3 w-4 h-4 text-muted-foreground" />
           <input
@@ -466,20 +550,28 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       {/* Main Modules Grid */}
       {!searchQuery.trim() && (
       <div className="max-w-4xl w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5">
-        {visibleModules.map((mod) => {
+        {sortedConfigs.map((config) => {
+          const mod = visibleModules.find(m => m.id === config.id);
+          if (!mod) return null;
+          if (!config.visible && !isEditMode) return null;
+          
           const Icon = mod.icon;
           const handleClick = () => {
+            if (isEditMode) return;
             if (mod.items.length === 1) {
               setActivePage(mod.items[0].id);
             } else {
               setSelectedModule(mod);
             }
           };
-          return (
+
+          const cardContent = (
             <button
               key={mod.id}
               onClick={handleClick}
-              className="group flex flex-col items-center gap-3 p-6 sm:p-8 rounded-2xl bg-card shadow-sm hover:shadow-lg transition-all duration-300"
+              className={`group flex flex-col items-center gap-3 p-6 sm:p-8 rounded-2xl bg-card shadow-sm hover:shadow-lg transition-all duration-300 w-full ${
+                config.size === 'large' ? 'col-span-2' : ''
+              } ${!config.visible ? 'opacity-40' : ''}`}
             >
               <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${mod.gradient} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
                 <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
@@ -489,6 +581,32 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
               </span>
             </button>
           );
+
+          if (isEditMode) {
+            return (
+              <EditableModuleCard
+                key={config.id}
+                id={config.id}
+                isEditMode={true}
+                visible={true} // show all in edit mode
+                size={config.size}
+                onRemove={dragDrop.removeModule}
+                onResize={dragDrop.resizeModule}
+                onMoveUp={dragDrop.moveUp}
+                onMoveDown={dragDrop.moveDown}
+                onDragStart={dragDrop.handleDragStart}
+                onDragEnd={dragDrop.handleDragEnd}
+                onDragOver={dragDrop.handleDragOver}
+                onDrop={dragDrop.handleDrop}
+                isDragging={dragDrop.draggedId === config.id}
+                isDragOver={dragDrop.dragOverId === config.id}
+              >
+                {cardContent}
+              </EditableModuleCard>
+            );
+          }
+
+          return cardContent;
         })}
       </div>
       )}
