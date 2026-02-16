@@ -1,8 +1,7 @@
-import { useState } from 'react';
 import { 
   LucideIcon, LayoutDashboard, Users, ShoppingCart, DollarSign, BookOpen, 
-  Warehouse, Users2, Wrench, Plug, Settings, Crown, FileText, Factory, 
-  MapPin, UtensilsCrossed, Ship, Building2, RotateCcw, RotateCw, FileCheck,
+  Warehouse, Users2, Wrench, Plug, Settings, FileText, Factory, 
+  MapPin, Building2, RotateCcw, RotateCw, FileCheck,
   CreditCard, Star, Award, CalendarCheck, ArrowLeftRight, Package, Banknote,
   ArrowDownToLine, Truck, Coins, Wallet, Clock, Receipt, Calculator, Scale,
   ClipboardList, ClipboardCheck, Landmark, HandCoins, Target, Percent,
@@ -10,8 +9,7 @@ import {
   ArrowUpFromLine, FolderTree, Ruler, Smartphone, Play, Home, Globe,
   BookMarked, RefreshCw, Link2, LayoutGrid, Code, Puzzle, Workflow,
   GitBranch, GitFork, Palette, Settings2, ShieldCheck, Database, FileUp,
-  TestTube, QrCode, CalendarDays, FileSignature, Calendar, UserCog, ListTodo,
-  Monitor, MessageCircle, ChevronDown, ChevronRight
+  TestTube, QrCode, CalendarDays, FileSignature, Calendar, UserCog, ListTodo
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,7 +18,6 @@ import { useAppSettings } from '@/hooks/useSettings';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePlugins } from '@/hooks/usePlugins';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import defaultLogo from '@/assets/logo.png';
 
 interface ModuleLauncherProps {
@@ -28,22 +25,13 @@ interface ModuleLauncherProps {
   onModuleSelect: (moduleId: string) => void;
 }
 
-interface SubItem {
+interface AppItem {
   id: ActivePage;
   label: string;
   labelEn: string;
   icon: LucideIcon;
-  permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users' | 'employees' | 'payroll' | 'warehouses' | 'financial_accounting';
-}
-
-interface ModuleSection {
-  id: string;
-  label: string;
-  labelEn: string;
-  icon: LucideIcon;
   color: string;
-  permission?: string;
-  items: SubItem[];
+  permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users' | 'employees' | 'payroll' | 'warehouses' | 'financial_accounting';
 }
 
 export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncherProps) {
@@ -52,196 +40,134 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   const { data: settings } = useAppSettings();
   const { language } = useLanguage();
   const { activePlugins } = usePlugins();
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
   const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
   const logoUrl = settings?.company_logo_url || defaultLogo;
 
-  const toggleSection = (id: string) => {
-    setExpandedSections(prev => ({ ...prev, [id]: !prev[id] }));
-  };
+  const allApps: AppItem[] = [
+    // Main
+    { id: 'dashboard', label: 'الرئيسية', labelEn: 'Dashboard', icon: LayoutDashboard, color: 'bg-emerald-500' },
 
-  // ===== القائمة الرئيسية =====
-  const mainSection: ModuleSection = {
-    id: 'main', label: 'القائمة الرئيسية', labelEn: 'Main Menu', icon: LayoutDashboard, color: 'bg-emerald-500',
-    items: [
-      { id: 'dashboard', label: 'الرئيسية', labelEn: 'Dashboard', icon: LayoutDashboard },
-    ]
-  };
+    // Sales
+    { id: 'sales', label: 'فاتورة مبيعات', labelEn: 'Sales Invoice', icon: DollarSign, color: 'bg-blue-500', permission: 'sales' },
+    { id: 'credit-debit-notes', label: 'مرتجع مبيعات', labelEn: 'Sales Returns', icon: RotateCcw, color: 'bg-blue-400', permission: 'sales' },
+    { id: 'quotations', label: 'عروض الأسعار', labelEn: 'Quotations', icon: FileCheck, color: 'bg-blue-600', permission: 'sales' },
+    { id: 'installments', label: 'الأقساط', labelEn: 'Installments', icon: CreditCard, color: 'bg-blue-300', permission: 'sales' },
+    { id: 'customers', label: 'العملاء', labelEn: 'Customers', icon: Users, color: 'bg-cyan-500', permission: 'sales' },
+    { id: 'crm', label: 'إدارة العملاء CRM', labelEn: 'CRM', icon: Users, color: 'bg-cyan-600', permission: 'sales' },
+    ...(companyType === 'car_dealership' ? [
+      { id: 'partner-dealerships' as ActivePage, label: 'المعارض الشريكة', labelEn: 'Partner Dealerships', icon: Building2, color: 'bg-blue-700', permission: 'sales' as const },
+      { id: 'car-transfers' as ActivePage, label: 'تحويلات السيارات', labelEn: 'Car Transfers', icon: ArrowLeftRight, color: 'bg-blue-800', permission: 'sales' as const },
+    ] : []),
+    { id: 'loyalty', label: 'نقاط الولاء', labelEn: 'Loyalty Points', icon: Star, color: 'bg-yellow-500', permission: 'sales' },
+    { id: 'sales-targets', label: 'المستهدفة', labelEn: 'Sales Targets', icon: Award, color: 'bg-amber-500', permission: 'sales' },
+    { id: 'bookings', label: 'الحجوزات', labelEn: 'Bookings', icon: CalendarCheck, color: 'bg-teal-500', permission: 'sales' },
+    { id: 'sales-report', label: 'تقرير المبيعات', labelEn: 'Sales Report', icon: DollarSign, color: 'bg-blue-500', permission: 'reports' },
+    { id: 'customers-report', label: 'تقرير العملاء', labelEn: 'Customers Report', icon: Users, color: 'bg-cyan-500', permission: 'reports' },
+    { id: 'commissions-report', label: 'تقرير العمولات', labelEn: 'Commissions Report', icon: DollarSign, color: 'bg-indigo-400', permission: 'reports' },
+    ...(companyType === 'car_dealership' ? [
+      { id: 'transfers-report' as ActivePage, label: 'تقرير التحويلات', labelEn: 'Transfers Report', icon: ArrowLeftRight, color: 'bg-indigo-500', permission: 'reports' as const },
+      { id: 'partner-report' as ActivePage, label: 'تقرير المعرض الشريك', labelEn: 'Partner Report', icon: Building2, color: 'bg-indigo-600', permission: 'reports' as const },
+    ] : []),
 
-  // ===== مبيعات =====
-  const salesSection: ModuleSection = {
-    id: 'sales', label: 'مبيعات', labelEn: 'Sales', icon: DollarSign, color: 'bg-blue-500', permission: 'sales',
-    items: [
-      { id: 'sales', label: 'فاتورة مبيعات', labelEn: 'Sales Invoice', icon: DollarSign, permission: 'sales' },
-      { id: 'credit-debit-notes', label: 'مرتجع مبيعات / إشعار دائن', labelEn: 'Sales Returns / Credit Note', icon: RotateCcw, permission: 'sales' },
-      { id: 'quotations', label: 'عروض الأسعار', labelEn: 'Quotations', icon: FileCheck, permission: 'sales' },
-      { id: 'installments', label: 'الأقساط', labelEn: 'Installments', icon: CreditCard, permission: 'sales' },
-      { id: 'customers', label: 'العملاء', labelEn: 'Customers', icon: Users, permission: 'sales' },
-      { id: 'crm', label: 'إدارة العملاء CRM', labelEn: 'CRM', icon: Users, permission: 'sales' },
-      ...(companyType === 'car_dealership' ? [
-        { id: 'partner-dealerships' as ActivePage, label: 'المعارض الشريكة', labelEn: 'Partner Dealerships', icon: Building2, permission: 'sales' as const },
-        { id: 'car-transfers' as ActivePage, label: 'تحويلات السيارات', labelEn: 'Car Transfers', icon: ArrowLeftRight, permission: 'sales' as const },
-      ] : []),
-      { id: 'loyalty', label: 'نقاط الولاء', labelEn: 'Loyalty Points', icon: Star, permission: 'sales' },
-      { id: 'sales-targets', label: 'المبيعات المستهدفة', labelEn: 'Sales Targets', icon: Award, permission: 'sales' },
-      { id: 'bookings', label: 'الحجوزات', labelEn: 'Bookings', icon: CalendarCheck, permission: 'sales' },
-      { id: 'sales-report', label: 'تقرير المبيعات', labelEn: 'Sales Report', icon: DollarSign, permission: 'reports' },
-      { id: 'customers-report', label: 'تقرير العملاء', labelEn: 'Customers Report', icon: Users, permission: 'reports' },
-      { id: 'commissions-report', label: 'تقرير العمولات', labelEn: 'Commissions Report', icon: DollarSign, permission: 'reports' },
-      ...(companyType === 'car_dealership' ? [
-        { id: 'transfers-report' as ActivePage, label: 'تقرير التحويلات', labelEn: 'Transfers Report', icon: ArrowLeftRight, permission: 'reports' as const },
-        { id: 'partner-report' as ActivePage, label: 'تقرير المعرض الشريك', labelEn: 'Partner Report', icon: Building2, permission: 'reports' as const },
-      ] : []),
-    ]
-  };
+    // Purchases
+    { id: 'purchases', label: 'فاتورة مشتريات', labelEn: 'Purchase Invoice', icon: ShoppingCart, color: 'bg-orange-500', permission: 'purchases' },
+    { id: 'purchase-returns', label: 'مرتجع مشتريات', labelEn: 'Purchase Returns', icon: RotateCw, color: 'bg-orange-400', permission: 'purchases' },
+    { id: 'materials-request', label: 'طلب مواد', labelEn: 'Materials Request', icon: Package, color: 'bg-orange-600', permission: 'purchases' },
+    { id: 'purchase-orders', label: 'طلب شراء', labelEn: 'Purchase Order', icon: ShoppingCart, color: 'bg-orange-700', permission: 'purchases' },
+    { id: 'contractor-payment', label: 'سند صرف مقاول', labelEn: 'Contractor Payment', icon: Banknote, color: 'bg-orange-300', permission: 'purchases' },
+    { id: 'goods-receipt', label: 'سند استلام مواد', labelEn: 'Goods Receipt', icon: ArrowDownToLine, color: 'bg-amber-600', permission: 'purchases' },
+    { id: 'suppliers', label: 'الموردين', labelEn: 'Suppliers', icon: Truck, color: 'bg-orange-500', permission: 'purchases' },
+    { id: 'currencies', label: 'العملات', labelEn: 'Currencies', icon: Coins, color: 'bg-yellow-600', permission: 'purchases' },
+    { id: 'expenses', label: 'المصروفات', labelEn: 'Expenses', icon: Wallet, color: 'bg-red-400', permission: 'purchases' },
+    { id: 'prepaid-expenses', label: 'المصروفات المقدمة', labelEn: 'Prepaid Expenses', icon: Clock, color: 'bg-red-300', permission: 'purchases' },
+    { id: 'purchases-report', label: 'تقارير المشتريات', labelEn: 'Purchases Report', icon: FileText, color: 'bg-orange-500', permission: 'reports' },
+    { id: 'suppliers-report', label: 'تقرير الموردين', labelEn: 'Suppliers Report', icon: Truck, color: 'bg-orange-600', permission: 'reports' },
 
-  // ===== مشتريات =====
-  const purchasesSection: ModuleSection = {
-    id: 'purchases', label: 'مشتريات', labelEn: 'Purchases', icon: ShoppingCart, color: 'bg-orange-500', permission: 'purchases',
-    items: [
-      { id: 'purchases', label: 'فاتورة مشتريات', labelEn: 'Purchase Invoice', icon: ShoppingCart, permission: 'purchases' },
-      { id: 'purchase-returns', label: 'مرتجع مشتريات / إشعار مدين', labelEn: 'Purchase Returns / Debit Note', icon: RotateCw, permission: 'purchases' },
-      { id: 'materials-request', label: 'طلب مواد', labelEn: 'Materials Request', icon: Package, permission: 'purchases' },
-      { id: 'purchase-orders', label: 'طلب شراء', labelEn: 'Purchase Order', icon: ShoppingCart, permission: 'purchases' },
-      { id: 'contractor-payment', label: 'سند صرف مقاول', labelEn: 'Contractor Payment', icon: Banknote, permission: 'purchases' },
-      { id: 'goods-receipt', label: 'سند استلام مواد', labelEn: 'Goods Receipt', icon: ArrowDownToLine, permission: 'purchases' },
-      { id: 'suppliers', label: 'الموردين', labelEn: 'Suppliers', icon: Truck, permission: 'purchases' },
-      { id: 'currencies', label: 'ملف العملات', labelEn: 'Currencies', icon: Coins, permission: 'purchases' },
-      { id: 'expenses', label: 'المصروفات', labelEn: 'Expenses', icon: Wallet, permission: 'purchases' },
-      { id: 'prepaid-expenses', label: 'المصروفات المقدمة', labelEn: 'Prepaid Expenses', icon: Clock, permission: 'purchases' },
-      { id: 'purchases-report', label: 'تقارير المشتريات', labelEn: 'Purchases Report', icon: FileText, permission: 'reports' },
-      { id: 'suppliers-report', label: 'تقرير الموردين', labelEn: 'Suppliers Report', icon: Truck, permission: 'reports' },
-    ]
-  };
+    // Accounting
+    { id: 'vouchers', label: 'سندات القبض والصرف', labelEn: 'Vouchers', icon: Receipt, color: 'bg-indigo-600' },
+    { id: 'journal-entries', label: 'دفتر اليومية', labelEn: 'Journal Entries', icon: Calculator, color: 'bg-indigo-500' },
+    { id: 'general-ledger', label: 'دفتر الأستاذ', labelEn: 'General Ledger', icon: FileText, color: 'bg-indigo-700' },
+    { id: 'account-statement', label: 'كشف حساب مفصل', labelEn: 'Account Statement', icon: ClipboardList, color: 'bg-indigo-400' },
+    { id: 'banking', label: 'إدارة البنوك', labelEn: 'Banking', icon: Scale, color: 'bg-violet-500' },
+    { id: 'checks', label: 'إدارة الشيكات', labelEn: 'Checks', icon: ClipboardCheck, color: 'bg-violet-600' },
+    { id: 'financing', label: 'شركات التمويل', labelEn: 'Financing', icon: Landmark, color: 'bg-violet-400' },
+    { id: 'custody', label: 'إدارة العهد', labelEn: 'Custody', icon: HandCoins, color: 'bg-purple-500' },
+    { id: 'chart-of-accounts', label: 'شجرة الحسابات', labelEn: 'Chart of Accounts', icon: BookOpen, color: 'bg-indigo-600' },
+    { id: 'cost-centers', label: 'مراكز التكلفة', labelEn: 'Cost Centers', icon: Target, color: 'bg-purple-600' },
+    { id: 'tax-settings', label: 'إعدادات الضريبة', labelEn: 'Tax Settings', icon: Percent, color: 'bg-red-500' },
+    { id: 'vat-return-report', label: 'إقرار ضريبة القيمة المضافة', labelEn: 'VAT Return', icon: Receipt, color: 'bg-red-600' },
+    { id: 'financial-reports', label: 'التقارير المالية', labelEn: 'Financial Reports', icon: PieChart, color: 'bg-indigo-500' },
+    { id: 'zakat-reports', label: 'القوائم الزكوية', labelEn: 'Zakat Reports', icon: Scale, color: 'bg-emerald-600' },
+    { id: 'trial-balance-analysis', label: 'تحليل ميزان المراجعة', labelEn: 'Trial Balance', icon: FileSpreadsheet, color: 'bg-indigo-400' },
+    { id: 'financial-statements', label: 'القوائم المالية', labelEn: 'Financial Statements', icon: FileText, color: 'bg-indigo-700' },
+    { id: 'fixed-assets', label: 'الأصول الثابتة', labelEn: 'Fixed Assets', icon: Boxes, color: 'bg-stone-500' },
+    { id: 'aging-report', label: 'تقرير أعمار الديون', labelEn: 'Aging Report', icon: Clock, color: 'bg-rose-500' },
+    { id: 'budgets', label: 'الموازنات التقديرية', labelEn: 'Budgets', icon: BarChart3, color: 'bg-sky-500' },
+    { id: 'financial-kpis', label: 'مؤشرات الأداء المالي', labelEn: 'Financial KPIs', icon: Activity, color: 'bg-green-500' },
+    { id: 'profit-report', label: 'تقرير الأرباح', labelEn: 'Profit Report', icon: TrendingUp, color: 'bg-emerald-500', permission: 'reports' },
+    { id: 'account-movement', label: 'حركة الحسابات', labelEn: 'Account Movement', icon: ClipboardList, color: 'bg-indigo-500', permission: 'reports' },
 
-  // ===== المحاسبة =====
-  const accountingSection: ModuleSection = {
-    id: 'accounting', label: 'المحاسبة', labelEn: 'Accounting', icon: BookOpen, color: 'bg-indigo-600', permission: 'reports',
-    items: [
-      { id: 'vouchers', label: 'سندات القبض والصرف', labelEn: 'Vouchers', icon: Receipt },
-      { id: 'journal-entries', label: 'دفتر اليومية', labelEn: 'Journal Entries', icon: Calculator },
-      { id: 'general-ledger', label: 'دفتر الأستاذ', labelEn: 'General Ledger', icon: FileText },
-      { id: 'account-statement', label: 'كشف حساب مفصل', labelEn: 'Account Statement', icon: ClipboardList },
-      { id: 'banking', label: 'إدارة البنوك', labelEn: 'Banking', icon: Scale },
-      { id: 'checks', label: 'إدارة الشيكات', labelEn: 'Checks', icon: ClipboardCheck },
-      { id: 'financing', label: 'شركات التمويل', labelEn: 'Financing', icon: Landmark },
-      { id: 'custody', label: 'إدارة العهد', labelEn: 'Custody', icon: HandCoins },
-      { id: 'chart-of-accounts', label: 'شجرة الحسابات', labelEn: 'Chart of Accounts', icon: BookOpen },
-      { id: 'cost-centers', label: 'مراكز التكلفة', labelEn: 'Cost Centers', icon: Target },
-      { id: 'tax-settings', label: 'إعدادات الضريبة', labelEn: 'Tax Settings', icon: Percent },
-      { id: 'currencies', label: 'العملات', labelEn: 'Currencies', icon: Coins },
-      { id: 'vat-return-report', label: 'إقرار ضريبة القيمة المضافة', labelEn: 'VAT Return', icon: Receipt },
-      { id: 'financial-reports', label: 'التقارير المالية', labelEn: 'Financial Reports', icon: PieChart },
-      { id: 'zakat-reports', label: 'القوائم الزكوية', labelEn: 'Zakat Reports', icon: Scale },
-      { id: 'trial-balance-analysis', label: 'تحليل ميزان المراجعة', labelEn: 'Trial Balance', icon: FileSpreadsheet },
-      { id: 'financial-statements', label: 'القوائم المالية الشاملة', labelEn: 'Financial Statements', icon: FileText },
-      { id: 'fixed-assets', label: 'الأصول الثابتة', labelEn: 'Fixed Assets', icon: Boxes },
-      { id: 'aging-report', label: 'تقرير أعمار الديون', labelEn: 'Aging Report', icon: Clock },
-      { id: 'budgets', label: 'الموازنات التقديرية', labelEn: 'Budgets', icon: BarChart3 },
-      { id: 'financial-kpis', label: 'مؤشرات الأداء المالي', labelEn: 'Financial KPIs', icon: Activity },
-      { id: 'profit-report', label: 'تقرير الأرباح', labelEn: 'Profit Report', icon: TrendingUp, permission: 'reports' },
-      { id: 'account-movement', label: 'تقرير حركة الحسابات', labelEn: 'Account Movement', icon: ClipboardList, permission: 'reports' },
-    ]
-  };
+    // Inventory
+    { id: 'items-catalog', label: 'ملف الأصناف', labelEn: 'Items Catalog', icon: Package, color: 'bg-amber-600' },
+    { id: 'stock-vouchers', label: 'الأذون المخزنية', labelEn: 'Stock Vouchers', icon: ArrowUpFromLine, color: 'bg-amber-500' },
+    { id: 'warehouses', label: 'المستودعات', labelEn: 'Warehouses', icon: Warehouse, color: 'bg-amber-700' },
+    { id: 'item-categories', label: 'فئات الأصناف', labelEn: 'Categories', icon: FolderTree, color: 'bg-amber-400' },
+    { id: 'units-of-measure', label: 'وحدات القياس', labelEn: 'Units', icon: Ruler, color: 'bg-lime-500' },
+    { id: 'stocktaking', label: 'الجرد', labelEn: 'Stocktaking', icon: ClipboardList, color: 'bg-amber-600' },
+    { id: 'manufacturing', label: 'التصنيع', labelEn: 'Manufacturing', icon: Factory, color: 'bg-stone-600' },
+    { id: 'mobile-inventory', label: 'جرد بالجوال', labelEn: 'Mobile Inventory', icon: Smartphone, color: 'bg-lime-600' },
+    { id: 'inventory-report', label: 'تقرير المخزون', labelEn: 'Inventory Report', icon: Package, color: 'bg-amber-500', permission: 'reports' },
 
-  // ===== مستودعات =====
-  const inventorySection: ModuleSection = {
-    id: 'inventory', label: 'مستودعات', labelEn: 'Warehouses', icon: Warehouse, color: 'bg-amber-600', permission: 'purchases',
-    items: [
-      { id: 'items-catalog', label: 'ملف الأصناف', labelEn: 'Items Catalog', icon: Package },
-      { id: 'stock-vouchers', label: 'الأذون المخزنية', labelEn: 'Stock Vouchers', icon: ArrowUpFromLine },
-      { id: 'warehouses', label: 'المستودعات', labelEn: 'Warehouses', icon: Warehouse },
-      { id: 'item-categories', label: 'فئات الأصناف', labelEn: 'Categories', icon: FolderTree },
-      { id: 'units-of-measure', label: 'وحدات القياس', labelEn: 'Units', icon: Ruler },
-      { id: 'stocktaking', label: 'الجرد', labelEn: 'Stocktaking', icon: ClipboardList },
-      { id: 'manufacturing', label: 'التصنيع', labelEn: 'Manufacturing', icon: Factory },
-      { id: 'mobile-inventory', label: 'جرد بالجوال', labelEn: 'Mobile Inventory', icon: Smartphone },
-      { id: 'inventory-report', label: 'تقرير المخزون', labelEn: 'Inventory Report', icon: Package, permission: 'reports' },
-    ]
-  };
+    // HR
+    { id: 'employees', label: 'الموظفين', labelEn: 'Employees', icon: Users, color: 'bg-teal-500', permission: 'employees' },
+    { id: 'payroll', label: 'مسير الرواتب', labelEn: 'Payroll', icon: CreditCard, color: 'bg-teal-600', permission: 'employees' },
+    { id: 'attendance', label: 'الحضور والانصراف', labelEn: 'Attendance', icon: Clock, color: 'bg-teal-400', permission: 'employees' },
+    { id: 'leaves', label: 'الإجازات', labelEn: 'Leaves', icon: CalendarDays, color: 'bg-teal-300', permission: 'employees' },
+    { id: 'employee-contracts', label: 'عقود الموظفين', labelEn: 'Contracts', icon: FileSignature, color: 'bg-teal-700', permission: 'employees' },
+    { id: 'org-structure', label: 'الهيكل التنظيمي', labelEn: 'Org Structure', icon: GitFork, color: 'bg-teal-500', permission: 'employees' },
 
-  // ===== الموارد البشرية =====
-  const hrSection: ModuleSection = {
-    id: 'hr', label: 'الموارد البشرية', labelEn: 'Human Resources', icon: Users2, color: 'bg-teal-500', permission: 'employees',
-    items: [
-      { id: 'employees', label: 'الموظفين', labelEn: 'Employees', icon: Users },
-      { id: 'payroll', label: 'مسير الرواتب', labelEn: 'Payroll', icon: CreditCard },
-      { id: 'attendance', label: 'الحضور والانصراف', labelEn: 'Attendance', icon: Clock },
-      { id: 'leaves', label: 'الإجازات', labelEn: 'Leaves', icon: CalendarDays },
-      { id: 'employee-contracts', label: 'عقود الموظفين', labelEn: 'Contracts', icon: FileSignature },
-      { id: 'org-structure', label: 'الهيكل التنظيمي', labelEn: 'Org Structure', icon: GitFork },
-    ]
-  };
+    // Operations
+    { id: 'work-orders', label: 'أوامر العمل', labelEn: 'Work Orders', icon: Wrench, color: 'bg-purple-500' },
+    { id: 'time-tracking', label: 'تتبع الوقت', labelEn: 'Time Tracking', icon: Play, color: 'bg-purple-400' },
+    { id: 'rentals', label: 'الإيجارات', labelEn: 'Rentals', icon: Home, color: 'bg-purple-600' },
+    { id: 'trips', label: 'إدارة الرحلات', labelEn: 'Trips', icon: MapPin, color: 'bg-purple-300' },
+    { id: 'advanced-projects', label: 'مشاريع متقدمة', labelEn: 'Projects', icon: LayoutGrid, color: 'bg-purple-700' },
+    { id: 'customer-portal', label: 'بوابة العملاء', labelEn: 'Customer Portal', icon: Globe, color: 'bg-sky-500' },
+    { id: 'bookkeeping-service', label: 'مسك الدفاتر', labelEn: 'Bookkeeping', icon: BookMarked, color: 'bg-sky-600' },
+    { id: 'subscriptions', label: 'الاشتراكات', labelEn: 'Subscriptions', icon: RefreshCw, color: 'bg-pink-500' },
+    { id: 'payment-gateway', label: 'بوابة الدفع', labelEn: 'Payment Gateway', icon: Link2, color: 'bg-pink-600' },
 
-  // ===== العمليات =====
-  const operationsSection: ModuleSection = {
-    id: 'operations', label: 'العمليات', labelEn: 'Operations', icon: Wrench, color: 'bg-purple-500',
-    items: [
-      { id: 'work-orders', label: 'أوامر العمل', labelEn: 'Work Orders', icon: Wrench },
-      { id: 'time-tracking', label: 'تتبع الوقت', labelEn: 'Time Tracking', icon: Play },
-      { id: 'rentals', label: 'الإيجارات', labelEn: 'Rentals', icon: Home },
-      { id: 'trips', label: 'إدارة الرحلات', labelEn: 'Trips', icon: MapPin },
-      { id: 'advanced-projects', label: 'إدارة مشاريع متقدمة', labelEn: 'Advanced Projects', icon: LayoutGrid },
-      { id: 'customer-portal', label: 'بوابة العملاء', labelEn: 'Customer Portal', icon: Globe },
-      { id: 'bookkeeping-service', label: 'مسك الدفاتر كخدمة', labelEn: 'Bookkeeping Service', icon: BookMarked },
-      { id: 'subscriptions', label: 'الاشتراكات', labelEn: 'Subscriptions', icon: RefreshCw },
-      { id: 'payment-gateway', label: 'بوابة الدفع', labelEn: 'Payment Gateway', icon: Link2 },
-    ]
-  };
+    // Integrations
+    { id: 'integrations', label: 'التكاملات', labelEn: 'Integrations', icon: Plug, color: 'bg-pink-500' },
+    { id: 'api-management', label: 'API عام', labelEn: 'API Management', icon: Globe, color: 'bg-pink-400' },
+    { id: 'developer-api', label: 'API للمطورين', labelEn: 'Developer API', icon: Code, color: 'bg-pink-600' },
+    { id: 'plugins', label: 'الإضافات', labelEn: 'Plugins', icon: Puzzle, color: 'bg-pink-700' },
+    ...activePlugins.map(p => ({
+      id: p.pageId as ActivePage,
+      label: p.menuLabel,
+      labelEn: p.menuLabel_en,
+      icon: Puzzle,
+      color: 'bg-pink-500',
+    })),
 
-  // ===== التكاملات والإضافات =====
-  const pluginItems: SubItem[] = activePlugins.map(p => ({
-    id: p.pageId as ActivePage,
-    label: p.menuLabel,
-    labelEn: p.menuLabel_en,
-    icon: Puzzle,
-  }));
-
-  const integrationsSection: ModuleSection = {
-    id: 'integrations', label: 'التكاملات والإضافات', labelEn: 'Integrations & Plugins', icon: Plug, color: 'bg-pink-500',
-    items: [
-      { id: 'integrations', label: 'التكاملات الخارجية', labelEn: 'Integrations', icon: Plug },
-      { id: 'api-management', label: 'API عام', labelEn: 'API Management', icon: Globe },
-      { id: 'developer-api', label: 'API للمطورين', labelEn: 'Developer API', icon: Code },
-      { id: 'plugins', label: 'الإضافات', labelEn: 'Plugins', icon: Puzzle },
-      ...pluginItems,
-    ]
-  };
-
-  // ===== النظام =====
-  const systemSection: ModuleSection = {
-    id: 'system', label: 'النظام', labelEn: 'System', icon: Settings, color: 'bg-gray-600', permission: 'admin',
-    items: [
-      { id: 'users-management', label: 'إدارة المستخدمين', labelEn: 'Users Management', icon: UserCog },
-      { id: 'branches', label: 'الفروع', labelEn: 'Branches', icon: GitFork },
-      { id: 'fiscal-years', label: 'السنوات المالية', labelEn: 'Fiscal Years', icon: Calendar },
-      { id: 'tasks', label: 'إدارة المهام', labelEn: 'Tasks', icon: ListTodo },
-      { id: 'approvals', label: 'الموافقات', labelEn: 'Approvals', icon: GitBranch },
-      { id: 'workflows', label: 'الدورات المستندية', labelEn: 'Workflows', icon: Workflow },
-      { id: 'app-settings', label: 'إعدادات النظام', labelEn: 'App Settings', icon: Settings },
-      { id: 'theme-settings', label: 'المظهر', labelEn: 'Theme', icon: Palette },
-      { id: 'control-center', label: 'مركز التحكم', labelEn: 'Control Center', icon: Settings2 },
-      { id: 'audit-logs', label: 'سجل التدقيق', labelEn: 'Audit Logs', icon: ClipboardList },
-      { id: 'accounting-audit', label: 'تدقيق محاسبي', labelEn: 'Accounting Audit', icon: ShieldCheck },
-      { id: 'backups', label: 'النسخ الاحتياطي', labelEn: 'Backups', icon: Database },
-      { id: 'medad-import', label: 'استيراد من ميداد', labelEn: 'Medad Import', icon: FileUp },
-      { id: 'zatca-sandbox', label: 'بيئة محاكاة ZATCA', labelEn: 'ZATCA Sandbox', icon: TestTube },
-      { id: 'zatca-technical-doc', label: 'وثائق ZATCA التقنية', labelEn: 'ZATCA Technical Docs', icon: FileText },
-      { id: 'mobile-invoice-reader', label: 'قراءة فاتورة بالجوال', labelEn: 'Mobile Invoice Reader', icon: QrCode },
-    ]
-  };
-
-  const allSections: ModuleSection[] = [
-    mainSection,
-    salesSection,
-    purchasesSection,
-    accountingSection,
-    inventorySection,
-    hrSection,
-    operationsSection,
-    integrationsSection,
-    systemSection,
+    // System
+    { id: 'users-management', label: 'إدارة المستخدمين', labelEn: 'Users', icon: UserCog, color: 'bg-gray-600', permission: 'admin' as const },
+    { id: 'branches', label: 'الفروع', labelEn: 'Branches', icon: GitFork, color: 'bg-gray-500', permission: 'admin' as const },
+    { id: 'fiscal-years', label: 'السنوات المالية', labelEn: 'Fiscal Years', icon: Calendar, color: 'bg-gray-700', permission: 'admin' as const },
+    { id: 'tasks', label: 'إدارة المهام', labelEn: 'Tasks', icon: ListTodo, color: 'bg-gray-500', permission: 'admin' as const },
+    { id: 'approvals', label: 'الموافقات', labelEn: 'Approvals', icon: GitBranch, color: 'bg-gray-600', permission: 'admin' as const },
+    { id: 'workflows', label: 'الدورات المستندية', labelEn: 'Workflows', icon: Workflow, color: 'bg-gray-700', permission: 'admin' as const },
+    { id: 'app-settings', label: 'إعدادات النظام', labelEn: 'Settings', icon: Settings, color: 'bg-gray-600', permission: 'admin' as const },
+    { id: 'theme-settings', label: 'المظهر', labelEn: 'Theme', icon: Palette, color: 'bg-gray-500', permission: 'admin' as const },
+    { id: 'control-center', label: 'مركز التحكم', labelEn: 'Control Center', icon: Settings2, color: 'bg-gray-700', permission: 'admin' as const },
+    { id: 'audit-logs', label: 'سجل التدقيق', labelEn: 'Audit Logs', icon: ClipboardList, color: 'bg-gray-600', permission: 'admin' as const },
+    { id: 'accounting-audit', label: 'تدقيق محاسبي', labelEn: 'Accounting Audit', icon: ShieldCheck, color: 'bg-gray-500', permission: 'admin' as const },
+    { id: 'backups', label: 'النسخ الاحتياطي', labelEn: 'Backups', icon: Database, color: 'bg-gray-700', permission: 'admin' as const },
+    { id: 'medad-import', label: 'استيراد من ميداد', labelEn: 'Medad Import', icon: FileUp, color: 'bg-gray-500', permission: 'admin' as const },
+    { id: 'zatca-sandbox', label: 'بيئة محاكاة ZATCA', labelEn: 'ZATCA Sandbox', icon: TestTube, color: 'bg-gray-600', permission: 'admin' as const },
+    { id: 'zatca-technical-doc', label: 'وثائق ZATCA', labelEn: 'ZATCA Docs', icon: FileText, color: 'bg-gray-700', permission: 'admin' as const },
+    { id: 'mobile-invoice-reader', label: 'قراءة فاتورة بالجوال', labelEn: 'Invoice Reader', icon: QrCode, color: 'bg-gray-500', permission: 'admin' as const },
   ];
 
   const hasAccess = (permission?: string) => {
@@ -254,9 +180,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
     return 'Elzini SaaS';
   };
 
-  const handleItemClick = (page: ActivePage) => {
-    setActivePage(page);
-  };
+  const visibleApps = allApps.filter(app => hasAccess(app.permission));
 
   return (
     <div className="min-h-[calc(100vh-60px)] bg-gradient-to-br from-muted/30 via-background to-muted/20 p-4 sm:p-6 lg:p-8">
@@ -273,50 +197,23 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
         <h1 className="text-xl sm:text-2xl font-bold text-foreground">{getAppName()}</h1>
       </div>
 
-      {/* Sections Grid */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
-        {allSections.filter(s => hasAccess(s.permission)).map((section) => {
-          const SectionIcon = section.icon;
-          const isExpanded = expandedSections[section.id] !== false; // default open
-          const visibleItems = section.items.filter(item => hasAccess(item.permission));
-          
-          if (visibleItems.length === 0) return null;
-
+      {/* Apps Grid */}
+      <div className="max-w-7xl mx-auto grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3 sm:gap-4">
+        {visibleApps.map((app) => {
+          const Icon = app.icon;
           return (
-            <div key={section.id} className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
-              {/* Section Header */}
-              <Collapsible open={isExpanded} onOpenChange={() => toggleSection(section.id)}>
-                <CollapsibleTrigger asChild>
-                  <button className={`w-full flex items-center gap-3 p-3 sm:p-4 ${section.color} text-white hover:opacity-90 transition-opacity`}>
-                    <SectionIcon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
-                    <span className="font-bold text-sm sm:text-base flex-1 text-start">
-                      {language === 'ar' ? section.label : section.labelEn}
-                    </span>
-                    {isExpanded ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
-                  </button>
-                </CollapsibleTrigger>
-
-                <CollapsibleContent>
-                  <div className="p-1.5 sm:p-2">
-                    {visibleItems.map((item) => {
-                      const ItemIcon = item.icon;
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => handleItemClick(item.id)}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-foreground/80 hover:bg-accent hover:text-foreground transition-colors text-start"
-                        >
-                          <ItemIcon className="w-4 h-4 shrink-0 text-muted-foreground" />
-                          <span className="text-sm truncate">
-                            {language === 'ar' ? item.label : item.labelEn}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
+            <button
+              key={app.id}
+              onClick={() => setActivePage(app.id)}
+              className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl bg-card border border-border/50 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 group"
+            >
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${app.color} flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow`}>
+                <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <span className="text-[10px] sm:text-xs text-center text-foreground/80 leading-tight line-clamp-2 font-medium">
+                {language === 'ar' ? app.label : app.labelEn}
+              </span>
+            </button>
           );
         })}
       </div>
