@@ -4698,6 +4698,56 @@ export type Database = {
           },
         ]
       }
+      hr_device_logs: {
+        Row: {
+          company_id: string
+          device_id: string | null
+          employee_code: string
+          id: string
+          imported_at: string
+          is_processed: boolean | null
+          punch_time: string
+          punch_type: string | null
+          raw_data: string | null
+          source: string | null
+          verification_method: string | null
+        }
+        Insert: {
+          company_id: string
+          device_id?: string | null
+          employee_code: string
+          id?: string
+          imported_at?: string
+          is_processed?: boolean | null
+          punch_time: string
+          punch_type?: string | null
+          raw_data?: string | null
+          source?: string | null
+          verification_method?: string | null
+        }
+        Update: {
+          company_id?: string
+          device_id?: string | null
+          employee_code?: string
+          id?: string
+          imported_at?: string
+          is_processed?: boolean | null
+          punch_time?: string
+          punch_type?: string | null
+          raw_data?: string | null
+          source?: string | null
+          verification_method?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_device_logs_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "hr_fingerprint_devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hr_employees: {
         Row: {
           bank_name: string | null
@@ -4890,6 +4940,39 @@ export type Database = {
         }
         Relationships: []
       }
+      hr_holidays: {
+        Row: {
+          company_id: string
+          created_at: string
+          end_date: string | null
+          holiday_date: string
+          id: string
+          is_active: boolean | null
+          is_recurring: boolean | null
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          end_date?: string | null
+          holiday_date: string
+          id?: string
+          is_active?: boolean | null
+          is_recurring?: boolean | null
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          end_date?: string | null
+          holiday_date?: string
+          id?: string
+          is_active?: boolean | null
+          is_recurring?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
       hr_insurance_records: {
         Row: {
           company_id: string
@@ -5053,6 +5136,60 @@ export type Database = {
           provider?: string | null
           status?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      hr_work_schedules: {
+        Row: {
+          break_duration_minutes: number | null
+          company_id: string
+          created_at: string
+          early_leave_tolerance_minutes: number | null
+          end_time: string
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          late_tolerance_minutes: number | null
+          name: string
+          overtime_after_minutes: number | null
+          schedule_type: string
+          start_time: string
+          updated_at: string
+          work_days: string[] | null
+        }
+        Insert: {
+          break_duration_minutes?: number | null
+          company_id: string
+          created_at?: string
+          early_leave_tolerance_minutes?: number | null
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          late_tolerance_minutes?: number | null
+          name: string
+          overtime_after_minutes?: number | null
+          schedule_type?: string
+          start_time?: string
+          updated_at?: string
+          work_days?: string[] | null
+        }
+        Update: {
+          break_duration_minutes?: number | null
+          company_id?: string
+          created_at?: string
+          early_leave_tolerance_minutes?: number | null
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          late_tolerance_minutes?: number | null
+          name?: string
+          overtime_after_minutes?: number | null
+          schedule_type?: string
+          start_time?: string
+          updated_at?: string
+          work_days?: string[] | null
         }
         Relationships: []
       }
