@@ -12,7 +12,7 @@ import {
   GitBranch, GitFork, Palette, Settings2, ShieldCheck, Database, FileUp,
   TestTube, QrCode, CalendarDays, FileSignature, Calendar, UserCog, ListTodo,
   ArrowRight, ArrowLeft, Search, Bell, Users2 as UsersIcon, Fingerprint, Shield,
-  Edit3
+  Edit3, Sparkles, LayoutGrid as LayoutGridIcon
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,7 +22,16 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { usePlugins } from '@/hooks/usePlugins';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { LauncherEditToolbar, EditableModuleCard, useLauncherDragDrop, LauncherModuleConfig } from '@/components/launcher/LauncherEditMode';
+import { LauncherCustomizer } from '@/components/launcher/LauncherCustomizer';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import defaultLogo from '@/assets/logo.png';
 
@@ -63,10 +72,10 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   const [showUsers, setShowUsers] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [customizerOpen, setCustomizerOpen] = useState(false);
   const usersRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  // Close popovers on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (usersRef.current && !usersRef.current.contains(e.target as Node)) setShowUsers(false);
@@ -272,7 +281,6 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       const saved = localStorage.getItem(LAUNCHER_CONFIG_KEY);
       if (saved) {
         const parsed: LauncherModuleConfig[] = JSON.parse(saved);
-        // Merge with current modules (handle new/removed modules)
         const merged = visibleModules.map((m, i) => {
           const existing = parsed.find(p => p.id === m.id);
           return existing || {
@@ -313,7 +321,6 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   const currentConfigs = isEditMode ? editConfigs : moduleConfigs;
   const sortedConfigs = [...currentConfigs].sort((a, b) => a.order - b.order);
 
-  // Filter items by search
   const filterBySearch = (items: SubItem[]) => {
     if (!searchQuery.trim()) return items.filter(i => hasAccess(i.permission));
     const q = searchQuery.toLowerCase();
@@ -329,7 +336,6 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
     const ModIcon = selectedModule.icon;
     return (
       <div className="min-h-[calc(100vh-60px)] bg-background">
-        {/* Colored header band */}
         <div className={`bg-gradient-to-r ${selectedModule.gradient} px-4 sm:px-8 py-6`}>
           <div className="max-w-6xl mx-auto">
             <button
@@ -353,7 +359,6 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
                   </p>
                 </div>
               </div>
-              {/* Search */}
               <div className="relative hidden sm:block">
                 <Search className="absolute top-1/2 -translate-y-1/2 start-3 w-4 h-4 text-white/50" />
                 <input
@@ -368,7 +373,6 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
           </div>
         </div>
 
-        {/* Sub-items Grid */}
         <div className="max-w-6xl mx-auto p-4 sm:p-8">
           {visibleItems.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
@@ -416,17 +420,54 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
         defaultModules={defaultModuleConfigs}
       />
 
-      {/* Top Bar: Search + Edit button */}
+      {/* Top Bar: Customize dropdown + Search */}
       <div className="w-full max-w-4xl mb-4 flex justify-between items-center">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleStartEdit}
-          className="gap-1.5 text-xs h-8 px-3 rounded-full"
-        >
-          <Edit3 className="w-3.5 h-3.5" />
-          {isRtl ? 'تخصيص الواجهة' : 'Customize'}
-        </Button>
+        {!isEditMode ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-dashed hover:border-primary hover:bg-primary/5 transition-all"
+              >
+                <Settings className="w-4 h-4" />
+                {isRtl ? 'تخصيص الواجهة' : 'Customize'}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel>{isRtl ? 'خيارات التخصيص' : 'Customization Options'}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleStartEdit} className="gap-2 cursor-pointer">
+                <Edit3 className="w-4 h-4 text-primary" />
+                <div>
+                  <p className="font-medium">{isRtl ? 'تعديل الواجهة' : 'Edit Layout'}</p>
+                  <p className="text-xs text-muted-foreground">{isRtl ? 'سحب وإفلات الأقسام' : 'Drag & drop sections'}</p>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setCustomizerOpen(true)} className="gap-2 cursor-pointer">
+                <LayoutGridIcon className="w-4 h-4 text-success" />
+                <div>
+                  <p className="font-medium">{isRtl ? 'ترتيب الوحدات' : 'Arrange Modules'}</p>
+                  <p className="text-xs text-muted-foreground">{isRtl ? 'نقل وتغيير حجم الوحدات' : 'Move & resize modules'}</p>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActivePage('theme-settings')} className="gap-2 cursor-pointer">
+                <Palette className="w-4 h-4 text-warning" />
+                <div>
+                  <p className="font-medium">{isRtl ? 'الألوان والسمات' : 'Colors & Themes'}</p>
+                  <p className="text-xs text-muted-foreground">{isRtl ? 'تغيير ألوان الواجهة' : 'Change interface colors'}</p>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActivePage('theme-settings')} className="gap-2 cursor-pointer">
+                <Sparkles className="w-4 h-4 text-purple-500" />
+                <div>
+                  <p className="font-medium">{isRtl ? 'تأثيرات متقدمة' : 'Advanced Effects'}</p>
+                  <p className="text-xs text-muted-foreground">{isRtl ? 'حركات وتأثيرات بصرية' : 'Animations & effects'}</p>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : <div />}
         <div className="relative">
           <Search className="absolute top-1/2 -translate-y-1/2 start-3 w-4 h-4 text-muted-foreground" />
           <input
@@ -453,7 +494,6 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {/* Online Users */}
           <div className="relative" ref={usersRef}>
             <button onClick={() => { setShowUsers(!showUsers); setShowNotifications(false); }} className="w-9 h-9 rounded-full bg-muted/20 flex items-center justify-center hover:bg-muted/30 transition-colors">
               <Users2 className="w-4 h-4 text-white/70" />
@@ -477,8 +517,6 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
               </div>
             )}
           </div>
-
-          {/* Notifications */}
           <div className="relative" ref={notifRef}>
             <button onClick={() => { setShowNotifications(!showNotifications); setShowUsers(false); }} className="w-9 h-9 rounded-full bg-muted/20 flex items-center justify-center hover:bg-muted/30 transition-colors">
               <Bell className="w-4 h-4 text-white/70" />
@@ -588,7 +626,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
                 key={config.id}
                 id={config.id}
                 isEditMode={true}
-                visible={true} // show all in edit mode
+                visible={true}
                 size={config.size}
                 onRemove={dragDrop.removeModule}
                 onResize={dragDrop.resizeModule}
@@ -616,6 +654,18 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
         <LanguageSwitcher variant="compact" />
         <p className="text-[10px] text-muted-foreground/50">Elzini SaaS © 2026</p>
       </div>
+
+      {/* Launcher Customizer Dialog */}
+      <LauncherCustomizer
+        open={customizerOpen}
+        onOpenChange={setCustomizerOpen}
+        modules={moduleConfigs}
+        onModulesChange={(configs) => {
+          setModuleConfigs(configs);
+          localStorage.setItem(LAUNCHER_CONFIG_KEY, JSON.stringify(configs));
+        }}
+        visibleModules={visibleModules}
+      />
     </div>
   );
 }
