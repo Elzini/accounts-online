@@ -217,6 +217,16 @@ export function FingerprintDevicesPage() {
                       <SelectItem value="Hikvision">Hikvision</SelectItem>
                       <SelectItem value="Dahua">Dahua</SelectItem>
                       <SelectItem value="Suprema">Suprema</SelectItem>
+                      <SelectItem value="Anviz">Anviz</SelectItem>
+                      <SelectItem value="FingerTec">FingerTec</SelectItem>
+                      <SelectItem value="Biotime">BioTime</SelectItem>
+                      <SelectItem value="eSSL">eSSL</SelectItem>
+                      <SelectItem value="Realand">Realand</SelectItem>
+                      <SelectItem value="Virdi">Virdi</SelectItem>
+                      <SelectItem value="ZKSoftware">ZK Software</SelectItem>
+                      <SelectItem value="Timewatch">Timewatch</SelectItem>
+                      <SelectItem value="Matrix">Matrix COSEC</SelectItem>
+                      <SelectItem value="Hundure">Hundure</SelectItem>
                       <SelectItem value="other">{language === 'ar' ? 'أخرى' : 'Other'}</SelectItem>
                     </SelectContent>
                   </Select>
