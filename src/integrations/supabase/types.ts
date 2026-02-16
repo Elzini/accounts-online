@@ -3349,10 +3349,12 @@ export type Database = {
           company_id: string
           created_at: string
           date: string
+          device_id: string | null
           employee_id: string
           id: string
           notes: string | null
           overtime_hours: number | null
+          source: string | null
           status: string
           updated_at: string
         }
@@ -3362,10 +3364,12 @@ export type Database = {
           company_id: string
           created_at?: string
           date: string
+          device_id?: string | null
           employee_id: string
           id?: string
           notes?: string | null
           overtime_hours?: number | null
+          source?: string | null
           status?: string
           updated_at?: string
         }
@@ -3375,10 +3379,12 @@ export type Database = {
           company_id?: string
           created_at?: string
           date?: string
+          device_id?: string | null
           employee_id?: string
           id?: string
           notes?: string | null
           overtime_hours?: number | null
+          source?: string | null
           status?: string
           updated_at?: string
         }
@@ -3388,6 +3394,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_attendance_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "hr_fingerprint_devices"
             referencedColumns: ["id"]
           },
           {
@@ -4825,6 +4838,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      hr_fingerprint_devices: {
+        Row: {
+          company_id: string
+          created_at: string
+          device_model: string | null
+          device_name: string
+          id: string
+          ip_address: string | null
+          last_sync_at: string | null
+          location: string | null
+          notes: string | null
+          port: number | null
+          serial_number: string | null
+          status: string
+          total_employees: number | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          device_model?: string | null
+          device_name: string
+          id?: string
+          ip_address?: string | null
+          last_sync_at?: string | null
+          location?: string | null
+          notes?: string | null
+          port?: number | null
+          serial_number?: string | null
+          status?: string
+          total_employees?: number | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          device_model?: string | null
+          device_name?: string
+          id?: string
+          ip_address?: string | null
+          last_sync_at?: string | null
+          location?: string | null
+          notes?: string | null
+          port?: number | null
+          serial_number?: string | null
+          status?: string
+          total_employees?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       hr_insurance_records: {
         Row: {
