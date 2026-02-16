@@ -11,7 +11,7 @@ import {
   BookMarked, RefreshCw, Link2, LayoutGrid, Code, Puzzle, Workflow,
   GitBranch, GitFork, Palette, Settings2, ShieldCheck, Database, FileUp,
   TestTube, QrCode, CalendarDays, FileSignature, Calendar, UserCog, ListTodo,
-  ArrowRight, ArrowLeft
+  ArrowRight, ArrowLeft, Search
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -41,6 +41,7 @@ interface MainModule {
   labelEn: string;
   icon: LucideIcon;
   color: string;
+  gradient: string;
   permission?: string;
   items: SubItem[];
 }
@@ -52,6 +53,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   const { language } = useLanguage();
   const { activePlugins } = usePlugins();
   const [selectedModule, setSelectedModule] = useState<MainModule | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
   const logoUrl = settings?.company_logo_url || defaultLogo;
@@ -59,11 +61,13 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
 
   const modules: MainModule[] = [
     {
-      id: 'dashboard-mod', label: 'الرئيسية', labelEn: 'Dashboard', icon: LayoutDashboard, color: 'bg-emerald-500',
+      id: 'dashboard-mod', label: 'الرئيسية', labelEn: 'Dashboard', icon: LayoutDashboard,
+      color: 'bg-emerald-500', gradient: 'from-emerald-400 to-emerald-600',
       items: [{ id: 'dashboard', label: 'لوحة التحكم', labelEn: 'Dashboard', icon: LayoutDashboard }],
     },
     {
-      id: 'sales-mod', label: 'المبيعات', labelEn: 'Sales', icon: DollarSign, color: 'bg-blue-500', permission: 'sales',
+      id: 'sales-mod', label: 'المبيعات', labelEn: 'Sales', icon: DollarSign,
+      color: 'bg-blue-500', gradient: 'from-blue-400 to-blue-600', permission: 'sales',
       items: [
         { id: 'sales', label: 'فاتورة مبيعات', labelEn: 'Sales Invoice', icon: DollarSign, permission: 'sales' },
         { id: 'credit-debit-notes', label: 'مرتجع مبيعات', labelEn: 'Sales Returns', icon: RotateCcw, permission: 'sales' },
@@ -88,7 +92,8 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       ],
     },
     {
-      id: 'purchases-mod', label: 'المشتريات', labelEn: 'Purchases', icon: ShoppingCart, color: 'bg-orange-500', permission: 'purchases',
+      id: 'purchases-mod', label: 'المشتريات', labelEn: 'Purchases', icon: ShoppingCart,
+      color: 'bg-orange-500', gradient: 'from-orange-400 to-orange-600', permission: 'purchases',
       items: [
         { id: 'purchases', label: 'فاتورة مشتريات', labelEn: 'Purchase Invoice', icon: ShoppingCart, permission: 'purchases' },
         { id: 'purchase-returns', label: 'مرتجع مشتريات', labelEn: 'Purchase Returns', icon: RotateCw, permission: 'purchases' },
@@ -105,7 +110,8 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       ],
     },
     {
-      id: 'accounting-mod', label: 'المحاسبة', labelEn: 'Accounting', icon: BookOpen, color: 'bg-indigo-600', permission: 'reports',
+      id: 'accounting-mod', label: 'المحاسبة', labelEn: 'Accounting', icon: BookOpen,
+      color: 'bg-indigo-600', gradient: 'from-indigo-500 to-indigo-700', permission: 'reports',
       items: [
         { id: 'vouchers', label: 'سندات القبض والصرف', labelEn: 'Vouchers', icon: Receipt },
         { id: 'journal-entries', label: 'دفتر اليومية', labelEn: 'Journal Entries', icon: Calculator },
@@ -132,7 +138,8 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       ],
     },
     {
-      id: 'inventory-mod', label: 'المستودعات', labelEn: 'Warehouses', icon: Warehouse, color: 'bg-amber-600', permission: 'purchases',
+      id: 'inventory-mod', label: 'المستودعات', labelEn: 'Warehouses', icon: Warehouse,
+      color: 'bg-amber-600', gradient: 'from-amber-500 to-amber-700', permission: 'purchases',
       items: [
         { id: 'items-catalog', label: 'ملف الأصناف', labelEn: 'Items Catalog', icon: Package },
         { id: 'stock-vouchers', label: 'الأذون المخزنية', labelEn: 'Stock Vouchers', icon: ArrowUpFromLine },
@@ -146,7 +153,8 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       ],
     },
     {
-      id: 'hr-mod', label: 'الموارد البشرية', labelEn: 'Human Resources', icon: Users2, color: 'bg-teal-500', permission: 'employees',
+      id: 'hr-mod', label: 'الموارد البشرية', labelEn: 'Human Resources', icon: Users2,
+      color: 'bg-teal-500', gradient: 'from-teal-400 to-teal-600', permission: 'employees',
       items: [
         { id: 'employees', label: 'الموظفين', labelEn: 'Employees', icon: Users, permission: 'employees' },
         { id: 'payroll', label: 'مسير الرواتب', labelEn: 'Payroll', icon: CreditCard, permission: 'employees' },
@@ -157,7 +165,8 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       ],
     },
     {
-      id: 'operations-mod', label: 'العمليات', labelEn: 'Operations', icon: Wrench, color: 'bg-purple-500',
+      id: 'operations-mod', label: 'العمليات', labelEn: 'Operations', icon: Wrench,
+      color: 'bg-purple-500', gradient: 'from-purple-400 to-purple-600',
       items: [
         { id: 'work-orders', label: 'أوامر العمل', labelEn: 'Work Orders', icon: Wrench },
         { id: 'time-tracking', label: 'تتبع الوقت', labelEn: 'Time Tracking', icon: Play },
@@ -171,7 +180,8 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       ],
     },
     {
-      id: 'integrations-mod', label: 'التكاملات', labelEn: 'Integrations', icon: Plug, color: 'bg-pink-500',
+      id: 'integrations-mod', label: 'التكاملات', labelEn: 'Integrations', icon: Plug,
+      color: 'bg-pink-500', gradient: 'from-pink-400 to-pink-600',
       items: [
         { id: 'integrations', label: 'التكاملات الخارجية', labelEn: 'Integrations', icon: Plug },
         { id: 'api-management', label: 'API عام', labelEn: 'API Management', icon: Globe },
@@ -186,7 +196,8 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       ],
     },
     {
-      id: 'system-mod', label: 'النظام', labelEn: 'System', icon: Settings, color: 'bg-gray-600', permission: 'admin',
+      id: 'system-mod', label: 'النظام', labelEn: 'System', icon: Settings,
+      color: 'bg-slate-600', gradient: 'from-slate-500 to-slate-700', permission: 'admin',
       items: [
         { id: 'users-management', label: 'إدارة المستخدمين', labelEn: 'Users', icon: UserCog, permission: 'admin' },
         { id: 'branches', label: 'الفروع', labelEn: 'Branches', icon: GitFork, permission: 'admin' },
@@ -221,50 +232,88 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   const visibleModules = modules.filter(m => hasAccess(m.permission));
   const BackIcon = isRtl ? ArrowRight : ArrowLeft;
 
+  // Filter items by search
+  const filterBySearch = (items: SubItem[]) => {
+    if (!searchQuery.trim()) return items.filter(i => hasAccess(i.permission));
+    const q = searchQuery.toLowerCase();
+    return items.filter(i => 
+      hasAccess(i.permission) && 
+      (i.label.includes(q) || i.labelEn.toLowerCase().includes(q))
+    );
+  };
+
   // === Sub-items view ===
   if (selectedModule) {
-    const visibleItems = selectedModule.items.filter(i => hasAccess(i.permission));
+    const visibleItems = filterBySearch(selectedModule.items);
     const ModIcon = selectedModule.icon;
     return (
-      <div className="min-h-[calc(100vh-60px)] bg-gradient-to-br from-muted/30 via-background to-muted/20 p-4 sm:p-6 lg:p-8">
-        {/* Back + Module Title */}
-        <div className="max-w-5xl mx-auto mb-6">
-          <button
-            onClick={() => setSelectedModule(null)}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4"
-          >
-            <BackIcon className="w-5 h-5" />
-            <span className="text-sm font-medium">{isRtl ? 'رجوع' : 'Back'}</span>
-          </button>
-          <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-xl ${selectedModule.color} flex items-center justify-center shadow-md`}>
-              <ModIcon className="w-6 h-6 text-white" />
+      <div className="min-h-[calc(100vh-60px)] bg-background">
+        {/* Colored header band */}
+        <div className={`bg-gradient-to-r ${selectedModule.gradient} px-4 sm:px-8 py-6`}>
+          <div className="max-w-6xl mx-auto">
+            <button
+              onClick={() => { setSelectedModule(null); setSearchQuery(''); }}
+              className="flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-4"
+            >
+              <BackIcon className="w-4 h-4" />
+              <span className="text-sm font-medium">{isRtl ? 'رجوع للقائمة' : 'Back to menu'}</span>
+            </button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <ModIcon className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">
+                    {isRtl ? selectedModule.label : selectedModule.labelEn}
+                  </h2>
+                  <p className="text-white/70 text-sm mt-0.5">
+                    {visibleItems.length} {isRtl ? 'عنصر' : 'items'}
+                  </p>
+                </div>
+              </div>
+              {/* Search */}
+              <div className="relative hidden sm:block">
+                <Search className="absolute top-1/2 -translate-y-1/2 start-3 w-4 h-4 text-white/50" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={isRtl ? 'بحث...' : 'Search...'}
+                  className="bg-white/15 backdrop-blur-sm border border-white/20 rounded-full py-2 ps-10 pe-4 text-sm text-white placeholder:text-white/40 w-56 focus:outline-none focus:bg-white/25 transition-colors"
+                />
+              </div>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-              {isRtl ? selectedModule.label : selectedModule.labelEn}
-            </h2>
           </div>
         </div>
 
         {/* Sub-items Grid */}
-        <div className="max-w-5xl mx-auto grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">
-          {visibleItems.map((item) => {
-            const ItemIcon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActivePage(item.id)}
-                className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl bg-card border border-border/50 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 group"
-              >
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${selectedModule.color} flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow`}>
-                  <ItemIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <span className="text-[10px] sm:text-xs text-center text-foreground/80 leading-tight line-clamp-2 font-medium">
-                  {isRtl ? item.label : item.labelEn}
-                </span>
-              </button>
-            );
-          })}
+        <div className="max-w-6xl mx-auto p-4 sm:p-8">
+          {visibleItems.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              {isRtl ? 'لا توجد نتائج' : 'No results found'}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {visibleItems.map((item) => {
+                const ItemIcon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActivePage(item.id)}
+                    className="group flex flex-col items-center gap-3 p-5 rounded-2xl bg-card border border-border/40 hover:border-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                  >
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${selectedModule.gradient} flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:scale-110 transition-all duration-300`}>
+                      <ItemIcon className="w-6 h-6 text-white" />
+                    </div>
+                    <span className="text-xs sm:text-sm text-center text-foreground/80 group-hover:text-foreground leading-tight line-clamp-2 font-medium transition-colors">
+                      {isRtl ? item.label : item.labelEn}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -272,50 +321,65 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
 
   // === Main modules view ===
   return (
-    <div className="min-h-[calc(100vh-60px)] bg-gradient-to-br from-muted/30 via-background to-muted/20 p-4 sm:p-6 lg:p-8">
-      {/* Logo & Title */}
-      <div className="text-center mb-6 sm:mb-8">
-        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 rounded-2xl overflow-hidden bg-card shadow-lg ring-2 ring-border/50">
-          <img
-            src={logoUrl}
-            alt="Logo"
-            className="w-full h-full object-cover"
-            onError={(e) => { (e.target as HTMLImageElement).src = defaultLogo; }}
-          />
+    <div className="min-h-[calc(100vh-60px)] bg-background flex flex-col">
+      {/* Hero Header */}
+      <div className="bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 px-4 sm:px-8 py-8 sm:py-12">
+        <div className="max-w-5xl mx-auto text-center">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-2xl overflow-hidden bg-white/10 backdrop-blur-sm shadow-2xl ring-2 ring-white/20">
+            <img
+              src={logoUrl}
+              alt="Logo"
+              className="w-full h-full object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).src = defaultLogo; }}
+            />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{getAppName()}</h1>
+          <p className="text-white/50 text-sm">
+            {isRtl ? 'اختر القسم للبدء' : 'Select a module to get started'}
+          </p>
         </div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">{getAppName()}</h1>
       </div>
 
       {/* Main Modules Grid */}
-      <div className="max-w-4xl mx-auto grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 sm:gap-6">
-        {visibleModules.map((mod) => {
-          const Icon = mod.icon;
-          const handleClick = () => {
-            if (mod.items.length === 1) {
-              setActivePage(mod.items[0].id);
-            } else {
-              setSelectedModule(mod);
-            }
-          };
-          return (
-            <button
-              key={mod.id}
-              onClick={handleClick}
-              className="flex flex-col items-center gap-3 p-4 sm:p-6 rounded-2xl bg-card border border-border/50 shadow-sm hover:shadow-lg hover:scale-105 transition-all duration-200 group"
-            >
-              <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl ${mod.color} flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow`}>
-                <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
-              </div>
-              <span className="text-xs sm:text-sm text-center text-foreground/90 font-semibold leading-tight">
-                {isRtl ? mod.label : mod.labelEn}
-              </span>
-            </button>
-          );
-        })}
+      <div className="flex-1 p-4 sm:p-8 -mt-6">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5">
+          {visibleModules.map((mod) => {
+            const Icon = mod.icon;
+            const itemCount = mod.items.filter(i => hasAccess(i.permission)).length;
+            const handleClick = () => {
+              if (mod.items.length === 1) {
+                setActivePage(mod.items[0].id);
+              } else {
+                setSelectedModule(mod);
+              }
+            };
+            return (
+              <button
+                key={mod.id}
+                onClick={handleClick}
+                className="group relative flex flex-col items-center gap-3 p-5 sm:p-6 rounded-2xl bg-card border border-border/40 shadow-sm hover:shadow-xl hover:border-border transition-all duration-300 hover:-translate-y-1"
+              >
+                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${mod.gradient} flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300`}>
+                  <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+                </div>
+                <div className="text-center">
+                  <span className="block text-sm sm:text-base text-foreground/90 font-semibold leading-tight group-hover:text-foreground transition-colors">
+                    {isRtl ? mod.label : mod.labelEn}
+                  </span>
+                  {itemCount > 1 && (
+                    <span className="block text-[10px] text-muted-foreground mt-1">
+                      {itemCount} {isRtl ? 'عنصر' : 'items'}
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Footer */}
-      <div className="mt-8 sm:mt-12 flex flex-col items-center gap-3">
+      <div className="py-6 flex flex-col items-center gap-3">
         <LanguageSwitcher variant="compact" />
         <p className="text-[10px] text-muted-foreground/50">Elzini SaaS © 2026</p>
       </div>
