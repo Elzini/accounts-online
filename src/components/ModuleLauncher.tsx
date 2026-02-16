@@ -75,6 +75,12 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   const [customizerOpen, setCustomizerOpen] = useState(false);
   const usersRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+  const [liveTime, setLiveTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setLiveTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -481,7 +487,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       </div>
 
       {/* Welcome Banner */}
-      <div className="w-full max-w-4xl mb-6 rounded-2xl bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 p-5 sm:p-6 flex items-center justify-between">
+      <div className="w-full max-w-4xl mb-6 rounded-2xl bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-3 sm:gap-4">
           <span className="text-3xl sm:text-4xl">👋</span>
           <div>
@@ -491,6 +497,21 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
             <p className="text-white/60 text-xs sm:text-sm mt-0.5">
               {isRtl ? `مرحباً بك في ${getAppName()}` : `Welcome to ${getAppName()}`}
             </p>
+          </div>
+        </div>
+        {/* Date & Time - Center */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5">
+            <Clock className="w-4 h-4 text-white/70" />
+            <span className="text-white font-bold text-sm tabular-nums">
+              {liveTime.toLocaleTimeString(isRtl ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5">
+            <CalendarDays className="w-4 h-4 text-white/70" />
+            <span className="text-white/90 text-xs sm:text-sm">
+              {liveTime.toLocaleDateString(isRtl ? 'ar-SA' : 'en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-3">
