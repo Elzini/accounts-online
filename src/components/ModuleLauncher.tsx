@@ -321,65 +321,50 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
 
   // === Main modules view ===
   return (
-    <div className="min-h-[calc(100vh-60px)] bg-background flex flex-col">
-      {/* Hero Header */}
-      <div className="bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 px-4 sm:px-8 py-8 sm:py-12">
-        <div className="max-w-5xl mx-auto text-center">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-2xl overflow-hidden bg-white/10 backdrop-blur-sm shadow-2xl ring-2 ring-white/20">
-            <img
-              src={logoUrl}
-              alt="Logo"
-              className="w-full h-full object-cover"
-              onError={(e) => { (e.target as HTMLImageElement).src = defaultLogo; }}
-            />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{getAppName()}</h1>
-          <p className="text-white/50 text-sm">
-            {isRtl ? 'اختر القسم للبدء' : 'Select a module to get started'}
-          </p>
+    <div className="min-h-[calc(100vh-60px)] bg-muted/40 flex flex-col items-center justify-center p-4 sm:p-8">
+      {/* Logo & Title */}
+      <div className="text-center mb-8 sm:mb-10">
+        <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 rounded-2xl overflow-hidden bg-card shadow-xl">
+          <img
+            src={logoUrl}
+            alt="Logo"
+            className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).src = defaultLogo; }}
+          />
         </div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{getAppName()}</h1>
       </div>
 
       {/* Main Modules Grid */}
-      <div className="flex-1 p-4 sm:p-8 -mt-6">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5">
-          {visibleModules.map((mod) => {
-            const Icon = mod.icon;
-            const itemCount = mod.items.filter(i => hasAccess(i.permission)).length;
-            const handleClick = () => {
-              if (mod.items.length === 1) {
-                setActivePage(mod.items[0].id);
-              } else {
-                setSelectedModule(mod);
-              }
-            };
-            return (
-              <button
-                key={mod.id}
-                onClick={handleClick}
-                className="group relative flex flex-col items-center gap-3 p-5 sm:p-6 rounded-2xl bg-card border border-border/40 shadow-sm hover:shadow-xl hover:border-border transition-all duration-300 hover:-translate-y-1"
-              >
-                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${mod.gradient} flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300`}>
-                  <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
-                </div>
-                <div className="text-center">
-                  <span className="block text-sm sm:text-base text-foreground/90 font-semibold leading-tight group-hover:text-foreground transition-colors">
-                    {isRtl ? mod.label : mod.labelEn}
-                  </span>
-                  {itemCount > 1 && (
-                    <span className="block text-[10px] text-muted-foreground mt-1">
-                      {itemCount} {isRtl ? 'عنصر' : 'items'}
-                    </span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+      <div className="max-w-4xl w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5">
+        {visibleModules.map((mod) => {
+          const Icon = mod.icon;
+          const handleClick = () => {
+            if (mod.items.length === 1) {
+              setActivePage(mod.items[0].id);
+            } else {
+              setSelectedModule(mod);
+            }
+          };
+          return (
+            <button
+              key={mod.id}
+              onClick={handleClick}
+              className="group flex flex-col items-center gap-3 p-6 sm:p-8 rounded-2xl bg-card shadow-sm hover:shadow-lg transition-all duration-300"
+            >
+              <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${mod.gradient} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              </div>
+              <span className="text-sm sm:text-base text-foreground/80 font-semibold leading-tight text-center group-hover:text-foreground transition-colors">
+                {isRtl ? mod.label : mod.labelEn}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Footer */}
-      <div className="py-6 flex flex-col items-center gap-3">
+      <div className="mt-10 sm:mt-14 flex flex-col items-center gap-3">
         <LanguageSwitcher variant="compact" />
         <p className="text-[10px] text-muted-foreground/50">Elzini SaaS © 2026</p>
       </div>
