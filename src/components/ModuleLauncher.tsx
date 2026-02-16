@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { 
   LucideIcon, LayoutDashboard, Users, ShoppingCart, DollarSign, BookOpen, 
   Warehouse, Users2, Wrench, Plug, Settings, FileText, Factory, 
@@ -54,6 +54,20 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   const { activePlugins } = usePlugins();
   const [selectedModule, setSelectedModule] = useState<MainModule | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showUsers, setShowUsers] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const usersRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  // Close popovers on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (usersRef.current && !usersRef.current.contains(e.target as Node)) setShowUsers(false);
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifications(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
   const logoUrl = settings?.company_logo_url || defaultLogo;
@@ -353,17 +367,46 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-9 h-9 rounded-full bg-muted/20 flex items-center justify-center">
+          {/* Online Users */}
+          <div className="relative" ref={usersRef}>
+            <button onClick={() => { setShowUsers(!showUsers); setShowNotifications(false); }} className="w-9 h-9 rounded-full bg-muted/20 flex items-center justify-center hover:bg-muted/30 transition-colors">
               <Users2 className="w-4 h-4 text-white/70" />
-            </div>
+            </button>
             <span className="absolute -top-1 -end-1 w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold flex items-center justify-center">
               {onlineUsersCount}
             </span>
+            {showUsers && (
+              <div className="absolute top-full mt-2 end-0 w-64 bg-card border border-border rounded-xl shadow-xl z-50 p-4">
+                <h4 className="text-sm font-semibold text-foreground mb-3">{isRtl ? 'المتصلون الآن' : 'Online Users'}</h4>
+                <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                    {userName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{userName}</p>
+                    <p className="text-[10px] text-muted-foreground">{isRtl ? 'أنت' : 'You'}</p>
+                  </div>
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                </div>
+              </div>
+            )}
           </div>
-          <button className="w-9 h-9 rounded-full bg-muted/20 flex items-center justify-center hover:bg-muted/30 transition-colors">
-            <Bell className="w-4 h-4 text-white/70" />
-          </button>
+
+          {/* Notifications */}
+          <div className="relative" ref={notifRef}>
+            <button onClick={() => { setShowNotifications(!showNotifications); setShowUsers(false); }} className="w-9 h-9 rounded-full bg-muted/20 flex items-center justify-center hover:bg-muted/30 transition-colors">
+              <Bell className="w-4 h-4 text-white/70" />
+            </button>
+            {showNotifications && (
+              <div className="absolute top-full mt-2 end-0 w-72 bg-card border border-border rounded-xl shadow-xl z-50 p-4">
+                <h4 className="text-sm font-semibold text-foreground mb-3">{isRtl ? 'الإشعارات' : 'Notifications'}</h4>
+                <div className="flex flex-col items-center py-6 text-muted-foreground">
+                  <Bell className="w-8 h-8 mb-2 opacity-30" />
+                  <p className="text-sm">{isRtl ? 'لا توجد إشعارات جديدة' : 'No new notifications'}</p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
