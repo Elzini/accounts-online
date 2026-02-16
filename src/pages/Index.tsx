@@ -449,7 +449,7 @@ const Index = () => {
                 </Button>
               </div>
             </div>
-            {/* Company info + Date/Time row */}
+            {/* Company info row */}
             <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-border/30">
               <div className="flex items-center gap-2">
                 {currentCompany?.logo_url ? (
@@ -459,16 +459,6 @@ const Index = () => {
                 )}
                 <span className="text-xs font-medium text-foreground truncate max-w-[200px]">
                   {currentCompany?.name || ''}
-                </span>
-              </div>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  {currentTime.toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  {currentTime.toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
                 </span>
               </div>
             </div>
