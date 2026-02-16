@@ -75,6 +75,7 @@ import { BudgetsPage } from '@/components/budgets/BudgetsPage';
 import { FinancialKPIsPage } from '@/components/reports/FinancialKPIsPage';
 import { ApprovalsPage } from '@/components/approvals/ApprovalsPage';
 import { AttendancePage } from '@/components/hr/AttendancePage';
+import { AttendanceManagementHub } from '@/components/hr/attendance/AttendanceManagementHub';
 import { FingerprintDevicesPage } from '@/components/hr/FingerprintDevicesPage';
 import { LeavesPage } from '@/components/hr/LeavesPage';
 import { ManufacturingPage } from '@/components/manufacturing/ManufacturingPage';
@@ -275,7 +276,7 @@ const Index = () => {
       case 'budgets': return <BudgetsPage />;
       case 'financial-kpis': return <FinancialKPIsPage />;
       case 'approvals': return <ApprovalsPage />;
-      case 'attendance': return <AttendancePage />;
+      case 'attendance': return <AttendanceManagementHub />;
       case 'fingerprint-devices': return <FingerprintDevicesPage />;
       case 'leaves': return <LeavesPage />;
       case 'manufacturing': return <ManufacturingPage />;
