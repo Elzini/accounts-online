@@ -11,7 +11,7 @@ import {
   BookMarked, RefreshCw, Link2, LayoutGrid, Code, Puzzle, Workflow,
   GitBranch, GitFork, Palette, Settings2, ShieldCheck, Database, FileUp,
   TestTube, QrCode, CalendarDays, FileSignature, Calendar, UserCog, ListTodo,
-  ArrowRight, ArrowLeft, Search
+  ArrowRight, ArrowLeft, Search, Bell, Users2 as UsersIcon
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -47,7 +47,7 @@ interface MainModule {
 }
 
 export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncherProps) {
-  const { permissions } = useAuth();
+  const { permissions, user } = useAuth();
   const { company } = useCompany();
   const { data: settings } = useAppSettings();
   const { language } = useLanguage();
@@ -319,9 +319,40 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
     );
   }
 
+  const userName = user?.user_metadata?.username || user?.email?.split('@')[0] || 'User';
+  const onlineUsersCount = 1;
+
   // === Main modules view ===
   return (
-    <div className="min-h-[calc(100vh-60px)] bg-muted/40 flex flex-col items-center justify-center p-4 sm:p-8">
+    <div className="min-h-[calc(100vh-60px)] bg-muted/40 flex flex-col items-center p-4 sm:p-8">
+      {/* Welcome Banner */}
+      <div className="w-full max-w-4xl mb-6 rounded-2xl bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 p-5 sm:p-6 flex items-center justify-between">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <span className="text-3xl sm:text-4xl">👋</span>
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-white">
+              {isRtl ? `أهلاً, ${userName}` : `Hello, ${userName}`} 👑
+            </h2>
+            <p className="text-white/60 text-xs sm:text-sm mt-0.5">
+              {isRtl ? `مرحباً بك في ${getAppName()}` : `Welcome to ${getAppName()}`}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="w-9 h-9 rounded-full bg-muted/20 flex items-center justify-center">
+              <Users2 className="w-4 h-4 text-white/70" />
+            </div>
+            <span className="absolute -top-1 -end-1 w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold flex items-center justify-center">
+              {onlineUsersCount}
+            </span>
+          </div>
+          <button className="w-9 h-9 rounded-full bg-muted/20 flex items-center justify-center hover:bg-muted/30 transition-colors">
+            <Bell className="w-4 h-4 text-white/70" />
+          </button>
+        </div>
+      </div>
+
       {/* Logo & Title */}
       <div className="text-center mb-8 sm:mb-10">
         <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 rounded-2xl overflow-hidden bg-card shadow-xl">
