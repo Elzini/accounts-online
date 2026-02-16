@@ -148,6 +148,7 @@ export type ActivePage =
    | 'attendance'
    | 'leaves'
    | 'insurance'
+   | 'fingerprint-devices'
    // Manufacturing
    | 'manufacturing'
    // Integrations

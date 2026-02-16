@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Loader2, Plus, Clock, Calendar, UserCheck, UserX, AlertTriangle } from 'lucide-react';
+import { Loader2, Plus, Clock, Calendar, UserCheck, UserX, AlertTriangle, Fingerprint } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -33,7 +33,7 @@ export function AttendancePage() {
     queryKey: ['attendance', companyId, selectedDate],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data, error } = await supabase.from('employee_attendance').select('*, employees(name, job_title)')
+      const { data, error } = await supabase.from('employee_attendance').select('*, employees(name, job_title), hr_fingerprint_devices(device_name)')
         .eq('company_id', companyId).eq('date', selectedDate).order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
@@ -148,6 +148,7 @@ export function AttendancePage() {
                   <TableHead className="text-right">{t.check_out}</TableHead>
                   <TableHead className="text-right">{t.status}</TableHead>
                   <TableHead className="text-right">{t.overtime_hours}</TableHead>
+                  <TableHead className="text-right">{language === 'ar' ? 'المصدر' : 'Source'}</TableHead>
                   <TableHead className="text-right">{t.notes}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -160,11 +161,16 @@ export function AttendancePage() {
                     <TableCell dir="ltr">{record.check_out || '-'}</TableCell>
                     <TableCell><Badge variant={statusLabels[record.status]?.variant || 'default'}>{statusLabels[record.status]?.label || record.status}</Badge></TableCell>
                     <TableCell>{record.overtime_hours || 0}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="gap-1">
+                        {record.source === 'fingerprint' ? <><Fingerprint className="w-3 h-3" />{language === 'ar' ? 'بصمة' : 'Fingerprint'}</> : (language === 'ar' ? 'يدوي' : 'Manual')}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{record.notes || '-'}</TableCell>
                   </TableRow>
                 ))}
                 {attendance.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t.no_attendance_records}</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t.no_attendance_records}</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
