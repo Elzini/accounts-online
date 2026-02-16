@@ -1,4 +1,4 @@
-import { RefreshCw, Calendar, Clock, Sun, Moon, Sunrise } from 'lucide-react';
+import { RefreshCw, Calendar, Clock, Sun, Moon, Sunrise, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,6 +6,7 @@ import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useAppSettings } from '@/hooks/useSettings';
 import { AmountDisplaySelector, AmountDisplayMode } from './AmountDisplaySelector';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCompany } from '@/contexts/CompanyContext';
 
 interface WelcomeHeaderProps {
   amountDisplayMode: AmountDisplayMode;
@@ -24,6 +25,7 @@ export function WelcomeHeader({
   const { selectedFiscalYear } = useFiscalYear();
   const { data: settings } = useAppSettings();
   const { t, language } = useLanguage();
+  const { company } = useCompany();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -61,6 +63,16 @@ export function WelcomeHeader({
             <h1 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-bold text-white truncate">
               {t.hello}, {userName} <greeting.icon className="inline-block w-4 h-4 sm:w-6 sm:h-6 text-warning" />
             </h1>
+            {company && (
+              <div className="flex items-center gap-2 mt-1">
+                {company.logo_url ? (
+                  <img src={company.logo_url} alt={company.name} className="w-5 h-5 sm:w-6 sm:h-6 rounded object-contain bg-white/20" />
+                ) : (
+                  <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-white/60" />
+                )}
+                <span className="text-white/80 text-xs sm:text-sm font-medium truncate">{company.name}</span>
+              </div>
+            )}
             <p className="text-white/70 text-[10px] sm:text-sm mt-0.5 sm:mt-1 truncate">
               {settings?.welcome_message || t.dashboard_default_subtitle}
             </p>
