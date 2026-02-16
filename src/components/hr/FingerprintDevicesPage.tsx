@@ -38,6 +38,37 @@ export function FingerprintDevicesPage() {
   const { t, language } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDevice, setEditingDevice] = useState<FingerprintDevice | null>(null);
+  const deviceDefaults: Record<string, { port: number; protocol: string; sdk: string; features: string; notes: string }> = {
+    ZKTeco: { port: 4370, protocol: 'TCP/IP, UDP', sdk: 'ZKTeco SDK / Push Protocol', features: 'بصمة، وجه، كارت، كلمة مرور', notes: 'يدعم بروتوكول Push و Pull - متوافق مع ZKBioTime' },
+    Hikvision: { port: 80, protocol: 'TCP/IP, ISAPI', sdk: 'Hikvision ISAPI / iVMS SDK', features: 'بصمة، وجه، كارت', notes: 'يدعم ISAPI Protocol - متوافق مع iVMS-4200' },
+    Dahua: { port: 37777, protocol: 'TCP/IP, HTTP', sdk: 'Dahua NetSDK', features: 'بصمة، وجه، كارت', notes: 'يدعم DSS Protocol - متوافق مع SmartPSS' },
+    Suprema: { port: 51211, protocol: 'TCP/IP, RS485', sdk: 'BioStar 2 API', features: 'بصمة، وجه، كارت، QR', notes: 'يدعم REST API - متوافق مع BioStar 2' },
+    Anviz: { port: 5010, protocol: 'TCP/IP, WiFi', sdk: 'Anviz CrossChex SDK', features: 'بصمة، وجه، كارت', notes: 'يدعم CrossChex Cloud - متوافق مع CrossChex Standard' },
+    FingerTec: { port: 4370, protocol: 'TCP/IP, USB', sdk: 'FingerTec OFIS SDK', features: 'بصمة، كارت', notes: 'متوافق مع TCMSv2 و TimeTec Cloud' },
+    Biotime: { port: 4370, protocol: 'TCP/IP', sdk: 'ZKBioTime API', features: 'بصمة، وجه، كارت', notes: 'نظام سحابي - يدعم REST API مباشرة' },
+    eSSL: { port: 4370, protocol: 'TCP/IP, USB', sdk: 'eSSL SDK / eTimeTrackLite', features: 'بصمة، كارت', notes: 'متوافق مع eTimeTrackLite و eSSL Etimetrak' },
+    Realand: { port: 4370, protocol: 'TCP/IP, USB', sdk: 'Realand SDK', features: 'بصمة، كارت', notes: 'متوافق مع A-C برنامج الحضور' },
+    Virdi: { port: 9870, protocol: 'TCP/IP, RS485', sdk: 'UNIS API', features: 'بصمة، وجه، كارت، قزحية', notes: 'يدعم UNIS Server - دقة عالية في التعرف' },
+    ZKSoftware: { port: 4370, protocol: 'TCP/IP, RS232', sdk: 'ZK SDK', features: 'بصمة، كارت', notes: 'الجيل الأقدم من ZKTeco - متوافق مع Attendance Management' },
+    Timewatch: { port: 4370, protocol: 'TCP/IP', sdk: 'Timewatch SDK', features: 'بصمة، وجه، كارت', notes: 'متوافق مع Timewatch Plus Software' },
+    Matrix: { port: 4011, protocol: 'TCP/IP, RS485', sdk: 'COSEC API', features: 'بصمة، وجه، كارت، كلمة مرور', notes: 'يدعم COSEC CENTRA - REST API متقدم' },
+    Hundure: { port: 4370, protocol: 'TCP/IP', sdk: 'Hundure SDK', features: 'بصمة، كارت', notes: 'متوافق مع RAC-900 Series Software' },
+  };
+
+  const handleModelChange = (model: string) => {
+    const defaults = deviceDefaults[model];
+    if (defaults) {
+      setFormData(prev => ({
+        ...prev,
+        device_model: model,
+        port: defaults.port,
+        notes: defaults.notes,
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, device_model: model }));
+    }
+  };
+
   const [formData, setFormData] = useState({
     device_name: '',
     device_model: 'ZKTeco',
@@ -210,7 +241,7 @@ export function FingerprintDevicesPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>{language === 'ar' ? 'الموديل' : 'Model'}</Label>
-                  <Select value={formData.device_model} onValueChange={(v) => setFormData({ ...formData, device_model: v })}>
+                  <Select value={formData.device_model} onValueChange={handleModelChange}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ZKTeco">ZKTeco</SelectItem>
@@ -232,6 +263,19 @@ export function FingerprintDevicesPage() {
                   </Select>
                 </div>
               </div>
+              {/* Device Info Card */}
+              {deviceDefaults[formData.device_model] && (
+                <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-2">
+                  <p className="text-sm font-semibold text-foreground">{language === 'ar' ? 'بيانات الجهاز التعريفية' : 'Device Specifications'}</p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-muted-foreground">{language === 'ar' ? 'البروتوكول:' : 'Protocol:'}</span> <span className="font-medium">{deviceDefaults[formData.device_model].protocol}</span></div>
+                    <div><span className="text-muted-foreground">{language === 'ar' ? 'المنفذ الافتراضي:' : 'Default Port:'}</span> <span className="font-medium">{deviceDefaults[formData.device_model].port}</span></div>
+                    <div><span className="text-muted-foreground">SDK:</span> <span className="font-medium">{deviceDefaults[formData.device_model].sdk}</span></div>
+                    <div><span className="text-muted-foreground">{language === 'ar' ? 'المميزات:' : 'Features:'}</span> <span className="font-medium">{deviceDefaults[formData.device_model].features}</span></div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{deviceDefaults[formData.device_model].notes}</p>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{language === 'ar' ? 'الرقم التسلسلي' : 'Serial Number'}</Label>
