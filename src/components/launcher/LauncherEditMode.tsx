@@ -9,7 +9,11 @@ export interface LauncherModuleConfig {
   label: string;
   visible: boolean;
   order: number;
-  size: 'normal' | 'large'; // large = wider card
+  size: 'small' | 'normal' | 'large';
+  bgColor?: string;
+  textColor?: string;
+  gradient?: string;
+  iconSize?: number; // px, for mouse resize
 }
 
 interface LauncherEditToolbarProps {
@@ -94,7 +98,7 @@ interface EditableModuleCardProps {
   id: string;
   isEditMode: boolean;
   visible: boolean;
-  size: 'normal' | 'large';
+  size: 'small' | 'normal' | 'large';
   onRemove: (id: string) => void;
   onResize: (id: string) => void;
   onMoveUp: (id: string) => void;
@@ -246,7 +250,7 @@ export function useLauncherDragDrop(
   }, [modules, onModulesChange]);
 
   const resizeModule = useCallback((id: string) => {
-    onModulesChange(modules.map(m => m.id === id ? { ...m, size: m.size === 'large' ? 'normal' : 'large' } : m));
+    onModulesChange(modules.map(m => m.id === id ? { ...m, size: m.size === 'small' ? 'normal' : m.size === 'normal' ? 'large' : 'small' } : m));
   }, [modules, onModulesChange]);
 
   const moveUp = useCallback((id: string) => {
