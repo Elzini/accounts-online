@@ -11,7 +11,7 @@ import {
   BookMarked, RefreshCw, Link2, LayoutGrid, Code, Puzzle, Workflow,
   GitBranch, GitFork, Palette, Settings2, ShieldCheck, Database, FileUp,
   TestTube, QrCode, CalendarDays, FileSignature, Calendar, UserCog, ListTodo,
-  ArrowRight, ArrowLeft, Search, Bell, Users2 as UsersIcon
+  ArrowRight, ArrowLeft, Search, Bell, Users2 as UsersIcon, Fingerprint, Shield
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -174,6 +174,8 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
         { id: 'payroll', label: 'مسير الرواتب', labelEn: 'Payroll', icon: CreditCard, permission: 'employees' },
         { id: 'attendance', label: 'الحضور والانصراف', labelEn: 'Attendance', icon: Clock, permission: 'employees' },
         { id: 'leaves', label: 'الإجازات', labelEn: 'Leaves', icon: CalendarDays, permission: 'employees' },
+        { id: 'insurance', label: 'التأمينات', labelEn: 'Insurance', icon: Shield, permission: 'employees' },
+        { id: 'fingerprint-devices', label: 'أجهزة البصمة', labelEn: 'Fingerprint Devices', icon: Fingerprint, permission: 'employees' },
         { id: 'employee-contracts', label: 'عقود الموظفين', labelEn: 'Contracts', icon: FileSignature, permission: 'employees' },
         { id: 'org-structure', label: 'الهيكل التنظيمي', labelEn: 'Org Structure', icon: GitFork, permission: 'employees' },
       ],
