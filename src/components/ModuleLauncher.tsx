@@ -492,7 +492,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
           <span className="text-3xl sm:text-4xl">👋</span>
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-white">
-              {isRtl ? `أهلاً, ${userName}` : `Hello, ${userName}`} 👑
+              {isRtl ? `أهلاً, ${userName}` : `Hello, ${userName}`} ☕
             </h2>
             <p className="text-white/60 text-xs sm:text-sm mt-0.5">
               {isRtl ? `مرحباً بك في ${getAppName()}` : `Welcome to ${getAppName()}`}
