@@ -325,6 +325,20 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   // === Main modules view ===
   return (
     <div className="min-h-[calc(100vh-60px)] bg-muted/40 flex flex-col items-center p-4 sm:p-8">
+      {/* Top Bar: Search */}
+      <div className="w-full max-w-4xl mb-4 flex justify-end">
+        <div className="relative">
+          <Search className="absolute top-1/2 -translate-y-1/2 start-3 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={isRtl ? 'ابحث في النظام...' : 'Search...'}
+            className="bg-card border border-border/50 rounded-full py-2 ps-10 pe-4 text-sm text-foreground placeholder:text-muted-foreground/60 shadow-sm focus:outline-none focus:shadow-md transition-shadow w-52 sm:w-64"
+          />
+        </div>
+      </div>
+
       {/* Welcome Banner */}
       <div className="w-full max-w-4xl mb-6 rounded-2xl bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 p-5 sm:p-6 flex items-center justify-between">
         <div className="flex items-center gap-3 sm:gap-4">
@@ -364,18 +378,6 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
           />
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{getAppName()}</h1>
-
-        {/* Search Bar */}
-        <div className="relative mt-5 max-w-md mx-auto">
-          <Search className="absolute top-1/2 -translate-y-1/2 start-4 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={isRtl ? 'ابحث في النظام...' : 'Search the system...'}
-            className="w-full bg-card border border-border/50 rounded-full py-2.5 ps-11 pe-4 text-sm text-foreground placeholder:text-muted-foreground/60 shadow-sm focus:outline-none focus:shadow-md transition-shadow"
-          />
-        </div>
       </div>
 
       {/* Search Results */}
