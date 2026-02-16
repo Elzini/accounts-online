@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
-import { LogOut, Building2, Calendar, Eye } from 'lucide-react';
+import { LogOut, Building2, Calendar, Eye, LayoutDashboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileSidebar, MobileSidebarRef } from '@/components/MobileSidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Dashboard } from '@/components/Dashboard';
+import { ModuleLauncher } from '@/components/ModuleLauncher';
 import { PWAInstallButton } from '@/components/PWAInstallButton';
 import { CheckUpdateButton } from '@/components/pwa/CheckUpdateButton';
 import { CustomerForm } from '@/components/forms/CustomerForm';
@@ -135,6 +136,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const Index = () => {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
+  const [showModuleLauncher, setShowModuleLauncher] = useState(true);
+  const [activeModule, setActiveModule] = useState<string | null>(null);
   const { data: stats, isLoading: isStatsLoading } = useStats();
   const { signOut, user, permissions } = useAuth();
   const { isSuperAdmin, viewAsCompanyId, setViewAsCompanyId, company: currentCompany } = useCompany();
@@ -346,6 +349,49 @@ const Index = () => {
     mobileSidebarRef.current?.open();
   };
 
+  // Wrap setActivePage to exit launcher mode
+  const handleSetActivePage = (page: ActivePage) => {
+    setActivePage(page);
+    if (page !== 'dashboard') {
+      setShowModuleLauncher(false);
+    }
+  };
+
+  // Handle module selection from launcher
+  const handleModuleSelect = (moduleId: string) => {
+    if (moduleId === 'super_admin') {
+      navigate('/companies');
+      return;
+    }
+    setActiveModule(moduleId);
+    setShowModuleLauncher(false);
+    // Navigate to first item of the module
+    const firstPages: Record<string, ActivePage> = {
+      sales: 'sales',
+      purchases: 'purchases',
+      accounting: 'vouchers',
+      inventory: 'items-catalog',
+      hr: 'employees',
+      operations: 'work-orders',
+      integrations: 'integrations',
+      system: 'users-management',
+      construction: 'projects',
+      restaurant: 'menu-management',
+      export_import: 'shipments',
+    };
+    const firstPage = firstPages[moduleId];
+    if (firstPage) {
+      setActivePage(firstPage);
+    }
+  };
+
+  // Back to launcher
+  const handleBackToLauncher = () => {
+    setShowModuleLauncher(true);
+    setActivePage('dashboard');
+    setActiveModule(null);
+  };
+
   return (
     <>
       {/* Mandatory Fiscal Year Selection Dialog - blocks access until selected */}
@@ -356,24 +402,15 @@ const Index = () => {
         onSelect={handleFiscalYearSelect}
       />
       
-      <div className="flex min-h-screen min-h-[100dvh] bg-background">
-        {/* Desktop Sidebar */}
-        <div className="hidden lg:block shrink-0">
-          <Sidebar activePage={activePage} setActivePage={setActivePage} />
-        </div>
-        
-        {/* Mobile Sidebar */}
-        <MobileSidebar ref={mobileSidebarRef} activePage={activePage} setActivePage={setActivePage} />
-        
-        <main className="flex-1 min-w-0 overflow-x-hidden pb-20 md:pb-0">
-          {/* Top Header Bar */}
-          <header className="sticky top-0 z-40 bg-background/98 backdrop-blur-lg border-b-2 border-border/80 shadow-md px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 safe-area-top">
-            <div className="flex justify-between items-center gap-2">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-                <p className="text-responsive-sm text-muted-foreground truncate">
-                  {t.hello_greeting} <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
-                </p>
-                {/* Super Admin Company Selector */}
+      {showModuleLauncher ? (
+        <div className="min-h-screen min-h-[100dvh] bg-background">
+          {/* Minimal top bar for launcher */}
+          <header className="sticky top-0 z-40 bg-background/98 backdrop-blur-lg border-b border-border/50 px-4 sm:px-6 py-2.5">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-muted-foreground">
+                {t.hello_greeting} <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
+              </p>
+              <div className="flex items-center gap-2">
                 {isSuperAdmin && allCompanies.length > 0 && (
                   <Select
                     value={viewAsCompanyId || 'default'}
@@ -391,69 +428,131 @@ const Index = () => {
                     </SelectContent>
                   </Select>
                 )}
-                {viewAsCompanyId && currentCompany && (
-                  <Badge variant="secondary" className="gap-1 shrink-0 bg-primary/10 text-primary">
-                    <Building2 className="w-3 h-3" />
-                    <span className="hidden sm:inline text-xs">{currentCompany.name}</span>
-                  </Badge>
-                )}
-                {selectedFiscalYear && fiscalYears.length > 1 && (
-                  <Badge 
-                    variant="outline" 
-                    className="cursor-pointer hover:bg-accent gap-1 shrink-0"
-                    onClick={() => setShowFiscalYearDialog(true)}
-                  >
-                    <Calendar className="w-3 h-3" />
-                    <span className="hidden sm:inline">{selectedFiscalYear.name}</span>
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <NotificationsBell />
-                <CheckUpdateButton />
-                <PWAInstallButton />
-                {permissions.super_admin && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate('/companies')}
-                    className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3"
-                  >
-                    <Building2 className="w-4 h-4" />
-                    <span className="hidden sm:inline text-xs sm:text-sm">{t.company_management}</span>
-                  </Button>
-                )}
-                <CarSearch />
                 <Button 
                   variant="ghost" 
                   size="sm"
                   onClick={signOut} 
-                  className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 text-muted-foreground hover:text-destructive"
+                  className="gap-1.5 h-8 text-muted-foreground hover:text-destructive"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline text-xs sm:text-sm">{t.logout}</span>
+                  <span className="hidden sm:inline text-xs">{t.logout}</span>
                 </Button>
               </div>
             </div>
           </header>
           
-          {/* Main Content */}
-          <div className="p-3 sm:p-4 md:p-6 lg:p-8">
-            {renderContent()}
+          <ModuleLauncher setActivePage={handleSetActivePage} onModuleSelect={handleModuleSelect} />
+        </div>
+      ) : (
+        <div className="flex min-h-screen min-h-[100dvh] bg-background">
+          {/* Desktop Sidebar */}
+          <div className="hidden lg:block shrink-0">
+            <Sidebar activePage={activePage} setActivePage={handleSetActivePage} />
           </div>
-        </main>
+          
+          {/* Mobile Sidebar */}
+          <MobileSidebar ref={mobileSidebarRef} activePage={activePage} setActivePage={handleSetActivePage} />
+          
+          <main className="flex-1 min-w-0 overflow-x-hidden pb-20 md:pb-0">
+            {/* Top Header Bar */}
+            <header className="sticky top-0 z-40 bg-background/98 backdrop-blur-lg border-b-2 border-border/80 shadow-md px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 safe-area-top">
+              <div className="flex justify-between items-center gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {/* Back to launcher button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBackToLauncher}
+                    className="gap-1.5 h-8 px-2 text-primary hover:text-primary/80"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    <span className="hidden sm:inline text-xs">{t.nav_dashboard}</span>
+                  </Button>
+                  <p className="text-responsive-sm text-muted-foreground truncate">
+                    {t.hello_greeting} <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
+                  </p>
+                  {/* Super Admin Company Selector */}
+                  {isSuperAdmin && allCompanies.length > 0 && (
+                    <Select
+                      value={viewAsCompanyId || 'default'}
+                      onValueChange={(val) => setViewAsCompanyId(val === 'default' ? null : val)}
+                    >
+                      <SelectTrigger className="h-8 w-auto min-w-[140px] max-w-[220px] text-xs gap-1 border-primary/50 bg-primary/5">
+                        <Eye className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <SelectValue placeholder={t.view_as_company} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">{t.my_original_company}</SelectItem>
+                        {allCompanies.map(c => (
+                          <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {viewAsCompanyId && currentCompany && (
+                    <Badge variant="secondary" className="gap-1 shrink-0 bg-primary/10 text-primary">
+                      <Building2 className="w-3 h-3" />
+                      <span className="hidden sm:inline text-xs">{currentCompany.name}</span>
+                    </Badge>
+                  )}
+                  {selectedFiscalYear && fiscalYears.length > 1 && (
+                    <Badge 
+                      variant="outline" 
+                      className="cursor-pointer hover:bg-accent gap-1 shrink-0"
+                      onClick={() => setShowFiscalYearDialog(true)}
+                    >
+                      <Calendar className="w-3 h-3" />
+                      <span className="hidden sm:inline">{selectedFiscalYear.name}</span>
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                  <NotificationsBell />
+                  <CheckUpdateButton />
+                  <PWAInstallButton />
+                  {permissions.super_admin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/companies')}
+                      className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3"
+                    >
+                      <Building2 className="w-4 h-4" />
+                      <span className="hidden sm:inline text-xs sm:text-sm">{t.company_management}</span>
+                    </Button>
+                  )}
+                  <CarSearch />
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={signOut} 
+                    className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 text-muted-foreground hover:text-destructive"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="hidden sm:inline text-xs sm:text-sm">{t.logout}</span>
+                  </Button>
+                </div>
+              </div>
+            </header>
+            
+            {/* Main Content */}
+            <div className="p-3 sm:p-4 md:p-6 lg:p-8">
+              {renderContent()}
+            </div>
+          </main>
 
-        {/* Bottom Navigation for Mobile */}
-        {/* Always render but CSS will hide on desktop */}
-        <BottomNavigation 
-          activePage={activePage} 
-          setActivePage={setActivePage} 
-          onMenuClick={handleMenuClick}
-        />
+          {/* Bottom Navigation for Mobile */}
+          <BottomNavigation 
+            activePage={activePage} 
+            setActivePage={handleSetActivePage} 
+            onMenuClick={handleMenuClick}
+          />
 
-        {/* AI Chat Widget */}
-        <AIChatWidget />
-      </div>
+          {/* AI Chat Widget */}
+          <AIChatWidget />
+        </div>
+      )}
     </>
   );
 };
