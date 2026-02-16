@@ -63,7 +63,22 @@ export function AttendanceManagementHub() {
                 </p>
               </div>
             </div>
-
+            <div className="flex items-center gap-3">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 text-center">
+                <div className="flex items-center gap-1.5 text-white/80 text-xs mb-0.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>{language === 'ar' ? 'الوقت' : 'Time'}</span>
+                </div>
+                <p className="text-white font-bold text-lg tabular-nums">{timeStr}</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 text-center">
+                <div className="flex items-center gap-1.5 text-white/80 text-xs mb-0.5">
+                  <CalendarDays className="w-3.5 h-3.5" />
+                  <span>{language === 'ar' ? 'التاريخ' : 'Date'}</span>
+                </div>
+                <p className="text-white font-semibold text-sm">{dateStr}</p>
+              </div>
+            </div>
           </div>
         </div>
 
