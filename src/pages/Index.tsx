@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { LogOut, Building2, Calendar, Eye, LayoutDashboard } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { LogOut, Building2, Calendar, Eye, LayoutDashboard, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileSidebar, MobileSidebarRef } from '@/components/MobileSidebar';
@@ -144,7 +144,13 @@ const Index = () => {
   const { signOut, user, permissions } = useAuth();
   const { isSuperAdmin, viewAsCompanyId, setViewAsCompanyId, company: currentCompany } = useCompany();
   const { fiscalYears, selectedFiscalYear, setSelectedFiscalYear, isLoading: isFiscalYearLoading } = useFiscalYear();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Fetch all companies for super admin selector
   const { data: allCompanies = [] } = useQuery({
@@ -408,9 +414,11 @@ const Index = () => {
           {/* Minimal top bar for launcher */}
           <header className="sticky top-0 z-40 bg-background/98 backdrop-blur-lg border-b border-border/50 px-4 sm:px-6 py-2.5">
             <div className="flex justify-between items-center">
-              <p className="text-sm text-muted-foreground">
-                {t.hello_greeting} <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="text-sm text-muted-foreground">
+                  {t.hello_greeting} <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
+                </p>
+              </div>
               <div className="flex items-center gap-2">
                 {isSuperAdmin && allCompanies.length > 0 && (
                   <Select
@@ -439,6 +447,29 @@ const Index = () => {
                   <LogOut className="w-4 h-4" />
                   <span className="hidden sm:inline text-xs">{t.logout}</span>
                 </Button>
+              </div>
+            </div>
+            {/* Company info + Date/Time row */}
+            <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-border/30">
+              <div className="flex items-center gap-2">
+                {currentCompany?.logo_url ? (
+                  <img src={currentCompany.logo_url} alt={currentCompany.name} className="w-6 h-6 rounded object-contain bg-muted/50" />
+                ) : (
+                  <Building2 className="w-4 h-4 text-muted-foreground" />
+                )}
+                <span className="text-xs font-medium text-foreground truncate max-w-[200px]">
+                  {currentCompany?.name || ''}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  {currentTime.toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {currentTime.toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                </span>
               </div>
             </div>
           </header>
