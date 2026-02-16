@@ -555,18 +555,8 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
         </div>
       </div>
 
-      {/* Logo & Title */}
-      <div className="text-center mb-8 sm:mb-10">
-        <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 rounded-2xl overflow-hidden bg-card shadow-xl">
-          <img
-            src={logoUrl}
-            alt="Logo"
-            className="w-full h-full object-cover"
-            onError={(e) => { (e.target as HTMLImageElement).src = defaultLogo; }}
-          />
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{getAppName()}</h1>
-      </div>
+
+
 
       {/* Search Results */}
       {searchQuery.trim() ? (
