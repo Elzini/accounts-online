@@ -690,7 +690,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       </div>
 
       {/* Main Content: Grid + Category Sidebar */}
-      <div className="max-w-7xl mx-auto flex flex-row-reverse gap-0">
+      <div className="max-w-7xl mx-auto flex gap-0">
         {/* Right Category Sidebar - Odoo Style */}
         <div className="hidden md:block w-52 lg:w-56 border-e border-border/50 bg-background p-4 sticky top-[45px] h-[calc(100vh-45px)] overflow-y-auto">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
