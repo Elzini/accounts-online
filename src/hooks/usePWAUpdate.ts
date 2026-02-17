@@ -10,10 +10,18 @@ interface ServiceWorkerRegistration {
 }
 
 export function usePWAUpdate() {
-  const [needRefresh, setNeedRefresh] = useState(false);
+  const [needRefresh, setNeedRefresh] = useState(() => {
+    // Restore from sessionStorage so it survives navigation/re-renders
+    return sessionStorage.getItem('pwa-need-refresh') === 'true';
+  });
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
+
+  // Sync needRefresh to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('pwa-need-refresh', String(needRefresh));
+  }, [needRefresh]);
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -96,6 +104,7 @@ export function usePWAUpdate() {
 
   const dismissUpdate = useCallback(() => {
     setNeedRefresh(false);
+    sessionStorage.removeItem('pwa-need-refresh');
   }, []);
 
   return {
