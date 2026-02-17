@@ -106,6 +106,14 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       }
       setFiscalYears(years);
       setCompanyName(fetchedCompanyName);
+      
+      // Only confirm email if company was found
+      if (!fetchedCompanyName) {
+        toast.error(t.email_not_found || 'لم يتم العثور على حساب مرتبط بهذا البريد الإلكتروني');
+        setEmailConfirmed(false);
+        return;
+      }
+      
       setEmailConfirmed(true);
       if (years.length > 0) {
         const currentYear = years.find((fy: CompanyFiscalYear) => fy.is_current);
