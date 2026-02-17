@@ -10663,6 +10663,39 @@ export type Database = {
           },
         ]
       }
+      sms_provider_configs: {
+        Row: {
+          company_id: string
+          config: Json | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          provider: string
+          sender_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          config?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          provider: string
+          sender_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          config?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          provider?: string
+          sender_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       social_posts: {
         Row: {
           comments_count: number | null
