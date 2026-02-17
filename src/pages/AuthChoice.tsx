@@ -52,9 +52,6 @@ export default function AuthChoice() {
     ? ['تجربة مجانية', 'لا حاجة لبطاقة ائتمان', 'جاهز للعمل فوراً', 'شامل لجميع التطبيقات']
     : ['Free Trial', 'No Credit Card Needed', 'Ready Instantly', 'All Apps Included'];
 
-  const navItems = isRtl
-    ? ['البرامج', 'مجالات العمل', 'الأسعار']
-    : ['Products', 'Industries', 'Pricing'];
 
   return (
     <div className="min-h-screen bg-[hsl(210,10%,97%)] flex flex-col" dir={isRtl ? 'rtl' : 'ltr'}>
@@ -75,17 +72,6 @@ export default function AuthChoice() {
             </span>
           </div>
 
-          {/* Nav Links - Desktop */}
-          <div className="hidden md:flex items-center gap-8">
-            {navItems.map((item, i) => (
-              <span
-                key={i}
-                className="text-sm font-medium text-[hsl(215,20%,40%)] hover:text-[hsl(215,40%,25%)] cursor-pointer transition-colors"
-              >
-                {item}
-              </span>
-            ))}
-          </div>
 
           {/* Actions */}
           <div className="flex items-center gap-3">
