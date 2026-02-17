@@ -3,6 +3,7 @@ import { X, GripVertical, Save, RotateCcw, Check, Maximize2, Minimize2, ArrowUp,
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export interface WidgetConfig {
   id: string;
@@ -11,6 +12,29 @@ export interface WidgetConfig {
   order: number;
   colSpan: number;
 }
+
+// Widget label map keyed by widget id -> translation key
+const WIDGET_LABEL_KEYS: Record<string, string> = {
+  quickAccess: 'widget_quick_access',
+  availableCars: 'widget_available_cars',
+  totalPurchases: 'widget_total_purchases',
+  monthSales: 'widget_month_sales',
+  totalProfit: 'widget_total_profit',
+  todaySales: 'widget_today_sales',
+  monthSalesCount: 'widget_month_sales_count',
+  allTimePurchases: 'widget_all_time_purchases',
+  allTimeSales: 'widget_all_time_sales',
+  activeInstallments: 'widget_active_installments',
+  overdueInstallments: 'widget_overdue_installments',
+  upcomingInstallments: 'widget_upcoming_installments',
+  totalDue: 'widget_total_due',
+  nextPayment: 'widget_next_payment',
+  monthlyExpenses: 'widget_monthly_expenses',
+  transfers: 'widget_transfers',
+  quickActions: 'widget_quick_actions',
+  reports: 'widget_reports',
+  recentInvoices: 'widget_recent_invoices',
+};
 
 export const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'quickAccess', label: 'الوصول السريع', visible: true, order: 0, colSpan: 2 },
@@ -49,7 +73,14 @@ export function DashboardEditToolbar({
   widgets, 
   onWidgetsChange 
 }: DashboardEditModeProps) {
+  const { t } = useLanguage();
+
   if (!isEditMode) return null;
+
+  const getWidgetLabel = (widget: WidgetConfig) => {
+    const key = WIDGET_LABEL_KEYS[widget.id];
+    return key ? (t as Record<string, string>)[key] || widget.label : widget.label;
+  };
 
   const toggleWidget = (id: string) => {
     onWidgetsChange(
@@ -68,12 +99,12 @@ export function DashboardEditToolbar({
       <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
         <div className="text-center mb-2 sm:mb-3">
           <p className="text-xs sm:text-sm text-muted-foreground">
-            اسحب وأفلت الأقسام لترتيبها • اضغط أيقونة التحجيم لتغيير العرض
+            {t.drag_drop_hint}
           </p>
         </div>
 
         <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap mb-2 sm:mb-3">
-          <span className="text-xs sm:text-sm text-muted-foreground ml-1 sm:ml-2 w-full text-center sm:w-auto">الأقسام (اضغط للإظهار/الإخفاء)</span>
+          <span className="text-xs sm:text-sm text-muted-foreground ml-1 sm:ml-2 w-full text-center sm:w-auto">{t.sections_label}</span>
           {sortedWidgets.map(widget => (
             <Badge
               key={widget.id}
@@ -87,22 +118,22 @@ export function DashboardEditToolbar({
               onClick={() => toggleWidget(widget.id)}
             >
               {widget.visible && <Check className="w-3 h-3 ml-1" />}
-              {widget.label}
+              {getWidgetLabel(widget)}
             </Badge>
           ))}
         </div>
 
         <div className="flex items-center justify-center gap-2 sm:gap-3">
           <Button variant="outline" size="sm" onClick={onCancel} className="gap-1 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3">
-            إلغاء
+            {t.cancel}
           </Button>
           <Button variant="outline" size="sm" onClick={resetToDefault} className="gap-1 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3">
             <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="hidden xs:inline">استعادة</span> الافتراضي
+            {t.restore_default}
           </Button>
           <Button size="sm" onClick={() => onSave(widgets)} className="gap-1 sm:gap-2 bg-primary hover:bg-primary/90 text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3">
             <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            حفظ
+            {t.save}
           </Button>
         </div>
       </div>

@@ -35,6 +35,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useDashboardConfig, useSaveDashboardConfig } from '@/hooks/useSystemControl';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Card configuration interface
 export interface CardConfig {
@@ -152,6 +153,7 @@ interface DashboardCustomizerProps {
 export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: DashboardCustomizerProps) {
   const { data: savedConfig, isLoading } = useDashboardConfig();
   const saveConfig = useSaveDashboardConfig();
+  const { t } = useLanguage();
 
   const [cards, setCards] = useState<CardConfig[]>(DEFAULT_STAT_CARDS);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
@@ -235,7 +237,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
       }));
     });
     setHasChanges(true);
-    toast.success('تم تطبيق التصميم على جميع البطاقات');
+    toast.success(t.style_applied_all);
   }, []);
 
   // Drag and drop handlers
@@ -308,11 +310,11 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
       });
       onConfigChange?.(cards);
       setHasChanges(false);
-      toast.success('تم حفظ إعدادات لوحة التحكم');
+      toast.success(t.dashboard_saved);
       onOpenChange(false);
     } catch (error) {
       console.error('Error saving dashboard config:', error);
-      toast.error('حدث خطأ أثناء الحفظ');
+      toast.error(t.save_error_text);
     }
   };
 
@@ -331,10 +333,10 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Move className="w-5 h-5 text-primary" />
-            تخصيص لوحة التحكم
+            {t.customize_dashboard}
           </DialogTitle>
           <DialogDescription>
-            قم بترتيب البطاقات وتخصيص ألوانها وأحجامها وخطوطها
+            {t.customize_dashboard_desc}
           </DialogDescription>
         </DialogHeader>
 
@@ -343,7 +345,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
           <div className="flex flex-col gap-2">
             <Label className="text-sm font-medium flex items-center gap-2">
               <GripVertical className="w-4 h-4" />
-              ترتيب البطاقات (اسحب للترتيب)
+              {t.card_order_drag}
             </Label>
             <ScrollArea className="flex-1 border rounded-lg p-2 max-h-[400px]">
               <div className="space-y-2">
@@ -404,7 +406,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                       <p className="font-medium text-sm truncate">{card.label}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="secondary" className="text-[10px]">
-                          {card.size === 'small' ? 'صغير' : card.size === 'large' ? 'كبير' : 'متوسط'}
+                          {card.size === 'small' ? t.size_small : card.size === 'large' ? t.size_large : t.size_medium}
                         </Badge>
                         {card.bgColor && (
                           <span
@@ -440,7 +442,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
           <div className="flex flex-col gap-4">
             <Label className="text-sm font-medium flex items-center gap-2">
               <Palette className="w-4 h-4" />
-              إعدادات البطاقة المحددة
+              {t.selected_card_settings}
             </Label>
 
             {selected ? (
@@ -449,7 +451,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                 <div className="space-y-2">
                   <Label className="text-sm flex items-center gap-2">
                     <Type className="w-4 h-4" />
-                    اسم البطاقة
+                    {t.card_name_label}
                   </Label>
                   <div className="flex items-center gap-2">
                     <input
@@ -458,7 +460,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                       onChange={(e) => updateCard(selected.id, { label: e.target.value })}
                       className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       dir="rtl"
-                      placeholder="اسم البطاقة"
+                      placeholder={t.card_name_placeholder}
                     />
                     <Button
                       variant="ghost"
@@ -470,17 +472,17 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                           updateCard(selected.id, { label: defaultCard.label });
                         }
                       }}
-                      title="استعادة الاسم الافتراضي"
+                      title={t.restore_default_name}
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                     </Button>
                   </div>
-                  <p className="text-[10px] text-muted-foreground">يمكنك تغيير اسم البطاقة كما تريد</p>
+                  <p className="text-[10px] text-muted-foreground">{t.card_name_hint}</p>
                 </div>
 
                 {/* Size */}
                 <div className="space-y-2">
-                  <Label className="text-sm">الحجم</Label>
+                  <Label className="text-sm">{t.size_label}</Label>
                   <div className="flex gap-2">
                     {(['small', 'medium', 'large'] as const).map(size => (
                       <Button
@@ -490,7 +492,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                         className="flex-1"
                         onClick={() => updateCard(selected.id, { size })}
                       >
-                        {size === 'small' ? 'صغير' : size === 'large' ? 'كبير' : 'متوسط'}
+                        {size === 'small' ? t.size_small : size === 'large' ? t.size_large : t.size_medium}
                       </Button>
                     ))}
                   </div>
@@ -498,7 +500,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
 
                 {/* Background Color */}
                 <div className="space-y-2">
-                  <Label className="text-sm">لون الخلفية</Label>
+                  <Label className="text-sm">{t.bg_color_label}</Label>
                   <div className="flex flex-wrap gap-2">
                     {CARD_COLORS.map(color => (
                       <button
@@ -527,7 +529,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                 <div className="space-y-2">
                   <Label className="text-sm flex items-center gap-2">
                     <Type className="w-4 h-4" />
-                    لون الخط
+                    {t.text_color_label}
                   </Label>
                   <div className="flex flex-wrap gap-2">
                     {TEXT_COLORS.map(color => (
@@ -557,7 +559,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                 <div className="space-y-2">
                   <Label className="text-sm flex items-center gap-2">
                     <Palette className="w-4 h-4" />
-                    ألوان تدريجية
+                    {t.gradient_colors}
                   </Label>
                   <div className="grid grid-cols-4 gap-2">
                     {GRADIENT_PRESETS.map((preset, i) => {
@@ -597,7 +599,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                   <div className="flex items-center justify-between">
                     <Label className="text-sm flex items-center gap-2">
                       <Type className="w-4 h-4" />
-                      حجم الخط
+                      {t.font_size_label}
                     </Label>
                     <span className="text-sm text-muted-foreground">{selected.fontSize || 100}%</span>
                   </div>
@@ -616,10 +618,10 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                   <div className="flex items-center justify-between">
                     <Label className="text-sm flex items-center gap-2">
                       <Ruler className="w-4 h-4" />
-                      ارتفاع البطاقة
+                      {t.card_height_label}
                     </Label>
                     <span className="text-sm text-muted-foreground">
-                      {selected.height ? `${selected.height}px` : 'تلقائي'}
+                      {selected.height ? `${selected.height}px` : t.auto_label}
                     </span>
                   </div>
                   <Slider
@@ -630,7 +632,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                     step={10}
                     className="w-full"
                   />
-                  <p className="text-xs text-muted-foreground">0 = ارتفاع تلقائي</p>
+                  <p className="text-xs text-muted-foreground">{t.auto_height_hint}</p>
                 </div>
 
                 {/* Card Width */}
@@ -638,10 +640,10 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                   <div className="flex items-center justify-between">
                     <Label className="text-sm flex items-center gap-2">
                       <Ruler className="w-4 h-4" />
-                      عرض البطاقة
+                      {t.card_width_label}
                     </Label>
                     <span className="text-sm text-muted-foreground">
-                      {selected.width ? `${selected.width}px` : 'تلقائي'}
+                      {selected.width ? `${selected.width}px` : t.auto_label}
                     </span>
                   </div>
                   <Slider
@@ -652,14 +654,14 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                     step={10}
                     className="w-full"
                   />
-                  <p className="text-xs text-muted-foreground">0 = عرض تلقائي (يملأ المساحة المتاحة)</p>
+                  <p className="text-xs text-muted-foreground">{t.auto_width_hint}</p>
                 </div>
 
                 {/* 3D Effect */}
                 <div className="flex items-center justify-between">
                   <Label className="text-sm flex items-center gap-2">
                     <Box className="w-4 h-4" />
-                    تأثير ثلاثي الأبعاد
+                    {t.effect_3d_label}
                   </Label>
                   <Switch
                     checked={selected.enable3D || false}
@@ -671,7 +673,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                 <div className="flex items-center justify-between">
                   <Label className="text-sm flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" />
-                    إظهار مؤشر الترند
+                    {t.show_trend_label}
                   </Label>
                   <Switch
                     checked={selected.showTrend ?? true}
@@ -684,7 +686,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                   <div className="space-y-2">
                     <Label className="text-sm flex items-center gap-2">
                       <TrendingUp className="w-4 h-4" />
-                      لون نص الترند
+                      {t.trend_color_label}
                     </Label>
                     <div className="flex flex-wrap gap-2">
                       {TREND_COLORS.map(color => (
@@ -713,7 +715,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
 
                 {/* Visibility */}
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm">إظهار البطاقة</Label>
+                  <Label className="text-sm">{t.show_card_label}</Label>
                   <Switch
                     checked={selected.visible}
                     onCheckedChange={() => toggleVisibility(selected.id)}
@@ -728,12 +730,12 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                   onClick={() => applyStyleToAll(selected.id)}
                 >
                   <Palette className="w-4 h-4" />
-                  تطبيق هذا التصميم على جميع البطاقات
+                  {t.apply_style_all}
                 </Button>
 
                 {/* Preview */}
                 <div className="pt-3 border-t">
-                  <Label className="text-sm mb-2 block">معاينة</Label>
+                  <Label className="text-sm mb-2 block">{t.preview_label}</Label>
                   <div
                     className={cn(
                       'rounded-xl p-4 border transition-all overflow-hidden',
@@ -757,15 +759,15 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                   >
                     <p className="opacity-75 text-[0.75em] mb-1" style={{ color: selected.textColor || undefined }}>{selected.label}</p>
                     <p className="font-bold text-[1.5em]" style={{ color: selected.textColor || undefined }}>123,456</p>
-                    <p className="opacity-60 text-[0.7em]" style={{ color: selected.textColor || undefined }}>ريال سعودي</p>
+                    <p className="opacity-60 text-[0.7em]" style={{ color: selected.textColor || undefined }}>{t.currency_sar_label}</p>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="border rounded-lg p-8 flex flex-col items-center justify-center text-center text-muted-foreground">
                 <Palette className="w-12 h-12 mb-3 opacity-30" />
-                <p>اختر بطاقة من القائمة</p>
-                <p className="text-xs mt-1">لتخصيص مظهرها</p>
+                <p>{t.select_card_hint}</p>
+                <p className="text-xs mt-1">{t.to_customize}</p>
               </div>
             )}
           </div>
@@ -774,15 +776,15 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
         <DialogFooter className="flex-shrink-0 flex items-center justify-between gap-2 border-t pt-4 mt-4">
           <Button variant="outline" onClick={handleReset} className="gap-2">
             <RotateCcw className="w-4 h-4" />
-            استعادة الافتراضي
+            {t.restore_default}
           </Button>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              إلغاء
+              {t.cancel}
             </Button>
             <Button onClick={handleSave} disabled={!hasChanges || saveConfig.isPending} className="gap-2">
               <Save className="w-4 h-4" />
-              {saveConfig.isPending ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+              {saveConfig.isPending ? t.saving_text : t.save_changes_text}
             </Button>
           </div>
         </DialogFooter>

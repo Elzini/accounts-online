@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { ArrowUpRight, Car } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface RecentSale {
   id: string;
@@ -17,8 +18,11 @@ interface RecentActivityCardProps {
 }
 
 export function RecentActivityCard({ recentSales }: RecentActivityCardProps) {
+  const { t, language } = useLanguage();
+  const locale = language === 'ar' ? 'ar-SA' : 'en-SA';
+
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'SAR',
       minimumFractionDigits: 0,
@@ -27,7 +31,7 @@ export function RecentActivityCard({ recentSales }: RecentActivityCardProps) {
 
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), 'dd MMM yyyy', { locale: ar });
+      return format(new Date(dateString), 'dd MMM yyyy', { locale: language === 'ar' ? ar : undefined });
     } catch {
       return dateString;
     }
@@ -37,14 +41,14 @@ export function RecentActivityCard({ recentSales }: RecentActivityCardProps) {
     <div className="relative overflow-hidden bg-card rounded-xl md:rounded-2xl p-4 md:p-6 border border-border/60">
       <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl md:rounded-t-2xl" style={{ backgroundColor: 'hsl(var(--success))' }} />
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-card-foreground">آخر المبيعات</h3>
+        <h3 className="text-lg font-bold text-card-foreground">{t.recent_sales}</h3>
         <ArrowUpRight className="w-5 h-5 text-muted-foreground" />
       </div>
       <ScrollArea className="h-[280px]">
         {recentSales.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Car className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p>لا توجد مبيعات حديثة</p>
+            <p>{t.no_recent_sales}</p>
           </div>
         ) : (
           <div className="space-y-3">
