@@ -24,7 +24,7 @@ const SEARCH_ITEMS: SearchItem[] = [
   { id: 'general-ledger', label: 'دفتر الأستاذ', section: 'المحاسبة', keywords: ['أستاذ', 'ledger'] },
   { id: 'employees', label: 'الموظفين', section: 'الموارد البشرية', keywords: ['موظف', 'employee', 'عامل'] },
   { id: 'payroll', label: 'مسير الرواتب', section: 'الموارد البشرية', keywords: ['راتب', 'payroll', 'مسير'] },
-  { id: 'custody', label: 'العهد', section: 'المالية', keywords: ['عهدة', 'custody', 'سلفة'] },
+  { id: 'custody', label: 'العهد', section: 'المالية', keywords: ['عهدة', 'العهده', 'عهده', 'custody', 'سلفة'] },
   { id: 'installments', label: 'الأقساط', section: 'المبيعات', keywords: ['قسط', 'installment', 'تقسيط'] },
   { id: 'vouchers', label: 'سندات القبض والصرف', section: 'المالية', keywords: ['سند', 'voucher', 'قبض', 'صرف'] },
   { id: 'checks', label: 'الشيكات', section: 'المالية', keywords: ['شيك', 'check'] },
