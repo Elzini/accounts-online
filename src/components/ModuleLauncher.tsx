@@ -76,6 +76,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   const [showNotifications, setShowNotifications] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [customizerOpen, setCustomizerOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const usersRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const [liveTime, setLiveTime] = useState(new Date());
@@ -563,9 +564,78 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   const userName = user?.user_metadata?.username || user?.email?.split('@')[0] || 'User';
   const onlineUsersCount = 1;
 
-  // === Main modules view ===
+  // Category filter
+
+  // Build categories with counts
+  const categories = visibleModules.map(mod => ({
+    id: mod.id,
+    label: isRtl ? mod.label : mod.labelEn,
+    count: mod.items.filter(i => hasAccess(i.permission)).length,
+  }));
+
+  const totalCount = categories.reduce((sum, c) => sum + c.count, 0);
+
+  // Filter modules by category
+  const displayModules = selectedCategory 
+    ? visibleModules.filter(m => m.id === selectedCategory) 
+    : visibleModules;
+
+  // Get all items for display (flattened from filtered modules)  
+  const allDisplayItems = displayModules.flatMap(mod => 
+    mod.items.filter(i => hasAccess(i.permission)).map(item => ({
+      ...item,
+      moduleId: mod.id,
+      moduleLabel: isRtl ? mod.label : mod.labelEn,
+      gradient: mod.gradient,
+      color: mod.color,
+    }))
+  );
+
+  // Apply search filter
+  const filteredItems = searchQuery.trim() 
+    ? allDisplayItems.filter(i => {
+        const q = searchQuery.toLowerCase();
+        return i.label.includes(q) || i.labelEn.toLowerCase().includes(q);
+      })
+    : allDisplayItems;
+
+  // Odoo-style description map
+  const moduleDescriptions: Record<string, { ar: string; en: string }> = {
+    'dashboard-mod': { ar: 'لوحة تحكم شاملة بالمؤشرات', en: 'Comprehensive KPI Dashboard' },
+    'sales-mod': { ar: 'من عروض الأسعار للفواتير', en: 'From quotations to invoices' },
+    'purchases-mod': { ar: 'إدارة المشتريات والموردين', en: 'Manage purchases & suppliers' },
+    'accounting-mod': { ar: 'إدارة المحاسبة المالية والتحليلية', en: 'Financial & analytical accounting' },
+    'inventory-mod': { ar: 'إدارة أنشطة مخزونك واللوجستية', en: 'Manage inventory & logistics' },
+    'hr-mod': { ar: 'إدارة الموارد البشرية والرواتب', en: 'HR & payroll management' },
+    'operations-mod': { ar: 'إدارة العمليات والمشاريع', en: 'Operations & project management' },
+    'integrations-mod': { ar: 'التكاملات والإضافات الخارجية', en: 'External integrations & plugins' },
+    'system-mod': { ar: 'إعدادات النظام والمستخدمين', en: 'System settings & users' },
+    'pos-mod': { ar: 'واجهة نقطة بيع سهلة', en: 'User-friendly POS interface' },
+    'recruitment-mod': { ar: 'تتبع الترشيحات وإغلاق الفرص', en: 'Track applications & hire' },
+    'appraisals-mod': { ar: 'تقييم أداء الموظفين', en: 'Employee performance reviews' },
+    'fleet-mod': { ar: 'إدارة المركبات والأسطول', en: 'Vehicle & fleet management' },
+    'maintenance-mod': { ar: 'جدولة وتتبع الصيانة', en: 'Schedule & track maintenance' },
+    'quality-mod': { ar: 'فحوصات ومراقبة الجودة', en: 'Quality checks & control' },
+    'email-marketing-mod': { ar: 'تصميم وإرسال وتتبع رسائل البريد', en: 'Design, send & track emails' },
+    'sms-marketing-mod': { ar: 'إرسال رسائل SMS تسويقية', en: 'Send marketing SMS messages' },
+    'social-mod': { ar: 'إدارة وسائل التواصل الاجتماعي', en: 'Manage social media channels' },
+    'events-mod': { ar: 'تنظيم وإدارة الفعاليات', en: 'Organize & manage events' },
+    'surveys-mod': { ar: 'إنشاء استطلاعات الرأي', en: 'Create & manage surveys' },
+    'elearning-mod': { ar: 'الدورات التدريبية الإلكترونية', en: 'Online training courses' },
+    'knowledge-mod': { ar: 'ويكي وقاعدة معرفة داخلية', en: 'Internal wiki & knowledge base' },
+    'chat-mod': { ar: 'الدردشة والتواصل الداخلي', en: 'Internal messaging & chat' },
+    'sign-mod': { ar: 'توقيع المستندات إلكترونياً', en: 'Electronic document signing' },
+    'planning-mod': { ar: 'تخطيط وجدولة الورديات', en: 'Shift planning & scheduling' },
+    'appointments-mod': { ar: 'حجز وإدارة المواعيد', en: 'Book & manage appointments' },
+    'field-service-mod': { ar: 'إدارة الفنيين الميدانيين', en: 'Manage field technicians' },
+    'plm-mod': { ar: 'إدارة دورة حياة المنتج', en: 'Product lifecycle management' },
+    'barcode-mod': { ar: 'مسح وإدارة الباركود', en: 'Barcode scanning & management' },
+    'support-mod': { ar: 'تواصل مع فريق الدعم الفني', en: 'Contact technical support' },
+  };
+
+  // === Main modules view - Odoo Style ===
   return (
-    <div className="min-h-[calc(100vh-60px)] bg-muted/40 flex flex-col items-center p-4 sm:p-8">
+    <div className="min-h-[calc(100vh-60px)] bg-muted/30">
       {/* Edit Mode Toolbar */}
       <LauncherEditToolbar
         isEditMode={isEditMode}
@@ -576,267 +646,210 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
         defaultModules={defaultModuleConfigs}
       />
 
-      {/* Top Bar: Customize dropdown + Search */}
-      <div className="w-full max-w-4xl mb-4 flex justify-between items-center">
-        {!isEditMode ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 border-dashed hover:border-primary hover:bg-primary/5 transition-all"
-              >
-                <Settings className="w-4 h-4" />
-                {isRtl ? 'تخصيص الواجهة' : 'Customize'}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuLabel>{isRtl ? 'خيارات التخصيص' : 'Customization Options'}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleStartEdit} className="gap-2 cursor-pointer">
-                <Edit3 className="w-4 h-4 text-primary" />
-                <div>
-                  <p className="font-medium">{isRtl ? 'تعديل الواجهة' : 'Edit Layout'}</p>
-                  <p className="text-xs text-muted-foreground">{isRtl ? 'سحب وإفلات الأقسام' : 'Drag & drop sections'}</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setCustomizerOpen(true)} className="gap-2 cursor-pointer">
-                <LayoutGridIcon className="w-4 h-4 text-success" />
-                <div>
-                  <p className="font-medium">{isRtl ? 'ترتيب الوحدات' : 'Arrange Modules'}</p>
-                  <p className="text-xs text-muted-foreground">{isRtl ? 'نقل وتغيير حجم الوحدات' : 'Move & resize modules'}</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setActivePage('theme-settings')} className="gap-2 cursor-pointer">
-                <Palette className="w-4 h-4 text-warning" />
-                <div>
-                  <p className="font-medium">{isRtl ? 'الألوان والسمات' : 'Colors & Themes'}</p>
-                  <p className="text-xs text-muted-foreground">{isRtl ? 'تغيير ألوان الواجهة' : 'Change interface colors'}</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setActivePage('theme-settings')} className="gap-2 cursor-pointer">
-                <Sparkles className="w-4 h-4 text-purple-500" />
-                <div>
-                  <p className="font-medium">{isRtl ? 'تأثيرات متقدمة' : 'Advanced Effects'}</p>
-                  <p className="text-xs text-muted-foreground">{isRtl ? 'حركات وتأثيرات بصرية' : 'Animations & effects'}</p>
-                </div>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : <div />}
-        <div className="relative">
-          <Search className="absolute top-1/2 -translate-y-1/2 start-3 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={isRtl ? 'ابحث في النظام...' : 'Search...'}
-            className="bg-card border border-border/50 rounded-full py-2 ps-10 pe-4 text-sm text-foreground placeholder:text-muted-foreground/60 shadow-sm focus:outline-none focus:shadow-md transition-shadow w-52 sm:w-64"
-          />
-        </div>
-      </div>
-
-      {/* Welcome Banner */}
-      <div className="w-full max-w-4xl mb-6 rounded-2xl bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-3 sm:gap-4">
-          <span className="text-3xl sm:text-4xl">👋</span>
-          <div>
-            <h2 className="text-lg sm:text-xl font-bold text-white">
-              {isRtl ? `أهلاً, ${userName}` : `Hello, ${userName}`} ☕
-            </h2>
-            <p className="text-white/60 text-xs sm:text-sm mt-0.5">
-              {isRtl ? `مرحباً بك في ${getAppName()}` : `Welcome to ${getAppName()}`}
-            </p>
-          </div>
-        </div>
-        {/* Date & Time - Center */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5">
-            <Clock className="w-4 h-4 text-white/70" />
-            <span className="text-white font-bold text-sm tabular-nums">
-              {liveTime.toLocaleTimeString(isRtl ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+      {/* Top Bar */}
+      <div className="sticky top-0 z-30 bg-background border-b border-border/50 px-4 py-2">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {!isEditMode ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2 border-dashed">
+                    <Settings className="w-4 h-4" />
+                    {isRtl ? 'تخصيص' : 'Customize'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuLabel>{isRtl ? 'خيارات التخصيص' : 'Customization'}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleStartEdit} className="gap-2 cursor-pointer">
+                    <Edit3 className="w-4 h-4 text-primary" />
+                    {isRtl ? 'تعديل الواجهة' : 'Edit Layout'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCustomizerOpen(true)} className="gap-2 cursor-pointer">
+                    <LayoutGridIcon className="w-4 h-4 text-success" />
+                    {isRtl ? 'ترتيب الوحدات' : 'Arrange Modules'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : <div />}
+            <span className="text-sm text-muted-foreground">
+              {filteredItems.length} {isRtl ? 'وحدة' : 'modules'}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5">
-            <CalendarDays className="w-4 h-4 text-white/70" />
-            <span className="text-white/90 text-xs sm:text-sm">
-              {liveTime.toLocaleDateString(isRtl ? 'ar-SA' : 'en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="relative" ref={usersRef}>
-            <button onClick={() => { setShowUsers(!showUsers); setShowNotifications(false); }} className="w-9 h-9 rounded-full bg-muted/20 flex items-center justify-center hover:bg-muted/30 transition-colors">
-              <Users2 className="w-4 h-4 text-white/70" />
-            </button>
-            <span className="absolute -top-1 -end-1 w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold flex items-center justify-center">
-              {onlineUsersCount}
-            </span>
-            {showUsers && (
-              <div className="absolute top-full mt-2 end-0 w-64 bg-card border border-border rounded-xl shadow-xl z-50 p-4">
-                <h4 className="text-sm font-semibold text-foreground mb-3">{isRtl ? 'المتصلون الآن' : 'Online Users'}</h4>
-                <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-                    {userName.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{userName}</p>
-                    <p className="text-[10px] text-muted-foreground">{isRtl ? 'أنت' : 'You'}</p>
-                  </div>
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="relative" ref={notifRef}>
-            <button onClick={() => { setShowNotifications(!showNotifications); setShowUsers(false); }} className="w-9 h-9 rounded-full bg-muted/20 flex items-center justify-center hover:bg-muted/30 transition-colors">
-              <Bell className="w-4 h-4 text-white/70" />
-            </button>
-            {showNotifications && (
-              <div className="absolute top-full mt-2 end-0 w-72 bg-card border border-border rounded-xl shadow-xl z-50 p-4">
-                <h4 className="text-sm font-semibold text-foreground mb-3">{isRtl ? 'الإشعارات' : 'Notifications'}</h4>
-                <div className="flex flex-col items-center py-6 text-muted-foreground">
-                  <Bell className="w-8 h-8 mb-2 opacity-30" />
-                  <p className="text-sm">{isRtl ? 'لا توجد إشعارات جديدة' : 'No new notifications'}</p>
-                </div>
-              </div>
-            )}
+          <div className="relative">
+            <Search className="absolute top-1/2 -translate-y-1/2 start-3 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={isRtl ? 'بحث...' : 'Search...'}
+              className="bg-card border border-border/50 rounded-lg py-1.5 ps-10 pe-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/30 w-48 sm:w-64"
+            />
           </div>
         </div>
       </div>
 
-
-
-
-      {/* Search Results */}
-      {searchQuery.trim() ? (
-        <div className="max-w-5xl w-full mb-8">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-            {visibleModules.flatMap(mod => 
-              mod.items.filter(i => hasAccess(i.permission)).filter(i => {
-                const q = searchQuery.toLowerCase();
-                return i.label.includes(q) || i.labelEn.toLowerCase().includes(q);
-              }).map(item => {
-                const ItemIcon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActivePage(item.id)}
-                    className="group flex flex-col items-center gap-3 p-5 rounded-2xl bg-card shadow-sm hover:shadow-lg transition-all duration-300"
-                  >
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${mod.gradient} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
-                      <ItemIcon className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-xs sm:text-sm text-center text-foreground/80 group-hover:text-foreground leading-tight line-clamp-2 font-medium">
-                      {isRtl ? item.label : item.labelEn}
-                    </span>
-                  </button>
-                );
-              })
-            )}
+      {/* Main Content: Grid + Category Sidebar */}
+      <div className="max-w-7xl mx-auto flex gap-0">
+        {/* Module Cards Grid - Main Area */}
+        <div className="flex-1 p-4 sm:p-6">
+          {/* Welcome Banner */}
+          <div className="mb-6 rounded-xl bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl sm:text-3xl">👋</span>
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-white">
+                  {isRtl ? `أهلاً, ${userName}` : `Hello, ${userName}`} ☕
+                </h2>
+                <p className="text-white/60 text-xs mt-0.5">
+                  {isRtl ? `مرحباً بك في ${getAppName()}` : `Welcome to ${getAppName()}`}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 bg-white/10 rounded-lg px-3 py-1.5">
+                <Clock className="w-3.5 h-3.5 text-white/70" />
+                <span className="text-white font-bold text-xs tabular-nums">
+                  {liveTime.toLocaleTimeString(isRtl ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white/10 rounded-lg px-3 py-1.5">
+                <CalendarDays className="w-3.5 h-3.5 text-white/70" />
+                <span className="text-white/90 text-xs">
+                  {liveTime.toLocaleDateString(isRtl ? 'ar-SA' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+            </div>
           </div>
-          {visibleModules.flatMap(mod => mod.items.filter(i => hasAccess(i.permission)).filter(i => {
-            const q = searchQuery.toLowerCase();
-            return i.label.includes(q) || i.labelEn.toLowerCase().includes(q);
-          })).length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
+
+          {/* Odoo-style Cards Grid */}
+          {filteredItems.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
               {isRtl ? 'لا توجد نتائج' : 'No results found'}
             </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {(selectedCategory ? filteredItems : 
+                // Group by module and show module-level cards when no category selected
+                visibleModules.filter(mod => {
+                  if (searchQuery.trim()) {
+                    const q = searchQuery.toLowerCase();
+                    return mod.items.some(i => hasAccess(i.permission) && (i.label.includes(q) || i.labelEn.toLowerCase().includes(q)));
+                  }
+                  return true;
+                }).map(mod => ({
+                  id: mod.id as ActivePage,
+                  label: mod.label,
+                  labelEn: mod.labelEn,
+                  icon: mod.icon,
+                  moduleId: mod.id,
+                  moduleLabel: isRtl ? mod.label : mod.labelEn,
+                  gradient: mod.gradient,
+                  color: mod.color,
+                  permission: mod.permission,
+                  isModule: true,
+                  itemCount: mod.items.filter(i => hasAccess(i.permission)).length,
+                }))
+              ).map((item: any) => {
+                const ItemIcon = item.icon;
+                const desc = moduleDescriptions[item.moduleId];
+                const description = desc ? (isRtl ? desc.ar : desc.en) : '';
+                const isModule = item.isModule;
+
+                return (
+                  <button
+                    key={item.isModule ? item.moduleId : item.id}
+                    onClick={() => {
+                      if (isModule) {
+                        const mod = visibleModules.find(m => m.id === item.moduleId);
+                        if (mod && mod.items.length === 1) {
+                          setActivePage(mod.items[0].id);
+                        } else if (mod) {
+                          setSelectedCategory(item.moduleId);
+                        }
+                      } else {
+                        setActivePage(item.id);
+                      }
+                    }}
+                    className="group flex items-start gap-4 p-4 rounded-xl bg-card border border-border/40 hover:border-border hover:shadow-md transition-all duration-200 text-start"
+                  >
+                    {/* Module Icon */}
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center shadow-sm shrink-0 group-hover:scale-105 transition-transform`}>
+                      <ItemIcon className="w-6 h-6 text-white" />
+                    </div>
+                    
+                    {/* Text Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-semibold text-sm text-foreground truncate">
+                          {isRtl ? (item.isModule ? item.label : item.label) : (item.isModule ? item.labelEn : item.labelEn)}
+                        </h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {description}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                          {isRtl ? 'مثبت' : 'Installed'}
+                        </span>
+                        {isModule && item.itemCount > 1 && (
+                          <span className="text-[10px] text-muted-foreground">
+                            {item.itemCount} {isRtl ? 'عنصر' : 'items'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           )}
+
+          {/* Footer */}
+          <div className="mt-8 flex flex-col items-center gap-2">
+            <LanguageSwitcher variant="compact" />
+            <p className="text-[10px] text-muted-foreground/50">Elzini SaaS © 2026</p>
+          </div>
         </div>
-      ) : null}
 
-      {/* Main Modules Grid */}
-      {!searchQuery.trim() && (
-      <div className="max-w-4xl w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5">
-        {sortedConfigs.map((config) => {
-          const mod = visibleModules.find(m => m.id === config.id);
-          if (!mod) return null;
-          if (!config.visible && !isEditMode) return null;
-          
-          const Icon = mod.icon;
-          const handleClick = () => {
-            if (isEditMode) return;
-            if (mod.items.length === 1) {
-              setActivePage(mod.items[0].id);
-            } else {
-              setSelectedModule(mod);
-            }
-          };
-
-          const iconSize = config.iconSize || (config.size === 'large' ? 72 : config.size === 'small' ? 48 : 64);
-          const gradientClass = config.gradient || mod.gradient;
-
-          const handleWheel = (e: React.WheelEvent) => {
-            if (!e.ctrlKey) return;
-            e.preventDefault();
-            const current = config.iconSize || iconSize;
-            const newSize = Math.max(32, Math.min(120, current + (e.deltaY > 0 ? -4 : 4)));
-            const updated = currentConfigs.map(c => c.id === config.id ? { ...c, iconSize: newSize } : c);
-            if (isEditMode) {
-              setEditConfigs(updated);
-            } else {
-              setModuleConfigs(updated);
-              localStorage.setItem(LAUNCHER_CONFIG_KEY, JSON.stringify(updated));
-            }
-          };
-
-          const cardContent = (
-            <button
-              key={mod.id}
-              onClick={handleClick}
-              onWheel={handleWheel}
-              className={`group flex flex-col items-center gap-3 p-6 sm:p-8 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 w-full ${
-                config.size === 'large' ? 'col-span-2' : ''
-              } ${!config.visible ? 'opacity-40' : ''}`}
-              style={{ background: config.bgColor || undefined }}
-            >
-              <div
-                className={`rounded-2xl bg-gradient-to-br ${gradientClass} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}
-                style={{ width: iconSize, height: iconSize }}
+        {/* Right Category Sidebar - Odoo Style */}
+        <div className="hidden md:block w-52 lg:w-56 border-s border-border/50 bg-background p-4 sticky top-[45px] h-[calc(100vh-45px)] overflow-y-auto">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-sm bg-primary" />
+            {isRtl ? 'الفئات' : 'Categories'}
+          </h3>
+          <ul className="space-y-0.5">
+            {/* All */}
+            <li>
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
+                  !selectedCategory 
+                    ? 'bg-primary/10 text-primary font-semibold border-s-2 border-primary' 
+                    : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                }`}
               >
-                <Icon className="text-white" style={{ width: iconSize * 0.45, height: iconSize * 0.45 }} />
-              </div>
-              <span className="text-sm sm:text-base font-semibold leading-tight text-center group-hover:text-foreground transition-colors"
-                style={{ color: config.textColor || undefined }}>
-                {(config.label && config.label !== mod.label && config.label !== mod.labelEn) ? config.label : (isRtl ? mod.label : mod.labelEn)}
-              </span>
-            </button>
-          );
-
-          if (isEditMode) {
-            return (
-              <EditableModuleCard
-                key={config.id}
-                id={config.id}
-                isEditMode={true}
-                visible={true}
-                size={config.size}
-                onRemove={dragDrop.removeModule}
-                onResize={dragDrop.resizeModule}
-                onMoveUp={dragDrop.moveUp}
-                onMoveDown={dragDrop.moveDown}
-                onDragStart={dragDrop.handleDragStart}
-                onDragEnd={dragDrop.handleDragEnd}
-                onDragOver={dragDrop.handleDragOver}
-                onDrop={dragDrop.handleDrop}
-                isDragging={dragDrop.draggedId === config.id}
-                isDragOver={dragDrop.dragOverId === config.id}
-              >
-                {cardContent}
-              </EditableModuleCard>
-            );
-          }
-
-          return cardContent;
-        })}
-      </div>
-      )}
-
-      {/* Footer */}
-      <div className="mt-10 sm:mt-14 flex flex-col items-center gap-3">
-        <LanguageSwitcher variant="compact" />
-        <p className="text-[10px] text-muted-foreground/50">Elzini SaaS © 2026</p>
+                <span>{isRtl ? 'الكل' : 'All'}</span>
+                <span className="text-xs text-muted-foreground">{totalCount}</span>
+              </button>
+            </li>
+            {categories.map(cat => (
+              <li key={cat.id}>
+                <button
+                  onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
+                    selectedCategory === cat.id 
+                      ? 'bg-primary/10 text-primary font-semibold border-s-2 border-primary' 
+                      : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  <span className="truncate">{cat.label}</span>
+                  <span className="text-xs text-muted-foreground">{cat.count}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       {/* Launcher Customizer Dialog */}
