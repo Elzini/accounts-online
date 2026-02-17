@@ -20,7 +20,27 @@ interface SmsProvider {
   fields: { key: string; label: string; labelAr: string; type?: string }[];
   instructions: string[];
   instructionsAr: string[];
+  brandColor?: string;
+  logo?: string;
 }
+
+// Brand styling for text-based logos
+const PROVIDER_BRAND: Record<string, { color: string; bg: string; text: string }> = {
+  fourjawaly: { color: '#1e88e5', bg: 'bg-blue-50', text: 'فور جوالي' },
+  alghaddm: { color: '#2e7d32', bg: 'bg-green-50', text: 'AlghadDM' },
+  twilio: { color: '#F22F46', bg: 'bg-red-50', text: 'twilio' },
+  plivo: { color: '#46C100', bg: 'bg-green-50', text: 'plivo' },
+  mobily: { color: '#6B2D8B', bg: 'bg-purple-50', text: 'mobily' },
+  mobilenet: { color: '#0D47A1', bg: 'bg-blue-50', text: 'MOBILE.NET SA' },
+  hisms: { color: '#00ACC1', bg: 'bg-cyan-50', text: 'Hi SMS' },
+  hawasms: { color: '#00897B', bg: 'bg-teal-50', text: 'HAWA SMS' },
+  jawalbsms: { color: '#333333', bg: 'bg-gray-50', text: 'JAWAL SMS' },
+  taqnyat: { color: '#E91E63', bg: 'bg-pink-50', text: 'Taqnyat' },
+  msegat: { color: '#FF6F00', bg: 'bg-orange-50', text: 'Msegat' },
+  malath: { color: '#C62828', bg: 'bg-red-50', text: 'SMS ملاذ' },
+  whatsapp: { color: '#25D366', bg: 'bg-green-50', text: 'WhatsApp' },
+  mora: { color: '#1565C0', bg: 'bg-blue-50', text: 'Mora' },
+};
 
 const SMS_PROVIDERS: SmsProvider[] = [
   {
@@ -310,8 +330,12 @@ export function SmsProvidersSettings() {
               onClick={() => openProviderConfig(provider)}
             >
               <CardContent className="pt-6 pb-4 flex flex-col items-center text-center gap-2">
-                <div className="w-16 h-16 rounded-xl bg-muted/50 flex items-center justify-center text-2xl font-bold text-muted-foreground mb-1">
-                  {provider.name.substring(0, 2).toUpperCase()}
+                <div className="w-20 h-16 rounded-xl flex items-center justify-center mb-1 p-2"
+                  style={{ backgroundColor: (PROVIDER_BRAND[provider.id]?.color || '#666') + '10' }}>
+                  <span className="text-base font-extrabold leading-tight text-center"
+                    style={{ color: PROVIDER_BRAND[provider.id]?.color || '#666' }}>
+                    {PROVIDER_BRAND[provider.id]?.text || provider.name}
+                  </span>
                 </div>
                 <p className="font-semibold text-sm text-foreground">{provider.name}</p>
                 {active && (
