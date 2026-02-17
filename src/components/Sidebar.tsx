@@ -863,65 +863,41 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        {/* Active section items - shown when a section is selected */}
-        {activeSection && activeSectionItems.length > 0 && (
-          <div className="border-b border-sidebar-border/50 overflow-y-auto max-h-[45vh] p-2">
-            <button 
-              onClick={() => setActiveSection(null)}
-              className="flex items-center gap-2 text-xs text-sidebar-foreground/50 hover:text-sidebar-foreground mb-2 px-2 py-1 w-full"
-            >
-              <ChevronRight className="w-3 h-3 rotate-180" />
-              <span className="font-bold">{activeSectionData?.label}</span>
-            </button>
-            <ul className="space-y-0.5">
-              {activeSectionItems.map(item => {
-                const Icon = item.icon;
-                const isActive = activePage === item.id;
-                const itemLabel = getItemLabel(activeSection, item.id, item.label);
-                return <li key={item.id}>
-                  <button onClick={() => setActivePage(item.id)} className={cn("w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200", isActive ? "bg-sidebar-primary text-white shadow-md shadow-sidebar-primary/25" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground")}>
-                    <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors", isActive ? "bg-white/20" : "bg-sidebar-accent/50")}>
-                      <Icon className="w-3.5 h-3.5 shrink-0" />
-                    </div>
-                    <span className="font-medium text-xs truncate">{itemLabel}</span>
-                  </button>
-                </li>;
-              })}
-            </ul>
-          </div>
-        )}
-
-        {/* Categories list - Odoo style with counts */}
+        {/* Show sub-items of active section */}
         <div className="flex-1 overflow-y-auto p-2">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/40 mb-2 px-3">
-            {language === 'ar' ? 'الأقسام' : 'Categories'}
-          </p>
-          <ul className="space-y-0.5">
-            {visibleSections.map(sec => {
-              const count = getFilteredItems(sec).length;
-              const isSelected = activeSection === sec.id;
-              const sectionLabel = getSectionLabel(sec.id, sec.label);
-              return <li key={sec.id}>
-                <button
-                  onClick={() => handleSectionClick(sec.id)}
-                  className={cn(
-                    "w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200",
-                    isSelected 
-                      ? "bg-sidebar-primary text-white shadow-md shadow-sidebar-primary/25" 
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                  )}
-                >
-                  <span className="font-medium text-sm truncate">{sectionLabel}</span>
-                  <span className={cn(
-                    "text-xs font-bold min-w-[24px] h-6 flex items-center justify-center rounded-full px-1.5",
-                    isSelected ? "bg-white/20 text-white" : "bg-sidebar-accent/50 text-sidebar-foreground/50"
-                  )}>
-                    {count}
-                  </span>
-                </button>
-              </li>;
-            })}
-          </ul>
+          {activeSection && activeSectionItems.length > 0 ? (
+            <>
+              <button 
+                onClick={() => {
+                  setActiveSection(null);
+                  setActivePage('dashboard' as ActivePage);
+                }}
+                className="flex items-center gap-2 text-xs text-sidebar-foreground/50 hover:text-sidebar-foreground mb-2 px-2 py-1 w-full"
+              >
+                <ChevronRight className="w-3 h-3 rotate-180" />
+                <span className="font-bold">{activeSectionData?.label}</span>
+              </button>
+              <ul className="space-y-0.5">
+                {activeSectionItems.map(item => {
+                  const Icon = item.icon;
+                  const isActive = activePage === item.id;
+                  const itemLabel = getItemLabel(activeSection, item.id, item.label);
+                  return <li key={item.id}>
+                    <button onClick={() => setActivePage(item.id)} className={cn("w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200", isActive ? "bg-sidebar-primary text-white shadow-md shadow-sidebar-primary/25" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground")}>
+                      <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors", isActive ? "bg-white/20" : "bg-sidebar-accent/50")}>
+                        <Icon className="w-3.5 h-3.5 shrink-0" />
+                      </div>
+                      <span className="font-medium text-xs truncate">{itemLabel}</span>
+                    </button>
+                  </li>;
+                })}
+              </ul>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full text-sidebar-foreground/30 text-xs">
+              {language === 'ar' ? 'اختر قسماً من القائمة الرئيسية' : 'Select a section'}
+            </div>
+          )}
 
           {isSuperAdmin && <div className="mt-4">
               <p className="text-[10px] font-bold uppercase tracking-wider text-warning/50 mb-2 px-3">{t.nav_super_admin}</p>
