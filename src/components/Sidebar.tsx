@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle, Monitor, MessageCircle, Workflow, ArrowDownToLine, ArrowUpFromLine, RotateCcw, RotateCw, Star, RefreshCw, CalendarCheck, Play, FileSignature, Home, Award, Link2, BookMarked, TestTube, LayoutGrid, Smartphone, QrCode, Code, Banknote, Fingerprint } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -173,6 +173,7 @@ export function Sidebar({
 
   // Track which section is currently active/expanded
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [autoDetected, setAutoDetected] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
   // Use company logo if available, otherwise use default
@@ -825,6 +826,18 @@ export function Sidebar({
     if (!sec.showCondition || !isSectionVisible(sec.id)) return false;
     return getFilteredItems(sec).length > 0;
   });
+
+  // Auto-detect active section based on current activePage
+  useEffect(() => {
+    if (activePage && activePage !== 'dashboard') {
+      const matchingSection = visibleSections.find(sec => 
+        sec.items.some(item => item.id === activePage)
+      );
+      if (matchingSection) {
+        setActiveSection(matchingSection.id);
+      }
+    }
+  }, [activePage]);
 
   const handleSectionClick = (sectionId: string) => {
     setActiveSection(prev => prev === sectionId ? null : sectionId);
