@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google Tag Manager -->
+    <script>
+        (function(w, d, s, l, i) {
+            w[l] = w[l] || [];
+            w[l].push({
+                'gtm.start': new Date().getTime(),
+                event: 'gtm.js'
+            });
+            var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s),
+                dl = l != 'dataLayer' ? '&l=' + l : '';
+            j.async = true;
+            j.src =
+                'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+            f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-KT7BQ6K');
+    </script>
+    <!-- End Google Tag Manager -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Page Not Found  |  الصفحه غير موجوده</title>
+
+    <!-- meta -->
+    <meta name="description" content="Taqnyat APIs offer you a communication platform and Smart API to connect businesses with their customers.">
+    <meta name="keywords" content="communication platform APIs,SMS,SMS API, SMS gateway,a2p,">
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-175299868-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+        gtag('js', new Date());
+
+        gtag('config', 'UA-175299868-1');
+    </script>
+    <link rel="shortcut icon" href="https://www.taqnyat.sa/assets/images/icon.ico">
+    <!-- Fonts -->
+
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="https://www.taqnyat.sa/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://www.taqnyat.sa/assets/css/min.css">
+
+    <!-- animate -->
+    <link rel="stylesheet" href="https://www.taqnyat.sa/assets/css/animate.css">
+</head>
+
+<body style="background-color: #fae7e4">
+
+<!-- Google Tag Manager (noscript) -->
+<noscript>
+    <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KT7BQ6K" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe>
+</noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<div class="page-not-found">
+    <div class="container">
+        <div class="page-404">
+            <div><img src="https://www.taqnyat.sa/assets/images/404.svg" alt=""></div>
+            <div class="page-box-404">
+                <h2>الصفحه غير موجوده</h2>
+                <h3>Page Not Found</h3>
+                <div class="h-line"></div>
+                <a class="btn btn-primary" href="https://www.taqnyat.sa/en/" title="  Home Page"> Back </a> <a class="btn btn-primary" href="https://www.taqnyat.sa/ar/" title="    الصفحة الرئيسية  "> رجوع </a> </div>
+        </div>
+    </div>
+</div>
+<!-- laoding -->
+
+<section class="laoding">
+    <div class="sk-circle">
+        <div class="sk-circle1 sk-child"></div>
+        <div class="sk-circle2 sk-child"></div>
+        <div class="sk-circle3 sk-child"></div>
+        <div class="sk-circle4 sk-child"></div>
+        <div class="sk-circle5 sk-child"></div>
+        <div class="sk-circle6 sk-child"></div>
+        <div class="sk-circle7 sk-child"></div>
+        <div class="sk-circle8 sk-child"></div>
+        <div class="sk-circle9 sk-child"></div>
+        <div class="sk-circle10 sk-child"></div>
+        <div class="sk-circle11 sk-child"></div>
+        <div class="sk-circle12 sk-child"></div>
+    </div>
+</section>
+
+<!-- Js -->
+
+<script src="https://www.taqnyat.sa/assets/js/jquery-3.4.1.min.js"></script>
+<script src="https://www.taqnyat.sa/assets/js/bootstrap.min.js"></script>
+<script src="https://www.taqnyat.sa/assets/js/min.js"></script>
+<script src="https://www.taqnyat.sa/assets/js/ad.js"></script>
+<script src="https://www.taqnyat.sa/assets/js/scrollspy.js"></script>
+<script src="https://www.taqnyat.sa/assets/js/wow.min.js"></script>
+<script>
+    new WOW().init();
+</script>
+
+<!----------------------------- chat ------------------------------------------------------------------>
+
+<script>
+    window.__lc = window.__lc || {};
+    window.__lc.license = 12622254;
+
+
+
+
+    window.__lc.group = 1;
+
+
+    ;
+    (function(n, t, c) {
+        function i(n) {
+            return e._h ? e._h.apply(null, n) : e._q.push(n)
+        }
+        var e = {
+            _q: [],
+            _h: null,
+            _v: "2.0",
+            on: function() {
+                i(["on", c.call(arguments)])
+            },
+            once: function() {
+                i(["once", c.call(arguments)])
+            },
+            off: function() {
+                i(["off", c.call(arguments)])
+            },
+            get: function() {
+                if (!e._h) throw new Error("[LiveChatWidget] You can't use getters before load.");
+                return i(["get", c.call(arguments)])
+            },
+            call: function() {
+                i(["call", c.call(arguments)])
+            },
+            init: function() {
+                var n = t.createElement("script");
+                n.async = !0, n.type = "text/javascript", n.src = "https://cdn.livechatinc.com/tracking.js", t.head.appendChild(n)
+            }
+        };
+        !n.__lc.asyncInit && e.init(), n.LiveChatWidget = n.LiveChatWidget || e
+    }(window, document, [].slice))
+</script>
+<noscript>
+    <a href="https://www.livechatinc.com/chat-with/12622254/" rel="nofollow">Chat with us</a>, powered by <a href="https://www.livechatinc.com/?welcome" rel="noopener nofollow" target="_blank">LiveChat</a>
+</noscript>
+<!-- End of LiveChat code -->
+
+</body>
+</html>
