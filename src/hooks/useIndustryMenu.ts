@@ -93,6 +93,15 @@ export function getIndustryLabels(companyType: CompanyActivityType) {
       itemName: 'المنتج الطبي',
       itemsName: 'المنتجات الطبية',
     },
+    real_estate: {
+      purchases: 'المشاريع العقارية',
+      sales: 'مبيعات الوحدات',
+      inventory: 'الوحدات',
+      purchasesDescription: 'إضافة مشروع عقاري',
+      salesDescription: 'بيع وحدة عقارية',
+      itemName: 'الوحدة',
+      itemsName: 'الوحدات العقارية',
+    },
   };
 
   return labels[companyType] || labels.car_dealership;

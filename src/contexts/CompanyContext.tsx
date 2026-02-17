@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { setCompanyOverride } from '@/lib/companyOverride';
 import { extractSubdomain } from '@/lib/tenantResolver';
 
-export type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import' | 'medical';
+export type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import' | 'medical' | 'real_estate';
 
 export interface Company {
   id: string;

@@ -14072,6 +14072,7 @@ export type Database = {
         | "restaurant"
         | "export_import"
         | "medical"
+        | "real_estate"
       transfer_status: "pending" | "sold" | "returned"
       transfer_type: "outgoing" | "incoming"
       user_permission:
@@ -14268,6 +14269,7 @@ export const Constants = {
         "restaurant",
         "export_import",
         "medical",
+        "real_estate",
       ],
       transfer_status: ["pending", "sold", "returned"],
       transfer_type: ["outgoing", "incoming"],
