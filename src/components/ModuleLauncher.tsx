@@ -676,16 +676,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
               {filteredItems.length} {isRtl ? 'وحدة' : 'modules'}
             </span>
           </div>
-          <div className="relative">
-            <Search className="absolute top-1/2 -translate-y-1/2 start-3 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={isRtl ? 'بحث...' : 'Search...'}
-              className="bg-card border border-border/50 rounded-lg py-1.5 ps-10 pe-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/30 w-48 sm:w-64"
-            />
-          </div>
+          <div />
         </div>
       </div>
 
