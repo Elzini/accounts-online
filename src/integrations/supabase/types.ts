@@ -3622,53 +3622,104 @@ export type Database = {
       employee_contracts: {
         Row: {
           allowances: number | null
+          auto_renew: boolean | null
           company_id: string
+          contract_code: string | null
           contract_type: string
           created_at: string
+          currency: string | null
+          deductions_json: Json | null
           department: string | null
+          description: string | null
+          duration_type: string | null
+          duration_unit: string | null
+          duration_value: number | null
           employee_id: string | null
           employee_name: string
           end_date: string | null
+          housing_allowance: number | null
           id: string
+          job_level: string | null
+          join_date: string | null
+          main_contract: string | null
           notes: string | null
+          other_allowances_json: Json | null
+          pay_cycle: string | null
           position: string | null
+          probation_end_date: string | null
           salary: number | null
+          signing_date: string | null
           start_date: string
           status: string
+          transport_allowance: number | null
           updated_at: string
         }
         Insert: {
           allowances?: number | null
+          auto_renew?: boolean | null
           company_id: string
+          contract_code?: string | null
           contract_type?: string
           created_at?: string
+          currency?: string | null
+          deductions_json?: Json | null
           department?: string | null
+          description?: string | null
+          duration_type?: string | null
+          duration_unit?: string | null
+          duration_value?: number | null
           employee_id?: string | null
           employee_name: string
           end_date?: string | null
+          housing_allowance?: number | null
           id?: string
+          job_level?: string | null
+          join_date?: string | null
+          main_contract?: string | null
           notes?: string | null
+          other_allowances_json?: Json | null
+          pay_cycle?: string | null
           position?: string | null
+          probation_end_date?: string | null
           salary?: number | null
+          signing_date?: string | null
           start_date: string
           status?: string
+          transport_allowance?: number | null
           updated_at?: string
         }
         Update: {
           allowances?: number | null
+          auto_renew?: boolean | null
           company_id?: string
+          contract_code?: string | null
           contract_type?: string
           created_at?: string
+          currency?: string | null
+          deductions_json?: Json | null
           department?: string | null
+          description?: string | null
+          duration_type?: string | null
+          duration_unit?: string | null
+          duration_value?: number | null
           employee_id?: string | null
           employee_name?: string
           end_date?: string | null
+          housing_allowance?: number | null
           id?: string
+          job_level?: string | null
+          join_date?: string | null
+          main_contract?: string | null
           notes?: string | null
+          other_allowances_json?: Json | null
+          pay_cycle?: string | null
           position?: string | null
+          probation_end_date?: string | null
           salary?: number | null
+          signing_date?: string | null
           start_date?: string
           status?: string
+          transport_allowance?: number | null
           updated_at?: string
         }
         Relationships: [
