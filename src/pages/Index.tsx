@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { LogOut, Building2, Calendar, Eye, LayoutDashboard, Clock } from 'lucide-react';
+import { LogOut, Building2, Calendar, Eye, LayoutDashboard, Clock, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileSidebar, MobileSidebarRef } from '@/components/MobileSidebar';
@@ -142,6 +142,9 @@ import { PLMPage } from '@/components/plm/PLMPage';
 import { BarcodeScannerPage } from '@/components/barcode/BarcodeScannerPage';
 import { SupportContact } from '@/components/SupportContact';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
+import { GlobalSearchDialog } from '@/components/global-search/GlobalSearchDialog';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -166,6 +169,10 @@ const Index = () => {
   const { fiscalYears, selectedFiscalYear, setSelectedFiscalYear, isLoading: isFiscalYearLoading } = useFiscalYear();
   const { t, language } = useLanguage();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false);
+
+  // Realtime notifications
+  useRealtimeNotifications();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -440,6 +447,13 @@ const Index = () => {
     setActiveModule(null);
   };
 
+  // Keyboard shortcuts (must be after handler declarations)
+  useKeyboardShortcuts({
+    setActivePage: handleSetActivePage,
+    onOpenSearch: () => setShowGlobalSearch(true),
+    onBackToLauncher: handleBackToLauncher,
+  });
+
   return (
     <>
       {/* Mandatory Fiscal Year Selection Dialog - blocks access until selected */}
@@ -479,6 +493,17 @@ const Index = () => {
                   </Select>
                 )}
                 <NotificationsBell />
+                {/* Global Search Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowGlobalSearch(true)}
+                  className="gap-1.5 h-8 text-muted-foreground"
+                >
+                  <Search className="w-4 h-4" />
+                  <span className="hidden sm:inline text-xs">{language === 'ar' ? 'بحث' : 'Search'}</span>
+                  <kbd className="hidden md:inline text-[10px] px-1 py-0.5 bg-muted rounded font-mono ms-1">⌘K</kbd>
+                </Button>
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -571,6 +596,17 @@ const Index = () => {
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                  {/* Global Search Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowGlobalSearch(true)}
+                    className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 text-muted-foreground"
+                  >
+                    <Search className="w-4 h-4" />
+                    <span className="hidden md:inline text-xs">{language === 'ar' ? 'بحث' : 'Search'}</span>
+                    <kbd className="hidden lg:inline text-[10px] px-1 py-0.5 bg-muted rounded font-mono ms-1">⌘K</kbd>
+                  </Button>
                   <NotificationsBell />
                   <CheckUpdateButton />
                   <PWAInstallButton />
@@ -616,6 +652,13 @@ const Index = () => {
           <AIChatWidget />
         </div>
       )}
+
+      {/* Global Search Dialog */}
+      <GlobalSearchDialog
+        open={showGlobalSearch}
+        onOpenChange={setShowGlobalSearch}
+        setActivePage={handleSetActivePage}
+      />
     </>
   );
 };
