@@ -15,7 +15,7 @@ import {
   Edit3, Sparkles, LayoutGrid as LayoutGridIcon,
   Monitor, Car, Hammer, SquareCheck, Mail, MessageSquare, Phone,
   Share2, PartyPopper, ClipboardPenLine, GraduationCap, BookOpenCheck,
-  MessagesSquare, PenTool, CalendarRange, MapPinned, Layers, ScanBarcode
+  MessagesSquare, PenTool, CalendarRange, MapPinned, Layers, ScanBarcode, Headphones
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -396,6 +396,13 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       color: 'bg-neutral-600', gradient: 'from-neutral-500 to-neutral-700',
       items: [
         { id: 'barcode-scanner', label: 'ماسح الباركود', labelEn: 'Barcode Scanner', icon: ScanBarcode },
+      ],
+    },
+    {
+      id: 'support-mod', label: 'الدعم الفني', labelEn: 'Support', icon: Headphones,
+      color: 'bg-red-600', gradient: 'from-red-500 to-red-700',
+      items: [
+        { id: 'support-contact', label: 'تواصل مع الدعم', labelEn: 'Contact Support', icon: Headphones },
       ],
     },
   ];
