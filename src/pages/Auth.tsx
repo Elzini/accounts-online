@@ -290,6 +290,14 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
               />
             </div>
 
+            {/* Company Name - shown prominently after email verification */}
+            {mode === 'company' && companyName && emailConfirmed && (
+              <div className="bg-[hsl(140,40%,95%)] rounded-lg p-3 text-center border border-[hsl(140,40%,80%)] flex items-center justify-center gap-2">
+                <Building2 className="w-4 h-4 text-[hsl(140,50%,40%)]" />
+                <p className="text-sm font-semibold text-[hsl(215,40%,25%)]">{companyName}</p>
+              </div>
+            )}
+
             {/* Password Row */}
             {showPasswordAndFiscalYear && (
               <div className="flex items-center gap-4">
@@ -307,14 +315,6 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                   minLength={6}
                   autoFocus
                 />
-              </div>
-            )}
-
-            {/* Company Name */}
-            {mode === 'company' && companyName && emailConfirmed && (
-              <div className="bg-[hsl(210,15%,96%)] rounded-lg p-3 text-center border border-[hsl(210,15%,88%)]">
-                <p className="text-[11px] text-[hsl(215,20%,55%)] mb-0.5">{t.company_label}</p>
-                <p className="text-sm font-semibold text-[hsl(215,40%,25%)]">{companyName}</p>
               </div>
             )}
 
