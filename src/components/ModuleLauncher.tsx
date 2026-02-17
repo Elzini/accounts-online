@@ -792,7 +792,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
               </div>
               <span className="text-sm sm:text-base font-semibold leading-tight text-center group-hover:text-foreground transition-colors"
                 style={{ color: config.textColor || undefined }}>
-                {config.label || (isRtl ? mod.label : mod.labelEn)}
+                {(config.label && config.label !== mod.label && config.label !== mod.labelEn) ? config.label : (isRtl ? mod.label : mod.labelEn)}
               </span>
             </button>
           );
