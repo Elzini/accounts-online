@@ -7,7 +7,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
-import loginBg from '@/assets/login-bg.jpg';
 import { usePublicAuthSettings } from '@/hooks/usePublicAuthSettings';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { format } from 'date-fns';
@@ -15,6 +14,7 @@ import { ar } from 'date-fns/locale';
 import { extractSubdomain, buildTenantUrl, getBaseDomain, isAdminSubdomain, getAdminUrl } from '@/lib/tenantResolver';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { AuthFeaturesSidebar } from '@/components/auth/AuthFeaturesSidebar';
 
 type AuthMode = 'company' | 'super_admin';
 
@@ -39,7 +39,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { setSelectedFiscalYear } = useFiscalYear();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isRtl = language === 'ar';
 
   const [autoFetchTriggered, setAutoFetchTriggered] = useState(false);
 
@@ -60,8 +61,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
   const { settings: globalSettings, loading: settingsLoading } = usePublicAuthSettings();
 
-  const pageTitle = mode === 'super_admin' ? t.super_admin_login : (globalSettings.login_title || 'تسجيل الدخول');
-  const primaryButtonText = mode === 'super_admin' ? t.super_admin_enter : (globalSettings.login_button_text || 'دخول');
+  const pageTitle = mode === 'super_admin' ? t.super_admin_login : (globalSettings.login_title || (isRtl ? 'تسجيل الدخول إلى حسابك' : 'Sign in to your account'));
+  const primaryButtonText = mode === 'super_admin' ? t.super_admin_enter : (globalSettings.login_button_text || (isRtl ? 'تسجيل الدخول' : 'Sign In'));
 
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMM yyyy', { locale: ar });
@@ -107,7 +108,6 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       setFiscalYears(years);
       setCompanyName(fetchedCompanyName);
       
-      // Only confirm email if company was found
       if (!fetchedCompanyName) {
         toast.error(t.email_not_found || 'لم يتم العثور على حساب مرتبط بهذا البريد الإلكتروني');
         setEmailConfirmed(false);
@@ -248,202 +248,182 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const showPasswordAndFiscalYear = mode === 'super_admin' || emailConfirmed;
 
   return (
-    <div className="min-h-screen bg-[hsl(210,15%,90%)] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[hsl(210,15%,93%)] flex items-center justify-center p-4" dir={isRtl ? 'rtl' : 'ltr'}>
       {/* Language Switcher */}
       <div className="absolute top-4 left-4 z-20">
         <LanguageSwitcher variant="compact" />
       </div>
 
-      {/* Card */}
-      <div className="w-full max-w-lg bg-white rounded-lg shadow-xl overflow-hidden">
-        {/* Header with background image */}
-        <div
-          className="relative h-40 flex items-center justify-center"
-          style={{
-            backgroundImage: `url(${loginBg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        >
-          <div className="absolute inset-0 bg-[hsl(215,50%,35%)]/40" />
-          <div className="relative z-10 flex flex-col items-center gap-2">
-            {!settingsLoading && (
-              <img
-                src={globalSettings.login_logo_url || logo}
-                alt="Logo"
-                className="w-12 h-12 object-contain"
-              />
-            )}
-            <h1 className="text-2xl font-bold text-white tracking-wide uppercase">{pageTitle}</h1>
-          </div>
-        </div>
+      <div className="w-full max-w-5xl flex flex-col lg:flex-row bg-transparent gap-0">
+        {/* Right side - Features (hidden on mobile) */}
+        <AuthFeaturesSidebar isRtl={isRtl} />
 
-        {/* Form Body */}
-        <div className="p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email Row */}
-            <div className="flex items-center gap-4">
-              <label className="text-xs font-bold text-[hsl(215,30%,40%)] uppercase tracking-wide w-24 shrink-0 text-right">
-                {t.email_placeholder || 'اسم المستخدم'}
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={handleEmailKeyDown}
-                placeholder={t.email_placeholder || "أدخل اسم المستخدم"}
-                className="flex-1 border-b-2 border-[hsl(210,15%,80%)] py-2.5 px-1 text-sm text-[hsl(215,30%,20%)] placeholder:text-[hsl(210,15%,70%)] bg-transparent outline-none focus:outline-none focus:ring-0 focus:border-[hsl(210,15%,80%)] transition-colors"
-                dir="rtl"
-                required
-              />
+        {/* Left side - Form Card */}
+        <div className="w-full lg:w-[480px] shrink-0">
+          <div className="bg-white rounded-lg shadow-lg p-8 sm:p-10">
+            {/* Logo on mobile */}
+            <div className="lg:hidden flex justify-center mb-4">
+              {!settingsLoading && (
+                <img
+                  src={globalSettings.login_logo_url || logo}
+                  alt="Logo"
+                  className="w-16 h-16 object-contain"
+                />
+              )}
             </div>
 
-            {/* Company Name - shown prominently after email verification */}
-            {mode === 'company' && companyName && emailConfirmed && (
-              <div className="bg-[hsl(140,40%,95%)] rounded-lg p-3 text-center border border-[hsl(140,40%,80%)] flex items-center justify-center gap-2">
-                <Building2 className="w-4 h-4 text-[hsl(140,50%,40%)]" />
-                <p className="text-sm font-semibold text-[hsl(215,40%,25%)]">{companyName}</p>
-              </div>
-            )}
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-2xl font-bold text-[hsl(215,40%,20%)]">{pageTitle}</h1>
+              <Link to="/" className="text-sm text-[hsl(210,70%,50%)] hover:underline">
+                {isRtl ? 'الرئيسية' : 'Home'}
+              </Link>
+            </div>
 
-            {/* Password Row */}
-            {showPasswordAndFiscalYear && (
-              <div className="flex items-center gap-4">
-                <label className="text-xs font-bold text-[hsl(215,30%,40%)] uppercase tracking-wide w-24 shrink-0 text-right">
-                  {t.password_placeholder || 'كلمة المرور'}
-                </label>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Email */}
+              <div>
                 <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t.password_placeholder || "أدخل كلمة المرور"}
-                  className="flex-1 border-b-2 border-[hsl(210,15%,80%)] py-2.5 px-1 text-sm text-[hsl(215,30%,20%)] placeholder:text-[hsl(210,15%,70%)] bg-transparent outline-none focus:outline-none focus:ring-0 focus:border-[hsl(210,15%,80%)] transition-colors"
-                  dir="rtl"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={handleEmailKeyDown}
+                  placeholder={isRtl ? 'البريد الإلكتروني *' : 'Email *'}
+                  className="w-full border border-border rounded-md py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground bg-transparent outline-none focus:outline-none focus:ring-0 focus:border-border"
+                  dir={isRtl ? 'rtl' : 'ltr'}
                   required
-                  minLength={6}
-                  autoFocus
                 />
               </div>
-            )}
 
-            {/* Fiscal Year Selector */}
-            {showPasswordAndFiscalYear && mode === 'company' && fiscalYears.length > 0 && (
-              <div className="flex items-center gap-4">
-                <label className="text-xs font-bold text-[hsl(215,30%,40%)] uppercase tracking-wide w-24 shrink-0 text-right">
-                  <Calendar className="w-4 h-4 inline-block ml-1" />
-                  {t.fiscal_year_select || 'السنة المالية'}
-                </label>
-                <Select
-                  value={selectedFiscalYearId}
-                  onValueChange={setSelectedFiscalYearId}
-                >
-                  <SelectTrigger className="flex-1 h-10 text-right bg-transparent border-b-2 border-[hsl(210,15%,80%)] rounded-none text-[hsl(215,30%,20%)] focus:outline-none focus:ring-0 focus:border-[hsl(210,15%,80%)] shadow-none">
-                    <SelectValue placeholder={t.fiscal_year_select} />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border z-50">
-                    {fiscalYears.map((fy) => (
-                      <SelectItem key={fy.id} value={fy.id}>
-                        <div className="flex items-center justify-between w-full gap-3">
-                          <span>{fy.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(fy.start_date)} - {formatDate(fy.end_date)}
-                          </span>
-                          {fy.is_current && (
-                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                              {t.current_label}
+              {/* Company Name */}
+              {mode === 'company' && companyName && emailConfirmed && (
+                <div className="bg-[hsl(140,40%,95%)] rounded-md p-3 text-center border border-[hsl(140,40%,80%)] flex items-center justify-center gap-2">
+                  <Building2 className="w-4 h-4 text-[hsl(140,50%,40%)]" />
+                  <p className="text-sm font-semibold text-[hsl(215,40%,25%)]">{companyName}</p>
+                </div>
+              )}
+
+              {/* Password */}
+              {showPasswordAndFiscalYear && (
+                <div>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={isRtl ? 'كلمة السر *' : 'Password *'}
+                    className="w-full border border-border rounded-md py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground bg-transparent outline-none focus:outline-none focus:ring-0 focus:border-border"
+                    dir={isRtl ? 'rtl' : 'ltr'}
+                    required
+                    minLength={6}
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              {/* Fiscal Year Selector */}
+              {showPasswordAndFiscalYear && mode === 'company' && fiscalYears.length > 0 && (
+                <div>
+                  <Select value={selectedFiscalYearId} onValueChange={setSelectedFiscalYearId}>
+                    <SelectTrigger className="w-full h-12 text-right bg-transparent border border-border rounded-md text-foreground shadow-none focus:outline-none focus:ring-0 focus:border-border">
+                      <SelectValue placeholder={t.fiscal_year_select || (isRtl ? 'السنة المالية' : 'Fiscal Year')} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border z-50">
+                      {fiscalYears.map((fy) => (
+                        <SelectItem key={fy.id} value={fy.id}>
+                          <div className="flex items-center justify-between w-full gap-3">
+                            <span>{fy.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(fy.start_date)} - {formatDate(fy.end_date)}
                             </span>
-                          )}
-                          {fy.status === 'closed' && (
-                            <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">
-                              {t.closed_label}
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+                            {fy.is_current && (
+                              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                {t.current_label}
+                              </span>
+                            )}
+                            {fy.status === 'closed' && (
+                              <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">
+                                {t.closed_label}
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
-            {/* Forgot password */}
-            {showPasswordAndFiscalYear && (
-              <div className="text-right pr-0">
-                <span className="text-xs text-[hsl(210,70%,50%)] hover:text-[hsl(210,70%,40%)] cursor-pointer transition-colors">
-                  {t.forgot_password || "نسيت كلمة المرور؟"}
-                </span>
-              </div>
-            )}
+              {/* Remember me + Forgot password */}
+              {showPasswordAndFiscalYear && (
+                <div className="flex items-center justify-between text-sm">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" className="rounded border-border" defaultChecked />
+                    <span className="text-muted-foreground">{isRtl ? 'تذكرني' : 'Remember me'}</span>
+                  </label>
+                  <span className="text-[hsl(210,70%,50%)] hover:underline cursor-pointer">
+                    {t.forgot_password || (isRtl ? 'نسيت كلمة المرور؟' : 'Forgot password?')}
+                  </span>
+                </div>
+              )}
 
-            {/* Fetch Fiscal Years Button */}
-            {mode === 'company' && !emailConfirmed && (
-              <div className="flex justify-center pt-2">
+              {/* Fetch Fiscal Years Button */}
+              {mode === 'company' && !emailConfirmed && (
                 <Button
                   type="button"
                   onClick={fetchFiscalYearsForEmail}
-                  className="px-12 h-11 bg-[hsl(140,50%,45%)] hover:bg-[hsl(140,50%,40%)] text-white font-bold tracking-wider rounded-full border-none shadow-md transition-all"
+                  className="w-full h-12 bg-[hsl(215,50%,45%)] hover:bg-[hsl(215,50%,40%)] text-white font-bold text-base rounded-md border-none shadow-sm transition-all"
                   disabled={fetchingFiscalYears || !email}
                 >
                   {fetchingFiscalYears ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {t.checking}
+                      {t.checking || (isRtl ? 'جاري التحقق...' : 'Checking...')}
                     </span>
                   ) : (
-                    t.next
+                    t.next || (isRtl ? 'التالي' : 'Next')
                   )}
                 </Button>
-              </div>
-            )}
+              )}
 
-            {/* Login Button */}
-            {showPasswordAndFiscalYear && (
-              <div className="flex justify-center pt-2">
+              {/* Login Button */}
+              {showPasswordAndFiscalYear && (
                 <Button
                   type="submit"
-                  className="px-12 h-11 bg-[hsl(140,50%,45%)] hover:bg-[hsl(140,50%,40%)] text-white font-bold tracking-wider rounded-full border-none shadow-md transition-all"
+                  className="w-full h-12 bg-[hsl(215,50%,45%)] hover:bg-[hsl(215,50%,40%)] text-white font-bold text-base rounded-md border-none shadow-sm transition-all"
                   disabled={loading}
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {t.loading}
+                      {t.loading || (isRtl ? 'جاري الدخول...' : 'Signing in...')}
                     </span>
                   ) : (
                     primaryButtonText
                   )}
                 </Button>
-              </div>
-            )}
-          </form>
+              )}
+            </form>
 
-          {/* Bottom links */}
-          <div className="mt-6 text-center space-y-3">
-            {mode === 'company' && (
-              <p className="text-sm text-[hsl(215,20%,55%)]">
-                {t.no_account}{' '}
-                <Link to="/register" className="text-[hsl(210,70%,50%)] hover:text-[hsl(210,70%,40%)] font-medium transition-colors">
-                  {t.register_company || 'تسجيل'}
-                </Link>
-              </p>
-            )}
-
-            {mode === 'super_admin' && (
-              <div className="flex items-center justify-center gap-4 text-xs">
-                <Link to="/auth/company" className="text-[hsl(215,20%,55%)] hover:text-[hsl(215,20%,40%)] inline-flex items-center gap-1 transition-colors">
-                  <Building2 className="w-3 h-3" />
-                  {t.company_login}
-                </Link>
-              </div>
-            )}
+            {/* Bottom links */}
+            <div className="mt-6 text-center">
+              {mode === 'company' && (
+                <p className="text-sm text-muted-foreground">
+                  {isRtl ? 'لا تملك حساباً؟' : "Don't have an account?"}{' '}
+                  <Link to="/register" className="text-[hsl(210,70%,50%)] hover:underline font-medium">
+                    {isRtl ? 'إنشاء حساب' : 'Create Account'}
+                  </Link>
+                </p>
+              )}
+              {mode === 'super_admin' && (
+                <div className="flex items-center justify-center gap-4 text-xs">
+                  <Link to="/auth/company" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors">
+                    <Building2 className="w-3 h-3" />
+                    {t.company_login}
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="py-3 text-center border-t border-[hsl(210,15%,90%)]">
-          <p className="text-[11px] text-[hsl(215,15%,65%)]">
-            © Copyright {new Date().getFullYear()} by <span className="text-[hsl(210,70%,50%)]">Elzini SaaS</span>. All Rights Reserved.
-          </p>
         </div>
       </div>
     </div>
