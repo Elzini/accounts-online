@@ -772,10 +772,9 @@ export function Sidebar({
     return config ? config.visible !== false : true;
   };
 
-  // Check if section is collapsible - default to true (all sections collapsible)
-  const isSectionCollapsible = (sectionId: string) => {
-    const config = getSectionConfig(sectionId);
-    return config?.isCollapsible !== false;
+  // All sections are always expanded (non-collapsible) - show everything
+  const isSectionCollapsible = (_sectionId: string) => {
+    return false;
   };
 
   // Get section label - respect language setting
