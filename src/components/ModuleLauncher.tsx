@@ -690,7 +690,45 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       </div>
 
       {/* Main Content: Grid + Category Sidebar */}
-      <div className="max-w-7xl mx-auto flex gap-0">
+      <div className="max-w-7xl mx-auto flex flex-row-reverse gap-0">
+        {/* Right Category Sidebar - Odoo Style */}
+        <div className="hidden md:block w-52 lg:w-56 border-e border-border/50 bg-background p-4 sticky top-[45px] h-[calc(100vh-45px)] overflow-y-auto">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-sm bg-primary" />
+            {isRtl ? 'الفئات' : 'Categories'}
+          </h3>
+          <ul className="space-y-0.5">
+            <li>
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
+                  !selectedCategory 
+                    ? 'bg-primary/10 text-primary font-semibold border-e-2 border-primary' 
+                    : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                }`}
+              >
+                <span>{isRtl ? 'الكل' : 'All'}</span>
+                <span className="text-xs text-muted-foreground">{totalCount}</span>
+              </button>
+            </li>
+            {categories.map(cat => (
+              <li key={cat.id}>
+                <button
+                  onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
+                    selectedCategory === cat.id 
+                      ? 'bg-primary/10 text-primary font-semibold border-e-2 border-primary' 
+                      : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  <span className="truncate">{cat.label}</span>
+                  <span className="text-xs text-muted-foreground">{cat.count}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         {/* Module Cards Grid - Main Area */}
         <div className="flex-1 p-4 sm:p-6">
           {/* Welcome Banner */}
@@ -812,44 +850,6 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
           </div>
         </div>
 
-        {/* Right Category Sidebar - Odoo Style */}
-        <div className="hidden md:block w-52 lg:w-56 border-s border-border/50 bg-background p-4 sticky top-[45px] h-[calc(100vh-45px)] overflow-y-auto">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-sm bg-primary" />
-            {isRtl ? 'الفئات' : 'Categories'}
-          </h3>
-          <ul className="space-y-0.5">
-            {/* All */}
-            <li>
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                  !selectedCategory 
-                    ? 'bg-primary/10 text-primary font-semibold border-s-2 border-primary' 
-                    : 'text-foreground/70 hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                <span>{isRtl ? 'الكل' : 'All'}</span>
-                <span className="text-xs text-muted-foreground">{totalCount}</span>
-              </button>
-            </li>
-            {categories.map(cat => (
-              <li key={cat.id}>
-                <button
-                  onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                    selectedCategory === cat.id 
-                      ? 'bg-primary/10 text-primary font-semibold border-s-2 border-primary' 
-                      : 'text-foreground/70 hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  <span className="truncate">{cat.label}</span>
-                  <span className="text-xs text-muted-foreground">{cat.count}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
       </div>
 
       {/* Launcher Customizer Dialog */}
