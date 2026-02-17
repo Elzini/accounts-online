@@ -84,7 +84,7 @@ import { RBACManagement } from '@/components/super-admin/RBACManagement';
 import { MenuConfigurationTab } from '@/components/control-center/tabs/MenuConfigurationTab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import';
+type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import' | 'medical' | 'real_estate';
 
 const ACTIVITY_TYPE_LABELS: Record<CompanyActivityType, string> = {
   car_dealership: 'معرض سيارات',
@@ -92,6 +92,8 @@ const ACTIVITY_TYPE_LABELS: Record<CompanyActivityType, string> = {
   general_trading: 'التجارة العامة',
   restaurant: 'مطاعم وكافيهات',
   export_import: 'الاستيراد والتصدير',
+  medical: 'تجارة أدوية وأدوات طبية',
+  real_estate: 'تطوير عقاري',
 };
 
 interface Company {

@@ -11,7 +11,7 @@ import { usePublicAuthSettings } from '@/hooks/usePublicAuthSettings';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
-type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import' | 'medical';
+type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import' | 'medical' | 'real_estate';
 
 const companyTypes: { value: CompanyActivityType; label: string; icon: React.ReactNode }[] = [
   { value: 'car_dealership', label: 'معرض سيارات', icon: <Car className="w-4 h-4" /> },
@@ -20,6 +20,7 @@ const companyTypes: { value: CompanyActivityType; label: string; icon: React.Rea
   { value: 'restaurant', label: 'مطاعم وكافيهات', icon: <Package className="w-4 h-4" /> },
   { value: 'export_import', label: 'تصدير واستيراد', icon: <Package className="w-4 h-4" /> },
   { value: 'medical', label: 'تجارة أدوية وأدوات طبية', icon: <Package className="w-4 h-4" /> },
+  { value: 'real_estate', label: 'تطوير عقاري', icon: <Building2 className="w-4 h-4" /> },
 ];
 
 export default function Register() {

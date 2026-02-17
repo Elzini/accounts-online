@@ -138,6 +138,25 @@ function buildLabels(companyType: CompanyActivityType, t: TranslationKeys): Reco
       showCommissionsReport: false,
       showInventoryReport: true,
     },
+    real_estate: {
+      itemName: t.industry_project || 'الوحدة العقارية',
+      itemsName: t.industry_projects || 'الوحدات العقارية',
+      itemUnit: t.industry_project_unit || 'وحدة',
+      availableItems: t.industry_active_projects || 'المشاريع النشطة',
+      availableSubtitle: t.industry_project_in_progress || 'مشروع قيد التطوير',
+      totalPurchasesLabel: t.industry_total_costs || 'إجمالي التكاليف',
+      allTimePurchasesSubUnit: t.industry_project_unit || 'مشروع',
+      allTimeSalesSubUnit: t.industry_sale_operation,
+      inventoryLabel: t.industry_inventory || 'الوحدات',
+      inventoryActions: [
+        { label: t.industry_projects || 'المشاريع', page: 'purchases' },
+        { label: t.inventory_report, page: 'inventory-report' },
+      ],
+      showTransfersReport: false,
+      showPartnerReport: false,
+      showCommissionsReport: false,
+      showInventoryReport: true,
+    },
   };
 }
 

@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingCart, DollarSign, Users, Menu, HardHat, Ship, UtensilsCrossed, LucideIcon } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, DollarSign, Users, Menu, HardHat, Ship, UtensilsCrossed, Building2, LucideIcon } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
 import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
@@ -37,6 +37,13 @@ function getNavItems(companyType: CompanyActivityType): NavItem[] {
       return [
         { id: 'dashboard', label: 'الرئيسية', label_en: 'Home', icon: LayoutDashboard },
         { id: 'restaurant-orders', label: 'الطلبات', label_en: 'Orders', icon: UtensilsCrossed },
+        { id: 'sales', label: 'المبيعات', label_en: 'Sales', icon: DollarSign },
+        { id: 'customers', label: 'العملاء', label_en: 'Customers', icon: Users },
+      ];
+    case 'real_estate':
+      return [
+        { id: 'dashboard', label: 'الرئيسية', label_en: 'Home', icon: LayoutDashboard },
+        { id: 'purchases', label: 'المشاريع', label_en: 'Projects', icon: Building2 },
         { id: 'sales', label: 'المبيعات', label_en: 'Sales', icon: DollarSign },
         { id: 'customers', label: 'العملاء', label_en: 'Customers', icon: Users },
       ];
