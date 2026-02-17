@@ -140,6 +140,7 @@ import { AppointmentsPage } from '@/components/appointments/AppointmentsPage';
 import { FieldServicePage } from '@/components/field-service/FieldServicePage';
 import { PLMPage } from '@/components/plm/PLMPage';
 import { BarcodeScannerPage } from '@/components/barcode/BarcodeScannerPage';
+import { SupportContact } from '@/components/SupportContact';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -386,6 +387,7 @@ const Index = () => {
       case 'field-service': return <FieldServicePage />;
       case 'plm': return <PLMPage />;
       case 'barcode-scanner': return <BarcodeScannerPage />;
+      case 'support-contact': return <SupportContact />;
       default:
         return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} />;
     }

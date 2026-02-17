@@ -239,4 +239,6 @@ export type ActivePage =
      | 'appointments'
      | 'field-service'
      | 'plm'
-     | 'barcode-scanner';
+     | 'barcode-scanner'
+     // Support
+     | 'support-contact';
