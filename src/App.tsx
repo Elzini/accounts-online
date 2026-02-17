@@ -21,6 +21,7 @@ import Register from "./pages/Register";
 import Companies from "./pages/Companies";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
+import RamadanGreeting from "./pages/RamadanGreeting";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -168,6 +169,7 @@ function AppRoutes() {
         } 
       />
       <Route path="/install" element={<Install />} />
+      <Route path="/ramadan" element={<RamadanGreeting />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
