@@ -800,10 +800,9 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
                     onClick={() => {
                       if (isModule) {
                         const mod = visibleModules.find(m => m.id === item.moduleId);
-                        if (mod && mod.items.length === 1) {
+                        if (mod) {
+                          // Navigate to first item directly
                           setActivePage(mod.items[0].id);
-                        } else if (mod) {
-                          setSelectedCategory(item.moduleId);
                         }
                       } else {
                         setActivePage(item.id);
