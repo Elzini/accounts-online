@@ -48,6 +48,8 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   { id: 'chart-of-accounts', label: 'شجرة الحسابات', labelEn: 'Chart of Accounts', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'BookOpen' },
   { id: 'banking', label: 'البنوك', labelEn: 'Banking', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'Scale' },
   { id: 'checks', label: 'الشيكات', labelEn: 'Checks', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'ClipboardCheck' },
+  { id: 'custody', label: 'العهد', labelEn: 'Custody', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'KeyRound', keywords: ['عهدة', 'العهده', 'عهده', 'سلفة', 'custody'] },
+  { id: 'prepaid-expenses', label: 'المصروفات المقدمة', labelEn: 'Prepaid Expenses', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'CalendarClock', keywords: ['مصروف مقدم', 'إيجار', 'prepaid'] },
   { id: 'financing', label: 'التمويل', labelEn: 'Financing', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'Landmark' },
   { id: 'tax-settings', label: 'إعدادات الضرائب', labelEn: 'Tax Settings', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'Percent' },
   { id: 'financial-reports', label: 'التقارير المالية', labelEn: 'Financial Reports', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'PieChart' },
