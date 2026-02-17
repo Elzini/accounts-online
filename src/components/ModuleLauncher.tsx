@@ -494,7 +494,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
     return (
       <div className="min-h-[calc(100vh-60px)] bg-background">
         <div className={`bg-gradient-to-r ${selectedModule.gradient} px-4 sm:px-8 py-6`}>
-          <div className="max-w-6xl mx-auto">
+          <div className="px-2">
             <button
               onClick={() => { setSelectedModule(null); setSearchQuery(''); }}
               className="flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-4"
@@ -530,7 +530,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto p-4 sm:p-8">
+        <div className="p-4 sm:p-6">
           {visibleItems.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
               {isRtl ? 'لا توجد نتائج' : 'No results found'}
@@ -648,7 +648,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
 
       {/* Top Bar */}
       <div className="sticky top-0 z-30 bg-background border-b border-border/50 px-4 py-2">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             {!isEditMode ? (
               <DropdownMenu>
@@ -690,7 +690,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       </div>
 
       {/* Main Content: Grid + Category Sidebar */}
-      <div className="max-w-7xl mx-auto flex gap-0">
+      <div className="flex gap-0">
         {/* Right Category Sidebar - Odoo Style */}
         <div className="hidden md:block w-52 lg:w-56 border-e border-border/50 bg-background p-4 sticky top-[45px] h-[calc(100vh-45px)] overflow-y-auto">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
