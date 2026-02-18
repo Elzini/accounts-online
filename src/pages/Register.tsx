@@ -145,7 +145,7 @@ export default function Register() {
           <p className="text-xs text-muted-foreground">
             {isRtl ? 'لم تستلم البريد؟ تحقق من مجلد الرسائل غير المرغوب فيها' : "Didn't receive it? Check your spam folder"}
           </p>
-          <Link to="/auth">
+          <Link to="/auth/company">
             <Button className="px-10 h-11 bg-[hsl(215,50%,45%)] hover:bg-[hsl(215,50%,40%)] text-white font-bold rounded-md border-none shadow-sm">
               {isRtl ? 'العودة لتسجيل الدخول' : 'Back to Sign In'}
             </Button>
@@ -328,7 +328,7 @@ export default function Register() {
             <div className="mt-5 text-center">
               <p className="text-sm text-muted-foreground">
                 {isRtl ? 'هل لديك حساب؟' : 'Already have an account?'}{' '}
-                <Link to="/auth" className="text-[hsl(210,70%,50%)] hover:underline font-medium">
+                <Link to="/auth/company" className="text-[hsl(210,70%,50%)] hover:underline font-medium">
                   {isRtl ? 'تسجيل الدخول' : 'Sign In'}
                 </Link>
               </p>
