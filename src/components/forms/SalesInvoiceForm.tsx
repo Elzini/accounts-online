@@ -1016,10 +1016,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selectedCars.map((car, index) => {
+                     {selectedCars.map((car, index) => {
                       const calcItem = calculations.items[index];
                       return (
-                        <TableRow key={car.id} className="hover:bg-muted/30 border-b">
+                        <TableRow key={car.id} className="hover:bg-primary/5 border-b bg-[hsl(var(--primary)/0.03)]">
                           <TableCell className="text-center text-xs py-1">{index + 1}</TableCell>
                           <TableCell className="text-xs py-1 font-medium">{car.car_name} {car.model} {car.color ? `- ${car.color}` : ''}</TableCell>
                           <TableCell className="text-center text-xs py-1">1</TableCell>
@@ -1112,10 +1112,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selectedInventoryItems.map((item, index) => {
+                     {selectedInventoryItems.map((item, index) => {
                       const calcItem = calculations.inventoryItems[index];
                       return (
-                        <TableRow key={item.id} className="hover:bg-muted/30 border-b">
+                        <TableRow key={item.id} className="hover:bg-primary/5 border-b bg-[hsl(var(--primary)/0.03)]">
                           <TableCell className="text-center text-xs py-1">{index + 1}</TableCell>
                           <TableCell className="text-xs py-1 font-medium">{item.item_name}</TableCell>
                           <TableCell className="py-1">
@@ -1167,6 +1167,52 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 </div>
               </>
             )}
+          </div>
+
+          {/* ===== Middle Info Section (Account, Status, Barcode, Voucher) ===== */}
+          <div className="p-3 border-t bg-muted/20">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">{t.inv_cash_account}</Label>
+                <div className="text-xs font-medium bg-primary/5 border border-primary/20 rounded px-2 py-1.5 truncate">
+                  {accounts.find(a => a.id === invoiceData.payment_account_id)?.name || '-'}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">{t.inv_invoice_number}</Label>
+                <div className="text-xs font-mono font-medium bg-muted border border-border rounded px-2 py-1.5">
+                  {invoiceData.invoice_number || nextInvoiceNumber}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">{t.inv_status_label || 'الحالة'}</Label>
+                <div className={`text-xs font-medium rounded px-2 py-1.5 text-center ${
+                  isViewingExisting && currentSaleStatus === 'approved' 
+                    ? 'bg-success/15 text-success border border-success/30' 
+                    : 'bg-warning/15 text-warning border border-warning/30'
+                }`}>
+                  {isViewingExisting ? (currentSaleStatus === 'approved' ? (t.inv_status_approved || 'معتمدة (مؤرشفة)') : (t.inv_status_draft || 'مسودة')) : (t.inv_new || 'جديدة')}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">{t.inv_issue_time || 'توقيت إصدار الفاتورة'}</Label>
+                <div className="text-xs font-mono font-medium bg-destructive/10 border border-destructive/20 rounded px-2 py-1.5 text-center" dir="ltr">
+                  {new Date().toLocaleString(locale)}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">{t.inv_voucher_number || 'رقم السند'}</Label>
+                <div className="text-xs font-bold bg-card border-2 border-border rounded px-2 py-1.5 text-center">
+                  {isViewingExisting ? (invoiceData.invoice_number || currentInvoiceIndex + 1) : '-'}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">{t.inv_salesperson || 'البائع'}</Label>
+                <div className="text-xs font-medium bg-card border border-border rounded px-2 py-1.5 truncate">
+                  {invoiceData.seller_name || '-'}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* ===== Totals Section (Large colored boxes - ERP Style) ===== */}
@@ -1227,9 +1273,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             </div>
           </div>
 
-          {/* ===== Bottom Action Bar (ERP Desktop Style) ===== */}
+          {/* ===== Bottom Action Bar (ERP Desktop Style with dropdowns) ===== */}
           <div className="p-2 bg-muted/50 border-t flex flex-wrap gap-1.5 justify-between items-center">
             <div className="flex flex-wrap gap-1.5">
+              {/* Primary Actions */}
               {isViewingExisting ? (
                 <>
                   {!isApproved && (
@@ -1265,18 +1312,30 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 <Printer className="w-3.5 h-3.5" />
                 {t.inv_print}
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8 rounded" disabled>
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-                {t.inv_import_data}
-              </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-warning hover:text-warning text-xs h-8 rounded" disabled={!isViewingExisting} onClick={() => setReverseDialogOpen(true)}>
-                <RotateCcw className="w-3.5 h-3.5" />
-                {t.inv_return}
-              </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive text-xs h-8 rounded" disabled={!isViewingExisting} onClick={() => setDeleteDialogOpen(true)}>
-                <Trash2 className="w-3.5 h-3.5" />
-                {t.delete}
-              </Button>
+
+              {/* عمليات Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8 rounded">
+                    {t.inv_operations || 'عمليات'}
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem disabled>
+                    <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />
+                    {t.inv_import_data}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled={!isViewingExisting} onClick={() => setReverseDialogOpen(true)} className="text-warning">
+                    <RotateCcw className="w-3.5 h-3.5 ml-2" />
+                    {t.inv_return}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled={!isViewingExisting} onClick={() => setDeleteDialogOpen(true)} className="text-destructive">
+                    <Trash2 className="w-3.5 h-3.5 ml-2" />
+                    {t.delete}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <Button variant="outline" onClick={() => setActivePage('sales')} size="sm" className="gap-1.5 text-xs h-8 rounded">
               <X className="w-3.5 h-3.5" />

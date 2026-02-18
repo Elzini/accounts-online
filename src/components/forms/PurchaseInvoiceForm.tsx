@@ -13,7 +13,8 @@ import {
   RotateCcw,
   Package,
   FileSpreadsheet,
-  MessageSquare
+  MessageSquare,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -832,7 +839,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   </TableHeader>
                   <TableBody>
                     {calculations.items.map((car, index) => (
-                      <TableRow key={car.id} className="hover:bg-muted/30 border-b">
+                      <TableRow key={car.id} className="hover:bg-primary/5 border-b bg-[hsl(var(--primary)/0.03)]">
                         <TableCell className="text-center text-xs py-1">{index + 1}</TableCell>
                         <TableCell className="py-1"><Input value={cars[index].name} onChange={(e) => handleCarChange(car.id, 'name', e.target.value)} placeholder={t.inv_description} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" /></TableCell>
                         <TableCell className="py-1"><Input value={cars[index].model} onChange={(e) => handleCarChange(car.id, 'model', e.target.value)} placeholder={t.inv_model} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" /></TableCell>
@@ -882,7 +889,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   </TableHeader>
                   <TableBody>
                     {calculations.inventoryItems.map((item, index) => (
-                      <TableRow key={item.id} className="hover:bg-muted/30 border-b">
+                      <TableRow key={item.id} className="hover:bg-primary/5 border-b bg-[hsl(var(--primary)/0.03)]">
                         <TableCell className="text-center text-xs py-1">{index + 1}</TableCell>
                         <TableCell className="text-xs py-1 font-medium">{item.item_name}</TableCell>
                         <TableCell className="py-1"><Input value={purchaseInventoryItems[index]?.barcode || ''} onChange={(e) => handleInventoryItemChange(item.id, 'barcode', e.target.value)} placeholder={t.inv_barcode} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" dir="ltr" /></TableCell>
@@ -931,6 +938,52 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             )}
           </div>
 
+          {/* ===== Middle Info Section (Account, Status, Barcode, Voucher) ===== */}
+          <div className="p-3 border-t bg-muted/20">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">{t.inv_cash_account}</Label>
+                <div className="text-xs font-medium bg-primary/5 border border-primary/20 rounded px-2 py-1.5 truncate">
+                  {accounts.find(a => a.id === invoiceData.payment_account_id)?.name || '-'}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">{t.inv_invoice_number}</Label>
+                <div className="text-xs font-mono font-medium bg-muted border border-border rounded px-2 py-1.5">
+                  {invoiceData.invoice_number || nextInvoiceNumber}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">{t.inv_status_label || 'الحالة'}</Label>
+                <div className={`text-xs font-medium rounded px-2 py-1.5 text-center ${
+                  isViewingExisting 
+                    ? 'bg-success/15 text-success border border-success/30' 
+                    : 'bg-warning/15 text-warning border border-warning/30'
+                }`}>
+                  {isViewingExisting ? (t.inv_status_approved || 'معتمدة') : (t.inv_new || 'جديدة')}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">{t.inv_issue_time || 'توقيت إصدار الفاتورة'}</Label>
+                <div className="text-xs font-mono font-medium bg-destructive/10 border border-destructive/20 rounded px-2 py-1.5 text-center" dir="ltr">
+                  {new Date().toLocaleString(locale)}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">{t.inv_voucher_number || 'رقم السند'}</Label>
+                <div className="text-xs font-bold bg-card border-2 border-border rounded px-2 py-1.5 text-center">
+                  {isViewingExisting ? (invoiceData.invoice_number || currentInvoiceIndex + 1) : '-'}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">{t.inv_supplier || 'المورد'}</Label>
+                <div className="text-xs font-medium bg-card border border-border rounded px-2 py-1.5 truncate">
+                  {selectedSupplier?.name || '-'}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* ===== Totals Section (Large colored boxes - ERP Style) ===== */}
           <div className="p-3 border-t bg-card">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -977,7 +1030,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             </div>
           </div>
 
-          {/* ===== Bottom Action Bar (ERP Desktop Style) ===== */}
+          {/* ===== Bottom Action Bar (ERP Desktop Style with dropdowns) ===== */}
           <div className="p-2 bg-muted/50 border-t flex flex-wrap gap-1.5 justify-between items-center">
             <div className="flex flex-wrap gap-1.5">
               {isViewingExisting ? (
@@ -999,18 +1052,30 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 <Printer className="w-3.5 h-3.5" />
                 {t.inv_print}
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8 rounded" disabled>
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-                {t.inv_import_data || 'استيراد بيانات'}
-              </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-warning hover:text-warning text-xs h-8 rounded" disabled={!isViewingExisting} onClick={() => setReverseDialogOpen(true)}>
-                <RotateCcw className="w-3.5 h-3.5" />
-                {t.inv_return}
-              </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive text-xs h-8 rounded" disabled={!isViewingExisting} onClick={() => setDeleteDialogOpen(true)}>
-                <Trash2 className="w-3.5 h-3.5" />
-                {t.delete}
-              </Button>
+
+              {/* عمليات Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8 rounded">
+                    {t.inv_operations || 'عمليات'}
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem disabled>
+                    <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />
+                    {t.inv_import_data || 'استيراد بيانات'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled={!isViewingExisting} onClick={() => setReverseDialogOpen(true)} className="text-warning">
+                    <RotateCcw className="w-3.5 h-3.5 ml-2" />
+                    {t.inv_return}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled={!isViewingExisting} onClick={() => setDeleteDialogOpen(true)} className="text-destructive">
+                    <Trash2 className="w-3.5 h-3.5 ml-2" />
+                    {t.delete}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <Button variant="outline" onClick={() => setActivePage('purchases')} size="sm" className="gap-1.5 text-xs h-8 rounded">
               <X className="w-3.5 h-3.5" />
