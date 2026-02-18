@@ -1273,50 +1273,42 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             </div>
           </div>
 
-          {/* ===== Bottom Action Bar (ERP Desktop Style with dropdowns) ===== */}
-          <div className="p-2 bg-muted/50 border-t flex flex-wrap gap-1.5 justify-between items-center">
-            <div className="flex flex-wrap gap-1.5">
-              {/* Primary Actions */}
-              {isViewingExisting ? (
-                <>
-                  {!isApproved && (
-                    <Button onClick={handleUpdateSale} size="sm" className="gap-1.5 bg-primary hover:bg-primary/90 text-xs h-8 rounded" disabled={updateSale.isPending}>
-                      <Save className="w-3.5 h-3.5" />
-                      {updateSale.isPending ? t.inv_saving : t.inv_save_changes}
-                    </Button>
-                  )}
-                  {!isApproved && (
-                    <Button onClick={() => setApproveDialogOpen(true)} size="sm" className="gap-1.5 bg-success hover:bg-success/90 text-success-foreground text-xs h-8 rounded" disabled={approveSale.isPending}>
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      {approveSale.isPending ? t.inv_approving : t.inv_approve_invoice}
-                    </Button>
-                  )}
-                  {isApproved && (
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-success/10 text-success rounded border border-success/20">
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      <span className="text-xs font-medium">{t.inv_status_approved}</span>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <Button onClick={handleSubmit} size="sm" className="gap-1.5 bg-primary hover:bg-primary/90 text-xs h-8 rounded" disabled={addMultiCarSale.isPending}>
-                  <Plus className="w-3.5 h-3.5" />
-                  {addMultiCarSale.isPending ? t.inv_saving : t.inv_save_draft}
-                </Button>
-              )}
-              <Button variant="outline" onClick={handleNewInvoice} size="sm" className="gap-1.5 text-xs h-8 rounded">
-                <Plus className="w-3.5 h-3.5" />
-                {t.inv_new}
-              </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8 rounded" disabled={!isViewingExisting} onClick={handlePrintExisting}>
-                <Printer className="w-3.5 h-3.5" />
-                {t.inv_print}
-              </Button>
-
-              {/* عمليات Dropdown */}
+          {/* ===== Bottom Action Bar - Row 1: Dropdown Menus (Al-Ameen ERP Style) ===== */}
+          <div className="border-t border-border bg-gradient-to-b from-muted/80 to-muted/40">
+            <div className="px-3 py-1.5 flex items-center gap-1.5 border-b border-border/50">
+              {/* عمليات الضرائب */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8 rounded">
+                  <Button variant="outline" size="sm" className="gap-1 text-[11px] h-7 rounded bg-card border-border shadow-sm">
+                    عمليات الضرائب
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem>إنشاء إقرار ضريبي</DropdownMenuItem>
+                  <DropdownMenuItem>تقرير الضريبة</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* تقارير */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1 text-[11px] h-7 rounded bg-card border-border shadow-sm">
+                    تقارير
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem>تقرير المبيعات</DropdownMenuItem>
+                  <DropdownMenuItem>تقرير الأرباح</DropdownMenuItem>
+                  <DropdownMenuItem>كشف حساب</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* عمليات */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1 text-[11px] h-7 rounded bg-card border-border shadow-sm">
                     {t.inv_operations || 'عمليات'}
                     <ChevronDown className="w-3 h-3" />
                   </Button>
@@ -1330,17 +1322,119 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                     <RotateCcw className="w-3.5 h-3.5 ml-2" />
                     {t.inv_return}
                   </DropdownMenuItem>
-                  <DropdownMenuItem disabled={!isViewingExisting} onClick={() => setDeleteDialogOpen(true)} className="text-destructive">
-                    <Trash2 className="w-3.5 h-3.5 ml-2" />
-                    {t.delete}
+                  <DropdownMenuItem>
+                    <MessageSquare className="w-3.5 h-3.5 ml-2" />
+                    إرسال SMS
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* عرض */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1 text-[11px] h-7 rounded bg-card border-border shadow-sm">
+                    عرض
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onClick={handlePrintExisting} disabled={!isViewingExisting}>
+                    <Printer className="w-3.5 h-3.5 ml-2" />
+                    معاينة قبل الطباعة
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <FileText className="w-3.5 h-3.5 ml-2" />
+                    عرض القيد المحاسبي
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <Button variant="outline" onClick={() => setActivePage('sales')} size="sm" className="gap-1.5 text-xs h-8 rounded">
-              <X className="w-3.5 h-3.5" />
-              {t.inv_exit}
-            </Button>
+
+            {/* Row 2: Action Buttons */}
+            <div className="px-3 py-1.5 flex items-center gap-1.5 flex-wrap">
+              {/* إضافة / حفظ */}
+              {isViewingExisting ? (
+                <>
+                  {!isApproved && (
+                    <Button onClick={handleUpdateSale} size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border border-border text-foreground hover:bg-muted shadow-sm" variant="outline" disabled={updateSale.isPending}>
+                      <Save className="w-3.5 h-3.5" />
+                      {updateSale.isPending ? t.inv_saving : t.inv_save_changes}
+                    </Button>
+                  )}
+                  {!isApproved && (
+                    <Button onClick={() => setApproveDialogOpen(true)} size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-success/10 border border-success/30 text-success hover:bg-success/20 shadow-sm" variant="outline" disabled={approveSale.isPending}>
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      {approveSale.isPending ? t.inv_approving : 'محاسبة'}
+                    </Button>
+                  )}
+                  {isApproved && (
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-success/10 text-success rounded border border-success/20 h-8">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      <span className="text-[11px] font-medium">{t.inv_status_approved}</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Button onClick={handleSubmit} size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border border-border text-foreground hover:bg-muted shadow-sm" variant="outline" disabled={addMultiCarSale.isPending}>
+                  <Plus className="w-3.5 h-3.5 text-primary" />
+                  {addMultiCarSale.isPending ? t.inv_saving : 'إضافة'}
+                </Button>
+              )}
+
+              <Button variant="outline" onClick={handleNewInvoice} size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm">
+                <FileText className="w-3.5 h-3.5 text-primary" />
+                جديد
+              </Button>
+
+              <Button variant="outline" size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm" disabled={!isViewingExisting || isApproved}>
+                <FileEdit className="w-3.5 h-3.5 text-muted-foreground" />
+                تعديل
+              </Button>
+
+              <Button variant="outline" size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm" disabled={!isViewingExisting} onClick={() => setDeleteDialogOpen(true)}>
+                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                حذف
+              </Button>
+
+              <Button variant="outline" size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm" disabled={!isViewingExisting} onClick={() => setApproveDialogOpen(true)}>
+                <CheckCircle className="w-3.5 h-3.5 text-success" />
+                محاسبة
+              </Button>
+
+              <Button variant="outline" size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm">
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground rotate-45" />
+                بحث
+              </Button>
+
+              <Button variant="outline" size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-[hsl(var(--primary)/0.08)] border-primary/30 shadow-sm" disabled={!isViewingExisting} onClick={handlePrintExisting}>
+                <Printer className="w-3.5 h-3.5 text-primary" />
+                طباعة
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm">
+                    مزيد..
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem disabled>
+                    <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />
+                    {t.inv_import_data}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled={!isViewingExisting} onClick={() => setReverseDialogOpen(true)} className="text-warning">
+                    <RotateCcw className="w-3.5 h-3.5 ml-2" />
+                    {t.inv_return}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button variant="outline" onClick={() => setActivePage('sales')} size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20 shadow-sm">
+                <X className="w-3.5 h-3.5" />
+                إغلاق
+              </Button>
+            </div>
           </div>
         </div>
       </div>
