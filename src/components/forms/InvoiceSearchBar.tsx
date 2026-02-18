@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, FileText, User, Truck, Car, X } from 'lucide-react';
+import { Search, FileText, User, Truck, Car, Package, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,8 +10,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { useCompany } from '@/contexts/CompanyContext';
+import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 
-type SearchType = 'invoice' | 'customer' | 'supplier' | 'car';
+type SearchType = 'invoice' | 'customer' | 'supplier' | 'car' | 'item';
 
 interface SearchResult {
   id: string;
@@ -38,6 +40,9 @@ export function InvoiceSearchBar({
   suppliers = [],
   onSelectResult 
 }: InvoiceSearchBarProps) {
+  const { company } = useCompany();
+  const industryLabels = useIndustryLabels();
+  const isCarDealership = company?.company_type === 'car_dealership';
   const [searchType, setSearchType] = useState<SearchType>(mode === 'sales' ? 'customer' : 'supplier');
   const [searchQuery, setSearchQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -100,7 +105,7 @@ export function InvoiceSearchBar({
             id: supplier.id,
             type: 'supplier',
             label: supplier.name,
-            sublabel: `${supplierPurchases.length} سيارة - ${supplier.phone || ''}`,
+            sublabel: `${supplierPurchases.length} ${industryLabels.itemName} - ${supplier.phone || ''}`,
             data: { supplier, purchases: supplierPurchases },
           });
         }
@@ -153,6 +158,7 @@ export function InvoiceSearchBar({
       case 'customer': return <User className="w-4 h-4" />;
       case 'supplier': return <Truck className="w-4 h-4" />;
       case 'car': return <Car className="w-4 h-4" />;
+      case 'item': return <Package className="w-4 h-4" />;
     }
   };
 
@@ -162,6 +168,7 @@ export function InvoiceSearchBar({
       case 'customer': return 'ابحث باسم العميل...';
       case 'supplier': return 'ابحث باسم المورد...';
       case 'car': return 'ابحث باسم السيارة أو رقم الشاسيه...';
+      case 'item': return `ابحث باسم ${industryLabels.itemName}...`;
     }
   };
 
@@ -198,15 +205,23 @@ export function InvoiceSearchBar({
                 </div>
               </SelectItem>
             )}
-            <SelectItem value="car">
-              <div className="flex items-center gap-2">
-                <Car className="w-3.5 h-3.5" />
-                السيارة
-              </div>
-            </SelectItem>
+            {isCarDealership ? (
+              <SelectItem value="car">
+                <div className="flex items-center gap-2">
+                  <Car className="w-3.5 h-3.5" />
+                  السيارة
+                </div>
+              </SelectItem>
+            ) : (
+              <SelectItem value="item">
+                <div className="flex items-center gap-2">
+                  <Package className="w-3.5 h-3.5" />
+                  {industryLabels.itemName}
+                </div>
+              </SelectItem>
+            )}
           </SelectContent>
         </Select>
-        
         <div className="relative flex-1">
           <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -256,7 +271,8 @@ export function InvoiceSearchBar({
               <Badge variant="outline" className="text-[10px] shrink-0">
                 {result.type === 'invoice' ? 'فاتورة' : 
                  result.type === 'customer' ? 'عميل' : 
-                 result.type === 'supplier' ? 'مورد' : 'سيارة'}
+                 result.type === 'supplier' ? 'مورد' : 
+                 result.type === 'car' ? 'سيارة' : industryLabels.itemName}
               </Badge>
             </button>
           ))}
