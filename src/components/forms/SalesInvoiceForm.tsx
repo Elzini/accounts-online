@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Save, 
   Plus, 
@@ -16,7 +16,8 @@ import {
   RotateCcw,
   Package,
   CheckCircle,
-  FileEdit
+  FileEdit,
+  Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -183,7 +184,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [currentSaleStatus, setCurrentSaleStatus] = useState<'draft' | 'approved'>('draft');
+  const [isEditing, setIsEditing] = useState(false);
+  const searchBarRef = useRef<HTMLDivElement>(null);
   const isApproved = isViewingExisting && currentSaleStatus === 'approved';
+  const isReadOnly = isViewingExisting && !isEditing && !isApproved;
 
   // Inventory items state (for non-car companies)
   const [selectedInventoryItems, setSelectedInventoryItems] = useState<SelectedInventoryItem[]>([]);
@@ -509,6 +513,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     setIsViewingExisting(false);
     setCurrentSaleId(null);
     setCurrentSaleStatus('draft');
+    setIsEditing(false);
   };
 
   const handleCloseInvoice = (open: boolean) => {
@@ -554,6 +559,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     setIsViewingExisting(true);
     setCurrentSaleId(sale.id);
     setCurrentSaleStatus(sale.status === 'approved' ? 'approved' : 'draft');
+    setIsEditing(false);
     
     setInvoiceData({
       invoice_number: sale.sale_number || '',
@@ -782,7 +788,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           </div>
 
           {/* ===== Search Bar ===== */}
-          <div className="p-2 border-b bg-muted/20">
+          <div className="p-2 border-b bg-muted/20" ref={searchBarRef}>
             <InvoiceSearchBar
               mode="sales"
               sales={fiscalYearFilteredSales}
@@ -1285,8 +1291,14 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  <DropdownMenuItem>إنشاء إقرار ضريبي</DropdownMenuItem>
-                  <DropdownMenuItem>تقرير الضريبة</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActivePage('vat-return-report')}>
+                    <FileText className="w-3.5 h-3.5 ml-2" />
+                    إنشاء إقرار ضريبي
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActivePage('tax-settings')}>
+                    <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />
+                    إعدادات الضريبة
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -1299,9 +1311,18 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  <DropdownMenuItem>تقرير المبيعات</DropdownMenuItem>
-                  <DropdownMenuItem>تقرير الأرباح</DropdownMenuItem>
-                  <DropdownMenuItem>كشف حساب</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActivePage('sales-report')}>
+                    <FileText className="w-3.5 h-3.5 ml-2" />
+                    تقرير المبيعات
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActivePage('profit-report')}>
+                    <FileText className="w-3.5 h-3.5 ml-2" />
+                    تقرير الأرباح
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActivePage('account-statement')}>
+                    <FileText className="w-3.5 h-3.5 ml-2" />
+                    كشف حساب
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -1314,15 +1335,15 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  <DropdownMenuItem disabled>
+                  <DropdownMenuItem onClick={() => setActivePage('medad-import')}>
                     <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />
                     {t.inv_import_data}
                   </DropdownMenuItem>
-                  <DropdownMenuItem disabled={!isViewingExisting} onClick={() => setReverseDialogOpen(true)} className="text-warning">
+                  <DropdownMenuItem disabled={!isViewingExisting || isApproved} onClick={() => setReverseDialogOpen(true)} className="text-warning">
                     <RotateCcw className="w-3.5 h-3.5 ml-2" />
                     {t.inv_return}
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toast.info('سيتم إضافة خاصية إرسال SMS قريباً')}>
                     <MessageSquare className="w-3.5 h-3.5 ml-2" />
                     إرسال SMS
                   </DropdownMenuItem>
@@ -1342,7 +1363,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                     <Printer className="w-3.5 h-3.5 ml-2" />
                     معاينة قبل الطباعة
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActivePage('journal-entries')} disabled={!isViewingExisting || !isApproved}>
                     <FileText className="w-3.5 h-3.5 ml-2" />
                     عرض القيد المحاسبي
                   </DropdownMenuItem>
@@ -1355,16 +1376,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               {/* إضافة / حفظ */}
               {isViewingExisting ? (
                 <>
-                  {!isApproved && (
+                  {!isApproved && isEditing && (
                     <Button onClick={handleUpdateSale} size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border border-border text-foreground hover:bg-muted shadow-sm" variant="outline" disabled={updateSale.isPending}>
                       <Save className="w-3.5 h-3.5" />
                       {updateSale.isPending ? t.inv_saving : t.inv_save_changes}
-                    </Button>
-                  )}
-                  {!isApproved && (
-                    <Button onClick={() => setApproveDialogOpen(true)} size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-success/10 border border-success/30 text-success hover:bg-success/20 shadow-sm" variant="outline" disabled={approveSale.isPending}>
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      {approveSale.isPending ? t.inv_approving : 'محاسبة'}
                     </Button>
                   )}
                   {isApproved && (
@@ -1386,23 +1401,47 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 جديد
               </Button>
 
-              <Button variant="outline" size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm" disabled={!isViewingExisting || isApproved}>
-                <FileEdit className="w-3.5 h-3.5 text-muted-foreground" />
-                تعديل
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={`gap-1.5 text-[11px] h-8 rounded shadow-sm ${isEditing ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-card border-border'}`}
+                disabled={!isViewingExisting || isApproved}
+                onClick={() => {
+                  setIsEditing(!isEditing);
+                  if (!isEditing) toast.info('تم تفعيل وضع التعديل');
+                }}
+              >
+                <FileEdit className="w-3.5 h-3.5" />
+                {isEditing ? 'إلغاء التعديل' : 'تعديل'}
               </Button>
 
-              <Button variant="outline" size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm" disabled={!isViewingExisting} onClick={() => setDeleteDialogOpen(true)}>
+              <Button variant="outline" size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm" disabled={!isViewingExisting || isApproved} onClick={() => setDeleteDialogOpen(true)}>
                 <Trash2 className="w-3.5 h-3.5 text-destructive" />
                 حذف
               </Button>
 
-              <Button variant="outline" size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm" disabled={!isViewingExisting} onClick={() => setApproveDialogOpen(true)}>
-                <CheckCircle className="w-3.5 h-3.5 text-success" />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1.5 text-[11px] h-8 rounded bg-success/10 border border-success/30 text-success hover:bg-success/20 shadow-sm" 
+                disabled={!isViewingExisting || isApproved}
+                onClick={() => setApproveDialogOpen(true)}
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
                 محاسبة
               </Button>
 
-              <Button variant="outline" size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm">
-                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground rotate-45" />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm"
+                onClick={() => {
+                  searchBarRef.current?.scrollIntoView({ behavior: 'smooth' });
+                  const input = searchBarRef.current?.querySelector('input');
+                  if (input) setTimeout(() => input.focus(), 300);
+                }}
+              >
+                <Search className="w-3.5 h-3.5 text-muted-foreground" />
                 بحث
               </Button>
 
@@ -1419,13 +1458,17 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  <DropdownMenuItem disabled>
+                  <DropdownMenuItem onClick={() => setActivePage('medad-import')}>
                     <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />
                     {t.inv_import_data}
                   </DropdownMenuItem>
-                  <DropdownMenuItem disabled={!isViewingExisting} onClick={() => setReverseDialogOpen(true)} className="text-warning">
+                  <DropdownMenuItem disabled={!isViewingExisting || isApproved} onClick={() => setReverseDialogOpen(true)} className="text-warning">
                     <RotateCcw className="w-3.5 h-3.5 ml-2" />
                     {t.inv_return}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActivePage('installments')}>
+                    <FileText className="w-3.5 h-3.5 ml-2" />
+                    الأقساط
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
