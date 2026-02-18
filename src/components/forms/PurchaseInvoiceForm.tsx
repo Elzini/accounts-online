@@ -660,24 +660,34 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     <>
       <div className="max-w-full mx-auto animate-fade-in p-2 sm:p-4">
         <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
-          {/* Header */}
-          <div className="bg-primary text-primary-foreground p-4 flex items-center justify-between rounded-t-lg">
-            <div className="flex items-center gap-3">
-              <FileText className="w-6 h-6" />
-              <h1 className="text-xl font-bold">{t.inv_purchase_invoice}</h1>
+          
+          {/* ===== Top Toolbar (dark header with nav + record count) ===== */}
+          <div className="bg-secondary text-secondary-foreground px-3 py-2 flex items-center justify-between gap-2 border-b">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-secondary-foreground hover:bg-secondary-foreground/10" onClick={handleLastPurchase} disabled={fiscalYearFilteredBatches.length === 0}>
+                <ChevronRight className="w-4 h-4" /><ChevronRight className="w-4 h-4 -mr-2" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-secondary-foreground hover:bg-secondary-foreground/10" onClick={handleNextPurchase} disabled={currentInvoiceIndex >= fiscalYearFilteredBatches.length - 1}>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+              <span className="px-3 py-1 text-xs bg-secondary-foreground/10 rounded min-w-[60px] text-center font-mono">
+                {fiscalYearFilteredBatches.length > 0 ? currentInvoiceIndex + 1 : 0} / {fiscalYearFilteredBatches.length}
+              </span>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-secondary-foreground hover:bg-secondary-foreground/10" onClick={handlePreviousPurchase} disabled={currentInvoiceIndex <= 0}>
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-secondary-foreground hover:bg-secondary-foreground/10" onClick={handleFirstPurchase} disabled={fiscalYearFilteredBatches.length === 0}>
+                <ChevronLeft className="w-4 h-4" /><ChevronLeft className="w-4 h-4 -ml-2" />
+              </Button>
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setActivePage('purchases')}
-              className="text-primary-foreground hover:bg-primary-foreground/20"
-            >
-              <X className="w-5 h-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-bold">{t.inv_purchase_invoice}</h1>
+              <FileText className="w-4 h-4" />
+            </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="p-3 border-b bg-muted/20">
+          {/* ===== Search Bar ===== */}
+          <div className="p-2 border-b bg-muted/20">
             <InvoiceSearchBar
               mode="purchases"
               purchases={fiscalYearFilteredCars}
@@ -710,53 +720,27 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             />
           </div>
 
-          {/* Invoice Header Form */}
-          <div className="p-4 border-b bg-muted/30 space-y-4">
+          {/* ===== Invoice Header Form (ERP Grid Style) ===== */}
+          <div className="p-3 border-b space-y-3 bg-card">
             {/* Row 1 */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              <div className="space-y-1">
-                <Label className="text-xs">{t.inv_invoice_number}</Label>
-                <Input
-                  value={invoiceData.invoice_number || nextInvoiceNumber}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, invoice_number: e.target.value })}
-                  className="h-9 text-sm"
-                  placeholder={String(nextInvoiceNumber)}
-                />
-              </div>
-              <div className="space-y-1 col-span-2">
-                <Label className="text-xs">{t.inv_supplier} *</Label>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-2">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs whitespace-nowrap min-w-[50px] text-muted-foreground">{t.inv_supplier} *</Label>
                 <Select value={invoiceData.supplier_id} onValueChange={(v) => setInvoiceData({ ...invoiceData, supplier_id: v })}>
-                  <SelectTrigger className="h-9 text-sm">
+                  <SelectTrigger className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none">
                     <SelectValue placeholder={t.inv_select_supplier} />
                   </SelectTrigger>
                   <SelectContent>
                     {suppliers.map((supplier) => (
-                      <SelectItem key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </SelectItem>
+                      <SelectItem key={supplier.id} value={supplier.id}>{supplier.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              {selectedSupplier && (
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">{t.inv_balance}</Label>
-                  <div className="h-9 flex items-center text-sm font-medium text-success">
-                    {formatCurrency(0)} {currency}
-                  </div>
-                </div>
-              )}
-              <div className="space-y-1">
-                <Label className="text-xs">{t.inv_supplier_invoice}</Label>
-                <Input
-                  className="h-9 text-sm"
-                  placeholder={t.inv_reference}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">{t.inv_warehouse}</Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs whitespace-nowrap min-w-[50px] text-muted-foreground">{t.inv_warehouse}</Label>
                 <Select value={invoiceData.warehouse} onValueChange={(v) => setInvoiceData({ ...invoiceData, warehouse: v })}>
-                  <SelectTrigger className="h-9 text-sm">
+                  <SelectTrigger className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -764,34 +748,28 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            {/* Row 2 */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              <div className="space-y-1">
-                <Label className="text-xs">{t.inv_purchase_date}</Label>
-                <Input
-                  type="date"
-                  value={invoiceData.purchase_date}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, purchase_date: e.target.value })}
-                  className="h-9 text-sm"
-                  dir="ltr"
+              <div className="flex items-center gap-2">
+                <Label className="text-xs whitespace-nowrap min-w-[60px] text-muted-foreground">{t.inv_cash_account}</Label>
+                <PaymentAccountSelector
+                  value={invoiceData.payment_account_id}
+                  onChange={(v) => setInvoiceData({ ...invoiceData, payment_account_id: v })}
+                  type="payment"
+                  className="h-8 border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none text-xs"
                 />
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">{t.inv_due_date}</Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs whitespace-nowrap min-w-[60px] text-muted-foreground">{t.inv_invoice_number}</Label>
                 <Input
-                  type="date"
-                  value={invoiceData.due_date}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, due_date: e.target.value })}
-                  className="h-9 text-sm"
-                  dir="ltr"
+                  value={invoiceData.invoice_number || nextInvoiceNumber}
+                  onChange={(e) => setInvoiceData({ ...invoiceData, invoice_number: e.target.value })}
+                  className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none"
+                  placeholder={String(nextInvoiceNumber)}
                 />
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">{t.inv_payment_method}</Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs whitespace-nowrap min-w-[50px] text-muted-foreground">{t.inv_payment_method}</Label>
                 <Select defaultValue="cash">
-                  <SelectTrigger className="h-9 text-sm">
+                  <SelectTrigger className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -800,152 +778,88 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">{t.inv_cash_account}</Label>
-                <PaymentAccountSelector
-                  value={invoiceData.payment_account_id}
-                  onChange={(v) => setInvoiceData({ ...invoiceData, payment_account_id: v })}
-                  type="payment"
-                  className="h-9"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">{t.inv_tax}</Label>
-                <div className="h-9 flex items-center text-sm bg-background px-3 rounded-md border">
-                  {t.inv_purchases_basic_rate}
+              {selectedSupplier && (
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs whitespace-nowrap text-muted-foreground">{t.inv_balance}</Label>
+                  <span className="text-xs font-medium text-success">{formatCurrency(0)} {currency}</span>
                 </div>
-              </div>
-              <div className="flex items-end gap-2 pb-1">
-                <Checkbox 
-                  id="price_includes_tax"
-                  checked={invoiceData.price_includes_tax}
-                  onCheckedChange={(checked) => setInvoiceData({ ...invoiceData, price_includes_tax: !!checked })}
-                />
-                <Label htmlFor="price_includes_tax" className="text-xs cursor-pointer">
-                  {t.inv_price_includes_tax}
-                </Label>
-              </div>
+              )}
             </div>
 
-            {/* Notes */}
-            <div className="space-y-1">
-              <Label className="text-xs">{t.inv_notes}</Label>
-              <Textarea
-                value={invoiceData.notes}
-                onChange={(e) => setInvoiceData({ ...invoiceData, notes: e.target.value })}
-                placeholder={t.inv_additional_notes}
-                className="h-16 text-sm resize-none"
-              />
+            {/* Row 2 */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-2">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs whitespace-nowrap min-w-[50px] text-muted-foreground">{t.inv_purchase_date}</Label>
+                <Input type="date" value={invoiceData.purchase_date} onChange={(e) => setInvoiceData({ ...invoiceData, purchase_date: e.target.value })} className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none" dir="ltr" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs whitespace-nowrap min-w-[50px] text-muted-foreground">{t.inv_due_date}</Label>
+                <Input type="date" value={invoiceData.due_date} onChange={(e) => setInvoiceData({ ...invoiceData, due_date: e.target.value })} className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none" dir="ltr" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs whitespace-nowrap min-w-[60px] text-muted-foreground">{t.inv_supplier_invoice}</Label>
+                <Input className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none" placeholder={t.inv_reference} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="purchase_price_includes_tax" checked={invoiceData.price_includes_tax} onCheckedChange={(checked) => setInvoiceData({ ...invoiceData, price_includes_tax: !!checked })} className="h-4 w-4" />
+                <Label htmlFor="purchase_price_includes_tax" className="text-xs cursor-pointer text-muted-foreground">{t.inv_price_includes_tax}</Label>
+              </div>
+              <div className="flex items-center gap-2 col-span-2">
+                <Label className="text-xs whitespace-nowrap text-muted-foreground">{t.inv_notes}</Label>
+                <Input value={invoiceData.notes} onChange={(e) => setInvoiceData({ ...invoiceData, notes: e.target.value })} placeholder="" className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none" />
+              </div>
             </div>
           </div>
 
-          {/* Items Table */}
+          {/* ===== Items Table (ERP Grid with colored header) ===== */}
           <div className="overflow-x-auto">
             {isCarDealership ? (
               <>
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="text-right text-xs w-10">#</TableHead>
-                      <TableHead className="text-right text-xs min-w-[150px]">{t.inv_description}</TableHead>
-                      <TableHead className="text-right text-xs min-w-[100px]">{t.inv_model}</TableHead>
-                      <TableHead className="text-right text-xs min-w-[80px]">{t.inv_color}</TableHead>
-                      <TableHead className="text-right text-xs min-w-[120px]">{t.inv_chassis_number}</TableHead>
-                      <TableHead className="text-center text-xs w-16">{t.inv_quantity}</TableHead>
-                      <TableHead className="text-center text-xs w-20">{t.inv_unit}</TableHead>
-                      <TableHead className="text-center text-xs w-24">{t.inv_price}</TableHead>
-                      <TableHead className="text-center text-xs w-24">{t.inv_subtotal}</TableHead>
-                      <TableHead className="text-center text-xs w-16">VAT</TableHead>
-                      <TableHead className="text-center text-xs w-24">{t.inv_grand_total}</TableHead>
-                      <TableHead className="text-center text-xs w-10"></TableHead>
+                    <TableRow className="bg-primary/10 border-b-2 border-primary/30">
+                      <TableHead className="text-right text-[11px] font-bold w-8 text-primary">#</TableHead>
+                      <TableHead className="text-right text-[11px] font-bold min-w-[150px] text-primary">{t.inv_description}</TableHead>
+                      <TableHead className="text-right text-[11px] font-bold min-w-[80px] text-primary">{t.inv_model}</TableHead>
+                      <TableHead className="text-right text-[11px] font-bold min-w-[60px] text-primary">{t.inv_color}</TableHead>
+                      <TableHead className="text-right text-[11px] font-bold min-w-[100px] text-primary">{t.inv_chassis_number}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-16 text-primary">{t.inv_quantity}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_price}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_subtotal}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-28 text-primary">{t.inv_price_includes_tax}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {calculations.items.map((car, index) => (
-                      <TableRow key={car.id} className="hover:bg-muted/30">
-                        <TableCell className="text-center text-sm">{index + 1}</TableCell>
-                        <TableCell>
-                          <Input
-                            value={cars[index].name}
-                            onChange={(e) => handleCarChange(car.id, 'name', e.target.value)}
-                            placeholder={t.inv_description}
-                            className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={cars[index].model}
-                            onChange={(e) => handleCarChange(car.id, 'model', e.target.value)}
-                            placeholder={t.inv_model}
-                            className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={cars[index].color}
-                            onChange={(e) => handleCarChange(car.id, 'color', e.target.value)}
-                            placeholder={t.inv_color}
-                            className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={cars[index].chassis_number}
-                            onChange={(e) => handleCarChange(car.id, 'chassis_number', e.target.value)}
-                            placeholder={t.inv_chassis_number}
-                            className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
-                            dir="ltr"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min={1}
-                            value={cars[index].quantity}
-                            onChange={(e) => handleCarChange(car.id, 'quantity', parseInt(e.target.value) || 1)}
-                            className="h-8 text-sm text-center border-0 bg-transparent focus-visible:ring-1 w-16"
-                          />
-                        </TableCell>
-                        <TableCell className="text-center text-sm">{t.inv_car_unit}</TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={cars[index].purchase_price}
-                            onChange={(e) => handleCarChange(car.id, 'purchase_price', e.target.value)}
-                            placeholder="0"
-                            className="h-8 text-sm text-center w-24"
-                            dir="ltr"
-                          />
-                        </TableCell>
-                        <TableCell className="text-center text-sm font-medium">
-                          {formatCurrency(car.baseAmount)}
-                        </TableCell>
-                        <TableCell className="text-center text-sm text-warning">
-                          {taxRate}%
-                        </TableCell>
-                        <TableCell className="text-center text-sm font-bold text-primary">
-                          {formatCurrency(car.total)}
-                        </TableCell>
-                        <TableCell>
+                      <TableRow key={car.id} className="hover:bg-muted/30 border-b">
+                        <TableCell className="text-center text-xs py-1">{index + 1}</TableCell>
+                        <TableCell className="py-1"><Input value={cars[index].name} onChange={(e) => handleCarChange(car.id, 'name', e.target.value)} placeholder={t.inv_description} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" /></TableCell>
+                        <TableCell className="py-1"><Input value={cars[index].model} onChange={(e) => handleCarChange(car.id, 'model', e.target.value)} placeholder={t.inv_model} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" /></TableCell>
+                        <TableCell className="py-1"><Input value={cars[index].color} onChange={(e) => handleCarChange(car.id, 'color', e.target.value)} placeholder={t.inv_color} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" /></TableCell>
+                        <TableCell className="py-1"><Input value={cars[index].chassis_number} onChange={(e) => handleCarChange(car.id, 'chassis_number', e.target.value)} placeholder={t.inv_chassis_number} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" dir="ltr" /></TableCell>
+                        <TableCell className="py-1"><Input type="number" min={1} value={cars[index].quantity} onChange={(e) => handleCarChange(car.id, 'quantity', parseInt(e.target.value) || 1)} className="h-7 text-xs text-center border-0 border-b border-border rounded-none bg-transparent w-16" /></TableCell>
+                        <TableCell className="py-1"><Input type="number" value={cars[index].purchase_price} onChange={(e) => handleCarChange(car.id, 'purchase_price', e.target.value)} placeholder="0" className="h-7 text-xs text-center w-24 border-0 border-b border-border rounded-none bg-transparent" dir="ltr" /></TableCell>
+                        <TableCell className="text-center text-xs py-1 font-medium">{formatCurrency(car.baseAmount)}</TableCell>
+                        <TableCell className="text-center text-xs py-1 font-medium">{formatCurrency(car.total)}</TableCell>
+                        <TableCell className="py-1">
                           {cars.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRemoveCar(car.id)}
-                              className="h-7 w-7 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveCar(car.id)} className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10"><X className="w-3 h-3" /></Button>
                           )}
                         </TableCell>
                       </TableRow>
                     ))}
+                    {Array.from({ length: Math.max(0, 4 - cars.length) }).map((_, i) => (
+                      <TableRow key={`empty-${i}`} className="border-b">
+                        <TableCell className="text-center text-xs py-1 text-muted-foreground">{cars.length + i + 1}</TableCell>
+                        <TableCell className="py-1" colSpan={9}></TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
-                <div className="p-2 border-t">
-                  <Button type="button" variant="outline" size="sm" onClick={handleAddCar} className="gap-2">
-                    <Plus className="w-4 h-4" />
+                <div className="p-2 border-t bg-muted/20">
+                  <Button type="button" variant="outline" size="sm" onClick={handleAddCar} className="gap-1.5 text-xs h-8">
+                    <Plus className="w-3.5 h-3.5" />
                     {t.inv_add_car}
                   </Button>
                 </div>
@@ -954,84 +868,47 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               <>
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="text-right text-xs w-10">#</TableHead>
-                      <TableHead className="text-right text-xs min-w-[200px]">{t.inv_item}</TableHead>
-                      <TableHead className="text-right text-xs min-w-[100px]">{t.inv_barcode}</TableHead>
-                      <TableHead className="text-center text-xs w-16">{t.inv_quantity}</TableHead>
-                      <TableHead className="text-center text-xs w-20">{t.inv_unit}</TableHead>
-                      <TableHead className="text-center text-xs w-24">{t.inv_purchase_price}</TableHead>
-                      <TableHead className="text-center text-xs w-24">{t.inv_subtotal}</TableHead>
-                      <TableHead className="text-center text-xs w-16">VAT</TableHead>
-                      <TableHead className="text-center text-xs w-24">{t.inv_grand_total}</TableHead>
-                      <TableHead className="text-center text-xs w-10"></TableHead>
+                    <TableRow className="bg-primary/10 border-b-2 border-primary/30">
+                      <TableHead className="text-right text-[11px] font-bold w-8 text-primary">#</TableHead>
+                      <TableHead className="text-right text-[11px] font-bold min-w-[180px] text-primary">{t.inv_item}</TableHead>
+                      <TableHead className="text-right text-[11px] font-bold min-w-[80px] text-primary">{t.inv_barcode}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-16 text-primary">{t.inv_quantity}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-16 text-primary">{t.inv_unit}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_purchase_price}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_subtotal}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-28 text-primary">{t.inv_price_includes_tax}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {calculations.inventoryItems.map((item, index) => (
-                      <TableRow key={item.id} className="hover:bg-muted/30">
-                        <TableCell className="text-center text-sm">{index + 1}</TableCell>
-                        <TableCell>
-                          <div className="text-sm font-medium">{item.item_name}</div>
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={purchaseInventoryItems[index]?.barcode || ''}
-                            onChange={(e) => handleInventoryItemChange(item.id, 'barcode', e.target.value)}
-                            placeholder={t.inv_barcode}
-                            className="h-8 text-sm border-0 bg-transparent focus-visible:ring-1"
-                            dir="ltr"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min={1}
-                            value={purchaseInventoryItems[index]?.quantity || 1}
-                            onChange={(e) => handleInventoryItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)}
-                            className="h-8 text-sm text-center border-0 bg-transparent focus-visible:ring-1 w-16"
-                          />
-                        </TableCell>
-                        <TableCell className="text-center text-sm">{item.unit_name}</TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={purchaseInventoryItems[index]?.purchase_price || ''}
-                            onChange={(e) => handleInventoryItemChange(item.id, 'purchase_price', e.target.value)}
-                            placeholder="0"
-                            className="h-8 text-sm text-center w-24"
-                            dir="ltr"
-                          />
-                        </TableCell>
-                        <TableCell className="text-center text-sm font-medium">
-                          {formatCurrency(item.baseAmount)}
-                        </TableCell>
-                        <TableCell className="text-center text-sm text-warning">
-                          {taxRate}%
-                        </TableCell>
-                        <TableCell className="text-center text-sm font-bold text-primary">
-                          {formatCurrency(item.total)}
-                        </TableCell>
-                        <TableCell>
+                      <TableRow key={item.id} className="hover:bg-muted/30 border-b">
+                        <TableCell className="text-center text-xs py-1">{index + 1}</TableCell>
+                        <TableCell className="text-xs py-1 font-medium">{item.item_name}</TableCell>
+                        <TableCell className="py-1"><Input value={purchaseInventoryItems[index]?.barcode || ''} onChange={(e) => handleInventoryItemChange(item.id, 'barcode', e.target.value)} placeholder={t.inv_barcode} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" dir="ltr" /></TableCell>
+                        <TableCell className="py-1"><Input type="number" min={1} value={purchaseInventoryItems[index]?.quantity || 1} onChange={(e) => handleInventoryItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)} className="h-7 text-xs text-center border-0 border-b border-border rounded-none bg-transparent w-16" /></TableCell>
+                        <TableCell className="text-center text-xs py-1">{item.unit_name}</TableCell>
+                        <TableCell className="py-1"><Input type="number" value={purchaseInventoryItems[index]?.purchase_price || ''} onChange={(e) => handleInventoryItemChange(item.id, 'purchase_price', e.target.value)} placeholder="0" className="h-7 text-xs text-center w-24 border-0 border-b border-border rounded-none bg-transparent" dir="ltr" /></TableCell>
+                        <TableCell className="text-center text-xs py-1 font-medium">{formatCurrency(item.baseAmount)}</TableCell>
+                        <TableCell className="text-center text-xs py-1 font-medium">{formatCurrency(item.total)}</TableCell>
+                        <TableCell className="py-1">
                           {purchaseInventoryItems.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRemoveInventoryItem(item.id)}
-                              className="h-7 w-7 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveInventoryItem(item.id)} className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10"><X className="w-3 h-3" /></Button>
                           )}
                         </TableCell>
                       </TableRow>
                     ))}
+                    {Array.from({ length: Math.max(0, 4 - purchaseInventoryItems.length) }).map((_, i) => (
+                      <TableRow key={`empty-${i}`} className="border-b">
+                        <TableCell className="text-center text-xs py-1 text-muted-foreground">{purchaseInventoryItems.length + i + 1}</TableCell>
+                        <TableCell className="py-1" colSpan={8}></TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
-                <div className="p-2 border-t flex gap-2">
+                <div className="p-2 border-t flex gap-2 bg-muted/20">
                   <Select onValueChange={handleSelectExistingItem}>
-                    <SelectTrigger className="h-8 text-sm w-[250px]">
+                    <SelectTrigger className="h-8 text-xs w-[250px]">
                       <SelectValue placeholder={t.inv_select_inventory_item} />
                     </SelectTrigger>
                     <SelectContent>
@@ -1045,8 +922,8 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button type="button" variant="outline" size="sm" onClick={handleAddInventoryItem} className="gap-2">
-                    <Plus className="w-4 h-4" />
+                  <Button type="button" variant="outline" size="sm" onClick={handleAddInventoryItem} className="gap-1.5 text-xs h-8">
+                    <Plus className="w-3.5 h-3.5" />
                     {t.inv_new_item}
                   </Button>
                 </div>
@@ -1054,150 +931,91 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             )}
           </div>
 
-          {/* Totals Section */}
-          <div className="p-4 bg-muted/30 border-t">
-            <div className="grid grid-cols-2 md:grid-cols-7 gap-4 items-center">
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">{t.inv_total}</Label>
-                <div className="text-lg font-bold">{formatCurrency(calculations.subtotal)}</div>
+          {/* ===== Totals Section (Large colored boxes - ERP Style) ===== */}
+          <div className="p-3 border-t bg-card">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {/* الإجمالي - Green box */}
+              <div className="bg-success/15 border-2 border-success/40 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-success">{formatCurrency(calculations.finalTotal)}</div>
+                <div className="text-[10px] text-success font-medium mt-1">{t.inv_net}</div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">{t.inv_quantity_label || 'الكمية'}</Label>
-                <div className="text-lg font-bold">{isCarDealership ? cars.length : purchaseInventoryItems.reduce((sum, i) => sum + i.quantity, 0)}</div>
+              {/* المجموع - Blue box */}
+              <div className="bg-primary/10 border-2 border-primary/30 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-primary">{formatCurrency(calculations.subtotal)}</div>
+                <div className="text-[10px] text-primary font-medium mt-1">{t.inv_total}</div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">{t.inv_discount}</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    value={discount}
-                    onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                    className="h-8 text-sm w-20"
-                    dir="ltr"
-                  />
+              {/* حسم الأقلام - Gray box */}
+              <div className="bg-muted border-2 border-border rounded-lg p-3 text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <Input type="number" value={discount} onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)} className="h-8 text-lg font-bold text-center w-20 border-0 border-b border-border rounded-none bg-transparent" dir="ltr" />
                   <Select value={discountType} onValueChange={(v: 'percentage' | 'amount') => setDiscountType(v)}>
-                    <SelectTrigger className="h-8 text-sm w-16">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="h-7 text-xs w-14 border-0 shadow-none"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="amount">{currency}</SelectItem>
                       <SelectItem value="percentage">%</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="text-[10px] text-muted-foreground font-medium mt-1">{t.inv_discount}</div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">{t.inv_subtotal_label}</Label>
-                <div className="text-lg font-bold">{formatCurrency(calculations.subtotalAfterDiscount)}</div>
+              {/* القيمة المضافة */}
+              <div className="border-2 border-warning/40 rounded-lg p-3 text-center bg-warning/5">
+                <div className="text-2xl font-bold text-warning">{formatCurrency(calculations.totalVAT)}</div>
+                <div className="text-[10px] text-warning font-medium mt-1">{t.inv_tax_label} {taxRate}%</div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">{t.inv_tax_label} {taxRate}%</Label>
-                <div className="text-lg font-bold text-warning">{formatCurrency(calculations.totalVAT)}</div>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">{t.inv_net}</Label>
-                <div className="text-xl font-bold text-primary">{formatCurrency(calculations.finalTotal)}</div>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">{t.inv_rounded_net}</Label>
-                <div className="text-xl font-bold text-primary">{formatCurrency(calculations.roundedTotal)}</div>
+              {/* Rounded Total */}
+              <div className="border-2 border-primary/30 rounded-lg p-3 text-center bg-primary/5">
+                <div className="text-2xl font-bold text-primary">{formatCurrency(calculations.roundedTotal)}</div>
+                <div className="text-[10px] text-primary font-medium mt-1">{t.inv_rounded_net}</div>
               </div>
             </div>
 
             {/* Terms */}
-            <div className="mt-4 pt-4 border-t">
-              <Label className="text-xs text-muted-foreground">{t.inv_terms || 'شروط البيع والدفع'}</Label>
-              <Textarea
-                placeholder={t.inv_terms_placeholder || 'أضف شروط وأحكام...'}
-                className="mt-2 h-12 text-sm resize-none"
-              />
+            <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-2">
+              <Label className="text-xs whitespace-nowrap text-muted-foreground">{t.inv_terms || 'شروط البيع والدفع'}</Label>
+              <Input placeholder={t.inv_terms_placeholder || 'أضف شروط وأحكام...'} className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none" />
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="p-4 bg-muted/50 border-t flex flex-wrap gap-2 justify-between">
-            <div className="flex flex-wrap gap-2">
+          {/* ===== Bottom Action Bar (ERP Desktop Style) ===== */}
+          <div className="p-2 bg-muted/50 border-t flex flex-wrap gap-1.5 justify-between items-center">
+            <div className="flex flex-wrap gap-1.5">
               {isViewingExisting ? (
-                <Button onClick={handleUpdatePurchase} className="gap-2 gradient-primary" disabled={updateCar.isPending}>
-                  <Save className="w-4 h-4" />
+                <Button onClick={handleUpdatePurchase} size="sm" className="gap-1.5 bg-primary hover:bg-primary/90 text-xs h-8 rounded" disabled={updateCar.isPending}>
+                  <Save className="w-3.5 h-3.5" />
                   {updateCar.isPending ? t.inv_saving : t.inv_save_changes}
                 </Button>
               ) : (
-                <Button onClick={handleSubmit} className="gap-2 gradient-primary" disabled={addPurchaseBatch.isPending}>
-                  <Save className="w-4 h-4" />
+                <Button onClick={handleSubmit} size="sm" className="gap-1.5 bg-primary hover:bg-primary/90 text-xs h-8 rounded" disabled={addPurchaseBatch.isPending}>
+                  <Plus className="w-3.5 h-3.5" />
                   {addPurchaseBatch.isPending ? t.inv_saving : t.inv_approve}
                 </Button>
               )}
-              <Button variant="outline" onClick={handleNewInvoice} className="gap-2">
-                <Plus className="w-4 h-4" />
+              <Button variant="outline" onClick={handleNewInvoice} size="sm" className="gap-1.5 text-xs h-8 rounded">
+                <Plus className="w-3.5 h-3.5" />
                 {t.inv_new}
               </Button>
-              <Button 
-                variant="outline" 
-                className="gap-2" 
-                disabled={!isViewingExisting}
-                onClick={handlePrintExisting}
-              >
-                <Printer className="w-4 h-4" />
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8 rounded" disabled={!isViewingExisting} onClick={handlePrintExisting}>
+                <Printer className="w-3.5 h-3.5" />
                 {t.inv_print}
               </Button>
-              <Button variant="outline" className="gap-2" disabled>
-                <FileSpreadsheet className="w-4 h-4" />
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8 rounded" disabled>
+                <FileSpreadsheet className="w-3.5 h-3.5" />
                 {t.inv_import_data || 'استيراد بيانات'}
               </Button>
-              <Button variant="outline" className="gap-2" disabled>
-                <MessageSquare className="w-4 h-4" />
-                SMS
-              </Button>
-              <Button 
-                variant="outline" 
-                className="gap-2 text-warning hover:text-warning" 
-                disabled={!isViewingExisting}
-                onClick={() => setReverseDialogOpen(true)}
-              >
-                <RotateCcw className="w-4 h-4" />
+              <Button variant="outline" size="sm" className="gap-1.5 text-warning hover:text-warning text-xs h-8 rounded" disabled={!isViewingExisting} onClick={() => setReverseDialogOpen(true)}>
+                <RotateCcw className="w-3.5 h-3.5" />
                 {t.inv_return}
               </Button>
-              <Button 
-                variant="outline" 
-                className="gap-2 text-destructive hover:text-destructive" 
-                disabled={!isViewingExisting}
-                onClick={() => setDeleteDialogOpen(true)}
-              >
-                <Trash2 className="w-4 h-4" />
+              <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive text-xs h-8 rounded" disabled={!isViewingExisting} onClick={() => setDeleteDialogOpen(true)}>
+                <Trash2 className="w-3.5 h-3.5" />
                 {t.delete}
               </Button>
             </div>
-
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setActivePage('purchases')}
-                className="gap-2"
-              >
-                <ArrowRight className="w-4 h-4" />
-                {t.inv_exit}
-              </Button>
-              <div className="flex items-center gap-1 border rounded-md overflow-hidden">
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none" onClick={handleNextPurchase} disabled={currentInvoiceIndex >= fiscalYearFilteredBatches.length - 1} title={t.inv_next_invoice}>
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none" onClick={handleLastPurchase} disabled={fiscalYearFilteredBatches.length === 0} title={t.inv_last_invoice}>
-                  <ChevronRight className="w-4 h-4" />
-                  <ChevronRight className="w-4 h-4 -mr-2" />
-                </Button>
-                <span className="px-3 text-sm bg-muted min-w-[50px] text-center">
-                  {fiscalYearFilteredBatches.length > 0 ? currentInvoiceIndex + 1 : 0} / {fiscalYearFilteredBatches.length}
-                </span>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none" onClick={handlePreviousPurchase} disabled={currentInvoiceIndex <= 0} title={t.inv_prev_invoice}>
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none" onClick={handleFirstPurchase} disabled={fiscalYearFilteredBatches.length === 0} title={t.inv_first_invoice}>
-                  <ChevronLeft className="w-4 h-4" />
-                  <ChevronLeft className="w-4 h-4 -ml-2" />
-                </Button>
-              </div>
-            </div>
+            <Button variant="outline" onClick={() => setActivePage('purchases')} size="sm" className="gap-1.5 text-xs h-8 rounded">
+              <X className="w-3.5 h-3.5" />
+              {t.inv_exit}
+            </Button>
           </div>
         </div>
       </div>
