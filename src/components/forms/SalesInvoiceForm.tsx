@@ -1373,7 +1373,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               </Button>
               <Button 
                 variant="outline" 
-                className="gap-2 text-orange-500 hover:text-orange-600" 
+                className="gap-2 text-warning hover:text-warning" 
                 disabled={!isViewingExisting}
                 onClick={() => setReverseDialogOpen(true)}
               >
@@ -1459,7 +1459,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
         <AlertDialogContent dir={dir}>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <RotateCcw className="h-5 w-5 text-orange-500" />
+              <RotateCcw className="h-5 w-5 text-warning" />
               {t.inv_return_invoice}
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
@@ -1476,7 +1476,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleReverseSale}
-              className="bg-orange-600 text-white hover:bg-orange-700"
+              className="bg-warning text-warning-foreground hover:bg-warning/90"
             >
               {reverseSale.isPending ? t.inv_returning : t.inv_return_invoice_btn}
             </AlertDialogAction>
