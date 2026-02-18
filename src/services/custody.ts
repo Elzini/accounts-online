@@ -93,23 +93,42 @@ export async function createEmployeeAdvance(
   return data.id;
 }
 
+// Helper to map hr_employees full_name to name for interface compatibility
+function mapEmployeeName(data: any): any {
+  if (!data) return data;
+  if (Array.isArray(data)) return data.map(mapEmployeeName);
+  const mapped = { ...data };
+  if (mapped.employee && mapped.employee.full_name) {
+    mapped.employee = { id: mapped.employee.id, name: mapped.employee.full_name };
+  }
+  if (mapped.transactions) {
+    mapped.transactions = mapped.transactions.map((t: any) => {
+      if (t.employee && t.employee.full_name) {
+        return { ...t, employee: { id: t.employee.id, name: t.employee.full_name } };
+      }
+      return t;
+    });
+  }
+  return mapped;
+}
+
 // Fetch all custodies with employee info
 export async function fetchCustodies(companyId: string): Promise<Custody[]> {
   const { data, error } = await supabase
     .from('custodies')
-    .select('*, employee:employees(id, name), transactions:custody_transactions(id, custody_id, company_id, transaction_date, description, analysis_category, amount, account_id, journal_entry_id, notes, created_by, created_at, updated_at)')
+    .select('*, employee:hr_employees!custodies_employee_id_fkey(id, full_name), transactions:custody_transactions(id, custody_id, company_id, transaction_date, description, analysis_category, amount, account_id, journal_entry_id, notes, created_by, created_at, updated_at)')
     .eq('company_id', companyId)
     .order('custody_date', { ascending: false });
   
   if (error) throw error;
-  return data as Custody[];
+  return mapEmployeeName(data) as Custody[];
 }
 
 // Fetch single custody with transactions
 export async function fetchCustodyWithTransactions(custodyId: string): Promise<Custody | null> {
   const { data: custody, error: custodyError } = await supabase
     .from('custodies')
-    .select('*, employee:employees(id, name)')
+    .select('*, employee:hr_employees!custodies_employee_id_fkey(id, full_name)')
     .eq('id', custodyId)
     .single();
   
@@ -118,16 +137,16 @@ export async function fetchCustodyWithTransactions(custodyId: string): Promise<C
 
   const { data: transactions, error: transError } = await supabase
     .from('custody_transactions')
-    .select('*, account:account_categories(id, code, name), employee:employees(id, name)')
+    .select('*, account:account_categories(id, code, name), employee:hr_employees!custody_transactions_employee_id_fkey(id, full_name)')
     .eq('custody_id', custodyId)
     .order('transaction_date', { ascending: true });
   
   if (transError) throw transError;
 
-  return {
+  return mapEmployeeName({
     ...custody,
     transactions: transactions || []
-  } as Custody;
+  }) as Custody;
 }
 
 // Create journal entry for custody creation (Dr. Custody Account → Cr. Cash Account)
@@ -238,11 +257,11 @@ export async function addCustody(custody: CustodyInsert): Promise<Custody> {
   const { data, error } = await supabase
     .from('custodies')
     .insert(custody)
-    .select('*, employee:employees(id, name)')
+    .select('*, employee:hr_employees!custodies_employee_id_fkey(id, full_name)')
     .single();
   
   if (error) throw error;
-  return data as Custody;
+  return mapEmployeeName(data) as Custody;
 }
 
 // Update custody
@@ -251,11 +270,11 @@ export async function updateCustody(id: string, updates: Partial<CustodyInsert>)
     .from('custodies')
     .update(updates)
     .eq('id', id)
-    .select('*, employee:employees(id, name)')
+    .select('*, employee:hr_employees!custodies_employee_id_fkey(id, full_name)')
     .single();
   
   if (error) throw error;
-  return data as Custody;
+  return mapEmployeeName(data) as Custody;
 }
 
 // Delete custody
@@ -312,11 +331,11 @@ export async function settleCustody(id: string, settlementDate: string): Promise
       settlement_date: settlementDate
     })
     .eq('id', id)
-    .select('*, employee:employees(id, name)')
+    .select('*, employee:hr_employees!custodies_employee_id_fkey(id, full_name)')
     .single();
   
   if (error) throw error;
-  return data as Custody;
+  return mapEmployeeName(data) as Custody;
 }
 
 // Get carried balance for an employee (from 'carried' status custodies)
