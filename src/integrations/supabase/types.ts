@@ -2781,6 +2781,13 @@ export type Database = {
             foreignKeyName: "custodies_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custodies_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "hr_employees"
             referencedColumns: ["id"]
           },
@@ -2876,6 +2883,13 @@ export type Database = {
             columns: ["custody_id"]
             isOneToOne: false
             referencedRelation: "custodies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_transactions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
           {
@@ -3530,6 +3544,13 @@ export type Database = {
             foreignKeyName: "employee_advances_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_advances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "hr_employees"
             referencedColumns: ["id"]
           },
@@ -3608,13 +3629,6 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -3793,13 +3807,6 @@ export type Database = {
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "employee_insurance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees_safe"
-            referencedColumns: ["id"]
-          },
         ]
       }
       employee_leaves: {
@@ -3863,13 +3870,6 @@ export type Database = {
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "employee_leaves_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees_safe"
-            referencedColumns: ["id"]
-          },
         ]
       }
       employee_rewards: {
@@ -3919,13 +3919,6 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_rewards_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -5398,6 +5391,13 @@ export type Database = {
             foreignKeyName: "hr_evaluations_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_evaluations_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "hr_employees"
             referencedColumns: ["id"]
           },
@@ -5539,6 +5539,13 @@ export type Database = {
             foreignKeyName: "hr_insurance_records_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_insurance_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "hr_employees"
             referencedColumns: ["id"]
           },
@@ -5591,6 +5598,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "hr_training_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_training_attendees_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
           {
@@ -7622,14 +7636,21 @@ export type Database = {
             foreignKeyName: "payroll_items_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
-            referencedRelation: "employees"
+            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "payroll_items_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
-            referencedRelation: "employees_safe"
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_items_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees_safe"
             referencedColumns: ["id"]
           },
           {
@@ -13322,7 +13343,7 @@ export type Database = {
           base_salary?: never
           company_id?: string | null
           created_at?: string | null
-          employee_number?: number | null
+          employee_number?: never
           hire_date?: string | null
           housing_allowance?: never
           iban_encrypted?: never
@@ -13342,7 +13363,7 @@ export type Database = {
           base_salary?: never
           company_id?: string | null
           created_at?: string | null
-          employee_number?: number | null
+          employee_number?: never
           hire_date?: string | null
           housing_allowance?: never
           iban_encrypted?: never
@@ -13358,15 +13379,7 @@ export type Database = {
           transport_allowance?: never
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "employees_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       financing_companies_admin: {
         Row: {

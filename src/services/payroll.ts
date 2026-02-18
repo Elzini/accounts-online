@@ -377,13 +377,14 @@ export async function generatePayrollItems(
 }
 
 // Refresh advances for all items in a payroll (re-calculate from pending advances)
+// Also removes inactive employees from the payroll
 export async function refreshPayrollAdvances(
   payrollId: string,
   companyId: string
 ): Promise<void> {
   const { data: items, error: itemsError } = await supabase
     .from('payroll_items')
-    .select('*')
+    .select('*, employee:employees_safe(*)')
     .eq('payroll_id', payrollId);
   
   if (itemsError) throw itemsError;
@@ -392,6 +393,13 @@ export async function refreshPayrollAdvances(
   const pendingAdvances = await fetchPendingAdvances(companyId);
 
   for (const item of items) {
+    // Remove inactive employees from payroll
+    const employee = item.employee as Record<string, unknown> | null;
+    if (employee && employee.is_active === false) {
+      await supabase.from('payroll_items').delete().eq('id', item.id);
+      continue;
+    }
+
     const empAdvances = pendingAdvances.filter(a => a.employee_id === item.employee_id);
     const totalAdvances = empAdvances.reduce((sum, a) => {
       const deduction = Number(a.monthly_deduction) > 0 
