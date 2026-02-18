@@ -11,7 +11,9 @@ import {
   Car,
   ArrowRight,
   RotateCcw,
-  Package
+  Package,
+  FileSpreadsheet,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -659,7 +661,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       <div className="max-w-full mx-auto animate-fade-in p-2 sm:p-4">
         <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
           {/* Header */}
-          <div className="bg-primary text-primary-foreground p-4 flex items-center justify-between">
+          <div className="bg-primary text-primary-foreground p-4 flex items-center justify-between rounded-t-lg">
             <div className="flex items-center gap-3">
               <FileText className="w-6 h-6" />
               <h1 className="text-xl font-bold">{t.inv_purchase_invoice}</h1>
@@ -1054,10 +1056,14 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
           {/* Totals Section */}
           <div className="p-4 bg-muted/30 border-t">
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-4 items-center">
+            <div className="grid grid-cols-2 md:grid-cols-7 gap-4 items-center">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">{t.inv_total}</Label>
                 <div className="text-lg font-bold">{formatCurrency(calculations.subtotal)}</div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">{t.inv_quantity_label || 'الكمية'}</Label>
+                <div className="text-lg font-bold">{isCarDealership ? cars.length : purchaseInventoryItems.reduce((sum, i) => sum + i.quantity, 0)}</div>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">{t.inv_discount}</Label>
@@ -1097,6 +1103,15 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 <div className="text-xl font-bold text-primary">{formatCurrency(calculations.roundedTotal)}</div>
               </div>
             </div>
+
+            {/* Terms */}
+            <div className="mt-4 pt-4 border-t">
+              <Label className="text-xs text-muted-foreground">{t.inv_terms || 'شروط البيع والدفع'}</Label>
+              <Textarea
+                placeholder={t.inv_terms_placeholder || 'أضف شروط وأحكام...'}
+                className="mt-2 h-12 text-sm resize-none"
+              />
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -1126,9 +1141,17 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 <Printer className="w-4 h-4" />
                 {t.inv_print}
               </Button>
+              <Button variant="outline" className="gap-2" disabled>
+                <FileSpreadsheet className="w-4 h-4" />
+                {t.inv_import_data || 'استيراد بيانات'}
+              </Button>
+              <Button variant="outline" className="gap-2" disabled>
+                <MessageSquare className="w-4 h-4" />
+                SMS
+              </Button>
               <Button 
                 variant="outline" 
-                className="gap-2 text-orange-500 hover:text-orange-600" 
+                className="gap-2 text-warning hover:text-warning" 
                 disabled={!isViewingExisting}
                 onClick={() => setReverseDialogOpen(true)}
               >
@@ -1214,7 +1237,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         <AlertDialogContent dir={dir}>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <RotateCcw className="h-5 w-5 text-orange-500" />
+              <RotateCcw className="h-5 w-5 text-warning" />
               {t.inv_return_purchase_invoice}
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
@@ -1231,7 +1254,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleReversePurchase}
-              className="bg-orange-600 text-white hover:bg-orange-700"
+              className="bg-warning text-warning-foreground hover:bg-warning/90"
             >
               {deleteCar.isPending ? t.inv_returning : t.inv_return_invoice_btn}
             </AlertDialogAction>
