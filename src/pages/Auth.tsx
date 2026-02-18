@@ -275,7 +275,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-2xl font-bold text-[hsl(215,40%,20%)]">{pageTitle}</h1>
-              <Link to="/" className="text-sm text-[hsl(210,70%,50%)] hover:underline">
+              <Link to="/auth" className="text-sm text-[hsl(210,70%,50%)] hover:underline">
                 {isRtl ? 'الرئيسية' : 'Home'}
               </Link>
             </div>

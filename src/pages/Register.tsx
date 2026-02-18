@@ -185,7 +185,7 @@ export default function Register() {
               <h1 className="text-2xl font-bold text-[hsl(215,40%,20%)]">
                 {globalSettings.register_title || (isRtl ? 'إنشاء حساب' : 'Create Account')}
               </h1>
-              <Link to="/" className="text-sm text-[hsl(210,70%,50%)] hover:underline">
+              <Link to="/auth" className="text-sm text-[hsl(210,70%,50%)] hover:underline">
                 {isRtl ? 'الرئيسية' : 'Home'}
               </Link>
             </div>
