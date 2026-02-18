@@ -54,7 +54,7 @@ function CompanyRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/auth/company" replace />;
   }
 
   // Super admin without a company should go to /companies
