@@ -2781,14 +2781,14 @@ export type Database = {
             foreignKeyName: "custodies_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
-            referencedRelation: "employees"
+            referencedRelation: "hr_employees"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "custodies_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
-            referencedRelation: "employees_safe"
+            referencedRelation: "hr_employees_safe"
             referencedColumns: ["id"]
           },
           {
@@ -2882,14 +2882,14 @@ export type Database = {
             foreignKeyName: "custody_transactions_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
-            referencedRelation: "employees"
+            referencedRelation: "hr_employees"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "custody_transactions_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
-            referencedRelation: "employees_safe"
+            referencedRelation: "hr_employees_safe"
             referencedColumns: ["id"]
           },
           {
@@ -3530,14 +3530,14 @@ export type Database = {
             foreignKeyName: "employee_advances_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
-            referencedRelation: "employees"
+            referencedRelation: "hr_employees"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "employee_advances_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
-            referencedRelation: "employees_safe"
+            referencedRelation: "hr_employees_safe"
             referencedColumns: ["id"]
           },
         ]
