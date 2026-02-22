@@ -475,8 +475,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
       try {
         if (!companyId) throw new Error(t.inv_toast_company_not_found);
-        const invoiceNumber = `INV-${Date.now()}`;
-        const finalInvoiceNumber = invoiceData.invoice_number || invoiceNumber;
+        const finalInvoiceNumber = invoiceData.invoice_number || nextInvoiceNumber;
 
         // Check for duplicate invoice number
         const { data: existing } = await supabase
