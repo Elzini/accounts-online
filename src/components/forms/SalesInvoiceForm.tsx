@@ -168,6 +168,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     invoice_number: '',
     customer_id: '',
     sale_date: new Date().toISOString().split('T')[0],
+    issue_time: new Date().toTimeString().slice(0, 5),
     payment_account_id: '',
     warehouse: 'main',
     seller_name: '',
@@ -499,7 +500,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             invoice_type: 'sales',
             customer_id: invoiceData.customer_id,
             customer_name: selectedCustomer?.name || '',
-            invoice_date: invoiceData.sale_date,
+            invoice_date: `${invoiceData.sale_date}T${invoiceData.issue_time || '00:00'}:00`,
             subtotal: calculations.subtotal,
             taxable_amount: calculations.subtotalAfterDiscount,
             vat_rate: taxRate,
@@ -560,6 +561,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       invoice_number: '',
       customer_id: '',
       sale_date: new Date().toISOString().split('T')[0],
+      issue_time: new Date().toTimeString().slice(0, 5),
       payment_account_id: accounts.find(a => a.code === '1101')?.id || '',
       warehouse: 'main',
       seller_name: '',
@@ -635,7 +637,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     setInvoiceData({
       invoice_number: isInvoiceRecord ? (sale.invoice_number || '') : (sale.sale_number || ''),
       customer_id: sale.customer_id || '',
-      sale_date: isInvoiceRecord ? (sale.invoice_date || '') : (sale.sale_date || ''),
+      sale_date: isInvoiceRecord ? (sale.invoice_date?.split('T')[0] || '') : (sale.sale_date || ''),
+      issue_time: isInvoiceRecord && sale.invoice_date?.includes('T') ? sale.invoice_date.split('T')[1]?.slice(0, 5) || new Date(sale.created_at).toTimeString().slice(0, 5) : new Date(sale.created_at).toTimeString().slice(0, 5),
       payment_account_id: sale.payment_account_id || '',
       warehouse: 'main',
       seller_name: sale.seller_name || '',
@@ -765,7 +768,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           .update({
             customer_id: invoiceData.customer_id,
             customer_name: selectedCustomer?.name || '',
-            invoice_date: invoiceData.sale_date,
+            invoice_date: `${invoiceData.sale_date}T${invoiceData.issue_time || '00:00'}:00`,
             subtotal: calculations.subtotal,
             taxable_amount: calculations.subtotalAfterDiscount,
             vat_rate: taxRate,
@@ -1442,8 +1445,21 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               </div>
               <div className="space-y-1">
                 <Label className="text-[10px] text-muted-foreground">{t.inv_issue_time || 'توقيت إصدار الفاتورة'}</Label>
-                <div className="text-xs font-mono font-medium bg-destructive/10 border border-destructive/20 rounded px-2 py-1.5 text-center" dir="ltr">
-                  {new Date().toLocaleString(locale)}
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="date"
+                    value={invoiceData.sale_date}
+                    onChange={(e) => setInvoiceData({ ...invoiceData, sale_date: e.target.value })}
+                    className="h-7 text-[11px] font-mono border-border rounded px-1.5 w-[120px]"
+                    disabled={isApproved}
+                  />
+                  <Input
+                    type="time"
+                    value={invoiceData.issue_time}
+                    onChange={(e) => setInvoiceData({ ...invoiceData, issue_time: e.target.value })}
+                    className="h-7 text-[11px] font-mono border-border rounded px-1.5 w-[90px]"
+                    disabled={isApproved}
+                  />
                 </div>
               </div>
               <div className="space-y-1">
