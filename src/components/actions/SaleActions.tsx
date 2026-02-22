@@ -394,6 +394,8 @@ export function SaleActions({ sale }: SaleActionsProps) {
     companyLogoUrl: invoiceLogoUrl,
     invoiceSettings,
     voucherNumber: sale.sale_number,
+    salesmanName: sale.seller_name || '',
+    branchName: '',
   };
 
   return (

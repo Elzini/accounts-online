@@ -51,6 +51,8 @@ interface InvoiceData {
   taxSettings?: TaxSettings | null;
   companyLogoUrl?: string | null;
   invoiceSettings?: InvoiceSettings | null;
+  salesmanName?: string;
+  branchName?: string;
 }
 
 interface InvoicePreviewDialogProps {
@@ -141,6 +143,8 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     taxSettings: data.taxSettings, companyLogoUrl: data.companyLogoUrl, uuid: invoiceUUID,
     sellerCommercialRegister: data.taxSettings?.commercial_register,
     voucherNumber: (data as any).voucherNumber,
+    salesmanName: data.salesmanName || '',
+    branchName: data.branchName || '',
   };
 
   const renderTemplate = () => {
