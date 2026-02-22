@@ -776,7 +776,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       taxAmount: calculations.totalVAT,
       total: calculations.finalTotal,
       taxSettings: taxSettings,
-      companyLogoUrl: company?.logo_url,
+      companyLogoUrl: (company as any)?.invoice_logo_url || company?.logo_url,
     };
   }, [savedSaleData, invoiceData, selectedCustomer, calculations, taxSettings, company, taxRate, nextInvoiceNumber]);
 

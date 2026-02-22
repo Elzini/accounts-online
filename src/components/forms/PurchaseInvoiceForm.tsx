@@ -669,7 +669,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       taxAmount: calculations.totalVAT,
       total: calculations.finalTotal,
       taxSettings: taxSettings,
-      companyLogoUrl: company?.logo_url,
+      companyLogoUrl: (company as any)?.invoice_logo_url || company?.logo_url,
     };
   }, [savedBatchData, invoiceData, selectedSupplier, calculations, taxSettings, company, taxRate, nextInvoiceNumber]);
 
