@@ -953,6 +953,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       total: calculations.finalTotal || Number(savedSaleData?.total) || 0,
       taxSettings: taxSettings,
       companyLogoUrl: (company as any)?.invoice_logo_url || company?.logo_url,
+      salesmanName: invoiceData.seller_name || savedSaleData?.seller_name || '',
+      branchName: '',
     };
   }, [savedSaleData, invoiceData, selectedCustomer, calculations, taxSettings, company, taxRate, nextInvoiceNumber]);
 
