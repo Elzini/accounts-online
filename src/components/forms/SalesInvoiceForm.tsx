@@ -460,7 +460,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           .insert({
             company_id: companyId,
             invoice_number: invoiceData.invoice_number || invoiceNumber,
-            invoice_type: 'sale',
+            invoice_type: 'sales',
             customer_id: invoiceData.customer_id,
             customer_name: selectedCustomer?.name || '',
             invoice_date: invoiceData.sale_date,
@@ -755,14 +755,23 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       buyerPhone: selectedCustomer?.phone || '',
       buyerAddress: selectedCustomer?.address || '',
       buyerTaxNumber: selectedCustomer?.registration_number || '',
-      items: calculations.items.map(car => ({
-        description: `${car.car_name} ${car.model || ''} - ${car.chassis_number}`,
-        quantity: car.quantity,
-        unitPrice: car.baseAmount / car.quantity,
-        taxRate: taxRate,
-        taxAmount: car.vatAmount,
-        total: car.total,
-      })),
+      items: isCarDealership
+        ? calculations.items.map(car => ({
+            description: `${car.car_name} ${car.model || ''} - ${car.chassis_number}`,
+            quantity: car.quantity,
+            unitPrice: car.baseAmount / car.quantity,
+            taxRate: taxRate,
+            taxAmount: car.vatAmount,
+            total: car.total,
+          }))
+        : calculations.inventoryItems.map(item => ({
+            description: item.item_name || '',
+            quantity: item.quantity,
+            unitPrice: item.baseAmount / item.quantity,
+            taxRate: taxRate,
+            taxAmount: item.vatAmount,
+            total: item.total,
+          })),
       subtotal: calculations.subtotal,
       taxAmount: calculations.totalVAT,
       total: calculations.finalTotal,
