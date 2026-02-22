@@ -750,41 +750,106 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       return;
     }
 
-    if (selectedCars.length === 0) {
-      toast.error(t.inv_toast_add_car);
-      return;
-    }
+    // Check if this is an invoice record (non-car company)
+    const isInvoiceRecord = existingInvoices.some(inv => inv.id === currentSaleId);
 
-    const invalidCar = selectedCars.find(car => !car.sale_price || parseFloat(car.sale_price) <= 0);
-    if (invalidCar) {
-      toast.error(t.inv_toast_enter_price);
-      return;
-    }
+    if (isInvoiceRecord) {
+      // Update invoice in invoices table
+      if (selectedInventoryItems.length === 0) {
+        toast.error(t.inv_toast_add_item);
+        return;
+      }
+      try {
+        const { error: invoiceError } = await supabase
+          .from('invoices')
+          .update({
+            customer_id: invoiceData.customer_id,
+            customer_name: selectedCustomer?.name || '',
+            invoice_date: invoiceData.sale_date,
+            subtotal: calculations.subtotal,
+            taxable_amount: calculations.subtotalAfterDiscount,
+            vat_rate: taxRate,
+            vat_amount: calculations.totalVAT,
+            total: calculations.finalTotal,
+            discount_amount: calculations.discountAmount,
+            amount_paid: paidAmount,
+            payment_status: paidAmount >= calculations.finalTotal ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid',
+            notes: invoiceData.notes || null,
+          })
+          .eq('id', currentSaleId);
+        if (invoiceError) throw invoiceError;
 
-    try {
-      const items = selectedCars.map((car, index) => ({
-        car_id: car.car_id,
-        sale_price: calculations.items[index].total,
-        purchase_price: car.purchase_price,
-      }));
+        // Delete old items and insert new ones
+        await supabase.from('invoice_items').delete().eq('invoice_id', currentSaleId);
+        const invoiceItems = selectedInventoryItems.map((item, index) => ({
+          invoice_id: currentSaleId,
+          item_description: item.item_name,
+          item_code: item.barcode || '',
+          quantity: item.quantity,
+          unit: item.unit_name,
+          unit_price: calculations.inventoryItems[index].baseAmount / item.quantity,
+          taxable_amount: calculations.inventoryItems[index].baseAmount,
+          vat_rate: taxRate,
+          vat_amount: calculations.inventoryItems[index].vatAmount,
+          total: calculations.inventoryItems[index].total,
+          inventory_item_id: item.item_id,
+        }));
+        const { error: itemsError } = await supabase.from('invoice_items').insert(invoiceItems);
+        if (itemsError) throw itemsError;
 
-      await updateSaleWithItems.mutateAsync({
-        saleId: currentSaleId,
-        saleData: {
-          sale_price: calculations.finalTotal,
-          seller_name: invoiceData.seller_name || null,
-          commission: parseFloat(invoiceData.commission) || 0,
-          other_expenses: parseFloat(invoiceData.other_expenses) || 0,
-          sale_date: invoiceData.sale_date,
-          profit: calculations.profit,
-          payment_account_id: invoiceData.payment_account_id || null,
-        },
-        items,
-      });
-      toast.success(t.inv_toast_update_success);
-    } catch (error) {
-      console.error('Update sale error:', error);
-      toast.error(t.inv_toast_update_error);
+        // Refresh invoices list
+        const { data: updatedInvoices } = await supabase
+          .from('invoices')
+          .select('*, invoice_items(*)')
+          .eq('company_id', companyId)
+          .eq('invoice_type', 'sales')
+          .order('created_at', { ascending: true });
+        setExistingInvoices(updatedInvoices || []);
+
+        toast.success(t.inv_toast_update_success);
+        setIsEditing(false);
+      } catch (error) {
+        console.error('Update invoice error:', error);
+        toast.error(t.inv_toast_update_error);
+      }
+    } else {
+      // Update sale (car dealership)
+      if (selectedCars.length === 0) {
+        toast.error(t.inv_toast_add_car);
+        return;
+      }
+
+      const invalidCar = selectedCars.find(car => !car.sale_price || parseFloat(car.sale_price) <= 0);
+      if (invalidCar) {
+        toast.error(t.inv_toast_enter_price);
+        return;
+      }
+
+      try {
+        const items = selectedCars.map((car, index) => ({
+          car_id: car.car_id,
+          sale_price: calculations.items[index].total,
+          purchase_price: car.purchase_price,
+        }));
+
+        await updateSaleWithItems.mutateAsync({
+          saleId: currentSaleId,
+          saleData: {
+            sale_price: calculations.finalTotal,
+            seller_name: invoiceData.seller_name || null,
+            commission: parseFloat(invoiceData.commission) || 0,
+            other_expenses: parseFloat(invoiceData.other_expenses) || 0,
+            sale_date: invoiceData.sale_date,
+            profit: calculations.profit,
+            payment_account_id: invoiceData.payment_account_id || null,
+          },
+          items,
+        });
+        toast.success(t.inv_toast_update_success);
+      } catch (error) {
+        console.error('Update sale error:', error);
+        toast.error(t.inv_toast_update_error);
+      }
     }
   };
 
