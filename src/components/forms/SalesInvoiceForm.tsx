@@ -140,7 +140,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
   // Generate next invoice number
   const nextInvoiceNumber = useMemo(() => {
-    return existingSales.length + 1;
+    const year = new Date().getFullYear();
+    const nextNum = existingSales.length + 1;
+    return `INV-${year}-${String(nextNum).padStart(3, '0')}`;
   }, [existingSales]);
 
   const [invoiceData, setInvoiceData] = useState({
@@ -454,12 +456,27 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       try {
         if (!companyId) throw new Error(t.inv_toast_company_not_found);
         const invoiceNumber = `INV-${Date.now()}`;
+        const finalInvoiceNumber = invoiceData.invoice_number || invoiceNumber;
+
+        // Check for duplicate invoice number
+        const { data: existing } = await supabase
+          .from('invoices')
+          .select('id')
+          .eq('company_id', companyId)
+          .eq('invoice_number', finalInvoiceNumber)
+          .eq('invoice_type', 'sales')
+          .maybeSingle();
+
+        if (existing) {
+          toast.error(language === 'ar' ? 'رقم الفاتورة موجود مسبقاً، الرجاء استخدام رقم آخر' : 'Invoice number already exists');
+          return;
+        }
 
         const { data: invoice, error: invoiceError } = await supabase
           .from('invoices')
           .insert({
             company_id: companyId,
-            invoice_number: invoiceData.invoice_number || invoiceNumber,
+            invoice_number: finalInvoiceNumber,
             invoice_type: 'sales',
             customer_id: invoiceData.customer_id,
             customer_name: selectedCustomer?.name || '',
