@@ -894,13 +894,16 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
   const handlePrintExisting = () => {
     if (!currentSaleId) return;
-    const sale = salesWithItems.find(s => s.id === currentSaleId) || existingSales.find(s => s.id === currentSaleId);
+    const sale = salesWithItems.find(s => s.id === currentSaleId) 
+      || existingSales.find(s => s.id === currentSaleId)
+      || existingInvoices.find(s => s.id === currentSaleId);
     if (!sale) return;
 
     setSavedSaleData({
       ...sale,
       customer: selectedCustomer,
       cars: selectedCars,
+      inventoryItems: selectedInventoryItems,
     });
     setInvoiceOpen(true);
   };
@@ -928,17 +931,26 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             taxAmount: car.vatAmount,
             total: car.total,
           }))
-        : calculations.inventoryItems.map(item => ({
-            description: item.item_name || '',
-            quantity: item.quantity,
-            unitPrice: item.baseAmount / item.quantity,
-            taxRate: taxRate,
-            taxAmount: item.vatAmount,
-            total: item.total,
-          })),
-      subtotal: calculations.subtotal,
-      taxAmount: calculations.totalVAT,
-      total: calculations.finalTotal,
+        : (calculations.inventoryItems.length > 0
+          ? calculations.inventoryItems.map(item => ({
+              description: item.item_name || '',
+              quantity: item.quantity,
+              unitPrice: item.baseAmount / item.quantity,
+              taxRate: taxRate,
+              taxAmount: item.vatAmount,
+              total: item.total,
+            }))
+          : (savedSaleData?.invoice_items || []).map((item: any) => ({
+              description: item.item_description || '',
+              quantity: Number(item.quantity) || 1,
+              unitPrice: Number(item.unit_price) || 0,
+              taxRate: Number(item.vat_rate) || taxRate,
+              taxAmount: Number(item.vat_amount) || 0,
+              total: Number(item.total) || 0,
+            }))),
+      subtotal: calculations.subtotal || Number(savedSaleData?.subtotal) || 0,
+      taxAmount: calculations.totalVAT || Number(savedSaleData?.vat_amount) || 0,
+      total: calculations.finalTotal || Number(savedSaleData?.total) || 0,
       taxSettings: taxSettings,
       companyLogoUrl: (company as any)?.invoice_logo_url || company?.logo_url,
     };
