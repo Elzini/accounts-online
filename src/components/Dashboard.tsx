@@ -1,10 +1,11 @@
 import { Car, ShoppingCart, DollarSign, TrendingUp, Package, BarChart3, RefreshCw, HardHat, Building2 } from 'lucide-react';
+import { GettingStartedDashboard } from './dashboard/GettingStartedDashboard';
 import { AnimatedDashboardBackground } from './dashboard/AnimatedDashboardBackground';
 import { StatCard } from './StatCard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivePage } from '@/types';
-import { useMonthlyChartData, useStats, useSales, useCars, useAllTimeStats } from '@/hooks/useDatabase';
+import { useMonthlyChartData, useStats, useSales, useCars, useAllTimeStats, useCustomers, useSuppliers } from '@/hooks/useDatabase';
 import { useAdvancedAnalytics } from '@/hooks/useAnalytics';
 import { useAppSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,6 +17,8 @@ import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { useFiscalYears } from '@/hooks/useFiscalYears';
+import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { useDashboardConfig, useSaveDashboardConfig } from '@/hooks/useSystemControl';
 import { CardConfig, DEFAULT_STAT_CARDS } from './dashboard/DashboardCustomizer';
 
@@ -79,6 +82,11 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
   const { data: allCars = [] } = useCars();
   const { data: allTimeStats } = useAllTimeStats();
   const { selectedFiscalYear } = useFiscalYear();
+  const { data: fiscalYears = [] } = useFiscalYears();
+  const { data: taxSettings } = useTaxSettings();
+  const { data: accountsList = [] } = useAccounts();
+  const { data: customers = [] } = useCustomers();
+  const { data: suppliers = [] } = useSuppliers();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { data: expenseBreakdown } = useMonthlyExpenseBreakdown();
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -501,6 +509,41 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     return Math.round((now.getDate() / daysInMonth) * 100);
   }, []);
+
+  // Detect if the system is freshly set up (no meaningful data)
+  const isNewSystem = useMemo(() => {
+    const hasNoSales = !allSales || allSales.length === 0;
+    const hasNoPurchases = !allCars || allCars.length === 0;
+    const hasNoCustomers = !customers || customers.length === 0;
+    const hasNoSuppliers = !suppliers || suppliers.length === 0;
+    // Show getting started if at least 4 of these are empty
+    const emptyCount = [hasNoSales, hasNoPurchases, hasNoCustomers, hasNoSuppliers, fiscalYears.length === 0, accountsList.length === 0].filter(Boolean).length;
+    return emptyCount >= 4;
+  }, [allSales, allCars, customers, suppliers, fiscalYears, accountsList]);
+
+  if (isNewSystem && !isLoading) {
+    return (
+      <div className="relative space-y-4 sm:space-y-6 md:space-y-8">
+        <AnimatedDashboardBackground />
+        <WelcomeHeader
+          amountDisplayMode={amountDisplayMode}
+          onAmountDisplayModeChange={setAmountDisplayMode}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+        />
+        <GettingStartedDashboard
+          setActivePage={setActivePage}
+          hasFiscalYear={fiscalYears.length > 0}
+          hasTaxSettings={!!taxSettings?.is_active}
+          hasAccounts={accountsList.length > 0}
+          hasCustomers={customers.length > 0}
+          hasSuppliers={suppliers.length > 0}
+          hasSales={allSales.length > 0}
+          hasPurchases={allCars.length > 0}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="relative space-y-4 sm:space-y-6 md:space-y-8">
