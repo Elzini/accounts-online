@@ -912,7 +912,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
     return {
       invoiceNumber: savedSaleData.sale_number || invoiceData.invoice_number || String(nextInvoiceNumber),
-      invoiceDate: invoiceData.sale_date,
+      invoiceDate: `${invoiceData.sale_date}T${invoiceData.issue_time || '00:00'}:00`,
       invoiceType: 'sale' as const,
       sellerName: taxSettings?.company_name_ar || company?.name || '',
       sellerTaxNumber: taxSettings?.tax_number || '',
