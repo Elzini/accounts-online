@@ -10,11 +10,12 @@ import { useTaxSettings } from '@/hooks/useAccounting';
 import { SaleActions } from '@/components/actions/SaleActions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useRecalculateCompanyProfits } from '@/hooks/useProfitRecalculation';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SalesTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -22,7 +23,8 @@ interface SalesTableProps {
 
 export function SalesTable({ setActivePage }: SalesTableProps) {
   const queryClient = useQueryClient();
-  const { companyId } = useCompany();
+  const { companyId, company } = useCompany();
+  const isCarDealership = company?.company_type === 'car_dealership';
   const { data: sales = [], isLoading, refetch } = useSales();
   const { data: taxSettings } = useTaxSettings();
   const { selectedFiscalYear } = useFiscalYear();
@@ -32,9 +34,26 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
   const isMobile = useIsMobile();
   const { t, language } = useLanguage();
 
+  // Fetch invoices for non-car companies
+  const { data: invoices = [], isLoading: invoicesLoading } = useQuery({
+    queryKey: ['company-invoices', companyId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('invoices')
+        .select('*')
+        .eq('company_id', companyId!)
+        .eq('invoice_type', 'sales')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId && !isCarDealership,
+  });
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await queryClient.invalidateQueries({ queryKey: ['sales', companyId] });
+    await queryClient.invalidateQueries({ queryKey: ['company-invoices', companyId] });
     await queryClient.invalidateQueries({ queryKey: ['stats', companyId] });
     await queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
     await queryClient.invalidateQueries({ queryKey: ['cars', companyId] });
@@ -86,11 +105,30 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
     }
   };
 
+  // For non-car companies, map invoices to a unified format
+  const unifiedData = useMemo(() => {
+    if (isCarDealership) return sales;
+    return invoices.map((inv: any) => ({
+      id: inv.id,
+      sale_number: inv.invoice_number,
+      sale_price: inv.subtotal || 0,
+      sale_date: inv.invoice_date || inv.created_at,
+      profit: 0,
+      customer: { name: inv.customer_name },
+      car: null,
+      _isInvoice: true,
+      _taxAmount: inv.vat_amount || 0,
+      _total: inv.total || 0,
+      _status: inv.status,
+      _paymentMethod: inv.payment_method,
+    }));
+  }, [isCarDealership, sales, invoices]);
+
   const filteredSales = useMemo(() => {
-    let result = sales;
+    let result = unifiedData;
     
     if (selectedFiscalYear) {
-      result = result.filter(sale => {
+      result = result.filter((sale: any) => {
         const saleDate = new Date(sale.sale_date);
         const startDate = new Date(selectedFiscalYear.start_date);
         const endDate = new Date(selectedFiscalYear.end_date);
@@ -100,20 +138,31 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
     
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(sale =>
+      result = result.filter((sale: any) =>
         sale.customer?.name?.toLowerCase().includes(query) ||
         sale.car?.name?.toLowerCase().includes(query) ||
         sale.car?.model?.toLowerCase().includes(query) ||
-        sale.sale_number.toString().includes(query)
+        String(sale.sale_number).toLowerCase().includes(query)
       );
     }
     
     return result;
-  }, [sales, searchQuery, selectedFiscalYear]);
+  }, [unifiedData, searchQuery, selectedFiscalYear]);
 
   const totals = useMemo(() => {
+    if (!isCarDealership) {
+      return filteredSales.reduce(
+        (acc: any, inv: any) => ({
+          baseAmount: acc.baseAmount + Number(inv.sale_price || 0),
+          taxAmount: acc.taxAmount + Number(inv._taxAmount || 0),
+          totalWithTax: acc.totalWithTax + Number(inv._total || 0),
+          profit: 0,
+        }),
+        { baseAmount: 0, taxAmount: 0, totalWithTax: 0, profit: 0 }
+      );
+    }
     return filteredSales.reduce(
-      (acc, sale) => {
+      (acc: any, sale: any) => {
         const details = calculateTaxDetails(Number(sale.sale_price));
         return {
           baseAmount: acc.baseAmount + details.baseAmount,
@@ -124,9 +173,9 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
       },
       { baseAmount: 0, taxAmount: 0, totalWithTax: 0, profit: 0 }
     );
-  }, [filteredSales, taxRate]);
+  }, [filteredSales, taxRate, isCarDealership]);
 
-  if (isLoading) {
+  if (isLoading || invoicesLoading) {
     return (
       <div className="flex items-center justify-center p-12">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -263,7 +312,7 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
             </div>
           )}
 
-          {sales.length === 0 && (
+          {unifiedData.length === 0 && (
             <div className="p-8 text-center bg-card rounded-xl border">
               <p className="text-muted-foreground mb-4">{t.no_sales_yet}</p>
               <Button 
@@ -275,7 +324,7 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
             </div>
           )}
 
-          {sales.length > 0 && filteredSales.length === 0 && (
+          {unifiedData.length > 0 && filteredSales.length === 0 && (
             <div className="p-8 text-center bg-card rounded-xl border">
               <p className="text-muted-foreground">{t.no_search_results}</p>
             </div>
@@ -289,24 +338,27 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
               <TableRow className="bg-muted/50">
                 <TableHead className="text-right font-bold">{t.th_sale_number}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_customer}</TableHead>
-                <TableHead className="text-right font-bold">{t.th_car}</TableHead>
+                {isCarDealership && <TableHead className="text-right font-bold">{t.th_car}</TableHead>}
                 <TableHead className="text-right font-bold">{t.th_base_amount}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_tax} ({taxRate}%)</TableHead>
                 <TableHead className="text-right font-bold">{t.th_total_with_tax}</TableHead>
-                <TableHead className="text-right font-bold">{t.th_profit}</TableHead>
+                {isCarDealership && <TableHead className="text-right font-bold">{t.th_profit}</TableHead>}
                 <TableHead className="text-right font-bold">{t.th_receipt_method}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_sale_date}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-            {filteredSales.map((sale) => {
-                const taxDetails = calculateTaxDetails(Number(sale.sale_price));
-                const saleItems = (sale as any).sale_items || [];
+            {filteredSales.map((sale: any) => {
+                const isInvoice = sale._isInvoice;
+                const taxDetails = isInvoice 
+                  ? { baseAmount: Number(sale.sale_price), taxAmount: Number(sale._taxAmount), totalWithTax: Number(sale._total) }
+                  : calculateTaxDetails(Number(sale.sale_price));
+                const saleItems = sale.sale_items || [];
                 const isMultiCar = saleItems.length > 1;
                 const carCount = saleItems.length > 0 ? saleItems.length : 1;
-                const paymentAccount = (sale as any).payment_account;
-                const paymentInfo = getPaymentMethodInfo(paymentAccount?.code);
+                const paymentAccount = sale.payment_account;
+                const paymentInfo = getPaymentMethodInfo(isInvoice ? sale._paymentMethod : paymentAccount?.code);
                 const PaymentIcon = paymentInfo.icon;
                 
                 return (
@@ -315,12 +367,12 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-1.5">
                         <Hash className="w-3.5 h-3.5 text-primary" />
-                        <span className="font-bold text-primary">INV-{sale.sale_number}</span>
+                        <span className="font-bold text-primary">{isInvoice ? sale.sale_number : `INV-${sale.sale_number}`}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">{t.th_voucher || 'سند'}: {sale.sale_number}</p>
                     </div>
                   </TableCell>
                   <TableCell className="font-semibold">{sale.customer?.name || '-'}</TableCell>
+                  {isCarDealership && (
                   <TableCell>
                     {isMultiCar ? (
                       <div>
@@ -338,9 +390,11 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
                       </div>
                     )}
                   </TableCell>
+                  )}
                   <TableCell className="font-medium">{formatCurrency(taxDetails.baseAmount)} {currency}</TableCell>
                   <TableCell className="text-orange-600 font-medium">{formatCurrency(taxDetails.taxAmount)} {currency}</TableCell>
                   <TableCell className="font-semibold text-primary">{formatCurrency(taxDetails.totalWithTax)} {currency}</TableCell>
+                  {isCarDealership && (
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <TrendingUp className={`w-4 h-4 ${Number(sale.profit) >= 0 ? 'text-success' : 'text-destructive'}`} />
@@ -349,6 +403,7 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
                       </span>
                     </div>
                   </TableCell>
+                  )}
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <PaymentIcon className={`w-4 h-4 ${paymentInfo.color}`} />
@@ -362,7 +417,7 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <SaleActions sale={sale} />
+                    {!isInvoice && <SaleActions sale={sale} />}
                   </TableCell>
                 </TableRow>
               );})}
