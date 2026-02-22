@@ -628,7 +628,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const loadSaleData = async (sale: any) => {
     setIsViewingExisting(true);
     setCurrentSaleId(sale.id);
-    setCurrentSaleStatus(sale.status === 'approved' ? 'approved' : 'draft');
+    setCurrentSaleStatus((sale.status === 'approved' || sale.status === 'issued') ? 'approved' : 'draft');
     setIsEditing(false);
 
     // Check if this is an invoice record (from invoices table) vs a sale record
@@ -867,7 +867,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
         const { error } = await supabase
           .from('invoices')
           .update({ 
-            status: 'approved',
+            status: 'issued',
           })
           .eq('id', currentSaleId);
         if (error) throw error;
