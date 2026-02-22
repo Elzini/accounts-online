@@ -38,6 +38,13 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
     rate: 15,
     apply_to_sales: true,
     apply_to_purchases: true,
+    company_name_ar: company?.name || '',
+    tax_number: '',
+    national_address: '',
+    city: '',
+    postal_code: '',
+    building_number: '',
+    commercial_register: '',
   });
   
   const createFiscalYear = useCreateFiscalYear();
@@ -89,6 +96,13 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
         is_active: taxData.enabled,
         apply_to_sales: taxData.apply_to_sales,
         apply_to_purchases: taxData.apply_to_purchases,
+        company_name_ar: taxData.company_name_ar,
+        tax_number: taxData.tax_number,
+        national_address: taxData.national_address,
+        city: taxData.city,
+        postal_code: taxData.postal_code,
+        building_number: taxData.building_number,
+        commercial_register: taxData.commercial_register,
       });
       setCompletedSteps(prev => new Set([...prev, 'tax']));
       toast.success('✅ تم حفظ إعدادات الضريبة');
@@ -252,6 +266,83 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 <CardDescription>تفعيل ضريبة القيمة المضافة حسب نظام هيئة الزكاة والضريبة والجمارك</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Company Info for E-Invoice */}
+                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-3">
+                    بيانات الشركة للفوترة الإلكترونية (ZATCA)
+                  </p>
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">اسم الشركة (عربي)</Label>
+                      <Input
+                        value={taxData.company_name_ar}
+                        onChange={e => setTaxData(d => ({ ...d, company_name_ar: e.target.value }))}
+                        placeholder="اسم المنشأة كما في السجل التجاري"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">الرقم الضريبي (VAT Number)</Label>
+                        <Input
+                          value={taxData.tax_number}
+                          onChange={e => setTaxData(d => ({ ...d, tax_number: e.target.value }))}
+                          placeholder="3XXXXXXXXXX003"
+                          maxLength={15}
+                          dir="ltr"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">السجل التجاري</Label>
+                        <Input
+                          value={taxData.commercial_register}
+                          onChange={e => setTaxData(d => ({ ...d, commercial_register: e.target.value }))}
+                          placeholder="XXXXXXXXXX"
+                          dir="ltr"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">العنوان الوطني</Label>
+                      <Input
+                        value={taxData.national_address}
+                        onChange={e => setTaxData(d => ({ ...d, national_address: e.target.value }))}
+                        placeholder="الحي، الشارع"
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">المدينة</Label>
+                        <Input
+                          value={taxData.city}
+                          onChange={e => setTaxData(d => ({ ...d, city: e.target.value }))}
+                          placeholder="الرياض"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">الرمز البريدي</Label>
+                        <Input
+                          value={taxData.postal_code}
+                          onChange={e => setTaxData(d => ({ ...d, postal_code: e.target.value }))}
+                          placeholder="XXXXX"
+                          maxLength={5}
+                          dir="ltr"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">رقم المبنى</Label>
+                        <Input
+                          value={taxData.building_number}
+                          onChange={e => setTaxData(d => ({ ...d, building_number: e.target.value }))}
+                          placeholder="XXXX"
+                          maxLength={4}
+                          dir="ltr"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* VAT Toggle */}
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                   <div>
                     <p className="font-medium">تفعيل ضريبة القيمة المضافة (VAT)</p>
