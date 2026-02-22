@@ -535,7 +535,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
         if (itemsError) throw itemsError;
 
         setSavedSaleData({ id: invoice.id, customer: selectedCustomer, inventoryItems: selectedInventoryItems });
-        toast.success(t.inv_draft_saved || t.inv_toast_invoice_success);
+        toast.success('✅ تم حفظ الفاتورة كمسودة - يمكنك تعديلها أو اعتمادها محاسبياً');
         // Enter viewing mode for the saved draft
         setIsViewingExisting(true);
         setCurrentSaleId(invoice.id);
@@ -791,8 +791,31 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const handleApproveSale = async () => {
     if (!currentSaleId) return;
     try {
-      await approveSale.mutateAsync(currentSaleId);
+      // Check if this is an invoice (non-car) or a sale (car)
+      const isInvoiceRecord = existingInvoices.some(inv => inv.id === currentSaleId);
+      if (isInvoiceRecord) {
+        // Approve invoice in invoices table
+        const { data: { user } } = await supabase.auth.getUser();
+        const { error } = await supabase
+          .from('invoices')
+          .update({ 
+            status: 'approved',
+          })
+          .eq('id', currentSaleId);
+        if (error) throw error;
+        // Refresh invoices list
+        const { data: updatedInvoices } = await supabase
+          .from('invoices')
+          .select('*, invoice_items(*)')
+          .eq('company_id', companyId)
+          .eq('invoice_type', 'sales')
+          .order('created_at', { ascending: true });
+        setExistingInvoices(updatedInvoices || []);
+      } else {
+        await approveSale.mutateAsync(currentSaleId);
+      }
       setCurrentSaleStatus('approved');
+      setIsEditing(false);
       toast.success(t.inv_approved_success);
       setApproveDialogOpen(false);
     } catch (error) {
@@ -883,12 +906,47 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               <h1 className="text-sm font-bold">{t.inv_sales_invoice}</h1>
               <FileText className="w-4 h-4" />
               {isViewingExisting && (
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${currentSaleStatus === 'approved' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'}`}>
-                  {currentSaleStatus === 'approved' ? t.inv_status_approved : t.inv_status_draft}
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse ${currentSaleStatus === 'approved' ? 'bg-success/20 text-success' : 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/30'}`}>
+                  {currentSaleStatus === 'approved' ? t.inv_status_approved : '⏳ ' + t.inv_status_draft}
                 </span>
               )}
             </div>
           </div>
+
+          {/* ===== Draft Status Banner ===== */}
+          {isViewingExisting && currentSaleStatus === 'draft' && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-600 dark:text-yellow-400 text-lg">📋</span>
+                <span className="text-xs font-bold text-yellow-700 dark:text-yellow-300">
+                  هذه الفاتورة محفوظة كمسودة - يمكنك تعديلها أو اعتمادها محاسبياً
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1 text-[10px] h-6 rounded bg-white dark:bg-card border-yellow-300 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-50"
+                  onClick={() => {
+                    setIsEditing(true);
+                    toast.info('تم تفعيل وضع التعديل');
+                  }}
+                >
+                  <FileEdit className="w-3 h-3" />
+                  تعديل
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1 text-[10px] h-6 rounded bg-success/10 border-success/30 text-success hover:bg-success/20"
+                  onClick={() => setApproveDialogOpen(true)}
+                >
+                  <CheckCircle className="w-3 h-3" />
+                  اعتماد محاسبة
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* ===== Search Bar ===== */}
           <div className="p-2 border-b bg-muted/20" ref={searchBarRef}>
