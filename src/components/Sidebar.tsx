@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle, Monitor, MessageCircle, Workflow, ArrowDownToLine, ArrowUpFromLine, RotateCcw, RotateCw, Star, RefreshCw, CalendarCheck, Play, FileSignature, Home, Award, Link2, BookMarked, TestTube, LayoutGrid, Smartphone, QrCode, Code, Banknote, Fingerprint } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle, Monitor, MessageCircle, Workflow, ArrowDownToLine, ArrowUpFromLine, RotateCcw, RotateCw, Star, RefreshCw, CalendarCheck, Play, FileSignature, Home, Award, Link2, BookMarked, TestTube, LayoutGrid, Smartphone, QrCode, Code, Banknote, Fingerprint, MoreHorizontal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -8,11 +8,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
 import { useAppSettings } from '@/hooks/useSettings';
 import { useMenuConfiguration } from '@/hooks/useSystemControl';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import defaultLogo from '@/assets/logo.png';
 import { usePlugins } from '@/hooks/usePlugins';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface SidebarProps {
   activePage: ActivePage;
@@ -64,31 +64,24 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'audit-logs': ClipboardList,
   'backups': Database,
   'control-center': Settings2,
-  // Construction icons
   'projects': Building2,
   'contracts': FileText,
   'progress-billings': Receipt,
   'materials': Package,
   'subcontractors': Users,
   'equipment': Wrench,
-  // Custody
   'custody': HandCoins,
-  // Trips
   'trips': MapPin,
-  // Theme settings
   'theme-settings': Palette,
-  // Restaurant
   'menu-management': UtensilsCrossed,
   'restaurant-orders': Coffee,
   'kitchen-display': ChefHat,
   'table-management': LayoutDashboard,
-  // Export/Import
   'shipments': Ship,
   'letters-of-credit': FileBox,
   'customs-clearance': Globe,
   'accounting-audit': ShieldCheck,
   'tasks': ListTodo,
-  // Inventory
   'warehouses': Warehouse,
   'items-catalog': Package,
   'item-categories': FolderTree,
@@ -144,42 +137,127 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'developer-api': Code,
 };
 
+// Section icon mapping
+const SECTION_ICONS: Record<string, LucideIcon> = {
+  main: LayoutDashboard,
+  sales: DollarSign,
+  purchases: ShoppingCart,
+  accounting: Calculator,
+  inventory: Warehouse,
+  hr: Users,
+  operations: Wrench,
+  integrations: Plug,
+  system: Settings2,
+  more: MoreHorizontal,
+};
+
+interface MenuItem {
+  id: ActivePage;
+  label: string;
+  icon: LucideIcon;
+  permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users';
+}
+
+interface Section {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  items: MenuItem[];
+  showCondition: boolean;
+  isMore?: boolean;
+}
+
+/** Collapsible section component */
+function SidebarSection({
+  section,
+  activePage,
+  setActivePage,
+  isOpen,
+  onToggle,
+  getItemLabel,
+}: {
+  section: Section;
+  activePage: ActivePage;
+  setActivePage: (page: ActivePage) => void;
+  isOpen: boolean;
+  onToggle: () => void;
+  getItemLabel: (sectionId: string, itemId: string, defaultLabel: string) => string;
+}) {
+  const SectionIcon = section.icon;
+  const hasActiveItem = section.items.some(item => item.id === activePage);
+
+  return (
+    <div className="mb-0.5">
+      <button
+        onClick={onToggle}
+        className={cn(
+          "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150",
+          hasActiveItem
+            ? "text-sidebar-primary bg-sidebar-primary/10"
+            : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+        )}
+      >
+        <SectionIcon className="w-4 h-4 shrink-0" />
+        <span className="flex-1 text-start truncate">{section.label}</span>
+        <ChevronDown
+          className={cn(
+            "w-3.5 h-3.5 shrink-0 transition-transform duration-200",
+            isOpen ? "rotate-0" : "-rotate-90"
+          )}
+        />
+      </button>
+
+      {isOpen && (
+        <ul className="mt-0.5 ms-3 border-s border-sidebar-border/30 ps-2 space-y-px">
+          {section.items.map(item => {
+            const Icon = item.icon;
+            const isActive = activePage === item.id;
+            const itemLabel = getItemLabel(section.id, item.id, item.label);
+            return (
+              <li key={item.id}>
+                <button
+                  onClick={() => setActivePage(item.id)}
+                  className={cn(
+                    "w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11px] transition-all duration-150",
+                    isActive
+                      ? "bg-sidebar-primary text-white font-medium shadow-sm shadow-sidebar-primary/20"
+                      : "text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  )}
+                >
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{itemLabel}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export function Sidebar({
   activePage,
   setActivePage
 }: SidebarProps) {
   const navigate = useNavigate();
-  const {
-    permissions
-  } = useAuth();
+  const { permissions } = useAuth();
   const { company } = useCompany();
-  const {
-    data: settings
-  } = useAppSettings();
-  const {
-    data: menuConfig
-  } = useMenuConfiguration();
+  const { data: settings } = useAppSettings();
+  const { data: menuConfig } = useMenuConfiguration();
   const { t, language } = useLanguage();
 
-  // Only use custom settings labels when language is Arabic (the original/default language)
-  // When English is selected, always use translation keys
   const s = (settingValue: string | undefined | null, translationValue: string) => {
     if (language !== 'ar') return translationValue;
     return settingValue || translationValue;
   };
 
-  // Get company type
   const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
 
-  // Track which section is currently active/expanded
-  const [activeSection, setActiveSection] = useState<string | null>(null);
-  const [autoDetected, setAutoDetected] = useState(false);
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
-  // Use company logo if available, otherwise use default
   const logoUrl = settings?.company_logo_url || defaultLogo;
-  
-  // Dynamic app name/subtitle based on company type
+
   const getAppName = () => {
     if (settings?.app_name && language === 'ar') return settings.app_name;
     switch (companyType) {
@@ -190,7 +268,7 @@ export function Sidebar({
       default: return 'Elzini SaaS';
     }
   };
-  
+
   const getAppSubtitle = () => {
     if (settings?.app_subtitle && language === 'ar') return settings.app_subtitle;
     switch (companyType) {
@@ -201,560 +279,143 @@ export function Sidebar({
       default: return t.sidebar_car_subtitle;
     }
   };
-  
+
   const appName = getAppName();
   const appSubtitle = getAppSubtitle();
 
-  // Construction-specific menu items
-  const constructionMenuItems = [{
-    id: 'dashboard' as ActivePage,
-    label: t.nav_dashboard,
-    icon: LayoutDashboard
-  }, {
-    id: 'projects' as ActivePage,
-    label: t.nav_projects,
-    icon: Building2,
-    permission: 'purchases' as const
-  }, {
-    id: 'contracts' as ActivePage,
-    label: t.nav_contracts,
-    icon: FileText,
-    permission: 'purchases' as const
-  }, {
-    id: 'progress-billings' as ActivePage,
-    label: t.nav_progress_billings,
-    icon: Receipt,
-    permission: 'sales' as const
-  }, {
-    id: 'customers' as ActivePage,
-    label: t.nav_customers,
-    icon: Users,
-    permission: 'sales' as const
-  }, {
-    id: 'suppliers' as ActivePage,
-    label: t.nav_suppliers,
-    icon: Truck,
-    permission: 'purchases' as const
-  }];
+  // ===== Core Sections =====
+  const salesMenuItems: MenuItem[] = [
+    { id: 'sales' as ActivePage, label: language === 'ar' ? 'فاتورة مبيعات' : 'Sales Invoice', icon: DollarSign, permission: 'sales' },
+    { id: 'credit-debit-notes' as ActivePage, label: language === 'ar' ? 'مرتجع مبيعات' : 'Sales Returns', icon: RotateCcw, permission: 'sales' },
+    { id: 'quotations' as ActivePage, label: s(settings?.quotations_title, t.nav_quotations), icon: FileCheck, permission: 'sales' },
+    { id: 'installments' as ActivePage, label: s(settings?.installments_title, t.nav_installments), icon: CreditCard, permission: 'sales' },
+    { id: 'customers' as ActivePage, label: s(settings?.customers_title, t.nav_customers), icon: Users, permission: 'sales' },
+    { id: 'sales-report' as ActivePage, label: s(settings?.sales_report_title, t.nav_sales_report), icon: DollarSign, permission: 'reports' },
+    { id: 'customers-report' as ActivePage, label: s(settings?.customers_report_title, t.nav_customers_report), icon: Users, permission: 'reports' },
+  ];
 
-  // Restaurant-specific menu items
-  const restaurantMenuItems = [{
-    id: 'dashboard' as ActivePage,
-    label: t.nav_dashboard,
-    icon: LayoutDashboard
-  }, {
-    id: 'menu-management' as ActivePage,
-    label: t.nav_menu_management,
-    icon: UtensilsCrossed,
-    permission: 'purchases' as const
-  }, {
-    id: 'restaurant-orders' as ActivePage,
-    label: t.nav_restaurant_orders,
-    icon: Coffee,
-    permission: 'sales' as const
-  }, {
-    id: 'kitchen-display' as ActivePage,
-    label: t.nav_kitchen_display,
-    icon: ChefHat,
-    permission: 'sales' as const
-  }, {
-    id: 'table-management' as ActivePage,
-    label: t.nav_table_management,
-    icon: LayoutDashboard,
-    permission: 'sales' as const
-  }, {
-    id: 'customers' as ActivePage,
-    label: t.nav_customers,
-    icon: Users,
-    permission: 'sales' as const
-  }, {
-    id: 'suppliers' as ActivePage,
-    label: t.nav_suppliers,
-    icon: Truck,
-    permission: 'purchases' as const
-  }];
-
-  // Export/Import-specific menu items
-  const exportImportMenuItems = [{
-    id: 'dashboard' as ActivePage,
-    label: t.nav_dashboard,
-    icon: LayoutDashboard
-  }, {
-    id: 'shipments' as ActivePage,
-    label: t.nav_shipments,
-    icon: Ship,
-    permission: 'purchases' as const
-  }, {
-    id: 'letters-of-credit' as ActivePage,
-    label: t.nav_letters_of_credit,
-    icon: FileBox,
-    permission: 'purchases' as const
-  }, {
-    id: 'customs-clearance' as ActivePage,
-    label: t.nav_customs_clearance,
-    icon: Globe,
-    permission: 'purchases' as const
-  }, {
-    id: 'customers' as ActivePage,
-    label: t.nav_customers,
-    icon: Users,
-    permission: 'sales' as const
-  }, {
-    id: 'suppliers' as ActivePage,
-    label: t.nav_suppliers,
-    icon: Truck,
-    permission: 'purchases' as const
-  }, {
-    id: 'purchases' as ActivePage,
-    label: t.nav_purchases,
-    icon: ShoppingCart,
-    permission: 'purchases' as const
-  }, {
-    id: 'sales' as ActivePage,
-    label: t.nav_sales,
-    icon: DollarSign,
-    permission: 'sales' as const
-  }];
-
-  // ===== مبيعات (Sales) =====
-  const salesMenuItems = [{
-    id: 'sales' as ActivePage,
-    label: language === 'ar' ? 'فاتورة مبيعات' : 'Sales Invoice',
-    icon: DollarSign,
-    permission: 'sales' as const
-  }, {
-    id: 'credit-debit-notes' as ActivePage,
-    label: language === 'ar' ? 'مرتجع مبيعات / إشعار دائن' : 'Sales Returns / Credit Note',
-    icon: RotateCcw,
-    permission: 'sales' as const
-  }, {
-    id: 'quotations' as ActivePage,
-    label: s(settings?.quotations_title, t.nav_quotations),
-    icon: FileCheck,
-    permission: 'sales' as const
-  }, {
-    id: 'installments' as ActivePage,
-    label: s(settings?.installments_title, t.nav_installments),
-    icon: CreditCard,
-    permission: 'sales' as const
-  }, {
-    id: 'customers' as ActivePage,
-    label: s(settings?.customers_title, t.nav_customers),
-    icon: Users,
-    permission: 'sales' as const
-  }, {
-    id: 'crm' as ActivePage,
-    label: language === 'ar' ? 'إدارة العملاء CRM' : 'CRM',
-    icon: Users,
-    permission: 'sales' as const
-  }, {
-    id: 'loyalty' as ActivePage,
-    label: language === 'ar' ? 'نقاط الولاء' : 'Loyalty Points',
-    icon: Star,
-    permission: 'sales' as const
-  }, {
-    id: 'sales-targets' as ActivePage,
-    label: language === 'ar' ? 'المبيعات المستهدفة' : 'Sales Targets',
-    icon: Award,
-    permission: 'sales' as const
-  }, {
-    id: 'bookings' as ActivePage,
-    label: language === 'ar' ? 'الحجوزات' : 'Bookings',
-    icon: CalendarCheck,
-    permission: 'sales' as const
-  }, {
-    id: 'sales-report' as ActivePage,
-    label: s(settings?.sales_report_title, t.nav_sales_report),
-    icon: DollarSign,
-    permission: 'reports' as const
-  }, {
-    id: 'customers-report' as ActivePage,
-    label: s(settings?.customers_report_title, t.nav_customers_report),
-    icon: Users,
-    permission: 'reports' as const
-  }, {
-    id: 'commissions-report' as ActivePage,
-    label: s(settings?.commissions_report_title, t.nav_commissions_report),
-    icon: DollarSign,
-    permission: 'reports' as const
-  }];
-
-  // Car dealership extras in sales
   if (companyType === 'car_dealership') {
-    salesMenuItems.splice(6, 0, 
-      { id: 'partner-dealerships' as ActivePage, label: s(settings?.partner_dealerships_title, t.nav_partner_dealerships), icon: Building2, permission: 'sales' as const },
-      { id: 'car-transfers' as ActivePage, label: s(settings?.car_transfers_title, t.nav_car_transfers), icon: ArrowLeftRight, permission: 'sales' as const },
+    salesMenuItems.splice(5, 0,
+      { id: 'partner-dealerships' as ActivePage, label: s(settings?.partner_dealerships_title, t.nav_partner_dealerships), icon: Building2, permission: 'sales' },
+      { id: 'car-transfers' as ActivePage, label: s(settings?.car_transfers_title, t.nav_car_transfers), icon: ArrowLeftRight, permission: 'sales' },
     );
     salesMenuItems.push(
-      { id: 'transfers-report' as ActivePage, label: s(settings?.transfers_report_title, t.nav_transfers_report), icon: ArrowLeftRight, permission: 'reports' as const },
-      { id: 'partner-report' as ActivePage, label: s(settings?.partner_report_title, t.nav_partner_report), icon: Building2, permission: 'reports' as const },
+      { id: 'commissions-report' as ActivePage, label: s(settings?.commissions_report_title, t.nav_commissions_report), icon: DollarSign, permission: 'reports' },
+      { id: 'transfers-report' as ActivePage, label: s(settings?.transfers_report_title, t.nav_transfers_report), icon: ArrowLeftRight, permission: 'reports' },
+      { id: 'partner-report' as ActivePage, label: s(settings?.partner_report_title, t.nav_partner_report), icon: Building2, permission: 'reports' },
     );
   }
 
-  // ===== مشتريات (Purchases) =====
-  const purchasesMenuItems = [{
-    id: 'purchases' as ActivePage,
-    label: language === 'ar' ? 'فاتورة مشتريات' : 'Purchase Invoice',
-    icon: ShoppingCart,
-    permission: 'purchases' as const
-  }, {
-    id: 'purchase-returns' as ActivePage,
-    label: language === 'ar' ? 'مرتجع مشتريات / إشعار مدين' : 'Purchase Returns / Debit Note',
-    icon: RotateCw,
-    permission: 'purchases' as const
-  }, {
-    id: 'materials-request' as ActivePage,
-    label: language === 'ar' ? 'طلب مواد' : 'Materials Request',
-    icon: Package,
-    permission: 'purchases' as const
-  }, {
-    id: 'purchase-orders' as ActivePage,
-    label: language === 'ar' ? 'طلب شراء' : 'Purchase Request',
-    icon: ShoppingCart,
-    permission: 'purchases' as const
-  }, {
-    id: 'contractor-payment' as ActivePage,
-    label: language === 'ar' ? 'سند صرف مقاول' : 'Contractor Payment',
-    icon: Banknote,
-    permission: 'purchases' as const
-  }, {
-    id: 'goods-receipt' as ActivePage,
-    label: language === 'ar' ? 'سند استلام مواد' : 'Goods Receipt',
-    icon: ArrowDownToLine,
-    permission: 'purchases' as const
-  }, {
-    id: 'suppliers' as ActivePage,
-    label: language === 'ar' ? 'ملف الموردين' : 'Suppliers File',
-    icon: Truck,
-    permission: 'purchases' as const
-  }, {
-    id: 'currencies' as ActivePage,
-    label: language === 'ar' ? 'ملف العملات' : 'Currencies File',
-    icon: Coins,
-    permission: 'purchases' as const
-  }, {
-    id: 'expenses' as ActivePage,
-    label: s(settings?.expenses_title, t.nav_expenses),
-    icon: Wallet,
-    permission: 'purchases' as const
-  }, {
-    id: 'prepaid-expenses' as ActivePage,
-    label: s(settings?.prepaid_expenses_title, t.nav_prepaid_expenses),
-    icon: Clock,
-    permission: 'purchases' as const
-  }, {
-    id: 'purchases-report' as ActivePage,
-    label: language === 'ar' ? 'تقارير المشتريات' : 'Purchases Reports',
-    icon: FileText,
-    permission: 'reports' as const
-  }, {
-    id: 'suppliers-report' as ActivePage,
-    label: s(settings?.suppliers_report_title, t.nav_suppliers_report),
-    icon: Truck,
-    permission: 'reports' as const
-  }];
+  const purchasesMenuItems: MenuItem[] = [
+    { id: 'purchases' as ActivePage, label: language === 'ar' ? 'فاتورة مشتريات' : 'Purchase Invoice', icon: ShoppingCart, permission: 'purchases' },
+    { id: 'purchase-returns' as ActivePage, label: language === 'ar' ? 'مرتجع مشتريات' : 'Purchase Returns', icon: RotateCw, permission: 'purchases' },
+    { id: 'purchase-orders' as ActivePage, label: language === 'ar' ? 'طلب شراء' : 'Purchase Order', icon: ShoppingCart, permission: 'purchases' },
+    { id: 'materials-request' as ActivePage, label: language === 'ar' ? 'طلب مواد' : 'Materials Request', icon: Package, permission: 'purchases' },
+    { id: 'goods-receipt' as ActivePage, label: language === 'ar' ? 'سند استلام' : 'Goods Receipt', icon: ArrowDownToLine, permission: 'purchases' },
+    { id: 'suppliers' as ActivePage, label: s(settings?.suppliers_title || null, t.nav_suppliers), icon: Truck, permission: 'purchases' },
+    { id: 'expenses' as ActivePage, label: s(settings?.expenses_title, t.nav_expenses), icon: Wallet, permission: 'purchases' },
+    { id: 'purchases-report' as ActivePage, label: language === 'ar' ? 'تقارير المشتريات' : 'Purchases Reports', icon: FileText, permission: 'reports' },
+    { id: 'suppliers-report' as ActivePage, label: s(settings?.suppliers_report_title, t.nav_suppliers_report), icon: Truck, permission: 'reports' },
+  ];
 
-  // ===== حسابات (Accounts) =====
-  const accountsMenuItems = [{
-    id: 'vouchers' as ActivePage,
-    label: s(settings?.vouchers_title, t.nav_vouchers),
-    icon: Receipt
-  }, {
-    id: 'journal-entries' as ActivePage,
-    label: s(settings?.journal_entries_title, t.nav_journal_entries),
-    icon: Calculator
-  }, {
-    id: 'general-ledger' as ActivePage,
-    label: s(settings?.general_ledger_title, t.nav_general_ledger),
-    icon: FileText
-  }, {
-    id: 'account-statement' as ActivePage,
-    label: t.nav_account_statement,
-    icon: ClipboardList
-  }, {
-    id: 'banking' as ActivePage,
-    label: s(settings?.banking_title, t.nav_banking),
-    icon: Scale
-  }, {
-    id: 'checks' as ActivePage,
-    label: t.nav_checks,
-    icon: ClipboardCheck
-  }, {
-    id: 'financing' as ActivePage,
-    label: s(settings?.financing_title, t.nav_financing),
-    icon: Landmark
-  }, {
-    id: 'custody' as ActivePage,
-    label: t.nav_custody,
-    icon: HandCoins
-  }, {
-    id: 'chart-of-accounts' as ActivePage,
-    label: s(settings?.chart_of_accounts_title, t.nav_chart_of_accounts),
-    icon: BookOpen
-  }, {
-    id: 'cost-centers' as ActivePage,
-    label: t.nav_cost_centers,
-    icon: Target
-  }, {
-    id: 'tax-settings' as ActivePage,
-    label: s(settings?.tax_settings_title, t.nav_tax_settings),
-    icon: Percent
-  }, {
-    id: 'currencies' as ActivePage,
-    label: t.nav_currencies,
-    icon: Coins
-  }, {
-    id: 'vat-return-report' as ActivePage,
-    label: t.nav_vat_return,
-    icon: Receipt
-  }, {
-    id: 'financial-reports' as ActivePage,
-    label: s(settings?.financial_reports_title, t.nav_financial_reports),
-    icon: PieChart
-  }, {
-    id: 'zakat-reports' as ActivePage,
-    label: t.nav_zakat_reports,
-    icon: Scale
-  }, {
-    id: 'trial-balance-analysis' as ActivePage,
-    label: t.nav_trial_balance,
-    icon: FileSpreadsheet
-  }, {
-    id: 'financial-statements' as ActivePage,
-    label: t.nav_financial_statements,
-    icon: FileText
-  }, {
-    id: 'fixed-assets' as ActivePage,
-    label: t.nav_fixed_assets,
-    icon: Boxes
-  }, {
-    id: 'aging-report' as ActivePage,
-    label: t.nav_aging_report,
-    icon: Clock
-  }, {
-    id: 'budgets' as ActivePage,
-    label: t.nav_budgets,
-    icon: BarChart3
-  }, {
-    id: 'financial-kpis' as ActivePage,
-    label: t.nav_financial_kpis,
-    icon: Activity
-  }, {
-    id: 'profit-report' as ActivePage,
-    label: s(settings?.profit_report_title, t.nav_profit_report),
-    icon: TrendingUp,
-    permission: 'reports' as const
-  }, {
-    id: 'account-movement' as ActivePage,
-    label: t.nav_account_movement,
-    icon: ClipboardList,
-    permission: 'reports' as const
-  }];
+  const accountsMenuItems: MenuItem[] = [
+    { id: 'vouchers' as ActivePage, label: s(settings?.vouchers_title, t.nav_vouchers), icon: Receipt },
+    { id: 'journal-entries' as ActivePage, label: s(settings?.journal_entries_title, t.nav_journal_entries), icon: Calculator },
+    { id: 'general-ledger' as ActivePage, label: s(settings?.general_ledger_title, t.nav_general_ledger), icon: FileText },
+    { id: 'account-statement' as ActivePage, label: t.nav_account_statement, icon: ClipboardList },
+    { id: 'banking' as ActivePage, label: s(settings?.banking_title, t.nav_banking), icon: Scale },
+    { id: 'checks' as ActivePage, label: t.nav_checks, icon: ClipboardCheck },
+    { id: 'custody' as ActivePage, label: t.nav_custody, icon: HandCoins },
+    { id: 'chart-of-accounts' as ActivePage, label: s(settings?.chart_of_accounts_title, t.nav_chart_of_accounts), icon: BookOpen },
+    { id: 'trial-balance-analysis' as ActivePage, label: t.nav_trial_balance, icon: FileSpreadsheet },
+    { id: 'financial-statements' as ActivePage, label: t.nav_financial_statements, icon: FileText },
+    { id: 'financial-reports' as ActivePage, label: s(settings?.financial_reports_title, t.nav_financial_reports), icon: PieChart },
+    { id: 'profit-report' as ActivePage, label: s(settings?.profit_report_title, t.nav_profit_report), icon: TrendingUp, permission: 'reports' },
+  ];
 
-  // ===== مستودعات (Warehouses/Inventory) =====
-  const warehouseMenuItems = [{
-    id: 'items-catalog' as ActivePage,
-    label: t.nav_items,
-    icon: Package
-  }, {
-    id: 'stock-vouchers' as ActivePage,
-    label: language === 'ar' ? 'الأذون المخزنية' : 'Stock Vouchers',
-    icon: ArrowUpFromLine
-  }, {
-    id: 'warehouses' as ActivePage,
-    label: t.nav_warehouses,
-    icon: Warehouse
-  }, {
-    id: 'item-categories' as ActivePage,
-    label: t.nav_categories,
-    icon: FolderTree
-  }, {
-    id: 'units-of-measure' as ActivePage,
-    label: t.nav_units,
-    icon: Ruler
-  }, {
-    id: 'stocktaking' as ActivePage,
-    label: language === 'ar' ? 'الجرد' : 'Stocktaking',
-    icon: ClipboardList
-  }, {
-    id: 'manufacturing' as ActivePage,
-    label: t.nav_manufacturing,
-    icon: Factory
-  }, {
-    id: 'mobile-inventory' as ActivePage,
-    label: language === 'ar' ? 'جرد بالجوال' : 'Mobile Inventory',
-    icon: Smartphone
-  }, {
-    id: 'inventory-report' as ActivePage,
-    label: s(settings?.inventory_report_title, t.nav_inventory_report),
-    icon: Package,
-    permission: 'reports' as const
-  }];
+  const warehouseMenuItems: MenuItem[] = [
+    { id: 'items-catalog' as ActivePage, label: t.nav_items, icon: Package },
+    { id: 'stock-vouchers' as ActivePage, label: language === 'ar' ? 'الأذون المخزنية' : 'Stock Vouchers', icon: ArrowUpFromLine },
+    { id: 'warehouses' as ActivePage, label: t.nav_warehouses, icon: Warehouse },
+    { id: 'inventory-report' as ActivePage, label: s(settings?.inventory_report_title, t.nav_inventory_report), icon: Package, permission: 'reports' },
+  ];
 
-  // ===== النظام (System) =====
-  const systemMenuItems = [{
-    id: 'users-management' as ActivePage,
-    label: s(settings?.users_management_title, t.nav_users_management),
-    icon: UserCog
-  }, {
-    id: 'branches' as ActivePage,
-    label: t.nav_branches,
-    icon: GitFork
-  }, {
-    id: 'fiscal-years' as ActivePage,
-    label: t.nav_fiscal_years,
-    icon: Calendar
-  }, {
-    id: 'tasks' as ActivePage,
-    label: t.nav_tasks,
-    icon: ListTodo
-  }, {
-    id: 'approvals' as ActivePage,
-    label: t.nav_approvals,
-    icon: GitBranch
-  }, {
-    id: 'workflows' as ActivePage,
-    label: language === 'ar' ? 'الدورات المستندية' : 'Workflows',
-    icon: Workflow
-  }, {
-    id: 'app-settings' as ActivePage,
-    label: s(settings?.app_settings_title, t.nav_app_settings),
-    icon: Settings
-  }, {
-    id: 'theme-settings' as ActivePage,
-    label: t.nav_theme_settings,
-    icon: Palette
-  }, {
-    id: 'control-center' as ActivePage,
-    label: t.nav_control_center,
-    icon: Settings2
-  }, {
-    id: 'audit-logs' as ActivePage,
-    label: s(settings?.audit_logs_title, t.nav_audit_logs),
-    icon: ClipboardList
-  }, {
-    id: 'accounting-audit' as ActivePage,
-    label: t.nav_accounting_audit,
-    icon: ShieldCheck
-  }, {
-    id: 'backups' as ActivePage,
-    label: s(settings?.backups_title, t.nav_backups),
-    icon: Database
-  }, {
-    id: 'medad-import' as ActivePage,
-    label: t.nav_medad_import,
-    icon: FileUp
-  }, {
-    id: 'zatca-sandbox' as ActivePage,
-    label: language === 'ar' ? 'بيئة محاكاة ZATCA' : 'ZATCA Sandbox',
-    icon: TestTube
-  }, {
-    id: 'zatca-technical-doc' as ActivePage,
-    label: language === 'ar' ? 'وثائق ZATCA التقنية' : 'ZATCA Technical Docs',
-    icon: FileText
-  }, {
-    id: 'mobile-invoice-reader' as ActivePage,
-    label: language === 'ar' ? 'قراءة فاتورة بالجوال' : 'Mobile Invoice Reader',
-    icon: QrCode
-  }];
+  const hrItems: MenuItem[] = [
+    { id: 'employees' as ActivePage, label: t.nav_employees, icon: Users },
+    { id: 'payroll' as ActivePage, label: t.nav_payroll, icon: CreditCard },
+    { id: 'attendance' as ActivePage, label: t.nav_attendance, icon: Clock },
+    { id: 'leaves' as ActivePage, label: t.nav_leaves, icon: CalendarDays },
+  ];
 
-  // ===== HR =====
-  const hrItems = [{
-    id: 'employees' as ActivePage,
-    label: t.nav_employees,
-    icon: Users
-  }, {
-    id: 'payroll' as ActivePage,
-    label: t.nav_payroll,
-    icon: CreditCard
-  }, {
-    id: 'attendance' as ActivePage,
-    label: t.nav_attendance,
-    icon: Clock
-  }, {
-    id: 'fingerprint-devices' as ActivePage,
-    label: language === 'ar' ? 'أجهزة البصمة' : 'Fingerprint Devices',
-    icon: Fingerprint
-  }, {
-    id: 'leaves' as ActivePage,
-    label: t.nav_leaves,
-    icon: CalendarDays
-  }, {
-    id: 'employee-contracts' as ActivePage,
-    label: language === 'ar' ? 'عقود الموظفين' : 'Employee Contracts',
-    icon: FileSignature
-  }, {
-    id: 'org-structure' as ActivePage,
-    label: language === 'ar' ? 'الهيكل التنظيمي' : 'Org Structure',
-    icon: GitFork
-  }];
+  const systemMenuItems: MenuItem[] = [
+    { id: 'users-management' as ActivePage, label: s(settings?.users_management_title, t.nav_users_management), icon: UserCog },
+    { id: 'branches' as ActivePage, label: t.nav_branches, icon: GitFork },
+    { id: 'fiscal-years' as ActivePage, label: t.nav_fiscal_years, icon: Calendar },
+    { id: 'app-settings' as ActivePage, label: s(settings?.app_settings_title, t.nav_app_settings), icon: Settings },
+    { id: 'control-center' as ActivePage, label: t.nav_control_center, icon: Settings2 },
+    { id: 'backups' as ActivePage, label: s(settings?.backups_title, t.nav_backups), icon: Database },
+    { id: 'audit-logs' as ActivePage, label: s(settings?.audit_logs_title, t.nav_audit_logs), icon: ClipboardList },
+  ];
 
-  // ===== Operations =====
-  const operationsItems = [{
-    id: 'work-orders' as ActivePage,
-    label: language === 'ar' ? 'أوامر العمل' : 'Work Orders',
-    icon: Wrench
-  }, {
-    id: 'time-tracking' as ActivePage,
-    label: language === 'ar' ? 'تتبع الوقت' : 'Time Tracking',
-    icon: Play
-  }, {
-    id: 'rentals' as ActivePage,
-    label: language === 'ar' ? 'الإيجارات' : 'Rentals',
-    icon: Home
-  }, {
-    id: 'trips' as ActivePage,
-    label: t.nav_trips,
-    icon: MapPin
-  }, {
-    id: 'advanced-projects' as ActivePage,
-    label: language === 'ar' ? 'إدارة مشاريع متقدمة' : 'Advanced Projects',
-    icon: LayoutGrid
-  }, {
-    id: 'customer-portal' as ActivePage,
-    label: language === 'ar' ? 'بوابة العملاء' : 'Customer Portal',
-    icon: Globe
-  }, {
-    id: 'bookkeeping-service' as ActivePage,
-    label: language === 'ar' ? 'مسك الدفاتر كخدمة' : 'Bookkeeping Service',
-    icon: BookMarked
-  }, {
-    id: 'subscriptions' as ActivePage,
-    label: language === 'ar' ? 'الاشتراكات' : 'Subscriptions',
-    icon: RefreshCw
-  }, {
-    id: 'payment-gateway' as ActivePage,
-    label: language === 'ar' ? 'بوابة الدفع' : 'Payment Gateway',
-    icon: Link2
-  }];
+  // ===== "المزيد" - Less used modules grouped together =====
+  const moreItems: MenuItem[] = [
+    { id: 'crm' as ActivePage, label: language === 'ar' ? 'إدارة العملاء CRM' : 'CRM', icon: Users, permission: 'sales' },
+    { id: 'loyalty' as ActivePage, label: language === 'ar' ? 'نقاط الولاء' : 'Loyalty', icon: Star, permission: 'sales' },
+    { id: 'sales-targets' as ActivePage, label: language === 'ar' ? 'المبيعات المستهدفة' : 'Sales Targets', icon: Award, permission: 'sales' },
+    { id: 'bookings' as ActivePage, label: language === 'ar' ? 'الحجوزات' : 'Bookings', icon: CalendarCheck, permission: 'sales' },
+    { id: 'contractor-payment' as ActivePage, label: language === 'ar' ? 'سند صرف مقاول' : 'Contractor Payment', icon: Banknote, permission: 'purchases' },
+    { id: 'prepaid-expenses' as ActivePage, label: s(settings?.prepaid_expenses_title, t.nav_prepaid_expenses), icon: Clock, permission: 'purchases' },
+    { id: 'currencies' as ActivePage, label: t.nav_currencies, icon: Coins },
+    { id: 'financing' as ActivePage, label: s(settings?.financing_title, t.nav_financing), icon: Landmark },
+    { id: 'cost-centers' as ActivePage, label: t.nav_cost_centers, icon: Target },
+    { id: 'tax-settings' as ActivePage, label: s(settings?.tax_settings_title, t.nav_tax_settings), icon: Percent },
+    { id: 'vat-return-report' as ActivePage, label: t.nav_vat_return, icon: Receipt },
+    { id: 'zakat-reports' as ActivePage, label: t.nav_zakat_reports, icon: Scale },
+    { id: 'fixed-assets' as ActivePage, label: t.nav_fixed_assets, icon: Boxes },
+    { id: 'aging-report' as ActivePage, label: t.nav_aging_report, icon: Clock },
+    { id: 'budgets' as ActivePage, label: t.nav_budgets, icon: BarChart3 },
+    { id: 'financial-kpis' as ActivePage, label: t.nav_financial_kpis, icon: Activity },
+    { id: 'account-movement' as ActivePage, label: t.nav_account_movement, icon: ClipboardList, permission: 'reports' },
+    { id: 'item-categories' as ActivePage, label: t.nav_categories, icon: FolderTree },
+    { id: 'units-of-measure' as ActivePage, label: t.nav_units, icon: Ruler },
+    { id: 'stocktaking' as ActivePage, label: language === 'ar' ? 'الجرد' : 'Stocktaking', icon: ClipboardList },
+    { id: 'manufacturing' as ActivePage, label: t.nav_manufacturing, icon: Factory },
+    { id: 'mobile-inventory' as ActivePage, label: language === 'ar' ? 'جرد بالجوال' : 'Mobile Inventory', icon: Smartphone },
+    { id: 'fingerprint-devices' as ActivePage, label: language === 'ar' ? 'أجهزة البصمة' : 'Fingerprint Devices', icon: Fingerprint },
+    { id: 'employee-contracts' as ActivePage, label: language === 'ar' ? 'عقود الموظفين' : 'Employee Contracts', icon: FileSignature },
+    { id: 'org-structure' as ActivePage, label: language === 'ar' ? 'الهيكل التنظيمي' : 'Org Structure', icon: GitFork },
+    { id: 'work-orders' as ActivePage, label: language === 'ar' ? 'أوامر العمل' : 'Work Orders', icon: Wrench },
+    { id: 'time-tracking' as ActivePage, label: language === 'ar' ? 'تتبع الوقت' : 'Time Tracking', icon: Play },
+    { id: 'rentals' as ActivePage, label: language === 'ar' ? 'الإيجارات' : 'Rentals', icon: Home },
+    { id: 'trips' as ActivePage, label: t.nav_trips, icon: MapPin },
+    { id: 'advanced-projects' as ActivePage, label: language === 'ar' ? 'مشاريع متقدمة' : 'Advanced Projects', icon: LayoutGrid },
+    { id: 'customer-portal' as ActivePage, label: language === 'ar' ? 'بوابة العملاء' : 'Customer Portal', icon: Globe },
+    { id: 'bookkeeping-service' as ActivePage, label: language === 'ar' ? 'مسك الدفاتر' : 'Bookkeeping', icon: BookMarked },
+    { id: 'subscriptions' as ActivePage, label: language === 'ar' ? 'الاشتراكات' : 'Subscriptions', icon: RefreshCw },
+    { id: 'payment-gateway' as ActivePage, label: language === 'ar' ? 'بوابة الدفع' : 'Payment Gateway', icon: Link2 },
+    { id: 'tasks' as ActivePage, label: t.nav_tasks, icon: ListTodo },
+    { id: 'approvals' as ActivePage, label: t.nav_approvals, icon: GitBranch },
+    { id: 'workflows' as ActivePage, label: language === 'ar' ? 'الدورات المستندية' : 'Workflows', icon: Workflow },
+    { id: 'integrations' as ActivePage, label: t.nav_integrations, icon: Plug },
+    { id: 'developer-api' as ActivePage, label: language === 'ar' ? 'API للمطورين' : 'Developer API', icon: Code },
+    { id: 'accounting-audit' as ActivePage, label: t.nav_accounting_audit, icon: ShieldCheck },
+    { id: 'theme-settings' as ActivePage, label: t.nav_theme_settings, icon: Palette },
+    { id: 'medad-import' as ActivePage, label: t.nav_medad_import, icon: FileUp },
+    { id: 'zatca-sandbox' as ActivePage, label: language === 'ar' ? 'ZATCA' : 'ZATCA Sandbox', icon: TestTube },
+    { id: 'mobile-invoice-reader' as ActivePage, label: language === 'ar' ? 'قراءة فاتورة' : 'Invoice Reader', icon: QrCode },
+  ];
 
-  // ===== Integrations =====
+  // Add plugin items
   const { activePlugins } = usePlugins();
-
-  const pluginMenuItems = activePlugins.map(p => ({
+  const pluginMenuItems: MenuItem[] = activePlugins.map(p => ({
     id: p.pageId as ActivePage,
     label: language === 'ar' ? p.menuLabel : p.menuLabel_en,
     icon: ICON_MAP[p.menuIcon] || Puzzle,
   }));
+  if (pluginMenuItems.length > 0) {
+    moreItems.push(...pluginMenuItems);
+  }
 
-  const integrationItems = [{
-    id: 'integrations' as ActivePage,
-    label: t.nav_integrations,
-    icon: Plug
-  }, {
-    id: 'api-management' as ActivePage,
-    label: t.nav_api_management,
-    icon: Globe
-  }, {
-    id: 'developer-api' as ActivePage,
-    label: language === 'ar' ? 'API للمطورين' : 'Developer API',
-    icon: Code
-  }, {
-    id: 'plugins' as ActivePage,
-    label: t.nav_plugins,
-    icon: Puzzle
-  }, ...pluginMenuItems];
-  
   const hasAccess = (permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users') => {
     if (!permission) return true;
     return permissions.admin || permissions[permission];
@@ -762,172 +423,156 @@ export function Sidebar({
   const canManageUsers = permissions.admin || permissions.users || permissions.super_admin;
   const isSuperAdmin = permissions.super_admin;
 
-  // Get menu configuration for a section
+  // Menu config helpers
   const getSectionConfig = (sectionId: string) => {
     if (!menuConfig?.menu_items) return null;
-    return menuConfig.menu_items.find(item => item.id === sectionId);
+    return menuConfig.menu_items.find((item: any) => item.id === sectionId);
   };
 
-  // Check if section is visible
   const isSectionVisible = (sectionId: string) => {
     const config = getSectionConfig(sectionId);
     return config ? config.visible !== false : true;
   };
 
-  // Get item config
   const getItemConfig = (sectionId: string, itemId: string) => {
     const section = getSectionConfig(sectionId);
     if (!section?.children) return null;
-    return section.children.find(child => child.id === itemId);
+    return section.children.find((child: any) => child.id === itemId);
   };
 
-  // Check if item is visible
   const isItemVisible = (sectionId: string, itemId: string) => {
     const itemConfig = getItemConfig(sectionId, itemId);
     return itemConfig ? itemConfig.visible !== false : true;
   };
 
-  // Get item label
   const getItemLabel = (sectionId: string, itemId: string, defaultLabel: string) => {
     if (language !== 'ar') return defaultLabel;
     const itemConfig = getItemConfig(sectionId, itemId);
     return itemConfig?.label || defaultLabel;
   };
 
-  // Get section label
   const getSectionLabel = (sectionId: string, defaultLabel: string) => {
     if (language !== 'ar') return defaultLabel;
     const config = getSectionConfig(sectionId);
     return config?.label || defaultLabel;
   };
 
-  // Odoo-style: sections list with counts
-  const allSections: Array<{
-    id: string;
-    label: string;
-    items: Array<{ id: ActivePage; label: string; icon: LucideIcon; permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users' }>;
-    showCondition: boolean;
-  }> = [
-    { id: 'main', label: language === 'ar' ? 'الرئيسية' : 'Dashboard', items: [{ id: 'dashboard' as ActivePage, label: s(settings?.dashboard_title, t.nav_dashboard), icon: LayoutDashboard }], showCondition: true },
-    { id: 'sales', label: language === 'ar' ? 'المبيعات' : 'Sales', items: salesMenuItems, showCondition: permissions.admin || permissions.sales },
-    { id: 'purchases', label: language === 'ar' ? 'المشتريات' : 'Purchases', items: purchasesMenuItems, showCondition: permissions.admin || permissions.purchases },
-    { id: 'accounting', label: language === 'ar' ? 'الحسابات' : 'Accounts', items: accountsMenuItems, showCondition: permissions.admin || permissions.reports || permissions.financial_accounting },
-    { id: 'inventory', label: language === 'ar' ? 'المستودعات' : 'Warehouses', items: warehouseMenuItems, showCondition: permissions.admin || permissions.purchases || permissions.warehouses },
-    { id: 'hr', label: t.nav_hr, items: hrItems, showCondition: permissions.admin || permissions.employees || permissions.payroll },
-    { id: 'operations', label: language === 'ar' ? 'العمليات' : 'Operations', items: operationsItems, showCondition: true },
-    { id: 'integrations', label: t.nav_integrations_section, items: integrationItems, showCondition: true },
-    { id: 'system', label: language === 'ar' ? 'النظام' : 'System', items: systemMenuItems, showCondition: canManageUsers },
+  // ===== Build sections =====
+  const coreSections: Section[] = [
+    { id: 'sales', label: getSectionLabel('sales', language === 'ar' ? 'المبيعات' : 'Sales'), icon: DollarSign, items: salesMenuItems, showCondition: permissions.admin || permissions.sales },
+    { id: 'purchases', label: getSectionLabel('purchases', language === 'ar' ? 'المشتريات' : 'Purchases'), icon: ShoppingCart, items: purchasesMenuItems, showCondition: permissions.admin || permissions.purchases },
+    { id: 'accounting', label: getSectionLabel('accounting', language === 'ar' ? 'الحسابات' : 'Accounts'), icon: Calculator, items: accountsMenuItems, showCondition: permissions.admin || permissions.reports || permissions.financial_accounting },
+    { id: 'inventory', label: getSectionLabel('inventory', language === 'ar' ? 'المستودعات' : 'Warehouses'), icon: Warehouse, items: warehouseMenuItems, showCondition: permissions.admin || permissions.purchases || permissions.warehouses },
+    { id: 'hr', label: getSectionLabel('hr', t.nav_hr), icon: Users, items: hrItems, showCondition: permissions.admin || permissions.employees || permissions.payroll },
+    { id: 'system', label: getSectionLabel('system', language === 'ar' ? 'النظام' : 'System'), icon: Settings2, items: systemMenuItems, showCondition: canManageUsers },
+    { id: 'more', label: language === 'ar' ? 'المزيد' : 'More', icon: MoreHorizontal, items: moreItems, showCondition: true, isMore: true },
   ];
 
-  const getFilteredItems = (sec: typeof allSections[0]) => 
+  const getFilteredItems = (sec: Section) =>
     sec.items.filter(item => hasAccess(item.permission) && isItemVisible(sec.id, item.id));
 
-  const visibleSections = allSections.filter(sec => {
+  const visibleSections = coreSections.filter(sec => {
     if (!sec.showCondition || !isSectionVisible(sec.id)) return false;
     return getFilteredItems(sec).length > 0;
   });
 
-  // Auto-detect active section based on current activePage
+  // Auto-open the section containing the active page
   useEffect(() => {
     if (activePage && activePage !== 'dashboard') {
-      const matchingSection = visibleSections.find(sec => 
+      const matchingSection = visibleSections.find(sec =>
         sec.items.some(item => item.id === activePage)
       );
       if (matchingSection) {
-        setActiveSection(matchingSection.id);
+        setOpenSections(prev => ({ ...prev, [matchingSection.id]: true }));
       }
     }
   }, [activePage]);
 
-  const handleSectionClick = (sectionId: string) => {
-    setActiveSection(prev => prev === sectionId ? null : sectionId);
+  const toggleSection = (sectionId: string) => {
+    setOpenSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
   };
 
-  const activeSectionData = visibleSections.find(s => s.id === activeSection);
-  const activeSectionItems = activeSectionData ? getFilteredItems(activeSectionData) : [];
-
-  return <aside className="w-[280px] sm:w-64 min-h-screen max-h-[100dvh] bg-sidebar text-sidebar-foreground flex flex-col shrink-0">
+  return (
+    <aside className="w-[260px] sm:w-60 min-h-screen max-h-[100dvh] bg-sidebar text-sidebar-foreground flex flex-col shrink-0">
       {/* Logo */}
-      <div className="p-4 sm:p-5 border-b border-sidebar-border/50">
+      <div className="p-4 border-b border-sidebar-border/50">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl overflow-hidden bg-sidebar-accent flex items-center justify-center ring-2 ring-sidebar-primary/20">
+          <div className="w-10 h-10 rounded-xl overflow-hidden bg-sidebar-accent flex items-center justify-center ring-2 ring-sidebar-primary/20">
             <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" onError={e => {
-            (e.target as HTMLImageElement).src = defaultLogo;
-          }} />
+              (e.target as HTMLImageElement).src = defaultLogo;
+            }} />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="font-bold text-base text-white truncate">{appName}</h1>
+            <h1 className="font-bold text-sm text-white truncate">{appName}</h1>
             <p className="text-[10px] text-sidebar-foreground/50 truncate">{appSubtitle}</p>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        {/* Show sub-items of active section */}
-        <div className="flex-1 overflow-y-auto p-2">
-          {activeSection && activeSectionItems.length > 0 ? (
-            <>
-              <button 
+      {/* Dashboard button */}
+      <div className="px-2 pt-2">
+        <button
+          onClick={() => setActivePage('dashboard' as ActivePage)}
+          className={cn(
+            "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150",
+            activePage === 'dashboard'
+              ? "bg-sidebar-primary text-white shadow-sm shadow-sidebar-primary/20"
+              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          )}
+        >
+          <LayoutDashboard className="w-4 h-4 shrink-0" />
+          <span>{s(settings?.dashboard_title, t.nav_dashboard)}</span>
+        </button>
+      </div>
+
+      {/* Scrollable sections */}
+      <ScrollArea className="flex-1 min-h-0">
+        <nav className="p-2 space-y-0.5">
+          {visibleSections.map(section => {
+            const filtered = getFilteredItems(section);
+            return (
+              <SidebarSection
+                key={section.id}
+                section={{ ...section, items: filtered }}
+                activePage={activePage}
+                setActivePage={setActivePage}
+                isOpen={!!openSections[section.id]}
+                onToggle={() => toggleSection(section.id)}
+                getItemLabel={getItemLabel}
+              />
+            );
+          })}
+
+          {/* Super Admin */}
+          {isSuperAdmin && (
+            <div className="mt-3 pt-3 border-t border-sidebar-border/30">
+              <button
+                type="button"
                 onClick={() => {
-                  setActiveSection(null);
-                  setActivePage('dashboard' as ActivePage);
+                  setActivePage('dashboard');
+                  navigate('/companies');
                 }}
-                className="flex items-center gap-2 text-xs text-sidebar-foreground/50 hover:text-sidebar-foreground mb-2 px-2 py-1 w-full"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-warning/70 hover:bg-warning/10 hover:text-warning transition-all duration-150"
               >
-                <ChevronRight className="w-3 h-3 rotate-180" />
-                <span className="font-bold">{activeSectionData?.label}</span>
+                <Crown className="w-4 h-4 shrink-0" />
+                <span>{t.nav_company_management}</span>
               </button>
-              <ul className="space-y-0.5">
-                {activeSectionItems.map(item => {
-                  const Icon = item.icon;
-                  const isActive = activePage === item.id;
-                  const itemLabel = getItemLabel(activeSection, item.id, item.label);
-                  return <li key={item.id}>
-                    <button onClick={() => setActivePage(item.id)} className={cn("w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200", isActive ? "bg-sidebar-primary text-white shadow-md shadow-sidebar-primary/25" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground")}>
-                      <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors", isActive ? "bg-white/20" : "bg-sidebar-accent/50")}>
-                        <Icon className="w-3.5 h-3.5 shrink-0" />
-                      </div>
-                      <span className="font-medium text-xs truncate">{itemLabel}</span>
-                    </button>
-                  </li>;
-                })}
-              </ul>
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-full text-sidebar-foreground/30 text-xs">
-              {language === 'ar' ? 'اختر قسماً من القائمة الرئيسية' : 'Select a section'}
             </div>
           )}
+        </nav>
+      </ScrollArea>
 
-          {isSuperAdmin && <div className="mt-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-warning/50 mb-2 px-3">{t.nav_super_admin}</p>
-              <ul className="space-y-0.5">
-                <li>
-                  <button type="button" onClick={() => {
-                setActivePage('dashboard');
-                navigate('/companies');
-              }} className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200", "text-warning/70 hover:bg-warning/10 hover:text-warning")}>
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-warning/10">
-                      <Crown className="w-4 h-4 shrink-0" />
-                    </div>
-                    <span className="font-medium text-sm truncate">{t.nav_company_management}</span>
-                  </button>
-                </li>
-              </ul>
-            </div>}
-        </div>
-      </nav>
-
-      {/* Language Switcher & Footer */}
+      {/* Footer */}
       <div className="p-3 border-t border-sidebar-border/50 space-y-2">
         <LanguageSwitcher variant="sidebar" />
         <p className="text-[10px] text-center text-sidebar-foreground/30 font-medium">
-          {companyType === 'construction' ? t.nav_system_footer_construction : 
-           companyType === 'general_trading' ? t.nav_system_footer_trading : 
-           companyType === 'restaurant' ? t.nav_system_footer_restaurant :
-           companyType === 'export_import' ? t.nav_system_footer_export_import :
-           t.nav_system_footer_car} © 2026
+          {companyType === 'construction' ? t.nav_system_footer_construction :
+            companyType === 'general_trading' ? t.nav_system_footer_trading :
+              companyType === 'restaurant' ? t.nav_system_footer_restaurant :
+                companyType === 'export_import' ? t.nav_system_footer_export_import :
+                  t.nav_system_footer_car} © 2026
         </p>
       </div>
-    </aside>;
+    </aside>
+  );
 }
