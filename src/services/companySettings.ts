@@ -69,7 +69,17 @@ export async function updateCompanySettings(
     if (error) throw error;
   }
 
-  // Update app_settings for this company
+  // Update company name if app_name is provided
+  if (settings.app_name !== undefined) {
+    const { error } = await supabase
+      .from('companies')
+      .update({ name: settings.app_name })
+      .eq('id', companyId);
+    
+    if (error) throw error;
+  }
+
+  // Update app_settings for this company using upsert
   const settingsToUpdate: { key: string; value: string }[] = [];
   
   if (settings.welcome_message !== undefined) {
@@ -83,34 +93,18 @@ export async function updateCompanySettings(
   }
 
   for (const setting of settingsToUpdate) {
-    // Check if setting exists for this company
-    const { data: existing } = await supabase
+    const { error } = await supabase
       .from('app_settings')
-      .select('id')
-      .eq('company_id', companyId)
-      .eq('key', setting.key)
-      .single();
-
-    if (existing) {
-      // Update existing
-      const { error } = await supabase
-        .from('app_settings')
-        .update({ value: setting.value })
-        .eq('id', existing.id);
-      
-      if (error) throw error;
-    } else {
-      // Insert new
-      const { error } = await supabase
-        .from('app_settings')
-        .insert({
+      .upsert(
+        {
           company_id: companyId,
           key: setting.key,
           value: setting.value,
-        });
-      
-      if (error) throw error;
-    }
+        },
+        { onConflict: 'company_id,key' }
+      );
+    
+    if (error) throw error;
   }
 }
 
