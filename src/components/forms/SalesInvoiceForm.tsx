@@ -745,7 +745,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     if (!savedSaleData) return null;
 
     return {
-      invoiceNumber: savedSaleData.id?.slice(0, 8) || nextInvoiceNumber,
+      invoiceNumber: savedSaleData.sale_number || invoiceData.invoice_number || String(nextInvoiceNumber),
       invoiceDate: invoiceData.sale_date,
       invoiceType: 'sale' as const,
       sellerName: taxSettings?.company_name_ar || company?.name || '',

@@ -648,7 +648,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     if (!savedBatchData) return null;
 
     return {
-      invoiceNumber: savedBatchData.batch?.id?.slice(0, 8) || nextInvoiceNumber,
+      invoiceNumber: savedBatchData.batch?.batch_number || invoiceData.invoice_number || String(nextInvoiceNumber),
       invoiceDate: invoiceData.purchase_date,
       supplierName: selectedSupplier?.name || '',
       supplierTaxNumber: selectedSupplier?.registration_number || '',
