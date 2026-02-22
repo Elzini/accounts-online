@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
 
 interface ReturnItem {
   id: string;
@@ -51,12 +52,16 @@ interface SaleData {
 export function SalesReturnsPage() {
   const { t, language } = useLanguage();
   const companyId = useCompanyId();
+  const { company } = useCompany();
+  const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
+  const isCarDealership = companyType === 'car_dealership';
   const queryClient = useQueryClient();
   const [searchList, setSearchList] = useState('');
   const [activeTab, setActiveTab] = useState('form');
   const [invoiceSearch, setInvoiceSearch] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [foundSale, setFoundSale] = useState<SaleData | null>(null);
+  const [foundInvoice, setFoundInvoice] = useState<any>(null);
   const [form, setForm] = useState({
     invoiceType: 'normal',
     paymentMethod: 'cash',
@@ -68,6 +73,48 @@ export function SalesReturnsPage() {
     reference: '',
   });
   const [items, setItems] = useState<ReturnItem[]>([]);
+
+  // Fetch available sales invoices for selection dropdown
+  const { data: availableInvoices = [] } = useQuery({
+    queryKey: ['available-invoices-for-return', companyId, isCarDealership],
+    queryFn: async () => {
+      if (isCarDealership) {
+        const { data, error } = await supabase
+          .from('sales')
+          .select('id, sale_number, sale_date, sale_price, customer:customers(name)')
+          .eq('company_id', companyId!)
+          .order('sale_number', { ascending: false })
+          .limit(200);
+        if (error) throw error;
+        return (data || []).map((s: any) => ({
+          id: s.id,
+          number: s.sale_number,
+          date: s.sale_date,
+          total: s.sale_price,
+          customerName: s.customer?.name || '',
+          source: 'sales' as const,
+        }));
+      } else {
+        const { data, error } = await supabase
+          .from('invoices')
+          .select('id, invoice_number, invoice_date, total, customer_name')
+          .eq('company_id', companyId!)
+          .eq('invoice_type', 'sales')
+          .order('invoice_number', { ascending: false })
+          .limit(200);
+        if (error) throw error;
+        return (data || []).map((inv: any) => ({
+          id: inv.id,
+          number: inv.invoice_number,
+          date: inv.invoice_date,
+          total: inv.total,
+          customerName: inv.customer_name || '',
+          source: 'invoices' as const,
+        }));
+      }
+    },
+    enabled: !!companyId,
+  });
 
   const { data: returns = [], isLoading } = useQuery({
     queryKey: ['sales-returns', companyId],
@@ -87,36 +134,60 @@ export function SalesReturnsPage() {
     if (!invoiceSearch.trim() || !companyId) return;
     setIsSearching(true);
     try {
-      const { data: sale, error } = await supabase
-        .from('sales')
-        .select(`
-          *,
-          car:cars(*),
-          customer:customers(name, phone),
-          sale_items:sale_items(*, car:cars(*))
-        `)
-        .eq('company_id', companyId)
-        .eq('sale_number', parseInt(invoiceSearch))
-        .single();
+      if (isCarDealership) {
+        // Search in sales table for car dealerships
+        const { data: sale, error } = await supabase
+          .from('sales')
+          .select(`
+            *,
+            car:cars(*),
+            customer:customers(name, phone),
+            sale_items:sale_items(*, car:cars(*))
+          `)
+          .eq('company_id', companyId)
+          .eq('sale_number', parseInt(invoiceSearch))
+          .single();
 
-      if (error || !sale) {
-        toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found');
-        setFoundSale(null);
-        setItems([]);
-        return;
-      }
+        if (error || !sale) {
+          toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found');
+          setFoundSale(null);
+          setFoundInvoice(null);
+          setItems([]);
+          return;
+        }
 
-      setFoundSale(sale as any);
+        setFoundSale(sale as any);
+        setFoundInvoice(null);
 
-      const saleItems = (sale as any).sale_items || [];
-      if (saleItems.length > 0) {
-        setItems(saleItems.map((item: any, idx: number) => {
-          const price = Number(item.sale_price);
+        const saleItems = (sale as any).sale_items || [];
+        if (saleItems.length > 0) {
+          setItems(saleItems.map((item: any, idx: number) => {
+            const price = Number(item.sale_price);
+            const vat = price * 0.15;
+            return {
+              id: String(idx + 1),
+              car_id: item.car_id,
+              description: `${item.car?.name || ''} ${item.car?.model || ''} - ${item.car?.color || ''} - شاسيه: ${item.car?.chassis_number || ''}`,
+              quantity: 1,
+              returnedQty: 1,
+              unit: 'سيارة',
+              price,
+              total: price,
+              discountPercent: 0,
+              discount: 0,
+              net: price,
+              vat,
+              grandTotal: price + vat,
+            };
+          }));
+        } else {
+          const car = (sale as any).car;
+          const price = Number(sale.sale_price);
           const vat = price * 0.15;
-          return {
-            id: String(idx + 1),
-            car_id: item.car_id,
-            description: `${item.car?.name || ''} ${item.car?.model || ''} - ${item.car?.color || ''} - شاسيه: ${item.car?.chassis_number || ''}`,
+          setItems([{
+            id: '1',
+            car_id: sale.car_id,
+            description: `${car?.name || ''} ${car?.model || ''} - ${car?.color || ''} - شاسيه: ${car?.chassis_number || ''}`,
             quantity: 1,
             returnedQty: 1,
             unit: 'سيارة',
@@ -127,27 +198,75 @@ export function SalesReturnsPage() {
             net: price,
             vat,
             grandTotal: price + vat,
-          };
-        }));
+          }]);
+        }
       } else {
-        const car = (sale as any).car;
-        const price = Number(sale.sale_price);
-        const vat = price * 0.15;
-        setItems([{
-          id: '1',
-          car_id: sale.car_id,
-          description: `${car?.name || ''} ${car?.model || ''} - ${car?.color || ''} - شاسيه: ${car?.chassis_number || ''}`,
-          quantity: 1,
-          returnedQty: 1,
-          unit: 'سيارة',
-          price,
-          total: price,
-          discountPercent: 0,
-          discount: 0,
-          net: price,
-          vat,
-          grandTotal: price + vat,
-        }]);
+        // Search in invoices table for non-car companies
+        const searchNum = invoiceSearch.trim();
+        const { data: invoice, error } = await supabase
+          .from('invoices')
+          .select('*')
+          .eq('company_id', companyId)
+          .eq('invoice_type', 'sales')
+          .eq('invoice_number', searchNum)
+          .single();
+
+        if (error || !invoice) {
+          toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found');
+          setFoundSale(null);
+          setFoundInvoice(null);
+          setItems([]);
+          return;
+        }
+
+        setFoundInvoice(invoice);
+        setFoundSale(null);
+
+        // Parse invoice items
+        const invoiceItems = Array.isArray((invoice as any).items) ? (invoice as any).items : [];
+        if (invoiceItems.length > 0) {
+          setItems(invoiceItems.map((item: any, idx: number) => {
+            const qty = Number(item.quantity) || 1;
+            const price = Number(item.unitPrice || item.unit_price || item.price) || 0;
+            const total = qty * price;
+            const taxRate = Number(item.taxRate || item.tax_rate) || 0.15;
+            const vat = total * taxRate;
+            return {
+              id: String(idx + 1),
+              car_id: '',
+              description: item.description || item.name || item.item_name || `صنف ${idx + 1}`,
+              quantity: qty,
+              returnedQty: qty,
+              unit: item.unit || 'وحدة',
+              price,
+              total,
+              discountPercent: 0,
+              discount: 0,
+              net: total,
+              vat,
+              grandTotal: total + vat,
+            };
+          }));
+        } else {
+          // Single item from invoice totals
+          const price = Number(invoice.subtotal) || Number(invoice.total) || 0;
+          const vat = Number(invoice.vat_amount) || price * 0.15;
+          setItems([{
+            id: '1',
+            car_id: '',
+            description: `فاتورة رقم ${invoice.invoice_number}`,
+            quantity: 1,
+            returnedQty: 1,
+            unit: 'وحدة',
+            price,
+            total: price,
+            discountPercent: 0,
+            discount: 0,
+            net: price,
+            vat,
+            grandTotal: price + vat,
+          }]);
+        }
       }
       toast.success(language === 'ar' ? 'تم العثور على الفاتورة' : 'Invoice found');
     } catch (e) {
@@ -155,7 +274,18 @@ export function SalesReturnsPage() {
     } finally {
       setIsSearching(false);
     }
-  }, [invoiceSearch, companyId, language]);
+  }, [invoiceSearch, companyId, language, isCarDealership]);
+
+  const handleSelectInvoice = useCallback((invoiceId: string) => {
+    const selected = availableInvoices.find(i => i.id === invoiceId);
+    if (selected) {
+      setInvoiceSearch(String(selected.number));
+      // Trigger search after setting
+      setTimeout(() => {
+        setInvoiceSearch(String(selected.number));
+      }, 0);
+    }
+  }, [availableInvoices]);
 
   const updateItem = (index: number, field: keyof ReturnItem, value: string | number) => {
     setItems(prev => {
@@ -182,28 +312,44 @@ export function SalesReturnsPage() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!foundSale) throw new Error('No sale found');
+      if (!foundSale && !foundInvoice) throw new Error('No sale/invoice found');
 
-      const returnedItems = items.filter(i => i.returnedQty > 0);
-      for (const item of returnedItems) {
-        const { error: carErr } = await supabase
-          .from('cars')
-          .update({ status: 'available' })
-          .eq('id', item.car_id);
-        if (carErr) throw carErr;
+      if (isCarDealership && foundSale) {
+        const returnedItems = items.filter(i => i.returnedQty > 0);
+        for (const item of returnedItems) {
+          if (item.car_id) {
+            const { error: carErr } = await supabase
+              .from('cars')
+              .update({ status: 'available' })
+              .eq('id', item.car_id);
+            if (carErr) throw carErr;
+          }
+        }
+
+        await supabase
+          .from('journal_entries')
+          .delete()
+          .eq('reference_type', 'sale')
+          .eq('reference_id', foundSale.id);
+
+        if (form.fullInvoice) {
+          await supabase.from('sale_items').delete().eq('sale_id', foundSale.id);
+          await supabase.from('sales').delete().eq('id', foundSale.id);
+        }
+      } else if (foundInvoice) {
+        // For non-car companies, reverse the invoice
+        await supabase
+          .from('journal_entries')
+          .delete()
+          .eq('reference_type', 'invoice')
+          .eq('reference_id', foundInvoice.id);
+
+        if (form.fullInvoice) {
+          await supabase.from('invoices').delete().eq('id', foundInvoice.id);
+        }
       }
 
-      await supabase
-        .from('journal_entries')
-        .delete()
-        .eq('reference_type', 'sale')
-        .eq('reference_id', foundSale.id);
-
-      if (form.fullInvoice) {
-        await supabase.from('sale_items').delete().eq('sale_id', foundSale.id);
-        await supabase.from('sales').delete().eq('id', foundSale.id);
-      }
-
+      const refNumber = foundSale ? foundSale.sale_number : foundInvoice?.invoice_number;
       const num = `SR-${String(returns.length + 1).padStart(4, '0')}`;
       const { error } = await supabase.from('credit_debit_notes').insert({
         company_id: companyId!,
@@ -211,7 +357,7 @@ export function SalesReturnsPage() {
         note_type: 'credit',
         note_date: form.returnDate,
         total_amount: totals.grandTotal,
-        reason: `مرتجع فاتورة رقم ${foundSale.sale_number}${form.notes ? ' - ' + form.notes : ''}`,
+        reason: `مرتجع فاتورة رقم ${refNumber}${form.notes ? ' - ' + form.notes : ''}`,
         status: 'approved',
       });
       if (error) throw error;
@@ -222,7 +368,9 @@ export function SalesReturnsPage() {
       queryClient.invalidateQueries({ queryKey: ['sales'] });
       queryClient.invalidateQueries({ queryKey: ['cars'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
-      toast.success(language === 'ar' ? 'تم اعتماد مرتجع المبيعات وإعادة السيارات للمخزون' : 'Sales return approved, cars returned to inventory');
+      queryClient.invalidateQueries({ queryKey: ['available-invoices-for-return'] });
+      queryClient.invalidateQueries({ queryKey: ['company-invoices'] });
+      toast.success(language === 'ar' ? 'تم اعتماد مرتجع المبيعات' : 'Sales return approved');
       resetForm();
     },
     onError: (e) => {
@@ -244,6 +392,7 @@ export function SalesReturnsPage() {
 
   const resetForm = () => {
     setFoundSale(null);
+    setFoundInvoice(null);
     setItems([]);
     setInvoiceSearch('');
     setForm({
@@ -301,18 +450,42 @@ export function SalesReturnsPage() {
 
               {/* Row 2 */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 col-span-2">
                   <Label className="text-xs shrink-0 min-w-[80px]">{language === 'ar' ? 'رقم فاتورة البيع' : 'Sale Invoice #'}</Label>
                   <div className="flex gap-1 flex-1">
+                    <Select
+                      value=""
+                      onValueChange={(val) => {
+                        const selected = availableInvoices.find(i => i.id === val);
+                        if (selected) {
+                          setInvoiceSearch(String(selected.number));
+                          // auto-search
+                          setTimeout(() => {
+                            const el = document.getElementById('search-invoice-btn');
+                            el?.click();
+                          }, 100);
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-8 text-sm flex-1">
+                        <SelectValue placeholder={language === 'ar' ? 'اختر فاتورة' : 'Select invoice'} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {availableInvoices.map(inv => (
+                          <SelectItem key={inv.id} value={inv.id}>
+                            #{inv.number} - {inv.customerName || (language === 'ar' ? 'بدون عميل' : 'No customer')} - {Number(inv.total).toLocaleString()}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Input
-                      className="h-8 text-sm font-mono flex-1"
-                      placeholder={language === 'ar' ? 'رقم الفاتورة' : 'Invoice #'}
+                      className="h-8 text-sm font-mono w-24"
+                      placeholder={language === 'ar' ? 'رقم' : '#'}
                       value={invoiceSearch}
                       onChange={e => setInvoiceSearch(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && searchInvoice()}
-                      type="number"
                     />
-                    <Button size="sm" variant="outline" className="h-8 px-2" onClick={searchInvoice} disabled={isSearching}>
+                    <Button id="search-invoice-btn" size="sm" variant="outline" className="h-8 px-2" onClick={searchInvoice} disabled={isSearching}>
                       {isSearching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
                     </Button>
                   </div>
@@ -342,7 +515,7 @@ export function SalesReturnsPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="flex items-center gap-2">
                   <Label className="text-xs shrink-0 min-w-[80px]">{language === 'ar' ? 'رقم العميل' : 'Customer #'}</Label>
-                  <Input className="h-8 text-sm bg-muted/50" value={foundSale?.customer?.name || ''} readOnly />
+                  <Input className="h-8 text-sm bg-muted/50" value={foundSale?.customer?.name || foundInvoice?.customer_name || ''} readOnly />
                 </div>
                 <div className="flex items-center gap-2">
                   <Label className="text-xs shrink-0">{language === 'ar' ? 'م. التكلفة' : 'Cost Center'}</Label>
@@ -469,7 +642,7 @@ export function SalesReturnsPage() {
               <Button
                 className="gap-2"
                 onClick={() => saveMutation.mutate()}
-                disabled={saveMutation.isPending || items.filter(i => i.returnedQty > 0).length === 0}
+                disabled={saveMutation.isPending || (!foundSale && !foundInvoice) || items.filter(i => i.returnedQty > 0).length === 0}
               >
                 {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {language === 'ar' ? 'اعتماد' : 'Approve'}
