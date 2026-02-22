@@ -48,6 +48,7 @@ import { VouchersPage } from '@/components/vouchers/VouchersPage';
 import { AuditLogsPage } from '@/components/audit/AuditLogsPage';
 import { BackupsPage } from '@/components/backups/BackupsPage';
 import { FinancingPage } from '@/components/financing/FinancingPage';
+import { SetupWizard } from '@/components/setup/SetupWizard';
 import { BankingPage } from '@/components/banking/BankingPage';
 import { FiscalYearSelectionDialog } from '@/components/FiscalYearSelectionDialog';
 import { TrialBalanceAnalysisPage } from '@/components/reports/TrialBalanceAnalysisPage';
@@ -170,6 +171,14 @@ const Index = () => {
   const { t, language } = useLanguage();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
+
+  // Show setup wizard if no fiscal years exist
+  useEffect(() => {
+    if (!isFiscalYearLoading && fiscalYears.length === 0 && currentCompany) {
+      setShowSetupWizard(true);
+    }
+  }, [isFiscalYearLoading, fiscalYears, currentCompany]);
 
   // Realtime notifications
   useRealtimeNotifications();
@@ -464,7 +473,9 @@ const Index = () => {
         onSelect={handleFiscalYearSelect}
       />
       
-      {showModuleLauncher ? (
+      {showSetupWizard ? (
+        <SetupWizard onComplete={() => setShowSetupWizard(false)} />
+      ) : showModuleLauncher ? (
         <div className="min-h-screen min-h-[100dvh] bg-background">
           {/* Minimal top bar for launcher */}
           <header className="sticky top-0 z-40 bg-background/98 backdrop-blur-lg border-b border-border/50 px-4 sm:px-6 py-2.5">
@@ -523,7 +534,7 @@ const Index = () => {
                 ) : (
                   <Building2 className="w-4 h-4 text-muted-foreground" />
                 )}
-                <span className="text-xs font-medium text-foreground truncate max-w-[200px]">
+                <span className="text-xs font-medium text-foreground truncate max-w-[300px] sm:max-w-[400px]">
                   {currentCompany?.name || ''}
                 </span>
               </div>
