@@ -9,10 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCompany } from '@/contexts/CompanyContext';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export function CustomersReport() {
   const { data: customers, isLoading: customersLoading } = useCustomers();
   const { data: sales, isLoading: salesLoading } = useSales();
+  const { companyId, company } = useCompany();
+  const isCarDealership = company?.company_type === 'car_dealership';
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
@@ -21,34 +26,79 @@ export function CustomersReport() {
   const { t, language } = useLanguage();
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
 
+  // Fetch invoices for non-car companies
+  const { data: invoices = [], isLoading: invoicesLoading } = useQuery({
+    queryKey: ['company-invoices-customers-report', companyId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('invoices')
+        .select('*')
+        .eq('company_id', companyId!)
+        .eq('invoice_type', 'sales')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId && !isCarDealership,
+  });
+
+  // Unify sales data
+  const unifiedSales = useMemo(() => {
+    if (isCarDealership) return sales || [];
+    return invoices.map((inv: any) => ({
+      id: inv.id,
+      sale_number: inv.invoice_number,
+      sale_price: inv.total || inv.subtotal || 0,
+      sale_date: inv.invoice_date || inv.created_at,
+      profit: 0,
+      commission: 0,
+      customer_id: inv.customer_id,
+      customer: { name: inv.customer_name },
+      car: null,
+      _taxAmount: inv.vat_amount || 0,
+      _total: inv.total || 0,
+    }));
+  }, [isCarDealership, sales, invoices]);
+
   // Filter sales by date and customer
   const filteredSales = useMemo(() => {
-    if (!sales) return [];
+    if (!unifiedSales) return [];
     
-    return sales.filter(sale => {
+    return unifiedSales.filter((sale: any) => {
       const saleDate = new Date(sale.sale_date);
       if (startDate && saleDate < new Date(startDate)) return false;
       if (endDate && saleDate > new Date(endDate + 'T23:59:59')) return false;
-      if (selectedCustomer !== 'all' && sale.customer_id !== selectedCustomer) return false;
+      if (selectedCustomer !== 'all') {
+        if (isCarDealership) {
+          if (sale.customer_id !== selectedCustomer) return false;
+        } else {
+          // For non-car, match by customer name from customers list
+          const cust = customers?.find((c: any) => c.id === selectedCustomer);
+          if (cust && sale.customer?.name !== cust.name) return false;
+        }
+      }
       return true;
     });
-  }, [sales, startDate, endDate, selectedCustomer]);
+  }, [unifiedSales, startDate, endDate, selectedCustomer, isCarDealership, customers]);
 
   // Calculate stats per customer
   const customerStats = useMemo(() => {
-    if (!customers || !sales) return [];
+    if (!customers) return [];
 
-    const relevantSales = sales.filter(sale => {
+    const relevantSales = (unifiedSales || []).filter((sale: any) => {
       const saleDate = new Date(sale.sale_date);
       if (startDate && saleDate < new Date(startDate)) return false;
       if (endDate && saleDate > new Date(endDate + 'T23:59:59')) return false;
       return true;
     });
 
-    return customers.map(customer => {
-      const customerSales = relevantSales.filter(sale => sale.customer_id === customer.id);
-      const totalPurchases = customerSales.reduce((sum, sale) => sum + Number(sale.sale_price), 0);
-      const totalProfit = customerSales.reduce((sum, sale) => sum + Number(sale.profit), 0);
+    return customers.map((customer: any) => {
+      const customerSales = relevantSales.filter((sale: any) => {
+        if (isCarDealership) return sale.customer_id === customer.id;
+        return sale.customer?.name === customer.name;
+      });
+      const totalPurchases = customerSales.reduce((sum: number, sale: any) => sum + Number(sale.sale_price), 0);
+      const totalProfit = customerSales.reduce((sum: number, sale: any) => sum + Number(sale.profit || 0), 0);
       
       return {
         ...customer,
@@ -56,13 +106,13 @@ export function CustomersReport() {
         totalPurchases,
         totalProfit,
         lastPurchaseDate: customerSales.length > 0 
-          ? customerSales.sort((a, b) => new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime())[0].sale_date
+          ? customerSales.sort((a: any, b: any) => new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime())[0].sale_date
           : null
       };
-    }).filter(c => selectedCustomer === 'all' || c.id === selectedCustomer);
-  }, [customers, sales, startDate, endDate, selectedCustomer]);
+    }).filter((c: any) => selectedCustomer === 'all' || c.id === selectedCustomer);
+  }, [customers, unifiedSales, startDate, endDate, selectedCustomer, isCarDealership]);
 
-  if (customersLoading || salesLoading) {
+  if (customersLoading || salesLoading || invoicesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -72,9 +122,9 @@ export function CustomersReport() {
 
   const selectedCustomerData = selectedCustomer !== 'all' ? customerStats[0] : null;
   const totalCustomers = selectedCustomer === 'all' ? customerStats.length : 1;
-  const activeCustomers = customerStats.filter(c => c.salesCount > 0).length;
-  const totalSalesAmount = customerStats.reduce((sum, c) => sum + c.totalPurchases, 0);
-  const totalSalesCount = customerStats.reduce((sum, c) => sum + c.salesCount, 0);
+  const activeCustomers = customerStats.filter((c: any) => c.salesCount > 0).length;
+  const totalSalesAmount = customerStats.reduce((sum: number, c: any) => sum + c.totalPurchases, 0);
+  const totalSalesCount = customerStats.reduce((sum: number, c: any) => sum + c.salesCount, 0);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ar-SA', {
@@ -103,17 +153,17 @@ export function CustomersReport() {
         { header: 'رقم الهاتف', key: 'phone' },
         { header: 'عدد المشتريات', key: 'sales_count' },
         { header: 'إجمالي المشتريات', key: 'total_purchases' },
-        { header: 'إجمالي الأرباح', key: 'total_profit' },
+        ...(isCarDealership ? [{ header: 'إجمالي الأرباح', key: 'total_profit' }] : []),
         { header: 'آخر شراء', key: 'last_purchase' },
       ] : [
-        { header: 'رقم البيع', key: 'sale_number' },
-        { header: 'السيارة', key: 'car' },
-        { header: 'سعر البيع', key: 'sale_price' },
-        { header: 'الربح', key: 'profit' },
+        { header: 'رقم الفاتورة', key: 'sale_number' },
+        ...(isCarDealership ? [{ header: 'السيارة', key: 'car' }] : []),
+        { header: 'المبلغ', key: 'sale_price' },
+        ...(isCarDealership ? [{ header: 'الربح', key: 'profit' }] : []),
         { header: 'التاريخ', key: 'date' },
       ],
       data: selectedCustomer === 'all'
-        ? customerStats.map(customer => ({
+        ? customerStats.map((customer: any) => ({
             name: customer.name,
             phone: customer.phone,
             sales_count: customer.salesCount,
@@ -121,7 +171,7 @@ export function CustomersReport() {
             total_profit: `${formatCurrencySimple(customer.totalProfit)} ريال`,
             last_purchase: customer.lastPurchaseDate ? formatDate(customer.lastPurchaseDate) : '-',
           }))
-        : filteredSales.map(sale => ({
+        : filteredSales.map((sale: any) => ({
             sale_number: sale.sale_number,
             car: sale.car?.name || '-',
             sale_price: `${formatCurrencySimple(Number(sale.sale_price))} ريال`,
@@ -132,7 +182,7 @@ export function CustomersReport() {
         { label: selectedCustomer === 'all' ? 'إجمالي العملاء' : 'العميل', value: selectedCustomer === 'all' ? String(totalCustomers) : selectedCustomerData?.name || '' },
         { label: 'عدد المشتريات', value: String(totalSalesCount) },
         { label: 'إجمالي المشتريات', value: `${formatCurrencySimple(totalSalesAmount)} ريال` },
-        { label: 'إجمالي الأرباح', value: `${formatCurrencySimple(customerStats.reduce((sum, c) => sum + c.totalProfit, 0))} ريال` },
+        ...(isCarDealership ? [{ label: 'إجمالي الأرباح', value: `${formatCurrencySimple(customerStats.reduce((sum: number, c: any) => sum + c.totalProfit, 0))} ريال` }] : []),
       ],
     });
   };
@@ -148,16 +198,16 @@ export function CustomersReport() {
         { header: 'العنوان', key: 'address' },
         { header: 'عدد المشتريات', key: 'sales_count' },
         { header: 'إجمالي المشتريات', key: 'total_purchases' },
-        { header: 'إجمالي الأرباح', key: 'total_profit' },
+        ...(isCarDealership ? [{ header: 'إجمالي الأرباح', key: 'total_profit' }] : []),
       ] : [
-        { header: 'رقم البيع', key: 'sale_number' },
-        { header: 'السيارة', key: 'car' },
-        { header: 'سعر البيع', key: 'sale_price' },
-        { header: 'الربح', key: 'profit' },
+        { header: 'رقم الفاتورة', key: 'sale_number' },
+        ...(isCarDealership ? [{ header: 'السيارة', key: 'car' }] : []),
+        { header: 'المبلغ', key: 'sale_price' },
+        ...(isCarDealership ? [{ header: 'الربح', key: 'profit' }] : []),
         { header: 'التاريخ', key: 'date' },
       ],
       data: selectedCustomer === 'all'
-        ? customerStats.map(customer => ({
+        ? customerStats.map((customer: any) => ({
             name: customer.name,
             id_number: customer.id_number || '-',
             registration_number: customer.registration_number || '-',
@@ -167,7 +217,7 @@ export function CustomersReport() {
             total_purchases: customer.totalPurchases,
             total_profit: customer.totalProfit,
           }))
-        : filteredSales.map(sale => ({
+        : filteredSales.map((sale: any) => ({
             sale_number: sale.sale_number,
             car: sale.car?.name || '-',
             sale_price: Number(sale.sale_price),
@@ -184,7 +234,7 @@ export function CustomersReport() {
   };
 
   // Sort customers by purchases
-  const sortedCustomers = [...customerStats].sort((a, b) => b.totalPurchases - a.totalPurchases);
+  const sortedCustomers = [...customerStats].sort((a: any, b: any) => b.totalPurchases - a.totalPurchases);
 
   return (
     <div className="space-y-6">
@@ -200,7 +250,7 @@ export function CustomersReport() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t.rpt_cust_select_all}</SelectItem>
-              {customers?.map(customer => (
+              {customers?.map((customer: any) => (
                 <SelectItem key={customer.id} value={customer.id}>{customer.name}</SelectItem>
               ))}
             </SelectContent>
@@ -333,18 +383,18 @@ export function CustomersReport() {
                     <TableHead className="text-right">{t.rpt_cust_col_phone}</TableHead>
                     <TableHead className="text-right">{t.rpt_cust_purchases_count}</TableHead>
                     <TableHead className="text-right">{t.rpt_cust_purchases_total}</TableHead>
-                    <TableHead className="text-right">{t.rpt_cust_total_profit}</TableHead>
+                    {isCarDealership && <TableHead className="text-right">{t.rpt_cust_total_profit}</TableHead>}
                     <TableHead className="text-right">{t.rpt_cust_last_purchase}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedCustomers.map((customer) => (
+                  {sortedCustomers.map((customer: any) => (
                     <TableRow key={customer.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedCustomer(customer.id)}>
                       <TableCell className="font-medium">{customer.name}</TableCell>
                       <TableCell>{customer.phone}</TableCell>
                       <TableCell>{customer.salesCount}</TableCell>
                       <TableCell>{formatCurrency(customer.totalPurchases)}</TableCell>
-                      <TableCell className="text-green-600 font-medium">{formatCurrency(customer.totalProfit)}</TableCell>
+                      {isCarDealership && <TableCell className="text-green-600 font-medium">{formatCurrency(customer.totalProfit)}</TableCell>}
                       <TableCell>{customer.lastPurchaseDate ? formatDate(customer.lastPurchaseDate) : '-'}</TableCell>
                     </TableRow>
                   ))}
@@ -370,22 +420,22 @@ export function CustomersReport() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">رقم البيع</TableHead>
-                    <TableHead className="text-right">السيارة</TableHead>
-                    <TableHead className="text-right">الموديل</TableHead>
-                    <TableHead className="text-right">سعر البيع</TableHead>
-                    <TableHead className="text-right">الربح</TableHead>
+                    <TableHead className="text-right">رقم الفاتورة</TableHead>
+                    {isCarDealership && <TableHead className="text-right">السيارة</TableHead>}
+                    {isCarDealership && <TableHead className="text-right">الموديل</TableHead>}
+                    <TableHead className="text-right">المبلغ</TableHead>
+                    {isCarDealership && <TableHead className="text-right">الربح</TableHead>}
                     <TableHead className="text-right">التاريخ</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredSales.map((sale) => (
+                  {filteredSales.map((sale: any) => (
                     <TableRow key={sale.id}>
                       <TableCell className="font-medium">{sale.sale_number}</TableCell>
-                      <TableCell>{sale.car?.name || '-'}</TableCell>
-                      <TableCell>{sale.car?.model || '-'}</TableCell>
+                      {isCarDealership && <TableCell>{sale.car?.name || '-'}</TableCell>}
+                      {isCarDealership && <TableCell>{sale.car?.model || '-'}</TableCell>}
                       <TableCell>{formatCurrency(Number(sale.sale_price))}</TableCell>
-                      <TableCell className="text-green-600 font-medium">{formatCurrency(Number(sale.profit))}</TableCell>
+                      {isCarDealership && <TableCell className="text-green-600 font-medium">{formatCurrency(Number(sale.profit))}</TableCell>}
                       <TableCell>{formatDate(sale.sale_date)}</TableCell>
                     </TableRow>
                   ))}
