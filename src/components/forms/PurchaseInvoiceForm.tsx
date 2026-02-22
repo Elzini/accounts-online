@@ -381,6 +381,11 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         toast.error(t.inv_toast_add_item);
         return;
       }
+      const emptyNameItem = purchaseInventoryItems.find(i => !i.item_name?.trim());
+      if (emptyNameItem) {
+        toast.error('الرجاء إدخال اسم الصنف لجميع العناصر');
+        return;
+      }
       const invalidItem = purchaseInventoryItems.find(i => !i.purchase_price || parseFloat(i.purchase_price) <= 0);
       if (invalidItem) {
         toast.error(t.inv_toast_enter_item_price);
@@ -898,7 +903,14 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                     {calculations.inventoryItems.map((item, index) => (
                       <TableRow key={item.id} className="hover:bg-primary/5 border-b bg-[hsl(var(--primary)/0.03)]">
                         <TableCell className="text-center text-xs py-1">{index + 1}</TableCell>
-                        <TableCell className="text-xs py-1 font-medium">{item.item_name}</TableCell>
+                        <TableCell className="py-1">
+                          <Input 
+                            value={purchaseInventoryItems[index]?.item_name || ''} 
+                            onChange={(e) => handleInventoryItemChange(item.id, 'item_name', e.target.value)} 
+                            placeholder={t.inv_item_name_placeholder || 'اسم الصنف / الخدمة'} 
+                            className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" 
+                          />
+                        </TableCell>
                         <TableCell className="py-1"><Input value={purchaseInventoryItems[index]?.barcode || ''} onChange={(e) => handleInventoryItemChange(item.id, 'barcode', e.target.value)} placeholder={t.inv_barcode} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" dir="ltr" /></TableCell>
                         <TableCell className="py-1"><Input type="number" min={1} value={purchaseInventoryItems[index]?.quantity || 1} onChange={(e) => handleInventoryItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)} className="h-7 text-xs text-center border-0 border-b border-border rounded-none bg-transparent w-16" /></TableCell>
                         <TableCell className="text-center text-xs py-1">{item.unit_name}</TableCell>
@@ -921,25 +933,27 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   </TableBody>
                 </Table>
                 <div className="p-2 border-t flex gap-2 bg-muted/20">
-                  <Select onValueChange={handleSelectExistingItem}>
-                    <SelectTrigger className="h-8 text-xs w-[250px]">
-                      <SelectValue placeholder={t.inv_select_inventory_item} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(inventoryItems || []).map((item: any) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          <div className="flex items-center gap-2">
-                            <Package className="w-3 h-3" />
-                            {item.name} {item.barcode ? `(${item.barcode})` : ''}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                   <Button type="button" variant="outline" size="sm" onClick={handleAddInventoryItem} className="gap-1.5 text-xs h-8">
                     <Plus className="w-3.5 h-3.5" />
-                    {t.inv_new_item}
+                    {t.inv_add_item || 'إضافة صنف'}
                   </Button>
+                  {(inventoryItems || []).length > 0 && (
+                    <Select onValueChange={handleSelectExistingItem}>
+                      <SelectTrigger className="h-8 text-xs w-[250px]">
+                        <SelectValue placeholder={t.inv_select_inventory_item || 'اختر من المخزون...'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(inventoryItems || []).map((item: any) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            <div className="flex items-center gap-2">
+                              <Package className="w-3 h-3" />
+                              {item.name} {item.barcode ? `(${item.barcode})` : ''}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </>
             )}
