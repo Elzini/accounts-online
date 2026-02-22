@@ -99,6 +99,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const { data: existingSales = [] } = useSales();
   const { data: salesWithItems = [] } = useSalesWithItems();
   const { data: savedTemplates = [] } = useImportedInvoiceData();
+  const [existingInvoices, setExistingInvoices] = useState<any[]>([]);
   const { company } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
   const addMultiCarSale = useAddMultiCarSale();
@@ -123,27 +124,45 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     [allCars]
   );
 
-  // Filter sales by fiscal year
+  // Fetch invoices for non-car companies
+  useEffect(() => {
+    if (!isCarDealership && companyId) {
+      const fetchInvoices = async () => {
+        const { data } = await supabase
+          .from('invoices')
+          .select('*, invoice_items(*)')
+          .eq('company_id', companyId)
+          .eq('invoice_type', 'sales')
+          .order('created_at', { ascending: true });
+        setExistingInvoices(data || []);
+      };
+      fetchInvoices();
+    }
+  }, [isCarDealership, companyId, existingSales]);
+
+  // Filter sales/invoices by fiscal year
   const fiscalYearFilteredSales = useMemo(() => {
-    if (!selectedFiscalYear) return existingSales;
+    const sourceData = isCarDealership ? existingSales : existingInvoices;
+    if (!selectedFiscalYear) return sourceData;
     
     const fyStart = new Date(selectedFiscalYear.start_date);
     fyStart.setHours(0, 0, 0, 0);
     const fyEnd = new Date(selectedFiscalYear.end_date);
     fyEnd.setHours(23, 59, 59, 999);
     
-    return existingSales.filter(sale => {
-      const saleDate = new Date(sale.sale_date);
-      return saleDate >= fyStart && saleDate <= fyEnd;
+    return sourceData.filter((item: any) => {
+      const itemDate = new Date(isCarDealership ? item.sale_date : item.invoice_date);
+      return itemDate >= fyStart && itemDate <= fyEnd;
     });
-  }, [existingSales, selectedFiscalYear]);
+  }, [existingSales, existingInvoices, selectedFiscalYear, isCarDealership]);
 
   // Generate next invoice number
   const nextInvoiceNumber = useMemo(() => {
     const year = new Date().getFullYear();
-    const nextNum = existingSales.length + 1;
+    const sourceData = isCarDealership ? existingSales : existingInvoices;
+    const nextNum = sourceData.length + 1;
     return `INV-${year}-${String(nextNum).padStart(3, '0')}`;
-  }, [existingSales]);
+  }, [existingSales, existingInvoices, isCarDealership]);
 
   const [invoiceData, setInvoiceData] = useState({
     invoice_number: '',
@@ -516,8 +535,19 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
         if (itemsError) throw itemsError;
 
         setSavedSaleData({ id: invoice.id, customer: selectedCustomer, inventoryItems: selectedInventoryItems });
-        toast.success(t.inv_toast_invoice_success);
-        setInvoiceOpen(true);
+        toast.success(t.inv_draft_saved || t.inv_toast_invoice_success);
+        // Enter viewing mode for the saved draft
+        setIsViewingExisting(true);
+        setCurrentSaleId(invoice.id);
+        setCurrentSaleStatus('draft');
+        // Refresh invoices list
+        const { data: updatedInvoices } = await supabase
+          .from('invoices')
+          .select('*, invoice_items(*)')
+          .eq('company_id', companyId)
+          .eq('invoice_type', 'sales')
+          .order('created_at', { ascending: true });
+        setExistingInvoices(updatedInvoices || []);
       } catch (error: any) {
         console.error('Invoice error:', error);
         toast.error(t.inv_toast_invoice_error);
@@ -598,15 +628,18 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     setCurrentSaleId(sale.id);
     setCurrentSaleStatus(sale.status === 'approved' ? 'approved' : 'draft');
     setIsEditing(false);
+
+    // Check if this is an invoice record (from invoices table) vs a sale record
+    const isInvoiceRecord = !!sale.invoice_number;
     
     setInvoiceData({
-      invoice_number: sale.sale_number || '',
+      invoice_number: isInvoiceRecord ? (sale.invoice_number || '') : (sale.sale_number || ''),
       customer_id: sale.customer_id || '',
-      sale_date: sale.sale_date,
+      sale_date: isInvoiceRecord ? (sale.invoice_date || '') : (sale.sale_date || ''),
       payment_account_id: sale.payment_account_id || '',
       warehouse: 'main',
       seller_name: sale.seller_name || '',
-      notes: '',
+      notes: sale.notes || '',
       price_includes_tax: true,
       commission: String(sale.commission || ''),
       other_expenses: String(sale.other_expenses || ''),
@@ -617,7 +650,30 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       first_installment_date: new Date().toISOString().split('T')[0],
     });
 
-    if (sale.sale_items && sale.sale_items.length > 0) {
+    // Load invoice items for non-car companies
+    if (isInvoiceRecord && sale.invoice_items && sale.invoice_items.length > 0) {
+      const loadedItems: SelectedInventoryItem[] = sale.invoice_items.map((item: any) => ({
+        id: crypto.randomUUID(),
+        item_id: item.inventory_item_id || '',
+        item_name: item.item_description || '',
+        barcode: item.item_code || '',
+        unit_name: item.unit || 'وحدة',
+        unit_id: null,
+        sale_price: String(item.unit_price || 0),
+        cost_price: 0,
+        quantity: item.quantity || 1,
+        available_quantity: 0,
+      }));
+      setSelectedInventoryItems(loadedItems);
+      setSelectedCars([]);
+      if (sale.discount_amount) {
+        setDiscount(sale.discount_amount);
+        setDiscountType('amount');
+      }
+      if (sale.amount_paid) {
+        setPaidAmount(sale.amount_paid);
+      }
+    } else if (sale.sale_items && sale.sale_items.length > 0) {
       const loadedCars: SelectedCarItem[] = [];
       
       for (const item of sale.sale_items) {
