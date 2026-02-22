@@ -209,7 +209,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     [availableCars, selectedCars]
   );
 
-  // Add inventory item to invoice
+  // Add inventory item to invoice (from dropdown)
   const handleAddInventoryItem = (itemId: string) => {
     const item = (inventoryItems || []).find((i: any) => i.id === itemId) as any;
     if (!item) return;
@@ -225,6 +225,22 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       cost_price: Number(item.cost_price || 0),
       quantity: 1,
       available_quantity: Number(item.current_quantity || 0),
+    }]);
+  };
+
+  // Add empty manual item row
+  const handleAddManualItem = () => {
+    setSelectedInventoryItems([...selectedInventoryItems, {
+      id: crypto.randomUUID(),
+      item_id: '',
+      item_name: '',
+      barcode: '',
+      unit_name: t.inv_unit || 'وحدة',
+      unit_id: null,
+      sale_price: '',
+      cost_price: 0,
+      quantity: 1,
+      available_quantity: 0,
     }]);
   };
 
@@ -422,6 +438,11 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     } else {
       if (selectedInventoryItems.length === 0) {
         toast.error(t.inv_toast_add_item);
+        return;
+      }
+      const emptyNameItem = selectedInventoryItems.find(i => !i.item_name?.trim());
+      if (emptyNameItem) {
+        toast.error('الرجاء إدخال اسم الصنف لجميع العناصر');
         return;
       }
       const invalidItem = selectedInventoryItems.find(i => !i.sale_price || parseFloat(i.sale_price) <= 0);
@@ -1123,7 +1144,15 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                       return (
                         <TableRow key={item.id} className="hover:bg-primary/5 border-b bg-[hsl(var(--primary)/0.03)]">
                           <TableCell className="text-center text-xs py-1">{index + 1}</TableCell>
-                          <TableCell className="text-xs py-1 font-medium">{item.item_name}</TableCell>
+                          <TableCell className="py-1">
+                            <Input 
+                              value={item.item_name} 
+                              onChange={(e) => handleInventoryItemChange(item.id, 'item_name', e.target.value)} 
+                              placeholder={t.inv_item_name_placeholder || 'اسم الصنف / الخدمة'} 
+                              className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" 
+                              disabled={isApproved}
+                            />
+                          </TableCell>
                           <TableCell className="py-1">
                             <Input type="number" min={1} max={item.available_quantity || undefined} value={item.quantity} onChange={(e) => handleInventoryItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)} className="h-7 text-xs text-center w-16 border-0 border-b border-border rounded-none bg-transparent" disabled={isApproved} />
                           </TableCell>
@@ -1153,23 +1182,29 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   </TableBody>
                 </Table>
                 <div className="p-2 border-t flex gap-2 flex-wrap bg-muted/20">
-                  <Select onValueChange={handleAddInventoryItem}>
-                    <SelectTrigger className="w-[300px] h-8 text-xs">
-                      <SelectValue placeholder={t.inv_select_item_placeholder} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableInventoryItems.map((item: any) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          <div className="flex items-center gap-2">
-                            <Package className="w-3 h-3" />
-                            <span>{item.name}</span>
-                            {item.barcode && <span className="text-muted-foreground text-xs" dir="ltr">{item.barcode}</span>}
-                            <span className="text-muted-foreground text-xs">({item.current_quantity || 0})</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Button type="button" variant="outline" size="sm" className="gap-2 h-8 text-xs" onClick={handleAddManualItem} disabled={isApproved}>
+                    <Plus className="w-3 h-3" />
+                    {t.inv_add_item || 'إضافة صنف'}
+                  </Button>
+                  {availableInventoryItems.length > 0 && (
+                    <Select onValueChange={handleAddInventoryItem}>
+                      <SelectTrigger className="w-[250px] h-8 text-xs">
+                        <SelectValue placeholder={t.inv_select_item_placeholder || 'اختر من المخزون...'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableInventoryItems.map((item: any) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            <div className="flex items-center gap-2">
+                              <Package className="w-3 h-3" />
+                              <span>{item.name}</span>
+                              {item.barcode && <span className="text-muted-foreground text-xs" dir="ltr">{item.barcode}</span>}
+                              <span className="text-muted-foreground text-xs">({item.current_quantity || 0})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </>
             )}
