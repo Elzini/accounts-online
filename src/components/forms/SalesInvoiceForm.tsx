@@ -472,7 +472,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             discount_amount: calculations.discountAmount,
             amount_paid: paidAmount,
             payment_status: paidAmount >= calculations.finalTotal ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid',
-            status: 'active',
+            status: 'draft',
             fiscal_year_id: selectedFiscalYear?.id || null,
             notes: invoiceData.notes || null,
           })
