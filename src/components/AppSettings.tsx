@@ -43,7 +43,7 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
   const updateSetting = useUpdateAppSetting();
   const resetDb = useResetDatabase();
   const { permissions } = useAuth();
-  const { companyId, company } = useCompany();
+  const { companyId, company, refreshCompany } = useCompany();
   const { t } = useLanguage();
   
   // Company settings hooks
@@ -295,6 +295,7 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
         app_name: companyAppName,
         app_subtitle: companyAppSubtitle,
       });
+      await refreshCompany();
       toast.success(t.settings_save_success);
     } catch (error) {
       console.error('Error saving company settings:', error);
