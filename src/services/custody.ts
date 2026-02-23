@@ -264,6 +264,48 @@ export async function addCustody(custody: CustodyInsert): Promise<Custody> {
   return mapEmployeeName(data) as Custody;
 }
 
+// Update journal entry amounts for custody
+export async function updateCustodyJournalEntry(
+  journalEntryId: string,
+  newAmount: number,
+  custodyName: string,
+): Promise<void> {
+  // Update journal entry totals
+  const { error: jeError } = await supabase
+    .from('journal_entries')
+    .update({
+      total_debit: newAmount,
+      total_credit: newAmount,
+      description: `إنشاء عهدة - ${custodyName}`,
+    })
+    .eq('id', journalEntryId);
+
+  if (jeError) throw jeError;
+
+  // Get existing lines to update them
+  const { data: lines, error: linesError } = await supabase
+    .from('journal_entry_lines')
+    .select('id, debit, credit')
+    .eq('journal_entry_id', journalEntryId)
+    .order('debit', { ascending: false });
+
+  if (linesError) throw linesError;
+
+  if (lines && lines.length >= 2) {
+    // Update debit line (custody account)
+    await supabase
+      .from('journal_entry_lines')
+      .update({ debit: newAmount, description: `عهدة - ${custodyName}` })
+      .eq('id', lines[0].id);
+
+    // Update credit line (cash account)
+    await supabase
+      .from('journal_entry_lines')
+      .update({ credit: newAmount, description: `صرف عهدة - ${custodyName}` })
+      .eq('id', lines[1].id);
+  }
+}
+
 // Update custody
 export async function updateCustody(id: string, updates: Partial<CustodyInsert>): Promise<Custody> {
   const { data, error } = await supabase

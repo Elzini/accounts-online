@@ -14,6 +14,7 @@ import {
   getEmployeeCarriedBalance,
   resolveCarriedCustodies,
   createCustodyJournalEntry,
+  updateCustodyJournalEntry,
   createTransactionJournalEntry,
   createEmployeeAdvance,
   CustodyInsert,
@@ -165,10 +166,23 @@ export function useCustody() {
 
   // Update custody mutation
   const updateCustodyMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<CustodyInsert> }) =>
-      updateCustodyService(id, updates),
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CustodyInsert> }) => {
+      const result = await updateCustodyService(id, updates);
+      
+      // If amount changed and there's a journal entry, update it too
+      if (updates.custody_amount !== undefined && result.journal_entry_id) {
+        await updateCustodyJournalEntry(
+          result.journal_entry_id,
+          updates.custody_amount,
+          updates.custody_name || result.custody_name,
+        );
+      }
+      
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custodies'] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
       toast.success('تم تحديث العهدة بنجاح');
     },
     onError: (error: Error) => {
