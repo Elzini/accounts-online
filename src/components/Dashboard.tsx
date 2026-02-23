@@ -56,6 +56,7 @@ import { useInstallmentStats, ActiveInstallmentsCard, OverdueInstallmentsCard, U
 import { TransfersWidget } from './dashboard/widgets/TransfersWidget';
 import { QuickActionsWidget } from './dashboard/widgets/QuickActionsWidget';
 import { ReportsWidget } from './dashboard/widgets/ReportsWidget';
+import { SmartAlertsWidget } from './dashboard/SmartAlertsWidget';
 
 interface DashboardProps {
   stats: any;
@@ -861,6 +862,13 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
                   return (
                     <EditableWidgetWrapper key={widget.id} {...props}>
                       <RecentInvoicesCard setActivePage={setActivePage} />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'smartAlerts':
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <SmartAlertsWidget setActivePage={setActivePage} />
                     </EditableWidgetWrapper>
                   );
                 

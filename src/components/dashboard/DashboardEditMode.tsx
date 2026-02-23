@@ -56,6 +56,7 @@ export const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'quickActions', label: 'الإجراءات السريعة', visible: true, order: 16, colSpan: 1 },
   { id: 'reports', label: 'التقارير', visible: true, order: 17, colSpan: 1 },
   { id: 'recentInvoices', label: 'أحدث الفواتير', visible: true, order: 18, colSpan: 2 },
+  { id: 'smartAlerts', label: 'التنبيهات الذكية', visible: true, order: 19, colSpan: 2 },
 ];
 
 interface DashboardEditModeProps {
