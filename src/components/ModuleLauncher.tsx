@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useRecentAndFavorites } from '@/hooks/useRecentAndFavorites';
 import { 
   LucideIcon, LayoutDashboard, Users, ShoppingCart, DollarSign, BookOpen, 
   Warehouse, Users2, Wrench, Plug, Settings, FileText, Factory, 
@@ -70,6 +71,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   const { data: settings } = useAppSettings();
   const { language } = useLanguage();
   const { activePlugins } = usePlugins();
+  const { recentPages, addRecent, toggleFavorite, isFavorite } = useRecentAndFavorites();
   const [selectedModule, setSelectedModule] = useState<MainModule | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showUsers, setShowUsers] = useState(false);
@@ -751,6 +753,71 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
             </div>
           </div>
 
+          {/* Favorites Section */}
+          {(() => {
+            const favoriteItems = allDisplayItems.filter(i => isFavorite(i.id));
+            if (favoriteItems.length === 0 && recentPages.length === 0) return null;
+            return (
+              <div className="mb-5 space-y-4">
+                {/* Favorites */}
+                {favoriteItems.length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                      {isRtl ? 'المفضلة' : 'Favorites'}
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {favoriteItems.map(item => {
+                        const ItemIcon = item.icon;
+                        return (
+                          <button
+                            key={`fav-${item.id}`}
+                            onClick={() => { addRecent(item.id, item.label, item.labelEn); setActivePage(item.id); }}
+                            className="group flex items-center gap-2.5 p-2.5 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 hover:border-amber-300 hover:shadow-sm transition-all text-start"
+                          >
+                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center shrink-0`}>
+                              <ItemIcon className="w-4 h-4 text-white" />
+                            </div>
+                            <span className="text-xs font-medium truncate">{isRtl ? item.label : item.labelEn}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recently Used */}
+                {recentPages.length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                      {isRtl ? 'المستخدم مؤخراً' : 'Recently Used'}
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {recentPages.map(recent => {
+                        const moduleInfo = allDisplayItems.find(i => i.id === recent.id);
+                        const RecentIcon = moduleInfo?.icon || LayoutDashboard;
+                        const gradient = moduleInfo?.gradient || 'from-slate-400 to-slate-600';
+                        return (
+                          <button
+                            key={`recent-${recent.id}`}
+                            onClick={() => { addRecent(recent.id, recent.label, recent.labelEn); setActivePage(recent.id); }}
+                            className="group flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/40 border border-border/40 hover:border-border hover:shadow-sm transition-all text-start"
+                          >
+                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0`}>
+                              <RecentIcon className="w-4 h-4 text-white" />
+                            </div>
+                            <span className="text-xs font-medium truncate">{isRtl ? recent.label : recent.labelEn}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Odoo-style Cards Grid */}
           {filteredItems.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
@@ -792,10 +859,12 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
                       if (isModule) {
                         const mod = visibleModules.find(m => m.id === item.moduleId);
                         if (mod) {
-                          // Navigate to first item directly
-                          setActivePage(mod.items[0].id);
+                          const firstItem = mod.items[0];
+                          addRecent(firstItem.id, firstItem.label, firstItem.labelEn);
+                          setActivePage(firstItem.id);
                         }
                       } else {
+                        addRecent(item.id, item.label, item.labelEn);
                         setActivePage(item.id);
                       }
                     }}
@@ -806,16 +875,25 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
                       <ItemIcon className="w-6 h-6 text-white" />
                     </div>
                     
-                    {/* Text Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="font-semibold text-sm text-foreground truncate">
-                          {isRtl ? (item.isModule ? item.label : item.label) : (item.isModule ? item.labelEn : item.labelEn)}
-                        </h3>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {description}
-                      </p>
+                     {/* Text Content */}
+                     <div className="flex-1 min-w-0">
+                       <div className="flex items-center justify-between gap-2">
+                         <h3 className="font-semibold text-sm text-foreground truncate">
+                           {isRtl ? (item.isModule ? item.label : item.label) : (item.isModule ? item.labelEn : item.labelEn)}
+                         </h3>
+                         {!isModule && (
+                           <button
+                             onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id); }}
+                             className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:scale-110"
+                             title={isRtl ? 'إضافة/إزالة من المفضلة' : 'Toggle favorite'}
+                           >
+                             <Star className={`w-3.5 h-3.5 ${isFavorite(item.id) ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground'}`} />
+                           </button>
+                         )}
+                       </div>
+                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                         {description}
+                       </p>
                       <div className="flex items-center gap-2 mt-2">
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                           {isRtl ? 'مثبت' : 'Installed'}
