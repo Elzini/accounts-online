@@ -71,7 +71,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
   const { data: settings } = useAppSettings();
   const { language } = useLanguage();
   const { activePlugins } = usePlugins();
-  const { recentPages, addRecent, toggleFavorite, isFavorite } = useRecentAndFavorites();
+  const { recentPages, addRecent, toggleFavorite, isFavorite, suggestions } = useRecentAndFavorites();
   const [selectedModule, setSelectedModule] = useState<MainModule | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showUsers, setShowUsers] = useState(false);
@@ -420,7 +420,18 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
     return 'Elzini SaaS';
   };
 
-  const visibleModules = modules.filter(m => hasAccess(m.permission));
+  // Activity-based module filtering: hide modules irrelevant to company type
+  const ACTIVITY_MODULE_MAP: Record<string, string[]> = {
+    car_dealership: [], // show all
+    general_trading: ['fleet-mod', 'plm-mod', 'field-service-mod'],
+    contracting: ['pos-mod', 'plm-mod'],
+    restaurant: ['fleet-mod', 'plm-mod', 'field-service-mod', 'manufacturing-mod'],
+    fuel_station: ['fleet-mod', 'plm-mod', 'field-service-mod', 'manufacturing-mod', 'elearning-mod'],
+    services: ['plm-mod', 'manufacturing-mod'],
+    real_estate: ['plm-mod', 'manufacturing-mod', 'pos-mod'],
+  };
+  const hiddenByActivity = new Set(ACTIVITY_MODULE_MAP[companyType] || []);
+  const visibleModules = modules.filter(m => hasAccess(m.permission) && !hiddenByActivity.has(m.id));
   const BackIcon = isRtl ? ArrowRight : ArrowLeft;
 
   // === Launcher customization config ===
@@ -808,6 +819,42 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
                               <RecentIcon className="w-4 h-4 text-white" />
                             </div>
                             <span className="text-xs font-medium truncate">{isRtl ? recent.label : recent.labelEn}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Smart Suggestions */}
+                {suggestions.length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-primary" />
+                      {isRtl ? 'مقترحات لك' : 'Suggested for you'}
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {suggestions.map(sug => {
+                        const moduleInfo = allDisplayItems.find(i => i.id === sug.id);
+                        const SugIcon = moduleInfo?.icon || LayoutDashboard;
+                        const gradient = moduleInfo?.gradient || 'from-primary to-primary';
+                        return (
+                          <button
+                            key={`sug-${sug.id}`}
+                            onClick={() => { addRecent(sug.id, sug.label, sug.labelEn); setActivePage(sug.id); }}
+                            className="group flex items-center gap-2.5 p-2.5 rounded-lg bg-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-sm transition-all text-start"
+                          >
+                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0`}>
+                              <SugIcon className="w-4 h-4 text-white" />
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-xs font-medium truncate block">{isRtl ? sug.label : sug.labelEn}</span>
+                              <span className="text-[10px] text-muted-foreground">{sug.count}x</span>
+                            </div>
+                            <Star
+                              className="w-3.5 h-3.5 text-muted-foreground/40 hover:text-amber-500 shrink-0 ms-auto cursor-pointer"
+                              onClick={(e) => { e.stopPropagation(); toggleFavorite(sug.id); }}
+                            />
                           </button>
                         );
                       })}
