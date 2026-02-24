@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Settings2, Monitor, Columns3, RefreshCw, LayoutGrid } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings2, Monitor, Columns3, RefreshCw, LayoutGrid, Sun, Moon, Sunrise } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -182,8 +182,86 @@ export function DisplaySettingsDialog({ settings, onUpdate }: DisplaySettingsDia
               </Badge>
             )}
           </div>
+
+          {/* Auto Theme */}
+          <AutoThemeSection />
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+type AutoThemeMode = 'manual' | 'auto' | 'schedule';
+const AUTO_THEME_KEY = 'pref_auto_theme_mode';
+
+function AutoThemeSection() {
+  const { language } = useLanguage();
+  const isRtl = language === 'ar';
+  
+  const [mode, setMode] = useState<AutoThemeMode>(() => {
+    try {
+      return (localStorage.getItem(AUTO_THEME_KEY) as AutoThemeMode) || 'manual';
+    } catch { return 'manual'; }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(AUTO_THEME_KEY, mode);
+    if (mode === 'auto') {
+      const hour = new Date().getHours();
+      const shouldBeDark = hour >= 19 || hour < 6;
+      if (shouldBeDark) document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    }
+  }, [mode]);
+
+  // Auto-check every minute if in auto mode
+  useEffect(() => {
+    if (mode !== 'auto') return;
+    const interval = setInterval(() => {
+      const hour = new Date().getHours();
+      const shouldBeDark = hour >= 19 || hour < 6;
+      if (shouldBeDark) document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [mode]);
+
+  const options: { value: AutoThemeMode; label: string; labelEn: string; icon: any }[] = [
+    { value: 'manual', label: 'يدوي', labelEn: 'Manual', icon: Settings2 },
+    { value: 'auto', label: 'تلقائي', labelEn: 'Auto', icon: Sunrise },
+  ];
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-xs font-medium flex items-center gap-1.5">
+        <Moon className="w-3.5 h-3.5" />
+        {isRtl ? 'الوضع الليلي/النهاري' : 'Dark/Light Mode'}
+      </Label>
+      <div className="grid grid-cols-2 gap-2">
+        {options.map(opt => {
+          const Icon = opt.icon;
+          return (
+            <button
+              key={opt.value}
+              onClick={() => setMode(opt.value)}
+              className={cn(
+                'p-2.5 rounded-lg border text-center transition-all flex flex-col items-center gap-1',
+                mode === opt.value
+                  ? 'border-primary bg-primary/10 ring-1 ring-primary'
+                  : 'border-border hover:border-primary/40'
+              )}
+            >
+              <Icon className="w-4 h-4" />
+              <span className="text-xs font-semibold">{isRtl ? opt.label : opt.labelEn}</span>
+            </button>
+          );
+        })}
+      </div>
+      {mode === 'auto' && (
+        <p className="text-[10px] text-muted-foreground">
+          {isRtl ? '🌙 الوضع الداكن من 7 مساءً إلى 6 صباحاً تلقائياً' : '🌙 Dark mode from 7 PM to 6 AM automatically'}
+        </p>
+      )}
+    </div>
   );
 }

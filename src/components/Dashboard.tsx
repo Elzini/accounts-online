@@ -59,6 +59,8 @@ import { ReportsWidget } from './dashboard/widgets/ReportsWidget';
 import { SmartAlertsWidget } from './dashboard/SmartAlertsWidget';
 import { DisplaySettingsDialog } from './dashboard/DisplaySettingsDialog';
 import { useDashboardDisplay } from '@/hooks/useUserPreferences';
+import { ExportImportSettings } from './dashboard/ExportImportSettings';
+import { FloatingPanelToggle } from './dashboard/FloatingMiniDashboard';
 
 interface DashboardProps {
   stats: any;
@@ -608,6 +610,8 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
             
             <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end">
               <DisplaySettingsDialog settings={displaySettings} onUpdate={updateDisplaySettings} />
+              <ExportImportSettings />
+              <FloatingPanelToggle />
               <OnlineUsersPopover />
               <PaymentRemindersPopover setActivePage={setActivePage} />
               <div className="h-6 w-px bg-border hidden sm:block" />
