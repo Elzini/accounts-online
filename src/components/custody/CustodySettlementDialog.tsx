@@ -262,13 +262,13 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                   <TableHead className="text-right font-bold">الحساب</TableHead>
                   <TableHead className="text-right font-bold">البيان</TableHead>
                   <TableHead className="text-right font-bold">القيمة</TableHead>
-                  <TableHead className="text-right font-bold w-24">إجراءات</TableHead>
+                  {!isSettled && <TableHead className="text-right font-bold w-24">إجراءات</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {transactions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={isSettled ? 5 : 6} className="text-center py-8 text-muted-foreground">
                       لا توجد مصروفات مسجلة
                     </TableCell>
                   </TableRow>
@@ -291,27 +291,29 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                         )}
                       </TableCell>
                       <TableCell className="font-medium">{formatNumber(tx.amount)}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => handleEditTransaction(tx)}
-                            title="تعديل"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive h-8 w-8 p-0"
-                            onClick={() => handleDeleteTransaction(tx.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+                      {!isSettled && (
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleEditTransaction(tx)}
+                              title="تعديل"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive h-8 w-8 p-0"
+                              onClick={() => handleDeleteTransaction(tx.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}
@@ -320,17 +322,17 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                 <TableRow className="bg-muted/50">
                   <TableCell colSpan={4} className="text-right font-bold">الإجمالي</TableCell>
                   <TableCell className="font-bold text-primary">{formatNumber(summary.totalSpent)}</TableCell>
-                  <TableCell />
+                  {!isSettled && <TableCell />}
                 </TableRow>
                 <TableRow className="bg-green-50">
                   <TableCell colSpan={4} className="text-right font-bold">المبلغ المردود</TableCell>
                   <TableCell className="font-bold text-green-600">{formatNumber(summary.returnedAmount)}</TableCell>
-                  <TableCell />
+                  {!isSettled && <TableCell />}
                 </TableRow>
                 <TableRow className="bg-orange-50">
                   <TableCell colSpan={4} className="text-right font-bold">الرصيد المرحل</TableCell>
                   <TableCell className="font-bold text-orange-600">{formatNumber(summary.carriedBalance)}</TableCell>
-                  <TableCell />
+                  {!isSettled && <TableCell />}
                 </TableRow>
               </TableFooter>
             </Table>
@@ -389,8 +391,9 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
           </Card>
         )}
 
-        <>
-          {showForm ? (
+        {!isSettled && (
+          <>
+            {showForm ? (
               <Card>
                 <CardContent className="pt-4">
                   <Form {...form}>
@@ -512,8 +515,9 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                 <Plus className="h-4 w-4" />
                 إضافة مصروف
               </Button>
-          )}
-        </>
+            )}
+          </>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-2 justify-end pt-4 border-t">
