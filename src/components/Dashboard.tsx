@@ -61,15 +61,19 @@ import { DisplaySettingsDialog } from './dashboard/DisplaySettingsDialog';
 import { useDashboardDisplay } from '@/hooks/useUserPreferences';
 import { ExportImportSettings } from './dashboard/ExportImportSettings';
 import { FloatingPanelToggle } from './dashboard/FloatingMiniDashboard';
+import { FocusModeToggle } from './dashboard/FocusMode';
+import { WidgetVisibilityPanel } from './dashboard/WidgetVisibilityPanel';
 
 interface DashboardProps {
   stats: any;
   setActivePage: (page: ActivePage) => void;
   isLoading?: boolean;
+  isFocusMode?: boolean;
+  onToggleFocusMode?: () => void;
 }
 
 
-export function Dashboard({ stats, setActivePage, isLoading = false }: DashboardProps) {
+export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode = false, onToggleFocusMode }: DashboardProps) {
   const queryClient = useQueryClient();
   const { data: chartData, isLoading: chartLoading } = useMonthlyChartData();
   const { data: analytics, isLoading: analyticsLoading } = useAdvancedAnalytics();
@@ -610,6 +614,12 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
             
             <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end">
               <DisplaySettingsDialog settings={displaySettings} onUpdate={updateDisplaySettings} />
+              <WidgetVisibilityPanel 
+                widgets={widgetConfigs} 
+                onToggle={(id) => setWidgetConfigs(prev => prev.map(w => w.id === id ? { ...w, visible: !w.visible } : w))}
+                onReset={() => setWidgetConfigs(DEFAULT_WIDGETS.map((w, i) => ({ ...w, order: i })))}
+              />
+              {onToggleFocusMode && <FocusModeToggle isFocusMode={isFocusMode} onToggle={onToggleFocusMode} />}
               <ExportImportSettings />
               <FloatingPanelToggle />
               <OnlineUsersPopover />

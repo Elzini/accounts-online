@@ -6,6 +6,7 @@ import { MobileSidebar, MobileSidebarRef } from '@/components/MobileSidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Dashboard } from '@/components/Dashboard';
 import { FloatingMiniDashboard } from '@/components/dashboard/FloatingMiniDashboard';
+import { useFocusMode, FocusModeOverlay } from '@/components/dashboard/FocusMode';
 import { ModuleLauncher } from '@/components/ModuleLauncher';
 import { PWAInstallButton } from '@/components/PWAInstallButton';
 import { CheckUpdateButton } from '@/components/pwa/CheckUpdateButton';
@@ -173,6 +174,7 @@ const Index = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const { isFocusMode, toggleFocusMode, exitFocusMode } = useFocusMode();
 
   // Show setup wizard if no fiscal years exist
   useEffect(() => {
@@ -234,7 +236,7 @@ const Index = () => {
 
   const renderContent = () => {
     switch (activePage) {
-      case 'dashboard': return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} />;
+      case 'dashboard': return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} isFocusMode={isFocusMode} onToggleFocusMode={toggleFocusMode} />;
       case 'customers': return <CustomersTable setActivePage={setActivePage} />;
       case 'suppliers': return <SuppliersTable setActivePage={setActivePage} />;
       case 'purchases': return <PurchasesTable setActivePage={setActivePage} />;
@@ -406,7 +408,7 @@ const Index = () => {
       case 'barcode-scanner': return <BarcodeScannerPage />;
       case 'support-contact': return <SupportContact />;
       default:
-        return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} />;
+        return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} isFocusMode={isFocusMode} onToggleFocusMode={toggleFocusMode} />;
     }
   };
 
@@ -546,16 +548,21 @@ const Index = () => {
         </div>
       ) : (
         <div className="flex min-h-screen min-h-[100dvh] bg-background">
-          {/* Desktop Sidebar */}
-          <div className="hidden lg:block shrink-0">
-            <Sidebar activePage={activePage} setActivePage={handleSetActivePage} />
-          </div>
+          {/* Desktop Sidebar - hidden in focus mode */}
+          {!isFocusMode && (
+            <div className="hidden lg:block shrink-0">
+              <Sidebar activePage={activePage} setActivePage={handleSetActivePage} />
+            </div>
+          )}
           
           {/* Mobile Sidebar */}
-          <MobileSidebar ref={mobileSidebarRef} activePage={activePage} setActivePage={handleSetActivePage} />
+          {!isFocusMode && (
+            <MobileSidebar ref={mobileSidebarRef} activePage={activePage} setActivePage={handleSetActivePage} />
+          )}
           
           <main className="flex-1 min-w-0 overflow-x-hidden pb-20 md:pb-0">
-            {/* Top Header Bar */}
+            {/* Top Header Bar - hidden in focus mode */}
+            {!isFocusMode && (
             <header className="sticky top-0 z-40 bg-background/98 backdrop-blur-lg border-b-2 border-border/80 shadow-md px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 safe-area-top">
               <div className="flex justify-between items-center gap-2">
               <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -646,6 +653,10 @@ const Index = () => {
                 </div>
               </div>
             </header>
+            )}
+            
+            {/* Focus Mode Overlay */}
+            {isFocusMode && <FocusModeOverlay onExit={exitFocusMode} />}
             
             {/* Main Content */}
             <div className="p-3 sm:p-4 md:p-6 lg:p-8">
@@ -653,12 +664,14 @@ const Index = () => {
             </div>
           </main>
 
-          {/* Bottom Navigation for Mobile */}
-          <BottomNavigation 
-            activePage={activePage} 
-            setActivePage={handleSetActivePage} 
-            onMenuClick={handleMenuClick}
-          />
+          {/* Bottom Navigation for Mobile - hidden in focus mode */}
+          {!isFocusMode && (
+            <BottomNavigation 
+              activePage={activePage} 
+              setActivePage={handleSetActivePage} 
+              onMenuClick={handleMenuClick}
+            />
+          )}
 
           {/* AI Chat Widget */}
           <AIChatWidget />
