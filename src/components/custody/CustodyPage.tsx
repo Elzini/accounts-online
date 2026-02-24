@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, FileText, Download, Wallet, CheckCircle, Clock, AlertCircle, Banknote } from 'lucide-react';
+import { Plus, FileText, Download, Wallet, CheckCircle, Clock, AlertCircle, Banknote, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { useCustody } from '@/hooks/useCustody';
 import { calculateCustodySummary, Custody } from '@/services/custody';
 import { CustodyFormDialog } from './CustodyFormDialog';
 import { CustodySettlementDialog } from './CustodySettlementDialog';
+import { CustodyAmountChangesDialog } from './CustodyAmountChangesDialog';
 import { formatNumber } from '@/components/financial-statements/utils/numberFormatting';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ExcelJS from 'exceljs';
@@ -21,7 +22,7 @@ export function CustodyPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCustody, setSelectedCustody] = useState<Custody | null>(null);
   const [settlementCustodyId, setSettlementCustodyId] = useState<string | null>(null);
-
+  const [amountChangesCustody, setAmountChangesCustody] = useState<{ id: string; name: string } | null>(null);
   const currency = language === 'ar' ? 'ر.س' : 'SAR';
 
   const getStatusBadge = (status: string) => {
@@ -196,6 +197,9 @@ export function CustodyPage() {
                             <FileText className="h-4 w-4 ml-1" />
                             {t.custody_settlement}
                           </Button>
+                          <Button variant="ghost" size="sm" onClick={() => setAmountChangesCustody({ id: custody.id, name: custody.custody_name })} title="سجل التعديلات">
+                            <History className="h-4 w-4" />
+                          </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleEdit(custody)}>{t.custody_edit}</Button>
                           <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(custody.id)} disabled={isDeleting}>{t.custody_delete}</Button>
                         </div>
@@ -212,6 +216,14 @@ export function CustodyPage() {
       <CustodyFormDialog open={isFormOpen} onOpenChange={setIsFormOpen} custody={selectedCustody} />
       {settlementCustodyId && (
         <CustodySettlementDialog open={!!settlementCustodyId} onOpenChange={(open) => !open && setSettlementCustodyId(null)} custodyId={settlementCustodyId} />
+      )}
+      {amountChangesCustody && (
+        <CustodyAmountChangesDialog
+          open={!!amountChangesCustody}
+          onOpenChange={(open) => !open && setAmountChangesCustody(null)}
+          custodyId={amountChangesCustody.id}
+          custodyName={amountChangesCustody.name}
+        />
       )}
     </div>
   );
