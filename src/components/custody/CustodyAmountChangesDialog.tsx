@@ -37,8 +37,7 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
-  const [formOldAmount, setFormOldAmount] = useState('');
-  const [formNewAmount, setFormNewAmount] = useState('');
+  const [formChangeAmount, setFormChangeAmount] = useState('');
   const [formNotes, setFormNotes] = useState('');
 
   const { data: changes = [], isLoading } = useQuery({
@@ -71,7 +70,7 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
       queryClient.invalidateQueries({ queryKey: ['custody-amount-changes', custodyId] });
       toast.success('تم إضافة سجل التعديل بنجاح');
       setShowForm(false);
-      setFormOldAmount(''); setFormNewAmount(''); setFormNotes('');
+      setFormChangeAmount(''); setFormNotes('');
       setFormDate(new Date().toISOString().split('T')[0]);
     },
     onError: (e: Error) => toast.error(`خطأ: ${e.message}`),
@@ -90,9 +89,11 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
   });
 
   const handleAdd = () => {
-    const oldAmt = parseFloat(formOldAmount);
-    const newAmt = parseFloat(formNewAmount);
-    if (isNaN(oldAmt) || isNaN(newAmt)) { toast.error('يرجى إدخال مبالغ صحيحة'); return; }
+    const changeAmt = parseFloat(formChangeAmount);
+    if (isNaN(changeAmt) || changeAmt === 0) { toast.error('يرجى إدخال مبلغ التعديل'); return; }
+    const lastNewAmount = changes.length > 0 ? changes[changes.length - 1].new_amount : 0;
+    const oldAmt = lastNewAmount;
+    const newAmt = oldAmt + changeAmt;
     addChangeMutation.mutate({
       old_amount: oldAmt, new_amount: newAmt,
       changed_at: formDate, notes: formNotes,
@@ -103,11 +104,7 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
   const totalReduced = changes.reduce((s, c) => s + (c.change_amount < 0 ? Math.abs(c.change_amount) : 0), 0);
   const netChange = changes.reduce((s, c) => s + c.change_amount, 0);
 
-  // Auto-fill old_amount from last entry
   const handleShowForm = () => {
-    if (changes.length > 0) {
-      setFormOldAmount(String(changes[changes.length - 1].new_amount));
-    }
     setShowForm(true);
   };
 
@@ -145,28 +142,17 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
         {/* Add Form */}
         {showForm && (
           <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
-            <h4 className="font-semibold text-sm">إضافة سجل تعديل</h4>
-            <div className="grid grid-cols-3 gap-3">
+            <h4 className="font-semibold text-sm">إضافة تعديل</h4>
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">التاريخ</label>
                 <Input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">المبلغ القديم</label>
-                <Input type="number" placeholder="0" value={formOldAmount} onChange={e => setFormOldAmount(e.target.value)} />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">المبلغ الجديد (بعد الإضافة)</label>
-                <Input type="number" placeholder="0" value={formNewAmount} onChange={e => setFormNewAmount(e.target.value)} />
+                <label className="text-xs text-muted-foreground mb-1 block">مبلغ التعديل (+ إضافة / - تخفيض)</label>
+                <Input type="number" placeholder="مثال: 3050 أو -500" value={formChangeAmount} onChange={e => setFormChangeAmount(e.target.value)} />
               </div>
             </div>
-            {formOldAmount && formNewAmount && (
-              <div className="text-sm">
-                الفرق: <Badge variant={parseFloat(formNewAmount) - parseFloat(formOldAmount) >= 0 ? 'default' : 'destructive'}>
-                  {parseFloat(formNewAmount) - parseFloat(formOldAmount) >= 0 ? '+' : ''}{formatNumber(parseFloat(formNewAmount) - parseFloat(formOldAmount))} ر.س
-                </Badge>
-              </div>
-            )}
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">ملاحظات</label>
               <Textarea placeholder="مثال: تم تحديث العهدة وإضافة مبلغ 3050 ر.س" value={formNotes} onChange={e => setFormNotes(e.target.value)} rows={2} />
