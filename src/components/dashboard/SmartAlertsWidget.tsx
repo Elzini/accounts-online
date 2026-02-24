@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, Clock, HandCoins, CreditCard, FileText, ChevronLeft, Settings2, Check, Bell, BellOff } from 'lucide-react';
+import { AlertTriangle, Clock, HandCoins, CreditCard, FileText, ChevronLeft, Settings2, Check, Bell, BellOff, Package, FileCheck, ClipboardCheck } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompanyId } from '@/hooks/useCompanyId';
@@ -31,6 +31,9 @@ const DEFAULT_ALERT_CONFIGS: AlertTypeConfig[] = [
   { id: 'open_custody', enabled: true, threshold: 1 },
   { id: 'overdue_installment', enabled: true, threshold: 1 },
   { id: 'pending_invoice', enabled: true, threshold: 1 },
+  { id: 'low_stock', enabled: true, threshold: 5 },
+  { id: 'expiring_contracts', enabled: true, threshold: 1 },
+  { id: 'pending_approvals', enabled: true, threshold: 1 },
 ];
 
 function loadAlertConfig(): AlertTypeConfig[] {
@@ -64,6 +67,9 @@ const ALERT_TYPE_LABELS: Record<string, { ar: string; en: string }> = {
   open_custody: { ar: 'عهد مفتوحة', en: 'Open Custodies' },
   overdue_installment: { ar: 'أقساط متأخرة', en: 'Overdue Installments' },
   pending_invoice: { ar: 'فواتير مسودة', en: 'Draft Invoices' },
+  low_stock: { ar: 'مخزون منخفض', en: 'Low Stock' },
+  expiring_contracts: { ar: 'عقود قاربت الانتهاء', en: 'Expiring Contracts' },
+  pending_approvals: { ar: 'موافقات معلقة', en: 'Pending Approvals' },
 };
 
 export function SmartAlertsWidget({ setActivePage }: SmartAlertsWidgetProps) {
@@ -134,6 +140,41 @@ export function SmartAlertsWidget({ setActivePage }: SmartAlertsWidgetProps) {
     enabled: !!companyId && getConfig('pending_invoice').enabled,
   });
 
+  // Low stock items (below reorder level)
+  const { data: lowStockItems = 0 } = useQuery({
+    queryKey: ['smart-alerts-low-stock', companyId],
+    queryFn: async () => {
+      if (!companyId) return 0;
+      // Get items where quantity_on_hand <= reorder_level
+      const { data } = await supabase
+        .from('inventory_items')
+        .select('id, quantity_on_hand, reorder_level')
+        .eq('company_id', companyId)
+        .eq('is_active', true)
+        .not('reorder_level', 'is', null);
+      if (!data) return 0;
+      return data.filter(item => 
+        (item.quantity_on_hand || 0) <= (item.reorder_level || 0)
+      ).length;
+    },
+    enabled: !!companyId && getConfig('low_stock').enabled,
+  });
+
+  // Pending approvals
+  const { data: pendingApprovals = 0 } = useQuery({
+    queryKey: ['smart-alerts-approvals', companyId],
+    queryFn: async () => {
+      if (!companyId) return 0;
+      const { count } = await supabase
+        .from('approval_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', companyId)
+        .eq('status', 'pending');
+      return count || 0;
+    },
+    enabled: !!companyId && getConfig('pending_approvals').enabled,
+  });
+
   const toggleAlert = (id: string) => {
     const updated = alertConfigs.map(c => c.id === id ? { ...c, enabled: !c.enabled } : c);
     setAlertConfigs(updated);
@@ -187,12 +228,34 @@ export function SmartAlertsWidget({ setActivePage }: SmartAlertsWidgetProps) {
     });
   }
 
+  const lowStockCfg = getConfig('low_stock');
+  if (lowStockCfg.enabled && lowStockItems >= lowStockCfg.threshold) {
+    alerts.push({
+      id: 'low-stock', type: 'low_stock',
+      title: isRtl ? 'مخزون منخفض' : 'Low Stock',
+      description: isRtl ? `${lowStockItems} صنف وصل لحد إعادة الطلب` : `${lowStockItems} items at or below reorder level`,
+      severity: 'warning', action: 'items-catalog' as any, count: lowStockItems,
+    });
+  }
+
+  const approvalsCfg = getConfig('pending_approvals');
+  if (approvalsCfg.enabled && pendingApprovals >= approvalsCfg.threshold) {
+    alerts.push({
+      id: 'pending-approvals', type: 'pending_approvals',
+      title: isRtl ? 'موافقات معلقة' : 'Pending Approvals',
+      description: isRtl ? `${pendingApprovals} طلب بانتظار الموافقة` : `${pendingApprovals} requests awaiting approval`,
+      severity: 'warning', action: 'approvals' as any, count: pendingApprovals,
+    });
+  }
+
   const getAlertIcon = (type: string) => {
     switch (type) {
       case 'overdue_check': return Clock;
       case 'open_custody': return HandCoins;
       case 'overdue_installment': return CreditCard;
       case 'pending_invoice': return FileText;
+      case 'low_stock': return Package;
+      case 'pending_approvals': return ClipboardCheck;
       default: return AlertTriangle;
     }
   };
