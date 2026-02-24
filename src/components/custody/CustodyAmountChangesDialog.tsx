@@ -101,6 +101,7 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
 
   const totalAdded = changes.reduce((s, c) => s + (c.change_amount > 0 ? c.change_amount : 0), 0);
   const totalReduced = changes.reduce((s, c) => s + (c.change_amount < 0 ? Math.abs(c.change_amount) : 0), 0);
+  const netChange = changes.reduce((s, c) => s + c.change_amount, 0);
 
   // Auto-fill old_amount from last entry
   const handleShowForm = () => {
@@ -228,7 +229,7 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
                 <TableCell className="font-bold">{changes.length > 0 ? `${formatNumber(changes[0].old_amount)} ر.س` : '-'}</TableCell>
                 <TableCell className="font-bold">{changes.length > 0 ? `${formatNumber(changes[changes.length - 1].new_amount)} ر.س` : '-'}</TableCell>
                 <TableCell className="font-bold text-primary">
-                  +{formatNumber(totalAdded - totalReduced)} ر.س
+                  {netChange >= 0 ? '+' : '-'}{formatNumber(Math.abs(netChange))} ر.س
                 </TableCell>
                 <TableCell colSpan={2} />
               </TableRow>
