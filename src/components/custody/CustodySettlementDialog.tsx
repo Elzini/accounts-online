@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Plus, Trash2, FileDown, Eye, CheckCircle, Pencil } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Plus, Trash2, FileDown, Eye, CheckCircle, Pencil, History, ArrowUp, ArrowDown } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -32,6 +34,7 @@ import {
 import { useCustodyDetails, useCustody } from '@/hooks/useCustody';
 import { calculateCustodySummary, CustodyTransaction } from '@/services/custody';
 import { formatNumber } from '@/components/financial-statements/utils/numberFormatting';
+import { Badge } from '@/components/ui/badge';
 import { useCustodyExport } from './useCustodyExport';
 import { CustodyPrintPreviewDialog } from './CustodyPrintPreviewDialog';
 import { AccountSearchSelect } from '@/components/accounting/AccountSearchSelect';
@@ -70,6 +73,20 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
   const { data: employees = [] } = useEmployees();
   const [editingTransaction, setEditingTransaction] = useState<CustodyTransaction | null>(null);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+
+  const { data: amountChanges = [] } = useQuery({
+    queryKey: ['custody-amount-changes', custodyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('custody_amount_changes')
+        .select('id, old_amount, new_amount, change_amount, changed_at, notes')
+        .eq('custody_id', custodyId)
+        .order('changed_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open && !!custodyId,
+  });
 
   const accountsList = accounts.map((a: any) => ({ id: a.id, code: a.code, name: a.name }));
 
@@ -322,7 +339,58 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
           </CardContent>
         </Card>
 
-        {/* Add Transaction Form */}
+        {/* Amount Changes History */}
+        {amountChanges.length > 0 && (
+          <Card>
+            <CardContent className="p-0">
+              <div className="flex items-center gap-2 p-4 pb-2">
+                <History className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold text-sm">سجل تعديلات مبلغ العهدة</h3>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-primary/10">
+                    <TableHead className="text-right font-bold w-10">#</TableHead>
+                    <TableHead className="text-right font-bold">التاريخ</TableHead>
+                    <TableHead className="text-right font-bold">المبلغ القديم</TableHead>
+                    <TableHead className="text-right font-bold">المبلغ الجديد</TableHead>
+                    <TableHead className="text-right font-bold">الفرق</TableHead>
+                    <TableHead className="text-right font-bold">ملاحظات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {amountChanges.map((change: any, idx: number) => (
+                    <TableRow key={change.id}>
+                      <TableCell className="font-medium">{idx + 1}</TableCell>
+                      <TableCell>{new Date(change.changed_at).toLocaleDateString('ar-SA')}</TableCell>
+                      <TableCell>{formatNumber(change.old_amount)} ر.س</TableCell>
+                      <TableCell className="font-semibold">{formatNumber(change.new_amount)} ر.س</TableCell>
+                      <TableCell>
+                        <Badge variant={change.change_amount > 0 ? 'default' : 'destructive'} className="gap-1">
+                          {change.change_amount > 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                          {change.change_amount > 0 ? '+' : ''}{formatNumber(change.change_amount)} ر.س
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{change.notes || '-'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableFooter>
+                  <TableRow className="bg-muted/50">
+                    <TableCell colSpan={4} className="text-right font-bold">صافي التعديلات</TableCell>
+                    <TableCell className="font-bold text-primary" colSpan={2}>
+                      {(() => {
+                        const net = amountChanges.reduce((s: number, c: any) => s + (c.change_amount || 0), 0);
+                        return `${net >= 0 ? '+' : ''}${formatNumber(net)} ر.س`;
+                      })()}
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
         {!isSettled && (
           <>
             {showForm ? (
