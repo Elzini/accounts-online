@@ -354,7 +354,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                     <TableHead className="text-right font-bold">التاريخ</TableHead>
                     <TableHead className="text-right font-bold">المبلغ القديم</TableHead>
                     <TableHead className="text-right font-bold">المبلغ الجديد</TableHead>
-                    <TableHead className="text-right font-bold">الفرق</TableHead>
+                    <TableHead className="text-right font-bold">المبلغ المضاف</TableHead>
                     <TableHead className="text-right font-bold">ملاحظات</TableHead>
                   </TableRow>
                 </TableHeader>
