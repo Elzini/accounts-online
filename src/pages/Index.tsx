@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { MobileSidebar, MobileSidebarRef } from '@/components/MobileSidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Dashboard } from '@/components/Dashboard';
+import { FloatingMiniDashboard } from '@/components/dashboard/FloatingMiniDashboard';
 import { ModuleLauncher } from '@/components/ModuleLauncher';
 import { PWAInstallButton } from '@/components/PWAInstallButton';
 import { CheckUpdateButton } from '@/components/pwa/CheckUpdateButton';
@@ -661,6 +662,9 @@ const Index = () => {
 
           {/* AI Chat Widget */}
           <AIChatWidget />
+
+          {/* Floating Mini Dashboard */}
+          <FloatingMiniDashboard isOnDashboard={activePage === 'dashboard'} />
         </div>
       )}
 
