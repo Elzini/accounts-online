@@ -2814,6 +2814,50 @@ export type Database = {
           },
         ]
       }
+      custody_amount_changes: {
+        Row: {
+          change_amount: number | null
+          changed_at: string
+          changed_by: string | null
+          company_id: string
+          custody_id: string
+          id: string
+          new_amount: number
+          notes: string | null
+          old_amount: number
+        }
+        Insert: {
+          change_amount?: number | null
+          changed_at?: string
+          changed_by?: string | null
+          company_id: string
+          custody_id: string
+          id?: string
+          new_amount: number
+          notes?: string | null
+          old_amount: number
+        }
+        Update: {
+          change_amount?: number | null
+          changed_at?: string
+          changed_by?: string | null
+          company_id?: string
+          custody_id?: string
+          id?: string
+          new_amount?: number
+          notes?: string | null
+          old_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_amount_changes_custody_id_fkey"
+            columns: ["custody_id"]
+            isOneToOne: false
+            referencedRelation: "custodies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custody_transactions: {
         Row: {
           account_id: string | null
