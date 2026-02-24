@@ -62,9 +62,11 @@ interface QuickActionsWidgetProps {
   setActivePage: (page: ActivePage) => void;
   canSales: boolean;
   canPurchases: boolean;
+  gridColumns?: number;
+  density?: 'compact' | 'comfortable' | 'spacious';
 }
 
-export function QuickActionsWidget({ setActivePage, canSales, canPurchases }: QuickActionsWidgetProps) {
+export function QuickActionsWidget({ setActivePage, canSales, canPurchases, gridColumns = 4, density = 'comfortable' }: QuickActionsWidgetProps) {
   const { t, language } = useLanguage();
   const { permissions } = useAuth();
   const canAccounting = permissions.admin || permissions.reports;
@@ -162,7 +164,7 @@ export function QuickActionsWidget({ setActivePage, canSales, canPurchases }: Qu
           </DialogContent>
         </Dialog>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))` }}>
         {visibleActions.map(action => {
           const Icon = action.icon;
           return (
@@ -170,7 +172,10 @@ export function QuickActionsWidget({ setActivePage, canSales, canPurchases }: Qu
               key={action.id}
               onClick={() => setActivePage(action.page)}
               variant="ghost"
-              className="h-auto py-3 flex flex-col items-center gap-1.5 hover:bg-muted/60 border border-transparent hover:border-border/50 rounded-lg transition-all"
+              className={cn(
+                "h-auto flex flex-col items-center gap-1.5 hover:bg-muted/60 border border-transparent hover:border-border/50 rounded-lg transition-all",
+                density === 'compact' ? 'py-2' : density === 'spacious' ? 'py-4' : 'py-3'
+              )}
             >
               <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${action.gradient} flex items-center justify-center`}>
                 <Icon className="w-4 h-4 text-white" />

@@ -57,6 +57,8 @@ import { TransfersWidget } from './dashboard/widgets/TransfersWidget';
 import { QuickActionsWidget } from './dashboard/widgets/QuickActionsWidget';
 import { ReportsWidget } from './dashboard/widgets/ReportsWidget';
 import { SmartAlertsWidget } from './dashboard/SmartAlertsWidget';
+import { DisplaySettingsDialog } from './dashboard/DisplaySettingsDialog';
+import { useDashboardDisplay } from '@/hooks/useUserPreferences';
 
 interface DashboardProps {
   stats: any;
@@ -94,6 +96,9 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
   const [detailData, setDetailData] = useState<StatDetailData | null>(null);
   const [amountDisplayMode, setAmountDisplayMode] = useState<AmountDisplayMode>('total');
   const showAmountAsWords = true;
+  
+  // Display settings (density, columns, auto-refresh)
+  const { settings: displaySettings, updateSettings: updateDisplaySettings } = useDashboardDisplay();
   
   // Custom card formulas
   const { getFormula } = useCardFormulas();
@@ -322,6 +327,17 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
       setIsRefreshing(false);
     }
   }, [queryClient]);
+
+  // Auto-refresh based on user setting
+  useEffect(() => {
+    if (!displaySettings.autoRefreshInterval) return;
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['monthlyChartData'] });
+    }, displaySettings.autoRefreshInterval * 1000);
+    return () => clearInterval(interval);
+  }, [displaySettings.autoRefreshInterval, queryClient]);
 
   // Installment stats  
   const installmentStats = useInstallmentStats(installmentSales);
@@ -591,6 +607,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
             />
             
             <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end">
+              <DisplaySettingsDialog settings={displaySettings} onUpdate={updateDisplaySettings} />
               <OnlineUsersPopover />
               <PaymentRemindersPopover setActivePage={setActivePage} />
               <div className="h-6 w-px bg-border hidden sm:block" />
@@ -602,11 +619,11 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
           </div>
 
           {isLoading || isDashboardConfigLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+            <div className="grid gap-3 sm:gap-5" style={{ gridTemplateColumns: `repeat(${displaySettings.kpiColumns}, minmax(0, 1fr))` }}>
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="rounded-xl border border-border/50 overflow-hidden animate-pulse">
                   <div className="h-9 bg-muted/60" />
-                  <div className="p-4 space-y-3">
+                  <div className={cn("space-y-3", displaySettings.density === 'compact' ? 'p-2' : displaySettings.density === 'spacious' ? 'p-6' : 'p-4')}>
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl bg-muted/40" />
                       <div className="flex-1 space-y-2">
@@ -621,7 +638,8 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
             </div>
           ) : (
           <div 
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5"
+            className={cn("grid", displaySettings.density === 'compact' ? 'gap-2' : displaySettings.density === 'spacious' ? 'gap-6' : 'gap-3 sm:gap-5')}
+            style={{ gridTemplateColumns: `repeat(${displaySettings.kpiColumns}, minmax(0, 1fr))` }}
             onDrop={isEditMode ? handleGridDrop : undefined}
             onDragOver={isEditMode ? handleGridDragOver : undefined}
           >
@@ -847,7 +865,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false }: Dashboard
                 case 'quickActions':
                   return (
                     <EditableWidgetWrapper key={widget.id} {...props}>
-                      <QuickActionsWidget setActivePage={setActivePage} canSales={canSales} canPurchases={canPurchases} />
+                      <QuickActionsWidget setActivePage={setActivePage} canSales={canSales} canPurchases={canPurchases} gridColumns={displaySettings.gridColumns} density={displaySettings.density} />
                     </EditableWidgetWrapper>
                   );
                 
