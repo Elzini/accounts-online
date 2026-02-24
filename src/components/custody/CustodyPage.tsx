@@ -12,6 +12,8 @@ import { CustodyFormDialog } from './CustodyFormDialog';
 import { CustodySettlementDialog } from './CustodySettlementDialog';
 import { formatNumber } from '@/components/financial-statements/utils/numberFormatting';
 import { useLanguage } from '@/contexts/LanguageContext';
+import ExcelJS from 'exceljs';
+import { toast } from 'sonner';
 
 export function CustodyPage() {
   const { t, language } = useLanguage();
@@ -41,6 +43,51 @@ export function CustodyPage() {
   const handleSettlement = (custodyId: string) => { setSettlementCustodyId(custodyId); };
   const handleDelete = (id: string) => { if (confirm(t.custody_delete_confirm)) { deleteCustody(id); } };
 
+  const handleExportExcel = async () => {
+    if (custodies.length === 0) { toast.info('لا توجد عهد للتصدير'); return; }
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('العهد');
+    sheet.columns = [
+      { header: 'رقم العهدة', key: 'num', width: 12 },
+      { header: 'النوع', key: 'type', width: 14 },
+      { header: 'اسم العهدة', key: 'name', width: 25 },
+      { header: 'المستلم', key: 'recipient', width: 20 },
+      { header: 'المبلغ', key: 'amount', width: 15 },
+      { header: 'المصروف', key: 'spent', width: 15 },
+      { header: 'المتبقي', key: 'remaining', width: 15 },
+      { header: 'التاريخ', key: 'date', width: 14 },
+      { header: 'الحالة', key: 'status', width: 14 },
+    ];
+    const headerRow = sheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
+    headerRow.alignment = { horizontal: 'center' };
+    const statusMap: Record<string, string> = { active: 'نشطة', settled: 'مصفاة', partially_settled: 'مصفاة جزئياً', carried: 'مرحّلة' };
+    custodies.forEach((c) => {
+      const s = calculateCustodySummary(c);
+      sheet.addRow({
+        num: c.custody_number, type: c.custody_type === 'advance' ? 'سلفة' : 'عهدة',
+        name: c.custody_name, recipient: c.employee?.name || '-',
+        amount: Number(c.custody_amount), spent: s.totalSpent, remaining: s.returnedAmount,
+        date: new Date(c.custody_date).toLocaleDateString(locale), status: statusMap[c.status] || c.status,
+      });
+    });
+    const totalAmount = custodies.reduce((s, c) => s + Number(c.custody_amount), 0);
+    const totalSpent = custodies.reduce((s, c) => s + calculateCustodySummary(c).totalSpent, 0);
+    const totalRemaining = custodies.reduce((s, c) => s + calculateCustodySummary(c).returnedAmount, 0);
+    const summaryRow = sheet.addRow({ num: '', type: '', name: 'الإجمالي', amount: totalAmount, spent: totalSpent, remaining: totalRemaining });
+    summaryRow.font = { bold: true };
+    summaryRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2EFDA' } };
+    ['amount', 'spent', 'remaining'].forEach(key => { sheet.getColumn(key).numFmt = '#,##0.00'; });
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url;
+    a.download = `العهد_${new Date().toISOString().split('T')[0]}.xlsx`;
+    a.click(); URL.revokeObjectURL(url);
+    toast.success('تم تصدير العهد بنجاح');
+  };
+
   const totalActiveCustodies = custodies.filter(c => c.status === 'active').length;
   const carriedAmount = custodies.filter(c => c.status === 'carried').reduce((sum, c) => sum + Number(c.custody_amount), 0);
   const totalActiveAmount = custodies.filter(c => c.status === 'active').reduce((sum, c) => sum + Number(c.custody_amount), 0) - carriedAmount;
@@ -58,10 +105,16 @@ export function CustodyPage() {
           </h1>
           <p className="text-muted-foreground">{t.custody_subtitle}</p>
         </div>
-        <Button onClick={() => { setSelectedCustody(null); setIsFormOpen(true); }} className="gap-2">
-          <Plus className="h-4 w-4" />
-          {t.custody_add}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportExcel} className="gap-2" disabled={custodies.length === 0}>
+            <Download className="h-4 w-4" />
+            تصدير Excel
+          </Button>
+          <Button onClick={() => { setSelectedCustody(null); setIsFormOpen(true); }} className="gap-2">
+            <Plus className="h-4 w-4" />
+            {t.custody_add}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
