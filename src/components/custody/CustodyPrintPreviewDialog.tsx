@@ -1,7 +1,9 @@
 import { useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Printer, Download, X } from 'lucide-react';
+import { Printer, Download, X, ArrowUp, ArrowDown } from 'lucide-react';
 import { Custody } from '@/services/custody';
 import { formatNumber } from '@/components/financial-statements/utils/numberFormatting';
 import { useReactToPrint } from 'react-to-print';
@@ -33,6 +35,20 @@ export function CustodyPrintPreviewDialog({
   const printRef = useRef<HTMLDivElement>(null);
   const transactions = custody.transactions || [];
   const currentDate = new Date().toLocaleDateString('ar-SA');
+
+  const { data: amountChanges = [] } = useQuery({
+    queryKey: ['custody-amount-changes-print', custody.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('custody_amount_changes')
+        .select('id, old_amount, new_amount, change_amount, changed_at, notes')
+        .eq('custody_id', custody.id)
+        .order('changed_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open && !!custody.id,
+  });
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -228,7 +244,51 @@ export function CustodyPrintPreviewDialog({
               </table>
             </div>
 
-            {/* Notes Section */}
+            {/* Amount Changes History */}
+            {amountChanges.length > 0 && (
+              <div className="p-6 pt-0">
+                <h3 className="text-lg font-bold mb-3 text-gray-700">سجل تعديلات مبلغ العهدة</h3>
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-blue-600 text-white">
+                      <th className="p-3 text-right font-semibold border border-blue-700 w-10">#</th>
+                      <th className="p-3 text-right font-semibold border border-blue-700">التاريخ</th>
+                      <th className="p-3 text-right font-semibold border border-blue-700">المبلغ القديم</th>
+                      <th className="p-3 text-right font-semibold border border-blue-700">المبلغ الجديد</th>
+                      <th className="p-3 text-right font-semibold border border-blue-700">المبلغ المضاف</th>
+                      <th className="p-3 text-right font-semibold border border-blue-700">ملاحظات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {amountChanges.map((change: any, idx: number) => (
+                      <tr key={change.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="p-3 border border-gray-200 text-center">{idx + 1}</td>
+                        <td className="p-3 border border-gray-200">{new Date(change.changed_at).toLocaleDateString('ar-SA')}</td>
+                        <td className="p-3 border border-gray-200">{formatNumber(change.old_amount)} ر.س</td>
+                        <td className="p-3 border border-gray-200 font-semibold">{formatNumber(change.new_amount)} ر.س</td>
+                        <td className="p-3 border border-gray-200">
+                          <span style={{ color: change.change_amount > 0 ? '#16a34a' : '#dc2626' }}>
+                            {change.change_amount > 0 ? '↑' : '↓'} {change.change_amount > 0 ? '+' : ''}{formatNumber(change.change_amount)} ر.س
+                          </span>
+                        </td>
+                        <td className="p-3 border border-gray-200 text-xs">{change.notes || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-gray-100">
+                      <td colSpan={4} className="p-3 text-left font-bold border border-gray-300">صافي التعديلات</td>
+                      <td className="p-3 font-bold border border-gray-300 text-blue-600">
+                        {formatNumber(amountChanges.reduce((s: number, c: any) => s + c.change_amount, 0))} ر.س
+                      </td>
+                      <td className="p-3 border border-gray-300"></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+
+
             {custody.notes && (
               <div className="px-6 pb-6">
                 <div className="bg-gray-50 rounded-lg p-4 border-r-4 border-blue-500">
