@@ -545,6 +545,7 @@ const Index = () => {
           </header>
           
           <ModuleLauncher setActivePage={handleSetActivePage} onModuleSelect={handleModuleSelect} />
+          <AIChatWidget />
         </div>
       ) : (
         <div className="flex min-h-screen min-h-[100dvh] bg-background">
