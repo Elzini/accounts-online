@@ -104,6 +104,12 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     return <LoadingSpinner />;
   }
 
+  // Don't redirect if 2FA verification is pending
+  const pending2FA = sessionStorage.getItem('pending_2fa_verification');
+  if (pending2FA === 'true') {
+    return <>{children}</>;
+  }
+
   if (user) {
     // Super admin without company goes to /companies
     if (permissions.super_admin && !companyId) {

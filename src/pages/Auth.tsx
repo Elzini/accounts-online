@@ -180,16 +180,17 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       try {
         const twoFaStatus = await check2FAStatus();
         if (twoFaStatus.success && twoFaStatus.isEnabled) {
-          // 2FA is enabled - show verification dialog, don't complete login yet
+          // 2FA is enabled - block navigation and show verification dialog
+          sessionStorage.setItem('pending_2fa_verification', 'true');
           setTwoFaType(twoFaStatus.twoFaType || 'totp');
           setTwoFaPhone(twoFaStatus.phoneNumber || null);
           setPendingLoginData(data);
           setShow2FA(true);
+          setLoading(false);
           return;
         }
       } catch (e) {
         console.error('2FA check error:', e);
-        // If 2FA check fails, proceed with login (don't block)
       }
 
       // No 2FA - complete login normally
@@ -459,10 +460,12 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         twoFaType={twoFaType}
         phoneNumber={twoFaPhone}
         onVerified={async () => {
+          sessionStorage.removeItem('pending_2fa_verification');
           setShow2FA(false);
           await completeLogin(pendingLoginData);
         }}
         onCancel={async () => {
+          sessionStorage.removeItem('pending_2fa_verification');
           setShow2FA(false);
           setPendingLoginData(null);
           // Sign out since 2FA was not verified
