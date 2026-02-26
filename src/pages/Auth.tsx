@@ -163,9 +163,12 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       return;
     }
     setLoading(true);
+    // Set pending 2FA flag BEFORE signIn to prevent PublicRoute redirect race condition
+    sessionStorage.setItem('pending_2fa_verification', 'true');
     try {
       const { error, data } = await signIn(email, password);
       if (error) {
+        sessionStorage.removeItem('pending_2fa_verification');
         if (error.message.includes('Invalid login credentials')) {
           toast.error(t.invalid_credentials || 'بيانات الدخول غير صحيحة');
         } else if (error.message.includes('Email not confirmed')) {
@@ -180,8 +183,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       try {
         const twoFaStatus = await check2FAStatus();
         if (twoFaStatus.success && twoFaStatus.isEnabled) {
-          // 2FA is enabled - block navigation and show verification dialog
-          sessionStorage.setItem('pending_2fa_verification', 'true');
+          // 2FA is enabled - keep the flag and show verification dialog
           setTwoFaType(twoFaStatus.twoFaType || 'totp');
           setTwoFaPhone(twoFaStatus.phoneNumber || null);
           setPendingLoginData(data);
@@ -193,7 +195,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         console.error('2FA check error:', e);
       }
 
-      // No 2FA - complete login normally
+      // No 2FA - remove flag and complete login normally
+      sessionStorage.removeItem('pending_2fa_verification');
       await completeLogin(data);
     } catch {
       toast.error(t.unexpected_error || 'حدث خطأ غير متوقع');
