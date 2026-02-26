@@ -81,6 +81,7 @@ import { SystemControlCenter } from '@/components/super-admin/SystemControlCente
 import { SystemMonitoring } from '@/components/super-admin/SystemMonitoring';
 import { SupportCenter } from '@/components/super-admin/SupportCenter';
 import { RBACManagement } from '@/components/super-admin/RBACManagement';
+import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { MenuConfigurationTab } from '@/components/control-center/tabs/MenuConfigurationTab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -431,6 +432,10 @@ export default function Companies() {
               <Lock className="w-4 h-4" />
               <span>الصلاحيات</span>
             </TabsTrigger>
+            <TabsTrigger value="security-2fa" className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              <span>الأمان</span>
+            </TabsTrigger>
             <TabsTrigger value="admin-dashboard" className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
               <span>الإدارة</span>
@@ -491,6 +496,18 @@ export default function Companies() {
 
           <TabsContent value="rbac">
             <RBACManagement />
+          </TabsContent>
+
+          <TabsContent value="security-2fa">
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <Shield className="w-6 h-6" /> المصادقة الثنائية (2FA)
+                </h2>
+                <p className="text-muted-foreground">تفعيل وإدارة المصادقة الثنائية لحساب السوبر أدمن</p>
+              </div>
+              <TwoFactorSetup />
+            </div>
           </TabsContent>
 
           <TabsContent value="admin-dashboard">
