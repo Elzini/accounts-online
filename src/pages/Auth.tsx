@@ -15,7 +15,8 @@ import { extractSubdomain, buildTenantUrl, getBaseDomain, isAdminSubdomain, getA
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { AuthFeaturesSidebar } from '@/components/auth/AuthFeaturesSidebar';
-
+import { TwoFactorLoginDialog } from '@/components/auth/TwoFactorLoginDialog';
+import { check2FAStatus } from '@/services/twoFactorAuth';
 type AuthMode = 'company' | 'super_admin';
 
 interface CompanyFiscalYear {
@@ -36,6 +37,10 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const [selectedFiscalYearId, setSelectedFiscalYearId] = useState<string>('');
   const [emailConfirmed, setEmailConfirmed] = useState(false);
   const [companyName, setCompanyName] = useState<string | null>(null);
+  const [show2FA, setShow2FA] = useState(false);
+  const [twoFaType, setTwoFaType] = useState<'totp' | 'sms' | null>(null);
+  const [twoFaPhone, setTwoFaPhone] = useState<string | null>(null);
+  const [pendingLoginData, setPendingLoginData] = useState<any>(null);
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { setSelectedFiscalYear } = useFiscalYear();
@@ -170,6 +175,33 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         }
         return;
       }
+
+      // Check 2FA status before completing login
+      try {
+        const twoFaStatus = await check2FAStatus();
+        if (twoFaStatus.success && twoFaStatus.isEnabled) {
+          // 2FA is enabled - show verification dialog, don't complete login yet
+          setTwoFaType(twoFaStatus.twoFaType || 'totp');
+          setTwoFaPhone(twoFaStatus.phoneNumber || null);
+          setPendingLoginData(data);
+          setShow2FA(true);
+          return;
+        }
+      } catch (e) {
+        console.error('2FA check error:', e);
+        // If 2FA check fails, proceed with login (don't block)
+      }
+
+      // No 2FA - complete login normally
+      await completeLogin(data);
+    } catch {
+      toast.error(t.unexpected_error || 'حدث خطأ غير متوقع');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const completeLogin = async (data: any) => {
       if (mode === 'super_admin' && data?.user) {
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
@@ -238,11 +270,6 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         }
       }
       navigate('/', { replace: true });
-    } catch {
-      toast.error(t.unexpected_error || 'حدث خطأ غير متوقع');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const showPasswordAndFiscalYear = mode === 'super_admin' || emailConfirmed;
@@ -426,6 +453,23 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           </div>
         </div>
       </div>
+      {/* 2FA Verification Dialog */}
+      <TwoFactorLoginDialog
+        open={show2FA}
+        twoFaType={twoFaType}
+        phoneNumber={twoFaPhone}
+        onVerified={async () => {
+          setShow2FA(false);
+          await completeLogin(pendingLoginData);
+        }}
+        onCancel={async () => {
+          setShow2FA(false);
+          setPendingLoginData(null);
+          // Sign out since 2FA was not verified
+          await supabase.auth.signOut();
+          toast.error('تم إلغاء المصادقة الثنائية');
+        }}
+      />
     </div>
   );
 }
