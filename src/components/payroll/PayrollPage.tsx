@@ -206,7 +206,7 @@ function PayrollDetailsSection({ payroll, onApprove, isApproving, onPrint, onExp
 
   const startEditing = (item: PayrollItem) => {
     setEditingItemId(item.id);
-    setEditForm({ base_salary: item.base_salary, housing_allowance: item.housing_allowance, transport_allowance: item.transport_allowance, bonus: item.bonus, overtime_hours: item.overtime_hours, overtime_rate: item.overtime_rate, overtime_amount: item.overtime_amount, advances_deducted: item.advances_deducted, absence_days: item.absence_days, absence_amount: item.absence_amount, other_deductions: item.other_deductions, deduction_notes: item.deduction_notes });
+    setEditForm({ base_salary: item.base_salary, housing_allowance: item.housing_allowance, transport_allowance: item.transport_allowance, bonus: item.bonus, gratuity: item.gratuity || 0, overtime_hours: item.overtime_hours, overtime_rate: item.overtime_rate, overtime_amount: item.overtime_amount, advances_deducted: item.advances_deducted, absence_days: item.absence_days, absence_amount: item.absence_amount, other_deductions: item.other_deductions, deduction_notes: item.deduction_notes });
   };
 
   const saveEditing = async () => {
@@ -223,11 +223,11 @@ function PayrollDetailsSection({ payroll, onApprove, isApproving, onPrint, onExp
       { header: t.job_title, key: 'job_title', align: 'right' },
       { header: t.base_salary, key: 'base_salary', align: 'right', type: 'currency' },
       { header: t.amount, key: 'bonus', align: 'right', type: 'currency' },
+      { header: t.payroll_gratuity, key: 'gratuity', align: 'right', type: 'currency' },
       { header: 'Overtime', key: 'overtime', align: 'right', type: 'currency' },
       { header: t.total, key: 'gross_salary', align: 'right', type: 'currency' },
       { header: t.total_deductions, key: 'advances', align: 'right', type: 'currency' },
       { header: t.total_deductions, key: 'deductions', align: 'right', type: 'currency' },
-      { header: t.payroll_gratuity, key: 'notes', align: 'right' },
       { header: t.total_deductions, key: 'absence', align: 'right', type: 'currency' },
       { header: t.total_deductions, key: 'total_deductions', align: 'right', type: 'currency', className: 'text-danger' },
       { header: t.net_salaries, key: 'net_salary', align: 'right', type: 'currency', className: 'text-success' },
@@ -235,14 +235,14 @@ function PayrollDetailsSection({ payroll, onApprove, isApproving, onPrint, onExp
     ];
 
     const data = items.map((item, index) => {
-      const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + Number(item.transport_allowance) + Number(item.bonus) + Number(item.overtime_amount);
+      const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + Number(item.transport_allowance) + Number(item.bonus) + Number(item.gratuity || 0) + Number(item.overtime_amount);
       const totalDeductions = Number(item.advances_deducted) + Number(item.absence_amount) + Number(item.other_deductions);
-      return { index: index + 1, name: item.employee?.name || '-', job_title: item.employee?.job_title || '-', base_salary: item.base_salary, bonus: item.bonus, overtime: item.overtime_amount, gross_salary: grossSalary, advances: item.advances_deducted, deductions: item.other_deductions, notes: item.deduction_notes || '-', absence: item.absence_amount, total_deductions: totalDeductions, net_salary: item.net_salary, employee_signature: '_______________' };
+      return { index: index + 1, name: item.employee?.name || '-', job_title: item.employee?.job_title || '-', base_salary: item.base_salary, bonus: item.bonus, gratuity: item.gratuity || 0, overtime: item.overtime_amount, gross_salary: grossSalary, advances: item.advances_deducted, deductions: item.other_deductions, absence: item.absence_amount, total_deductions: totalDeductions, net_salary: item.net_salary, employee_signature: '_______________' };
     });
 
-    const grossTotal = payroll.total_base_salaries + payroll.total_allowances + payroll.total_bonuses + payroll.total_overtime;
+    const grossTotal = payroll.total_base_salaries + payroll.total_allowances + payroll.total_bonuses + (payroll.total_gratuities || 0) + payroll.total_overtime;
     const totalDeductionsSum = payroll.total_advances + payroll.total_deductions + payroll.total_absences;
-    const summaryRow = { index: '', name: t.total, job_title: '', base_salary: payroll.total_base_salaries, bonus: payroll.total_bonuses, overtime: payroll.total_overtime, gross_salary: grossTotal, advances: payroll.total_advances, deductions: payroll.total_deductions, notes: '', absence: payroll.total_absences, total_deductions: totalDeductionsSum, net_salary: payroll.total_net_salaries, employee_signature: '' };
+    const summaryRow = { index: '', name: t.total, job_title: '', base_salary: payroll.total_base_salaries, bonus: payroll.total_bonuses, gratuity: payroll.total_gratuities || 0, overtime: payroll.total_overtime, gross_salary: grossTotal, advances: payroll.total_advances, deductions: payroll.total_deductions, absence: payroll.total_absences, total_deductions: totalDeductionsSum, net_salary: payroll.total_net_salaries, employee_signature: '' };
 
     onPrint({ title: t.payroll_title, subtitle: `${MONTHS[payroll.month - 1]} ${payroll.year}`, columns, data, summaryRow, showSignatures: true, signatureLabels: [t.approve, t.approve, t.approve] });
   };
@@ -250,15 +250,16 @@ function PayrollDetailsSection({ payroll, onApprove, isApproving, onPrint, onExp
   const handleExportExcel = () => {
     const excelColumns = [
       { header: '#', key: 'index' }, { header: t.name, key: 'name' }, { header: t.job_title, key: 'job_title' },
-      { header: t.base_salary, key: 'base_salary' }, { header: t.amount, key: 'bonus' }, { header: 'Overtime', key: 'overtime' },
+      { header: t.base_salary, key: 'base_salary' }, { header: t.amount, key: 'bonus' }, { header: t.payroll_gratuity, key: 'gratuity' },
+      { header: 'Overtime', key: 'overtime' },
       { header: t.total, key: 'gross_salary' }, { header: t.total_deductions, key: 'advances' }, { header: t.total_deductions, key: 'deductions' },
-      { header: t.payroll_gratuity, key: 'notes' }, { header: t.total_deductions, key: 'absence' }, { header: t.total_deductions, key: 'total_deductions' },
+      { header: t.total_deductions, key: 'absence' }, { header: t.total_deductions, key: 'total_deductions' },
       { header: t.net_salaries, key: 'net_salary' },
     ];
     const excelData = items.map((item, index) => {
-      const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + Number(item.transport_allowance) + Number(item.bonus) + Number(item.overtime_amount);
+      const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + Number(item.transport_allowance) + Number(item.bonus) + Number(item.gratuity || 0) + Number(item.overtime_amount);
       const totalDeductions = Number(item.advances_deducted) + Number(item.absence_amount) + Number(item.other_deductions);
-      return { index: index + 1, name: item.employee?.name || '-', job_title: item.employee?.job_title || '-', base_salary: Number(item.base_salary), bonus: Number(item.bonus), overtime: Number(item.overtime_amount), gross_salary: grossSalary, advances: Number(item.advances_deducted), deductions: Number(item.other_deductions), notes: item.deduction_notes || '-', absence: Number(item.absence_amount), total_deductions: totalDeductions, net_salary: Number(item.net_salary) };
+      return { index: index + 1, name: item.employee?.name || '-', job_title: item.employee?.job_title || '-', base_salary: Number(item.base_salary), bonus: Number(item.bonus), gratuity: Number(item.gratuity || 0), overtime: Number(item.overtime_amount), gross_salary: grossSalary, advances: Number(item.advances_deducted), deductions: Number(item.other_deductions), absence: Number(item.absence_amount), total_deductions: totalDeductions, net_salary: Number(item.net_salary) };
     });
     onExportExcel({ title: `${t.payroll_title} - ${MONTHS[payroll.month - 1]} ${payroll.year}`, columns: excelColumns, data: excelData, fileName: `payroll_${MONTHS[payroll.month - 1]}_${payroll.year}`, summaryData: [{ label: t.total_base_salaries, value: payroll.total_base_salaries }, { label: t.total_allowances, value: payroll.total_allowances }, { label: t.total_deductions, value: payroll.total_advances + payroll.total_deductions + payroll.total_absences }, { label: t.net_salaries, value: payroll.total_net_salaries }] });
     toast.success(t.success);
@@ -289,16 +290,17 @@ function PayrollDetailsSection({ payroll, onApprove, isApproving, onPrint, onExp
               <TableRow className="bg-muted/50">
                 <TableHead className="text-right">{t.name}</TableHead><TableHead className="text-right">{t.job_title}</TableHead>
                 <TableHead className="text-right">{t.base_salary}</TableHead><TableHead className="text-right">{t.amount}</TableHead>
+                <TableHead className="text-right">{t.payroll_gratuity}</TableHead>
                 <TableHead className="text-right">Overtime</TableHead><TableHead className="text-right">{t.total}</TableHead>
                 <TableHead className="text-right">{t.total_deductions}</TableHead><TableHead className="text-right">{t.total_deductions}</TableHead>
-                <TableHead className="text-right">{t.payroll_gratuity}</TableHead><TableHead className="text-right">{t.total_deductions}</TableHead>
+                <TableHead className="text-right">{t.total_deductions}</TableHead>
                 <TableHead className="text-right">{t.total_deductions}</TableHead><TableHead className="text-right">{t.net_salaries}</TableHead>
                 <TableHead className="text-right">{t.edit}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {items.map((item) => {
-                const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + Number(item.transport_allowance) + Number(item.bonus) + Number(item.overtime_amount);
+                const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + Number(item.transport_allowance) + Number(item.bonus) + Number(item.gratuity || 0) + Number(item.overtime_amount);
                 const totalDeductions = Number(item.advances_deducted) + Number(item.absence_amount) + Number(item.other_deductions);
 
                 if (editingItemId === item.id && payroll.status === 'draft') {
@@ -308,11 +310,11 @@ function PayrollDetailsSection({ payroll, onApprove, isApproving, onPrint, onExp
                       <TableCell>{item.employee?.job_title}</TableCell>
                       <TableCell><Input type="number" value={editForm.base_salary} onChange={(e) => setEditForm({ ...editForm, base_salary: parseFloat(e.target.value) || 0 })} className="w-20" /></TableCell>
                       <TableCell><Input type="number" value={editForm.bonus} onChange={(e) => setEditForm({ ...editForm, bonus: parseFloat(e.target.value) || 0 })} className="w-20" /></TableCell>
+                      <TableCell><Input type="number" value={editForm.gratuity || 0} onChange={(e) => setEditForm({ ...editForm, gratuity: parseFloat(e.target.value) || 0 })} className="w-20" /></TableCell>
                       <TableCell><Input type="number" value={editForm.overtime_amount} onChange={(e) => setEditForm({ ...editForm, overtime_amount: parseFloat(e.target.value) || 0 })} className="w-20" /></TableCell>
                       <TableCell className="font-medium">-</TableCell>
                       <TableCell><Input type="number" value={editForm.advances_deducted} onChange={(e) => setEditForm({ ...editForm, advances_deducted: parseFloat(e.target.value) || 0 })} className="w-20" /></TableCell>
                       <TableCell><Input type="number" value={editForm.other_deductions} onChange={(e) => setEditForm({ ...editForm, other_deductions: parseFloat(e.target.value) || 0 })} className="w-20" /></TableCell>
-                      <TableCell><Input value={editForm.deduction_notes || ''} onChange={(e) => setEditForm({ ...editForm, deduction_notes: e.target.value })} className="w-24" /></TableCell>
                       <TableCell><Input type="number" value={editForm.absence_amount} onChange={(e) => setEditForm({ ...editForm, absence_amount: parseFloat(e.target.value) || 0 })} className="w-20" /></TableCell>
                       <TableCell>-</TableCell><TableCell>-</TableCell>
                       <TableCell><div className="flex gap-1"><Button size="sm" onClick={saveEditing}>{t.save}</Button><Button size="sm" variant="outline" onClick={() => setEditingItemId(null)}>{t.cancel}</Button></div></TableCell>
@@ -326,11 +328,11 @@ function PayrollDetailsSection({ payroll, onApprove, isApproving, onPrint, onExp
                     <TableCell>{item.employee?.job_title}</TableCell>
                     <TableCell>{formatCurrency(item.base_salary)}</TableCell>
                     <TableCell>{formatCurrency(item.bonus)}</TableCell>
+                    <TableCell>{formatCurrency(item.gratuity || 0)}</TableCell>
                     <TableCell>{formatCurrency(item.overtime_amount)}</TableCell>
                     <TableCell className="font-medium">{formatCurrency(grossSalary)}</TableCell>
                     <TableCell className={Number(item.advances_deducted) > 0 ? 'text-orange-600 font-medium' : ''}>{formatCurrency(item.advances_deducted)}</TableCell>
                     <TableCell>{formatCurrency(item.other_deductions)}</TableCell>
-                    <TableCell className="text-sm">{item.deduction_notes || '-'}</TableCell>
                     <TableCell>{formatCurrency(item.absence_amount)}</TableCell>
                     <TableCell className="text-rose-600">{formatCurrency(totalDeductions)}</TableCell>
                     <TableCell className="font-bold text-emerald-600">{formatCurrency(item.net_salary)}</TableCell>
@@ -342,11 +344,11 @@ function PayrollDetailsSection({ payroll, onApprove, isApproving, onPrint, onExp
                 <TableCell colSpan={2}>{t.total}</TableCell>
                 <TableCell>{formatCurrency(payroll.total_base_salaries)}</TableCell>
                 <TableCell>{formatCurrency(payroll.total_bonuses)}</TableCell>
+                <TableCell>{formatCurrency(payroll.total_gratuities || 0)}</TableCell>
                 <TableCell>{formatCurrency(payroll.total_overtime)}</TableCell>
-                <TableCell>{formatCurrency(payroll.total_base_salaries + payroll.total_allowances + payroll.total_bonuses + payroll.total_overtime)}</TableCell>
+                <TableCell>{formatCurrency(payroll.total_base_salaries + payroll.total_allowances + payroll.total_bonuses + (payroll.total_gratuities || 0) + payroll.total_overtime)}</TableCell>
                 <TableCell className="text-orange-600">{formatCurrency(payroll.total_advances)}</TableCell>
                 <TableCell>{formatCurrency(payroll.total_deductions)}</TableCell>
-                <TableCell></TableCell>
                 <TableCell>{formatCurrency(payroll.total_absences)}</TableCell>
                 <TableCell className="text-rose-600">{formatCurrency(payroll.total_advances + payroll.total_deductions + payroll.total_absences)}</TableCell>
                 <TableCell className="text-emerald-600">{formatCurrency(payroll.total_net_salaries)}</TableCell>

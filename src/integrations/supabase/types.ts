@@ -7621,6 +7621,7 @@ export type Database = {
           created_at: string
           deduction_notes: string | null
           employee_id: string
+          gratuity: number
           gross_salary: number
           housing_allowance: number
           id: string
@@ -7642,6 +7643,7 @@ export type Database = {
           created_at?: string
           deduction_notes?: string | null
           employee_id: string
+          gratuity?: number
           gross_salary?: number
           housing_allowance?: number
           id?: string
@@ -7663,6 +7665,7 @@ export type Database = {
           created_at?: string
           deduction_notes?: string | null
           employee_id?: string
+          gratuity?: number
           gross_salary?: number
           housing_allowance?: number
           id?: string
@@ -7723,6 +7726,7 @@ export type Database = {
           total_base_salaries: number
           total_bonuses: number
           total_deductions: number
+          total_gratuities: number
           total_net_salaries: number
           total_overtime: number
           updated_at: string
@@ -7744,6 +7748,7 @@ export type Database = {
           total_base_salaries?: number
           total_bonuses?: number
           total_deductions?: number
+          total_gratuities?: number
           total_net_salaries?: number
           total_overtime?: number
           updated_at?: string
@@ -7765,6 +7770,7 @@ export type Database = {
           total_base_salaries?: number
           total_bonuses?: number
           total_deductions?: number
+          total_gratuities?: number
           total_net_salaries?: number
           total_overtime?: number
           updated_at?: string
