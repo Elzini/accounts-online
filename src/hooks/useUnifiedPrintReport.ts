@@ -229,7 +229,7 @@ export function useUnifiedPrintReport() {
           
           @page {
             size: ${paperSize};
-            margin: 10mm;
+            margin: 8mm;
           }
           
           body {
@@ -238,9 +238,9 @@ export function useUnifiedPrintReport() {
             text-align: right;
             background: #fff;
             color: #1f2937;
-            line-height: 1.5;
+            line-height: 1.3;
             font-size: ${fontSize};
-            padding: 15px;
+            padding: 10px;
           }
           
           /* Company Header */
@@ -249,8 +249,8 @@ export function useUnifiedPrintReport() {
             justify-content: space-between;
             align-items: flex-start;
             border-bottom: 2px solid ${headerColor};
-            padding-bottom: 15px;
-            margin-bottom: 20px;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
           }
           
           .company-info {
@@ -289,18 +289,18 @@ export function useUnifiedPrintReport() {
           /* Report Title */
           .report-title {
             text-align: center;
-            margin: 25px 0;
+            margin: 10px 0;
           }
           
           .report-title h1 {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 700;
             color: ${headerColor};
-            margin-bottom: 10px;
+            margin-bottom: 5px;
           }
           
           .report-title .subtitle {
-            font-size: 14px;
+            font-size: 12px;
             color: #6b7280;
           }
           
@@ -340,14 +340,14 @@ export function useUnifiedPrintReport() {
           th {
             background: ${headerColor};
             color: white;
-            padding: 10px 8px;
+            padding: 5px 4px;
             font-weight: 600;
-            font-size: 12px;
+            font-size: 11px;
             border: 1px solid ${headerColor};
           }
           
           td {
-            padding: 8px;
+            padding: 4px 5px;
             border: 1px solid #e5e7eb;
             font-size: ${fontSize};
           }
@@ -388,40 +388,40 @@ export function useUnifiedPrintReport() {
           .signatures {
             display: flex;
             justify-content: space-around;
-            margin-top: 60px;
-            padding-top: 20px;
+            margin-top: 30px;
+            padding-top: 10px;
             border-top: 2px solid #e5e7eb;
           }
           
           .signature-box {
             text-align: center;
-            min-width: 180px;
-            padding: 15px;
+            min-width: 150px;
+            padding: 8px;
           }
           
           .signature-label {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: #374151;
-            margin-bottom: 40px;
+            margin-bottom: 25px;
           }
           
           .signature-line {
             border-top: 1px solid #1f2937;
-            margin-top: 40px;
+            margin-top: 25px;
             width: 100%;
           }
           
           .signature-date {
-            font-size: 11px;
+            font-size: 10px;
             color: #6b7280;
-            margin-top: 8px;
+            margin-top: 5px;
           }
           
           /* Footer */
           .footer {
-            margin-top: 30px;
-            padding-top: 15px;
+            margin-top: 15px;
+            padding-top: 8px;
             border-top: 1px solid #e5e7eb;
             display: flex;
             justify-content: space-between;
