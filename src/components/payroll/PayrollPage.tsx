@@ -227,7 +227,7 @@ function PayrollDetailsSection({ payroll, onApprove, isApproving, onPrint, onExp
       { header: t.total, key: 'gross_salary', align: 'right', type: 'currency' },
       { header: t.total_deductions, key: 'advances', align: 'right', type: 'currency' },
       { header: t.total_deductions, key: 'deductions', align: 'right', type: 'currency' },
-      { header: t.notes, key: 'notes', align: 'right' },
+      { header: t.payroll_gratuity, key: 'notes', align: 'right' },
       { header: t.total_deductions, key: 'absence', align: 'right', type: 'currency' },
       { header: t.total_deductions, key: 'total_deductions', align: 'right', type: 'currency', className: 'text-danger' },
       { header: t.net_salaries, key: 'net_salary', align: 'right', type: 'currency', className: 'text-success' },
@@ -252,7 +252,7 @@ function PayrollDetailsSection({ payroll, onApprove, isApproving, onPrint, onExp
       { header: '#', key: 'index' }, { header: t.name, key: 'name' }, { header: t.job_title, key: 'job_title' },
       { header: t.base_salary, key: 'base_salary' }, { header: t.amount, key: 'bonus' }, { header: 'Overtime', key: 'overtime' },
       { header: t.total, key: 'gross_salary' }, { header: t.total_deductions, key: 'advances' }, { header: t.total_deductions, key: 'deductions' },
-      { header: t.notes, key: 'notes' }, { header: t.total_deductions, key: 'absence' }, { header: t.total_deductions, key: 'total_deductions' },
+      { header: t.payroll_gratuity, key: 'notes' }, { header: t.total_deductions, key: 'absence' }, { header: t.total_deductions, key: 'total_deductions' },
       { header: t.net_salaries, key: 'net_salary' },
     ];
     const excelData = items.map((item, index) => {
@@ -291,7 +291,7 @@ function PayrollDetailsSection({ payroll, onApprove, isApproving, onPrint, onExp
                 <TableHead className="text-right">{t.base_salary}</TableHead><TableHead className="text-right">{t.amount}</TableHead>
                 <TableHead className="text-right">Overtime</TableHead><TableHead className="text-right">{t.total}</TableHead>
                 <TableHead className="text-right">{t.total_deductions}</TableHead><TableHead className="text-right">{t.total_deductions}</TableHead>
-                <TableHead className="text-right">{t.notes}</TableHead><TableHead className="text-right">{t.total_deductions}</TableHead>
+                <TableHead className="text-right">{t.payroll_gratuity}</TableHead><TableHead className="text-right">{t.total_deductions}</TableHead>
                 <TableHead className="text-right">{t.total_deductions}</TableHead><TableHead className="text-right">{t.net_salaries}</TableHead>
                 <TableHead className="text-right">{t.edit}</TableHead>
               </TableRow>
