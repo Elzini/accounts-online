@@ -14,6 +14,15 @@ export interface ReportSettings {
   show_page_numbers: boolean;
   paper_size: 'A4' | 'A4-landscape';
   font_size: 'small' | 'medium' | 'large';
+  page_margin: number; // mm
+  body_padding: number; // px
+  line_height: number;
+  table_header_padding: number; // px
+  table_cell_padding: number; // px
+  header_margin_bottom: number; // px
+  title_margin: number; // px
+  signature_margin_top: number; // px
+  footer_margin_top: number; // px
 }
 
 export const defaultReportSettings: ReportSettings = {
@@ -27,6 +36,15 @@ export const defaultReportSettings: ReportSettings = {
   show_page_numbers: true,
   paper_size: 'A4-landscape',
   font_size: 'medium',
+  page_margin: 8,
+  body_padding: 10,
+  line_height: 1.3,
+  table_header_padding: 5,
+  table_cell_padding: 4,
+  header_margin_bottom: 10,
+  title_margin: 10,
+  signature_margin_top: 30,
+  footer_margin_top: 15,
 };
 
 export interface UnifiedReportColumn {
@@ -229,7 +247,7 @@ export function useUnifiedPrintReport() {
           
           @page {
             size: ${paperSize};
-            margin: 8mm;
+            margin: ${reportSettings.page_margin}mm;
           }
           
           body {
@@ -238,9 +256,9 @@ export function useUnifiedPrintReport() {
             text-align: right;
             background: #fff;
             color: #1f2937;
-            line-height: 1.3;
+            line-height: ${reportSettings.line_height};
             font-size: ${fontSize};
-            padding: 10px;
+            padding: ${reportSettings.body_padding}px;
           }
           
           /* Company Header */
@@ -250,7 +268,7 @@ export function useUnifiedPrintReport() {
             align-items: flex-start;
             border-bottom: 2px solid ${headerColor};
             padding-bottom: 8px;
-            margin-bottom: 10px;
+            margin-bottom: ${reportSettings.header_margin_bottom}px;
           }
           
           .company-info {
@@ -289,7 +307,7 @@ export function useUnifiedPrintReport() {
           /* Report Title */
           .report-title {
             text-align: center;
-            margin: 10px 0;
+            margin: ${reportSettings.title_margin}px 0;
           }
           
           .report-title h1 {
@@ -340,14 +358,14 @@ export function useUnifiedPrintReport() {
           th {
             background: ${headerColor};
             color: white;
-            padding: 5px 4px;
+            padding: ${reportSettings.table_header_padding}px ${reportSettings.table_header_padding - 1}px;
             font-weight: 600;
             font-size: 11px;
             border: 1px solid ${headerColor};
           }
           
           td {
-            padding: 4px 5px;
+            padding: ${reportSettings.table_cell_padding}px ${reportSettings.table_cell_padding + 1}px;
             border: 1px solid #e5e7eb;
             font-size: ${fontSize};
           }
@@ -388,7 +406,7 @@ export function useUnifiedPrintReport() {
           .signatures {
             display: flex;
             justify-content: space-around;
-            margin-top: 30px;
+            margin-top: ${reportSettings.signature_margin_top}px;
             padding-top: 10px;
             border-top: 2px solid #e5e7eb;
           }
@@ -420,7 +438,7 @@ export function useUnifiedPrintReport() {
           
           /* Footer */
           .footer {
-            margin-top: 15px;
+            margin-top: ${reportSettings.footer_margin_top}px;
             padding-top: 8px;
             border-top: 1px solid #e5e7eb;
             display: flex;
