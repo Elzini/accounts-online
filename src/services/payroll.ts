@@ -48,6 +48,7 @@ export interface PayrollRecord {
   total_base_salaries: number;
   total_allowances: number;
   total_bonuses: number;
+  total_gratuities: number;
   total_overtime: number;
   total_deductions: number;
   total_advances: number;
@@ -70,6 +71,7 @@ export interface PayrollItem {
   housing_allowance: number;
   transport_allowance: number;
   bonus: number;
+  gratuity: number;
   overtime_hours: number;
   overtime_rate: number;
   overtime_amount: number;
@@ -351,6 +353,7 @@ export async function generatePayrollItems(
       housing_allowance: Number(emp.housing_allowance),
       transport_allowance: Number(emp.transport_allowance),
       bonus: 0,
+      gratuity: 0,
       overtime_hours: 0,
       overtime_rate: 0,
       overtime_amount: 0,
@@ -413,7 +416,7 @@ export async function refreshPayrollAdvances(
       }, 0);
 
       if (totalAdvances !== Number(item.advances_deducted)) {
-        const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + Number(item.transport_allowance) + Number(item.bonus || 0) + Number(item.overtime_amount || 0);
+        const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + Number(item.transport_allowance) + Number(item.bonus || 0) + Number(item.gratuity || 0) + Number(item.overtime_amount || 0);
         const totalDeductions = totalAdvances + Number(item.absence_amount || 0) + Number(item.other_deductions || 0);
         const netSalary = grossSalary - totalDeductions;
 
@@ -454,6 +457,7 @@ export async function refreshPayrollAdvances(
         housing_allowance: Number(emp.housing_allowance),
         transport_allowance: Number(emp.transport_allowance),
         bonus: 0,
+        gratuity: 0,
         overtime_hours: 0,
         overtime_rate: 0,
         overtime_amount: 0,
@@ -482,6 +486,7 @@ export async function updatePayrollItem(
     Number(updates.housing_allowance || 0) + 
     Number(updates.transport_allowance || 0) + 
     Number(updates.bonus || 0) + 
+    Number(updates.gratuity || 0) + 
     Number(updates.overtime_amount || 0);
 
   const totalDeductions = 
@@ -521,6 +526,7 @@ export async function updatePayrollTotals(payrollId: string): Promise<PayrollRec
       total_base_salaries: acc.total_base_salaries + Number(item.base_salary),
       total_allowances: acc.total_allowances + Number(item.housing_allowance) + Number(item.transport_allowance),
       total_bonuses: acc.total_bonuses + Number(item.bonus),
+      total_gratuities: acc.total_gratuities + Number(item.gratuity || 0),
       total_overtime: acc.total_overtime + Number(item.overtime_amount),
       total_deductions: acc.total_deductions + Number(item.other_deductions),
       total_advances: acc.total_advances + Number(item.advances_deducted),
@@ -531,6 +537,7 @@ export async function updatePayrollTotals(payrollId: string): Promise<PayrollRec
       total_base_salaries: 0,
       total_allowances: 0,
       total_bonuses: 0,
+      total_gratuities: 0,
       total_overtime: 0,
       total_deductions: 0,
       total_advances: 0,
