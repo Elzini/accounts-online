@@ -377,7 +377,7 @@ export async function generatePayrollItems(
 }
 
 // Refresh advances for all items in a payroll (re-calculate from pending advances)
-// Also removes inactive employees from the payroll
+// Also removes inactive employees and adds new employees to the payroll
 export async function refreshPayrollAdvances(
   payrollId: string,
   companyId: string
@@ -388,40 +388,87 @@ export async function refreshPayrollAdvances(
     .eq('payroll_id', payrollId);
   
   if (itemsError) throw itemsError;
-  if (!items || items.length === 0) return;
 
   const pendingAdvances = await fetchPendingAdvances(companyId);
+  const existingEmployeeIds = new Set<string>();
 
-  for (const item of items) {
-    // Remove inactive employees from payroll
-    const employee = item.employee as Record<string, unknown> | null;
-    if (employee && employee.is_active === false) {
-      await supabase.from('payroll_items').delete().eq('id', item.id);
-      continue;
+  // Process existing items
+  if (items && items.length > 0) {
+    for (const item of items) {
+      existingEmployeeIds.add(item.employee_id);
+
+      // Remove inactive employees from payroll
+      const employee = item.employee as Record<string, unknown> | null;
+      if (employee && employee.is_active === false) {
+        await supabase.from('payroll_items').delete().eq('id', item.id);
+        continue;
+      }
+
+      const empAdvances = pendingAdvances.filter(a => a.employee_id === item.employee_id);
+      const totalAdvances = empAdvances.reduce((sum, a) => {
+        const deduction = Number(a.monthly_deduction) > 0 
+          ? Math.min(Number(a.monthly_deduction), Number(a.remaining_amount || a.amount))
+          : Number(a.remaining_amount || a.amount);
+        return sum + deduction;
+      }, 0);
+
+      if (totalAdvances !== Number(item.advances_deducted)) {
+        const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + Number(item.transport_allowance) + Number(item.bonus || 0) + Number(item.overtime_amount || 0);
+        const totalDeductions = totalAdvances + Number(item.absence_amount || 0) + Number(item.other_deductions || 0);
+        const netSalary = grossSalary - totalDeductions;
+
+        await supabase
+          .from('payroll_items')
+          .update({
+            advances_deducted: totalAdvances,
+            total_deductions: totalDeductions,
+            net_salary: netSalary,
+          })
+          .eq('id', item.id);
+      }
     }
+  }
 
-    const empAdvances = pendingAdvances.filter(a => a.employee_id === item.employee_id);
-    const totalAdvances = empAdvances.reduce((sum, a) => {
-      const deduction = Number(a.monthly_deduction) > 0 
-        ? Math.min(Number(a.monthly_deduction), Number(a.remaining_amount || a.amount))
-        : Number(a.remaining_amount || a.amount);
-      return sum + deduction;
-    }, 0);
+  // Add new active employees that are not yet in the payroll
+  const allEmployees = await fetchEmployees(companyId);
+  const newEmployees = allEmployees.filter(e => e.is_active && !existingEmployeeIds.has(e.id));
 
-    if (totalAdvances !== Number(item.advances_deducted)) {
-      const grossSalary = Number(item.base_salary) + Number(item.housing_allowance) + Number(item.transport_allowance) + Number(item.bonus || 0) + Number(item.overtime_amount || 0);
-      const totalDeductions = totalAdvances + Number(item.absence_amount || 0) + Number(item.other_deductions || 0);
+  if (newEmployees.length > 0) {
+    const newItems = newEmployees.map(emp => {
+      const empAdvances = pendingAdvances.filter(a => a.employee_id === emp.id);
+      const totalAdvances = empAdvances.reduce((sum, a) => {
+        const deduction = Number(a.monthly_deduction) > 0 
+          ? Math.min(Number(a.monthly_deduction), Number(a.remaining_amount || a.amount))
+          : Number(a.remaining_amount || a.amount);
+        return sum + deduction;
+      }, 0);
+
+      const grossSalary = Number(emp.base_salary) + Number(emp.housing_allowance) + Number(emp.transport_allowance);
+      const totalDeductions = totalAdvances;
       const netSalary = grossSalary - totalDeductions;
 
-      await supabase
-        .from('payroll_items')
-        .update({
-          advances_deducted: totalAdvances,
-          total_deductions: totalDeductions,
-          net_salary: netSalary,
-        })
-        .eq('id', item.id);
-    }
+      return {
+        payroll_id: payrollId,
+        employee_id: emp.id,
+        base_salary: Number(emp.base_salary),
+        housing_allowance: Number(emp.housing_allowance),
+        transport_allowance: Number(emp.transport_allowance),
+        bonus: 0,
+        overtime_hours: 0,
+        overtime_rate: 0,
+        overtime_amount: 0,
+        advances_deducted: totalAdvances,
+        absence_days: 0,
+        absence_amount: 0,
+        other_deductions: 0,
+        deduction_notes: null,
+        gross_salary: grossSalary,
+        total_deductions: totalDeductions,
+        net_salary: netSalary,
+      };
+    });
+
+    await supabase.from('payroll_items').insert(newItems);
   }
 }
 
