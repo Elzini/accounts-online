@@ -106,9 +106,9 @@ function formatCurrency(amount: number | string | null | undefined): string {
   if (amount === null || amount === undefined) return '-';
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
   if (isNaN(num)) return '-';
-  return new Intl.NumberFormat('ar-SA', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+  return new Intl.NumberFormat('en-SA', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(num);
 }
 
