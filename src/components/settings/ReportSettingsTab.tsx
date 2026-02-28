@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useReportSettings, ReportSettings, defaultReportSettings } from '@/hooks/useUnifiedPrintReport';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, FileText, Palette, Settings2 } from 'lucide-react';
+import { Loader2, FileText, Palette, Settings2, Ruler } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function ReportSettingsTab() {
@@ -117,6 +118,80 @@ export function ReportSettingsTab() {
                   <SelectItem value="large">{t.report_font_large}</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Ruler className="w-5 h-5" />المسافات والهوامش</CardTitle>
+          <CardDescription>التحكم في المسافات والهوامش وكثافة الجدول في التقارير المطبوعة</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>هامش الصفحة (مم)</Label>
+                <span className="text-sm text-muted-foreground">{settings.page_margin} مم</span>
+              </div>
+              <Slider value={[settings.page_margin]} onValueChange={([v]) => setSettings({ ...settings, page_margin: v })} min={3} max={25} step={1} />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>المسافة الداخلية (بكسل)</Label>
+                <span className="text-sm text-muted-foreground">{settings.body_padding} px</span>
+              </div>
+              <Slider value={[settings.body_padding]} onValueChange={([v]) => setSettings({ ...settings, body_padding: v })} min={0} max={30} step={2} />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>تباعد الأسطر</Label>
+                <span className="text-sm text-muted-foreground">{settings.line_height}</span>
+              </div>
+              <Slider value={[settings.line_height * 10]} onValueChange={([v]) => setSettings({ ...settings, line_height: v / 10 })} min={10} max={25} step={1} />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>حشو رأس الجدول (بكسل)</Label>
+                <span className="text-sm text-muted-foreground">{settings.table_header_padding} px</span>
+              </div>
+              <Slider value={[settings.table_header_padding]} onValueChange={([v]) => setSettings({ ...settings, table_header_padding: v })} min={2} max={15} step={1} />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>حشو خلايا الجدول (بكسل)</Label>
+                <span className="text-sm text-muted-foreground">{settings.table_cell_padding} px</span>
+              </div>
+              <Slider value={[settings.table_cell_padding]} onValueChange={([v]) => setSettings({ ...settings, table_cell_padding: v })} min={2} max={15} step={1} />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>المسافة بعد الترويسة (بكسل)</Label>
+                <span className="text-sm text-muted-foreground">{settings.header_margin_bottom} px</span>
+              </div>
+              <Slider value={[settings.header_margin_bottom]} onValueChange={([v]) => setSettings({ ...settings, header_margin_bottom: v })} min={0} max={40} step={2} />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>المسافة حول العنوان (بكسل)</Label>
+                <span className="text-sm text-muted-foreground">{settings.title_margin} px</span>
+              </div>
+              <Slider value={[settings.title_margin]} onValueChange={([v]) => setSettings({ ...settings, title_margin: v })} min={0} max={40} step={2} />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>المسافة قبل التوقيعات (بكسل)</Label>
+                <span className="text-sm text-muted-foreground">{settings.signature_margin_top} px</span>
+              </div>
+              <Slider value={[settings.signature_margin_top]} onValueChange={([v]) => setSettings({ ...settings, signature_margin_top: v })} min={5} max={80} step={5} />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>المسافة قبل التذييل (بكسل)</Label>
+                <span className="text-sm text-muted-foreground">{settings.footer_margin_top} px</span>
+              </div>
+              <Slider value={[settings.footer_margin_top]} onValueChange={([v]) => setSettings({ ...settings, footer_margin_top: v })} min={5} max={50} step={5} />
             </div>
           </div>
         </CardContent>
