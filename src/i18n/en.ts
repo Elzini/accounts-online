@@ -758,6 +758,7 @@ export const en: TranslationKeys = {
   total_allowances: 'Total Allowances',
   total_deductions: 'Total Deductions',
   net_salaries: 'Net Salaries',
+  payroll_gratuity: 'Gratuity',
   draft_status: 'Draft',
   approved_status: 'Approved',
   paid_status: 'Paid',

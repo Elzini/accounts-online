@@ -758,6 +758,7 @@ export const ar: TranslationKeys = {
   total_allowances: 'إجمالي البدلات',
   total_deductions: 'إجمالي الخصومات',
   net_salaries: 'صافي الرواتب',
+  payroll_gratuity: 'إكرامية',
   draft_status: 'مسودة',
   approved_status: 'معتمد',
   paid_status: 'مدفوع',
