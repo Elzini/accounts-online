@@ -46,7 +46,7 @@ export function PayrollPage() {
   const { printReport } = useUnifiedPrintReport();
   const { exportToExcel } = useExcelExport();
 
-  const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('en-SA', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
   const handleCreatePayroll = async () => {
     try {
@@ -202,7 +202,7 @@ function PayrollDetailsSection({ payroll, onApprove, isApproving, onPrint, onExp
     try { await refreshAdvances.mutateAsync(payroll.id); toast.success(t.success); } catch { toast.error(t.error_occurred); }
   };
 
-  const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('en-SA', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
   const startEditing = (item: PayrollItem) => {
     setEditingItemId(item.id);
