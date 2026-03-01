@@ -241,9 +241,9 @@ export function ZakatReportsPage() {
     }
   };
 
-  // Export Actions Component
-  const ExportActions = ({ onExport }: { onExport: (type: 'print' | 'excel' | 'pdf') => void }) => (
-    <DropdownMenu>
+  // Export Actions - rendered inline instead of as a sub-component to avoid remounting
+  const renderExportActions = (onExport: (type: 'print' | 'excel' | 'pdf') => void) => (
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Download className="w-4 h-4" />
@@ -251,15 +251,15 @@ export function ZakatReportsPage() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onExport('print')} className="gap-2 cursor-pointer">
+        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onExport('print'); }} className="gap-2 cursor-pointer">
           <Printer className="w-4 h-4" />
           طباعة
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onExport('pdf')} className="gap-2 cursor-pointer">
+        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onExport('pdf'); }} className="gap-2 cursor-pointer">
           <FileText className="w-4 h-4" />
           تصدير PDF
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onExport('excel')} className="gap-2 cursor-pointer">
+        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onExport('excel'); }} className="gap-2 cursor-pointer">
           <FileSpreadsheet className="w-4 h-4" />
           تصدير Excel
         </DropdownMenuItem>
@@ -267,8 +267,8 @@ export function ZakatReportsPage() {
     </DropdownMenu>
   );
 
-  // Date Range Picker Component
-  const DateRangePicker = () => (
+  // Date Range Picker - rendered inline to avoid remounting
+  const dateRangePicker = (
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className={cn("justify-start text-right font-normal gap-2", !dateRange.from && "text-muted-foreground")}>
@@ -349,8 +349,8 @@ export function ZakatReportsPage() {
                   <CardDescription>توضح حركة النقد من الأنشطة التشغيلية والاستثمارية والتمويلية</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <ExportActions onExport={exportCashFlow} />
-                  <DateRangePicker />
+                  {renderExportActions(exportCashFlow)}
+                  {dateRangePicker}
                 </div>
               </div>
             </CardHeader>
@@ -531,8 +531,8 @@ export function ZakatReportsPage() {
                   <CardDescription>توضح التغيرات في رأس المال والاحتياطيات والأرباح المحتجزة</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <ExportActions onExport={exportEquityChanges} />
-                  <DateRangePicker />
+                  {renderExportActions(exportEquityChanges)}
+                  {dateRangePicker}
                 </div>
               </div>
             </CardHeader>
@@ -580,7 +580,7 @@ export function ZakatReportsPage() {
                   <CardDescription>احتساب الوعاء الزكوي والزكاة المستحقة حسب متطلبات هيئة الزكاة والضريبة والجمارك</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <ExportActions onExport={exportZakatBase} />
+                  {renderExportActions(exportZakatBase)}
                   <Select value={fiscalYear} onValueChange={setFiscalYear}>
                     <SelectTrigger className="w-32">
                       <SelectValue placeholder="السنة" />
@@ -737,8 +737,8 @@ export function ZakatReportsPage() {
                   <CardDescription>قائمة الدخل مع تفاصيل الإيرادات والمصروفات وصافي الربح قبل وبعد الزكاة</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <ExportActions onExport={exportDetailedIncome} />
-                  <DateRangePicker />
+                  {renderExportActions(exportDetailedIncome)}
+                  {dateRangePicker}
                 </div>
               </div>
             </CardHeader>
