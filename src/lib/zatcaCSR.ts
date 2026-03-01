@@ -2,75 +2,53 @@
  * ZATCA CSR (Certificate Signing Request) Generator
  * توليد طلب توقيع الشهادة الرقمية لهيئة الزكاة والضريبة والجمارك
  * 
- * المرحلة الثانية (Phase 2) - التوقيع الرقمي
- * 
- * References:
- * - ZATCA E-invoicing Onboarding Guide
- * - ZATCA SDK CSR Generation Specification
+ * Uses pkijs for proper PKCS#10 ASN.1 DER-encoded CSR generation
+ * compliant with ZATCA Phase 2 requirements.
  */
 
+import * as pkijs from 'pkijs';
+import * as asn1js from 'asn1js';
+
 export interface CSRConfig {
-  // Organization info
-  commonName: string;        // CN - اسم الجهاز/الحل
-  organizationName: string;  // O - اسم المنشأة
-  organizationUnit: string;  // OU - القسم
-  country: string;           // C - رمز الدولة (SA)
-  
-  // ZATCA-specific fields
-  serialNumber: string;      // SERIALNUMBER - الرقم التسلسلي (1-TST|2-TST|3-...)
-  vatNumber: string;         // UID - الرقم الضريبي
-  invoiceType: string;       // title - نوع الفاتورة (1100 = Standard+Simplified)
-  location: string;          // registeredAddress - موقع الجهاز
-  industry: string;          // businessCategory - نوع النشاط
+  commonName: string;        // CN
+  organizationName: string;  // O
+  organizationUnit: string;  // OU
+  country: string;           // C (SA)
+  serialNumber: string;      // SERIALNUMBER
+  vatNumber: string;         // UID
+  invoiceType: string;       // title (1100)
+  location: string;          // registeredAddress
+  industry: string;          // businessCategory
 }
 
 export interface CSRResult {
-  csrPEM: string;           // CSR بصيغة PEM
-  privateKeyPEM: string;    // المفتاح الخاص بصيغة PEM
-  publicKeyPEM: string;     // المفتاح العام بصيغة PEM
-  generatedAt: string;      // تاريخ التوليد
-  config: CSRConfig;        // إعدادات التوليد
+  csrPEM: string;
+  privateKeyPEM: string;
+  publicKeyPEM: string;
+  generatedAt: string;
+  config: CSRConfig;
 }
 
 export interface SignedInvoiceResult {
-  invoiceHash: string;       // SHA-256 hash
-  invoiceHashBase64: string; // Base64 encoded hash
-  signatureValue: string;    // ECDSA signature (Base64)
-  publicKeyBase64: string;   // Public key (Base64)
-  signingTime: string;       // Signing timestamp
+  invoiceHash: string;
+  invoiceHashBase64: string;
+  signatureValue: string;
+  publicKeyBase64: string;
+  signingTime: string;
 }
 
-/**
- * Generate ECDSA key pair using Web Crypto API
- */
-async function generateECDSAKeyPair(): Promise<CryptoKeyPair> {
-  return await crypto.subtle.generateKey(
-    {
-      name: 'ECDSA',
-      namedCurve: 'P-256', // secp256r1 - ZATCA required curve
-    },
-    true, // extractable
-    ['sign', 'verify']
-  );
-}
+// OID constants
+const OID_COMMON_NAME = '2.5.4.3';
+const OID_COUNTRY = '2.5.4.6';
+const OID_ORGANIZATION = '2.5.4.10';
+const OID_ORG_UNIT = '2.5.4.11';
+const OID_SERIAL_NUMBER = '2.5.4.5';
+const OID_UID = '0.9.2342.19200300.100.1.1';
+const OID_TITLE = '2.5.4.12';
+const OID_REGISTERED_ADDRESS = '2.5.4.26';
+const OID_BUSINESS_CATEGORY = '2.5.4.15';
+const OID_SAN = '2.5.29.17';
 
-/**
- * Export a CryptoKey to PEM format
- */
-async function exportKeyToPEM(key: CryptoKey, type: 'public' | 'private'): Promise<string> {
-  const format = type === 'public' ? 'spki' : 'pkcs8';
-  const exported = await crypto.subtle.exportKey(format, key);
-  const base64 = arrayBufferToBase64(exported);
-  const label = type === 'public' ? 'PUBLIC KEY' : 'PRIVATE KEY';
-  
-  // Format with 64-char line wrapping
-  const lines = base64.match(/.{1,64}/g) || [];
-  return `-----BEGIN ${label}-----\n${lines.join('\n')}\n-----END ${label}-----`;
-}
-
-/**
- * Convert ArrayBuffer to Base64 string
- */
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';
@@ -80,9 +58,6 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-/**
- * Convert Base64 string to ArrayBuffer
- */
 function base64ToArrayBuffer(base64: string): ArrayBuffer {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
@@ -92,63 +67,118 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
   return bytes.buffer;
 }
 
+async function exportKeyToPEM(key: CryptoKey, type: 'public' | 'private'): Promise<string> {
+  const format = type === 'public' ? 'spki' : 'pkcs8';
+  const exported = await crypto.subtle.exportKey(format, key);
+  const base64 = arrayBufferToBase64(exported);
+  const label = type === 'public' ? 'PUBLIC KEY' : 'PRIVATE KEY';
+  const lines = base64.match(/.{1,64}/g) || [];
+  return `-----BEGIN ${label}-----\n${lines.join('\n')}\n-----END ${label}-----`;
+}
+
 /**
- * Generate a simplified CSR structure
- * Note: Full ASN.1 DER encoding requires a library like asn1js
- * This generates a ZATCA-compatible CSR representation
+ * Generate a real PKCS#10 CSR using pkijs with ZATCA-required fields
  */
 export async function generateCSR(config: CSRConfig): Promise<CSRResult> {
-  // Generate ECDSA key pair
-  const keyPair = await generateECDSAKeyPair();
-  
-  // Export keys to PEM
+  // Set crypto engine for pkijs
+  const cryptoEngine = new pkijs.CryptoEngine({
+    name: 'webcrypto',
+    crypto: crypto,
+  });
+  pkijs.setEngine('webcrypto', cryptoEngine as any);
+
+  // Generate ECDSA P-256 key pair
+  const keyPair = await crypto.subtle.generateKey(
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    true,
+    ['sign', 'verify']
+  );
+
+  // Create PKCS#10 CSR
+  const pkcs10 = new pkijs.CertificationRequest();
+  pkcs10.version = 0;
+
+  // Add subject DN attributes
+  const subjectAttrs: Array<{ oid: string; value: string }> = [
+    { oid: OID_COUNTRY, value: config.country },
+    { oid: OID_ORGANIZATION, value: config.organizationName },
+    { oid: OID_ORG_UNIT, value: config.organizationUnit },
+    { oid: OID_COMMON_NAME, value: config.commonName },
+    { oid: OID_SERIAL_NUMBER, value: config.serialNumber },
+    { oid: OID_UID, value: config.vatNumber },
+    { oid: OID_TITLE, value: config.invoiceType },
+    { oid: OID_REGISTERED_ADDRESS, value: config.location },
+    { oid: OID_BUSINESS_CATEGORY, value: config.industry },
+  ];
+
+  for (const attr of subjectAttrs) {
+    if (!attr.value) continue;
+    pkcs10.subject.typesAndValues.push(new pkijs.AttributeTypeAndValue({
+      type: attr.oid,
+      value: new asn1js.Utf8String({ value: attr.value }),
+    }));
+  }
+
+  // Build SAN (Subject Alternative Name) extension with DirectoryName
+  const sanDirName = new pkijs.GeneralName({
+    type: 4, // directoryName
+    value: new pkijs.RelativeDistinguishedNames({
+      typesAndValues: [
+        new pkijs.AttributeTypeAndValue({
+          type: OID_UID,
+          value: new asn1js.Utf8String({ value: config.vatNumber }),
+        }),
+        new pkijs.AttributeTypeAndValue({
+          type: OID_TITLE,
+          value: new asn1js.Utf8String({ value: config.invoiceType }),
+        }),
+        new pkijs.AttributeTypeAndValue({
+          type: OID_REGISTERED_ADDRESS,
+          value: new asn1js.Utf8String({ value: config.location }),
+        }),
+        new pkijs.AttributeTypeAndValue({
+          type: OID_BUSINESS_CATEGORY,
+          value: new asn1js.Utf8String({ value: config.industry }),
+        }),
+      ],
+    }),
+  });
+
+  const sanExtension = new pkijs.Extension({
+    extnID: OID_SAN,
+    critical: false,
+    extnValue: new pkijs.GeneralNames({
+      names: [sanDirName],
+    }).toSchema().toBER(false),
+  });
+
+  // Add extensions as CSR attribute
+  pkcs10.attributes = [];
+  pkcs10.attributes.push(new pkijs.Attribute({
+    type: '1.2.840.113549.1.9.14', // extensionRequest OID
+    values: [
+      new pkijs.Extensions({
+        extensions: [sanExtension],
+      }).toSchema(),
+    ],
+  }));
+
+  // Import public key into CSR
+  await pkcs10.subjectPublicKeyInfo.importKey(keyPair.publicKey);
+
+  // Sign the CSR with ECDSA SHA-256
+  await pkcs10.sign(keyPair.privateKey, 'SHA-256');
+
+  // Export CSR to DER then to PEM
+  const csrDER = pkcs10.toSchema(true).toBER(false);
+  const csrBase64 = arrayBufferToBase64(csrDER);
+  const csrLines = csrBase64.match(/.{1,64}/g) || [];
+  const csrPEM = `-----BEGIN CERTIFICATE REQUEST-----\n${csrLines.join('\n')}\n-----END CERTIFICATE REQUEST-----`;
+
+  // Export keys
   const privateKeyPEM = await exportKeyToPEM(keyPair.privateKey, 'private');
   const publicKeyPEM = await exportKeyToPEM(keyPair.publicKey, 'public');
-  
-  // Build CSR subject DN (Distinguished Name)
-  const subjectDN = buildSubjectDN(config);
-  
-  // Build CSR PEM (simplified format for ZATCA onboarding)
-  // In production, use a proper ASN.1 library for full CSR generation
-  const csrData = {
-    version: 1,
-    subject: subjectDN,
-    publicKey: publicKeyPEM,
-    signatureAlgorithm: 'ECDSA with SHA-256',
-    extensions: {
-      subjectAlternativeName: {
-        directoryName: {
-          UID: config.vatNumber,
-          title: config.invoiceType,
-          registeredAddress: config.location,
-          businessCategory: config.industry,
-        },
-      },
-    },
-  };
-  
-  // Sign the CSR data with private key
-  const csrString = JSON.stringify(csrData);
-  const encoder = new TextEncoder();
-  const csrBytes = encoder.encode(csrString);
-  
-  const signature = await crypto.subtle.sign(
-    { name: 'ECDSA', hash: 'SHA-256' },
-    keyPair.privateKey,
-    csrBytes
-  );
-  
-  const signatureBase64 = arrayBufferToBase64(signature);
-  
-  // Build PEM-like CSR output
-  const csrContent = btoa(JSON.stringify({
-    ...csrData,
-    signature: signatureBase64,
-  }));
-  
-  const csrLines = csrContent.match(/.{1,64}/g) || [];
-  const csrPEM = `-----BEGIN CERTIFICATE REQUEST-----\n${csrLines.join('\n')}\n-----END CERTIFICATE REQUEST-----`;
-  
+
   return {
     csrPEM,
     privateKeyPEM,
@@ -159,26 +189,7 @@ export async function generateCSR(config: CSRConfig): Promise<CSRResult> {
 }
 
 /**
- * Build Subject Distinguished Name string
- */
-function buildSubjectDN(config: CSRConfig): string {
-  const parts = [
-    `CN=${config.commonName}`,
-    `O=${config.organizationName}`,
-    `OU=${config.organizationUnit}`,
-    `C=${config.country}`,
-    `SERIALNUMBER=${config.serialNumber}`,
-    `UID=${config.vatNumber}`,
-    `title=${config.invoiceType}`,
-    `registeredAddress=${config.location}`,
-    `businessCategory=${config.industry}`,
-  ];
-  return parts.join(', ');
-}
-
-/**
- * Sign an invoice XML/JSON using ECDSA private key
- * Returns the signature and related Phase 2 data
+ * Sign an invoice using ECDSA private key
  */
 export async function signInvoice(
   invoiceContent: string,
@@ -187,27 +198,23 @@ export async function signInvoice(
 ): Promise<SignedInvoiceResult> {
   const encoder = new TextEncoder();
   const contentBytes = encoder.encode(invoiceContent);
-  
-  // Generate SHA-256 hash
+
   const hashBuffer = await crypto.subtle.digest('SHA-256', contentBytes);
   const hashArray = new Uint8Array(hashBuffer);
-  
-  // Hash as hex string
+
   const invoiceHash = Array.from(hashArray)
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
-  
-  // Hash as Base64
+
   let hashBinary = '';
   for (let i = 0; i < hashArray.length; i++) {
     hashBinary += String.fromCharCode(hashArray[i]);
   }
   const invoiceHashBase64 = btoa(hashBinary);
-  
-  // Import private key for signing
+
   const privateKeyData = extractPEMContent(privateKeyPEM);
   const privateKeyBuffer = base64ToArrayBuffer(privateKeyData);
-  
+
   const privateKey = await crypto.subtle.importKey(
     'pkcs8',
     privateKeyBuffer,
@@ -215,19 +222,16 @@ export async function signInvoice(
     false,
     ['sign']
   );
-  
-  // Sign with ECDSA
+
   const signature = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
     privateKey,
     contentBytes
   );
-  
+
   const signatureValue = arrayBufferToBase64(signature);
-  
-  // Extract public key as Base64
   const publicKeyData = extractPEMContent(publicKeyPEM);
-  
+
   return {
     invoiceHash,
     invoiceHashBase64,
@@ -248,10 +252,10 @@ export async function verifyInvoiceSignature(
   try {
     const encoder = new TextEncoder();
     const contentBytes = encoder.encode(invoiceContent);
-    
+
     const publicKeyData = extractPEMContent(publicKeyPEM);
     const publicKeyBuffer = base64ToArrayBuffer(publicKeyData);
-    
+
     const publicKey = await crypto.subtle.importKey(
       'spki',
       publicKeyBuffer,
@@ -259,9 +263,9 @@ export async function verifyInvoiceSignature(
       false,
       ['verify']
     );
-    
+
     const signatureBuffer = base64ToArrayBuffer(signatureBase64);
-    
+
     return await crypto.subtle.verify(
       { name: 'ECDSA', hash: 'SHA-256' },
       publicKey,
@@ -274,9 +278,6 @@ export async function verifyInvoiceSignature(
   }
 }
 
-/**
- * Extract Base64 content from PEM format
- */
 function extractPEMContent(pem: string): string {
   return pem
     .replace(/-----BEGIN [A-Z ]+-----/g, '')
@@ -284,9 +285,6 @@ function extractPEMContent(pem: string): string {
     .replace(/\s/g, '');
 }
 
-/**
- * Store CSR data in localStorage for persistence
- */
 export function storeCSRData(companyId: string, csrResult: CSRResult): void {
   const key = `zatca_csr_${companyId}`;
   localStorage.setItem(key, JSON.stringify({
@@ -294,35 +292,23 @@ export function storeCSRData(companyId: string, csrResult: CSRResult): void {
     publicKeyPEM: csrResult.publicKeyPEM,
     generatedAt: csrResult.generatedAt,
     config: csrResult.config,
-    // Private key stored separately for security
   }));
-  
-  // Store private key separately
   const privateKeyKey = `zatca_private_key_${companyId}`;
   localStorage.setItem(privateKeyKey, csrResult.privateKeyPEM);
 }
 
-/**
- * Retrieve stored CSR data
- */
 export function getStoredCSRData(companyId: string): Partial<CSRResult> | null {
   const key = `zatca_csr_${companyId}`;
   const data = localStorage.getItem(key);
   if (!data) return null;
-  
+
   const parsed = JSON.parse(data);
   const privateKeyKey = `zatca_private_key_${companyId}`;
   const privateKeyPEM = localStorage.getItem(privateKeyKey);
-  
-  return {
-    ...parsed,
-    privateKeyPEM: privateKeyPEM || undefined,
-  };
+
+  return { ...parsed, privateKeyPEM: privateKeyPEM || undefined };
 }
 
-/**
- * Download CSR as file
- */
 export function downloadCSR(csrPEM: string, fileName: string): void {
   const blob = new Blob([csrPEM], { type: 'application/x-pem-file' });
   const url = URL.createObjectURL(blob);
@@ -335,9 +321,6 @@ export function downloadCSR(csrPEM: string, fileName: string): void {
   URL.revokeObjectURL(url);
 }
 
-/**
- * Generate default CSR config from company tax settings
- */
 export function buildCSRConfigFromSettings(settings: {
   companyName?: string;
   vatNumber?: string;
@@ -352,8 +335,8 @@ export function buildCSRConfigFromSettings(settings: {
     country: 'SA',
     serialNumber: `1-${settings.solutionName || 'ERP'}|2-${settings.solutionName || 'ERP'}|3-ed22f1d8-e6a2-1118-9b58-d9a8f11e445f`,
     vatNumber: settings.vatNumber || '',
-    invoiceType: '1100', // Standard + Simplified
+    invoiceType: '1100',
     location: settings.address || '',
-    industry: 'Automotive', // Default for car dealership
+    industry: 'Automotive',
   };
 }
