@@ -15,9 +15,8 @@ import {
   useZakatBaseStatement,
   useDetailedIncomeStatement,
 } from '@/hooks/useZakatReports';
-import { usePrintReport } from '@/hooks/usePrintReport';
+import { useUnifiedPrintReport } from '@/hooks/useUnifiedPrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
-import { usePdfExport } from '@/hooks/usePdfExport';
 import { 
   Loader2, 
   Download, 
@@ -56,9 +55,8 @@ export function ZakatReportsPage() {
   const { data: zakatBase, isLoading: isLoadingZakat } = useZakatBaseStatement(fiscalYear);
   const { data: detailedIncome, isLoading: isLoadingDetailedIncome } = useDetailedIncomeStatement(startDate, endDate);
 
-  const { printReport } = usePrintReport();
+  const { printReport } = useUnifiedPrintReport();
   const { exportToExcel } = useExcelExport();
-  const { exportToPdf } = usePdfExport();
 
   const isLoading = isLoadingCashFlow || isLoadingEquity || isLoadingZakat || isLoadingDetailedIncome;
 
@@ -97,23 +95,20 @@ export function ZakatReportsPage() {
       { item: 'النقدية في نهاية الفترة', amount: cashFlow.cashAtEnd.toLocaleString() },
     ];
 
-    const summaryCards = [
-      { label: 'التدفقات التشغيلية', value: cashFlow.operatingActivities.total.toLocaleString() + ' ر.س' },
-      { label: 'التدفقات الاستثمارية', value: cashFlow.investingActivities.total.toLocaleString() + ' ر.س' },
-      { label: 'التدفقات التمويلية', value: cashFlow.financingActivities.total.toLocaleString() + ' ر.س' },
-      { label: 'صافي التغير', value: cashFlow.netChangeInCash.toLocaleString() + ' ر.س' },
-    ];
-
     const dateSubtitle = dateRange.from && dateRange.to 
       ? `من ${format(dateRange.from, 'yyyy/MM/dd')} إلى ${format(dateRange.to, 'yyyy/MM/dd')}`
       : undefined;
 
-    if (type === 'print') {
-      printReport({ title: 'قائمة التدفقات النقدية', subtitle: dateSubtitle, columns, data, summaryCards });
-    } else if (type === 'excel') {
-      exportToExcel({ title: 'قائمة التدفقات النقدية', columns, data, fileName: 'cash-flow-statement', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
+    if (type === 'excel') {
+      const summaryData = [
+        { label: 'التدفقات التشغيلية', value: cashFlow.operatingActivities.total.toLocaleString() + ' ر.س' },
+        { label: 'التدفقات الاستثمارية', value: cashFlow.investingActivities.total.toLocaleString() + ' ر.س' },
+        { label: 'التدفقات التمويلية', value: cashFlow.financingActivities.total.toLocaleString() + ' ر.س' },
+        { label: 'صافي التغير', value: cashFlow.netChangeInCash.toLocaleString() + ' ر.س' },
+      ];
+      exportToExcel({ title: 'قائمة التدفقات النقدية', columns, data, fileName: 'cash-flow-statement', summaryData });
     } else {
-      exportToPdf({ title: 'قائمة التدفقات النقدية', subtitle: dateSubtitle, columns, data, fileName: 'cash-flow-statement', summaryCards });
+      printReport({ title: 'قائمة التدفقات النقدية', subtitle: dateSubtitle, columns, data });
     }
   };
 
@@ -137,21 +132,18 @@ export function ZakatReportsPage() {
       total: d.total.toLocaleString(),
     }));
 
-    const summaryCards = [
-      { label: 'الرصيد الافتتاحي', value: equityChanges.openingBalance.total.toLocaleString() + ' ر.س' },
-      { label: 'الرصيد الختامي', value: equityChanges.closingBalance.total.toLocaleString() + ' ر.س' },
-    ];
-
     const dateSubtitle = dateRange.from && dateRange.to 
       ? `من ${format(dateRange.from, 'yyyy/MM/dd')} إلى ${format(dateRange.to, 'yyyy/MM/dd')}`
       : undefined;
 
-    if (type === 'print') {
-      printReport({ title: 'قائمة التغيرات في حقوق الملكية', subtitle: dateSubtitle, columns, data, summaryCards });
-    } else if (type === 'excel') {
-      exportToExcel({ title: 'قائمة التغيرات في حقوق الملكية', columns, data, fileName: 'equity-changes', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
+    if (type === 'excel') {
+      const summaryData = [
+        { label: 'الرصيد الافتتاحي', value: equityChanges.openingBalance.total.toLocaleString() + ' ر.س' },
+        { label: 'الرصيد الختامي', value: equityChanges.closingBalance.total.toLocaleString() + ' ر.س' },
+      ];
+      exportToExcel({ title: 'قائمة التغيرات في حقوق الملكية', columns, data, fileName: 'equity-changes', summaryData });
     } else {
-      exportToPdf({ title: 'قائمة التغيرات في حقوق الملكية', subtitle: dateSubtitle, columns, data, fileName: 'equity-changes', summaryCards });
+      printReport({ title: 'قائمة التغيرات في حقوق الملكية', subtitle: dateSubtitle, columns, data });
     }
   };
 
@@ -187,17 +179,14 @@ export function ZakatReportsPage() {
       { item: 'الزكاة المستحقة', amount: zakatBase.zakatDue.toLocaleString() },
     ];
 
-    const summaryCards = [
-      { label: 'الوعاء الزكوي', value: zakatBase.adjustedZakatBase.toLocaleString() + ' ر.س' },
-      { label: 'الزكاة المستحقة', value: zakatBase.zakatDue.toLocaleString() + ' ر.س' },
-    ];
-
-    if (type === 'print') {
-      printReport({ title: 'قائمة الوعاء الزكوي', subtitle: `السنة المالية: ${fiscalYear}`, columns, data, summaryCards });
-    } else if (type === 'excel') {
-      exportToExcel({ title: 'قائمة الوعاء الزكوي', columns, data, fileName: 'zakat-base', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
+    if (type === 'excel') {
+      const summaryData = [
+        { label: 'الوعاء الزكوي', value: zakatBase.adjustedZakatBase.toLocaleString() + ' ر.س' },
+        { label: 'الزكاة المستحقة', value: zakatBase.zakatDue.toLocaleString() + ' ر.س' },
+      ];
+      exportToExcel({ title: 'قائمة الوعاء الزكوي', columns, data, fileName: 'zakat-base', summaryData });
     } else {
-      exportToPdf({ title: 'قائمة الوعاء الزكوي', subtitle: `السنة المالية: ${fiscalYear}`, columns, data, fileName: 'zakat-base', summaryCards });
+      printReport({ title: 'قائمة الوعاء الزكوي', subtitle: `السنة المالية: ${fiscalYear}`, columns, data });
     }
   };
 
@@ -235,23 +224,20 @@ export function ZakatReportsPage() {
       { item: detailedIncome.zakatNote, amount: '' },
     ];
 
-    const summaryCards = [
-      { label: 'إجمالي الإيرادات', value: detailedIncome.revenue.total.toLocaleString() + ' ر.س' },
-      { label: 'مجمل الربح', value: detailedIncome.grossProfit.toLocaleString() + ' ر.س' },
-      { label: 'صافي الربح', value: detailedIncome.netIncomeBeforeZakat.toLocaleString() + ' ر.س' },
-      { label: 'عدد المبيعات', value: detailedIncome.stats.totalSalesCount.toString() },
-    ];
-
     const dateSubtitle = dateRange.from && dateRange.to 
       ? `من ${format(dateRange.from, 'yyyy/MM/dd')} إلى ${format(dateRange.to, 'yyyy/MM/dd')}`
       : undefined;
 
-    if (type === 'print') {
-      printReport({ title: 'قائمة الدخل المفصلة', subtitle: dateSubtitle, columns, data, summaryCards });
-    } else if (type === 'excel') {
-      exportToExcel({ title: 'قائمة الدخل المفصلة', columns, data, fileName: 'detailed-income', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
+    if (type === 'excel') {
+      const summaryData = [
+        { label: 'إجمالي الإيرادات', value: detailedIncome.revenue.total.toLocaleString() + ' ر.س' },
+        { label: 'مجمل الربح', value: detailedIncome.grossProfit.toLocaleString() + ' ر.س' },
+        { label: 'صافي الربح', value: detailedIncome.netIncomeBeforeZakat.toLocaleString() + ' ر.س' },
+        { label: 'عدد المبيعات', value: detailedIncome.stats.totalSalesCount.toString() },
+      ];
+      exportToExcel({ title: 'قائمة الدخل المفصلة', columns, data, fileName: 'detailed-income', summaryData });
     } else {
-      exportToPdf({ title: 'قائمة الدخل المفصلة', subtitle: dateSubtitle, columns, data, fileName: 'detailed-income', summaryCards });
+      printReport({ title: 'قائمة الدخل المفصلة', subtitle: dateSubtitle, columns, data });
     }
   };
 
