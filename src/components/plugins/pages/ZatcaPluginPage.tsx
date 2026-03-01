@@ -44,24 +44,21 @@ export function ZatcaPluginPage() {
     // If no CSR pasted, generate one
     if (!csrBase64) {
       try {
-        toast.info('جاري توليد CSR...');
+        toast.info('جاري توليد CSR عبر الخادم...');
         const csrConfig = buildCSRConfigFromSettings({
           companyName: companyName || 'Company',
           vatNumber: vatNumber || '300000000000003',
           solutionName: 'ERP-Solution',
         });
-        const csrResult = await generateCSR(csrConfig);
-        // Extract Base64 content from PEM
-        csrBase64 = csrResult.csrPEM
-          .replace(/-----BEGIN CERTIFICATE REQUEST-----/g, '')
-          .replace(/-----END CERTIFICATE REQUEST-----/g, '')
-          .replace(/\s/g, '');
+        const csrResult = await generateCSR(csrConfig, environment as any);
+        csrBase64 = csrResult.csrBase64;
         
         // Store keys for later use
         storeCSRData('current', csrResult);
         
         // Save private key in config
         saveConfig.mutate({ private_key: csrResult.privateKeyPEM });
+        toast.success('تم توليد CSR بنجاح ✅');
       } catch (err: any) {
         return toast.error(`فشل توليد CSR: ${err.message}`);
       }
