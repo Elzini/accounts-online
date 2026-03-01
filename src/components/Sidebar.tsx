@@ -357,6 +357,16 @@ export function Sidebar({
     { id: 'audit-logs' as ActivePage, label: s(settings?.audit_logs_title, t.nav_audit_logs), icon: ClipboardList },
   ];
 
+  const toolsMenuItems: MenuItem[] = [
+    { id: 'zatca-sandbox' as ActivePage, label: language === 'ar' ? 'محاكاة ZATCA' : 'ZATCA Sandbox', icon: TestTube, permission: 'admin' },
+    { id: 'zatca-technical-doc' as ActivePage, label: language === 'ar' ? 'وثائق ZATCA' : 'ZATCA Docs', icon: FileText, permission: 'admin' },
+    { id: 'plugins' as ActivePage, label: language === 'ar' ? 'الإضافات' : 'Plugins', icon: Plug },
+    { id: 'integrations' as ActivePage, label: t.nav_integrations, icon: Link2 },
+    { id: 'developer-api' as ActivePage, label: language === 'ar' ? 'API للمطورين' : 'Developer API', icon: Code, permission: 'admin' },
+    { id: 'medad-import' as ActivePage, label: t.nav_medad_import, icon: FileUp, permission: 'admin' },
+    { id: 'mobile-invoice-reader' as ActivePage, label: language === 'ar' ? 'قراءة فاتورة' : 'Invoice Reader', icon: QrCode },
+  ];
+
   // ===== "المزيد" - Less used modules grouped together =====
   const moreItems: MenuItem[] = [
     { id: 'crm' as ActivePage, label: language === 'ar' ? 'إدارة العملاء CRM' : 'CRM', icon: Users, permission: 'sales' },
@@ -396,13 +406,8 @@ export function Sidebar({
     { id: 'tasks' as ActivePage, label: t.nav_tasks, icon: ListTodo },
     { id: 'approvals' as ActivePage, label: t.nav_approvals, icon: GitBranch },
     { id: 'workflows' as ActivePage, label: language === 'ar' ? 'الدورات المستندية' : 'Workflows', icon: Workflow },
-    { id: 'integrations' as ActivePage, label: t.nav_integrations, icon: Plug },
-    { id: 'developer-api' as ActivePage, label: language === 'ar' ? 'API للمطورين' : 'Developer API', icon: Code },
     { id: 'accounting-audit' as ActivePage, label: t.nav_accounting_audit, icon: ShieldCheck },
     { id: 'theme-settings' as ActivePage, label: t.nav_theme_settings, icon: Palette },
-    { id: 'medad-import' as ActivePage, label: t.nav_medad_import, icon: FileUp },
-    { id: 'zatca-sandbox' as ActivePage, label: language === 'ar' ? 'ZATCA' : 'ZATCA Sandbox', icon: TestTube },
-    { id: 'mobile-invoice-reader' as ActivePage, label: language === 'ar' ? 'قراءة فاتورة' : 'Invoice Reader', icon: QrCode },
   ];
 
   // Add plugin items
@@ -413,7 +418,7 @@ export function Sidebar({
     icon: ICON_MAP[p.menuIcon] || Puzzle,
   }));
   if (pluginMenuItems.length > 0) {
-    moreItems.push(...pluginMenuItems);
+    toolsMenuItems.push(...pluginMenuItems);
   }
 
   const hasAccess = (permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users') => {
@@ -465,6 +470,7 @@ export function Sidebar({
     { id: 'inventory', label: getSectionLabel('inventory', language === 'ar' ? 'المستودعات' : 'Warehouses'), icon: Warehouse, items: warehouseMenuItems, showCondition: permissions.admin || permissions.purchases || permissions.warehouses },
     { id: 'hr', label: getSectionLabel('hr', t.nav_hr), icon: Users, items: hrItems, showCondition: permissions.admin || permissions.employees || permissions.payroll },
     { id: 'system', label: getSectionLabel('system', language === 'ar' ? 'النظام' : 'System'), icon: Settings2, items: systemMenuItems, showCondition: canManageUsers },
+    { id: 'tools', label: getSectionLabel('tools', language === 'ar' ? 'الأدوات' : 'Tools'), icon: Wrench, items: toolsMenuItems, showCondition: true },
     { id: 'more', label: language === 'ar' ? 'المزيد' : 'More', icon: MoreHorizontal, items: moreItems, showCondition: true, isMore: true },
   ];
 
