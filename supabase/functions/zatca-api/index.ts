@@ -60,24 +60,34 @@ serve(async (req) => {
           throw new Error('CSR and OTP are required for get-csid action');
         }
 
-        const complianceResponse = await fetch(`${baseUrl}/compliance`, {
+        const requestUrl = `${baseUrl}/compliance`;
+        const requestBody = JSON.stringify({ csr: body.csr });
+        
+        console.log('ZATCA get-csid request:', {
+          url: requestUrl,
+          otp: body.otp,
+          csrLength: body.csr.length,
+          csrPreview: body.csr.substring(0, 50) + '...',
+        });
+
+        const complianceResponse = await fetch(requestUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept-Version': 'V2',
             'OTP': body.otp,
           },
-          body: JSON.stringify({
-            csr: body.csr,
-          }),
+          body: requestBody,
         });
 
+        const responseText = await complianceResponse.text();
+        console.log('ZATCA response status:', complianceResponse.status, 'body:', responseText);
+
         if (!complianceResponse.ok) {
-          const errorText = await complianceResponse.text();
-          throw new Error(`ZATCA Compliance API error [${complianceResponse.status}]: ${errorText}`);
+          throw new Error(`ZATCA Compliance API error [${complianceResponse.status}]: ${responseText}`);
         }
 
-        result = await complianceResponse.json();
+        result = JSON.parse(responseText);
         break;
       }
 
