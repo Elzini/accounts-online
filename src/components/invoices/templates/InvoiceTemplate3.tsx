@@ -84,6 +84,7 @@ export const InvoiceTemplate3 = forwardRef<HTMLDivElement, Props>(({ data }, ref
             <div className="flex justify-between"><span className="text-gray-500">Invoice Date تاريخ الفاتورة:</span><span>{formattedDate}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Branch الفرع:</span><span>{branchName || 'SHOWROOM'}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">SalesMan مندوب المبيعات:</span><span>{salesmanName || '-'}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Payment طريقة الدفع:</span><span>{data.paymentMethod === 'credit' ? 'آجل / Credit' : data.paymentMethod === 'bank' ? 'تحويل بنكي / Bank' : 'نقدي / Cash'}</span></div>
           </div>
         </div>
       </div>
