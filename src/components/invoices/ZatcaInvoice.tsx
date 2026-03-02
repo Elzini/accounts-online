@@ -52,6 +52,7 @@ interface InvoiceData {
   companyLogoUrl?: string | null;
   invoiceSettings?: InvoiceSettings | null;
   uuid?: string;
+  paymentMethod?: string;
 }
 
 interface ZatcaInvoiceProps {
@@ -80,6 +81,7 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
       companyLogoUrl,
       invoiceSettings,
       uuid,
+      paymentMethod,
     } = data;
 
     // Invoice settings with defaults
@@ -216,6 +218,10 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                   <span className="font-mono">{uuid.substring(0, 18)}...</span>
                 </div>
               )}
+              <div className="mt-1 bg-white/10 px-3 py-0.5 rounded text-xs">
+                <span className="opacity-75">طريقة الدفع: </span>
+                <span className="font-bold">{paymentMethod === 'credit' ? 'آجل' : paymentMethod === 'bank' ? 'تحويل بنكي' : 'نقدي'}</span>
+              </div>
             </div>
           </div>
         </div>

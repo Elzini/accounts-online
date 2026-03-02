@@ -56,7 +56,7 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
 
       {/* Invoice Title */}
       <div className="text-center py-2 border-b">
-        <h2 className="text-lg font-bold">فاتورة ضريبية {data.paymentMethod === 'cash' ? 'نقدي' : ''}</h2>
+        <h2 className="text-lg font-bold">فاتورة ضريبية {data.paymentMethod === 'credit' ? '- آجل' : data.paymentMethod === 'bank' ? '- تحويل بنكي' : '- نقدي'}</h2>
       </div>
 
       {/* Info Grid */}

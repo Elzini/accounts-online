@@ -53,6 +53,7 @@ interface InvoiceData {
   invoiceSettings?: InvoiceSettings | null;
   salesmanName?: string;
   branchName?: string;
+  paymentMethod?: string;
 }
 
 interface InvoicePreviewDialogProps {
@@ -145,6 +146,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     voucherNumber: (data as any).voucherNumber,
     salesmanName: data.salesmanName || '',
     branchName: data.branchName || '',
+    paymentMethod: data.paymentMethod || 'cash',
   };
 
   const renderTemplate = () => {
@@ -153,7 +155,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
       case 'template2': return <InvoiceTemplate2 ref={invoiceRef} data={templateData} />;
       case 'template3': return <InvoiceTemplate3 ref={invoiceRef} data={templateData} />;
       case 'template4': return <InvoiceTemplate4 ref={invoiceRef} data={templateData} />;
-      default: return <ZatcaInvoice ref={invoiceRef} data={{ ...data, uuid: invoiceUUID }} />;
+      default: return <ZatcaInvoice ref={invoiceRef} data={{ ...data, uuid: invoiceUUID, paymentMethod: templateData.paymentMethod }} />;
     }
   };
 
