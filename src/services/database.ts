@@ -909,6 +909,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
   const monthSalesProfit = monthSalesData.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0);
 
   return {
+    availableNewCars,
+    availableUsedCars,
     availableCars: availableCars || 0,
     todaySales: todaySales || 0,
     totalProfit,
