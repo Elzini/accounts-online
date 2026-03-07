@@ -75,6 +75,7 @@ interface SelectedCarItem {
   color: string;
   chassis_number: string;
   quantity: number;
+  car_condition: 'new' | 'used';
   pendingTransfer?: CarTransfer | null;
 }
 
@@ -301,6 +302,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       color: car.color || '',
       chassis_number: car.chassis_number,
       quantity: 1,
+      car_condition: 'new',
       pendingTransfer,
     }]);
   };
@@ -326,15 +328,16 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     const commission = parseFloat(invoiceData.commission) || 0;
     const otherExpenses = parseFloat(invoiceData.other_expenses) || 0;
 
-    const calcItem = (price: number, quantity: number) => {
+    const calcItem = (price: number, quantity: number, itemTaxRate?: number) => {
+      const effectiveTaxRate = itemTaxRate ?? taxRate;
       let baseAmount: number, vatAmount: number, total: number;
-      if (invoiceData.price_includes_tax && taxRate > 0) {
+      if (invoiceData.price_includes_tax && effectiveTaxRate > 0) {
         total = price * quantity;
-        baseAmount = total / (1 + taxRate / 100);
+        baseAmount = total / (1 + effectiveTaxRate / 100);
         vatAmount = total - baseAmount;
       } else {
         baseAmount = price * quantity;
-        vatAmount = baseAmount * (taxRate / 100);
+        vatAmount = baseAmount * (effectiveTaxRate / 100);
         total = baseAmount + vatAmount;
       }
       subtotal += baseAmount;
@@ -342,11 +345,31 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       return { baseAmount, vatAmount, total };
     };
 
-    // Car items
+    // Car items - apply different tax logic based on car condition
     const itemsWithCalc = selectedCars.map(car => {
       const price = parseFloat(car.sale_price) || 0;
-      const result = calcItem(price, car.quantity || 1);
-      return { ...car, ...result };
+      
+      if (car.car_condition === 'used' && taxRate > 0) {
+        // Used car: VAT on profit margin only
+        const quantity = car.quantity || 1;
+        const totalPrice = price * quantity;
+        let baseAmount: number;
+        if (invoiceData.price_includes_tax) {
+          baseAmount = totalPrice / (1 + taxRate / 100);
+        } else {
+          baseAmount = totalPrice;
+        }
+        const profitMargin = Math.max(0, baseAmount - car.purchase_price);
+        const vatAmount = profitMargin * (taxRate / 100);
+        const total = baseAmount + vatAmount;
+        subtotal += baseAmount;
+        totalVAT += vatAmount;
+        return { ...car, baseAmount, vatAmount, total };
+      } else {
+        // New car: normal VAT on full price
+        const result = calcItem(price, car.quantity || 1);
+        return { ...car, ...result };
+      }
     });
 
     // Inventory items
@@ -691,6 +714,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             color: car.color || '',
             chassis_number: car.chassis_number,
             quantity: 1,
+            car_condition: 'new',
             pendingTransfer: null,
           });
         }
@@ -712,6 +736,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           color: car.color || '',
           chassis_number: car.chassis_number,
           quantity: 1,
+          car_condition: 'new',
           pendingTransfer: null,
         }]);
       }
@@ -1263,6 +1288,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                     <TableRow className="bg-primary/10 border-b-2 border-primary/30">
                       <TableHead className="text-right text-[11px] font-bold w-8 text-primary">#</TableHead>
                       <TableHead className="text-right text-[11px] font-bold min-w-[180px] text-primary">{t.inv_description}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-24 text-primary">الحالة</TableHead>
                       <TableHead className="text-center text-[11px] font-bold w-16 text-primary">{t.inv_quantity}</TableHead>
                       <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_price}</TableHead>
                       <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_subtotal}</TableHead>
@@ -1277,12 +1303,26 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                         <TableRow key={car.id} className="hover:bg-primary/5 border-b bg-[hsl(var(--primary)/0.03)]">
                           <TableCell className="text-center text-xs py-1">{index + 1}</TableCell>
                           <TableCell className="text-xs py-1 font-medium">{car.car_name} {car.model} {car.color ? `- ${car.color}` : ''}</TableCell>
+                          <TableCell className="py-1">
+                            <Select value={car.car_condition} onValueChange={(v) => handleCarChange(car.id, 'car_condition', v)} disabled={isApproved}>
+                              <SelectTrigger className="h-7 text-[10px] border-0 border-b border-border rounded-none bg-transparent shadow-none w-20">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="new">جديدة</SelectItem>
+                                <SelectItem value="used">مستعملة</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
                           <TableCell className="text-center text-xs py-1">1</TableCell>
                           <TableCell className="py-1">
                             <Input type="number" value={car.sale_price} onChange={(e) => handleCarChange(car.id, 'sale_price', e.target.value)} placeholder="0" className="h-7 text-xs text-center w-24 border-0 border-b border-border rounded-none bg-transparent" dir="ltr" disabled={isApproved} />
                           </TableCell>
                           <TableCell className="text-center text-xs py-1 font-medium">{formatCurrency(calcItem?.baseAmount || 0)}</TableCell>
-                          <TableCell className="text-center text-xs py-1 font-medium">{formatCurrency(calcItem?.total || 0)}</TableCell>
+                          <TableCell className="text-center text-xs py-1 font-medium">
+                            {formatCurrency(calcItem?.total || 0)}
+                            {car.car_condition === 'used' && <span className="block text-[9px] text-muted-foreground">ضريبة هامش</span>}
+                          </TableCell>
                           <TableCell className="py-1">
                             {selectedCars.length > 1 && (
                               <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveCar(car.id)} className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10">
@@ -1297,7 +1337,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                     {Array.from({ length: Math.max(0, 4 - selectedCars.length) }).map((_, i) => (
                       <TableRow key={`empty-${i}`} className="border-b">
                         <TableCell className="text-center text-xs py-1 text-muted-foreground">{selectedCars.length + i + 1}</TableCell>
-                        <TableCell className="py-1" colSpan={6}></TableCell>
+                        <TableCell className="py-1" colSpan={7}></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

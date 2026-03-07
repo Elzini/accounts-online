@@ -80,6 +80,7 @@ interface CarItem {
   purchase_price: string;
   quantity: number;
   unit: string;
+  car_condition: 'new' | 'used';
 }
 
 export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps) {
@@ -112,6 +113,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     purchase_price: '',
     quantity: 1,
     unit: t.inv_car_unit,
+    car_condition: 'new',
   });
 
   // Inventory items state for non-car companies
@@ -261,15 +263,16 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     let subtotal = 0;
     let totalVAT = 0;
 
-    const calcItem = (price: number, quantity: number) => {
+    const calcItem = (price: number, quantity: number, itemTaxRate?: number) => {
+      const effectiveTaxRate = itemTaxRate ?? taxRate;
       let baseAmount: number, vatAmount: number, total: number;
-      if (invoiceData.price_includes_tax && taxRate > 0) {
+      if (invoiceData.price_includes_tax && effectiveTaxRate > 0) {
         total = price * quantity;
-        baseAmount = total / (1 + taxRate / 100);
+        baseAmount = total / (1 + effectiveTaxRate / 100);
         vatAmount = total - baseAmount;
       } else {
         baseAmount = price * quantity;
-        vatAmount = baseAmount * (taxRate / 100);
+        vatAmount = baseAmount * (effectiveTaxRate / 100);
         total = baseAmount + vatAmount;
       }
       subtotal += baseAmount;
@@ -277,9 +280,11 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       return { baseAmount, vatAmount, total };
     };
 
+    // Car items - used cars have 0% tax
     const itemsWithCalc = cars.map(car => {
       const price = parseFloat(car.purchase_price) || 0;
-      const result = calcItem(price, car.quantity || 1);
+      const effectiveTaxRate = car.car_condition === 'used' ? 0 : taxRate;
+      const result = calcItem(price, car.quantity || 1, effectiveTaxRate);
       return { ...car, ...result };
     });
 
@@ -534,6 +539,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         purchase_price: String(car.purchase_price),
         quantity: 1,
         unit: t.inv_car_unit,
+        car_condition: 'new' as const,
       })));
     } else {
       setCars([createEmptyCar()]);
@@ -842,6 +848,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                       <TableHead className="text-right text-[11px] font-bold min-w-[80px] text-primary">{t.inv_model}</TableHead>
                       <TableHead className="text-right text-[11px] font-bold min-w-[60px] text-primary">{t.inv_color}</TableHead>
                       <TableHead className="text-right text-[11px] font-bold min-w-[100px] text-primary">{t.inv_chassis_number}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-24 text-primary">الحالة</TableHead>
                       <TableHead className="text-center text-[11px] font-bold w-16 text-primary">{t.inv_quantity}</TableHead>
                       <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_price}</TableHead>
                       <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_subtotal}</TableHead>
@@ -857,10 +864,24 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                         <TableCell className="py-1"><Input value={cars[index].model} onChange={(e) => handleCarChange(car.id, 'model', e.target.value)} placeholder={t.inv_model} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" /></TableCell>
                         <TableCell className="py-1"><Input value={cars[index].color} onChange={(e) => handleCarChange(car.id, 'color', e.target.value)} placeholder={t.inv_color} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" /></TableCell>
                         <TableCell className="py-1"><Input value={cars[index].chassis_number} onChange={(e) => handleCarChange(car.id, 'chassis_number', e.target.value)} placeholder={t.inv_chassis_number} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" dir="ltr" /></TableCell>
+                        <TableCell className="py-1">
+                          <Select value={cars[index].car_condition} onValueChange={(v) => handleCarChange(car.id, 'car_condition', v)}>
+                            <SelectTrigger className="h-7 text-[10px] border-0 border-b border-border rounded-none bg-transparent shadow-none w-20">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="new">جديدة</SelectItem>
+                              <SelectItem value="used">مستعملة</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
                         <TableCell className="py-1"><Input type="number" min={1} value={cars[index].quantity} onChange={(e) => handleCarChange(car.id, 'quantity', parseInt(e.target.value) || 1)} className="h-7 text-xs text-center border-0 border-b border-border rounded-none bg-transparent w-16" /></TableCell>
                         <TableCell className="py-1"><Input type="number" value={cars[index].purchase_price} onChange={(e) => handleCarChange(car.id, 'purchase_price', e.target.value)} placeholder="0" className="h-7 text-xs text-center w-24 border-0 border-b border-border rounded-none bg-transparent" dir="ltr" /></TableCell>
                         <TableCell className="text-center text-xs py-1 font-medium">{formatCurrency(car.baseAmount)}</TableCell>
-                        <TableCell className="text-center text-xs py-1 font-medium">{formatCurrency(car.total)}</TableCell>
+                        <TableCell className="text-center text-xs py-1 font-medium">
+                          {formatCurrency(car.total)}
+                          {cars[index].car_condition === 'used' && <span className="block text-[9px] text-muted-foreground">بدون ضريبة</span>}
+                        </TableCell>
                         <TableCell className="py-1">
                           {cars.length > 1 && (
                             <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveCar(car.id)} className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10"><X className="w-3 h-3" /></Button>
@@ -871,7 +892,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                     {Array.from({ length: Math.max(0, 4 - cars.length) }).map((_, i) => (
                       <TableRow key={`empty-${i}`} className="border-b">
                         <TableCell className="text-center text-xs py-1 text-muted-foreground">{cars.length + i + 1}</TableCell>
-                        <TableCell className="py-1" colSpan={9}></TableCell>
+                        <TableCell className="py-1" colSpan={10}></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
