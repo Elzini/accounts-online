@@ -628,6 +628,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             purchase_date: invoiceData.purchase_date,
             payment_account_id: invoiceData.payment_account_id || null,
             supplier_id: invoiceData.supplier_id || null,
+            car_condition: carData.car_condition || 'new',
           }
         });
       }
