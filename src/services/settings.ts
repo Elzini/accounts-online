@@ -206,35 +206,35 @@ export async function updateAppSetting(key: string, value: string) {
 }
 
 export async function resetDatabase() {
-  // Delete sales first (has foreign keys to cars and customers)
-  const { error: salesError } = await supabase
-    .from('sales')
-    .delete()
-    .neq('id', '00000000-0000-0000-0000-000000000000');
-  
-  if (salesError) throw salesError;
+  const companyId = await getCurrentCompanyId();
+  if (!companyId) throw new Error('No company ID found');
 
-  // Delete cars (has foreign key to suppliers)
-  const { error: carsError } = await supabase
-    .from('cars')
-    .delete()
-    .neq('id', '00000000-0000-0000-0000-000000000000');
-  
-  if (carsError) throw carsError;
+  // Order matters: delete child tables first to respect foreign key constraints
+  const tablesToDelete = [
+    'car_transfers',    // references cars, sales
+    'checks',           // references customers, suppliers
+    'vouchers',         // references customers, suppliers
+    'installments',     // references sales
+    'sales',            // references cars, customers
+    'expenses',         // references suppliers
+    'cars',             // references suppliers
+    'customers',
+    'suppliers',
+  ];
 
-  // Delete customers
-  const { error: customersError } = await supabase
-    .from('customers')
-    .delete()
-    .neq('id', '00000000-0000-0000-0000-000000000000');
-  
-  if (customersError) throw customersError;
-
-  // Delete suppliers
-  const { error: suppliersError } = await supabase
-    .from('suppliers')
-    .delete()
-    .neq('id', '00000000-0000-0000-0000-000000000000');
-  
-  if (suppliersError) throw suppliersError;
+  for (const table of tablesToDelete) {
+    try {
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq('company_id', companyId);
+      
+      if (error) {
+        console.warn(`Warning deleting from ${table}:`, error.message);
+        // Continue with other tables even if one fails
+      }
+    } catch (e) {
+      console.warn(`Skipping table ${table}:`, e);
+    }
+  }
 }
