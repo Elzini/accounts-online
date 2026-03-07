@@ -75,6 +75,7 @@ interface SelectedCarItem {
   color: string;
   chassis_number: string;
   quantity: number;
+  car_condition: 'new' | 'used';
   pendingTransfer?: CarTransfer | null;
 }
 

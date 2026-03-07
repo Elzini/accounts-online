@@ -80,6 +80,7 @@ interface CarItem {
   purchase_price: string;
   quantity: number;
   unit: string;
+  car_condition: 'new' | 'used';
 }
 
 export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps) {
