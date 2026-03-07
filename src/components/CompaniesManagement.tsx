@@ -65,6 +65,7 @@ interface Company {
   address: string | null;
   logo_url: string | null;
   is_active: boolean;
+  show_module_launcher: boolean;
   company_type: 'car_dealership' | 'construction' | 'general_trading';
   subdomain: string | null;
   created_at: string;
@@ -102,6 +103,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
     address: '',
     subdomain: '',
     is_active: true,
+    show_module_launcher: true,
     company_type: 'car_dealership' as 'car_dealership' | 'construction' | 'general_trading',
   });
 
@@ -158,6 +160,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
           address: data.address || null,
           subdomain: data.subdomain || null,
           is_active: data.is_active,
+          show_module_launcher: data.show_module_launcher,
           company_type: data.company_type,
         })
         .select()
@@ -188,6 +191,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
           address: data.address || null,
           subdomain: data.subdomain || null,
           is_active: data.is_active,
+          show_module_launcher: data.show_module_launcher,
         })
         .eq('id', id)
         .select()
@@ -236,6 +240,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
       address: '',
       subdomain: '',
       is_active: true,
+      show_module_launcher: true,
       company_type: 'car_dealership',
     });
   };
@@ -248,6 +253,7 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
       address: company.address || '',
       subdomain: company.subdomain || '',
       is_active: company.is_active,
+      show_module_launcher: company.show_module_launcher ?? true,
       company_type: company.company_type || 'car_dealership',
     });
     setEditDialogOpen(true);
