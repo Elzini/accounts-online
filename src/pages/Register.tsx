@@ -86,25 +86,27 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            username: companyName,
-            phone: phone,
-            company_type: companyType,
-          },
-          emailRedirectTo: `${window.location.origin}/auth`
+      const { data, error } = await supabase.functions.invoke('admin-signup', {
+        body: {
+          email,
+          password,
+          username: companyName,
+          phone,
+          company_type: companyType,
         }
       });
 
-      if (authError) {
-        toast.error(translateAuthError(authError.message));
+      if (error) {
+        toast.error(translateAuthError(error.message || 'حدث خطأ'));
         return;
       }
 
-      if (authData.user) {
+      if (data?.error) {
+        toast.error(translateAuthError(data.error));
+        return;
+      }
+
+      if (data?.user) {
         try {
           await supabase.functions.invoke('send-welcome-email', {
             body: { email, companyName }
