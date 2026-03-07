@@ -56,7 +56,9 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
 
       {/* Invoice Title */}
       <div className="text-center py-2 border-b">
-        <h2 className="text-lg font-bold">فاتورة ضريبية {data.paymentMethod === 'credit' ? '- آجل' : data.paymentMethod === 'bank' ? '- تحويل بنكي' : '- نقدي'}</h2>
+        <h2 className="text-lg font-bold">
+          {invoiceType === 'purchase' ? 'فاتورة مشتريات' : 'فاتورة ضريبية'} {data.paymentMethod === 'credit' ? '- آجل' : data.paymentMethod === 'bank' ? '- تحويل بنكي' : '- نقدي'}
+        </h2>
       </div>
 
       {/* Info Grid */}
@@ -64,23 +66,26 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
         <div className="p-2 border-l">
           <div className="flex justify-between"><span className="text-gray-500">Store/Branch المعرض/الفرع</span><span className="font-medium">{branchName || 'الرئيسي'}</span></div>
           <div className="flex justify-between mt-1"><span className="text-gray-500">Sales Man مندوب المبيعات</span><span className="font-medium">{salesmanName || '-'}</span></div>
-          <div className="flex justify-between mt-1"><span className="text-gray-500">Customer العميل</span><span className="font-medium">{buyerName}</span></div>
+          <div className="flex justify-between mt-1">
+            <span className="text-gray-500">{invoiceType === 'purchase' ? 'Supplier المورد' : 'Customer العميل'}</span>
+            <span className="font-medium">{invoiceType === 'purchase' ? sellerName : buyerName}</span>
+          </div>
         </div>
         <div className="p-2 border-l">
           <div className="flex justify-between"><span className="text-gray-500">Date التاريخ</span><span className="font-medium">{formattedDate}</span></div>
-          <div className="flex justify-between mt-1"><span className="text-gray-500">Mobile الجوال</span><span className="font-medium" dir="ltr">{buyerPhone || '-'}</span></div>
+          <div className="flex justify-between mt-1"><span className="text-gray-500">Mobile الجوال</span><span className="font-medium" dir="ltr">{invoiceType === 'purchase' ? (data.sellerPhone || '-') : (buyerPhone || '-')}</span></div>
         </div>
         <div className="p-2">
           <div className="flex justify-between"><span className="text-gray-500">Trans. No. رقم الفاتورة</span><span className="font-bold">{invoiceNumber}</span></div>
           <div className="flex justify-between mt-1"><span className="text-gray-500">Voucher No. رقم السند</span><span className="font-bold">{data.voucherNumber || invoiceNumber}</span></div>
-          <div className="flex justify-between mt-1"><span className="text-gray-500">Address العنوان</span><span className="font-medium">{buyerAddress || '-'}</span></div>
+          <div className="flex justify-between mt-1"><span className="text-gray-500">Address العنوان</span><span className="font-medium">{invoiceType === 'purchase' ? (sellerAddress || '-') : (buyerAddress || '-')}</span></div>
         </div>
       </div>
 
-      {/* Customer VAT */}
+      {/* VAT Number */}
       <div className="flex justify-between px-4 py-1 border-b text-xs bg-gray-50">
-        <span>Customer VAT NO. الرقم الضريبي العميل</span>
-        <span className="font-bold" dir="ltr">{buyerTaxNumber || '-'}</span>
+        <span>{invoiceType === 'purchase' ? 'Supplier VAT NO. الرقم الضريبي المورد' : 'Customer VAT NO. الرقم الضريبي العميل'}</span>
+        <span className="font-bold" dir="ltr">{invoiceType === 'purchase' ? (sellerTaxNumber || '-') : (buyerTaxNumber || '-')}</span>
       </div>
 
       {/* Items Table */}
@@ -135,7 +140,7 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       <div className="grid grid-cols-3 gap-4 p-4 mt-8 border-t">
         <div className="text-center">
           <div className="border-b border-gray-400 pb-8 mb-1"></div>
-          <p className="text-xs text-gray-500">Customer العميل</p>
+          <p className="text-xs text-gray-500">{invoiceType === 'purchase' ? 'Supplier المورد' : 'Customer العميل'}</p>
         </div>
         <div className="text-center">
           <div className="border-b border-gray-400 pb-8 mb-1"></div>

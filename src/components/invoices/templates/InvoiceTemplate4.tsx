@@ -48,7 +48,7 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
 
       {/* Title */}
       <div className="text-center py-2 border-y-2 border-gray-800">
-        <h2 className="text-lg font-bold">فاتورة ضريبية</h2>
+        <h2 className="text-lg font-bold">{invoiceType === 'purchase' ? 'فاتورة مشتريات' : 'فاتورة ضريبية'}</h2>
         <p className="text-[10px] text-gray-500">{data.paymentMethod === 'credit' ? 'آجل' : data.paymentMethod === 'bank' ? 'تحويل بنكي' : 'نقدية'}</p>
       </div>
 
