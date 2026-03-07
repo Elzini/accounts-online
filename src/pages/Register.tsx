@@ -73,14 +73,13 @@ export default function Register() {
       return;
     }
 
-    if (password.length < 8) {
-      toast.error(isRtl ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' : 'Password must be at least 8 characters');
+    if (password.length < 6) {
+      toast.error(isRtl ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters');
       return;
     }
 
-    const strength = getPasswordStrength(password);
-    if (strength.level < 2) {
-      toast.error(isRtl ? 'كلمة المرور ضعيفة جداً' : 'Password is too weak');
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      toast.error(isRtl ? 'كلمة المرور يجب أن تحتوي على رمز واحد على الأقل (مثل @#$!)' : 'Password must contain at least one special character (@#$!)');
       return;
     }
 
