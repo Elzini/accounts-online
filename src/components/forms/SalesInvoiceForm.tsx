@@ -1288,6 +1288,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                     <TableRow className="bg-primary/10 border-b-2 border-primary/30">
                       <TableHead className="text-right text-[11px] font-bold w-8 text-primary">#</TableHead>
                       <TableHead className="text-right text-[11px] font-bold min-w-[180px] text-primary">{t.inv_description}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-24 text-primary">الحالة</TableHead>
                       <TableHead className="text-center text-[11px] font-bold w-16 text-primary">{t.inv_quantity}</TableHead>
                       <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_price}</TableHead>
                       <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_subtotal}</TableHead>
@@ -1302,12 +1303,26 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                         <TableRow key={car.id} className="hover:bg-primary/5 border-b bg-[hsl(var(--primary)/0.03)]">
                           <TableCell className="text-center text-xs py-1">{index + 1}</TableCell>
                           <TableCell className="text-xs py-1 font-medium">{car.car_name} {car.model} {car.color ? `- ${car.color}` : ''}</TableCell>
+                          <TableCell className="py-1">
+                            <Select value={car.car_condition} onValueChange={(v) => handleCarChange(car.id, 'car_condition', v)} disabled={isApproved}>
+                              <SelectTrigger className="h-7 text-[10px] border-0 border-b border-border rounded-none bg-transparent shadow-none w-20">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="new">جديدة</SelectItem>
+                                <SelectItem value="used">مستعملة</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
                           <TableCell className="text-center text-xs py-1">1</TableCell>
                           <TableCell className="py-1">
                             <Input type="number" value={car.sale_price} onChange={(e) => handleCarChange(car.id, 'sale_price', e.target.value)} placeholder="0" className="h-7 text-xs text-center w-24 border-0 border-b border-border rounded-none bg-transparent" dir="ltr" disabled={isApproved} />
                           </TableCell>
                           <TableCell className="text-center text-xs py-1 font-medium">{formatCurrency(calcItem?.baseAmount || 0)}</TableCell>
-                          <TableCell className="text-center text-xs py-1 font-medium">{formatCurrency(calcItem?.total || 0)}</TableCell>
+                          <TableCell className="text-center text-xs py-1 font-medium">
+                            {formatCurrency(calcItem?.total || 0)}
+                            {car.car_condition === 'used' && <span className="block text-[9px] text-muted-foreground">ضريبة هامش</span>}
+                          </TableCell>
                           <TableCell className="py-1">
                             {selectedCars.length > 1 && (
                               <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveCar(car.id)} className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10">
@@ -1322,7 +1337,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                     {Array.from({ length: Math.max(0, 4 - selectedCars.length) }).map((_, i) => (
                       <TableRow key={`empty-${i}`} className="border-b">
                         <TableCell className="text-center text-xs py-1 text-muted-foreground">{selectedCars.length + i + 1}</TableCell>
-                        <TableCell className="py-1" colSpan={6}></TableCell>
+                        <TableCell className="py-1" colSpan={7}></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
