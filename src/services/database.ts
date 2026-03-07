@@ -780,6 +780,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
   // Execute ALL queries in parallel for maximum performance
   const [
     availableCarsResult,
+    availableNewCarsResult,
+    availableUsedCarsResult,
     todaySalesResult,
     salesResult,
     expensesResult,
@@ -788,6 +790,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
     purchasesResult
   ] = await Promise.all([
     availableCarsQuery,
+    availableNewCarsQuery,
+    availableUsedCarsQuery,
     todaySalesQuery,
     salesQuery,
     expensesQuery,
@@ -797,6 +801,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
   ]);
 
   const availableCars = availableCarsResult.count;
+  const availableNewCars = availableNewCarsResult.count || 0;
+  const availableUsedCars = availableUsedCarsResult.count || 0;
   const todaySales = todaySalesResult.count;
   const salesData = salesResult.data;
   const expensesData = expensesResult.data;
