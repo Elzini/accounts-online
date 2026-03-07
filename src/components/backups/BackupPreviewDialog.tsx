@@ -139,7 +139,7 @@ export function BackupPreviewDialog({
                         <span className="font-medium">{section.label}</span>
                       </div>
                       <Badge variant="outline" className="text-base">
-                        {count.toLocaleString('ar-SA')}
+                        {count.toLocaleString('en-US')}
                       </Badge>
                     </div>
                   );
