@@ -328,15 +328,16 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     const commission = parseFloat(invoiceData.commission) || 0;
     const otherExpenses = parseFloat(invoiceData.other_expenses) || 0;
 
-    const calcItem = (price: number, quantity: number) => {
+    const calcItem = (price: number, quantity: number, itemTaxRate?: number) => {
+      const effectiveTaxRate = itemTaxRate ?? taxRate;
       let baseAmount: number, vatAmount: number, total: number;
-      if (invoiceData.price_includes_tax && taxRate > 0) {
+      if (invoiceData.price_includes_tax && effectiveTaxRate > 0) {
         total = price * quantity;
-        baseAmount = total / (1 + taxRate / 100);
+        baseAmount = total / (1 + effectiveTaxRate / 100);
         vatAmount = total - baseAmount;
       } else {
         baseAmount = price * quantity;
-        vatAmount = baseAmount * (taxRate / 100);
+        vatAmount = baseAmount * (effectiveTaxRate / 100);
         total = baseAmount + vatAmount;
       }
       subtotal += baseAmount;
@@ -344,11 +345,31 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       return { baseAmount, vatAmount, total };
     };
 
-    // Car items
+    // Car items - apply different tax logic based on car condition
     const itemsWithCalc = selectedCars.map(car => {
       const price = parseFloat(car.sale_price) || 0;
-      const result = calcItem(price, car.quantity || 1);
-      return { ...car, ...result };
+      
+      if (car.car_condition === 'used' && taxRate > 0) {
+        // Used car: VAT on profit margin only
+        const quantity = car.quantity || 1;
+        const totalPrice = price * quantity;
+        let baseAmount: number;
+        if (invoiceData.price_includes_tax) {
+          baseAmount = totalPrice / (1 + taxRate / 100);
+        } else {
+          baseAmount = totalPrice;
+        }
+        const profitMargin = Math.max(0, baseAmount - car.purchase_price);
+        const vatAmount = profitMargin * (taxRate / 100);
+        const total = baseAmount + vatAmount;
+        subtotal += baseAmount;
+        totalVAT += vatAmount;
+        return { ...car, baseAmount, vatAmount, total };
+      } else {
+        // New car: normal VAT on full price
+        const result = calcItem(price, car.quantity || 1);
+        return { ...car, ...result };
+      }
     });
 
     // Inventory items

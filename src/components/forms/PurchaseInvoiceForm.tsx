@@ -263,15 +263,16 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     let subtotal = 0;
     let totalVAT = 0;
 
-    const calcItem = (price: number, quantity: number) => {
+    const calcItem = (price: number, quantity: number, itemTaxRate?: number) => {
+      const effectiveTaxRate = itemTaxRate ?? taxRate;
       let baseAmount: number, vatAmount: number, total: number;
-      if (invoiceData.price_includes_tax && taxRate > 0) {
+      if (invoiceData.price_includes_tax && effectiveTaxRate > 0) {
         total = price * quantity;
-        baseAmount = total / (1 + taxRate / 100);
+        baseAmount = total / (1 + effectiveTaxRate / 100);
         vatAmount = total - baseAmount;
       } else {
         baseAmount = price * quantity;
-        vatAmount = baseAmount * (taxRate / 100);
+        vatAmount = baseAmount * (effectiveTaxRate / 100);
         total = baseAmount + vatAmount;
       }
       subtotal += baseAmount;
@@ -279,9 +280,11 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       return { baseAmount, vatAmount, total };
     };
 
+    // Car items - used cars have 0% tax
     const itemsWithCalc = cars.map(car => {
       const price = parseFloat(car.purchase_price) || 0;
-      const result = calcItem(price, car.quantity || 1);
+      const effectiveTaxRate = car.car_condition === 'used' ? 0 : taxRate;
+      const result = calcItem(price, car.quantity || 1, effectiveTaxRate);
       return { ...car, ...result };
     });
 
