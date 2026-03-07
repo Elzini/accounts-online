@@ -130,10 +130,10 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
         </div>
         {/* Totals Right */}
         <div className="flex-1 text-[10px]">
-          <div className="flex justify-between p-1.5 border-b"><span className="font-bold">Total الإجمالي</span><span>{subtotal.toLocaleString('en', { minimumFractionDigits: 1 })}</span></div>
-          <div className="flex justify-between p-1.5 border-b"><span className="font-bold">Discount الخصم</span><span>{discountAmount.toLocaleString('en', { minimumFractionDigits: 0 })}</span></div>
-          <div className="flex justify-between p-1.5 border-b"><span className="font-bold">VAT الضريبة</span><span>{taxAmount.toLocaleString('en', { minimumFractionDigits: 1 })}</span></div>
-          <div className="flex justify-between p-1.5 border-b font-bold text-sm bg-gray-100"><span>Net الصافي</span><span>{total.toLocaleString('en', { minimumFractionDigits: 0 })}</span></div>
+          <div className="flex justify-between p-1.5 border-b"><span className="font-bold">Total الإجمالي</span><span>{Math.round(subtotal).toLocaleString('en-US')}</span></div>
+          <div className="flex justify-between p-1.5 border-b"><span className="font-bold">Discount الخصم</span><span>{Math.round(discountAmount).toLocaleString('en-US')}</span></div>
+          <div className="flex justify-between p-1.5 border-b"><span className="font-bold">VAT الضريبة</span><span>{Math.round(taxAmount).toLocaleString('en-US')}</span></div>
+          <div className="flex justify-between p-1.5 border-b font-bold text-sm bg-gray-100"><span>Net الصافي</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
           <div className="p-1.5 text-[10px] text-gray-600">{numberToArabicWords(Math.round(total))} ريال</div>
         </div>
       </div>
