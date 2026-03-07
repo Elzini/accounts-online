@@ -179,6 +179,17 @@ const Index = () => {
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const { isFocusMode, toggleFocusMode, exitFocusMode } = useFocusMode();
 
+  // Check if company has module launcher enabled
+  useEffect(() => {
+    if (currentCompany) {
+      const shouldShow = (currentCompany as any).show_module_launcher !== false;
+      setShowModuleLauncher(shouldShow);
+      if (!shouldShow) {
+        setActivePage('dashboard');
+      }
+    }
+  }, [currentCompany]);
+
   // Show setup wizard if no fiscal years exist
   useEffect(() => {
     if (!isFiscalYearLoading && fiscalYears.length === 0 && currentCompany) {
