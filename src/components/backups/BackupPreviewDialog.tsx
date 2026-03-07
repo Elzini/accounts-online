@@ -115,7 +115,7 @@ export function BackupPreviewDialog({
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">إجمالي السجلات:</span>
                 <Badge variant="secondary" className="text-lg px-3">
-                  {totalRecords.toLocaleString('ar-SA')}
+                  {totalRecords.toLocaleString('en-US')}
                 </Badge>
               </div>
             </div>
