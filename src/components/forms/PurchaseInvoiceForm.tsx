@@ -539,6 +539,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         purchase_price: String(car.purchase_price),
         quantity: 1,
         unit: t.inv_car_unit,
+        car_condition: 'new' as const,
       })));
     } else {
       setCars([createEmptyCar()]);
