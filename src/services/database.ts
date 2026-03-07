@@ -679,8 +679,28 @@ export async function fetchStats(fiscalYearId?: string | null) {
     .eq('status', 'available')
     .eq('company_id', companyId);
 
+  let availableNewCarsQuery = supabase
+    .from('cars')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'available')
+    .eq('car_condition', 'new')
+    .eq('company_id', companyId);
+
+  let availableUsedCarsQuery = supabase
+    .from('cars')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'available')
+    .eq('car_condition', 'used')
+    .eq('company_id', companyId);
+
   if (fiscalYearStart && fiscalYearEnd) {
     availableCarsQuery = availableCarsQuery
+      .gte('purchase_date', fiscalYearStart)
+      .lte('purchase_date', fiscalYearEnd);
+    availableNewCarsQuery = availableNewCarsQuery
+      .gte('purchase_date', fiscalYearStart)
+      .lte('purchase_date', fiscalYearEnd);
+    availableUsedCarsQuery = availableUsedCarsQuery
       .gte('purchase_date', fiscalYearStart)
       .lte('purchase_date', fiscalYearEnd);
   }
