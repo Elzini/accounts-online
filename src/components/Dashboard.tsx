@@ -678,7 +678,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
                         value={getCardValue('availableCars', stats.availableCars)}
                         icon={isCarDealership ? Car : HardHat}
                         gradient="primary"
-                        subtitle={industryLabels.availableSubtitle}
+                        subtitle={`${stats.availableNewCars || 0} جديدة • ${stats.availableUsedCars || 0} مستعملة`}
                         onClick={() => showStatDetail('availableCars')}
                         {...getCardStyleProps('availableCars')}
                         animationIndex={getNextAnimIndex()}
