@@ -353,6 +353,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           color: cars[index].color || null,
           purchase_price: car.baseAmount / (cars[index].quantity || 1),
           fiscal_year_id: selectedFiscalYear?.id ?? null,
+          car_condition: cars[index].car_condition || 'new',
         }));
 
         const result = await addPurchaseBatch.mutateAsync({
