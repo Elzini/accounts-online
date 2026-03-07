@@ -164,7 +164,10 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const Index = () => {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
-  const [showModuleLauncher, setShowModuleLauncher] = useState(true);
+  const [showModuleLauncher, setShowModuleLauncher] = useState(() => {
+    // Will be updated once company data loads
+    return true;
+  });
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const { data: stats, isLoading: isStatsLoading } = useStats();
   const { signOut, user, permissions } = useAuth();
@@ -175,6 +178,17 @@ const Index = () => {
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const { isFocusMode, toggleFocusMode, exitFocusMode } = useFocusMode();
+
+  // Check if company has module launcher enabled
+  useEffect(() => {
+    if (currentCompany) {
+      const shouldShow = (currentCompany as any).show_module_launcher !== false;
+      setShowModuleLauncher(shouldShow);
+      if (!shouldShow) {
+        setActivePage('dashboard');
+      }
+    }
+  }, [currentCompany]);
 
   // Show setup wizard if no fiscal years exist
   useEffect(() => {
@@ -452,11 +466,17 @@ const Index = () => {
     }
   };
 
-  // Back to launcher
+  // Back to launcher (only if company has it enabled)
   const handleBackToLauncher = () => {
-    setShowModuleLauncher(true);
-    setActivePage('dashboard');
-    setActiveModule(null);
+    const launcherEnabled = (currentCompany as any)?.show_module_launcher !== false;
+    if (launcherEnabled) {
+      setShowModuleLauncher(true);
+      setActivePage('dashboard');
+      setActiveModule(null);
+    } else {
+      setActivePage('dashboard');
+      setActiveModule(null);
+    }
   };
 
   // Keyboard shortcuts (must be after handler declarations)
