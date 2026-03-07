@@ -2025,6 +2025,7 @@ export type Database = {
           name: string
           phone: string | null
           risk_level: string | null
+          show_module_launcher: boolean
           subdomain: string | null
           updated_at: string
         }
@@ -2046,6 +2047,7 @@ export type Database = {
           name: string
           phone?: string | null
           risk_level?: string | null
+          show_module_launcher?: boolean
           subdomain?: string | null
           updated_at?: string
         }
@@ -2067,6 +2069,7 @@ export type Database = {
           name?: string
           phone?: string | null
           risk_level?: string | null
+          show_module_launcher?: boolean
           subdomain?: string | null
           updated_at?: string
         }
