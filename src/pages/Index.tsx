@@ -466,11 +466,17 @@ const Index = () => {
     }
   };
 
-  // Back to launcher
+  // Back to launcher (only if company has it enabled)
   const handleBackToLauncher = () => {
-    setShowModuleLauncher(true);
-    setActivePage('dashboard');
-    setActiveModule(null);
+    const launcherEnabled = (currentCompany as any)?.show_module_launcher !== false;
+    if (launcherEnabled) {
+      setShowModuleLauncher(true);
+      setActivePage('dashboard');
+      setActiveModule(null);
+    } else {
+      setActivePage('dashboard');
+      setActiveModule(null);
+    }
   };
 
   // Keyboard shortcuts (must be after handler declarations)
