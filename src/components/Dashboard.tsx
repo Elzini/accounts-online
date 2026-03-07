@@ -535,6 +535,8 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
 
   // Detect if the system is freshly set up (no meaningful data)
   const isNewSystem = useMemo(() => {
+    // Skip onboarding if explicitly disabled in dashboard config
+    if ((dashboardConfig?.layout_settings as any)?.skip_onboarding) return false;
     const hasNoSales = !allSales || allSales.length === 0;
     const hasNoPurchases = !allCars || allCars.length === 0;
     const hasNoCustomers = !customers || customers.length === 0;
@@ -542,7 +544,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
     // Show getting started if at least 4 of these are empty
     const emptyCount = [hasNoSales, hasNoPurchases, hasNoCustomers, hasNoSuppliers, fiscalYears.length === 0, accountsList.length === 0].filter(Boolean).length;
     return emptyCount >= 4;
-  }, [allSales, allCars, customers, suppliers, fiscalYears, accountsList]);
+  }, [allSales, allCars, customers, suppliers, fiscalYears, accountsList, dashboardConfig]);
 
   if (isNewSystem && !isLoading) {
     return (
