@@ -105,8 +105,8 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
               <td className="p-2 border-l text-right">{i + 1}</td>
               <td className="p-2 border-l text-right">{item.description}</td>
               <td className="p-2 border-l text-center">{item.quantity}</td>
-              <td className="p-2 border-l text-center">{item.unitPrice.toLocaleString('en', { minimumFractionDigits: 2 })}</td>
-              <td className="p-2 text-center">{item.total.toLocaleString('en', { minimumFractionDigits: 2 })}</td>
+              <td className="p-2 border-l text-center">{Math.round(item.unitPrice).toLocaleString('en-US')}</td>
+              <td className="p-2 text-center">{Math.round(item.total).toLocaleString('en-US')}</td>
             </tr>
           ))}
         </tbody>
@@ -115,12 +115,12 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       {/* Totals + QR */}
       <div className="flex border-t">
         <div className="flex-1 p-3">
-          <div className="flex justify-between py-1"><span>الاجمالي</span><span>{subtotal.toLocaleString('en', { minimumFractionDigits: 2 })}</span></div>
+          <div className="flex justify-between py-1"><span>الاجمالي</span><span>{Math.round(subtotal).toLocaleString('en-US')}</span></div>
           {discountAmount > 0 && (
-            <div className="flex justify-between py-1"><span>الاجمالي بعد الخصم</span><span>{subtotalAfterDiscount.toLocaleString('en', { minimumFractionDigits: 2 })}</span></div>
+            <div className="flex justify-between py-1"><span>الاجمالي بعد الخصم</span><span>{Math.round(subtotalAfterDiscount).toLocaleString('en-US')}</span></div>
           )}
-          <div className="flex justify-between py-1"><span>القيمة المضافة {taxRate}%</span><span>{taxAmount.toLocaleString('en', { minimumFractionDigits: 2 })}</span></div>
-          <div className="flex justify-between py-1 font-bold text-base border-t mt-1 pt-2"><span>الاجمالي مع الضريبة</span><span>{total.toLocaleString('en', { minimumFractionDigits: 2 })}</span></div>
+          <div className="flex justify-between py-1"><span>القيمة المضافة {taxRate}%</span><span>{Math.round(taxAmount).toLocaleString('en-US')}</span></div>
+          <div className="flex justify-between py-1 font-bold text-base border-t mt-1 pt-2"><span>الاجمالي مع الضريبة</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
         </div>
         <div className="p-3 border-r flex items-center">
           <QRCodeSVG value={qrData} size={80} level="M" />

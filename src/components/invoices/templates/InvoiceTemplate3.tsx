@@ -109,10 +109,10 @@ export const InvoiceTemplate3 = forwardRef<HTMLDivElement, Props>(({ data }, ref
               <tr key={i} className={i % 2 === 0 ? '' : 'bg-gray-50'}>
                 <td className="p-1.5 border text-center">{i + 1}</td>
                 <td className="p-1.5 border text-right">{item.description}</td>
-                <td className="p-1.5 border text-center">{item.unitPrice.toLocaleString('en', { minimumFractionDigits: 2 })}</td>
+                <td className="p-1.5 border text-center">{Math.round(item.unitPrice).toLocaleString('en-US')}</td>
                 <td className="p-1.5 border text-center">{item.quantity}</td>
-                <td className="p-1.5 border text-center">{item.taxAmount.toLocaleString('en', { minimumFractionDigits: 2 })}</td>
-                <td className="p-1.5 border text-center font-medium">{item.total.toLocaleString('en', { minimumFractionDigits: 2 })}</td>
+                <td className="p-1.5 border text-center">{Math.round(item.taxAmount).toLocaleString('en-US')}</td>
+                <td className="p-1.5 border text-center font-medium">{Math.round(item.total).toLocaleString('en-US')}</td>
               </tr>
             ))}
           </tbody>

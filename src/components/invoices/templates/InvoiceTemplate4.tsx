@@ -114,9 +114,9 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
               <td className="p-1.5 border text-center">{'-'}</td>
               <td className="p-1.5 border text-right">{item.description}</td>
               <td className="p-1.5 border text-center">{item.quantity}</td>
-              <td className="p-1.5 border text-center">{item.unitPrice.toLocaleString('en', { minimumFractionDigits: 2 })}</td>
-              <td className="p-1.5 border text-center">{item.taxRate}</td>
-              <td className="p-1.5 border text-center font-medium">{item.total.toLocaleString('en', { minimumFractionDigits: 0 })}</td>
+               <td className="p-1.5 border text-center">{Math.round(item.unitPrice).toLocaleString('en-US')}</td>
+               <td className="p-1.5 border text-center">{item.taxRate}</td>
+               <td className="p-1.5 border text-center font-medium">{Math.round(item.total).toLocaleString('en-US')}</td>
             </tr>
           ))}
         </tbody>
