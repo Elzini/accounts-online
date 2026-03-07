@@ -693,6 +693,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             color: car.color || '',
             chassis_number: car.chassis_number,
             quantity: 1,
+            car_condition: 'new',
             pendingTransfer: null,
           });
         }
@@ -714,6 +715,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           color: car.color || '',
           chassis_number: car.chassis_number,
           quantity: 1,
+          car_condition: 'new',
           pendingTransfer: null,
         }]);
       }
