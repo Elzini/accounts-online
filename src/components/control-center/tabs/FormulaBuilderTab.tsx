@@ -465,7 +465,7 @@ export function FormulaBuilderTab() {
                           </Button>
                           {testResult !== null && (
                             <Badge variant="secondary" className="text-base px-3">
-                              النتيجة: {testResult.toLocaleString('ar-SA')}
+                              النتيجة: {testResult.toLocaleString('en-US')}
                             </Badge>
                           )}
                         </div>

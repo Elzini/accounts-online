@@ -119,10 +119,10 @@ export const InvoiceTemplate2 = forwardRef<HTMLDivElement, Props>(({ data }, ref
               <td className="p-1.5 border text-center">{i + 1}</td>
               <td className="p-1.5 border text-right">{item.description}</td>
               <td className="p-1.5 border text-center">{item.quantity}</td>
-              <td className="p-1.5 border text-center">{item.unitPrice.toLocaleString('en', { minimumFractionDigits: 2 })}</td>
+              <td className="p-1.5 border text-center">{Math.round(item.unitPrice).toLocaleString('en-US')}</td>
               <td className="p-1.5 border text-center">{item.taxRate}%</td>
-              <td className="p-1.5 border text-center">{item.taxAmount.toLocaleString('en', { minimumFractionDigits: 2 })}</td>
-              <td className="p-1.5 border text-center font-medium">{item.total.toLocaleString('en', { minimumFractionDigits: 2 })}</td>
+              <td className="p-1.5 border text-center">{Math.round(item.taxAmount).toLocaleString('en-US')}</td>
+              <td className="p-1.5 border text-center font-medium">{Math.round(item.total).toLocaleString('en-US')}</td>
             </tr>
           ))}
         </tbody>
@@ -135,13 +135,13 @@ export const InvoiceTemplate2 = forwardRef<HTMLDivElement, Props>(({ data }, ref
           <div className="flex justify-between"><span>Sales Man / البائع</span><span>{data.salesmanName || '-'}</span></div>
         </div>
         <div className="p-2 text-[10px] space-y-1">
-          <div className="flex justify-between"><span>Total Excluding VAT الإجمالي غير شامل الضريبة</span><span>{subtotal.toLocaleString('en', { minimumFractionDigits: 2 })}</span></div>
+          <div className="flex justify-between"><span>Total Excluding VAT الإجمالي غير شامل الضريبة</span><span>{Math.round(subtotal).toLocaleString('en-US')}</span></div>
           {discountAmount > 0 && (
-            <div className="flex justify-between"><span>Discount / الخصم</span><span>{discountAmount.toLocaleString('en', { minimumFractionDigits: 2 })}</span></div>
+            <div className="flex justify-between"><span>Discount / الخصم</span><span>{Math.round(discountAmount).toLocaleString('en-US')}</span></div>
           )}
-          <div className="flex justify-between"><span>Total Taxable Amount المبلغ الخاضع للضريبة</span><span>{(subtotal - discountAmount).toLocaleString('en', { minimumFractionDigits: 2 })}</span></div>
-          <div className="flex justify-between"><span>Tax %{taxRate} / الضريبة</span><span>{taxAmount.toLocaleString('en', { minimumFractionDigits: 2 })}</span></div>
-          <div className="flex justify-between font-bold border-t pt-1"><span>Total Amt With Tax الإجمالي شامل الضريبة</span><span>{total.toLocaleString('en', { minimumFractionDigits: 2 })}</span></div>
+          <div className="flex justify-between"><span>Total Taxable Amount المبلغ الخاضع للضريبة</span><span>{Math.round(subtotal - discountAmount).toLocaleString('en-US')}</span></div>
+          <div className="flex justify-between"><span>Tax %{taxRate} / الضريبة</span><span>{Math.round(taxAmount).toLocaleString('en-US')}</span></div>
+          <div className="flex justify-between font-bold border-t pt-1"><span>Total Amt With Tax الإجمالي شامل الضريبة</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
         </div>
       </div>
 
