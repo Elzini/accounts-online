@@ -26,10 +26,17 @@ export function PaymentAccountSelector({
   // Cash accounts (11xx), Bank accounts, Partner accounts (31xx)
   const paymentAccounts = accounts.filter(account => {
     const code = account.code;
-    // الصندوق والنقدية (11xx)
-    if (code.startsWith('110')) return true;
-    // البنك (1102, 1103)
-    if (code === '1102' || code === '1103') return true;
+    // الصندوق (1101)
+    if (code === '1101') return true;
+    // نقاط البيع (1103)
+    if (code === '1103') return true;
+    // حسابات بنكية فرعية (1102x)
+    if (code.startsWith('1102') && code.length > 4) return true;
+    // البنك الرئيسي فقط إذا لا توجد فرعية
+    if (code === '1102') {
+      const hasSubs = accounts.some(a => a.code.startsWith('1102') && a.code.length > 4);
+      return !hasSubs;
+    }
     // جاري الشريك (3102)
     if (code === '3102') return true;
     // العملاء للمبيعات الآجلة (1201)
@@ -41,14 +48,13 @@ export function PaymentAccountSelector({
 
   const getAccountIcon = (code: string) => {
     if (code === '1101') return <Wallet className="w-4 h-4" />;
-    if (code === '1102' || code === '1103') return <Building2 className="w-4 h-4" />;
+    if (code.startsWith('1102') || code === '1103') return <Building2 className="w-4 h-4" />;
     if (code === '3102') return <Users className="w-4 h-4" />;
     if (code === '1201' || code === '2101') return <CreditCard className="w-4 h-4" />;
     return <Wallet className="w-4 h-4" />;
   };
 
   const getAccountLabel = (account: typeof accounts[0]) => {
-    // Custom labels for better UX
     switch (account.code) {
       case '1101': return 'نقداً - الصندوق';
       case '1102': return 'تحويل بنكي';
@@ -56,7 +62,10 @@ export function PaymentAccountSelector({
       case '3102': return 'جاري الشريك';
       case '1201': return 'آجل - على العميل';
       case '2101': return 'آجل - على المورد';
-      default: return account.name;
+      default:
+        // Bank sub-accounts show as "تحويل بنكي - اسم البنك"
+        if (account.code.startsWith('1102')) return `تحويل بنكي - ${account.name}`;
+        return account.name;
     }
   };
 
