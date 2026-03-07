@@ -1532,6 +1532,7 @@ export type Database = {
       cars: {
         Row: {
           batch_id: string | null
+          car_condition: string
           chassis_number: string
           color: string | null
           company_id: string | null
@@ -1550,6 +1551,7 @@ export type Database = {
         }
         Insert: {
           batch_id?: string | null
+          car_condition?: string
           chassis_number: string
           color?: string | null
           company_id?: string | null
@@ -1568,6 +1570,7 @@ export type Database = {
         }
         Update: {
           batch_id?: string | null
+          car_condition?: string
           chassis_number?: string
           color?: string | null
           company_id?: string | null

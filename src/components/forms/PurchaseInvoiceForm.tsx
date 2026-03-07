@@ -353,6 +353,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           color: cars[index].color || null,
           purchase_price: car.baseAmount / (cars[index].quantity || 1),
           fiscal_year_id: selectedFiscalYear?.id ?? null,
+          car_condition: cars[index].car_condition || 'new',
         }));
 
         const result = await addPurchaseBatch.mutateAsync({
@@ -627,6 +628,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             purchase_date: invoiceData.purchase_date,
             payment_account_id: invoiceData.payment_account_id || null,
             supplier_id: invoiceData.supplier_id || null,
+            car_condition: carData.car_condition || 'new',
           }
         });
       }

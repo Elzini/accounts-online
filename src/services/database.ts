@@ -679,8 +679,28 @@ export async function fetchStats(fiscalYearId?: string | null) {
     .eq('status', 'available')
     .eq('company_id', companyId);
 
+  let availableNewCarsQuery = supabase
+    .from('cars')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'available')
+    .eq('car_condition', 'new')
+    .eq('company_id', companyId);
+
+  let availableUsedCarsQuery = supabase
+    .from('cars')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'available')
+    .eq('car_condition', 'used')
+    .eq('company_id', companyId);
+
   if (fiscalYearStart && fiscalYearEnd) {
     availableCarsQuery = availableCarsQuery
+      .gte('purchase_date', fiscalYearStart)
+      .lte('purchase_date', fiscalYearEnd);
+    availableNewCarsQuery = availableNewCarsQuery
+      .gte('purchase_date', fiscalYearStart)
+      .lte('purchase_date', fiscalYearEnd);
+    availableUsedCarsQuery = availableUsedCarsQuery
       .gte('purchase_date', fiscalYearStart)
       .lte('purchase_date', fiscalYearEnd);
   }
@@ -760,6 +780,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
   // Execute ALL queries in parallel for maximum performance
   const [
     availableCarsResult,
+    availableNewCarsResult,
+    availableUsedCarsResult,
     todaySalesResult,
     salesResult,
     expensesResult,
@@ -768,6 +790,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
     purchasesResult
   ] = await Promise.all([
     availableCarsQuery,
+    availableNewCarsQuery,
+    availableUsedCarsQuery,
     todaySalesQuery,
     salesQuery,
     expensesQuery,
@@ -777,6 +801,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
   ]);
 
   const availableCars = availableCarsResult.count;
+  const availableNewCars = availableNewCarsResult.count || 0;
+  const availableUsedCars = availableUsedCarsResult.count || 0;
   const todaySales = todaySalesResult.count;
   const salesData = salesResult.data;
   const expensesData = expensesResult.data;
@@ -883,6 +909,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
   const monthSalesProfit = monthSalesData.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0);
 
   return {
+    availableNewCars,
+    availableUsedCars,
     availableCars: availableCars || 0,
     todaySales: todaySales || 0,
     totalProfit,

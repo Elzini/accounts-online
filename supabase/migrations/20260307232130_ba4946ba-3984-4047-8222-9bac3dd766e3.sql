@@ -1,0 +1,1 @@
+ALTER TABLE public.cars ADD COLUMN car_condition TEXT NOT NULL DEFAULT 'new' CHECK (car_condition IN ('new', 'used'));
