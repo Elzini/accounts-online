@@ -52,24 +52,21 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
   if (!data) return null;
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
+    return new Intl.NumberFormat('en-US', {
+      maximumFractionDigits: 0,
+    }).format(Math.round(value)) + ' ر.س.';
   };
 
   const formatNumber = (value: number) => {
-    return new Intl.NumberFormat('ar-SA').format(value);
+    return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.round(value));
   };
 
   const formatDate = (date: string) => {
-    return new Intl.DateTimeFormat('ar-SA').format(new Date(date));
+    return new Intl.DateTimeFormat('en-US').format(new Date(date));
   };
 
   const formatCurrencyForExport = (value: number) => {
-    return `${new Intl.NumberFormat('ar-SA').format(value)} ريال`;
+    return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.round(value))} ريال`;
   };
 
   const handleExportExcel = () => {

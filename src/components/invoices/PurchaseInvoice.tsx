@@ -234,12 +234,12 @@ export const PurchaseInvoice = forwardRef<HTMLDivElement, PurchaseInvoiceProps>(
                     <td className="p-3 text-right border-b border-gray-100">{index + 1}</td>
                     <td className="p-3 text-right border-b border-gray-100">{item.description}</td>
                     <td className="p-3 text-center border-b border-gray-100">{item.quantity}</td>
-                    <td className="p-3 text-center border-b border-gray-100">{item.unitPrice.toLocaleString('ar-SA')}</td>
+                    <td className="p-3 text-center border-b border-gray-100">{Math.round(item.unitPrice).toLocaleString('en-US')}</td>
                     <td className="p-3 text-center border-b border-gray-100">
-                      {item.taxAmount.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {Math.round(item.taxAmount).toLocaleString('en-US')}
                     </td>
                     <td className="p-3 text-center border-b border-gray-100 font-medium">
-                      {item.total.toLocaleString('ar-SA')}
+                      {Math.round(item.total).toLocaleString('en-US')}
                     </td>
                   </tr>
                 ))}
@@ -251,15 +251,15 @@ export const PurchaseInvoice = forwardRef<HTMLDivElement, PurchaseInvoiceProps>(
           <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
             <div className="flex justify-between items-center p-4 border-b border-gray-100">
               <span className="text-gray-600 font-medium">المجموع</span>
-              <span className="font-bold text-lg">{subtotal.toLocaleString('ar-SA')} ر.س</span>
+              <span className="font-bold text-lg">{Math.round(subtotal).toLocaleString('en-US')} ر.س</span>
             </div>
             <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
               <span className="text-gray-600 font-medium">ضريبة القيمة المضافة ({taxRate}%)</span>
-              <span className="font-bold text-lg">{taxAmount.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س</span>
+              <span className="font-bold text-lg">{Math.round(taxAmount).toLocaleString('en-US')} ر.س</span>
             </div>
             <div className="flex justify-between items-center p-4 bg-blue-600 text-white">
               <span className="font-bold text-lg">المجموع مع الضريبة ({taxRate}%)</span>
-              <span className="font-bold text-xl">{total.toLocaleString('ar-SA')} ر.س</span>
+              <span className="font-bold text-xl">{Math.round(total).toLocaleString('en-US')} ر.س</span>
             </div>
           </div>
 
