@@ -56,8 +56,8 @@ export default function Register() {
 
   const translateAuthError = (message: string): string => {
     if (message.includes('already registered')) return isRtl ? 'هذا البريد الإلكتروني مسجل مسبقاً' : 'Email already registered';
-    if (message.includes('weak') || message.includes('easy to guess'))
-      return isRtl ? 'كلمة المرور ضعيفة. يرجى اختيار كلمة مرور أقوى' : 'Password too weak. Please choose a stronger one';
+    if (message.includes('weak') || message.includes('easy to guess') || message.includes('pwned'))
+      return isRtl ? 'كلمة المرور شائعة ومكشوفة في قواعد بيانات الاختراقات. يرجى اختيار كلمة مرور فريدة مثل: MyComp#2026x' : 'This password has been found in data breaches. Please choose a unique one like: MyComp#2026x';
     if (message.includes('password') && message.includes('length'))
       return isRtl ? 'كلمة المرور قصيرة جداً' : 'Password too short';
     if (message.includes('rate limit')) return isRtl ? 'تم تجاوز عدد المحاولات. حاول لاحقاً' : 'Too many attempts. Try later';
