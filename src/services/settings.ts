@@ -225,7 +225,7 @@ export async function resetDatabase() {
   for (const table of tablesToDelete) {
     try {
       const { error } = await supabase
-        .from(table)
+        .from(table as any)
         .delete()
         .eq('company_id', companyId);
       
