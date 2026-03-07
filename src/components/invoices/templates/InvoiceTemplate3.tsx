@@ -61,19 +61,21 @@ export const InvoiceTemplate3 = forwardRef<HTMLDivElement, Props>(({ data }, ref
 
       {/* Title */}
       <div className="text-center py-1.5 bg-[#3b82f6]/10 border-y border-[#3b82f6]/30">
-        <h2 className="text-base font-bold text-[#3b82f6]">فاتورة ضريبية / Tax Invoice</h2>
+        <h2 className="text-base font-bold text-[#3b82f6]">{invoiceType === 'purchase' ? 'فاتورة مشتريات / Purchase Invoice' : 'فاتورة ضريبية / Tax Invoice'}</h2>
       </div>
 
-      {/* Customer & Invoice Info */}
+      {/* Party & Invoice Info */}
       <div className="grid grid-cols-2 gap-0 p-3">
-        {/* Customer Info */}
+        {/* Party Info (Supplier for purchases, Customer for sales) */}
         <div className="border border-gray-200 rounded-sm p-2 ml-1">
-          <h3 className="font-bold text-[10px] text-[#3b82f6] mb-1">بيانات العميل Customer</h3>
+          <h3 className="font-bold text-[10px] text-[#3b82f6] mb-1">
+            {invoiceType === 'purchase' ? 'بيانات المورد Supplier' : 'بيانات العميل Customer'}
+          </h3>
           <div className="space-y-0.5 text-[10px]">
-            <div className="flex gap-1"><span className="text-gray-500 w-14">الاسم:</span><span className="font-medium">{buyerName}</span></div>
-            <div className="flex gap-1"><span className="text-gray-500 w-14">VAT No:</span><span dir="ltr">{buyerTaxNumber || buyerIdNumber || '-'}</span></div>
-            <div className="flex gap-1"><span className="text-gray-500 w-14">العنوان:</span><span>{buyerAddress || '-'}</span></div>
-            <div className="flex gap-1"><span className="text-gray-500 w-14">الجوال:</span><span dir="ltr">{buyerPhone || '-'}</span></div>
+            <div className="flex gap-1"><span className="text-gray-500 w-14">الاسم:</span><span className="font-medium">{invoiceType === 'purchase' ? sellerName : buyerName}</span></div>
+            <div className="flex gap-1"><span className="text-gray-500 w-14">VAT No:</span><span dir="ltr">{invoiceType === 'purchase' ? (sellerTaxNumber || '-') : (buyerTaxNumber || buyerIdNumber || '-')}</span></div>
+            <div className="flex gap-1"><span className="text-gray-500 w-14">العنوان:</span><span>{invoiceType === 'purchase' ? (sellerAddress || '-') : (buyerAddress || '-')}</span></div>
+            <div className="flex gap-1"><span className="text-gray-500 w-14">الجوال:</span><span dir="ltr">{invoiceType === 'purchase' ? (data.sellerPhone || '-') : (buyerPhone || '-')}</span></div>
           </div>
         </div>
         {/* Invoice Info */}

@@ -48,7 +48,7 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
 
       {/* Title */}
       <div className="text-center py-2 border-y-2 border-gray-800">
-        <h2 className="text-lg font-bold">فاتورة ضريبية</h2>
+        <h2 className="text-lg font-bold">{invoiceType === 'purchase' ? 'فاتورة مشتريات' : 'فاتورة ضريبية'}</h2>
         <p className="text-[10px] text-gray-500">{data.paymentMethod === 'credit' ? 'آجل' : data.paymentMethod === 'bank' ? 'تحويل بنكي' : 'نقدية'}</p>
       </div>
 
@@ -68,28 +68,28 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
         </div>
       </div>
 
-      {/* Customer Info - Grid */}
+      {/* Party Info - Grid */}
       <div className="px-4 py-2 border-b">
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
           <div className="flex gap-1 border-b border-gray-200 pb-1">
-            <span className="text-gray-500 w-20">Cust. Name اسم العميل</span>
-            <span className="font-medium flex-1">{buyerName}</span>
+            <span className="text-gray-500 w-20">{invoiceType === 'purchase' ? 'Supplier المورد' : 'Cust. Name اسم العميل'}</span>
+            <span className="font-medium flex-1">{invoiceType === 'purchase' ? sellerName : buyerName}</span>
           </div>
           <div className="flex gap-1 border-b border-gray-200 pb-1">
-            <span className="text-gray-500 w-20">Cust. No. رقم العميل</span>
+            <span className="text-gray-500 w-20">{invoiceType === 'purchase' ? 'Supp. No. رقم المورد' : 'Cust. No. رقم العميل'}</span>
             <span className="font-medium">{buyerIdNumber || '-'}</span>
           </div>
           <div className="flex gap-1 border-b border-gray-200 pb-1">
             <span className="text-gray-500 w-20">Address العنوان</span>
-            <span className="font-medium">{buyerAddress || '-'}</span>
+            <span className="font-medium">{invoiceType === 'purchase' ? (sellerAddress || '-') : (buyerAddress || '-')}</span>
           </div>
           <div className="flex gap-1 border-b border-gray-200 pb-1">
             <span className="text-gray-500 w-20">Phone الهاتف</span>
-            <span className="font-medium" dir="ltr">{buyerPhone || '-'}</span>
+            <span className="font-medium" dir="ltr">{invoiceType === 'purchase' ? (data.sellerPhone || '-') : (buyerPhone || '-')}</span>
           </div>
           <div className="flex gap-1 col-span-2 border-b border-gray-200 pb-1">
             <span className="text-gray-500 w-20">VAT No. رقم الضريبة</span>
-            <span className="font-bold" dir="ltr">{buyerTaxNumber || '-'}</span>
+            <span className="font-bold" dir="ltr">{invoiceType === 'purchase' ? (sellerTaxNumber || '-') : (buyerTaxNumber || '-')}</span>
           </div>
         </div>
       </div>
