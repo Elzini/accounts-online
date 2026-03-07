@@ -55,7 +55,6 @@ export function PaymentAccountSelector({
   };
 
   const getAccountLabel = (account: typeof accounts[0]) => {
-    // Custom labels for better UX
     switch (account.code) {
       case '1101': return 'نقداً - الصندوق';
       case '1102': return 'تحويل بنكي';
@@ -63,7 +62,10 @@ export function PaymentAccountSelector({
       case '3102': return 'جاري الشريك';
       case '1201': return 'آجل - على العميل';
       case '2101': return 'آجل - على المورد';
-      default: return account.name;
+      default:
+        // Bank sub-accounts show as "تحويل بنكي - اسم البنك"
+        if (account.code.startsWith('1102')) return `تحويل بنكي - ${account.name}`;
+        return account.name;
     }
   };
 
