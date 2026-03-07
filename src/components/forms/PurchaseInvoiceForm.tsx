@@ -113,6 +113,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     purchase_price: '',
     quantity: 1,
     unit: t.inv_car_unit,
+    car_condition: 'new',
   });
 
   // Inventory items state for non-car companies
