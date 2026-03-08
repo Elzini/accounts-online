@@ -86,11 +86,11 @@ export function FinancialReportsPage() {
     ];
     const data = trialBalance.accounts.map(item => ({
       code: item.account.code, name: item.account.name, type: getTypeLabel(item.account.type),
-      debit: item.debit > 0 ? item.debit.toLocaleString() : '-', credit: item.credit > 0 ? item.credit.toLocaleString() : '-',
+      debit: item.debit > 0 ? fmt(item.debit) : '-', credit: item.credit > 0 ? fmt(item.credit) : '-',
     }));
     const summaryCards = [
-      { label: t.fr_total_debit, value: trialBalance.totalDebit.toLocaleString() + ' ر.س' },
-      { label: t.fr_total_credit, value: trialBalance.totalCredit.toLocaleString() + ' ر.س' },
+      { label: t.fr_total_debit, value: fmt(trialBalance.totalDebit) + ' ر.س' },
+      { label: t.fr_total_credit, value: fmt(trialBalance.totalCredit) + ' ر.س' },
       { label: t.je_col_status, value: trialBalance.totalDebit === trialBalance.totalCredit ? t.fr_balanced : t.fr_unbalanced },
     ];
     if (type === 'print') printReport({ title: t.fr_trial_balance, columns, data, summaryCards });
