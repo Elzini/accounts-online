@@ -96,6 +96,7 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
         purchase_date: formData.purchase_date,
         payment_account_id: formData.payment_account_id || null,
         fiscal_year_id: selectedFiscalYear?.id ?? null,
+        plate_number: formData.plate_number || null,
       });
       
       // Store saved data for invoice
