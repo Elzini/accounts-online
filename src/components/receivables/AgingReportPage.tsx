@@ -114,7 +114,7 @@ export function AgingReportPage() {
   }, [filtered]);
 
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
-  const fmt = (n: number) => n.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
   const handleExport = () => {
     const columns = [

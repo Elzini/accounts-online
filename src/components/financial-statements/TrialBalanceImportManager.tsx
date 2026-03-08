@@ -133,7 +133,7 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
     setMissingAccountsAdded(false);
   };
 
-  const formatNumber = (n: number) => new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  const formatNumber = (n: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
 
   const mappingStats = {
     total: rows.length,

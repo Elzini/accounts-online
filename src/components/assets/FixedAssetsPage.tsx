@@ -93,7 +93,7 @@ export function FixedAssetsPage() {
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'SAR',
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
     }).format(amount);
   };
 

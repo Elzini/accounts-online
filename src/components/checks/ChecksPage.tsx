@@ -114,7 +114,7 @@ export function ChecksPage() {
   }, [checks, search]);
 
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
-  const fmt = (n: number) => n?.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00';
+  const fmt = (n: number) => n?.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) || '0';
 
   const totalAmount = filtered.reduce((s: number, c: any) => s + (Number(c.amount) || 0), 0);
   const pendingCount = filtered.filter((c: any) => c.status === 'pending').length;
