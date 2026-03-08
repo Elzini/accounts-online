@@ -146,7 +146,12 @@ export function AccountSearchSelect({ accounts, value, onChange, placeholder = "
     inputRef.current?.select();
   };
 
-  const handleBlur = () => {
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Check if the related target is inside our portal dropdown
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (relatedTarget && relatedTarget.closest('[data-account-dropdown]')) {
+      return;
+    }
     setTimeout(() => {
       setOpen(false);
       if (selectedAccount) {
@@ -154,15 +159,17 @@ export function AccountSearchSelect({ accounts, value, onChange, placeholder = "
       } else {
         setSearch('');
       }
-    }, 200);
+    }, 250);
   };
 
   const dropdown = open && filteredAccounts.length > 0 
     ? createPortal(
         <div 
           ref={listRef}
+          data-account-dropdown="true"
           className="max-h-[200px] overflow-y-auto rounded-md border bg-popover shadow-lg"
           style={dropdownStyle}
+          onMouseDown={(e) => e.preventDefault()}
         >
           {filteredAccounts.map((account, index) => (
             <div
