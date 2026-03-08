@@ -256,9 +256,10 @@ export function Sidebar({
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
-  const logoUrl = settings?.company_logo_url 
-    ? `${settings.company_logo_url}?t=${Date.now()}` 
-    : defaultLogo;
+  const rawLogoUrl = settings?.company_logo_url || defaultLogo;
+  const logoUrl = rawLogoUrl !== defaultLogo && !rawLogoUrl.includes('?') 
+    ? `${rawLogoUrl}?v=${encodeURIComponent(rawLogoUrl.slice(-10))}` 
+    : rawLogoUrl;
 
   const getAppName = () => {
     if (settings?.app_name && language === 'ar') return settings.app_name;
