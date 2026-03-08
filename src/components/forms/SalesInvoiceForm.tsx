@@ -302,7 +302,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       color: car.color || '',
       chassis_number: car.chassis_number,
       quantity: 1,
-      car_condition: 'new',
+      car_condition: (car as any).car_condition === 'used' ? 'used' : 'new',
       pendingTransfer,
     }]);
   };
@@ -350,16 +350,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       const price = parseFloat(car.sale_price) || 0;
       
       if (car.car_condition === 'used' && taxRate > 0) {
-        // Used car: VAT on profit margin only
+        // Used car: VAT on profit margin only (margin × 15% added to sale price)
         const quantity = car.quantity || 1;
-        const totalPrice = price * quantity;
-        let baseAmount: number;
-        if (invoiceData.price_includes_tax) {
-          baseAmount = totalPrice / (1 + taxRate / 100);
-        } else {
-          baseAmount = totalPrice;
-        }
-        const profitMargin = Math.max(0, baseAmount - car.purchase_price);
+        const baseAmount = price * quantity;
+        const profitMargin = Math.max(0, baseAmount - (car.purchase_price * quantity));
         const vatAmount = profitMargin * (taxRate / 100);
         const total = baseAmount + vatAmount;
         subtotal += baseAmount;
@@ -714,7 +708,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             color: car.color || '',
             chassis_number: car.chassis_number,
             quantity: 1,
-            car_condition: 'new',
+            car_condition: (car as any).car_condition === 'used' ? 'used' : 'new',
             pendingTransfer: null,
           });
         }
@@ -736,7 +730,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           color: car.color || '',
           chassis_number: car.chassis_number,
           quantity: 1,
-          car_condition: 'new',
+          car_condition: (car as any).car_condition === 'used' ? 'used' : 'new',
           pendingTransfer: null,
         }]);
       }
