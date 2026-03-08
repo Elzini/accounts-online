@@ -53,6 +53,7 @@ export function EditCarDialog({ car, open, onOpenChange }: EditCarDialogProps) {
     model: car.model || '',
     color: car.color || '',
     chassis_number: car.chassis_number,
+    plate_number: (car as any).plate_number || '',
     purchase_price: car.purchase_price.toString(),
     purchase_date: car.purchase_date,
     supplier_id: car.supplier_id || '',
@@ -126,6 +127,14 @@ export function EditCarDialog({ car, open, onOpenChange }: EditCarDialogProps) {
                   value={formData.chassis_number}
                   onChange={(e) => setFormData({ ...formData, chassis_number: e.target.value })}
                   required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="plate_number">رقم اللوحة</Label>
+                <Input
+                  id="plate_number"
+                  value={formData.plate_number}
+                  onChange={(e) => setFormData({ ...formData, plate_number: e.target.value })}
                 />
               </div>
             </div>

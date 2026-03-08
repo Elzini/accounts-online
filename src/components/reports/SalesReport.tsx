@@ -101,6 +101,7 @@ export function SalesReport() {
       columns: isCarDealership ? [
         { header: t.rpt_sales_col_number, key: 'sale_number' }, { header: t.rpt_sales_col_customer, key: 'customer' },
         { header: t.rpt_sales_col_item, key: 'car' }, { header: t.rpt_sales_col_chassis, key: 'chassis_number' },
+        { header: 'رقم اللوحة', key: 'plate_number' },
         { header: t.rpt_sales_col_price, key: 'sale_price' }, { header: t.rpt_sales_col_commission, key: 'commission' },
         { header: t.rpt_sales_col_expenses, key: 'expenses' }, { header: t.rpt_sales_col_profit, key: 'profit' },
         { header: t.rpt_sales_col_date, key: 'date' },
@@ -111,6 +112,7 @@ export function SalesReport() {
       ],
       data: salesData.map((sale: any) => isCarDealership ? {
         sale_number: sale.sale_number, customer: sale.customer?.name || '-', car: sale.car?.name || '-', chassis_number: sale.car?.chassis_number || '-',
+        plate_number: (sale.car as any)?.plate_number || '-',
         sale_price: `${formatCurrencySimple(Number(sale.sale_price))} ${t.rpt_currency}`, commission: `${formatCurrencySimple(Number(sale.commission || 0))} ${t.rpt_currency}`,
         expenses: `${formatCurrencySimple(Number(sale.other_expenses || 0))} ${t.rpt_currency}`, profit: `${formatCurrencySimple(Number(sale.profit))} ${t.rpt_currency}`, date: formatDate(sale.sale_date),
       } : {
@@ -137,6 +139,7 @@ export function SalesReport() {
       columns: isCarDealership ? [
         { header: t.rpt_sales_col_number, key: 'sale_number' }, { header: t.rpt_sales_col_customer, key: 'customer' },
         { header: t.rpt_sales_col_item, key: 'car' }, { header: t.rpt_sales_col_chassis, key: 'chassis_number' },
+        { header: 'رقم اللوحة', key: 'plate_number' },
         { header: t.rpt_sales_col_price, key: 'sale_price' }, { header: t.rpt_sales_col_commission, key: 'commission' },
         { header: t.rpt_sales_col_expenses, key: 'expenses' }, { header: t.rpt_sales_col_profit, key: 'profit' },
         { header: t.rpt_sales_col_date, key: 'date' },
@@ -146,7 +149,7 @@ export function SalesReport() {
         { header: 'الإجمالي', key: 'total' }, { header: t.rpt_sales_col_date, key: 'date' },
       ],
       data: salesData.map((sale: any) => isCarDealership ? {
-        sale_number: sale.sale_number, customer: sale.customer?.name || '-', car: sale.car?.name || '-', chassis_number: sale.car?.chassis_number || '-',
+        sale_number: sale.sale_number, customer: sale.customer?.name || '-', car: sale.car?.name || '-', chassis_number: sale.car?.chassis_number || '-', plate_number: (sale.car as any)?.plate_number || '-',
         sale_price: Number(sale.sale_price), commission: Number(sale.commission || 0), expenses: Number(sale.other_expenses || 0), profit: Number(sale.profit), date: formatDate(sale.sale_date),
       } : {
         sale_number: sale.sale_number, customer: sale.customer?.name || '-',
@@ -201,6 +204,7 @@ export function SalesReport() {
             <TableHead className="text-right">{t.rpt_sales_col_customer}</TableHead>
             {isCarDealership && <TableHead className="text-right">{t.rpt_sales_col_item}</TableHead>}
             {isCarDealership && <TableHead className="text-right">{t.rpt_sales_col_chassis}</TableHead>}
+            {isCarDealership && <TableHead className="text-right">رقم اللوحة</TableHead>}
             <TableHead className="text-right">{t.rpt_sales_col_price}</TableHead>
             {!isCarDealership && <TableHead className="text-right">الضريبة</TableHead>}
             {!isCarDealership && <TableHead className="text-right">الإجمالي</TableHead>}
@@ -214,6 +218,7 @@ export function SalesReport() {
               <TableCell>{sale.customer?.name || '-'}</TableCell>
               {isCarDealership && <TableCell>{sale.car?.name || '-'}</TableCell>}
               {isCarDealership && <TableCell className="font-mono text-sm">{sale.car?.chassis_number || '-'}</TableCell>}
+              {isCarDealership && <TableCell>{(sale.car as any)?.plate_number || '-'}</TableCell>}
               <TableCell>{formatCurrency(Number(sale.sale_price))}</TableCell>
               {!isCarDealership && <TableCell>{formatCurrency(Number(sale._taxAmount || 0))}</TableCell>}
               {!isCarDealership && <TableCell className="font-semibold text-primary">{formatCurrency(Number(sale._total || 0))}</TableCell>}

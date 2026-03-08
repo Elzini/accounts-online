@@ -74,6 +74,7 @@ interface PurchaseInventoryItem {
 interface CarItem {
   id: string;
   chassis_number: string;
+  plate_number: string;
   name: string;
   model: string;
   color: string;
@@ -107,6 +108,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const createEmptyCar = (): CarItem => ({
     id: crypto.randomUUID(),
     chassis_number: '',
+    plate_number: '',
     name: '',
     model: '',
     color: '',
@@ -348,6 +350,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       try {
         const carsWithPrices = calculations.items.map((car, index) => ({
           chassis_number: cars[index].chassis_number,
+          plate_number: cars[index].plate_number || null,
           name: cars[index].name,
           model: cars[index].model || null,
           color: cars[index].color || null,
@@ -534,13 +537,14 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       setCars(batchCars.map((car: any) => ({
         id: crypto.randomUUID(),
         chassis_number: car.chassis_number,
+        plate_number: car.plate_number || '',
         name: car.name,
         model: car.model || '',
         color: car.color || '',
         purchase_price: String(car.purchase_price),
         quantity: 1,
         unit: t.inv_car_unit,
-        car_condition: 'new' as const,
+        car_condition: ((car.car_condition || 'new') as 'new' | 'used'),
       })));
     } else {
       setCars([createEmptyCar()]);
@@ -623,6 +627,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             name: carData.name,
             model: carData.model || null,
             chassis_number: carData.chassis_number,
+            plate_number: carData.plate_number || null,
             color: carData.color || null,
             purchase_price: parseFloat(carData.purchase_price),
             purchase_date: invoiceData.purchase_date,
@@ -666,7 +671,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       companyTaxNumber: taxSettings?.tax_number || '',
       companyAddress: taxSettings?.national_address || company?.address || '',
       items: calculations.items.map(car => ({
-        description: `${car.name} ${car.model || ''} - ${car.chassis_number}`,
+        description: `${car.name} ${car.model || ''} - ${car.chassis_number}${cars.find(c => c.id === car.id)?.plate_number ? ` - لوحة: ${cars.find(c => c.id === car.id)?.plate_number}` : ''}`,
         quantity: car.quantity,
         unitPrice: car.baseAmount / car.quantity,
         taxRate: taxRate,
@@ -850,6 +855,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                       <TableHead className="text-right text-[11px] font-bold min-w-[80px] text-primary">{t.inv_model}</TableHead>
                       <TableHead className="text-right text-[11px] font-bold min-w-[60px] text-primary">{t.inv_color}</TableHead>
                       <TableHead className="text-right text-[11px] font-bold min-w-[100px] text-primary">{t.inv_chassis_number}</TableHead>
+                      <TableHead className="text-right text-[11px] font-bold min-w-[80px] text-primary">رقم اللوحة</TableHead>
                       <TableHead className="text-center text-[11px] font-bold w-24 text-primary">الحالة</TableHead>
                       <TableHead className="text-center text-[11px] font-bold w-16 text-primary">{t.inv_quantity}</TableHead>
                       <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_price}</TableHead>
@@ -866,6 +872,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                         <TableCell className="py-1"><Input value={cars[index].model} onChange={(e) => handleCarChange(car.id, 'model', e.target.value)} placeholder={t.inv_model} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" /></TableCell>
                         <TableCell className="py-1"><Input value={cars[index].color} onChange={(e) => handleCarChange(car.id, 'color', e.target.value)} placeholder={t.inv_color} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" /></TableCell>
                         <TableCell className="py-1"><Input value={cars[index].chassis_number} onChange={(e) => handleCarChange(car.id, 'chassis_number', e.target.value)} placeholder={t.inv_chassis_number} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" dir="ltr" /></TableCell>
+                        <TableCell className="py-1"><Input value={cars[index].plate_number} onChange={(e) => handleCarChange(car.id, 'plate_number', e.target.value)} placeholder="رقم اللوحة" className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" /></TableCell>
                         <TableCell className="py-1">
                           <Select value={cars[index].car_condition} onValueChange={(v) => handleCarChange(car.id, 'car_condition', v)}>
                             <SelectTrigger className="h-7 text-[10px] border-0 border-b border-border rounded-none bg-transparent shadow-none w-20">

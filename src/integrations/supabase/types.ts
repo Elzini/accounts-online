@@ -1543,6 +1543,7 @@ export type Database = {
           model: string | null
           name: string
           payment_account_id: string | null
+          plate_number: string | null
           purchase_date: string
           purchase_price: number
           status: string
@@ -1562,6 +1563,7 @@ export type Database = {
           model?: string | null
           name: string
           payment_account_id?: string | null
+          plate_number?: string | null
           purchase_date?: string
           purchase_price: number
           status?: string
@@ -1581,6 +1583,7 @@ export type Database = {
           model?: string | null
           name?: string
           payment_account_id?: string | null
+          plate_number?: string | null
           purchase_date?: string
           purchase_price?: number
           status?: string

@@ -336,6 +336,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                 <TableHead className="text-right font-bold">{t.th_model}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_color}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_chassis_number}</TableHead>
+                <TableHead className="text-right font-bold">رقم اللوحة</TableHead>
                 <TableHead className="text-right font-bold">{t.th_base_amount}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_tax} ({taxRate}%)</TableHead>
                 <TableHead className="text-right font-bold">{t.th_total_with_tax}</TableHead>
@@ -365,6 +366,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                   <TableCell>{car.model || '-'}</TableCell>
                   <TableCell>{car.color || '-'}</TableCell>
                   <TableCell dir="ltr" className="text-right font-mono text-sm">{car.chassis_number}</TableCell>
+                  <TableCell>{(car as any).plate_number || '-'}</TableCell>
                   <TableCell className="font-medium">{formatCurrency(taxDetails.baseAmount)} {currency}</TableCell>
                   <TableCell className="text-orange-600 font-medium">{formatCurrency(taxDetails.taxAmount)} {currency}</TableCell>
                   <TableCell className="font-semibold text-primary">{formatCurrency(taxDetails.totalWithTax)} {currency}</TableCell>

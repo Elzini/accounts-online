@@ -28,6 +28,7 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
   const [formData, setFormData] = useState({
     supplier_id: '',
     chassis_number: '',
+    plate_number: '',
     name: '',
     model: '',
     color: '',
@@ -95,6 +96,7 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
         purchase_date: formData.purchase_date,
         payment_account_id: formData.payment_account_id || null,
         fiscal_year_id: selectedFiscalYear?.id ?? null,
+        plate_number: formData.plate_number || null,
       });
       
       // Store saved data for invoice
@@ -207,6 +209,19 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
                 className="h-12"
                 dir="ltr"
               />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="plate_number">رقم اللوحة</Label>
+                <Input
+                  id="plate_number"
+                  value={formData.plate_number}
+                  onChange={(e) => setFormData({ ...formData, plate_number: e.target.value })}
+                  placeholder="أدخل رقم اللوحة"
+                  className="h-12"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

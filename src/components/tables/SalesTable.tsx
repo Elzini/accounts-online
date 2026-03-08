@@ -395,7 +395,7 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
                     ) : (
                       <div>
                         <p className="font-medium">{sale.car?.name || '-'}</p>
-                        <p className="text-sm text-muted-foreground">{sale.car?.model} - {sale.car?.color}</p>
+                        <p className="text-sm text-muted-foreground">{sale.car?.model} - {sale.car?.color} {(sale.car as any)?.plate_number ? `[${(sale.car as any).plate_number}]` : ''}</p>
                       </div>
                     )}
                   </TableCell>

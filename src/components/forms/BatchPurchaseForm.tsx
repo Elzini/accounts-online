@@ -21,6 +21,7 @@ interface BatchPurchaseFormProps {
 interface CarItem {
   id: string;
   chassis_number: string;
+  plate_number: string;
   name: string;
   model: string;
   color: string;
@@ -30,6 +31,7 @@ interface CarItem {
 const createEmptyCar = (): CarItem => ({
   id: crypto.randomUUID(),
   chassis_number: '',
+  plate_number: '',
   name: '',
   model: '',
   color: '',
@@ -148,6 +150,7 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
         },
         cars: cars.map(car => ({
           chassis_number: car.chassis_number,
+          plate_number: car.plate_number || null,
           name: car.name,
           model: car.model || null,
           color: car.color || null,
@@ -337,6 +340,16 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
                           placeholder="أدخل رقم الهيكل"
                           className="h-10"
                           dir="ltr"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`plate-${car.id}`}>رقم اللوحة</Label>
+                        <Input
+                          id={`plate-${car.id}`}
+                          value={car.plate_number}
+                          onChange={(e) => handleCarChange(car.id, 'plate_number', e.target.value)}
+                          placeholder="أدخل رقم اللوحة"
+                          className="h-10"
                         />
                       </div>
                       <div className="space-y-2">

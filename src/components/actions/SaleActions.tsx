@@ -348,7 +348,7 @@ export function SaleActions({ sale }: SaleActionsProps) {
         }
         
         return {
-          description: `${item.car?.name || 'سيارة'} ${item.car?.model || ''} - ${item.car?.color || ''} - شاسيه: ${item.car?.chassis_number || ''}`,
+          description: `${item.car?.name || 'سيارة'} ${item.car?.model || ''} - ${item.car?.color || ''} - شاسيه: ${item.car?.chassis_number || ''}${(item.car as any)?.plate_number ? ` - لوحة: ${(item.car as any).plate_number}` : ''}`,
           quantity: 1,
           unitPrice: itemSubtotal,
           taxRate: taxRate,
@@ -384,7 +384,7 @@ export function SaleActions({ sale }: SaleActionsProps) {
       
       return {
         items: [{
-          description: `${sale.car?.name || 'سيارة'} ${sale.car?.model || ''} - ${sale.car?.color || ''} - شاسيه: ${sale.car?.chassis_number || ''}`,
+          description: `${sale.car?.name || 'سيارة'} ${sale.car?.model || ''} - ${sale.car?.color || ''} - شاسيه: ${sale.car?.chassis_number || ''}${(sale.car as any)?.plate_number ? ` - لوحة: ${(sale.car as any).plate_number}` : ''}`,
           quantity: 1,
           unitPrice: subtotal,
           taxRate: taxRate,

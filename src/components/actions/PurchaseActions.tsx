@@ -45,6 +45,7 @@ export function EditPurchaseDialog({ car, open, onOpenChange }: EditPurchaseDial
     name: car.name,
     model: car.model || '',
     chassis_number: car.chassis_number,
+    plate_number: (car as any).plate_number || '',
     color: car.color || '',
     purchase_price: car.purchase_price.toString(),
     purchase_date: car.purchase_date,
@@ -62,6 +63,7 @@ export function EditPurchaseDialog({ car, open, onOpenChange }: EditPurchaseDial
           name: formData.name,
           model: formData.model || null,
           chassis_number: formData.chassis_number,
+          plate_number: formData.plate_number || null,
           color: formData.color || null,
           purchase_price: parseFloat(formData.purchase_price),
           purchase_date: formData.purchase_date,
@@ -115,6 +117,14 @@ export function EditPurchaseDialog({ car, open, onOpenChange }: EditPurchaseDial
                   value={formData.chassis_number}
                   onChange={(e) => setFormData({ ...formData, chassis_number: e.target.value })}
                   required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="plate_number">رقم اللوحة</Label>
+                <Input
+                  id="plate_number"
+                  value={formData.plate_number}
+                  onChange={(e) => setFormData({ ...formData, plate_number: e.target.value })}
                 />
               </div>
               <div className="grid gap-2">

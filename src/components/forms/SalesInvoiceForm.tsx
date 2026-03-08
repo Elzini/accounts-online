@@ -74,6 +74,7 @@ interface SelectedCarItem {
   model: string;
   color: string;
   chassis_number: string;
+  plate_number: string;
   quantity: number;
   car_condition: 'new' | 'used';
   pendingTransfer?: CarTransfer | null;
@@ -301,6 +302,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       model: car.model || '',
       color: car.color || '',
       chassis_number: car.chassis_number,
+      plate_number: (car as any).plate_number || '',
       quantity: 1,
       car_condition: (car as any).car_condition === 'used' ? 'used' : 'new',
       pendingTransfer,
@@ -707,6 +709,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             model: car.model || '',
             color: car.color || '',
             chassis_number: car.chassis_number,
+            plate_number: (car as any).plate_number || '',
             quantity: 1,
             car_condition: (car as any).car_condition === 'used' ? 'used' : 'new',
             pendingTransfer: null,
@@ -729,6 +732,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           model: car.model || '',
           color: car.color || '',
           chassis_number: car.chassis_number,
+          plate_number: (car as any).plate_number || '',
           quantity: 1,
           car_condition: (car as any).car_condition === 'used' ? 'used' : 'new',
           pendingTransfer: null,
@@ -942,7 +946,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       buyerTaxNumber: selectedCustomer?.registration_number || '',
       items: isCarDealership
         ? calculations.items.map(car => ({
-            description: `${car.car_name} ${car.model || ''} - ${car.chassis_number}`,
+            description: `${car.car_name} ${car.model || ''} - ${car.chassis_number}${car.plate_number ? ` - لوحة: ${car.plate_number}` : ''}`,
             quantity: car.quantity,
             unitPrice: car.baseAmount / car.quantity,
             taxRate: taxRate,
@@ -1296,7 +1300,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                       return (
                         <TableRow key={car.id} className="hover:bg-primary/5 border-b bg-[hsl(var(--primary)/0.03)]">
                           <TableCell className="text-center text-xs py-1">{index + 1}</TableCell>
-                          <TableCell className="text-xs py-1 font-medium">{car.car_name} {car.model} {car.color ? `- ${car.color}` : ''}</TableCell>
+                          <TableCell className="text-xs py-1 font-medium">{car.car_name} {car.model} {car.color ? `- ${car.color}` : ''} {car.plate_number ? `- لوحة: ${car.plate_number}` : ''}</TableCell>
                           <TableCell className="py-1">
                             <Select value={car.car_condition} onValueChange={(v) => handleCarChange(car.id, 'car_condition', v)} disabled={isApproved}>
                               <SelectTrigger className="h-7 text-[10px] border-0 border-b border-border rounded-none bg-transparent shadow-none w-20">

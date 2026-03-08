@@ -220,7 +220,7 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
       buyerTaxNumber: selectedCustomer?.registration_number || '', // الرقم الضريبي للعميل
       items: [
         {
-          description: `${selectedCar.name} ${selectedCar.model || ''} - ${selectedCar.chassis_number}`,
+          description: `${selectedCar.name} ${selectedCar.model || ''} - ${selectedCar.chassis_number}${(selectedCar as any).plate_number ? ` - لوحة: ${(selectedCar as any).plate_number}` : ''}`,
           quantity: 1,
           unitPrice: baseAmount,
           taxRate: taxRate,
@@ -283,7 +283,7 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
                   {availableCars.map((car) => (
                     <SelectItem key={car.id} value={car.id}>
                       <div className="flex items-center gap-2">
-                        <span>{car.name} - {car.model} ({car.chassis_number})</span>
+                        <span>{car.name} - {car.model} ({car.chassis_number}) {(car as any).plate_number ? `[${(car as any).plate_number}]` : ''}</span>
                         {car.status === 'transferred' && (
                           <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs">محولة</Badge>
                         )}
