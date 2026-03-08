@@ -764,7 +764,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
 
   let purchasesQuery = supabase
     .from('cars')
-    .select('purchase_price')
+    .select('purchase_price, car_condition')
     .eq('company_id', companyId);
   
   if (fiscalYearId) {
