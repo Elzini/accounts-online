@@ -152,7 +152,8 @@ export function AccountSearchSelect({ accounts, value, onChange, placeholder = "
       {open && filteredAccounts.length > 0 && (
         <div 
           ref={listRef}
-          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-[200px] overflow-y-auto rounded-md border bg-popover shadow-lg"
+          className="absolute top-full right-0 left-0 z-[9999] mt-1 max-h-[200px] overflow-y-auto rounded-md border bg-popover shadow-lg"
+          style={{ position: 'absolute' }}
         >
           {filteredAccounts.map((account, index) => (
             <div
