@@ -45,6 +45,7 @@ export function EditPurchaseDialog({ car, open, onOpenChange }: EditPurchaseDial
     name: car.name,
     model: car.model || '',
     chassis_number: car.chassis_number,
+    plate_number: (car as any).plate_number || '',
     color: car.color || '',
     purchase_price: car.purchase_price.toString(),
     purchase_date: car.purchase_date,
