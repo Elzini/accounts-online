@@ -1,4 +1,4 @@
-import { ShoppingCart, Users, Package, Wallet, Boxes, FileText, CreditCard, UserPlus, Truck, ArrowLeftRight, FileCheck, TrendingUp, LucideIcon, HardHat, Building2, Ship, Calculator, BookOpen } from 'lucide-react';
+import { ShoppingCart, Users, Package, Wallet, Boxes, FileText, CreditCard, UserPlus, Truck, ArrowLeftRight, FileCheck, TrendingUp, LucideIcon, HardHat, Building2, Ship, Calculator, BookOpen, Scale } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ActivePage } from '@/types';
@@ -59,6 +59,17 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
         { label: t.nav_journal_entries, page: 'journal-entries' },
         { label: t.nav_general_ledger, page: 'general-ledger' },
         { label: t.nav_chart_of_accounts, page: 'chart-of-accounts' },
+      ],
+    },
+    {
+      id: 'reports',
+      title: language === 'ar' ? 'التقارير' : 'Reports',
+      icon: Scale,
+      ...CARD_THEMES.cyan,
+      actions: [
+        { label: language === 'ar' ? 'ميزان المراجعة' : 'Trial Balance', page: 'financial-reports' as ActivePage },
+        { label: t.nav_financial_reports, page: 'financial-reports' as ActivePage },
+        { label: t.nav_account_statement, page: 'account-statement' as ActivePage },
       ],
     },
   ];
