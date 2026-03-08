@@ -371,13 +371,6 @@ export function JournalEntriesPage() {
                           </TableCell>
                           <TableCell>
                             <Input
-                              value={line.account_name || ''}
-                              readOnly
-                              className="bg-muted/30 text-sm"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
                               type="number"
                               min="0"
                               value={line.debit || ''}
