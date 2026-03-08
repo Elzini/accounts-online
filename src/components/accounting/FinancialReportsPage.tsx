@@ -27,6 +27,8 @@ import { AccountMovementReport } from '@/components/reports/AccountMovementRepor
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
+
 export function FinancialReportsPage() {
   const { t, direction } = useLanguage();
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
