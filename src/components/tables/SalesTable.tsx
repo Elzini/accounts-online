@@ -83,9 +83,18 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
     return new Intl.DateTimeFormat(locale).format(new Date(date));
   };
 
-  const calculateTaxDetails = (salePrice: number) => {
+  const calculateTaxDetails = (salePrice: number, carCondition?: string, purchasePrice?: number) => {
     const baseAmount = salePrice;
-    const taxAmount = salePrice * (taxRate / 100);
+    let taxAmount: number;
+    
+    if (carCondition === 'used' || carCondition === 'مستعملة') {
+      // ضريبة هامش الربح للسيارات المستعملة
+      const margin = Math.max(0, salePrice - (purchasePrice || 0));
+      taxAmount = margin * (taxRate / 100);
+    } else {
+      taxAmount = salePrice * (taxRate / 100);
+    }
+    
     const totalWithTax = salePrice + taxAmount;
     return {
       baseAmount: Math.round(baseAmount * 100) / 100,
@@ -163,7 +172,7 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
     }
     return filteredSales.reduce(
       (acc: any, sale: any) => {
-        const details = calculateTaxDetails(Number(sale.sale_price));
+        const details = calculateTaxDetails(Number(sale.sale_price), sale.car?.car_condition, Number(sale.car?.purchase_price || 0));
         return {
           baseAmount: acc.baseAmount + details.baseAmount,
           taxAmount: acc.taxAmount + details.taxAmount,
@@ -231,7 +240,7 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
       {isMobile ? (
         <div className="space-y-3">
           {filteredSales.map((sale) => {
-            const taxDetails = calculateTaxDetails(Number(sale.sale_price));
+            const taxDetails = calculateTaxDetails(Number(sale.sale_price), sale.car?.car_condition, Number(sale.car?.purchase_price || 0));
             const saleItems = (sale as any).sale_items || [];
             const isMultiCar = saleItems.length > 1;
             const carCount = saleItems.length > 0 ? saleItems.length : 1;
@@ -353,7 +362,7 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
                 const isInvoice = sale._isInvoice;
                 const taxDetails = isInvoice 
                   ? { baseAmount: Number(sale.sale_price), taxAmount: Number(sale._taxAmount), totalWithTax: Number(sale._total) }
-                  : calculateTaxDetails(Number(sale.sale_price));
+                  : calculateTaxDetails(Number(sale.sale_price), sale.car?.car_condition, Number(sale.car?.purchase_price || 0));
                 const saleItems = sale.sale_items || [];
                 const isMultiCar = saleItems.length > 1;
                 const carCount = saleItems.length > 0 ? saleItems.length : 1;
