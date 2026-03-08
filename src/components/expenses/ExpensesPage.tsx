@@ -44,7 +44,7 @@ export function ExpensesPage() {
   
   const expenseAccounts = accounts.filter(acc => acc.code.startsWith('5') && acc.code.length === 4);
   const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
-  const availableCars = cars.filter(car => car.status === 'available');
+  const allCarsForExpense = cars; // Allow linking expenses to any car (available, sold, transferred)
 
   const handleAddExpense = async () => {
     if (!expenseForm.amount || !expenseForm.description) { toast.error(t.fill_required); return; }
@@ -139,7 +139,7 @@ export function ExpensesPage() {
                       <SelectTrigger><SelectValue placeholder={t.general_expense} /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">{t.general_expense}</SelectItem>
-                        {availableCars.map(car => (<SelectItem key={car.id} value={car.id}>{car.name} - {car.chassis_number}</SelectItem>))}
+                        {allCarsForExpense.map(car => (<SelectItem key={car.id} value={car.id}>{car.name} - {car.chassis_number} {car.status === 'sold' ? '(مباعة)' : car.status === 'transferred' ? '(محولة)' : ''}</SelectItem>))}
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-1">* {t.car_expense_note}</p>
