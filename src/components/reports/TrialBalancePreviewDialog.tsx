@@ -52,11 +52,7 @@ export function TrialBalancePreviewDialog({
   const currentDate = new Date().toLocaleDateString('ar-SA');
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'decimal',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
+    return Math.round(amount).toLocaleString('en-US');
   };
 
   const handlePrint = () => {
