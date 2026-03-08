@@ -54,7 +54,7 @@ export function AccountStatementReport() {
 
   const groupedAccounts = useMemo(() => {
     const groups: Record<string, typeof filteredAccounts> = {
-      assets: [], liabilities: [], equity: [], revenue: [], expenses: [],
+      asset: [], liability: [], equity: [], revenue: [], expense: [],
     };
     filteredAccounts.forEach(account => {
       if (groups[account.type]) groups[account.type].push(account);
