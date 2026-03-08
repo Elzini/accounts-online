@@ -320,7 +320,7 @@ export function JournalEntriesPage() {
               </div>
 
               {/* Lines Table */}
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border rounded-lg">
                 <div className="bg-muted/50 p-2 flex items-center gap-2 border-b">
                   <Button variant="outline" size="sm" onClick={addLine}>
                     <Plus className="w-4 h-4 ml-1" />
