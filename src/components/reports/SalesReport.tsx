@@ -204,6 +204,7 @@ export function SalesReport() {
             <TableHead className="text-right">{t.rpt_sales_col_customer}</TableHead>
             {isCarDealership && <TableHead className="text-right">{t.rpt_sales_col_item}</TableHead>}
             {isCarDealership && <TableHead className="text-right">{t.rpt_sales_col_chassis}</TableHead>}
+            {isCarDealership && <TableHead className="text-right">رقم اللوحة</TableHead>}
             <TableHead className="text-right">{t.rpt_sales_col_price}</TableHead>
             {!isCarDealership && <TableHead className="text-right">الضريبة</TableHead>}
             {!isCarDealership && <TableHead className="text-right">الإجمالي</TableHead>}
