@@ -50,9 +50,11 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
     return new Intl.DateTimeFormat(locale).format(new Date(date));
   };
 
-  const calculateTaxDetails = (purchasePrice: number) => {
+  const calculateTaxDetails = (purchasePrice: number, carCondition?: string) => {
     const baseAmount = purchasePrice;
-    const taxAmount = purchasePrice * (taxRate / 100);
+    // Used cars have 0% tax on purchases
+    const effectiveTaxRate = carCondition === 'used' ? 0 : taxRate;
+    const taxAmount = purchasePrice * (effectiveTaxRate / 100);
     const totalWithTax = purchasePrice + taxAmount;
     return {
       baseAmount: Math.round(baseAmount * 100) / 100,
@@ -121,7 +123,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const totals = useMemo(() => {
     return filteredCars.reduce(
       (acc, car) => {
-        const details = calculateTaxDetails(Number(car.purchase_price));
+        const details = calculateTaxDetails(Number(car.purchase_price), (car as any).car_condition);
         return {
           baseAmount: acc.baseAmount + details.baseAmount,
           taxAmount: acc.taxAmount + details.taxAmount,
@@ -188,7 +190,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       {isMobile ? (
         <div className="space-y-3">
           {filteredCars.map((car) => {
-            const taxDetails = calculateTaxDetails(Number(car.purchase_price));
+            const taxDetails = calculateTaxDetails(Number(car.purchase_price), (car as any).car_condition);
             const paymentAccount = (car as any).payment_account;
             const paymentInfo = getPaymentMethodInfo(paymentAccount?.code);
             
@@ -300,7 +302,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
             </TableHeader>
             <TableBody>
               {filteredCars.map((car) => {
-                const taxDetails = calculateTaxDetails(Number(car.purchase_price));
+                const taxDetails = calculateTaxDetails(Number(car.purchase_price), (car as any).car_condition);
                 const paymentAccount = (car as any).payment_account;
                 const paymentInfo = getPaymentMethodInfo(paymentAccount?.code);
                 const PaymentIcon = paymentInfo.icon;
