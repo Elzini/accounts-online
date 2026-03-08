@@ -644,9 +644,9 @@ export function FinancialReportsPage() {
                       <TableRow key={item.account.id}>
                         <TableCell className="font-mono">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell>
                         <TableCell>{getTypeLabel(item.account.type)}</TableCell>
-                        <TableCell className="text-left">{(item.debit_total ?? 0).toLocaleString()}</TableCell>
-                        <TableCell className="text-left">{(item.credit_total ?? 0).toLocaleString()}</TableCell>
-                        <TableCell className={cn("text-left font-medium", (item.balance ?? 0) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>{(item.balance ?? 0).toLocaleString()}</TableCell>
+                        <TableCell className="text-left">{fmt(item.debit_total ?? 0)}</TableCell>
+                        <TableCell className="text-left">{fmt(item.credit_total ?? 0)}</TableCell>
+                        <TableCell className={cn("text-left font-medium", (item.balance ?? 0) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>{fmt(item.balance ?? 0)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
