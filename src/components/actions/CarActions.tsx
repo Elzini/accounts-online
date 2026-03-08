@@ -53,6 +53,7 @@ export function EditCarDialog({ car, open, onOpenChange }: EditCarDialogProps) {
     model: car.model || '',
     color: car.color || '',
     chassis_number: car.chassis_number,
+    plate_number: (car as any).plate_number || '',
     purchase_price: car.purchase_price.toString(),
     purchase_date: car.purchase_date,
     supplier_id: car.supplier_id || '',
