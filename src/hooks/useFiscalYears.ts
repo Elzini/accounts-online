@@ -153,6 +153,8 @@ export function useCloseFiscalYear() {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['fiscal-years'] });
         queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+        queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance'] });
+        queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
         toast.success('تم إغلاق السنة المالية بنجاح');
       } else {
         toast.error(result.error || 'فشل إغلاق السنة المالية');
@@ -191,6 +193,8 @@ export function useOpenNewFiscalYear() {
         queryClient.invalidateQueries({ queryKey: ['fiscal-years'] });
         queryClient.invalidateQueries({ queryKey: ['current-fiscal-year'] });
         queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+        queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance'] });
+        queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
         toast.success('تم فتح السنة المالية الجديدة بنجاح');
       } else {
         toast.error(result.error || 'فشل فتح السنة المالية');
@@ -254,6 +258,8 @@ export function useRefreshOpeningBalances() {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['fiscal-years'] });
         queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+        queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance'] });
+        queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
         toast.success('تم تحديث الأرصدة الافتتاحية بنجاح');
       } else {
         toast.error(result.error || 'فشل تحديث الأرصدة الافتتاحية');
@@ -278,6 +284,8 @@ export function useRefreshAllCarryForward() {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['fiscal-years'] });
         queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+        queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance'] });
+        queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
         queryClient.invalidateQueries({ queryKey: ['cars'] });
         queryClient.invalidateQueries({ queryKey: ['stats'] });
         toast.success(`تم تحديث جميع الأرصدة المرحلة بنجاح (${result.inventoryCount} سيارة)`);

@@ -183,6 +183,8 @@ export function useCustody() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custodies'] });
       queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance'] });
+      queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
       toast.success('تم تحديث العهدة بنجاح');
     },
     onError: (error: Error) => {

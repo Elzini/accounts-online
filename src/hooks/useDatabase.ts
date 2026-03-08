@@ -211,6 +211,9 @@ export function useUpdateSale() {
       queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
       queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
       queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['trial-balance', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', companyId] });
     },
   });
 }
@@ -248,6 +251,9 @@ export function useUpdateSaleWithItems() {
       queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
       queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
       queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['trial-balance', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', companyId] });
     },
   });
 }
@@ -266,6 +272,9 @@ export function useDeleteSale() {
       queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
       queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
       queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['trial-balance', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', companyId] });
     },
   });
 }
@@ -285,6 +294,9 @@ export function useReverseSale() {
       queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
       queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
       queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['trial-balance', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', companyId] });
     },
   });
 }
@@ -398,6 +410,9 @@ export function useDeleteMultiCarSale() {
       queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
       queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
       queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['trial-balance', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', companyId] });
     },
   });
 }
@@ -416,6 +431,9 @@ export function useApproveSale() {
       queryClient.invalidateQueries({ queryKey: ['advanced-analytics', companyId] });
       queryClient.invalidateQueries({ queryKey: ['monthly-chart-data', companyId] });
       queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['trial-balance', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', companyId] });
     },
   });
 }
