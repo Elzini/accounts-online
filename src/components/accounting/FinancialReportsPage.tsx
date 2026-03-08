@@ -27,6 +27,8 @@ import { AccountMovementReport } from '@/components/reports/AccountMovementRepor
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
+
 export function FinancialReportsPage() {
   const { t, direction } = useLanguage();
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
@@ -84,11 +86,11 @@ export function FinancialReportsPage() {
     ];
     const data = trialBalance.accounts.map(item => ({
       code: item.account.code, name: item.account.name, type: getTypeLabel(item.account.type),
-      debit: item.debit > 0 ? item.debit.toLocaleString() : '-', credit: item.credit > 0 ? item.credit.toLocaleString() : '-',
+      debit: item.debit > 0 ? fmt(item.debit) : '-', credit: item.credit > 0 ? fmt(item.credit) : '-',
     }));
     const summaryCards = [
-      { label: t.fr_total_debit, value: trialBalance.totalDebit.toLocaleString() + ' ر.س' },
-      { label: t.fr_total_credit, value: trialBalance.totalCredit.toLocaleString() + ' ر.س' },
+      { label: t.fr_total_debit, value: fmt(trialBalance.totalDebit) + ' ر.س' },
+      { label: t.fr_total_credit, value: fmt(trialBalance.totalCredit) + ' ر.س' },
       { label: t.je_col_status, value: trialBalance.totalDebit === trialBalance.totalCredit ? t.fr_balanced : t.fr_unbalanced },
     ];
     if (type === 'print') printReport({ title: t.fr_trial_balance, columns, data, summaryCards });
@@ -105,14 +107,14 @@ export function FinancialReportsPage() {
     ];
     const data = comprehensiveTrial.accounts.map(item => ({
       code: item.account.code, name: item.account.name,
-      periodDebit: item.periodDebit > 0 ? item.periodDebit.toLocaleString() : '-',
-      periodCredit: item.periodCredit > 0 ? item.periodCredit.toLocaleString() : '-',
-      closingDebit: item.closingDebit > 0 ? item.closingDebit.toLocaleString() : '-',
-      closingCredit: item.closingCredit > 0 ? item.closingCredit.toLocaleString() : '-',
+      periodDebit: item.periodDebit > 0 ? fmt(item.periodDebit) : '-',
+      periodCredit: item.periodCredit > 0 ? fmt(item.periodCredit) : '-',
+      closingDebit: item.closingDebit > 0 ? fmt(item.closingDebit) : '-',
+      closingCredit: item.closingCredit > 0 ? fmt(item.closingCredit) : '-',
     }));
     const summaryCards = [
-      { label: t.acc_debit, value: comprehensiveTrial.totals.periodDebit.toLocaleString() + ' ر.س' },
-      { label: t.acc_credit, value: comprehensiveTrial.totals.periodCredit.toLocaleString() + ' ر.س' },
+      { label: t.acc_debit, value: fmt(comprehensiveTrial.totals.periodDebit) + ' ر.س' },
+      { label: t.acc_credit, value: fmt(comprehensiveTrial.totals.periodCredit) + ' ر.س' },
     ];
     if (type === 'print') printReport({ title: t.fr_comprehensive_trial, columns, data, summaryCards });
     else if (type === 'excel') exportToExcel({ title: t.fr_comprehensive_trial, columns, data, fileName: 'comprehensive-trial-balance', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
@@ -126,13 +128,13 @@ export function FinancialReportsPage() {
       { header: t.je_col_type, key: 'type' }, { header: t.acc_balance, key: 'amount' },
     ];
     const data = [
-      ...incomeStatement.revenue.map(item => ({ code: item.account.code, name: item.account.name, type: t.coa_type_revenue, amount: item.amount.toLocaleString() })),
-      ...incomeStatement.expenses.map(item => ({ code: item.account.code, name: item.account.name, type: t.coa_type_expenses, amount: item.amount.toLocaleString() })),
+      ...incomeStatement.revenue.map(item => ({ code: item.account.code, name: item.account.name, type: t.coa_type_revenue, amount: fmt(item.amount) })),
+      ...incomeStatement.expenses.map(item => ({ code: item.account.code, name: item.account.name, type: t.coa_type_expenses, amount: fmt(item.amount) })),
     ];
     const summaryCards = [
-      { label: t.fr_total_revenue, value: incomeStatement.totalRevenue.toLocaleString() + ' ر.س' },
-      { label: t.fr_total_expenses, value: incomeStatement.totalExpenses.toLocaleString() + ' ر.س' },
-      { label: t.fr_net_income, value: incomeStatement.netIncome.toLocaleString() + ' ر.س' },
+      { label: t.fr_total_revenue, value: fmt(incomeStatement.totalRevenue) + ' ر.س' },
+      { label: t.fr_total_expenses, value: fmt(incomeStatement.totalExpenses) + ' ر.س' },
+      { label: t.fr_net_income, value: fmt(incomeStatement.netIncome) + ' ر.س' },
     ];
     const dateSubtitle = dateRange.from && dateRange.to ? `${t.gl_from} ${format(dateRange.from, 'yyyy/MM/dd')} ${t.gl_to} ${format(dateRange.to, 'yyyy/MM/dd')}` : undefined;
     if (type === 'print') printReport({ title: t.fr_income_statement, subtitle: dateSubtitle, columns, data, summaryCards });
@@ -147,19 +149,19 @@ export function FinancialReportsPage() {
       { header: t.je_col_type, key: 'category' }, { header: t.acc_balance, key: 'balance' },
     ];
     const data = [
-      ...balanceSheet.currentAssets.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_current_assets, balance: item.balance.toLocaleString() })),
-      ...balanceSheet.fixedAssets.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_fixed_assets, balance: item.balance.toLocaleString() })),
-      ...balanceSheet.currentLiabilities.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_current_liabilities, balance: item.balance.toLocaleString() })),
-      ...balanceSheet.longTermLiabilities.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_long_term_liabilities, balance: item.balance.toLocaleString() })),
-      ...balanceSheet.equity.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_equity, balance: item.balance.toLocaleString() })),
-      ...(balanceSheet.retainedEarnings !== 0 ? [{ code: '-', name: t.fr_retained_earnings, category: t.fr_equity, balance: balanceSheet.retainedEarnings.toLocaleString() }] : []),
+      ...balanceSheet.currentAssets.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_current_assets, balance: fmt(item.balance) })),
+      ...balanceSheet.fixedAssets.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_fixed_assets, balance: fmt(item.balance) })),
+      ...balanceSheet.currentLiabilities.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_current_liabilities, balance: fmt(item.balance) })),
+      ...balanceSheet.longTermLiabilities.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_long_term_liabilities, balance: fmt(item.balance) })),
+      ...balanceSheet.equity.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_equity, balance: fmt(item.balance) })),
+      ...(balanceSheet.retainedEarnings !== 0 ? [{ code: '-', name: t.fr_retained_earnings, category: t.fr_equity, balance: fmt(balanceSheet.retainedEarnings) }] : []),
     ];
     const summaryCards = [
-      { label: t.fr_current_assets, value: balanceSheet.totalCurrentAssets.toLocaleString() + ' ر.س' },
-      { label: t.fr_fixed_assets, value: balanceSheet.totalFixedAssets.toLocaleString() + ' ر.س' },
-      { label: t.fr_total_assets, value: balanceSheet.totalAssets.toLocaleString() + ' ر.س' },
-      { label: t.fr_total_liabilities, value: balanceSheet.totalLiabilities.toLocaleString() + ' ر.س' },
-      { label: t.fr_total_equity, value: balanceSheet.totalEquity.toLocaleString() + ' ر.س' },
+      { label: t.fr_current_assets, value: fmt(balanceSheet.totalCurrentAssets) + ' ر.س' },
+      { label: t.fr_fixed_assets, value: fmt(balanceSheet.totalFixedAssets) + ' ر.س' },
+      { label: t.fr_total_assets, value: fmt(balanceSheet.totalAssets) + ' ر.س' },
+      { label: t.fr_total_liabilities, value: fmt(balanceSheet.totalLiabilities) + ' ر.س' },
+      { label: t.fr_total_equity, value: fmt(balanceSheet.totalEquity) + ' ر.س' },
     ];
     if (type === 'print') printReport({ title: t.fr_balance_sheet, columns, data, summaryCards });
     else if (type === 'excel') exportToExcel({ title: t.fr_balance_sheet, columns, data, fileName: 'balance-sheet', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
@@ -175,14 +177,14 @@ export function FinancialReportsPage() {
     ];
     const data = journalEntries.map((entry: any) => ({
       entry_number: entry.entry_number, date: entry.entry_date, type: getReferenceTypeLabel(entry.reference_type),
-      description: entry.description, debit: entry.total_debit.toLocaleString(), credit: entry.total_credit.toLocaleString(),
+      description: entry.description, debit: fmt(entry.total_debit), credit: fmt(entry.total_credit),
     }));
     const totalDebit = journalEntries.reduce((sum: number, e: any) => sum + e.total_debit, 0);
     const totalCredit = journalEntries.reduce((sum: number, e: any) => sum + e.total_credit, 0);
     const summaryCards = [
       { label: t.fr_entries_count, value: journalEntries.length.toString() },
-      { label: t.fr_total_debit, value: totalDebit.toLocaleString() + ' ر.س' },
-      { label: t.fr_total_credit, value: totalCredit.toLocaleString() + ' ر.س' },
+      { label: t.fr_total_debit, value: fmt(totalDebit) + ' ر.س' },
+      { label: t.fr_total_credit, value: fmt(totalCredit) + ' ر.س' },
     ];
     const dateSubtitle = dateRange.from && dateRange.to ? `${t.gl_from} ${format(dateRange.from, 'yyyy/MM/dd')} ${t.gl_to} ${format(dateRange.to, 'yyyy/MM/dd')}` : undefined;
     if (type === 'print') printReport({ title: t.fr_journal_entries_report, subtitle: dateSubtitle, columns, data, summaryCards });
@@ -199,8 +201,8 @@ export function FinancialReportsPage() {
     ];
     const data = accountBalances.map(item => ({
       code: item.account.code, name: item.account.name, type: getTypeLabel(item.account.type),
-      debit_total: (item.debit_total ?? 0).toLocaleString(), credit_total: (item.credit_total ?? 0).toLocaleString(),
-      balance: (item.balance ?? 0).toLocaleString(),
+      debit_total: fmt(item.debit_total ?? 0), credit_total: fmt(item.credit_total ?? 0),
+      balance: fmt(item.balance ?? 0),
     }));
     if (type === 'print') printReport({ title: t.fr_account_balances, columns, data });
     else if (type === 'excel') exportToExcel({ title: t.fr_account_balances, columns, data, fileName: 'account-balances' });
@@ -217,12 +219,12 @@ export function FinancialReportsPage() {
     const data = vatSettlement.transactions.map(tr => ({
       entryNumber: tr.entryNumber, date: tr.date,
       type: tr.type === 'sales' ? t.vat_output_tax : t.vat_input_tax,
-      description: tr.description, taxAmount: tr.taxAmount.toLocaleString(),
+      description: tr.description, taxAmount: fmt(tr.taxAmount),
     }));
     const summaryCards = [
-      { label: t.vat_output_tax, value: vatSettlement.vatPayable.balance.toLocaleString() + ' ر.س' },
-      { label: t.vat_input_tax, value: vatSettlement.vatRecoverable.balance.toLocaleString() + ' ر.س' },
-      { label: t.vat_net_vat, value: Math.abs(vatSettlement.netVAT).toLocaleString() + ' ر.س' },
+      { label: t.vat_output_tax, value: fmt(vatSettlement.vatPayable.balance) + ' ر.س' },
+      { label: t.vat_input_tax, value: fmt(vatSettlement.vatRecoverable.balance) + ' ر.س' },
+      { label: t.vat_net_vat, value: fmt(Math.abs(vatSettlement.netVAT)) + ' ر.س' },
     ];
     const dateSubtitle = dateRange.from && dateRange.to ? `${t.gl_from} ${format(dateRange.from, 'yyyy/MM/dd')} ${t.gl_to} ${format(dateRange.to, 'yyyy/MM/dd')}` : undefined;
     if (type === 'print') printReport({ title: t.fr_vat_settlement, subtitle: dateSubtitle, columns, data, summaryCards });
@@ -299,9 +301,9 @@ export function FinancialReportsPage() {
               {vatSettlement ? (
                 <>
                   <div className="grid gap-4 md:grid-cols-4">
-                    <Card className="border-primary/20"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><ArrowUpCircle className="w-5 h-5 text-destructive" /><span className="text-sm text-muted-foreground">{t.vat_output_tax}</span></div><p className="text-2xl font-bold">{vatSettlement.vatPayable.balance.toLocaleString()} <span className="text-sm font-normal">ر.س</span></p>{vatSettlement.vatPayable.account && <p className="text-xs text-muted-foreground mt-1">{vatSettlement.vatPayable.account.code} - {vatSettlement.vatPayable.account.name}</p>}</CardContent></Card>
-                    <Card className="border-primary/20"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><ArrowDownCircle className="w-5 h-5 text-primary" /><span className="text-sm text-muted-foreground">{t.vat_input_tax}</span></div><p className="text-2xl font-bold">{vatSettlement.vatRecoverable.balance.toLocaleString()} <span className="text-sm font-normal">ر.س</span></p>{vatSettlement.vatRecoverable.account && <p className="text-xs text-muted-foreground mt-1">{vatSettlement.vatRecoverable.account.code} - {vatSettlement.vatRecoverable.account.name}</p>}</CardContent></Card>
-                    <Card className={cn("border-2", vatSettlement.status === 'payable' ? "border-destructive/50 bg-destructive/5" : vatSettlement.status === 'receivable' ? "border-primary/50 bg-primary/5" : "border-muted")}><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><MinusCircle className="w-5 h-5" /><span className="text-sm text-muted-foreground">{t.vat_net_vat}</span></div><p className={cn("text-2xl font-bold", vatSettlement.status === 'payable' ? "text-destructive" : vatSettlement.status === 'receivable' ? "text-primary" : "")}>{Math.abs(vatSettlement.netVAT).toLocaleString()} <span className="text-sm font-normal">ر.س</span></p></CardContent></Card>
+                    <Card className="border-primary/20"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><ArrowUpCircle className="w-5 h-5 text-destructive" /><span className="text-sm text-muted-foreground">{t.vat_output_tax}</span></div><p className="text-2xl font-bold">{fmt(vatSettlement.vatPayable.balance)} <span className="text-sm font-normal">ر.س</span></p>{vatSettlement.vatPayable.account && <p className="text-xs text-muted-foreground mt-1">{vatSettlement.vatPayable.account.code} - {vatSettlement.vatPayable.account.name}</p>}</CardContent></Card>
+                    <Card className="border-primary/20"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><ArrowDownCircle className="w-5 h-5 text-primary" /><span className="text-sm text-muted-foreground">{t.vat_input_tax}</span></div><p className="text-2xl font-bold">{fmt(vatSettlement.vatRecoverable.balance)} <span className="text-sm font-normal">ر.س</span></p>{vatSettlement.vatRecoverable.account && <p className="text-xs text-muted-foreground mt-1">{vatSettlement.vatRecoverable.account.code} - {vatSettlement.vatRecoverable.account.name}</p>}</CardContent></Card>
+                    <Card className={cn("border-2", vatSettlement.status === 'payable' ? "border-destructive/50 bg-destructive/5" : vatSettlement.status === 'receivable' ? "border-primary/50 bg-primary/5" : "border-muted")}><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><MinusCircle className="w-5 h-5" /><span className="text-sm text-muted-foreground">{t.vat_net_vat}</span></div><p className={cn("text-2xl font-bold", vatSettlement.status === 'payable' ? "text-destructive" : vatSettlement.status === 'receivable' ? "text-primary" : "")}>{fmt(Math.abs(vatSettlement.netVAT))} <span className="text-sm font-normal">ر.س</span></p></CardContent></Card>
                     <Card className="border-primary/20"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><Receipt className="w-5 h-5" /><span className="text-sm text-muted-foreground">{t.je_col_status}</span></div><Badge variant={vatSettlement.status === 'payable' ? 'destructive' : vatSettlement.status === 'receivable' ? 'default' : 'secondary'} className="text-base px-3 py-1">{vatSettlement.status === 'payable' ? t.vat_payable : vatSettlement.status === 'receivable' ? t.vat_refundable : t.fr_balanced}</Badge></CardContent></Card>
                   </div>
                   <div>
@@ -317,7 +319,7 @@ export function FinancialReportsPage() {
                             <TableRow key={idx}>
                               <TableCell className="font-mono">{tr.entryNumber}</TableCell><TableCell>{tr.date}</TableCell>
                               <TableCell><Badge variant={tr.type === 'sales' ? 'destructive' : 'default'}>{tr.type === 'sales' ? t.vat_output_tax : t.vat_input_tax}</Badge></TableCell>
-                              <TableCell>{tr.description}</TableCell><TableCell className="text-left font-medium">{tr.taxAmount.toLocaleString()}</TableCell>
+                              <TableCell>{tr.description}</TableCell><TableCell className="text-left font-medium">{fmt(tr.taxAmount)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -382,7 +384,7 @@ export function FinancialReportsPage() {
                               !entry.reference_type && "bg-muted text-muted-foreground"
                             )}>{getReferenceTypeLabel(entry.reference_type)}</span>
                           </div>
-                          <span className="font-medium">{entry.total_debit.toLocaleString()} ر.س</span>
+                          <span className="font-medium">{fmt(entry.total_debit)} ر.س</span>
                         </div>
                         <p className="text-sm text-muted-foreground">{entry.description}</p>
                       </CardHeader>
@@ -395,8 +397,8 @@ export function FinancialReportsPage() {
                             {entry.lines?.map((line: any) => (
                               <TableRow key={line.id}>
                                 <TableCell><span className="font-mono text-xs text-muted-foreground ml-2">{line.account?.code}</span>{line.account?.name}</TableCell>
-                                <TableCell className="text-center text-green-600 dark:text-green-400">{line.debit > 0 ? line.debit.toLocaleString() : '-'}</TableCell>
-                                <TableCell className="text-center text-red-600 dark:text-red-400">{line.credit > 0 ? line.credit.toLocaleString() : '-'}</TableCell>
+                                <TableCell className="text-center text-green-600 dark:text-green-400">{line.debit > 0 ? fmt(line.debit) : '-'}</TableCell>
+                                <TableCell className="text-center text-red-600 dark:text-red-400">{line.credit > 0 ? fmt(line.credit) : '-'}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -434,14 +436,14 @@ export function FinancialReportsPage() {
                         <TableRow key={item.account.id}>
                           <TableCell className="font-mono">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell>
                           <TableCell>{getTypeLabel(item.account.type)}</TableCell>
-                          <TableCell className="text-left">{item.debit > 0 ? item.debit.toLocaleString() : '-'}</TableCell>
-                          <TableCell className="text-left">{item.credit > 0 ? item.credit.toLocaleString() : '-'}</TableCell>
+                          <TableCell className="text-left">{item.debit > 0 ? fmt(item.debit) : '-'}</TableCell>
+                          <TableCell className="text-left">{item.credit > 0 ? fmt(item.credit) : '-'}</TableCell>
                         </TableRow>
                       ))}
                       <TableRow className="bg-muted/50 font-bold">
                         <TableCell colSpan={3}>{t.total}</TableCell>
-                        <TableCell className="text-left">{trialBalance.totalDebit.toLocaleString()}</TableCell>
-                        <TableCell className="text-left">{trialBalance.totalCredit.toLocaleString()}</TableCell>
+                        <TableCell className="text-left">{fmt(trialBalance.totalDebit)}</TableCell>
+                        <TableCell className="text-left">{fmt(trialBalance.totalCredit)}</TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
@@ -485,18 +487,18 @@ export function FinancialReportsPage() {
                     {comprehensiveTrial.accounts.map((item) => (
                       <TableRow key={item.account.id}>
                         <TableCell className="font-mono">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell>
-                        <TableCell className="text-center border-x">{item.periodDebit > 0 ? item.periodDebit.toLocaleString() : '-'}</TableCell>
-                        <TableCell className="text-center border-x">{item.periodCredit > 0 ? item.periodCredit.toLocaleString() : '-'}</TableCell>
-                        <TableCell className="text-center">{item.closingDebit > 0 ? item.closingDebit.toLocaleString() : '-'}</TableCell>
-                        <TableCell className="text-center">{item.closingCredit > 0 ? item.closingCredit.toLocaleString() : '-'}</TableCell>
+                        <TableCell className="text-center border-x">{item.periodDebit > 0 ? fmt(item.periodDebit) : '-'}</TableCell>
+                        <TableCell className="text-center border-x">{item.periodCredit > 0 ? fmt(item.periodCredit) : '-'}</TableCell>
+                        <TableCell className="text-center">{item.closingDebit > 0 ? fmt(item.closingDebit) : '-'}</TableCell>
+                        <TableCell className="text-center">{item.closingCredit > 0 ? fmt(item.closingCredit) : '-'}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow className="bg-muted/50 font-bold">
                       <TableCell colSpan={2}>{t.total}</TableCell>
-                      <TableCell className="text-center border-x">{comprehensiveTrial.totals.periodDebit.toLocaleString()}</TableCell>
-                      <TableCell className="text-center border-x">{comprehensiveTrial.totals.periodCredit.toLocaleString()}</TableCell>
-                      <TableCell className="text-center">{comprehensiveTrial.totals.closingDebit.toLocaleString()}</TableCell>
-                      <TableCell className="text-center">{comprehensiveTrial.totals.closingCredit.toLocaleString()}</TableCell>
+                      <TableCell className="text-center border-x">{fmt(comprehensiveTrial.totals.periodDebit)}</TableCell>
+                      <TableCell className="text-center border-x">{fmt(comprehensiveTrial.totals.periodCredit)}</TableCell>
+                      <TableCell className="text-center">{fmt(comprehensiveTrial.totals.closingDebit)}</TableCell>
+                      <TableCell className="text-center">{fmt(comprehensiveTrial.totals.closingCredit)}</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -527,18 +529,18 @@ export function FinancialReportsPage() {
                 <div className="space-y-6">
                   <div><h3 className="font-bold text-lg mb-2 text-green-600 dark:text-green-400">{t.coa_type_revenue}</h3>
                     <Table><TableBody>
-                      {incomeStatement.revenue.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left text-green-600 dark:text-green-400">{item.amount.toLocaleString()}</TableCell></TableRow>))}
-                      <TableRow className="bg-green-50 dark:bg-green-900/20 font-bold"><TableCell colSpan={2}>{t.fr_total_revenue}</TableCell><TableCell className="text-left text-green-600 dark:text-green-400">{incomeStatement.totalRevenue.toLocaleString()}</TableCell></TableRow>
+                      {incomeStatement.revenue.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left text-green-600 dark:text-green-400">{fmt(item.amount)}</TableCell></TableRow>))}
+                      <TableRow className="bg-green-50 dark:bg-green-900/20 font-bold"><TableCell colSpan={2}>{t.fr_total_revenue}</TableCell><TableCell className="text-left text-green-600 dark:text-green-400">{fmt(incomeStatement.totalRevenue)}</TableCell></TableRow>
                     </TableBody></Table>
                   </div>
                   <div><h3 className="font-bold text-lg mb-2 text-red-600 dark:text-red-400">{t.coa_type_expenses}</h3>
                     <Table><TableBody>
-                      {incomeStatement.expenses.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left text-red-600 dark:text-red-400">{item.amount.toLocaleString()}</TableCell></TableRow>))}
-                      <TableRow className="bg-red-50 dark:bg-red-900/20 font-bold"><TableCell colSpan={2}>{t.fr_total_expenses}</TableCell><TableCell className="text-left text-red-600 dark:text-red-400">{incomeStatement.totalExpenses.toLocaleString()}</TableCell></TableRow>
+                      {incomeStatement.expenses.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left text-red-600 dark:text-red-400">{fmt(item.amount)}</TableCell></TableRow>))}
+                      <TableRow className="bg-red-50 dark:bg-red-900/20 font-bold"><TableCell colSpan={2}>{t.fr_total_expenses}</TableCell><TableCell className="text-left text-red-600 dark:text-red-400">{fmt(incomeStatement.totalExpenses)}</TableCell></TableRow>
                     </TableBody></Table>
                   </div>
                   <div className={cn("p-4 rounded-lg text-center", incomeStatement.netIncome >= 0 ? "bg-green-100 dark:bg-green-900/30" : "bg-red-100 dark:bg-red-900/30")}>
-                    <p className="text-lg font-bold">{t.fr_net_income}: <span className={incomeStatement.netIncome >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}>{incomeStatement.netIncome.toLocaleString()} ر.س</span></p>
+                    <p className="text-lg font-bold">{t.fr_net_income}: <span className={incomeStatement.netIncome >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}>{fmt(incomeStatement.netIncome)} ر.س</span></p>
                   </div>
                 </div>
               )}
@@ -563,41 +565,41 @@ export function FinancialReportsPage() {
                   <div className="border rounded-lg p-4 space-y-4">
                     <div><h3 className="font-bold text-lg mb-4 text-primary border-b pb-2">{t.fr_current_assets}</h3>
                       <Table><TableBody>
-                        {balanceSheet.currentAssets.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{item.balance.toLocaleString()}</TableCell></TableRow>))}
-                        <TableRow className="bg-primary/10 font-bold"><TableCell colSpan={2}>{t.fr_current_assets}</TableCell><TableCell className="text-left text-primary">{balanceSheet.totalCurrentAssets.toLocaleString()}</TableCell></TableRow>
+                        {balanceSheet.currentAssets.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{fmt(item.balance)}</TableCell></TableRow>))}
+                        <TableRow className="bg-primary/10 font-bold"><TableCell colSpan={2}>{t.fr_current_assets}</TableCell><TableCell className="text-left text-primary">{fmt(balanceSheet.totalCurrentAssets)}</TableCell></TableRow>
                       </TableBody></Table>
                     </div>
                     {balanceSheet.fixedAssets.length > 0 && (
                       <div><h3 className="font-bold text-lg mb-4 text-muted-foreground border-b pb-2">{t.fr_fixed_assets}</h3>
                         <Table><TableBody>
-                          {balanceSheet.fixedAssets.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{item.balance.toLocaleString()}</TableCell></TableRow>))}
-                          <TableRow className="bg-muted/50 font-bold"><TableCell colSpan={2}>{t.fr_fixed_assets}</TableCell><TableCell className="text-left">{balanceSheet.totalFixedAssets.toLocaleString()}</TableCell></TableRow>
+                          {balanceSheet.fixedAssets.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{fmt(item.balance)}</TableCell></TableRow>))}
+                          <TableRow className="bg-muted/50 font-bold"><TableCell colSpan={2}>{t.fr_fixed_assets}</TableCell><TableCell className="text-left">{fmt(balanceSheet.totalFixedAssets)}</TableCell></TableRow>
                         </TableBody></Table>
                       </div>
                     )}
-                    <div className="bg-primary/20 p-3 rounded-lg"><div className="flex justify-between items-center font-bold text-lg"><span>{t.fr_total_assets}</span><span className="text-primary">{balanceSheet.totalAssets.toLocaleString()}</span></div></div>
+                    <div className="bg-primary/20 p-3 rounded-lg"><div className="flex justify-between items-center font-bold text-lg"><span>{t.fr_total_assets}</span><span className="text-primary">{fmt(balanceSheet.totalAssets)}</span></div></div>
                   </div>
                   <div className="space-y-4">
                     <div className="border rounded-lg p-4"><h3 className="font-bold text-lg mb-4 text-destructive border-b pb-2">{t.fr_current_liabilities}</h3>
                       <Table><TableBody>
-                        {balanceSheet.currentLiabilities.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{item.balance.toLocaleString()}</TableCell></TableRow>))}
+                        {balanceSheet.currentLiabilities.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{fmt(item.balance)}</TableCell></TableRow>))}
                         {balanceSheet.currentLiabilities.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground">{t.fr_no_data}</TableCell></TableRow>}
-                        <TableRow className="bg-destructive/10 font-bold"><TableCell colSpan={2}>{t.fr_current_liabilities}</TableCell><TableCell className="text-left text-destructive">{balanceSheet.totalCurrentLiabilities.toLocaleString()}</TableCell></TableRow>
+                        <TableRow className="bg-destructive/10 font-bold"><TableCell colSpan={2}>{t.fr_current_liabilities}</TableCell><TableCell className="text-left text-destructive">{fmt(balanceSheet.totalCurrentLiabilities)}</TableCell></TableRow>
                       </TableBody></Table>
                     </div>
                     {balanceSheet.longTermLiabilities.length > 0 && (
                       <div className="border rounded-lg p-4"><h3 className="font-bold text-lg mb-4 text-muted-foreground border-b pb-2">{t.fr_long_term_liabilities}</h3>
                         <Table><TableBody>
-                          {balanceSheet.longTermLiabilities.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{item.balance.toLocaleString()}</TableCell></TableRow>))}
-                          <TableRow className="bg-muted/50 font-bold"><TableCell colSpan={2}>{t.fr_long_term_liabilities}</TableCell><TableCell className="text-left">{balanceSheet.totalLongTermLiabilities.toLocaleString()}</TableCell></TableRow>
+                          {balanceSheet.longTermLiabilities.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{fmt(item.balance)}</TableCell></TableRow>))}
+                          <TableRow className="bg-muted/50 font-bold"><TableCell colSpan={2}>{t.fr_long_term_liabilities}</TableCell><TableCell className="text-left">{fmt(balanceSheet.totalLongTermLiabilities)}</TableCell></TableRow>
                         </TableBody></Table>
                       </div>
                     )}
                     <div className="border rounded-lg p-4"><h3 className="font-bold text-lg mb-4 text-purple-600 dark:text-purple-400 border-b pb-2">{t.fr_equity}</h3>
                       <Table><TableBody>
-                        {balanceSheet.equity.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{item.balance.toLocaleString()}</TableCell></TableRow>))}
-                        {balanceSheet.retainedEarnings !== 0 && (<TableRow><TableCell></TableCell><TableCell className="font-medium">{t.fr_retained_earnings}</TableCell><TableCell className={cn("text-left font-medium", balanceSheet.retainedEarnings >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>{balanceSheet.retainedEarnings.toLocaleString()}</TableCell></TableRow>)}
-                        <TableRow className="bg-purple-50 dark:bg-purple-900/20 font-bold"><TableCell colSpan={2}>{t.fr_total_equity}</TableCell><TableCell className="text-left text-purple-600 dark:text-purple-400">{balanceSheet.totalEquity.toLocaleString()}</TableCell></TableRow>
+                        {balanceSheet.equity.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{fmt(item.balance)}</TableCell></TableRow>))}
+                        {balanceSheet.retainedEarnings !== 0 && (<TableRow><TableCell></TableCell><TableCell className="font-medium">{t.fr_retained_earnings}</TableCell><TableCell className={cn("text-left font-medium", balanceSheet.retainedEarnings >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>{fmt(balanceSheet.retainedEarnings)}</TableCell></TableRow>)}
+                        <TableRow className="bg-purple-50 dark:bg-purple-900/20 font-bold"><TableCell colSpan={2}>{t.fr_total_equity}</TableCell><TableCell className="text-left text-purple-600 dark:text-purple-400">{fmt(balanceSheet.totalEquity)}</TableCell></TableRow>
                       </TableBody></Table>
                     </div>
                   </div>
@@ -642,9 +644,9 @@ export function FinancialReportsPage() {
                       <TableRow key={item.account.id}>
                         <TableCell className="font-mono">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell>
                         <TableCell>{getTypeLabel(item.account.type)}</TableCell>
-                        <TableCell className="text-left">{(item.debit_total ?? 0).toLocaleString()}</TableCell>
-                        <TableCell className="text-left">{(item.credit_total ?? 0).toLocaleString()}</TableCell>
-                        <TableCell className={cn("text-left font-medium", (item.balance ?? 0) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>{(item.balance ?? 0).toLocaleString()}</TableCell>
+                        <TableCell className="text-left">{fmt(item.debit_total ?? 0)}</TableCell>
+                        <TableCell className="text-left">{fmt(item.credit_total ?? 0)}</TableCell>
+                        <TableCell className={cn("text-left font-medium", (item.balance ?? 0) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>{fmt(item.balance ?? 0)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
