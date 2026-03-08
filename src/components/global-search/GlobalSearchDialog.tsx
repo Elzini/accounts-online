@@ -70,6 +70,7 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   { id: 'financial-reports', label: 'التقارير المالية', labelEn: 'Financial Reports', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'PieChart', keywords: ['تقرير مالي', 'financial'] },
   { id: 'zakat-reports', label: 'القوائم الزكوية', labelEn: 'Zakat Reports', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'Scale', keywords: ['زكاة', 'زكوي', 'zakat'] },
   { id: 'trial-balance-analysis', label: 'ميزان المراجعة', labelEn: 'Trial Balance', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'FileSpreadsheet', keywords: ['ميزان', 'مراجعة', 'trial balance'] },
+  { id: 'comprehensive-trial-balance', label: 'ميزان المراجعة الشامل', labelEn: 'Comprehensive Trial Balance', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'Scale', keywords: ['ميزان شامل', 'مراجعة شامل', 'comprehensive trial'] },
   { id: 'financial-statements', label: 'القوائم المالية', labelEn: 'Financial Statements', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'FileText', keywords: ['ميزانية', 'قائمة مالية', 'balance sheet'] },
   { id: 'fixed-assets', label: 'الأصول الثابتة', labelEn: 'Fixed Assets', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'Boxes', keywords: ['أصل', 'أصول', 'إهلاك', 'asset', 'depreciation'] },
   { id: 'aging-report', label: 'أعمار الديون', labelEn: 'Aging Report', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'Clock', keywords: ['تقادم', 'ذمم', 'aging', 'ديون'] },

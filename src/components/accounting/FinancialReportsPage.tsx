@@ -29,7 +29,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
 
-export function FinancialReportsPage() {
+export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defaultTab?: string } = {}) {
   const { t, direction } = useLanguage();
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: new Date(new Date().getFullYear(), 0, 1),
@@ -256,7 +256,7 @@ export function FinancialReportsPage() {
         <p className="text-muted-foreground">{t.fr_subtitle}</p>
       </div>
 
-      <Tabs defaultValue="journal-entries" className="space-y-4">
+      <Tabs defaultValue={defaultTab} className="space-y-4">
         <ScrollArea className="w-full">
           <TabsList className="inline-flex w-max gap-1 p-1">
             <TabsTrigger value="journal-entries" className="gap-1 text-xs sm:text-sm whitespace-nowrap"><ClipboardList className="w-4 h-4" />{t.fr_tab_journal_entries}</TabsTrigger>
