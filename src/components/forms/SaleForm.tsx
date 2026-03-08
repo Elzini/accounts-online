@@ -220,7 +220,7 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
       buyerTaxNumber: selectedCustomer?.registration_number || '', // الرقم الضريبي للعميل
       items: [
         {
-          description: `${selectedCar.name} ${selectedCar.model || ''} - ${selectedCar.chassis_number}`,
+          description: `${selectedCar.name} ${selectedCar.model || ''} - ${selectedCar.chassis_number}${(selectedCar as any).plate_number ? ` - لوحة: ${(selectedCar as any).plate_number}` : ''}`,
           quantity: 1,
           unitPrice: baseAmount,
           taxRate: taxRate,
