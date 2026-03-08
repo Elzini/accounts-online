@@ -384,7 +384,7 @@ export function FinancialReportsPage() {
                               !entry.reference_type && "bg-muted text-muted-foreground"
                             )}>{getReferenceTypeLabel(entry.reference_type)}</span>
                           </div>
-                          <span className="font-medium">{entry.total_debit.toLocaleString()} ر.س</span>
+                          <span className="font-medium">{fmt(entry.total_debit)} ر.س</span>
                         </div>
                         <p className="text-sm text-muted-foreground">{entry.description}</p>
                       </CardHeader>
@@ -397,8 +397,8 @@ export function FinancialReportsPage() {
                             {entry.lines?.map((line: any) => (
                               <TableRow key={line.id}>
                                 <TableCell><span className="font-mono text-xs text-muted-foreground ml-2">{line.account?.code}</span>{line.account?.name}</TableCell>
-                                <TableCell className="text-center text-green-600 dark:text-green-400">{line.debit > 0 ? line.debit.toLocaleString() : '-'}</TableCell>
-                                <TableCell className="text-center text-red-600 dark:text-red-400">{line.credit > 0 ? line.credit.toLocaleString() : '-'}</TableCell>
+                                <TableCell className="text-center text-green-600 dark:text-green-400">{line.debit > 0 ? fmt(line.debit) : '-'}</TableCell>
+                                <TableCell className="text-center text-red-600 dark:text-red-400">{line.credit > 0 ? fmt(line.credit) : '-'}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -436,14 +436,14 @@ export function FinancialReportsPage() {
                         <TableRow key={item.account.id}>
                           <TableCell className="font-mono">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell>
                           <TableCell>{getTypeLabel(item.account.type)}</TableCell>
-                          <TableCell className="text-left">{item.debit > 0 ? item.debit.toLocaleString() : '-'}</TableCell>
-                          <TableCell className="text-left">{item.credit > 0 ? item.credit.toLocaleString() : '-'}</TableCell>
+                          <TableCell className="text-left">{item.debit > 0 ? fmt(item.debit) : '-'}</TableCell>
+                          <TableCell className="text-left">{item.credit > 0 ? fmt(item.credit) : '-'}</TableCell>
                         </TableRow>
                       ))}
                       <TableRow className="bg-muted/50 font-bold">
                         <TableCell colSpan={3}>{t.total}</TableCell>
-                        <TableCell className="text-left">{trialBalance.totalDebit.toLocaleString()}</TableCell>
-                        <TableCell className="text-left">{trialBalance.totalCredit.toLocaleString()}</TableCell>
+                        <TableCell className="text-left">{fmt(trialBalance.totalDebit)}</TableCell>
+                        <TableCell className="text-left">{fmt(trialBalance.totalCredit)}</TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
@@ -487,18 +487,18 @@ export function FinancialReportsPage() {
                     {comprehensiveTrial.accounts.map((item) => (
                       <TableRow key={item.account.id}>
                         <TableCell className="font-mono">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell>
-                        <TableCell className="text-center border-x">{item.periodDebit > 0 ? item.periodDebit.toLocaleString() : '-'}</TableCell>
-                        <TableCell className="text-center border-x">{item.periodCredit > 0 ? item.periodCredit.toLocaleString() : '-'}</TableCell>
-                        <TableCell className="text-center">{item.closingDebit > 0 ? item.closingDebit.toLocaleString() : '-'}</TableCell>
-                        <TableCell className="text-center">{item.closingCredit > 0 ? item.closingCredit.toLocaleString() : '-'}</TableCell>
+                        <TableCell className="text-center border-x">{item.periodDebit > 0 ? fmt(item.periodDebit) : '-'}</TableCell>
+                        <TableCell className="text-center border-x">{item.periodCredit > 0 ? fmt(item.periodCredit) : '-'}</TableCell>
+                        <TableCell className="text-center">{item.closingDebit > 0 ? fmt(item.closingDebit) : '-'}</TableCell>
+                        <TableCell className="text-center">{item.closingCredit > 0 ? fmt(item.closingCredit) : '-'}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow className="bg-muted/50 font-bold">
                       <TableCell colSpan={2}>{t.total}</TableCell>
-                      <TableCell className="text-center border-x">{comprehensiveTrial.totals.periodDebit.toLocaleString()}</TableCell>
-                      <TableCell className="text-center border-x">{comprehensiveTrial.totals.periodCredit.toLocaleString()}</TableCell>
-                      <TableCell className="text-center">{comprehensiveTrial.totals.closingDebit.toLocaleString()}</TableCell>
-                      <TableCell className="text-center">{comprehensiveTrial.totals.closingCredit.toLocaleString()}</TableCell>
+                      <TableCell className="text-center border-x">{fmt(comprehensiveTrial.totals.periodDebit)}</TableCell>
+                      <TableCell className="text-center border-x">{fmt(comprehensiveTrial.totals.periodCredit)}</TableCell>
+                      <TableCell className="text-center">{fmt(comprehensiveTrial.totals.closingDebit)}</TableCell>
+                      <TableCell className="text-center">{fmt(comprehensiveTrial.totals.closingCredit)}</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
