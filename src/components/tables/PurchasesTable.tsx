@@ -25,8 +25,25 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const queryClient = useQueryClient();
   const { companyId } = useCompany();
   const { data: cars = [], isLoading, refetch } = useCars();
+  const { data: allExpenses = [] } = useExpenses();
   const { data: taxSettings } = useTaxSettings();
   const { selectedFiscalYear } = useFiscalYear();
+
+  // Build a map of car_id -> expenses
+  const carExpensesMap = useMemo(() => {
+    const map: Record<string, { description: string; amount: number }[]> = {};
+    allExpenses.forEach(exp => {
+      if (exp.car_id) {
+        if (!map[exp.car_id]) map[exp.car_id] = [];
+        map[exp.car_id].push({ description: exp.description, amount: Number(exp.amount) });
+      }
+    });
+    return map;
+  }, [allExpenses]);
+
+  const getCarExpensesTotal = (carId: string) => {
+    return (carExpensesMap[carId] || []).reduce((sum, e) => sum + e.amount, 0);
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
