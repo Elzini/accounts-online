@@ -386,7 +386,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     const totalPurchasePrice = isCarDealership
       ? selectedCars.reduce((sum, car) => sum + car.purchase_price, 0)
       : selectedInventoryItems.reduce((sum, item) => sum + (item.cost_price * item.quantity), 0);
-    const profit = finalTotal - totalPurchasePrice - commission - otherExpenses;
+    const profit = subtotalAfterDiscount - totalPurchasePrice - commission - otherExpenses;
     const totalQuantity = isCarDealership ? selectedCars.length : selectedInventoryItems.reduce((sum, i) => sum + i.quantity, 0);
 
     return {
