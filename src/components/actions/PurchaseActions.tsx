@@ -63,6 +63,7 @@ export function EditPurchaseDialog({ car, open, onOpenChange }: EditPurchaseDial
           name: formData.name,
           model: formData.model || null,
           chassis_number: formData.chassis_number,
+          plate_number: formData.plate_number || null,
           color: formData.color || null,
           purchase_price: parseFloat(formData.purchase_price),
           purchase_date: formData.purchase_date,
