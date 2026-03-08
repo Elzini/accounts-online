@@ -247,6 +247,32 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                     label={t.th_total_with_tax} 
                     value={<span className="text-primary font-bold">{formatCurrency(taxDetails.totalWithTax)} {currency}</span>}
                   />
+                  {(() => {
+                    const carExps = carExpensesMap[car.id] || [];
+                    const expTotal = getCarExpensesTotal(car.id);
+                    return carExps.length > 0 ? (
+                      <>
+                        <MobileCardRow 
+                          label="المصروفات"
+                          value={
+                            <div className="text-sm">
+                              {carExps.map((e, i) => (
+                                <div key={i} className="flex justify-between gap-2">
+                                  <span className="text-muted-foreground">{e.description}</span>
+                                  <span className="text-orange-600 font-medium">{formatCurrency(e.amount)} {currency}</span>
+                                </div>
+                              ))}
+                            </div>
+                          }
+                          icon={<Receipt className="w-3.5 h-3.5" />}
+                        />
+                        <MobileCardRow 
+                          label="إجمالي التكلفة"
+                          value={<span className="text-success font-bold">{formatCurrency(taxDetails.totalWithTax + expTotal)} {currency}</span>}
+                        />
+                      </>
+                    ) : null;
+                  })()}
                   <MobileCardRow 
                     label={t.th_purchase_date} 
                     value={formatDate(car.purchase_date)}
