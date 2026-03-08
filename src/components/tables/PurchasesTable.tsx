@@ -302,7 +302,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       ) : (
         /* Desktop Table View */
         <div className="bg-card rounded-xl md:rounded-2xl card-shadow overflow-hidden overflow-x-auto">
-          <Table className="min-w-[1200px]">
+          <Table className="min-w-[1400px]">
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="text-right font-bold">{t.th_inventory_number}</TableHead>
@@ -313,6 +313,8 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                 <TableHead className="text-right font-bold">{t.th_base_amount}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_tax} ({taxRate}%)</TableHead>
                 <TableHead className="text-right font-bold">{t.th_total_with_tax}</TableHead>
+                <TableHead className="text-right font-bold">المصروفات</TableHead>
+                <TableHead className="text-right font-bold">إجمالي التكلفة</TableHead>
                 <TableHead className="text-right font-bold">{t.th_payment_method}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_purchase_date}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_status}</TableHead>
@@ -340,6 +342,36 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                   <TableCell className="font-medium">{formatCurrency(taxDetails.baseAmount)} {currency}</TableCell>
                   <TableCell className="text-orange-600 font-medium">{formatCurrency(taxDetails.taxAmount)} {currency}</TableCell>
                   <TableCell className="font-semibold text-primary">{formatCurrency(taxDetails.totalWithTax)} {currency}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      const carExps = carExpensesMap[car.id] || [];
+                      if (carExps.length === 0) return <span className="text-muted-foreground">-</span>;
+                      return (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-orange-600 font-medium cursor-help underline decoration-dotted">
+                                {formatCurrency(getCarExpensesTotal(car.id))} {currency}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                              <div className="space-y-1 text-sm">
+                                {carExps.map((e, i) => (
+                                  <div key={i} className="flex justify-between gap-4">
+                                    <span>{e.description}</span>
+                                    <span className="font-bold">{formatCurrency(e.amount)} {currency}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })()}
+                  </TableCell>
+                  <TableCell className="font-bold text-success">
+                    {formatCurrency(taxDetails.totalWithTax + getCarExpensesTotal(car.id))} {currency}
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <PaymentIcon className={`w-4 h-4 ${paymentInfo.color}`} />
