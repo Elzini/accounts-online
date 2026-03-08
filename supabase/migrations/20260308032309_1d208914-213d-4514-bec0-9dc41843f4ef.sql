@@ -1,0 +1,1 @@
+UPDATE app_settings SET value = 'شركة شائع للسيارات' WHERE company_id = 'aafb750f-8c08-4a64-a2b9-bba3b91ebe18' AND key = 'app_name';
