@@ -21,6 +21,7 @@ interface BatchPurchaseFormProps {
 interface CarItem {
   id: string;
   chassis_number: string;
+  plate_number: string;
   name: string;
   model: string;
   color: string;
@@ -30,6 +31,7 @@ interface CarItem {
 const createEmptyCar = (): CarItem => ({
   id: crypto.randomUUID(),
   chassis_number: '',
+  plate_number: '',
   name: '',
   model: '',
   color: '',
