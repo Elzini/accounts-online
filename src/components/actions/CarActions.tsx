@@ -242,8 +242,9 @@ export function CarActions({ car }: CarActionsProps) {
   const { data: taxSettings } = useTaxSettings();
   const { company } = useCompany();
 
-  // Calculate tax for purchase
-  const taxRate = taxSettings?.is_active && taxSettings?.apply_to_purchases ? (taxSettings?.tax_rate || 0) : 0;
+  // Calculate tax for purchase - used cars have 0% tax
+  const isUsedCar = (car as any).car_condition === 'used';
+  const taxRate = (!isUsedCar && taxSettings?.is_active && taxSettings?.apply_to_purchases) ? (taxSettings?.tax_rate || 0) : 0;
   const purchasePrice = Number(car.purchase_price);
   const taxAmount = purchasePrice * (taxRate / (100 + taxRate));
   const subtotal = purchasePrice - taxAmount;
