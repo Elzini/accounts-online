@@ -44,7 +44,7 @@ export function ExpensesPage() {
   
   const expenseAccounts = accounts.filter(acc => acc.code.startsWith('5') && acc.code.length === 4);
   const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
-  const availableCars = cars.filter(car => car.status === 'available');
+  const allCarsForExpense = cars; // Allow linking expenses to any car (available, sold, transferred)
 
   const handleAddExpense = async () => {
     if (!expenseForm.amount || !expenseForm.description) { toast.error(t.fill_required); return; }
