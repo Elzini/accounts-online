@@ -537,13 +537,14 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       setCars(batchCars.map((car: any) => ({
         id: crypto.randomUUID(),
         chassis_number: car.chassis_number,
+        plate_number: car.plate_number || '',
         name: car.name,
         model: car.model || '',
         color: car.color || '',
         purchase_price: String(car.purchase_price),
         quantity: 1,
         unit: t.inv_car_unit,
-        car_condition: 'new' as const,
+        car_condition: (car.car_condition || 'new') as const,
       })));
     } else {
       setCars([createEmptyCar()]);
