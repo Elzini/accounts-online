@@ -213,6 +213,19 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label htmlFor="plate_number">رقم اللوحة</Label>
+                <Input
+                  id="plate_number"
+                  value={formData.plate_number}
+                  onChange={(e) => setFormData({ ...formData, plate_number: e.target.value })}
+                  placeholder="أدخل رقم اللوحة"
+                  className="h-12"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label htmlFor="name">اسم السيارة *</Label>
                 <Input
                   id="name"

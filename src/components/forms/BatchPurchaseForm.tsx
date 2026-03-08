@@ -343,6 +343,16 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
                         />
                       </div>
                       <div className="space-y-2">
+                        <Label htmlFor={`plate-${car.id}`}>رقم اللوحة</Label>
+                        <Input
+                          id={`plate-${car.id}`}
+                          value={car.plate_number}
+                          onChange={(e) => handleCarChange(car.id, 'plate_number', e.target.value)}
+                          placeholder="أدخل رقم اللوحة"
+                          className="h-10"
+                        />
+                      </div>
+                      <div className="space-y-2">
                         <Label htmlFor={`name-${car.id}`}>اسم السيارة *</Label>
                         <Input
                           id={`name-${car.id}`}
