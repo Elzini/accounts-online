@@ -337,6 +337,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                 <TableHead className="text-right font-bold">{t.th_color}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_chassis_number}</TableHead>
                 <TableHead className="text-right font-bold">رقم اللوحة</TableHead>
+                <TableHead className="text-right font-bold">{t.th_base_amount}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_tax} ({taxRate}%)</TableHead>
                 <TableHead className="text-right font-bold">{t.th_total_with_tax}</TableHead>
                 <TableHead className="text-right font-bold">المصروفات</TableHead>
