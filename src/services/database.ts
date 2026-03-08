@@ -940,9 +940,8 @@ export async function fetchAllTimeStats() {
   // Total purchases across all years
   const { data: carsData } = await supabase.from('cars').select('purchase_price').eq('company_id', companyId);
   
-  // Purchase prices are stored as base amounts (without VAT)
-  const allTimePurchasesBase = carsData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
-  const allTimePurchases = Math.round(allTimePurchasesBase * 1.15);
+  // Show raw purchase amounts from database as-is
+  const allTimePurchases = Math.round(carsData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0);
   
   // Total sales across all years
   const { data: salesData } = await supabase.from('sales').select('sale_price, profit').eq('company_id', companyId);
