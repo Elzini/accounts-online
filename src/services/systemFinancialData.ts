@@ -129,7 +129,7 @@ export async function getSystemTrialBalance(
     const closingCredit = netBalance < 0 ? Math.abs(netBalance) : 0;
 
     // فقط الحسابات التي لها حركة
-    if (closingDebit > 0 || closingCredit > 0) {
+    if (movementDebit > 0 || movementCredit > 0 || openingDebit > 0 || openingCredit > 0) {
       trialBalanceAccounts.push({
         code: account.code,
         name: account.name,
