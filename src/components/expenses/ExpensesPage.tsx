@@ -139,7 +139,7 @@ export function ExpensesPage() {
                       <SelectTrigger><SelectValue placeholder={t.general_expense} /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">{t.general_expense}</SelectItem>
-                        {availableCars.map(car => (<SelectItem key={car.id} value={car.id}>{car.name} - {car.chassis_number}</SelectItem>))}
+                        {allCarsForExpense.map(car => (<SelectItem key={car.id} value={car.id}>{car.name} - {car.chassis_number} {car.status === 'sold' ? '(مباعة)' : car.status === 'transferred' ? '(محولة)' : ''}</SelectItem>))}
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-1">* {t.car_expense_note}</p>
