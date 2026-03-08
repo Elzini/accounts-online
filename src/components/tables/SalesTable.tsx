@@ -83,9 +83,18 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
     return new Intl.DateTimeFormat(locale).format(new Date(date));
   };
 
-  const calculateTaxDetails = (salePrice: number) => {
+  const calculateTaxDetails = (salePrice: number, carCondition?: string, purchasePrice?: number) => {
     const baseAmount = salePrice;
-    const taxAmount = salePrice * (taxRate / 100);
+    let taxAmount: number;
+    
+    if (carCondition === 'used' || carCondition === 'مستعملة') {
+      // ضريبة هامش الربح للسيارات المستعملة
+      const margin = Math.max(0, salePrice - (purchasePrice || 0));
+      taxAmount = margin * (taxRate / 100);
+    } else {
+      taxAmount = salePrice * (taxRate / 100);
+    }
+    
     const totalWithTax = salePrice + taxAmount;
     return {
       baseAmount: Math.round(baseAmount * 100) / 100,
