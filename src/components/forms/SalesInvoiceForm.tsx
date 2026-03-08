@@ -732,6 +732,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           model: car.model || '',
           color: car.color || '',
           chassis_number: car.chassis_number,
+          plate_number: (car as any).plate_number || '',
           quantity: 1,
           car_condition: (car as any).car_condition === 'used' ? 'used' : 'new',
           pendingTransfer: null,
