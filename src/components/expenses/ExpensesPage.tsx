@@ -81,7 +81,7 @@ export function ExpensesPage() {
     try { await deleteExpense.mutateAsync(id); toast.success(t.expense_deleted); } catch (error) { toast.error(t.error_occurred); }
   };
 
-  const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(amount);
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
   const filteredExpenses = useMemo(() => filterByFiscalYear(expenses, 'expense_date'), [expenses, filterByFiscalYear]);
   const totalExpenses = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
