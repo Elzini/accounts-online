@@ -330,15 +330,30 @@ export function SaleActions({ sale }: SaleActionsProps) {
       // Multi-car sale: build from sale_items
       const items = sale.sale_items.map(item => {
         const itemPrice = Number(item.sale_price);
-        const itemTaxAmount = itemPrice * (taxRate / (100 + taxRate));
-        const itemSubtotal = itemPrice - itemTaxAmount;
+        const carCondition = item.car?.car_condition;
+        const purchasePrice = Number(item.car?.purchase_price || 0);
+        
+        let itemTaxAmount: number;
+        let itemSubtotal: number;
+        
+        if (carCondition === 'used' && taxRate > 0) {
+          // Used car: margin VAT - tax on profit margin only, added on top
+          itemSubtotal = itemPrice;
+          const margin = Math.max(0, itemPrice - purchasePrice);
+          itemTaxAmount = margin * (taxRate / 100);
+        } else {
+          // New car: tax included in stored price
+          itemTaxAmount = itemPrice * (taxRate / (100 + taxRate));
+          itemSubtotal = itemPrice - itemTaxAmount;
+        }
+        
         return {
           description: `${item.car?.name || 'سيارة'} ${item.car?.model || ''} - ${item.car?.color || ''} - شاسيه: ${item.car?.chassis_number || ''}`,
           quantity: 1,
           unitPrice: itemSubtotal,
           taxRate: taxRate,
           taxAmount: itemTaxAmount,
-          total: itemPrice,
+          total: itemSubtotal + itemTaxAmount,
         };
       });
       
@@ -350,8 +365,22 @@ export function SaleActions({ sale }: SaleActionsProps) {
     } else {
       // Single car sale
       const salePrice = Number(sale.sale_price);
-      const taxAmount = salePrice * (taxRate / (100 + taxRate));
-      const subtotal = salePrice - taxAmount;
+      const carCondition = sale.car?.car_condition;
+      const purchasePrice = Number(sale.car?.purchase_price || 0);
+      
+      let taxAmount: number;
+      let subtotal: number;
+      
+      if (carCondition === 'used' && taxRate > 0) {
+        // Used car: margin VAT
+        subtotal = salePrice;
+        const margin = Math.max(0, salePrice - purchasePrice);
+        taxAmount = margin * (taxRate / 100);
+      } else {
+        // New car: tax included in stored price
+        taxAmount = salePrice * (taxRate / (100 + taxRate));
+        subtotal = salePrice - taxAmount;
+      }
       
       return {
         items: [{
@@ -359,11 +388,11 @@ export function SaleActions({ sale }: SaleActionsProps) {
           quantity: 1,
           unitPrice: subtotal,
           taxRate: taxRate,
-          total: salePrice,
+          total: subtotal + taxAmount,
         }],
         subtotal,
         taxAmount,
-        total: salePrice,
+        total: subtotal + taxAmount,
       };
     }
   };
