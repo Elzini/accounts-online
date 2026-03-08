@@ -243,7 +243,7 @@ export function TrialBalanceFormulaEditor({
   const handleApplyFormula = () => {
     if (testResult !== null && onApplyFormula && formulaKey) {
       onApplyFormula(formulaKey, testResult);
-      toast.success(`تم تطبيق نتيجة المعادلة: ${testResult.toLocaleString()}`);
+      toast.success(`تم تطبيق نتيجة المعادلة: ${Math.round(testResult).toLocaleString('en-US')}`);
     }
   };
 

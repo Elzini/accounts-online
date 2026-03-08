@@ -272,7 +272,7 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
                   نتيجة الفحص: <strong className={scenarioSummary.overallScore >= 80 ? 'text-green-600' : scenarioSummary.overallScore >= 50 ? 'text-amber-600' : 'text-destructive'}>{scenarioSummary.overallScore}/100</strong>
                 </span>
                 <span className="text-muted-foreground">|</span>
-                <span className="text-muted-foreground">{scenarioSummary.totalScenariosTested.toLocaleString('ar-SA')}+ سيناريو</span>
+                <span className="text-muted-foreground">{scenarioSummary.totalScenariosTested.toLocaleString('en-US')}+ سيناريو</span>
                 {scenarioSummary.critical > 0 && <Badge variant="destructive" className="text-xs">{scenarioSummary.critical} حرج</Badge>}
                 {scenarioSummary.errors > 0 && <Badge variant="destructive" className="text-xs">{scenarioSummary.errors} خطأ</Badge>}
               </div>
@@ -399,7 +399,7 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
             </p>
             {scenarioSummary && (
               <p className="text-xs text-muted-foreground">
-                نتيجة الفحص: {scenarioSummary.overallScore}/100 | {scenarioSummary.totalScenariosTested.toLocaleString('ar-SA')}+ سيناريو
+                نتيجة الفحص: {scenarioSummary.overallScore}/100 | {scenarioSummary.totalScenariosTested.toLocaleString('en-US')}+ سيناريو
               </p>
             )}
             <Button variant="outline" size="sm" onClick={handleReset} className="gap-1">
