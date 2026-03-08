@@ -356,7 +356,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
         const quantity = car.quantity || 1;
         const baseAmount = price * quantity;
         const profitMargin = Math.max(0, baseAmount - (car.purchase_price * quantity));
-        const vatAmount = profitMargin * (taxRate / 100);
+        const vatAmount = profitMargin * taxRate / (100 + taxRate);
         const total = baseAmount + vatAmount;
         subtotal += baseAmount;
         totalVAT += vatAmount;

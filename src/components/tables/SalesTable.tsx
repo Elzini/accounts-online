@@ -88,9 +88,9 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
     let taxAmount: number;
     
     if (carCondition === 'used' || carCondition === 'مستعملة') {
-      // ضريبة هامش الربح للسيارات المستعملة
+      // ضريبة هامش الربح للسيارات المستعملة - الهامش شامل الضريبة
       const margin = Math.max(0, salePrice - (purchasePrice || 0));
-      taxAmount = margin * (taxRate / 100);
+      taxAmount = margin * taxRate / (100 + taxRate);
     } else {
       taxAmount = salePrice * (taxRate / 100);
     }
