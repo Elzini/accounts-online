@@ -1,4 +1,4 @@
-import { ShoppingCart, Users, Package, Wallet, Boxes, FileText, CreditCard, UserPlus, Truck, ArrowLeftRight, FileCheck, TrendingUp, LucideIcon, HardHat, Building2, Ship } from 'lucide-react';
+import { ShoppingCart, Users, Package, Wallet, Boxes, FileText, CreditCard, UserPlus, Truck, ArrowLeftRight, FileCheck, TrendingUp, LucideIcon, HardHat, Building2, Ship, Calculator, BookOpen } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ActivePage } from '@/types';
