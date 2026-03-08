@@ -333,8 +333,8 @@ export function JournalEntriesPage() {
                       <TableRow className="bg-muted/30">
                         <TableHead className="w-10 text-center">#</TableHead>
                         <TableHead className="min-w-[250px]">{t.je_col_account}</TableHead>
-                        <TableHead className="w-28">{t.je_col_debit}</TableHead>
-                        <TableHead className="w-28">{t.je_col_credit}</TableHead>
+                        <TableHead className="min-w-[120px] w-36">{t.je_col_debit}</TableHead>
+                        <TableHead className="min-w-[120px] w-36">{t.je_col_credit}</TableHead>
                         <TableHead className="min-w-[140px]">{t.je_col_statement}</TableHead>
                         <TableHead className="w-28">{t.je_col_reference}</TableHead>
                         <TableHead className="w-32">{t.je_col_date}</TableHead>
