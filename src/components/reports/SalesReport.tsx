@@ -112,6 +112,7 @@ export function SalesReport() {
       ],
       data: salesData.map((sale: any) => isCarDealership ? {
         sale_number: sale.sale_number, customer: sale.customer?.name || '-', car: sale.car?.name || '-', chassis_number: sale.car?.chassis_number || '-',
+        plate_number: (sale.car as any)?.plate_number || '-',
         sale_price: `${formatCurrencySimple(Number(sale.sale_price))} ${t.rpt_currency}`, commission: `${formatCurrencySimple(Number(sale.commission || 0))} ${t.rpt_currency}`,
         expenses: `${formatCurrencySimple(Number(sale.other_expenses || 0))} ${t.rpt_currency}`, profit: `${formatCurrencySimple(Number(sale.profit))} ${t.rpt_currency}`, date: formatDate(sale.sale_date),
       } : {
