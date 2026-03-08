@@ -671,7 +671,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       companyTaxNumber: taxSettings?.tax_number || '',
       companyAddress: taxSettings?.national_address || company?.address || '',
       items: calculations.items.map(car => ({
-        description: `${car.name} ${car.model || ''} - ${car.chassis_number}`,
+        description: `${car.name} ${car.model || ''} - ${car.chassis_number}${cars.find(c => c.id === car.id)?.plate_number ? ` - لوحة: ${cars.find(c => c.id === car.id)?.plate_number}` : ''}`,
         quantity: car.quantity,
         unitPrice: car.baseAmount / car.quantity,
         taxRate: taxRate,
