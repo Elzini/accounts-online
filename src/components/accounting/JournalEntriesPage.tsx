@@ -225,7 +225,21 @@ export function JournalEntriesPage() {
               {t.je_new}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
+          <DialogContent 
+            className="max-w-5xl max-h-[95vh] overflow-y-auto"
+            onPointerDownOutside={(e) => {
+              const target = e.target as HTMLElement;
+              if (target?.closest('[data-account-dropdown]')) {
+                e.preventDefault();
+              }
+            }}
+            onFocusOutside={(e) => {
+              const target = e.target as HTMLElement;
+              if (target?.closest('[data-account-dropdown]')) {
+                e.preventDefault();
+              }
+            }}
+          >
             <DialogHeader className="border-b pb-4">
               <DialogTitle className="text-xl">{t.je_dialog_title}</DialogTitle>
             </DialogHeader>
