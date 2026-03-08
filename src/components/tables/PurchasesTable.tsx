@@ -302,7 +302,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
             </TableHeader>
             <TableBody>
               {filteredCars.map((car) => {
-                const taxDetails = calculateTaxDetails(Number(car.purchase_price));
+                const taxDetails = calculateTaxDetails(Number(car.purchase_price), (car as any).car_condition);
                 const paymentAccount = (car as any).payment_account;
                 const paymentInfo = getPaymentMethodInfo(paymentAccount?.code);
                 const PaymentIcon = paymentInfo.icon;
