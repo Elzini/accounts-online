@@ -627,6 +627,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             name: carData.name,
             model: carData.model || null,
             chassis_number: carData.chassis_number,
+            plate_number: carData.plate_number || null,
             color: carData.color || null,
             purchase_price: parseFloat(carData.purchase_price),
             purchase_date: invoiceData.purchase_date,
