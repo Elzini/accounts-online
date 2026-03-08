@@ -366,6 +366,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                   <TableCell>{car.model || '-'}</TableCell>
                   <TableCell>{car.color || '-'}</TableCell>
                   <TableCell dir="ltr" className="text-right font-mono text-sm">{car.chassis_number}</TableCell>
+                  <TableCell>{(car as any).plate_number || '-'}</TableCell>
                   <TableCell className="font-medium">{formatCurrency(taxDetails.baseAmount)} {currency}</TableCell>
                   <TableCell className="text-orange-600 font-medium">{formatCurrency(taxDetails.taxAmount)} {currency}</TableCell>
                   <TableCell className="font-semibold text-primary">{formatCurrency(taxDetails.totalWithTax)} {currency}</TableCell>
