@@ -59,7 +59,21 @@ export function ProfitReport() {
   const totalNetProfitFromSales = salesWithCarExpenses.reduce((sum, sale) => sum + sale.netProfit, 0);
   const totalGeneralExpenses = filteredGeneralExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
   const finalNetProfit = totalNetProfitFromSales - totalGeneralExpenses;
-  const totalSales = salesWithCarExpenses.reduce((sum, sale) => sum + Number(sale.sale_price), 0);
+  
+  // Calculate total sales WITHOUT margin tax for used cars
+  const totalSales = salesWithCarExpenses.reduce((sum, sale) => {
+    const salePrice = Number(sale.sale_price);
+    const carCondition = sale.car?.car_condition;
+    const purchasePrice = Number(sale.car?.purchase_price) || 0;
+    
+    if (carCondition === 'used' && purchasePrice > 0) {
+      // For used cars: sale_price in DB = base_price + (base_price - purchase_price) * 0.15
+      // So base_price = (sale_price + 0.15 * purchase_price) / 1.15
+      const baseSalePrice = (salePrice + 0.15 * purchasePrice) / 1.15;
+      return sum + baseSalePrice;
+    }
+    return sum + salePrice;
+  }, 0);
 
   const handlePrint = () => {
     printReport({
