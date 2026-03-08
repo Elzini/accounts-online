@@ -873,10 +873,14 @@ export async function fetchStats(fiscalYearId?: string | null) {
     monthSalesCount = salesData?.filter(sale => sale.sale_date >= startOfMonth && sale.sale_date <= endOfMonth).length || 0;
   }
 
-  // Total purchases - prices are stored as base amounts (without VAT)
-  // Multiply by 1.15 to get VAT-inclusive totals
-  const totalPurchasesBase = purchasesData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0;
-  const totalPurchases = Math.round(totalPurchasesBase * 1.15);
+  // Total purchases - new cars get 1.15 VAT multiplier, used cars have 0% tax
+  const totalPurchases = Math.round(
+    (purchasesData || []).reduce((sum, car) => {
+      const price = Number(car.purchase_price) || 0;
+      const multiplier = car.car_condition === 'used' ? 1 : 1.15;
+      return sum + (price * multiplier);
+    }, 0)
+  );
 
   // Month sales amount - store as RAW amount from DB (no VAT pre-processing)
   // calculateDisplayAmount() in the UI handles VAT display modes
