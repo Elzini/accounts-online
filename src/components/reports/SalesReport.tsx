@@ -101,6 +101,7 @@ export function SalesReport() {
       columns: isCarDealership ? [
         { header: t.rpt_sales_col_number, key: 'sale_number' }, { header: t.rpt_sales_col_customer, key: 'customer' },
         { header: t.rpt_sales_col_item, key: 'car' }, { header: t.rpt_sales_col_chassis, key: 'chassis_number' },
+        { header: 'رقم اللوحة', key: 'plate_number' },
         { header: t.rpt_sales_col_price, key: 'sale_price' }, { header: t.rpt_sales_col_commission, key: 'commission' },
         { header: t.rpt_sales_col_expenses, key: 'expenses' }, { header: t.rpt_sales_col_profit, key: 'profit' },
         { header: t.rpt_sales_col_date, key: 'date' },
