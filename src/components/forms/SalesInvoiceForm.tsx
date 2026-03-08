@@ -1300,7 +1300,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                       return (
                         <TableRow key={car.id} className="hover:bg-primary/5 border-b bg-[hsl(var(--primary)/0.03)]">
                           <TableCell className="text-center text-xs py-1">{index + 1}</TableCell>
-                          <TableCell className="text-xs py-1 font-medium">{car.car_name} {car.model} {car.color ? `- ${car.color}` : ''}</TableCell>
+                          <TableCell className="text-xs py-1 font-medium">{car.car_name} {car.model} {car.color ? `- ${car.color}` : ''} {car.plate_number ? `- لوحة: ${car.plate_number}` : ''}</TableCell>
                           <TableCell className="py-1">
                             <Select value={car.car_condition} onValueChange={(v) => handleCarChange(car.id, 'car_condition', v)} disabled={isApproved}>
                               <SelectTrigger className="h-7 text-[10px] border-0 border-b border-border rounded-none bg-transparent shadow-none w-20">
