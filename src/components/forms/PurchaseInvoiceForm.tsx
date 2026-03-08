@@ -350,6 +350,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       try {
         const carsWithPrices = calculations.items.map((car, index) => ({
           chassis_number: cars[index].chassis_number,
+          plate_number: cars[index].plate_number || null,
           name: cars[index].name,
           model: cars[index].model || null,
           color: cars[index].color || null,
