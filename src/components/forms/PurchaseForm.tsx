@@ -28,6 +28,7 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
   const [formData, setFormData] = useState({
     supplier_id: '',
     chassis_number: '',
+    plate_number: '',
     name: '',
     model: '',
     color: '',
