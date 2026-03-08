@@ -1,0 +1,1 @@
+ALTER TABLE public.cars ADD COLUMN plate_number text DEFAULT null;
