@@ -41,8 +41,8 @@ export function VATReturnReportPage() {
 
   const { data: report, isLoading } = useVATReturnReport(startDate, endDate);
 
-  const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR', minimumFractionDigits: 2 }).format(amount);
-  const formatNumber = (amount: number) => new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR', minimumFractionDigits: 0 }).format(amount);
+  const formatNumber = (amount: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
   const handlePrint = () => { window.print(); };
 

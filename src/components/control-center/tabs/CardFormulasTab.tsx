@@ -90,7 +90,7 @@ export function CardFormulasTab() {
   };
 
   const formatNumber = (n: number) =>
-    new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
+    new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
 
   return (
     <div className="space-y-6">
