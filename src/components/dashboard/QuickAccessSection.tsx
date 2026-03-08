@@ -52,7 +52,7 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
     },
     {
       id: 'accounting',
-      title: t.nav_chart_of_accounts?.replace('شجرة الحسابات', 'المحاسبة') || 'المحاسبة',
+      title: t.nav_accounting,
       icon: BookOpen,
       ...CARD_THEMES.green,
       actions: [
