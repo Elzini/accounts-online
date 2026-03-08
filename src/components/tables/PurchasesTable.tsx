@@ -50,9 +50,11 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
     return new Intl.DateTimeFormat(locale).format(new Date(date));
   };
 
-  const calculateTaxDetails = (purchasePrice: number) => {
+  const calculateTaxDetails = (purchasePrice: number, carCondition?: string) => {
     const baseAmount = purchasePrice;
-    const taxAmount = purchasePrice * (taxRate / 100);
+    // Used cars have 0% tax on purchases
+    const effectiveTaxRate = carCondition === 'used' ? 0 : taxRate;
+    const taxAmount = purchasePrice * (effectiveTaxRate / 100);
     const totalWithTax = purchasePrice + taxAmount;
     return {
       baseAmount: Math.round(baseAmount * 100) / 100,
