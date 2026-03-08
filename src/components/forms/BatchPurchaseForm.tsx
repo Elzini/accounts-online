@@ -150,6 +150,7 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
         },
         cars: cars.map(car => ({
           chassis_number: car.chassis_number,
+          plate_number: car.plate_number || null,
           name: car.name,
           model: car.model || null,
           color: car.color || null,
