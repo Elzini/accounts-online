@@ -123,7 +123,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const totals = useMemo(() => {
     return filteredCars.reduce(
       (acc, car) => {
-        const details = calculateTaxDetails(Number(car.purchase_price));
+        const details = calculateTaxDetails(Number(car.purchase_price), (car as any).car_condition);
         return {
           baseAmount: acc.baseAmount + details.baseAmount,
           taxAmount: acc.taxAmount + details.taxAmount,
@@ -190,7 +190,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       {isMobile ? (
         <div className="space-y-3">
           {filteredCars.map((car) => {
-            const taxDetails = calculateTaxDetails(Number(car.purchase_price));
+            const taxDetails = calculateTaxDetails(Number(car.purchase_price), (car as any).car_condition);
             const paymentAccount = (car as any).payment_account;
             const paymentInfo = getPaymentMethodInfo(paymentAccount?.code);
             
