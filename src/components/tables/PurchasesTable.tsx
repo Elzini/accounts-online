@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ShoppingCart, Car, Calendar, Wallet, Building2, CreditCard, Banknote, Hash, RefreshCw } from 'lucide-react';
+import { ShoppingCart, Car, Calendar, Wallet, Building2, CreditCard, Banknote, Hash, RefreshCw, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,8 @@ import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useExpenses } from '@/hooks/useExpenses';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface PurchasesTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -23,8 +25,25 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const queryClient = useQueryClient();
   const { companyId } = useCompany();
   const { data: cars = [], isLoading, refetch } = useCars();
+  const { data: allExpenses = [] } = useExpenses();
   const { data: taxSettings } = useTaxSettings();
   const { selectedFiscalYear } = useFiscalYear();
+
+  // Build a map of car_id -> expenses
+  const carExpensesMap = useMemo(() => {
+    const map: Record<string, { description: string; amount: number }[]> = {};
+    allExpenses.forEach(exp => {
+      if (exp.car_id) {
+        if (!map[exp.car_id]) map[exp.car_id] = [];
+        map[exp.car_id].push({ description: exp.description, amount: Number(exp.amount) });
+      }
+    });
+    return map;
+  }, [allExpenses]);
+
+  const getCarExpensesTotal = (carId: string) => {
+    return (carExpensesMap[carId] || []).reduce((sum, e) => sum + e.amount, 0);
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -228,6 +247,32 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                     label={t.th_total_with_tax} 
                     value={<span className="text-primary font-bold">{formatCurrency(taxDetails.totalWithTax)} {currency}</span>}
                   />
+                  {(() => {
+                    const carExps = carExpensesMap[car.id] || [];
+                    const expTotal = getCarExpensesTotal(car.id);
+                    return carExps.length > 0 ? (
+                      <>
+                        <MobileCardRow 
+                          label="المصروفات"
+                          value={
+                            <div className="text-sm">
+                              {carExps.map((e, i) => (
+                                <div key={i} className="flex justify-between gap-2">
+                                  <span className="text-muted-foreground">{e.description}</span>
+                                  <span className="text-orange-600 font-medium">{formatCurrency(e.amount)} {currency}</span>
+                                </div>
+                              ))}
+                            </div>
+                          }
+                          icon={<Receipt className="w-3.5 h-3.5" />}
+                        />
+                        <MobileCardRow 
+                          label="إجمالي التكلفة"
+                          value={<span className="text-success font-bold">{formatCurrency(taxDetails.totalWithTax + expTotal)} {currency}</span>}
+                        />
+                      </>
+                    ) : null;
+                  })()}
                   <MobileCardRow 
                     label={t.th_purchase_date} 
                     value={formatDate(car.purchase_date)}
@@ -283,7 +328,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       ) : (
         /* Desktop Table View */
         <div className="bg-card rounded-xl md:rounded-2xl card-shadow overflow-hidden overflow-x-auto">
-          <Table className="min-w-[1200px]">
+          <Table className="min-w-[1400px]">
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="text-right font-bold">{t.th_inventory_number}</TableHead>
@@ -294,6 +339,8 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                 <TableHead className="text-right font-bold">{t.th_base_amount}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_tax} ({taxRate}%)</TableHead>
                 <TableHead className="text-right font-bold">{t.th_total_with_tax}</TableHead>
+                <TableHead className="text-right font-bold">المصروفات</TableHead>
+                <TableHead className="text-right font-bold">إجمالي التكلفة</TableHead>
                 <TableHead className="text-right font-bold">{t.th_payment_method}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_purchase_date}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_status}</TableHead>
@@ -321,6 +368,36 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                   <TableCell className="font-medium">{formatCurrency(taxDetails.baseAmount)} {currency}</TableCell>
                   <TableCell className="text-orange-600 font-medium">{formatCurrency(taxDetails.taxAmount)} {currency}</TableCell>
                   <TableCell className="font-semibold text-primary">{formatCurrency(taxDetails.totalWithTax)} {currency}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      const carExps = carExpensesMap[car.id] || [];
+                      if (carExps.length === 0) return <span className="text-muted-foreground">-</span>;
+                      return (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-orange-600 font-medium cursor-help underline decoration-dotted">
+                                {formatCurrency(getCarExpensesTotal(car.id))} {currency}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                              <div className="space-y-1 text-sm">
+                                {carExps.map((e, i) => (
+                                  <div key={i} className="flex justify-between gap-4">
+                                    <span>{e.description}</span>
+                                    <span className="font-bold">{formatCurrency(e.amount)} {currency}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })()}
+                  </TableCell>
+                  <TableCell className="font-bold text-success">
+                    {formatCurrency(taxDetails.totalWithTax + getCarExpensesTotal(car.id))} {currency}
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <PaymentIcon className={`w-4 h-4 ${paymentInfo.color}`} />
