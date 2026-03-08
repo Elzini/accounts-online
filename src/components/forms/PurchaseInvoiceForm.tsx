@@ -108,6 +108,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const createEmptyCar = (): CarItem => ({
     id: crypto.randomUUID(),
     chassis_number: '',
+    plate_number: '',
     name: '',
     model: '',
     color: '',
