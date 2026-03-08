@@ -946,7 +946,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       buyerTaxNumber: selectedCustomer?.registration_number || '',
       items: isCarDealership
         ? calculations.items.map(car => ({
-            description: `${car.car_name} ${car.model || ''} - ${car.chassis_number}`,
+            description: `${car.car_name} ${car.model || ''} - ${car.chassis_number}${car.plate_number ? ` - لوحة: ${car.plate_number}` : ''}`,
             quantity: car.quantity,
             unitPrice: car.baseAmount / car.quantity,
             taxRate: taxRate,
