@@ -81,7 +81,7 @@ export function ExpensesPage() {
     try { await deleteExpense.mutateAsync(id); toast.success(t.expense_deleted); } catch (error) { toast.error(t.error_occurred); }
   };
 
-  const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(amount);
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
   const filteredExpenses = useMemo(() => filterByFiscalYear(expenses, 'expense_date'), [expenses, filterByFiscalYear]);
   const totalExpenses = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
@@ -151,8 +151,8 @@ export function ExpensesPage() {
                     </div>
                     {expenseForm.has_vat_invoice && expenseForm.amount && (
                       <div className="grid grid-cols-2 gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                        <div><Label className="text-green-700 dark:text-green-300 text-xs">{t.vat_15}</Label><div className="text-lg font-bold text-green-600 dark:text-green-400">{new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(parseFloat(expenseForm.amount) * 0.15)}</div></div>
-                        <div><Label className="text-green-700 dark:text-green-300 text-xs">{t.total_with_tax}</Label><div className="text-lg font-bold text-green-600 dark:text-green-400">{new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(parseFloat(expenseForm.amount) * 1.15)}</div></div>
+                        <div><Label className="text-green-700 dark:text-green-300 text-xs">{t.vat_15}</Label><div className="text-lg font-bold text-green-600 dark:text-green-400">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(parseFloat(expenseForm.amount) * 0.15)}</div></div>
+                        <div><Label className="text-green-700 dark:text-green-300 text-xs">{t.total_with_tax}</Label><div className="text-lg font-bold text-green-600 dark:text-green-400">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(parseFloat(expenseForm.amount) * 1.15)}</div></div>
                       </div>
                     )}
                   </div>
