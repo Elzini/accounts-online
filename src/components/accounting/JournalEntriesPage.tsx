@@ -225,21 +225,7 @@ export function JournalEntriesPage() {
               {t.je_new}
             </Button>
           </DialogTrigger>
-          <DialogContent 
-            className="max-w-5xl max-h-[95vh] overflow-y-auto"
-            onPointerDownOutside={(e) => {
-              const target = e.target as HTMLElement;
-              if (target?.closest('[data-account-dropdown]')) {
-                e.preventDefault();
-              }
-            }}
-            onFocusOutside={(e) => {
-              const target = e.target as HTMLElement;
-              if (target?.closest('[data-account-dropdown]')) {
-                e.preventDefault();
-              }
-            }}
-          >
+          <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
             <DialogHeader className="border-b pb-4">
               <DialogTitle className="text-xl">{t.je_dialog_title}</DialogTitle>
             </DialogHeader>
@@ -334,7 +320,7 @@ export function JournalEntriesPage() {
               </div>
 
               {/* Lines Table */}
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border rounded-lg">
                 <div className="bg-muted/50 p-2 flex items-center gap-2 border-b">
                   <Button variant="outline" size="sm" onClick={addLine}>
                     <Plus className="w-4 h-4 ml-1" />
