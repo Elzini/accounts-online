@@ -384,7 +384,7 @@ export function SaleActions({ sale }: SaleActionsProps) {
       
       return {
         items: [{
-          description: `${sale.car?.name || 'سيارة'} ${sale.car?.model || ''} - ${sale.car?.color || ''} - شاسيه: ${sale.car?.chassis_number || ''}`,
+          description: `${sale.car?.name || 'سيارة'} ${sale.car?.model || ''} - ${sale.car?.color || ''} - شاسيه: ${sale.car?.chassis_number || ''}${(sale.car as any)?.plate_number ? ` - لوحة: ${(sale.car as any).plate_number}` : ''}`,
           quantity: 1,
           unitPrice: subtotal,
           taxRate: taxRate,

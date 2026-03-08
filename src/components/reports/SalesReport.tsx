@@ -218,6 +218,7 @@ export function SalesReport() {
               <TableCell>{sale.customer?.name || '-'}</TableCell>
               {isCarDealership && <TableCell>{sale.car?.name || '-'}</TableCell>}
               {isCarDealership && <TableCell className="font-mono text-sm">{sale.car?.chassis_number || '-'}</TableCell>}
+              {isCarDealership && <TableCell>{(sale.car as any)?.plate_number || '-'}</TableCell>}
               <TableCell>{formatCurrency(Number(sale.sale_price))}</TableCell>
               {!isCarDealership && <TableCell>{formatCurrency(Number(sale._taxAmount || 0))}</TableCell>}
               {!isCarDealership && <TableCell className="font-semibold text-primary">{formatCurrency(Number(sale._total || 0))}</TableCell>}
