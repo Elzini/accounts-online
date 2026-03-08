@@ -222,6 +222,8 @@ export function useApprovePayroll() {
       queryClient.invalidateQueries({ queryKey: ['payroll'] });
       queryClient.invalidateQueries({ queryKey: ['pending-advances', companyId] });
       queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['trial-balance', companyId] });
     },
   });
 }
