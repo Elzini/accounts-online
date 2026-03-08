@@ -129,6 +129,14 @@ export function EditCarDialog({ car, open, onOpenChange }: EditCarDialogProps) {
                   required
                 />
               </div>
+              <div className="grid gap-2">
+                <Label htmlFor="plate_number">رقم اللوحة</Label>
+                <Input
+                  id="plate_number"
+                  value={formData.plate_number}
+                  onChange={(e) => setFormData({ ...formData, plate_number: e.target.value })}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">

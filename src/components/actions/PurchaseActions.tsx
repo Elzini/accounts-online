@@ -120,6 +120,14 @@ export function EditPurchaseDialog({ car, open, onOpenChange }: EditPurchaseDial
                 />
               </div>
               <div className="grid gap-2">
+                <Label htmlFor="plate_number">رقم اللوحة</Label>
+                <Input
+                  id="plate_number"
+                  value={formData.plate_number}
+                  onChange={(e) => setFormData({ ...formData, plate_number: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
                 <Label htmlFor="color">اللون</Label>
                 <Input
                   id="color"
