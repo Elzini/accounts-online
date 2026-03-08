@@ -107,14 +107,14 @@ export function FinancialReportsPage() {
     ];
     const data = comprehensiveTrial.accounts.map(item => ({
       code: item.account.code, name: item.account.name,
-      periodDebit: item.periodDebit > 0 ? item.periodDebit.toLocaleString() : '-',
-      periodCredit: item.periodCredit > 0 ? item.periodCredit.toLocaleString() : '-',
-      closingDebit: item.closingDebit > 0 ? item.closingDebit.toLocaleString() : '-',
-      closingCredit: item.closingCredit > 0 ? item.closingCredit.toLocaleString() : '-',
+      periodDebit: item.periodDebit > 0 ? fmt(item.periodDebit) : '-',
+      periodCredit: item.periodCredit > 0 ? fmt(item.periodCredit) : '-',
+      closingDebit: item.closingDebit > 0 ? fmt(item.closingDebit) : '-',
+      closingCredit: item.closingCredit > 0 ? fmt(item.closingCredit) : '-',
     }));
     const summaryCards = [
-      { label: t.acc_debit, value: comprehensiveTrial.totals.periodDebit.toLocaleString() + ' ر.س' },
-      { label: t.acc_credit, value: comprehensiveTrial.totals.periodCredit.toLocaleString() + ' ر.س' },
+      { label: t.acc_debit, value: fmt(comprehensiveTrial.totals.periodDebit) + ' ر.س' },
+      { label: t.acc_credit, value: fmt(comprehensiveTrial.totals.periodCredit) + ' ر.س' },
     ];
     if (type === 'print') printReport({ title: t.fr_comprehensive_trial, columns, data, summaryCards });
     else if (type === 'excel') exportToExcel({ title: t.fr_comprehensive_trial, columns, data, fileName: 'comprehensive-trial-balance', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
@@ -128,13 +128,13 @@ export function FinancialReportsPage() {
       { header: t.je_col_type, key: 'type' }, { header: t.acc_balance, key: 'amount' },
     ];
     const data = [
-      ...incomeStatement.revenue.map(item => ({ code: item.account.code, name: item.account.name, type: t.coa_type_revenue, amount: item.amount.toLocaleString() })),
-      ...incomeStatement.expenses.map(item => ({ code: item.account.code, name: item.account.name, type: t.coa_type_expenses, amount: item.amount.toLocaleString() })),
+      ...incomeStatement.revenue.map(item => ({ code: item.account.code, name: item.account.name, type: t.coa_type_revenue, amount: fmt(item.amount) })),
+      ...incomeStatement.expenses.map(item => ({ code: item.account.code, name: item.account.name, type: t.coa_type_expenses, amount: fmt(item.amount) })),
     ];
     const summaryCards = [
-      { label: t.fr_total_revenue, value: incomeStatement.totalRevenue.toLocaleString() + ' ر.س' },
-      { label: t.fr_total_expenses, value: incomeStatement.totalExpenses.toLocaleString() + ' ر.س' },
-      { label: t.fr_net_income, value: incomeStatement.netIncome.toLocaleString() + ' ر.س' },
+      { label: t.fr_total_revenue, value: fmt(incomeStatement.totalRevenue) + ' ر.س' },
+      { label: t.fr_total_expenses, value: fmt(incomeStatement.totalExpenses) + ' ر.س' },
+      { label: t.fr_net_income, value: fmt(incomeStatement.netIncome) + ' ر.س' },
     ];
     const dateSubtitle = dateRange.from && dateRange.to ? `${t.gl_from} ${format(dateRange.from, 'yyyy/MM/dd')} ${t.gl_to} ${format(dateRange.to, 'yyyy/MM/dd')}` : undefined;
     if (type === 'print') printReport({ title: t.fr_income_statement, subtitle: dateSubtitle, columns, data, summaryCards });
@@ -149,19 +149,19 @@ export function FinancialReportsPage() {
       { header: t.je_col_type, key: 'category' }, { header: t.acc_balance, key: 'balance' },
     ];
     const data = [
-      ...balanceSheet.currentAssets.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_current_assets, balance: item.balance.toLocaleString() })),
-      ...balanceSheet.fixedAssets.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_fixed_assets, balance: item.balance.toLocaleString() })),
-      ...balanceSheet.currentLiabilities.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_current_liabilities, balance: item.balance.toLocaleString() })),
-      ...balanceSheet.longTermLiabilities.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_long_term_liabilities, balance: item.balance.toLocaleString() })),
-      ...balanceSheet.equity.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_equity, balance: item.balance.toLocaleString() })),
-      ...(balanceSheet.retainedEarnings !== 0 ? [{ code: '-', name: t.fr_retained_earnings, category: t.fr_equity, balance: balanceSheet.retainedEarnings.toLocaleString() }] : []),
+      ...balanceSheet.currentAssets.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_current_assets, balance: fmt(item.balance) })),
+      ...balanceSheet.fixedAssets.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_fixed_assets, balance: fmt(item.balance) })),
+      ...balanceSheet.currentLiabilities.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_current_liabilities, balance: fmt(item.balance) })),
+      ...balanceSheet.longTermLiabilities.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_long_term_liabilities, balance: fmt(item.balance) })),
+      ...balanceSheet.equity.map(item => ({ code: item.account.code, name: item.account.name, category: t.fr_equity, balance: fmt(item.balance) })),
+      ...(balanceSheet.retainedEarnings !== 0 ? [{ code: '-', name: t.fr_retained_earnings, category: t.fr_equity, balance: fmt(balanceSheet.retainedEarnings) }] : []),
     ];
     const summaryCards = [
-      { label: t.fr_current_assets, value: balanceSheet.totalCurrentAssets.toLocaleString() + ' ر.س' },
-      { label: t.fr_fixed_assets, value: balanceSheet.totalFixedAssets.toLocaleString() + ' ر.س' },
-      { label: t.fr_total_assets, value: balanceSheet.totalAssets.toLocaleString() + ' ر.س' },
-      { label: t.fr_total_liabilities, value: balanceSheet.totalLiabilities.toLocaleString() + ' ر.س' },
-      { label: t.fr_total_equity, value: balanceSheet.totalEquity.toLocaleString() + ' ر.س' },
+      { label: t.fr_current_assets, value: fmt(balanceSheet.totalCurrentAssets) + ' ر.س' },
+      { label: t.fr_fixed_assets, value: fmt(balanceSheet.totalFixedAssets) + ' ر.س' },
+      { label: t.fr_total_assets, value: fmt(balanceSheet.totalAssets) + ' ر.س' },
+      { label: t.fr_total_liabilities, value: fmt(balanceSheet.totalLiabilities) + ' ر.س' },
+      { label: t.fr_total_equity, value: fmt(balanceSheet.totalEquity) + ' ر.س' },
     ];
     if (type === 'print') printReport({ title: t.fr_balance_sheet, columns, data, summaryCards });
     else if (type === 'excel') exportToExcel({ title: t.fr_balance_sheet, columns, data, fileName: 'balance-sheet', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
@@ -177,14 +177,14 @@ export function FinancialReportsPage() {
     ];
     const data = journalEntries.map((entry: any) => ({
       entry_number: entry.entry_number, date: entry.entry_date, type: getReferenceTypeLabel(entry.reference_type),
-      description: entry.description, debit: entry.total_debit.toLocaleString(), credit: entry.total_credit.toLocaleString(),
+      description: entry.description, debit: fmt(entry.total_debit), credit: fmt(entry.total_credit),
     }));
     const totalDebit = journalEntries.reduce((sum: number, e: any) => sum + e.total_debit, 0);
     const totalCredit = journalEntries.reduce((sum: number, e: any) => sum + e.total_credit, 0);
     const summaryCards = [
       { label: t.fr_entries_count, value: journalEntries.length.toString() },
-      { label: t.fr_total_debit, value: totalDebit.toLocaleString() + ' ر.س' },
-      { label: t.fr_total_credit, value: totalCredit.toLocaleString() + ' ر.س' },
+      { label: t.fr_total_debit, value: fmt(totalDebit) + ' ر.س' },
+      { label: t.fr_total_credit, value: fmt(totalCredit) + ' ر.س' },
     ];
     const dateSubtitle = dateRange.from && dateRange.to ? `${t.gl_from} ${format(dateRange.from, 'yyyy/MM/dd')} ${t.gl_to} ${format(dateRange.to, 'yyyy/MM/dd')}` : undefined;
     if (type === 'print') printReport({ title: t.fr_journal_entries_report, subtitle: dateSubtitle, columns, data, summaryCards });
@@ -201,8 +201,8 @@ export function FinancialReportsPage() {
     ];
     const data = accountBalances.map(item => ({
       code: item.account.code, name: item.account.name, type: getTypeLabel(item.account.type),
-      debit_total: (item.debit_total ?? 0).toLocaleString(), credit_total: (item.credit_total ?? 0).toLocaleString(),
-      balance: (item.balance ?? 0).toLocaleString(),
+      debit_total: fmt(item.debit_total ?? 0), credit_total: fmt(item.credit_total ?? 0),
+      balance: fmt(item.balance ?? 0),
     }));
     if (type === 'print') printReport({ title: t.fr_account_balances, columns, data });
     else if (type === 'excel') exportToExcel({ title: t.fr_account_balances, columns, data, fileName: 'account-balances' });
@@ -219,12 +219,12 @@ export function FinancialReportsPage() {
     const data = vatSettlement.transactions.map(tr => ({
       entryNumber: tr.entryNumber, date: tr.date,
       type: tr.type === 'sales' ? t.vat_output_tax : t.vat_input_tax,
-      description: tr.description, taxAmount: tr.taxAmount.toLocaleString(),
+      description: tr.description, taxAmount: fmt(tr.taxAmount),
     }));
     const summaryCards = [
-      { label: t.vat_output_tax, value: vatSettlement.vatPayable.balance.toLocaleString() + ' ر.س' },
-      { label: t.vat_input_tax, value: vatSettlement.vatRecoverable.balance.toLocaleString() + ' ر.س' },
-      { label: t.vat_net_vat, value: Math.abs(vatSettlement.netVAT).toLocaleString() + ' ر.س' },
+      { label: t.vat_output_tax, value: fmt(vatSettlement.vatPayable.balance) + ' ر.س' },
+      { label: t.vat_input_tax, value: fmt(vatSettlement.vatRecoverable.balance) + ' ر.س' },
+      { label: t.vat_net_vat, value: fmt(Math.abs(vatSettlement.netVAT)) + ' ر.س' },
     ];
     const dateSubtitle = dateRange.from && dateRange.to ? `${t.gl_from} ${format(dateRange.from, 'yyyy/MM/dd')} ${t.gl_to} ${format(dateRange.to, 'yyyy/MM/dd')}` : undefined;
     if (type === 'print') printReport({ title: t.fr_vat_settlement, subtitle: dateSubtitle, columns, data, summaryCards });
