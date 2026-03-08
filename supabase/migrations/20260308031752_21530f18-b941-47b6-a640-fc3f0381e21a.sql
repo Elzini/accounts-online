@@ -1,0 +1,1 @@
+UPDATE account_categories SET name = 'تكلفة السيارات المباعة', type = 'expenses' WHERE id = '45655a93-e33d-4c07-b432-53571bea9613';
