@@ -166,8 +166,10 @@ export function AccountSearchSelect({ accounts, value, onChange, placeholder = "
     ? createPortal(
         <div 
           ref={listRef}
+          data-account-dropdown="true"
           className="max-h-[200px] overflow-y-auto rounded-md border bg-popover shadow-lg"
           style={dropdownStyle}
+          onMouseDown={(e) => e.preventDefault()}
         >
           {filteredAccounts.map((account, index) => (
             <div
