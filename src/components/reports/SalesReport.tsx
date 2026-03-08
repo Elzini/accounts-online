@@ -149,7 +149,7 @@ export function SalesReport() {
         { header: 'الإجمالي', key: 'total' }, { header: t.rpt_sales_col_date, key: 'date' },
       ],
       data: salesData.map((sale: any) => isCarDealership ? {
-        sale_number: sale.sale_number, customer: sale.customer?.name || '-', car: sale.car?.name || '-', chassis_number: sale.car?.chassis_number || '-',
+        sale_number: sale.sale_number, customer: sale.customer?.name || '-', car: sale.car?.name || '-', chassis_number: sale.car?.chassis_number || '-', plate_number: (sale.car as any)?.plate_number || '-',
         sale_price: Number(sale.sale_price), commission: Number(sale.commission || 0), expenses: Number(sale.other_expenses || 0), profit: Number(sale.profit), date: formatDate(sale.sale_date),
       } : {
         sale_number: sale.sale_number, customer: sale.customer?.name || '-',
