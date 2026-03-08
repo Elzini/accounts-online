@@ -74,6 +74,7 @@ interface PurchaseInventoryItem {
 interface CarItem {
   id: string;
   chassis_number: string;
+  plate_number: string;
   name: string;
   model: string;
   color: string;
