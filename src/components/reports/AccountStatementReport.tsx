@@ -54,7 +54,7 @@ export function AccountStatementReport() {
 
   const groupedAccounts = useMemo(() => {
     const groups: Record<string, typeof filteredAccounts> = {
-      assets: [], liabilities: [], equity: [], revenue: [], expenses: [],
+      asset: [], liability: [], equity: [], revenue: [], expense: [],
     };
     filteredAccounts.forEach(account => {
       if (groups[account.type]) groups[account.type].push(account);
@@ -66,8 +66,8 @@ export function AccountStatementReport() {
 
   const getTypeLabel = (type: string) => {
     const types: Record<string, string> = {
-      assets: t.coa_type_assets, liabilities: t.coa_type_liabilities, equity: t.coa_type_equity,
-      revenue: t.coa_type_revenue, expenses: t.coa_type_expenses,
+      asset: t.coa_type_assets, liability: t.coa_type_liabilities, equity: t.coa_type_equity,
+      revenue: t.coa_type_revenue, expense: t.coa_type_expenses,
     };
     return types[type] || type;
   };
