@@ -63,11 +63,11 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
     },
     {
       id: 'reports',
-      title: language === 'ar' ? 'التقارير' : 'Reports',
+      title: t.nav_financial_reports,
       icon: Scale,
       ...CARD_THEMES.cyan,
       actions: [
-        { label: language === 'ar' ? 'ميزان المراجعة' : 'Trial Balance', page: 'financial-reports' as ActivePage },
+        { label: t.fr_comprehensive_trial, page: 'financial-reports' as ActivePage },
         { label: t.nav_financial_reports, page: 'financial-reports' as ActivePage },
         { label: t.nav_account_statement, page: 'account-statement' as ActivePage },
       ],
