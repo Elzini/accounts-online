@@ -358,9 +358,8 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   }, []);
 
   const formatCurrencyWithMode = useCallback((value: number) => {
-    const displayValue = calculateDisplayAmount(value, amountDisplayMode);
-    return formatCurrency(displayValue);
-  }, [amountDisplayMode, formatCurrency]);
+    return formatCurrency(value);
+  }, [formatCurrency]);
 
   const getCurrencySubtitle = useCallback(() => {
     return t.currency_sar_label;
@@ -626,11 +625,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
               <FloatingPanelToggle />
               <OnlineUsersPopover />
               <PaymentRemindersPopover setActivePage={setActivePage} />
-              <div className="h-6 w-px bg-border hidden sm:block" />
-              <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-card rounded-lg border border-border">
-                <span className="text-xs sm:text-sm text-muted-foreground hidden md:block">{t.display_amounts}:</span>
-                <AmountDisplaySelector value={amountDisplayMode} onChange={setAmountDisplayMode} />
-              </div>
+              
             </div>
           </div>
 
