@@ -319,7 +319,7 @@ export function FinancialReportsPage() {
                             <TableRow key={idx}>
                               <TableCell className="font-mono">{tr.entryNumber}</TableCell><TableCell>{tr.date}</TableCell>
                               <TableCell><Badge variant={tr.type === 'sales' ? 'destructive' : 'default'}>{tr.type === 'sales' ? t.vat_output_tax : t.vat_input_tax}</Badge></TableCell>
-                              <TableCell>{tr.description}</TableCell><TableCell className="text-left font-medium">{tr.taxAmount.toLocaleString()}</TableCell>
+                              <TableCell>{tr.description}</TableCell><TableCell className="text-left font-medium">{fmt(tr.taxAmount)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
