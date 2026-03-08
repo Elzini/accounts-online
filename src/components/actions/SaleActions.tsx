@@ -340,7 +340,7 @@ export function SaleActions({ sale }: SaleActionsProps) {
           // Used car: margin VAT - tax on profit margin only, added on top
           itemSubtotal = itemPrice;
           const margin = Math.max(0, itemPrice - purchasePrice);
-          itemTaxAmount = margin * (taxRate / 100);
+          itemTaxAmount = margin * taxRate / (100 + taxRate);
         } else {
           // New car: tax included in stored price
           itemTaxAmount = itemPrice * (taxRate / (100 + taxRate));
