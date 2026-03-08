@@ -1,4 +1,4 @@
-import { ShoppingCart, Users, Package, Wallet, Boxes, FileText, CreditCard, UserPlus, Truck, ArrowLeftRight, FileCheck, TrendingUp, LucideIcon, HardHat, Building2, Ship } from 'lucide-react';
+import { ShoppingCart, Users, Package, Wallet, Boxes, FileText, CreditCard, UserPlus, Truck, ArrowLeftRight, FileCheck, TrendingUp, LucideIcon, HardHat, Building2, Ship, Calculator, BookOpen } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ActivePage } from '@/types';
@@ -48,6 +48,17 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
         { label: t.receipts, page: 'vouchers' },
         { label: t.banks, page: 'banking' },
         { label: t.nav_expenses, page: 'expenses' },
+      ],
+    },
+    {
+      id: 'accounting',
+      title: t.nav_accounting,
+      icon: BookOpen,
+      ...CARD_THEMES.green,
+      actions: [
+        { label: t.nav_journal_entries, page: 'journal-entries' },
+        { label: t.nav_general_ledger, page: 'general-ledger' },
+        { label: t.nav_chart_of_accounts, page: 'chart-of-accounts' },
       ],
     },
   ];
