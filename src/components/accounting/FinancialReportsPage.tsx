@@ -529,18 +529,18 @@ export function FinancialReportsPage() {
                 <div className="space-y-6">
                   <div><h3 className="font-bold text-lg mb-2 text-green-600 dark:text-green-400">{t.coa_type_revenue}</h3>
                     <Table><TableBody>
-                      {incomeStatement.revenue.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left text-green-600 dark:text-green-400">{item.amount.toLocaleString()}</TableCell></TableRow>))}
-                      <TableRow className="bg-green-50 dark:bg-green-900/20 font-bold"><TableCell colSpan={2}>{t.fr_total_revenue}</TableCell><TableCell className="text-left text-green-600 dark:text-green-400">{incomeStatement.totalRevenue.toLocaleString()}</TableCell></TableRow>
+                      {incomeStatement.revenue.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left text-green-600 dark:text-green-400">{fmt(item.amount)}</TableCell></TableRow>))}
+                      <TableRow className="bg-green-50 dark:bg-green-900/20 font-bold"><TableCell colSpan={2}>{t.fr_total_revenue}</TableCell><TableCell className="text-left text-green-600 dark:text-green-400">{fmt(incomeStatement.totalRevenue)}</TableCell></TableRow>
                     </TableBody></Table>
                   </div>
                   <div><h3 className="font-bold text-lg mb-2 text-red-600 dark:text-red-400">{t.coa_type_expenses}</h3>
                     <Table><TableBody>
-                      {incomeStatement.expenses.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left text-red-600 dark:text-red-400">{item.amount.toLocaleString()}</TableCell></TableRow>))}
-                      <TableRow className="bg-red-50 dark:bg-red-900/20 font-bold"><TableCell colSpan={2}>{t.fr_total_expenses}</TableCell><TableCell className="text-left text-red-600 dark:text-red-400">{incomeStatement.totalExpenses.toLocaleString()}</TableCell></TableRow>
+                      {incomeStatement.expenses.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left text-red-600 dark:text-red-400">{fmt(item.amount)}</TableCell></TableRow>))}
+                      <TableRow className="bg-red-50 dark:bg-red-900/20 font-bold"><TableCell colSpan={2}>{t.fr_total_expenses}</TableCell><TableCell className="text-left text-red-600 dark:text-red-400">{fmt(incomeStatement.totalExpenses)}</TableCell></TableRow>
                     </TableBody></Table>
                   </div>
                   <div className={cn("p-4 rounded-lg text-center", incomeStatement.netIncome >= 0 ? "bg-green-100 dark:bg-green-900/30" : "bg-red-100 dark:bg-red-900/30")}>
-                    <p className="text-lg font-bold">{t.fr_net_income}: <span className={incomeStatement.netIncome >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}>{incomeStatement.netIncome.toLocaleString()} ر.س</span></p>
+                    <p className="text-lg font-bold">{t.fr_net_income}: <span className={incomeStatement.netIncome >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}>{fmt(incomeStatement.netIncome)} ر.س</span></p>
                   </div>
                 </div>
               )}
@@ -565,41 +565,41 @@ export function FinancialReportsPage() {
                   <div className="border rounded-lg p-4 space-y-4">
                     <div><h3 className="font-bold text-lg mb-4 text-primary border-b pb-2">{t.fr_current_assets}</h3>
                       <Table><TableBody>
-                        {balanceSheet.currentAssets.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{item.balance.toLocaleString()}</TableCell></TableRow>))}
-                        <TableRow className="bg-primary/10 font-bold"><TableCell colSpan={2}>{t.fr_current_assets}</TableCell><TableCell className="text-left text-primary">{balanceSheet.totalCurrentAssets.toLocaleString()}</TableCell></TableRow>
+                        {balanceSheet.currentAssets.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{fmt(item.balance)}</TableCell></TableRow>))}
+                        <TableRow className="bg-primary/10 font-bold"><TableCell colSpan={2}>{t.fr_current_assets}</TableCell><TableCell className="text-left text-primary">{fmt(balanceSheet.totalCurrentAssets)}</TableCell></TableRow>
                       </TableBody></Table>
                     </div>
                     {balanceSheet.fixedAssets.length > 0 && (
                       <div><h3 className="font-bold text-lg mb-4 text-muted-foreground border-b pb-2">{t.fr_fixed_assets}</h3>
                         <Table><TableBody>
-                          {balanceSheet.fixedAssets.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{item.balance.toLocaleString()}</TableCell></TableRow>))}
-                          <TableRow className="bg-muted/50 font-bold"><TableCell colSpan={2}>{t.fr_fixed_assets}</TableCell><TableCell className="text-left">{balanceSheet.totalFixedAssets.toLocaleString()}</TableCell></TableRow>
+                          {balanceSheet.fixedAssets.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{fmt(item.balance)}</TableCell></TableRow>))}
+                          <TableRow className="bg-muted/50 font-bold"><TableCell colSpan={2}>{t.fr_fixed_assets}</TableCell><TableCell className="text-left">{fmt(balanceSheet.totalFixedAssets)}</TableCell></TableRow>
                         </TableBody></Table>
                       </div>
                     )}
-                    <div className="bg-primary/20 p-3 rounded-lg"><div className="flex justify-between items-center font-bold text-lg"><span>{t.fr_total_assets}</span><span className="text-primary">{balanceSheet.totalAssets.toLocaleString()}</span></div></div>
+                    <div className="bg-primary/20 p-3 rounded-lg"><div className="flex justify-between items-center font-bold text-lg"><span>{t.fr_total_assets}</span><span className="text-primary">{fmt(balanceSheet.totalAssets)}</span></div></div>
                   </div>
                   <div className="space-y-4">
                     <div className="border rounded-lg p-4"><h3 className="font-bold text-lg mb-4 text-destructive border-b pb-2">{t.fr_current_liabilities}</h3>
                       <Table><TableBody>
-                        {balanceSheet.currentLiabilities.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{item.balance.toLocaleString()}</TableCell></TableRow>))}
+                        {balanceSheet.currentLiabilities.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{fmt(item.balance)}</TableCell></TableRow>))}
                         {balanceSheet.currentLiabilities.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground">{t.fr_no_data}</TableCell></TableRow>}
-                        <TableRow className="bg-destructive/10 font-bold"><TableCell colSpan={2}>{t.fr_current_liabilities}</TableCell><TableCell className="text-left text-destructive">{balanceSheet.totalCurrentLiabilities.toLocaleString()}</TableCell></TableRow>
+                        <TableRow className="bg-destructive/10 font-bold"><TableCell colSpan={2}>{t.fr_current_liabilities}</TableCell><TableCell className="text-left text-destructive">{fmt(balanceSheet.totalCurrentLiabilities)}</TableCell></TableRow>
                       </TableBody></Table>
                     </div>
                     {balanceSheet.longTermLiabilities.length > 0 && (
                       <div className="border rounded-lg p-4"><h3 className="font-bold text-lg mb-4 text-muted-foreground border-b pb-2">{t.fr_long_term_liabilities}</h3>
                         <Table><TableBody>
-                          {balanceSheet.longTermLiabilities.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{item.balance.toLocaleString()}</TableCell></TableRow>))}
-                          <TableRow className="bg-muted/50 font-bold"><TableCell colSpan={2}>{t.fr_long_term_liabilities}</TableCell><TableCell className="text-left">{balanceSheet.totalLongTermLiabilities.toLocaleString()}</TableCell></TableRow>
+                          {balanceSheet.longTermLiabilities.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{fmt(item.balance)}</TableCell></TableRow>))}
+                          <TableRow className="bg-muted/50 font-bold"><TableCell colSpan={2}>{t.fr_long_term_liabilities}</TableCell><TableCell className="text-left">{fmt(balanceSheet.totalLongTermLiabilities)}</TableCell></TableRow>
                         </TableBody></Table>
                       </div>
                     )}
                     <div className="border rounded-lg p-4"><h3 className="font-bold text-lg mb-4 text-purple-600 dark:text-purple-400 border-b pb-2">{t.fr_equity}</h3>
                       <Table><TableBody>
-                        {balanceSheet.equity.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{item.balance.toLocaleString()}</TableCell></TableRow>))}
-                        {balanceSheet.retainedEarnings !== 0 && (<TableRow><TableCell></TableCell><TableCell className="font-medium">{t.fr_retained_earnings}</TableCell><TableCell className={cn("text-left font-medium", balanceSheet.retainedEarnings >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>{balanceSheet.retainedEarnings.toLocaleString()}</TableCell></TableRow>)}
-                        <TableRow className="bg-purple-50 dark:bg-purple-900/20 font-bold"><TableCell colSpan={2}>{t.fr_total_equity}</TableCell><TableCell className="text-left text-purple-600 dark:text-purple-400">{balanceSheet.totalEquity.toLocaleString()}</TableCell></TableRow>
+                        {balanceSheet.equity.map((item) => (<TableRow key={item.account.id}><TableCell className="font-mono text-xs text-muted-foreground">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell><TableCell className="text-left">{fmt(item.balance)}</TableCell></TableRow>))}
+                        {balanceSheet.retainedEarnings !== 0 && (<TableRow><TableCell></TableCell><TableCell className="font-medium">{t.fr_retained_earnings}</TableCell><TableCell className={cn("text-left font-medium", balanceSheet.retainedEarnings >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>{fmt(balanceSheet.retainedEarnings)}</TableCell></TableRow>)}
+                        <TableRow className="bg-purple-50 dark:bg-purple-900/20 font-bold"><TableCell colSpan={2}>{t.fr_total_equity}</TableCell><TableCell className="text-left text-purple-600 dark:text-purple-400">{fmt(balanceSheet.totalEquity)}</TableCell></TableRow>
                       </TableBody></Table>
                     </div>
                   </div>
