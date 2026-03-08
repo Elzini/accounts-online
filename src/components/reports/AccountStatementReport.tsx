@@ -66,8 +66,8 @@ export function AccountStatementReport() {
 
   const getTypeLabel = (type: string) => {
     const types: Record<string, string> = {
-      assets: t.coa_type_assets, liabilities: t.coa_type_liabilities, equity: t.coa_type_equity,
-      revenue: t.coa_type_revenue, expenses: t.coa_type_expenses,
+      asset: t.coa_type_assets, liability: t.coa_type_liabilities, equity: t.coa_type_equity,
+      revenue: t.coa_type_revenue, expense: t.coa_type_expenses,
     };
     return types[type] || type;
   };
