@@ -50,6 +50,17 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
         { label: t.nav_expenses, page: 'expenses' },
       ],
     },
+    {
+      id: 'accounting',
+      title: t.nav_chart_of_accounts?.replace('شجرة الحسابات', 'المحاسبة') || 'المحاسبة',
+      icon: BookOpen,
+      ...CARD_THEMES.green,
+      actions: [
+        { label: t.nav_journal_entries, page: 'journal-entries' },
+        { label: t.nav_general_ledger, page: 'general-ledger' },
+        { label: t.nav_chart_of_accounts, page: 'chart-of-accounts' },
+      ],
+    },
   ];
 
   switch (companyType) {
