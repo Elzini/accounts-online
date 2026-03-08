@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
@@ -19,15 +20,16 @@ export function AccountSearchSelect({ accounts, value, onChange, placeholder = "
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const selectedAccount = useMemo(() => 
     accounts.find(acc => acc.id === value), 
     [accounts, value]
   );
 
-  // Set initial search value when account is selected
   useEffect(() => {
     if (selectedAccount && !open) {
       setSearch(`${selectedAccount.code} - ${selectedAccount.name}`);
@@ -45,12 +47,10 @@ export function AccountSearchSelect({ accounts, value, onChange, placeholder = "
     );
   }, [accounts, search, selectedAccount]);
 
-  // Reset highlight when filter changes
   useEffect(() => {
     setHighlightedIndex(0);
   }, [filteredAccounts.length]);
 
-  // Scroll highlighted item into view
   useEffect(() => {
     if (open && listRef.current) {
       const highlightedElement = listRef.current.children[highlightedIndex] as HTMLElement;
@@ -59,6 +59,32 @@ export function AccountSearchSelect({ accounts, value, onChange, placeholder = "
       }
     }
   }, [highlightedIndex, open]);
+
+  // Position dropdown relative to input using portal
+  const updatePosition = useCallback(() => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 99999,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [open, updatePosition]);
 
   const handleSelect = (account: Account) => {
     onChange(account.id);
@@ -70,8 +96,6 @@ export function AccountSearchSelect({ accounts, value, onChange, placeholder = "
     const newValue = e.target.value;
     setSearch(newValue);
     setOpen(true);
-    
-    // If cleared, also clear the selected value
     if (!newValue) {
       onChange('');
     }
@@ -119,12 +143,10 @@ export function AccountSearchSelect({ accounts, value, onChange, placeholder = "
 
   const handleFocus = () => {
     setOpen(true);
-    // Select all text for easy replacement
     inputRef.current?.select();
   };
 
-  const handleBlur = (e: React.FocusEvent) => {
-    // Delay closing to allow click on list items
+  const handleBlur = () => {
     setTimeout(() => {
       setOpen(false);
       if (selectedAccount) {
@@ -135,30 +157,17 @@ export function AccountSearchSelect({ accounts, value, onChange, placeholder = "
     }, 200);
   };
 
-  return (
-    <div className="relative">
-      <Input
-        ref={inputRef}
-        value={search}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        placeholder={placeholder}
-        className="w-full text-sm"
-        autoComplete="off"
-      />
-      
-      {open && filteredAccounts.length > 0 && (
+  const dropdown = open && filteredAccounts.length > 0 
+    ? createPortal(
         <div 
           ref={listRef}
-          className="absolute top-full right-0 left-0 z-[9999] mt-1 max-h-[200px] overflow-y-auto rounded-md border bg-popover shadow-lg"
-          style={{ position: 'absolute' }}
+          className="max-h-[200px] overflow-y-auto rounded-md border bg-popover shadow-lg"
+          style={dropdownStyle}
         >
           {filteredAccounts.map((account, index) => (
             <div
               key={account.id}
-              onClick={() => handleSelect(account)}
+              onMouseDown={(e) => { e.preventDefault(); handleSelect(account); }}
               className={cn(
                 "flex items-center gap-2 px-3 py-2 cursor-pointer text-sm transition-colors",
                 index === highlightedIndex 
@@ -170,14 +179,38 @@ export function AccountSearchSelect({ accounts, value, onChange, placeholder = "
               <span className="flex-1 truncate">{account.name}</span>
             </div>
           ))}
-        </div>
-      )}
-      
-      {open && filteredAccounts.length === 0 && search && (
-        <div className="absolute top-full right-0 left-0 z-50 mt-1 rounded-md border bg-popover p-3 text-sm text-muted-foreground shadow-lg">
+        </div>,
+        document.body
+      )
+    : null;
+
+  const noResults = open && filteredAccounts.length === 0 && search
+    ? createPortal(
+        <div 
+          className="rounded-md border bg-popover p-3 text-sm text-muted-foreground shadow-lg"
+          style={dropdownStyle}
+        >
           لا توجد نتائج
-        </div>
-      )}
+        </div>,
+        document.body
+      )
+    : null;
+
+  return (
+    <div ref={containerRef} className="relative">
+      <Input
+        ref={inputRef}
+        value={search}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        placeholder={placeholder}
+        className="w-full text-sm"
+        autoComplete="off"
+      />
+      {dropdown}
+      {noResults}
     </div>
   );
 }
