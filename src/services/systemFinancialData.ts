@@ -120,8 +120,13 @@ export async function getSystemTrialBalance(
     const openingCredit = opening.credit;
     const movementDebit = movement.debit;
     const movementCredit = movement.credit;
-    const closingDebit = openingDebit + movementDebit;
-    const closingCredit = openingCredit + movementCredit;
+    
+    // حساب الصافي الإجمالي (رصيد افتتاحي + حركة الفترة)
+    const totalDebit = openingDebit + movementDebit;
+    const totalCredit = openingCredit + movementCredit;
+    const netBalance = totalDebit - totalCredit;
+    const closingDebit = netBalance > 0 ? netBalance : 0;
+    const closingCredit = netBalance < 0 ? Math.abs(netBalance) : 0;
 
     // فقط الحسابات التي لها حركة
     if (closingDebit > 0 || closingCredit > 0) {
