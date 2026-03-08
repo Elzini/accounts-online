@@ -291,6 +291,7 @@ const Index = () => {
       case 'zakat-reports': return <ZakatReportsPage />;
       case 'fiscal-years': return <FiscalYearsPage />;
       case 'trial-balance-analysis': return <TrialBalanceAnalysisPage />;
+      case 'comprehensive-trial-balance': return <FinancialReportsPage defaultTab="comprehensive-trial" />;
       case 'financial-statements': return <ComprehensiveFinancialStatementsPage />;
       case 'vat-return-report': return <VATReturnReportPage />;
       case 'employees': return <EmployeesPage />;
