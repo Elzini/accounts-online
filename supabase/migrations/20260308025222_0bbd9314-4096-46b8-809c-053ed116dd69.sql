@@ -1,0 +1,1 @@
+ALTER FUNCTION public.create_purchase_journal_entry() SET search_path = public;
