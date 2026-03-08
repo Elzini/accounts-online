@@ -166,21 +166,7 @@ export function JournalEntryEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent 
-        className="max-w-4xl max-h-[90vh] overflow-y-auto"
-        onPointerDownOutside={(e) => {
-          const target = e.target as HTMLElement;
-          if (target?.closest('[data-account-dropdown]')) {
-            e.preventDefault();
-          }
-        }}
-        onFocusOutside={(e) => {
-          const target = e.target as HTMLElement;
-          if (target?.closest('[data-account-dropdown]')) {
-            e.preventDefault();
-          }
-        }}
-      >
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="border-b pb-4">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl flex items-center gap-2">
