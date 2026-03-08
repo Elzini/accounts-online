@@ -585,6 +585,26 @@ export async function updateSale(id: string, sale: SaleUpdate) {
     .single();
   
   if (error) throw error;
+
+  // Also update sale_items if sale_price changed (for single-car sales)
+  if (sale.sale_price !== undefined) {
+    const { data: saleItems } = await supabase
+      .from('sale_items')
+      .select('id, car_id')
+      .eq('sale_id', id);
+    
+    if (saleItems && saleItems.length === 1) {
+      const profit = sale.profit !== undefined ? sale.profit : (sale.sale_price - 0);
+      await supabase
+        .from('sale_items')
+        .update({ 
+          sale_price: sale.sale_price,
+          profit: profit,
+        })
+        .eq('id', saleItems[0].id);
+    }
+  }
+
   return data;
 }
 
