@@ -1,0 +1,1 @@
+UPDATE app_settings SET value = 'Aa' WHERE company_id = 'b2d40212-40fe-4152-939e-426b0d5811a3' AND key = 'app_name';
