@@ -3361,6 +3361,65 @@ export type Database = {
           },
         ]
       }
+      ecommerce_integrations: {
+        Row: {
+          api_key_encrypted: string | null
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_sync_at: string | null
+          platform: string
+          settings: Json | null
+          store_url: string | null
+          sync_customers: boolean | null
+          sync_orders: boolean | null
+          sync_products: boolean | null
+          updated_at: string
+          webhook_secret_encrypted: string | null
+        }
+        Insert: {
+          api_key_encrypted?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          platform: string
+          settings?: Json | null
+          store_url?: string | null
+          sync_customers?: boolean | null
+          sync_orders?: boolean | null
+          sync_products?: boolean | null
+          updated_at?: string
+          webhook_secret_encrypted?: string | null
+        }
+        Update: {
+          api_key_encrypted?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          platform?: string
+          settings?: Json | null
+          store_url?: string | null
+          sync_customers?: boolean | null
+          sync_orders?: boolean | null
+          sync_products?: boolean | null
+          updated_at?: string
+          webhook_secret_encrypted?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecommerce_integrations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       elearning_courses: {
         Row: {
           category: string | null
@@ -4379,6 +4438,50 @@ export type Database = {
             columns: ["fiscal_year_id"]
             isOneToOne: false
             referencedRelation: "fiscal_years"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      field_permissions: {
+        Row: {
+          can_edit: boolean
+          can_view: boolean
+          company_id: string
+          created_at: string
+          field_name: string
+          id: string
+          role_name: string
+          table_name: string
+          updated_at: string
+        }
+        Insert: {
+          can_edit?: boolean
+          can_view?: boolean
+          company_id: string
+          created_at?: string
+          field_name: string
+          id?: string
+          role_name: string
+          table_name: string
+          updated_at?: string
+        }
+        Update: {
+          can_edit?: boolean
+          can_view?: boolean
+          company_id?: string
+          created_at?: string
+          field_name?: string
+          id?: string
+          role_name?: string
+          table_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_permissions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
