@@ -228,8 +228,10 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       color: 'bg-pink-500', gradient: 'from-pink-400 to-pink-600',
       items: [
         { id: 'integrations', label: 'التكاملات الخارجية', labelEn: 'Integrations', icon: Plug },
+        { id: 'ecommerce-integration', label: 'ربط سلة/زد', labelEn: 'Salla/Zid', icon: Globe },
         { id: 'api-management', label: 'API عام', labelEn: 'API Management', icon: Globe },
         { id: 'developer-api', label: 'API للمطورين', labelEn: 'Developer API', icon: Code },
+        { id: 'public-api-docs', label: 'توثيق API العام', labelEn: 'Public API Docs', icon: FileText },
         { id: 'plugins', label: 'الإضافات', labelEn: 'Plugins', icon: Puzzle },
         ...activePlugins.map(p => ({
           id: p.pageId as ActivePage,
