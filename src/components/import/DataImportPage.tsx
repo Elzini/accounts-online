@@ -133,13 +133,13 @@ export function DataImportPage() {
           }
           const { error } = await supabase.from('inventory_items').insert({
             company_id: companyId,
-            name: row.name,
-            sku: row.sku || null,
+            item_name: row.item_name,
+            item_code: row.item_code || `ITEM-${Date.now()}-${i}`,
             category: row.category || null,
             unit: row.unit || 'حبة',
             cost_price: parseFloat(row.cost_price) || 0,
             selling_price: parseFloat(row.selling_price) || 0,
-            current_quantity: parseInt(row.quantity) || 0,
+            quantity_on_hand: parseInt(row.quantity_on_hand) || 0,
           });
           if (error) throw error;
         }
