@@ -9,7 +9,7 @@ import { useVATReturnReport } from '@/hooks/useVATReturnReport';
 import { useTaxSettings } from '@/hooks/useAccounting';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { toast } from 'sonner';
-import { Loader2, FileText, Printer, TrendingUp, TrendingDown, Building2, Receipt, ShoppingCart, AlertCircle, CheckCircle2, FileSpreadsheet } from 'lucide-react';
+import { Loader2, FileText, Printer, TrendingUp, TrendingDown, Building2, Receipt, ShoppingCart, AlertCircle, CheckCircle2, FileSpreadsheet, FileCode } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths, startOfQuarter, endOfQuarter, subQuarters } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';

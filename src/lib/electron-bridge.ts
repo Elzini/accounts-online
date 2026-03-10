@@ -22,7 +22,7 @@ const ipcInvoke = async <T>(channel: string, ...args: any[]): Promise<T> => {
     throw new Error('Not running in Electron environment');
   }
   
-  const { ipcRenderer } = window.require('electron');
+  const { ipcRenderer } = (window as any).require('electron');
   const result = await ipcRenderer.invoke(channel, ...args);
   
   if (!result.success) {
