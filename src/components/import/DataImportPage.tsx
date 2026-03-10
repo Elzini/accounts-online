@@ -34,7 +34,7 @@ const TEMPLATES: Record<ImportType, { headers: string[]; headersAr: string[]; ex
     example: [['شركة التوريد', '0551234567', '300000000000003', 'جدة', 'خالد']],
   },
   items: {
-    headers: ['name', 'sku', 'category', 'unit', 'cost_price', 'selling_price', 'quantity'],
+    headers: ['item_name', 'item_code', 'category', 'unit', 'cost_price', 'selling_price', 'quantity_on_hand'],
     headersAr: ['اسم الصنف', 'رمز الصنف', 'التصنيف', 'الوحدة', 'سعر التكلفة', 'سعر البيع', 'الكمية'],
     example: [['قلم جاف', 'PEN001', 'أدوات مكتبية', 'حبة', '2', '5', '100']],
   },
@@ -126,20 +126,20 @@ export function DataImportPage() {
           });
           if (error) throw error;
         } else if (activeTab === 'items') {
-          if (!row.name) {
+          if (!row.item_name) {
             result.failed++;
             result.errors.push(`سطر ${i + 1}: اسم الصنف مطلوب`);
             continue;
           }
           const { error } = await supabase.from('inventory_items').insert({
             company_id: companyId,
-            name: row.name,
-            sku: row.sku || null,
+            item_name: row.item_name,
+            item_code: row.item_code || `ITEM-${Date.now()}-${i}`,
             category: row.category || null,
             unit: row.unit || 'حبة',
             cost_price: parseFloat(row.cost_price) || 0,
             selling_price: parseFloat(row.selling_price) || 0,
-            current_quantity: parseInt(row.quantity) || 0,
+            quantity_on_hand: parseInt(row.quantity_on_hand) || 0,
           });
           if (error) throw error;
         }
