@@ -53,7 +53,8 @@ export function DataImportPage() {
     if (!file) return;
 
     try {
-      const workbook = await readExcelFile(file);
+      const buffer = await file.arrayBuffer();
+      const workbook = await readExcelFile(buffer);
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const jsonData = utils.sheet_to_json<ImportRow>(sheet);
