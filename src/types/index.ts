@@ -250,4 +250,8 @@ export type ActivePage =
      // Ecommerce Integration
      | 'ecommerce-integration'
      // Public API Docs
-     | 'public-api-docs';
+     | 'public-api-docs'
+     // New wired pages
+     | 'data-import'
+     | 'expense-ocr'
+     | 'overdue-invoices';
