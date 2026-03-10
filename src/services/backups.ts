@@ -199,6 +199,28 @@ function calculateRecordsCount(data: BackupData): Record<string, number> {
   };
 }
 
+async function deleteCompanyScopedChildRows(companyId: string) {
+  const { data: salesRows } = await supabase
+    .from('sales')
+    .select('id')
+    .eq('company_id', companyId);
+
+  const saleIds = (salesRows || []).map((row) => row.id);
+  if (saleIds.length > 0) {
+    await supabase.from('sale_items').delete().in('sale_id', saleIds);
+  }
+
+  const { data: journalRows } = await supabase
+    .from('journal_entries')
+    .select('id')
+    .eq('company_id', companyId);
+
+  const journalIds = (journalRows || []).map((row) => row.id);
+  if (journalIds.length > 0) {
+    await supabase.from('journal_entry_lines').delete().in('journal_entry_id', journalIds);
+  }
+}
+
 export async function deleteBackup(backupId: string): Promise<void> {
   const { error } = await supabase
     .from('backups')
