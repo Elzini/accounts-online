@@ -204,21 +204,51 @@ export function PurchasesReport() {
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_number}</TableHead>
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_item}</TableHead>
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_model}</TableHead>
+                <TableHead className="text-right font-bold">رقم اللوحة</TableHead>
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_chassis}</TableHead>
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_price}</TableHead>
+                <TableHead className="text-right font-bold">المصروفات</TableHead>
+                <TableHead className="text-right font-bold">الإجمالي</TableHead>
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_date}</TableHead>
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_status}</TableHead>
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCars.map((car) => (
+              {filteredCars.map((car) => {
+                const expTotal = getCarExpensesTotal(car.id);
+                const expDetails = carExpensesMap[car.id] || [];
+                const total = Number(car.purchase_price) + expTotal;
+                return (
                 <TableRow key={car.id}>
                   <TableCell>{car.inventory_number}</TableCell>
                   <TableCell className="font-semibold">{car.name}</TableCell>
                   <TableCell>{car.model || '-'}</TableCell>
+                  <TableCell>{car.plate_number || '-'}</TableCell>
                   <TableCell className="font-mono text-sm">{car.chassis_number}</TableCell>
                   <TableCell>{formatCurrency(Number(car.purchase_price))} {t.rpt_currency}</TableCell>
+                  <TableCell>
+                    {expTotal > 0 ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger className="cursor-help underline decoration-dotted">
+                            {formatCurrency(expTotal)} {t.rpt_currency}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="space-y-1 text-sm">
+                              {expDetails.map((e, i) => (
+                                <div key={i} className="flex justify-between gap-4">
+                                  <span>{e.description}</span>
+                                  <span>{formatCurrency(e.amount)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : '-'}
+                  </TableCell>
+                  <TableCell className="font-bold">{formatCurrency(total)} {t.rpt_currency}</TableCell>
                   <TableCell>{formatDate(car.purchase_date)}</TableCell>
                   <TableCell>
                     <Badge className={car.status === 'available' ? 'bg-success' : car.status === 'transferred' ? 'bg-orange-500' : ''}>
@@ -229,7 +259,8 @@ export function PurchasesReport() {
                     <PurchaseActions car={car} />
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         )}
