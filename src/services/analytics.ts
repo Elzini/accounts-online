@@ -82,7 +82,7 @@ export interface AdvancedStats {
 
 export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<AdvancedStats> {
   const companyId = await getCurrentCompanyId();
-  
+  if (!companyId) throw new Error('COMPANY_REQUIRED');
   const toDateOnly = (date: Date) => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
