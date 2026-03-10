@@ -9,10 +9,12 @@ import { useVATReturnReport } from '@/hooks/useVATReturnReport';
 import { useTaxSettings } from '@/hooks/useAccounting';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { toast } from 'sonner';
-import { Loader2, FileText, Printer, TrendingUp, TrendingDown, Building2, Receipt, ShoppingCart, AlertCircle, CheckCircle2, FileSpreadsheet } from 'lucide-react';
+import { Loader2, FileText, Printer, TrendingUp, TrendingDown, Building2, Receipt, ShoppingCart, AlertCircle, CheckCircle2, FileSpreadsheet, FileCode } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths, startOfQuarter, endOfQuarter, subQuarters } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { generateZatcaVATReturnXML, downloadZatcaXML } from '@/lib/zatcaXmlExport';
+import { useTaxSettings as useTaxSettingsHook } from '@/hooks/useAccounting';
 
 export function VATReturnReportPage() {
   const { t, direction } = useLanguage();
@@ -130,6 +132,21 @@ export function VATReturnReportPage() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={handlePrint}><Printer className="w-4 h-4 ml-2" />{t.print}</Button>
           <Button variant="outline" onClick={handleExportExcel}><FileSpreadsheet className="w-4 h-4 ml-2" />{t.fr_export_excel}</Button>
+          <Button variant="outline" onClick={() => {
+            if (!report) return;
+            const xml = generateZatcaVATReturnXML({
+              companyName: taxSettings?.company_name_ar || '',
+              vatNumber: taxSettings?.tax_number || '',
+              periodStart: startDate,
+              periodEnd: endDate,
+              taxRate: taxSettings?.tax_rate || 15,
+              sales: report.sales,
+              purchases: report.purchases,
+              netVAT: report.netVAT,
+            });
+            downloadZatcaXML(xml, startDate, endDate);
+            toast.success('تم تصدير ملف XML بنجاح');
+          }}><FileCode className="w-4 h-4 ml-2" />تصدير XML</Button>
         </div>
       </div>
 

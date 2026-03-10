@@ -241,5 +241,13 @@ export type ActivePage =
      | 'field-service'
      | 'plm'
      | 'barcode-scanner'
-     // Support
-     | 'support-contact';
+      // Support
+     | 'support-contact'
+     // Field-Level Security
+     | 'field-level-security'
+     // Invoice Approval Workflow
+     | 'invoice-approval-workflow'
+     // Ecommerce Integration
+     | 'ecommerce-integration'
+     // Public API Docs
+     | 'public-api-docs';

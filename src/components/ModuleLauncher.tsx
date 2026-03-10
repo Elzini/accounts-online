@@ -228,8 +228,10 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       color: 'bg-pink-500', gradient: 'from-pink-400 to-pink-600',
       items: [
         { id: 'integrations', label: 'التكاملات الخارجية', labelEn: 'Integrations', icon: Plug },
+        { id: 'ecommerce-integration', label: 'ربط سلة/زد', labelEn: 'Salla/Zid', icon: Globe },
         { id: 'api-management', label: 'API عام', labelEn: 'API Management', icon: Globe },
         { id: 'developer-api', label: 'API للمطورين', labelEn: 'Developer API', icon: Code },
+        { id: 'public-api-docs', label: 'توثيق API العام', labelEn: 'Public API Docs', icon: FileText },
         { id: 'plugins', label: 'الإضافات', labelEn: 'Plugins', icon: Puzzle },
         ...activePlugins.map(p => ({
           id: p.pageId as ActivePage,
@@ -244,10 +246,12 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       color: 'bg-slate-600', gradient: 'from-slate-500 to-slate-700', permission: 'admin',
       items: [
         { id: 'users-management', label: 'إدارة المستخدمين', labelEn: 'Users', icon: UserCog, permission: 'admin' },
+        { id: 'field-level-security', label: 'صلاحيات الحقول', labelEn: 'Field Security', icon: Shield, permission: 'admin' },
         { id: 'branches', label: 'الفروع', labelEn: 'Branches', icon: GitFork, permission: 'admin' },
         { id: 'fiscal-years', label: 'السنوات المالية', labelEn: 'Fiscal Years', icon: Calendar, permission: 'admin' },
         { id: 'tasks', label: 'إدارة المهام', labelEn: 'Tasks', icon: ListTodo, permission: 'admin' },
         { id: 'approvals', label: 'الموافقات', labelEn: 'Approvals', icon: GitBranch, permission: 'admin' },
+        { id: 'invoice-approval-workflow', label: 'اعتماد الفواتير', labelEn: 'Invoice Approvals', icon: Workflow, permission: 'admin' },
         { id: 'workflows', label: 'الدورات المستندية', labelEn: 'Workflows', icon: Workflow, permission: 'admin' },
         { id: 'app-settings', label: 'إعدادات النظام', labelEn: 'Settings', icon: Settings, permission: 'admin' },
         { id: 'theme-settings', label: 'المظهر', labelEn: 'Theme', icon: Palette, permission: 'admin' },

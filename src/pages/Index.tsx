@@ -144,6 +144,10 @@ import { FieldServicePage } from '@/components/field-service/FieldServicePage';
 import { PLMPage } from '@/components/plm/PLMPage';
 import { BarcodeScannerPage } from '@/components/barcode/BarcodeScannerPage';
 import { SupportContact } from '@/components/SupportContact';
+import { FieldLevelSecurityPage } from '@/components/security/FieldLevelSecurityPage';
+import { InvoiceApprovalWorkflow } from '@/components/approvals/InvoiceApprovalWorkflow';
+import { EcommerceIntegrationPage } from '@/components/integrations/EcommerceIntegrationPage';
+import { PublicApiDocsPage } from '@/components/api-docs/PublicApiDocsPage';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { GlobalSearchDialog } from '@/components/global-search/GlobalSearchDialog';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -422,6 +426,10 @@ const Index = () => {
       case 'plm': return <PLMPage />;
       case 'barcode-scanner': return <BarcodeScannerPage />;
       case 'support-contact': return <SupportContact />;
+      case 'field-level-security': return <FieldLevelSecurityPage />;
+      case 'invoice-approval-workflow': return <InvoiceApprovalWorkflow />;
+      case 'ecommerce-integration': return <EcommerceIntegrationPage />;
+      case 'public-api-docs': return <PublicApiDocsPage />;
       default:
         return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} isFocusMode={isFocusMode} onToggleFocusMode={toggleFocusMode} />;
     }
