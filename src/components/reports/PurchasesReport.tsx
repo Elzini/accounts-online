@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { FileText, ShoppingCart, Truck, Printer, RefreshCw } from 'lucide-react';
 import { useCars, useSuppliers } from '@/hooks/useDatabase';
+import { useExpenses } from '@/hooks/useExpenses';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -11,10 +12,12 @@ import { PurchaseActions } from '@/components/actions/PurchaseActions';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function PurchasesReport() {
   const { data: cars = [], isLoading, refetch } = useCars();
   const { data: suppliers = [] } = useSuppliers();
+  const { data: allExpenses = [] } = useExpenses();
   const { filterByFiscalYear } = useFiscalYearFilter();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -35,6 +38,21 @@ export function PurchasesReport() {
       return acc;
     }, {} as Record<string, typeof suppliers[0]>);
   }, [suppliers]);
+
+  // Build car expenses map
+  const carExpensesMap = useMemo(() => {
+    const map: Record<string, { description: string; amount: number }[]> = {};
+    allExpenses.forEach(exp => {
+      if (exp.car_id) {
+        if (!map[exp.car_id]) map[exp.car_id] = [];
+        map[exp.car_id].push({ description: exp.description, amount: Number(exp.amount) });
+      }
+    });
+    return map;
+  }, [allExpenses]);
+
+  const getCarExpensesTotal = (carId: string) =>
+    (carExpensesMap[carId] || []).reduce((sum, e) => sum + e.amount, 0);
 
   // Enrich cars with supplier data
   const carsWithSuppliers = useMemo(() => {
@@ -75,20 +93,30 @@ export function PurchasesReport() {
         { header: t.rpt_purch_col_number, key: 'inventory_number' },
         { header: t.rpt_purch_col_item, key: 'name' },
         { header: t.rpt_purch_col_model, key: 'model' },
+        { header: 'رقم اللوحة', key: 'plate_number' },
         { header: t.rpt_purch_col_chassis, key: 'chassis_number' },
         { header: t.rpt_purch_col_price, key: 'purchase_price' },
+        { header: 'المصروفات', key: 'expenses' },
+        { header: 'الإجمالي', key: 'total_cost' },
         { header: t.rpt_purch_col_date, key: 'purchase_date' },
         { header: t.rpt_purch_col_status, key: 'status' },
       ],
-      data: filteredCars.map(car => ({
-        inventory_number: car.inventory_number,
-        name: car.name,
-        model: car.model || '-',
-        chassis_number: car.chassis_number,
-        purchase_price: `${formatCurrency(Number(car.purchase_price))} ${t.rpt_currency}`,
-        purchase_date: formatDate(car.purchase_date),
-        status: getStatusText(car.status),
-      })),
+      data: filteredCars.map(car => {
+        const expTotal = getCarExpensesTotal(car.id);
+        const total = Number(car.purchase_price) + expTotal;
+        return {
+          inventory_number: car.inventory_number,
+          name: car.name,
+          model: car.model || '-',
+          plate_number: car.plate_number || '-',
+          chassis_number: car.chassis_number,
+          purchase_price: `${formatCurrency(Number(car.purchase_price))} ${t.rpt_currency}`,
+          expenses: `${formatCurrency(expTotal)} ${t.rpt_currency}`,
+          total_cost: `${formatCurrency(total)} ${t.rpt_currency}`,
+          purchase_date: formatDate(car.purchase_date),
+          status: getStatusText(car.status),
+        };
+      }),
       summaryCards: [
         { label: t.rpt_purch_count, value: String(filteredCars.length) },
         { label: t.rpt_purch_total, value: `${formatCurrency(totalPurchases)} ${t.rpt_currency}` },
@@ -176,21 +204,51 @@ export function PurchasesReport() {
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_number}</TableHead>
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_item}</TableHead>
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_model}</TableHead>
+                <TableHead className="text-right font-bold">رقم اللوحة</TableHead>
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_chassis}</TableHead>
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_price}</TableHead>
+                <TableHead className="text-right font-bold">المصروفات</TableHead>
+                <TableHead className="text-right font-bold">الإجمالي</TableHead>
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_date}</TableHead>
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_status}</TableHead>
                 <TableHead className="text-right font-bold">{t.rpt_purch_col_actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCars.map((car) => (
+              {filteredCars.map((car) => {
+                const expTotal = getCarExpensesTotal(car.id);
+                const expDetails = carExpensesMap[car.id] || [];
+                const total = Number(car.purchase_price) + expTotal;
+                return (
                 <TableRow key={car.id}>
                   <TableCell>{car.inventory_number}</TableCell>
                   <TableCell className="font-semibold">{car.name}</TableCell>
                   <TableCell>{car.model || '-'}</TableCell>
+                  <TableCell>{car.plate_number || '-'}</TableCell>
                   <TableCell className="font-mono text-sm">{car.chassis_number}</TableCell>
                   <TableCell>{formatCurrency(Number(car.purchase_price))} {t.rpt_currency}</TableCell>
+                  <TableCell>
+                    {expTotal > 0 ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger className="cursor-help underline decoration-dotted">
+                            {formatCurrency(expTotal)} {t.rpt_currency}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="space-y-1 text-sm">
+                              {expDetails.map((e, i) => (
+                                <div key={i} className="flex justify-between gap-4">
+                                  <span>{e.description}</span>
+                                  <span>{formatCurrency(e.amount)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : '-'}
+                  </TableCell>
+                  <TableCell className="font-bold">{formatCurrency(total)} {t.rpt_currency}</TableCell>
                   <TableCell>{formatDate(car.purchase_date)}</TableCell>
                   <TableCell>
                     <Badge className={car.status === 'available' ? 'bg-success' : car.status === 'transferred' ? 'bg-orange-500' : ''}>
@@ -201,7 +259,8 @@ export function PurchasesReport() {
                     <PurchaseActions car={car} />
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         )}
