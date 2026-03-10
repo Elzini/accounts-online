@@ -93,20 +93,30 @@ export function PurchasesReport() {
         { header: t.rpt_purch_col_number, key: 'inventory_number' },
         { header: t.rpt_purch_col_item, key: 'name' },
         { header: t.rpt_purch_col_model, key: 'model' },
+        { header: 'رقم اللوحة', key: 'plate_number' },
         { header: t.rpt_purch_col_chassis, key: 'chassis_number' },
         { header: t.rpt_purch_col_price, key: 'purchase_price' },
+        { header: 'المصروفات', key: 'expenses' },
+        { header: 'الإجمالي', key: 'total_cost' },
         { header: t.rpt_purch_col_date, key: 'purchase_date' },
         { header: t.rpt_purch_col_status, key: 'status' },
       ],
-      data: filteredCars.map(car => ({
-        inventory_number: car.inventory_number,
-        name: car.name,
-        model: car.model || '-',
-        chassis_number: car.chassis_number,
-        purchase_price: `${formatCurrency(Number(car.purchase_price))} ${t.rpt_currency}`,
-        purchase_date: formatDate(car.purchase_date),
-        status: getStatusText(car.status),
-      })),
+      data: filteredCars.map(car => {
+        const expTotal = getCarExpensesTotal(car.id);
+        const total = Number(car.purchase_price) + expTotal;
+        return {
+          inventory_number: car.inventory_number,
+          name: car.name,
+          model: car.model || '-',
+          plate_number: car.plate_number || '-',
+          chassis_number: car.chassis_number,
+          purchase_price: `${formatCurrency(Number(car.purchase_price))} ${t.rpt_currency}`,
+          expenses: `${formatCurrency(expTotal)} ${t.rpt_currency}`,
+          total_cost: `${formatCurrency(total)} ${t.rpt_currency}`,
+          purchase_date: formatDate(car.purchase_date),
+          status: getStatusText(car.status),
+        };
+      }),
       summaryCards: [
         { label: t.rpt_purch_count, value: String(filteredCars.length) },
         { label: t.rpt_purch_total, value: `${formatCurrency(totalPurchases)} ${t.rpt_currency}` },
