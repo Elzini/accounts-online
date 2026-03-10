@@ -36,25 +36,27 @@ export type VoucherInsert = Omit<Voucher, 'id' | 'voucher_number' | 'created_at'
 
 export async function fetchVouchers(): Promise<Voucher[]> {
   const companyId = await getCurrentCompanyId();
-  let query = supabase
+  if (!companyId) return [];
+  
+  const { data, error } = await supabase
     .from('vouchers')
     .select('*')
+    .eq('company_id', companyId)
     .order('created_at', { ascending: false });
-  if (companyId) query = query.eq('company_id', companyId);
-  const { data, error } = await query;
   if (error) throw error;
   return data as Voucher[];
 }
 
 export async function fetchVouchersByType(type: 'receipt' | 'payment'): Promise<Voucher[]> {
   const companyId = await getCurrentCompanyId();
-  let query = supabase
+  if (!companyId) return [];
+  
+  const { data, error } = await supabase
     .from('vouchers')
     .select('*')
     .eq('voucher_type', type)
+    .eq('company_id', companyId)
     .order('created_at', { ascending: false });
-  if (companyId) query = query.eq('company_id', companyId);
-  const { data, error } = await query;
   if (error) throw error;
   return data as Voucher[];
 }
