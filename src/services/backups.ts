@@ -243,10 +243,9 @@ export async function restoreBackup(backupId: string, companyId: string): Promis
 
   const backupData = backup.backup_data as unknown as BackupData;
 
-  // Delete existing data (in correct order to respect foreign keys)
-  await supabase.from('journal_entry_lines').delete().eq('journal_entries.company_id', companyId);
+  // Delete existing data (company-scoped only, in FK-safe order)
+  await deleteCompanyScopedChildRows(companyId);
   await supabase.from('journal_entries').delete().eq('company_id', companyId);
-  await supabase.from('sale_items').delete().eq('sales.company_id', companyId);
   await supabase.from('sales').delete().eq('company_id', companyId);
   await supabase.from('cars').delete().eq('company_id', companyId);
   await supabase.from('purchase_batches').delete().eq('company_id', companyId);
