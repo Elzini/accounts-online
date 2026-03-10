@@ -10,18 +10,10 @@ interface ServiceWorkerRegistration {
 }
 
 export function usePWAUpdate() {
-  const [needRefresh, setNeedRefresh] = useState(() => {
-    // Restore from sessionStorage so it survives navigation/re-renders
-    return sessionStorage.getItem('pwa-need-refresh') === 'true';
-  });
+  const [needRefresh, setNeedRefresh] = useState(false);
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
-
-  // Sync needRefresh to sessionStorage
-  useEffect(() => {
-    sessionStorage.setItem('pwa-need-refresh', String(needRefresh));
-  }, [needRefresh]);
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -97,14 +89,11 @@ export function usePWAUpdate() {
   }, []);
 
   const updateServiceWorker = useCallback(async () => {
-    // Try the current registration first
     if (registration?.waiting) {
       registration.waiting.postMessage({ type: 'SKIP_WAITING' });
       return;
     }
 
-    // If needRefresh was restored from sessionStorage but registration.waiting is null,
-    // try to get a fresh registration
     if ('serviceWorker' in navigator) {
       try {
         const reg = await navigator.serviceWorker.ready;
@@ -112,20 +101,16 @@ export function usePWAUpdate() {
           reg.waiting.postMessage({ type: 'SKIP_WAITING' });
           return;
         }
-        // No waiting worker found - force reload to get latest version
-        sessionStorage.removeItem('pwa-need-refresh');
-        window.location.reload();
       } catch {
-        // Fallback: just reload
-        sessionStorage.removeItem('pwa-need-refresh');
-        window.location.reload();
+        // ignore
       }
     }
+    // No waiting worker — just dismiss
+    setNeedRefresh(false);
   }, [registration]);
 
   const dismissUpdate = useCallback(() => {
     setNeedRefresh(false);
-    sessionStorage.removeItem('pwa-need-refresh');
   }, []);
 
   return {
