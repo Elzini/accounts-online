@@ -353,8 +353,11 @@ export function Sidebar({
 
   const systemMenuItems: MenuItem[] = [
     { id: 'users-management' as ActivePage, label: s(settings?.users_management_title, t.nav_users_management), icon: UserCog },
+    { id: 'field-level-security' as ActivePage, label: language === 'ar' ? 'صلاحيات الحقول' : 'Field Security', icon: Shield, permission: 'admin' },
     { id: 'branches' as ActivePage, label: t.nav_branches, icon: GitFork },
     { id: 'fiscal-years' as ActivePage, label: t.nav_fiscal_years, icon: Calendar },
+    { id: 'approvals' as ActivePage, label: language === 'ar' ? 'الموافقات' : 'Approvals', icon: GitBranch, permission: 'admin' },
+    { id: 'invoice-approval-workflow' as ActivePage, label: language === 'ar' ? 'اعتماد الفواتير' : 'Invoice Approvals', icon: Workflow, permission: 'admin' },
     { id: 'app-settings' as ActivePage, label: s(settings?.app_settings_title, t.nav_app_settings), icon: Settings },
     { id: 'control-center' as ActivePage, label: t.nav_control_center, icon: Settings2 },
     { id: 'backups' as ActivePage, label: s(settings?.backups_title, t.nav_backups), icon: Database },
@@ -366,7 +369,9 @@ export function Sidebar({
     { id: 'zatca-technical-doc' as ActivePage, label: language === 'ar' ? 'وثائق ZATCA' : 'ZATCA Docs', icon: FileText, permission: 'admin' },
     { id: 'plugins' as ActivePage, label: language === 'ar' ? 'الإضافات' : 'Plugins', icon: Plug },
     { id: 'integrations' as ActivePage, label: t.nav_integrations, icon: Link2 },
+    { id: 'ecommerce-integration' as ActivePage, label: language === 'ar' ? 'ربط سلة/زد' : 'Salla/Zid', icon: Globe, permission: 'admin' },
     { id: 'developer-api' as ActivePage, label: language === 'ar' ? 'API للمطورين' : 'Developer API', icon: Code, permission: 'admin' },
+    { id: 'public-api-docs' as ActivePage, label: language === 'ar' ? 'توثيق API' : 'API Docs', icon: FileText, permission: 'admin' },
     { id: 'medad-import' as ActivePage, label: t.nav_medad_import, icon: FileUp, permission: 'admin' },
     { id: 'mobile-invoice-reader' as ActivePage, label: language === 'ar' ? 'قراءة فاتورة' : 'Invoice Reader', icon: QrCode },
   ];
