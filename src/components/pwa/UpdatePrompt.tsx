@@ -8,12 +8,12 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 const CHANGELOG = [
   {
-    version: '2.5.0',
-    date: '2026-02-16',
+    version: '2.6.0',
+    date: '2026-03-10',
     changes: [
-      { ar: 'إضافة 20 وحدة جديدة (نقاط البيع، التوظيف، الأسطول...)', en: 'Added 20 new modules (POS, Recruitment, Fleet...)' },
-      { ar: 'نظام إشعارات التحديث مع سجل التغييرات', en: 'Update notification system with changelog' },
-      { ar: 'مراجعة التعديلات قبل الحفظ', en: 'Edit review before saving' },
+      { ar: 'تحسين تقرير المشتريات: إضافة رقم اللوحة والمصروفات والإجمالي', en: 'Purchase report: added plate number, expenses & total' },
+      { ar: 'فلترة تقرير المشتريات حسب حالة السيارة (متاحة/مباعة)', en: 'Filter purchase report by car status (available/sold)' },
+      { ar: 'إصلاح ترقيم المخزون ليبدأ من 1 لكل شركة', en: 'Fixed inventory numbering to start from 1 per company' },
       { ar: 'تحسينات الأداء والاستقرار', en: 'Performance and stability improvements' },
     ],
   },
