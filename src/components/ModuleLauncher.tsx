@@ -244,10 +244,12 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
       color: 'bg-slate-600', gradient: 'from-slate-500 to-slate-700', permission: 'admin',
       items: [
         { id: 'users-management', label: 'إدارة المستخدمين', labelEn: 'Users', icon: UserCog, permission: 'admin' },
+        { id: 'field-level-security', label: 'صلاحيات الحقول', labelEn: 'Field Security', icon: Shield, permission: 'admin' },
         { id: 'branches', label: 'الفروع', labelEn: 'Branches', icon: GitFork, permission: 'admin' },
         { id: 'fiscal-years', label: 'السنوات المالية', labelEn: 'Fiscal Years', icon: Calendar, permission: 'admin' },
         { id: 'tasks', label: 'إدارة المهام', labelEn: 'Tasks', icon: ListTodo, permission: 'admin' },
         { id: 'approvals', label: 'الموافقات', labelEn: 'Approvals', icon: GitBranch, permission: 'admin' },
+        { id: 'invoice-approval-workflow', label: 'اعتماد الفواتير', labelEn: 'Invoice Approvals', icon: Workflow, permission: 'admin' },
         { id: 'workflows', label: 'الدورات المستندية', labelEn: 'Workflows', icon: Workflow, permission: 'admin' },
         { id: 'app-settings', label: 'إعدادات النظام', labelEn: 'Settings', icon: Settings, permission: 'admin' },
         { id: 'theme-settings', label: 'المظهر', labelEn: 'Theme', icon: Palette, permission: 'admin' },
