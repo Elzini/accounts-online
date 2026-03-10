@@ -17,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 export function PurchasesReport() {
   const { data: cars = [], isLoading, refetch } = useCars();
   const { data: suppliers = [] } = useSuppliers();
+  const { data: allExpenses = [] } = useExpenses();
   const { filterByFiscalYear } = useFiscalYearFilter();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
