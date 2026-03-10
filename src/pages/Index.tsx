@@ -148,6 +148,9 @@ import { FieldLevelSecurityPage } from '@/components/security/FieldLevelSecurity
 import { InvoiceApprovalWorkflow } from '@/components/approvals/InvoiceApprovalWorkflow';
 import { EcommerceIntegrationPage } from '@/components/integrations/EcommerceIntegrationPage';
 import { PublicApiDocsPage } from '@/components/api-docs/PublicApiDocsPage';
+import { DataImportPage } from '@/components/import/DataImportPage';
+import { ExpenseOCRPage } from '@/components/expenses/ExpenseOCRPage';
+import { OverdueInvoicesPage } from '@/components/notifications/OverdueInvoicesPage';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { GlobalSearchDialog } from '@/components/global-search/GlobalSearchDialog';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
