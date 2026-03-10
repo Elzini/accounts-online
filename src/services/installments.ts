@@ -56,6 +56,8 @@ export async function fetchInstallmentSales(
   fiscalYearStartDate?: string,
   fiscalYearEndDate?: string
 ): Promise<InstallmentSale[]> {
+  if (!companyId) return [];
+  
   let query = supabase
     .from('installment_sales')
     .select(`
@@ -67,11 +69,8 @@ export async function fetchInstallmentSales(
       ),
       payments:installment_payments(*)
     `)
+    .eq('company_id', companyId)
     .order('created_at', { ascending: false });
-  
-  if (companyId) {
-    query = query.eq('company_id', companyId);
-  }
   
   const { data, error } = await query;
   
