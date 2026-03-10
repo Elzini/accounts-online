@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { RefreshCw, X, Sparkles, CheckCircle2 } from 'lucide-react';
+import { RefreshCw, X, Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { usePWAUpdate } from '@/hooks/usePWAUpdate';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -24,8 +25,39 @@ export function UpdatePrompt() {
   const { language } = useLanguage();
   const isAr = language === 'ar';
   const [showChangelog, setShowChangelog] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   if (!needRefresh) return null;
+
+  const handleUpdate = async () => {
+    setIsUpdating(true);
+    setProgress(0);
+
+    // Simulate progress while the service worker updates
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) {
+          clearInterval(interval);
+          return 90;
+        }
+        return prev + Math.random() * 15;
+      });
+    }, 300);
+
+    try {
+      await updateServiceWorker();
+      setProgress(100);
+      // Small delay to show 100% before reload
+      setTimeout(() => {
+        clearInterval(interval);
+      }, 500);
+    } catch {
+      clearInterval(interval);
+      setIsUpdating(false);
+      setProgress(0);
+    }
+  };
 
   return (
     <>
@@ -34,30 +66,50 @@ export function UpdatePrompt() {
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Sparkles className="w-5 h-5 text-primary" />
+                {isUpdating ? (
+                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                ) : (
+                  <Sparkles className="w-5 h-5 text-primary" />
+                )}
               </div>
               <div>
                 <p className="font-semibold text-sm">
-                  {isAr ? 'تحديث جديد متاح! 🎉' : 'New update available! 🎉'}
+                  {isUpdating
+                    ? (isAr ? 'جاري التحديث...' : 'Updating...')
+                    : (isAr ? 'تحديث جديد متاح! 🎉' : 'New update available! 🎉')}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {isAr ? 'نسخة جديدة جاهزة مع تحسينات وميزات جديدة' : 'A new version is ready with improvements'}
+                  {isUpdating
+                    ? (isAr ? 'يرجى الانتظار حتى يكتمل التحديث' : 'Please wait until the update completes')
+                    : (isAr ? 'نسخة جديدة جاهزة مع تحسينات وميزات جديدة' : 'A new version is ready with improvements')}
                 </p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" className="h-6 w-6 -mt-1 -mr-1" onClick={dismissUpdate}>
-              <X className="w-4 h-4" />
-            </Button>
+            {!isUpdating && (
+              <Button variant="ghost" size="icon" className="h-6 w-6 -mt-1 -mr-1" onClick={dismissUpdate}>
+                <X className="w-4 h-4" />
+              </Button>
+            )}
           </div>
-          <div className="flex gap-2 mt-3">
-            <Button size="sm" variant="outline" onClick={() => setShowChangelog(true)} className="text-xs">
-              {isAr ? 'عرض التغييرات' : 'View Changes'}
-            </Button>
-            <Button onClick={updateServiceWorker} size="sm" className="flex-1 gap-2">
-              <RefreshCw className="w-4 h-4" />
-              {isAr ? 'تحديث الآن' : 'Update Now'}
-            </Button>
-          </div>
+
+          {isUpdating ? (
+            <div className="mt-3 space-y-1.5">
+              <Progress value={progress} className="h-2" />
+              <p className="text-xs text-muted-foreground text-center">
+                {Math.round(progress)}%
+              </p>
+            </div>
+          ) : (
+            <div className="flex gap-2 mt-3">
+              <Button size="sm" variant="outline" onClick={() => setShowChangelog(true)} className="text-xs">
+                {isAr ? 'عرض التغييرات' : 'View Changes'}
+              </Button>
+              <Button onClick={handleUpdate} size="sm" className="flex-1 gap-2">
+                <RefreshCw className="w-4 h-4" />
+                {isAr ? 'تحديث الآن' : 'Update Now'}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -91,7 +143,7 @@ export function UpdatePrompt() {
             <Button variant="outline" onClick={() => setShowChangelog(false)}>
               {isAr ? 'لاحقاً' : 'Later'}
             </Button>
-            <Button onClick={() => { setShowChangelog(false); updateServiceWorker(); }} className="gap-1.5">
+            <Button onClick={() => { setShowChangelog(false); handleUpdate(); }} className="gap-1.5">
               <RefreshCw className="w-4 h-4" />
               {isAr ? 'تحديث الآن' : 'Update Now'}
             </Button>
