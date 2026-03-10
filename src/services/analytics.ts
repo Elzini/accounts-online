@@ -82,7 +82,7 @@ export interface AdvancedStats {
 
 export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<AdvancedStats> {
   const companyId = await getCurrentCompanyId();
-  
+  if (!companyId) throw new Error('COMPANY_REQUIRED');
   const toDateOnly = (date: Date) => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -113,11 +113,11 @@ export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<Adv
   const thisMonthEnd = toDateOnly(new Date(now.getFullYear(), now.getMonth() + 1, 0));
   const lastMonthEnd = toDateOnly(new Date(now.getFullYear(), now.getMonth(), 0));
 
-  // Build queries with fiscal year filter AND company filter
+  // Build queries with fiscal year filter AND mandatory company filter
   let allCarsQuery = supabase
     .from('cars')
-    .select('id, name, model, status, purchase_price, purchase_date, created_at, supplier_id');
-  if (companyId) allCarsQuery = allCarsQuery.eq('company_id', companyId);
+    .select('id, name, model, status, purchase_price, purchase_date, created_at, supplier_id')
+    .eq('company_id', companyId);
   
   let allSalesQuery = supabase
     .from('sales')
@@ -130,8 +130,8 @@ export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<Adv
       customer:customers(id, name, phone),
       car:cars(id, name, model, purchase_price, purchase_date)
     `)
+    .eq('company_id', companyId)
     .order('sale_date', { ascending: false });
-  if (companyId) allSalesQuery = allSalesQuery.eq('company_id', companyId);
 
   // Apply fiscal year filter - filter by date only
   if (fiscalYearStart && fiscalYearEnd) {
@@ -145,14 +145,9 @@ export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<Adv
   }
 
   // Parallel fetches for better performance
-  let customersQuery = supabase.from('customers').select('id, name, phone');
-  if (companyId) customersQuery = customersQuery.eq('company_id', companyId);
-  
-  let suppliersQuery = supabase.from('suppliers').select('id, name');
-  if (companyId) suppliersQuery = suppliersQuery.eq('company_id', companyId);
-  
-  let transfersQuery = supabase.from('car_transfers').select('id, car_id, status');
-  if (companyId) transfersQuery = transfersQuery.eq('company_id', companyId);
+  let customersQuery = supabase.from('customers').select('id, name, phone').eq('company_id', companyId);
+  let suppliersQuery = supabase.from('suppliers').select('id, name').eq('company_id', companyId);
+  let transfersQuery = supabase.from('car_transfers').select('id, car_id, status').eq('company_id', companyId);
 
   const [
     allCars,
