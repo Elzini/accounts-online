@@ -59,11 +59,13 @@ export type ExpenseCategoryInsert = Omit<ExpenseCategory, 'id' | 'created_at' | 
 // Expense Categories
 export async function fetchExpenseCategories(): Promise<ExpenseCategory[]> {
   const companyId = await getCurrentCompanyId();
-  let query = supabase
+  if (!companyId) return [];
+  
+  const { data, error } = await supabase
     .from('expense_categories')
-    .select('*');
-  if (companyId) query = query.eq('company_id', companyId);
-  const { data, error } = await query.order('name');
+    .select('*')
+    .eq('company_id', companyId)
+    .order('name');
   
   if (error) throw error;
   return data as ExpenseCategory[];
