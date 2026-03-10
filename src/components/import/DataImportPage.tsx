@@ -126,7 +126,7 @@ export function DataImportPage() {
           });
           if (error) throw error;
         } else if (activeTab === 'items') {
-          if (!row.name) {
+          if (!row.item_name) {
             result.failed++;
             result.errors.push(`سطر ${i + 1}: اسم الصنف مطلوب`);
             continue;
