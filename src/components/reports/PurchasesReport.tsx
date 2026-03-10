@@ -39,6 +39,21 @@ export function PurchasesReport() {
     }, {} as Record<string, typeof suppliers[0]>);
   }, [suppliers]);
 
+  // Build car expenses map
+  const carExpensesMap = useMemo(() => {
+    const map: Record<string, { description: string; amount: number }[]> = {};
+    allExpenses.forEach(exp => {
+      if (exp.car_id) {
+        if (!map[exp.car_id]) map[exp.car_id] = [];
+        map[exp.car_id].push({ description: exp.description, amount: Number(exp.amount) });
+      }
+    });
+    return map;
+  }, [allExpenses]);
+
+  const getCarExpensesTotal = (carId: string) =>
+    (carExpensesMap[carId] || []).reduce((sum, e) => sum + e.amount, 0);
+
   // Enrich cars with supplier data
   const carsWithSuppliers = useMemo(() => {
     return cars.map(car => ({
