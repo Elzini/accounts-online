@@ -380,10 +380,9 @@ export async function restoreFromLocalFile(
           throw new Error('ملف النسخة الاحتياطية غير صالح');
         }
 
-        // Delete existing data (in correct order to respect foreign keys)
-        await supabase.from('journal_entry_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        // Delete existing data (company-scoped only, in FK-safe order)
+        await deleteCompanyScopedChildRows(companyId);
         await supabase.from('journal_entries').delete().eq('company_id', companyId);
-        await supabase.from('sale_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         await supabase.from('sales').delete().eq('company_id', companyId);
         await supabase.from('cars').delete().eq('company_id', companyId);
         await supabase.from('purchase_batches').delete().eq('company_id', companyId);
