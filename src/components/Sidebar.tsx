@@ -369,7 +369,9 @@ export function Sidebar({
     { id: 'zatca-technical-doc' as ActivePage, label: language === 'ar' ? 'وثائق ZATCA' : 'ZATCA Docs', icon: FileText, permission: 'admin' },
     { id: 'plugins' as ActivePage, label: language === 'ar' ? 'الإضافات' : 'Plugins', icon: Plug },
     { id: 'integrations' as ActivePage, label: t.nav_integrations, icon: Link2 },
+    { id: 'ecommerce-integration' as ActivePage, label: language === 'ar' ? 'ربط سلة/زد' : 'Salla/Zid', icon: Globe, permission: 'admin' },
     { id: 'developer-api' as ActivePage, label: language === 'ar' ? 'API للمطورين' : 'Developer API', icon: Code, permission: 'admin' },
+    { id: 'public-api-docs' as ActivePage, label: language === 'ar' ? 'توثيق API' : 'API Docs', icon: FileText, permission: 'admin' },
     { id: 'medad-import' as ActivePage, label: t.nav_medad_import, icon: FileUp, permission: 'admin' },
     { id: 'mobile-invoice-reader' as ActivePage, label: language === 'ar' ? 'قراءة فاتورة' : 'Invoice Reader', icon: QrCode },
   ];
