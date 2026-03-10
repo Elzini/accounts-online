@@ -199,6 +199,28 @@ function calculateRecordsCount(data: BackupData): Record<string, number> {
   };
 }
 
+async function deleteCompanyScopedChildRows(companyId: string) {
+  const { data: salesRows } = await supabase
+    .from('sales')
+    .select('id')
+    .eq('company_id', companyId);
+
+  const saleIds = (salesRows || []).map((row) => row.id);
+  if (saleIds.length > 0) {
+    await supabase.from('sale_items').delete().in('sale_id', saleIds);
+  }
+
+  const { data: journalRows } = await supabase
+    .from('journal_entries')
+    .select('id')
+    .eq('company_id', companyId);
+
+  const journalIds = (journalRows || []).map((row) => row.id);
+  if (journalIds.length > 0) {
+    await supabase.from('journal_entry_lines').delete().in('journal_entry_id', journalIds);
+  }
+}
+
 export async function deleteBackup(backupId: string): Promise<void> {
   const { error } = await supabase
     .from('backups')
@@ -221,10 +243,9 @@ export async function restoreBackup(backupId: string, companyId: string): Promis
 
   const backupData = backup.backup_data as unknown as BackupData;
 
-  // Delete existing data (in correct order to respect foreign keys)
-  await supabase.from('journal_entry_lines').delete().eq('journal_entries.company_id', companyId);
+  // Delete existing data (company-scoped only, in FK-safe order)
+  await deleteCompanyScopedChildRows(companyId);
   await supabase.from('journal_entries').delete().eq('company_id', companyId);
-  await supabase.from('sale_items').delete().eq('sales.company_id', companyId);
   await supabase.from('sales').delete().eq('company_id', companyId);
   await supabase.from('cars').delete().eq('company_id', companyId);
   await supabase.from('purchase_batches').delete().eq('company_id', companyId);
@@ -359,10 +380,9 @@ export async function restoreFromLocalFile(
           throw new Error('ملف النسخة الاحتياطية غير صالح');
         }
 
-        // Delete existing data (in correct order to respect foreign keys)
-        await supabase.from('journal_entry_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        // Delete existing data (company-scoped only, in FK-safe order)
+        await deleteCompanyScopedChildRows(companyId);
         await supabase.from('journal_entries').delete().eq('company_id', companyId);
-        await supabase.from('sale_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         await supabase.from('sales').delete().eq('company_id', companyId);
         await supabase.from('cars').delete().eq('company_id', companyId);
         await supabase.from('purchase_batches').delete().eq('company_id', companyId);
