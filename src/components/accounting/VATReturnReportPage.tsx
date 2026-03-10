@@ -13,6 +13,8 @@ import { Loader2, FileText, Printer, TrendingUp, TrendingDown, Building2, Receip
 import { format, startOfMonth, endOfMonth, subMonths, startOfQuarter, endOfQuarter, subQuarters } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { generateZatcaVATReturnXML, downloadZatcaXML } from '@/lib/zatcaXmlExport';
+import { useTaxSettings as useTaxSettingsHook } from '@/hooks/useAccounting';
 
 export function VATReturnReportPage() {
   const { t, direction } = useLanguage();
