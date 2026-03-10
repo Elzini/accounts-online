@@ -353,8 +353,11 @@ export function Sidebar({
 
   const systemMenuItems: MenuItem[] = [
     { id: 'users-management' as ActivePage, label: s(settings?.users_management_title, t.nav_users_management), icon: UserCog },
+    { id: 'field-level-security' as ActivePage, label: language === 'ar' ? 'صلاحيات الحقول' : 'Field Security', icon: Shield, permission: 'admin' },
     { id: 'branches' as ActivePage, label: t.nav_branches, icon: GitFork },
     { id: 'fiscal-years' as ActivePage, label: t.nav_fiscal_years, icon: Calendar },
+    { id: 'approvals' as ActivePage, label: language === 'ar' ? 'الموافقات' : 'Approvals', icon: GitBranch, permission: 'admin' },
+    { id: 'invoice-approval-workflow' as ActivePage, label: language === 'ar' ? 'اعتماد الفواتير' : 'Invoice Approvals', icon: Workflow, permission: 'admin' },
     { id: 'app-settings' as ActivePage, label: s(settings?.app_settings_title, t.nav_app_settings), icon: Settings },
     { id: 'control-center' as ActivePage, label: t.nav_control_center, icon: Settings2 },
     { id: 'backups' as ActivePage, label: s(settings?.backups_title, t.nav_backups), icon: Database },
