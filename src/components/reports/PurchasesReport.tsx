@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { FileText, ShoppingCart, Truck, Printer, RefreshCw } from 'lucide-react';
+import { FileText, ShoppingCart, Truck, Printer, RefreshCw, Filter } from 'lucide-react';
 import { useCars, useSuppliers } from '@/hooks/useDatabase';
 import { useExpenses } from '@/hooks/useExpenses';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
@@ -13,6 +13,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function PurchasesReport() {
   const { data: cars = [], isLoading, refetch } = useCars();
@@ -21,6 +22,7 @@ export function PurchasesReport() {
   const { filterByFiscalYear } = useFiscalYearFilter();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'sold'>('all');
   const { printReport } = usePrintReport();
   const queryClient = useQueryClient();
   const { companyId } = useCompany();
@@ -31,7 +33,6 @@ export function PurchasesReport() {
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(locale);
   const getStatusText = (status: string) => status === 'available' ? t.rpt_status_available : status === 'transferred' ? t.rpt_status_transferred : t.rpt_status_sold;
 
-  // Map suppliers by ID for quick lookup
   const suppliersMap = useMemo(() => {
     return suppliers.reduce((acc, supplier) => {
       acc[supplier.id] = supplier;
@@ -39,7 +40,6 @@ export function PurchasesReport() {
     }, {} as Record<string, typeof suppliers[0]>);
   }, [suppliers]);
 
-  // Build car expenses map
   const carExpensesMap = useMemo(() => {
     const map: Record<string, { description: string; amount: number }[]> = {};
     allExpenses.forEach(exp => {
@@ -54,7 +54,6 @@ export function PurchasesReport() {
   const getCarExpensesTotal = (carId: string) =>
     (carExpensesMap[carId] || []).reduce((sum, e) => sum + e.amount, 0);
 
-  // Enrich cars with supplier data
   const carsWithSuppliers = useMemo(() => {
     return cars.map(car => ({
       ...car,
@@ -63,19 +62,33 @@ export function PurchasesReport() {
   }, [cars, suppliersMap]);
 
   const filteredCars = useMemo(() => {
-    // First filter by fiscal year
     let result = filterByFiscalYear(carsWithSuppliers, 'purchase_date');
     
-    // Then apply date range filter within fiscal year
-    return result.filter(car => {
+    result = result.filter(car => {
       const purchaseDate = new Date(car.purchase_date);
       if (startDate && purchaseDate < new Date(startDate)) return false;
       if (endDate && purchaseDate > new Date(endDate + 'T23:59:59')) return false;
       return true;
     });
-  }, [carsWithSuppliers, startDate, endDate, filterByFiscalYear]);
+
+    if (statusFilter === 'available') {
+      result = result.filter(car => car.status === 'available');
+    } else if (statusFilter === 'sold') {
+      result = result.filter(car => car.status === 'sold');
+    }
+
+    return result;
+  }, [carsWithSuppliers, startDate, endDate, filterByFiscalYear, statusFilter]);
 
   const totalPurchases = filteredCars.reduce((sum, car) => sum + Number(car.purchase_price), 0);
+  const totalExpenses = filteredCars.reduce((sum, car) => sum + getCarExpensesTotal(car.id), 0);
+  const grandTotal = totalPurchases + totalExpenses;
+
+  const getFilterLabel = () => {
+    if (statusFilter === 'available') return 'السيارات المتاحة';
+    if (statusFilter === 'sold') return 'السيارات المباعة';
+    return t.rpt_purch_title;
+  };
 
   const handleRefresh = () => {
     refetch();
@@ -86,8 +99,14 @@ export function PurchasesReport() {
   };
 
   const handlePrint = () => {
+    const printTitle = statusFilter === 'available' 
+      ? 'تقرير مشتريات السيارات المتاحة' 
+      : statusFilter === 'sold' 
+        ? 'تقرير مشتريات السيارات المباعة' 
+        : t.rpt_purch_title;
+
     printReport({
-      title: t.rpt_purch_title,
+      title: printTitle,
       subtitle: t.rpt_purch_subtitle,
       columns: [
         { header: t.rpt_purch_col_number, key: 'inventory_number' },
@@ -118,9 +137,10 @@ export function PurchasesReport() {
         };
       }),
       summaryCards: [
-        { label: t.rpt_purch_count, value: String(filteredCars.length) },
-        { label: t.rpt_purch_total, value: `${formatCurrency(totalPurchases)} ${t.rpt_currency}` },
-        { label: t.rpt_purch_available, value: String(filteredCars.filter(c => c.status === 'available').length) },
+        { label: `عدد ${getFilterLabel()}`, value: String(filteredCars.length) },
+        { label: `إجمالي مشتريات ${getFilterLabel()}`, value: `${formatCurrency(totalPurchases)} ${t.rpt_currency}` },
+        { label: 'إجمالي المصروفات', value: `${formatCurrency(totalExpenses)} ${t.rpt_currency}` },
+        { label: 'الإجمالي الكلي', value: `${formatCurrency(grandTotal)} ${t.rpt_currency}` },
       ],
     });
   };
@@ -134,7 +154,18 @@ export function PurchasesReport() {
           <h1 className="text-3xl font-bold text-foreground">{t.rpt_purch_title}</h1>
           <p className="text-muted-foreground">{t.rpt_purch_subtitle}</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'available' | 'sold')}>
+            <SelectTrigger className="w-[160px]">
+              <Filter className="w-4 h-4 ml-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">الكل</SelectItem>
+              <SelectItem value="available">المتاحة</SelectItem>
+              <SelectItem value="sold">المباعة</SelectItem>
+            </SelectContent>
+          </Select>
           <DateRangeFilter
             startDate={startDate}
             endDate={endDate}
@@ -152,14 +183,14 @@ export function PurchasesReport() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-card rounded-2xl p-6 card-shadow">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
               <ShoppingCart className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">{t.rpt_purch_count}</p>
+              <p className="text-sm text-muted-foreground">عدد {getFilterLabel()}</p>
               <p className="text-2xl font-bold">{filteredCars.length}</p>
             </div>
           </div>
@@ -170,8 +201,19 @@ export function PurchasesReport() {
               <FileText className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">{t.rpt_purch_total}</p>
+              <p className="text-sm text-muted-foreground">إجمالي المشتريات</p>
               <p className="text-2xl font-bold">{formatCurrency(totalPurchases)} {t.rpt_currency}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-card rounded-2xl p-6 card-shadow">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-orange-500 flex items-center justify-center">
+              <FileText className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">إجمالي المصروفات</p>
+              <p className="text-2xl font-bold">{formatCurrency(totalExpenses)} {t.rpt_currency}</p>
             </div>
           </div>
         </div>
@@ -181,8 +223,8 @@ export function PurchasesReport() {
               <Truck className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">{t.rpt_purch_available}</p>
-              <p className="text-2xl font-bold">{filteredCars.filter(c => c.status === 'available').length}</p>
+              <p className="text-sm text-muted-foreground">الإجمالي الكلي</p>
+              <p className="text-2xl font-bold">{formatCurrency(grandTotal)} {t.rpt_currency}</p>
             </div>
           </div>
         </div>
@@ -190,8 +232,11 @@ export function PurchasesReport() {
 
       {/* Detailed Table */}
       <div className="bg-card rounded-2xl card-shadow overflow-hidden">
-        <div className="p-4 border-b">
-          <h3 className="font-bold">{t.rpt_purch_details}</h3>
+        <div className="p-4 border-b flex items-center justify-between">
+          <h3 className="font-bold">{t.rpt_purch_details} - {getFilterLabel()}</h3>
+          {statusFilter !== 'all' && (
+            <Badge variant="secondary">{getFilterLabel()} ({filteredCars.length})</Badge>
+          )}
         </div>
         {filteredCars.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
