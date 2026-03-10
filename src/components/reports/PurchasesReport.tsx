@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { FileText, ShoppingCart, Truck, Printer, RefreshCw } from 'lucide-react';
 import { useCars, useSuppliers } from '@/hooks/useDatabase';
+import { useExpenses } from '@/hooks/useExpenses';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,7 @@ import { PurchaseActions } from '@/components/actions/PurchaseActions';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function PurchasesReport() {
   const { data: cars = [], isLoading, refetch } = useCars();
