@@ -426,6 +426,10 @@ const Index = () => {
       case 'plm': return <PLMPage />;
       case 'barcode-scanner': return <BarcodeScannerPage />;
       case 'support-contact': return <SupportContact />;
+      case 'field-level-security': return <FieldLevelSecurityPage />;
+      case 'invoice-approval-workflow': return <InvoiceApprovalWorkflow />;
+      case 'ecommerce-integration': return <EcommerceIntegrationPage />;
+      case 'public-api-docs': return <PublicApiDocsPage />;
       default:
         return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} isFocusMode={isFocusMode} onToggleFocusMode={toggleFocusMode} />;
     }

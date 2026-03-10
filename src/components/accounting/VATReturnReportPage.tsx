@@ -132,6 +132,21 @@ export function VATReturnReportPage() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={handlePrint}><Printer className="w-4 h-4 ml-2" />{t.print}</Button>
           <Button variant="outline" onClick={handleExportExcel}><FileSpreadsheet className="w-4 h-4 ml-2" />{t.fr_export_excel}</Button>
+          <Button variant="outline" onClick={() => {
+            if (!report) return;
+            const xml = generateZatcaVATReturnXML({
+              companyName: taxSettings?.company_name_ar || '',
+              vatNumber: taxSettings?.tax_number || '',
+              periodStart: startDate,
+              periodEnd: endDate,
+              taxRate: taxSettings?.tax_rate || 15,
+              sales: report.sales,
+              purchases: report.purchases,
+              netVAT: report.netVAT,
+            });
+            downloadZatcaXML(xml, startDate, endDate);
+            toast.success('تم تصدير ملف XML بنجاح');
+          }}><FileCode className="w-4 h-4 ml-2" />تصدير XML</Button>
         </div>
       </div>
 
