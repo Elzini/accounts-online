@@ -94,11 +94,15 @@ export function VATReturnReportPage() {
     let start: Date, end: Date;
     if (type === 'year') { start = fyStart; end = fyEnd; }
     else if (type === 'quarter') {
-      end = endOfQuarter(fyEnd); if (end > fyEnd) end = fyEnd;
-      start = startOfQuarter(end); if (start < fyStart) start = fyStart;
+      const now = new Date();
+      const ref = now > fyEnd ? fyEnd : now < fyStart ? fyStart : now;
+      end = endOfQuarter(ref); if (end > fyEnd) end = fyEnd;
+      start = startOfQuarter(ref); if (start < fyStart) start = fyStart;
     } else {
-      end = endOfMonth(fyEnd); if (end > fyEnd) end = fyEnd;
-      start = startOfMonth(end); if (start < fyStart) start = fyStart;
+      const now = new Date();
+      const ref = now > fyEnd ? fyEnd : now < fyStart ? fyStart : now;
+      end = endOfMonth(ref); if (end > fyEnd) end = fyEnd;
+      start = startOfMonth(ref); if (start < fyStart) start = fyStart;
     }
     setStartDate(format(start, 'yyyy-MM-dd'));
     setEndDate(format(end, 'yyyy-MM-dd'));
