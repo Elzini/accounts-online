@@ -373,6 +373,9 @@ export function Sidebar({
     { id: 'developer-api' as ActivePage, label: language === 'ar' ? 'API للمطورين' : 'Developer API', icon: Code, permission: 'admin' },
     { id: 'public-api-docs' as ActivePage, label: language === 'ar' ? 'توثيق API' : 'API Docs', icon: FileText, permission: 'admin' },
     { id: 'medad-import' as ActivePage, label: t.nav_medad_import, icon: FileUp, permission: 'admin' },
+    { id: 'data-import' as ActivePage, label: language === 'ar' ? 'استيراد Excel' : 'Excel Import', icon: FileUp, permission: 'admin' },
+    { id: 'expense-ocr' as ActivePage, label: language === 'ar' ? 'مسح المصروفات' : 'Expense OCR', icon: Receipt, permission: 'admin' },
+    { id: 'overdue-invoices' as ActivePage, label: language === 'ar' ? 'الفواتير المتأخرة' : 'Overdue Invoices', icon: AlertCircle },
     { id: 'mobile-invoice-reader' as ActivePage, label: language === 'ar' ? 'قراءة فاتورة' : 'Invoice Reader', icon: QrCode },
   ];
 
