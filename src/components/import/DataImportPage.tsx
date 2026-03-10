@@ -139,7 +139,7 @@ export function DataImportPage() {
             unit: row.unit || 'حبة',
             cost_price: parseFloat(row.cost_price) || 0,
             selling_price: parseFloat(row.selling_price) || 0,
-            quantity: parseInt(row.quantity) || 0,
+            current_quantity: parseInt(row.quantity) || 0,
           });
           if (error) throw error;
         }
