@@ -34,7 +34,7 @@ const TEMPLATES: Record<ImportType, { headers: string[]; headersAr: string[]; ex
     example: [['شركة التوريد', '0551234567', '300000000000003', 'جدة', 'خالد']],
   },
   items: {
-    headers: ['name', 'sku', 'category', 'unit', 'cost_price', 'selling_price', 'quantity'],
+    headers: ['item_name', 'item_code', 'category', 'unit', 'cost_price', 'selling_price', 'quantity_on_hand'],
     headersAr: ['اسم الصنف', 'رمز الصنف', 'التصنيف', 'الوحدة', 'سعر التكلفة', 'سعر البيع', 'الكمية'],
     example: [['قلم جاف', 'PEN001', 'أدوات مكتبية', 'حبة', '2', '5', '100']],
   },
