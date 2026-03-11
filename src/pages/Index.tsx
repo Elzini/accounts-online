@@ -149,6 +149,7 @@ import { FieldServicePage } from '@/components/field-service/FieldServicePage';
 import { PLMPage } from '@/components/plm/PLMPage';
 import { BarcodeScannerPage } from '@/components/barcode/BarcodeScannerPage';
 import { SupportContact } from '@/components/SupportContact';
+import { FloatingQuickActions } from '@/components/FloatingQuickActions';
 import { FieldLevelSecurityPage } from '@/components/security/FieldLevelSecurityPage';
 import { InvoiceApprovalWorkflow } from '@/components/approvals/InvoiceApprovalWorkflow';
 import { EcommerceIntegrationPage } from '@/components/integrations/EcommerceIntegrationPage';
@@ -609,22 +610,34 @@ const Index = () => {
           <main className="flex-1 min-w-0 overflow-x-hidden pb-20 md:pb-0">
             {/* Top Header Bar - hidden in focus mode */}
             {!isFocusMode && (
-            <header className="sticky top-0 z-40 bg-background/98 backdrop-blur-lg border-b-2 border-border/80 shadow-md px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 safe-area-top">
+            <header className="sticky top-0 z-40 bg-background/98 backdrop-blur-lg border-b border-border/60 shadow-sm px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-2.5 safe-area-top">
               <div className="flex justify-between items-center gap-2">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {/* Back to launcher button */}
+                {/* Left: Back + Breadcrumb */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleBackToLauncher}
-                    className="gap-1.5 h-8 px-2 text-primary hover:text-primary/80"
+                    className="gap-1.5 h-8 px-2 text-primary hover:bg-primary/10"
                   >
                     <LayoutDashboard className="w-4 h-4" />
-                    <span className="hidden sm:inline text-xs">{t.nav_dashboard}</span>
                   </Button>
-                  <p className="text-responsive-sm text-muted-foreground truncate">
-                    {t.hello_greeting} <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
-                  </p>
+                  {/* Breadcrumb */}
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span className="hidden sm:inline">{t.nav_dashboard}</span>
+                    {activePage !== 'dashboard' && (
+                      <>
+                        <span className="text-border">/</span>
+                        <span className="font-medium text-foreground truncate max-w-[200px]">
+                          {(() => {
+                            // Find the section containing this page
+                            const pageLabel = activePage.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                            return pageLabel;
+                          })()}
+                        </span>
+                      </>
+                    )}
+                  </div>
                   {/* Super Admin Company Selector */}
                   {isSuperAdmin && allCompanies.length > 0 && (
                     <Select
@@ -643,16 +656,10 @@ const Index = () => {
                       </SelectContent>
                     </Select>
                   )}
-                  {viewAsCompanyId && currentCompany && (
-                    <Badge variant="secondary" className="gap-1 shrink-0 bg-primary/10 text-primary">
-                      <Building2 className="w-3 h-3" />
-                      <span className="hidden sm:inline text-xs">{currentCompany.name}</span>
-                    </Badge>
-                  )}
                   {selectedFiscalYear && fiscalYears.length > 1 && (
                     <Badge 
                       variant="outline" 
-                      className="cursor-pointer hover:bg-accent gap-1 shrink-0"
+                      className="cursor-pointer hover:bg-accent gap-1 shrink-0 text-xs"
                       onClick={() => setShowFiscalYearDialog(true)}
                     >
                       <Calendar className="w-3 h-3" />
@@ -660,41 +667,25 @@ const Index = () => {
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                  {/* Global Search Button */}
+                {/* Right: Actions */}
+                <div className="flex items-center gap-1.5 shrink-0">
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setShowGlobalSearch(true)}
-                    className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 text-muted-foreground"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
                   >
                     <Search className="w-4 h-4" />
-                    <span className="hidden md:inline text-xs">{language === 'ar' ? 'بحث' : 'Search'}</span>
-                    <kbd className="hidden lg:inline text-[10px] px-1 py-0.5 bg-muted rounded font-mono ms-1">⌘K</kbd>
                   </Button>
                   <NotificationsBell />
-                  <CheckUpdateButton />
-                  <PWAInstallButton />
-                  {permissions.super_admin && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate('/companies')}
-                      className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3"
-                    >
-                      <Building2 className="w-4 h-4" />
-                      <span className="hidden sm:inline text-xs sm:text-sm">{t.company_management}</span>
-                    </Button>
-                  )}
                   <CarSearch />
                   <Button 
                     variant="ghost" 
-                    size="sm"
+                    size="icon"
                     onClick={signOut} 
-                    className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 text-muted-foreground hover:text-destructive"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span className="hidden sm:inline text-xs sm:text-sm">{t.logout}</span>
                   </Button>
                 </div>
               </div>
@@ -721,6 +712,9 @@ const Index = () => {
 
           {/* AI Chat Widget */}
           <AIChatWidget />
+
+          {/* Floating Quick Actions */}
+          <FloatingQuickActions setActivePage={handleSetActivePage} />
 
           {/* Floating Mini Dashboard */}
           <FloatingMiniDashboard isOnDashboard={activePage === 'dashboard'} />
