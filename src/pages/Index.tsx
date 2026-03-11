@@ -96,6 +96,7 @@ import {
   BIAnalyticsPluginPage, POSPluginPage, WhatsAppPluginPage,
   IFRSPluginPage, ProjectMgmtPluginPage
 } from '@/components/plugins/pages';
+import { CashFlowForecastPage } from '@/components/cashflow/CashFlowForecastPage';
 import { PurchaseOrdersPage, GoodsReceiptPage, PurchaseReturnsPage, MaterialsRequestPage, ContractorPaymentPage } from '@/components/procurement';
 import { StockVouchersPage } from '@/components/inventory/StockVouchersPage';
 import { StocktakingPage } from '@/components/inventory/StocktakingPage';
