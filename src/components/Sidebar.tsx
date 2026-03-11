@@ -566,7 +566,7 @@ export function Sidebar({
       </div>
 
       {/* Scrollable sections */}
-      <ScrollArea className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-sidebar-border scrollbar-track-transparent">
         <nav className="p-2 space-y-0.5">
           {visibleSections.map(section => {
             const filtered = getFilteredItems(section);
@@ -600,7 +600,7 @@ export function Sidebar({
             </div>
           )}
         </nav>
-      </ScrollArea>
+      </div>
 
       {/* Footer */}
       <div className="p-3 border-t border-sidebar-border/50 space-y-2">
