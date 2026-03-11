@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 
 type Message = {role: 'user' | 'assistant';content: string;};
@@ -21,6 +22,8 @@ const smartQuestions = [
 
 export function AIChatWidget() {
   const { companyId } = useCompany();
+  const { language } = useLanguage();
+  const isAr = language === 'ar';
   const [isOpen, setIsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
