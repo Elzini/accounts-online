@@ -255,4 +255,8 @@ export type ActivePage =
      | 'data-import'
      | 'expense-ocr'
      | 'overdue-invoices'
-     | 'cashflow-forecast';
+     | 'cashflow-forecast'
+     | 'executive-kpis'
+     | 'commissions-system'
+     | 'branch-comparison'
+     | 'ai-sales-forecast';

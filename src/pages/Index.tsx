@@ -97,6 +97,10 @@ import {
   IFRSPluginPage, ProjectMgmtPluginPage
 } from '@/components/plugins/pages';
 import { CashFlowForecastPage } from '@/components/cashflow/CashFlowForecastPage';
+import { ExecutiveKPIDashboard } from '@/components/kpi/ExecutiveKPIDashboard';
+import { CommissionsSystemPage } from '@/components/commissions/CommissionsSystemPage';
+import { BranchComparisonPage } from '@/components/branches/BranchComparisonPage';
+import { AISalesForecastPage } from '@/components/sales-forecast/AISalesForecastPage';
 import { PurchaseOrdersPage, GoodsReceiptPage, PurchaseReturnsPage, MaterialsRequestPage, ContractorPaymentPage } from '@/components/procurement';
 import { StockVouchersPage } from '@/components/inventory/StockVouchersPage';
 import { StocktakingPage } from '@/components/inventory/StocktakingPage';
@@ -358,6 +362,10 @@ const Index = () => {
       case 'plugin-multi-warehouse': return <MultiWarehousePluginPage />;
       case 'plugin-bi-analytics': return <BIAnalyticsPluginPage />;
       case 'cashflow-forecast': return <CashFlowForecastPage />;
+      case 'executive-kpis': return <ExecutiveKPIDashboard />;
+      case 'commissions-system': return <CommissionsSystemPage />;
+      case 'branch-comparison': return <BranchComparisonPage />;
+      case 'ai-sales-forecast': return <AISalesForecastPage />;
       case 'plugin-pos': return <POSPluginPage />;
       case 'plugin-whatsapp': return <WhatsAppPluginPage />;
       case 'plugin-ifrs': return <IFRSPluginPage />;

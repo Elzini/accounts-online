@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle, Monitor, MessageCircle, Workflow, ArrowDownToLine, ArrowUpFromLine, RotateCcw, RotateCw, Star, RefreshCw, CalendarCheck, Play, FileSignature, Home, Award, Link2, BookMarked, TestTube, LayoutGrid, Smartphone, QrCode, Code, Banknote, Fingerprint, MoreHorizontal, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle, Monitor, MessageCircle, Workflow, ArrowDownToLine, ArrowUpFromLine, RotateCcw, RotateCw, Star, RefreshCw, CalendarCheck, Play, FileSignature, Home, Award, Link2, BookMarked, TestTube, LayoutGrid, Smartphone, QrCode, Code, Banknote, Fingerprint, MoreHorizontal, AlertCircle, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -398,6 +398,10 @@ export function Sidebar({
     { id: 'budgets' as ActivePage, label: t.nav_budgets, icon: BarChart3 },
     { id: 'financial-kpis' as ActivePage, label: t.nav_financial_kpis, icon: Activity },
     { id: 'cashflow-forecast' as ActivePage, label: 'توقعات التدفق النقدي', icon: TrendingUp },
+    { id: 'executive-kpis' as ActivePage, label: 'لوحة KPIs الإدارية', icon: Target },
+    { id: 'commissions-system' as ActivePage, label: 'نظام العمولات', icon: Calculator },
+    { id: 'branch-comparison' as ActivePage, label: 'مقارنة الفروع', icon: Building2 },
+    { id: 'ai-sales-forecast' as ActivePage, label: 'توقعات AI للمبيعات', icon: Sparkles },
     { id: 'account-movement' as ActivePage, label: t.nav_account_movement, icon: ClipboardList, permission: 'reports' },
     { id: 'item-categories' as ActivePage, label: t.nav_categories, icon: FolderTree },
     { id: 'units-of-measure' as ActivePage, label: t.nav_units, icon: Ruler },
