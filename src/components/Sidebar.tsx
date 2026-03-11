@@ -187,28 +187,36 @@ function SidebarSection({
   const hasActiveItem = section.items.some(item => item.id === activePage);
 
   return (
-    <div className="mb-0.5">
+    <div className="mb-1">
       <button
         onClick={onToggle}
         className={cn(
-          "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150",
+          "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-200",
           hasActiveItem
-            ? "text-sidebar-primary bg-sidebar-primary/10"
-            : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+            ? "text-white bg-sidebar-primary shadow-md shadow-sidebar-primary/30"
+            : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
         )}
       >
-        <SectionIcon className="w-4 h-4 shrink-0" />
+        <div className={cn(
+          "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+          hasActiveItem ? "bg-white/20" : "bg-sidebar-accent/40"
+        )}>
+          <SectionIcon className="w-4 h-4 shrink-0" />
+        </div>
         <span className="flex-1 text-start truncate">{section.label}</span>
         <ChevronDown
           className={cn(
-            "w-3.5 h-3.5 shrink-0 transition-transform duration-200",
+            "w-3.5 h-3.5 shrink-0 transition-transform duration-300 ease-out",
             isOpen ? "rotate-0" : "-rotate-90"
           )}
         />
       </button>
 
-      {isOpen && (
-        <ul className="mt-0.5 ms-3 border-s border-sidebar-border/30 ps-2 space-y-px">
+      <div className={cn(
+        "overflow-hidden transition-all duration-300 ease-out",
+        isOpen ? "max-h-[600px] opacity-100 mt-1" : "max-h-0 opacity-0"
+      )}>
+        <ul className="ms-5 border-s-2 border-sidebar-primary/20 ps-2.5 space-y-0.5 pb-1">
           {section.items.map(item => {
             const Icon = item.icon;
             const isActive = activePage === item.id;
@@ -218,20 +226,21 @@ function SidebarSection({
                 <button
                   onClick={() => setActivePage(item.id)}
                   className={cn(
-                    "w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11px] transition-all duration-150",
+                    "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11.5px] transition-all duration-150",
                     isActive
-                      ? "bg-sidebar-primary text-white font-medium shadow-sm shadow-sidebar-primary/20"
-                      : "text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                      ? "bg-sidebar-primary/90 text-white font-semibold shadow-sm"
+                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                   )}
                 >
-                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  <Icon className="w-4 h-4 shrink-0" />
                   <span className="truncate">{itemLabel}</span>
+                  {isActive && <div className="w-1.5 h-1.5 rounded-full bg-white ms-auto shrink-0" />}
                 </button>
               </li>
             );
           })}
         </ul>
-      )}
+      </div>
     </div>
   );
 }
