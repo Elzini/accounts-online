@@ -156,7 +156,7 @@ export function CashFlowForecastPage() {
         inflow: Math.round(projectedInflow),
         outflow: Math.round(projectedOutflow),
         net: Math.round(projectedInflow - projectedOutflow),
-        type: 'forecast' as const,
+        type: 'forecast' as any,
       });
     }
     return months;

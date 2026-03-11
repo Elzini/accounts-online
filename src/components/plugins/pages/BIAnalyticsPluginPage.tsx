@@ -11,13 +11,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
-import { useFiscalYear } from '@/contexts/FiscalYearContext';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
 export function BIAnalyticsPluginPage() {
   const { companyId } = useCompany();
-  const { fiscalYearId } = useFiscalYear();
   const [period, setPeriod] = useState<'6' | '12'>('6');
 
   // Fetch sales data
