@@ -362,6 +362,10 @@ const Index = () => {
       case 'plugin-multi-warehouse': return <MultiWarehousePluginPage />;
       case 'plugin-bi-analytics': return <BIAnalyticsPluginPage />;
       case 'cashflow-forecast': return <CashFlowForecastPage />;
+      case 'executive-kpis': return <ExecutiveKPIDashboard />;
+      case 'commissions-system': return <CommissionsSystemPage />;
+      case 'branch-comparison': return <BranchComparisonPage />;
+      case 'ai-sales-forecast': return <AISalesForecastPage />;
       case 'plugin-pos': return <POSPluginPage />;
       case 'plugin-whatsapp': return <WhatsAppPluginPage />;
       case 'plugin-ifrs': return <IFRSPluginPage />;
