@@ -713,6 +713,9 @@ const Index = () => {
           {/* AI Chat Widget */}
           <AIChatWidget />
 
+          {/* Floating Quick Actions */}
+          <FloatingQuickActions setActivePage={handleSetActivePage} />
+
           {/* Floating Mini Dashboard */}
           <FloatingMiniDashboard isOnDashboard={activePage === 'dashboard'} />
         </div>
