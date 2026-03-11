@@ -138,7 +138,7 @@ export function AIChatWidget() {
     if (isFullscreen) {
       return 'fixed inset-0 z-50';
     }
-    return 'fixed bottom-24 md:bottom-6 left-20 z-[60] w-[360px] sm:w-[400px] h-[540px]';
+    return 'fixed bottom-24 md:bottom-6 left-24 z-[60] w-[360px] sm:w-[400px] h-[540px]';
   }, [isFullscreen]);
 
   return (
@@ -147,7 +147,7 @@ export function AIChatWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-24 md:bottom-6 left-20 z-[60] group"
+          className="fixed bottom-24 md:bottom-6 left-24 z-[60] group"
           aria-label="فتح المساعد الذكي"
         >
           <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-primary/25">
