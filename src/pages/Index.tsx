@@ -449,15 +449,13 @@ const Index = () => {
     setActivePage(page);
   };
 
-  // Handle module selection from launcher
+  // Handle module selection
   const handleModuleSelect = (moduleId: string) => {
     if (moduleId === 'super_admin') {
       navigate('/companies');
       return;
     }
     setActiveModule(moduleId);
-    setShowModuleLauncher(false);
-    // Navigate to first item of the module
     const firstPages: Record<string, ActivePage> = {
       sales: 'sales',
       purchases: 'purchases',
