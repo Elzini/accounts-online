@@ -7,7 +7,7 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { Dashboard } from '@/components/Dashboard';
 import { FloatingMiniDashboard } from '@/components/dashboard/FloatingMiniDashboard';
 import { useFocusMode, FocusModeOverlay } from '@/components/dashboard/FocusMode';
-import { ModuleLauncher } from '@/components/ModuleLauncher';
+
 import { PWAInstallButton } from '@/components/PWAInstallButton';
 import { CheckUpdateButton } from '@/components/pwa/CheckUpdateButton';
 import { CustomerForm } from '@/components/forms/CustomerForm';
@@ -177,10 +177,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const Index = () => {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
-  const [showModuleLauncher, setShowModuleLauncher] = useState(() => {
-    // Will be updated once company data loads
-    return true;
-  });
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const { data: stats, isLoading: isStatsLoading } = useStats();
   const { signOut, user, permissions } = useAuth();
@@ -192,16 +188,6 @@ const Index = () => {
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const { isFocusMode, toggleFocusMode, exitFocusMode } = useFocusMode();
 
-  // Check if company has module launcher enabled
-  useEffect(() => {
-    if (currentCompany) {
-      const shouldShow = (currentCompany as any).show_module_launcher !== false;
-      setShowModuleLauncher(shouldShow);
-      if (!shouldShow) {
-        setActivePage('dashboard');
-      }
-    }
-  }, [currentCompany]);
 
   // Show setup wizard if no fiscal years exist
   useEffect(() => {
@@ -458,21 +444,18 @@ const Index = () => {
     mobileSidebarRef.current?.open();
   };
 
-  // Wrap setActivePage to exit launcher mode
+  // Wrap setActivePage
   const handleSetActivePage = (page: ActivePage) => {
     setActivePage(page);
-    setShowModuleLauncher(false);
   };
 
-  // Handle module selection from launcher
+  // Handle module selection
   const handleModuleSelect = (moduleId: string) => {
     if (moduleId === 'super_admin') {
       navigate('/companies');
       return;
     }
     setActiveModule(moduleId);
-    setShowModuleLauncher(false);
-    // Navigate to first item of the module
     const firstPages: Record<string, ActivePage> = {
       sales: 'sales',
       purchases: 'purchases',
@@ -492,17 +475,10 @@ const Index = () => {
     }
   };
 
-  // Back to launcher (only if company has it enabled)
+  // Back to dashboard
   const handleBackToLauncher = () => {
-    const launcherEnabled = (currentCompany as any)?.show_module_launcher !== false;
-    if (launcherEnabled) {
-      setShowModuleLauncher(true);
-      setActivePage('dashboard');
-      setActiveModule(null);
-    } else {
-      setActivePage('dashboard');
-      setActiveModule(null);
-    }
+    setActivePage('dashboard');
+    setActiveModule(null);
   };
 
   // Keyboard shortcuts (must be after handler declarations)
@@ -524,75 +500,6 @@ const Index = () => {
       
       {showSetupWizard ? (
         <SetupWizard onComplete={() => setShowSetupWizard(false)} />
-      ) : showModuleLauncher ? (
-        <div className="min-h-screen min-h-[100dvh] bg-background">
-          {/* Minimal top bar for launcher */}
-          <header className="sticky top-0 z-40 bg-background/98 backdrop-blur-lg border-b border-border/50 px-4 sm:px-6 py-2.5">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <p className="text-sm text-muted-foreground">
-                  {t.hello_greeting} <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {isSuperAdmin && allCompanies.length > 0 && (
-                  <Select
-                    value={viewAsCompanyId || 'default'}
-                    onValueChange={(val) => setViewAsCompanyId(val === 'default' ? null : val)}
-                  >
-                    <SelectTrigger className="h-8 w-auto min-w-[140px] max-w-[220px] text-xs gap-1 border-primary/50 bg-primary/5">
-                      <Eye className="w-3.5 h-3.5 text-primary shrink-0" />
-                      <SelectValue placeholder={t.view_as_company} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="default">{t.my_original_company}</SelectItem>
-                      {allCompanies.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                <NotificationsBell />
-                {/* Global Search Button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowGlobalSearch(true)}
-                  className="gap-1.5 h-8 text-muted-foreground"
-                >
-                  <Search className="w-4 h-4" />
-                  <span className="hidden sm:inline text-xs">{language === 'ar' ? 'بحث' : 'Search'}</span>
-                  <kbd className="hidden md:inline text-[10px] px-1 py-0.5 bg-muted rounded font-mono ms-1">⌘K</kbd>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={signOut} 
-                  className="gap-1.5 h-8 text-muted-foreground hover:text-destructive"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline text-xs">{t.logout}</span>
-                </Button>
-              </div>
-            </div>
-            {/* Company info row */}
-            <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-border/30">
-              <div className="flex items-center gap-2">
-                {currentCompany?.logo_url ? (
-                  <img src={currentCompany.logo_url} alt={currentCompany.name} className="w-6 h-6 rounded object-contain bg-muted/50" />
-                ) : (
-                  <Building2 className="w-4 h-4 text-muted-foreground" />
-                )}
-                <span className="text-xs font-medium text-foreground truncate max-w-[300px] sm:max-w-[400px]">
-                  {currentCompany?.name || ''}
-                </span>
-              </div>
-            </div>
-          </header>
-          
-          <ModuleLauncher setActivePage={handleSetActivePage} onModuleSelect={handleModuleSelect} />
-          <AIChatWidget />
-        </div>
       ) : (
         <div className="flex min-h-screen min-h-[100dvh] bg-background">
           {/* Desktop Sidebar - hidden in focus mode */}
