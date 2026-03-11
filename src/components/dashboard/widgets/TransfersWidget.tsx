@@ -1,17 +1,34 @@
-import { Car, ArrowDownLeft, ArrowUpRight, Building2 } from 'lucide-react';
+import { Car, ArrowDownLeft, ArrowUpRight, Building2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ActivePage } from '@/types';
 import { CarTransfer } from '@/services/transfers';
 
+interface TransferredCar {
+  id: string;
+  name: string;
+  model?: string;
+  chassis_number: string;
+  purchase_price: number;
+  status: string;
+}
+
 interface TransfersWidgetProps {
   transfers: CarTransfer[];
+  transferredCars?: TransferredCar[];
   setActivePage: (page: ActivePage) => void;
 }
 
-export function TransfersWidget({ transfers, setActivePage }: TransfersWidgetProps) {
+export function TransfersWidget({ transfers, transferredCars = [], setActivePage }: TransfersWidgetProps) {
   const incomingCars = transfers?.filter(t => t.transfer_type === 'incoming' && t.status === 'pending') || [];
   const outgoingCars = transfers?.filter(t => t.transfer_type === 'outgoing' && t.status === 'pending') || [];
+
+  // Cars marked as transferred but without a transfer record
+  const transferredWithoutRecord = transferredCars.filter(car => 
+    !transfers?.some(t => t.car_id === car.id)
+  );
+
+  const totalOutgoing = outgoingCars.length + transferredWithoutRecord.length;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
@@ -79,7 +96,7 @@ export function TransfersWidget({ transfers, setActivePage }: TransfersWidgetPro
               السيارات الصادرة للمعارض
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-              <span className="font-semibold text-warning">{outgoingCars.length}</span> سيارة قيد الانتظار
+              <span className="font-semibold text-warning">{totalOutgoing}</span> سيارة محولة
             </p>
           </div>
           <Button 
@@ -91,13 +108,14 @@ export function TransfersWidget({ transfers, setActivePage }: TransfersWidgetPro
             عرض الكل
           </Button>
         </div>
-        {outgoingCars.length === 0 ? (
+        {totalOutgoing === 0 ? (
           <div className="text-center py-6 sm:py-8 text-muted-foreground">
             <Building2 className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 opacity-50" />
             <p className="text-xs sm:text-sm">لا توجد سيارات صادرة قيد الانتظار</p>
           </div>
         ) : (
           <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
+            {/* Cars with transfer records */}
             {outgoingCars.map((car) => (
               <div 
                 key={car.id} 
@@ -117,6 +135,32 @@ export function TransfersWidget({ transfers, setActivePage }: TransfersWidgetPro
                   <div className="text-left shrink-0">
                     <p className="text-[10px] sm:text-xs font-medium text-warning truncate max-w-[80px] sm:max-w-none">{car.partner_dealership?.name}</p>
                     <Badge variant="outline" className="text-[10px] sm:text-xs h-5">قيد الانتظار</Badge>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {/* Cars with transferred status but no transfer record */}
+            {transferredWithoutRecord.map((car) => (
+              <div 
+                key={car.id} 
+                className="p-2.5 sm:p-3 bg-warning/5 dark:bg-warning/10 rounded-lg hover:bg-warning/10 dark:hover:bg-warning/20 cursor-pointer transition-colors"
+                onClick={() => setActivePage('car-transfers')}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-warning/20 flex items-center justify-center shrink-0">
+                      <Car className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-xs sm:text-sm truncate">{car.name} {car.model}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground truncate">شاسيه: {car.chassis_number}</p>
+                    </div>
+                  </div>
+                  <div className="text-left shrink-0">
+                    <Badge variant="secondary" className="text-[10px] sm:text-xs h-5 gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      محولة
+                    </Badge>
                   </div>
                 </div>
               </div>
