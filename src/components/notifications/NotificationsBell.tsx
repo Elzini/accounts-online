@@ -60,6 +60,23 @@ export function NotificationsBell() {
     refetchInterval: 30000,
   });
 
+  // Realtime subscription for instant notifications
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel('notifications-realtime')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`,
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id, queryClient]);
+
   const unreadCount = notifications.filter((n: any) => !n.is_read).length;
 
   const filteredNotifications = activeTab === 'all'
