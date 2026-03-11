@@ -213,8 +213,8 @@ function SidebarSection({
       </button>
 
       <div className={cn(
-        "transition-all duration-300 ease-out",
-        isOpen ? "max-h-none opacity-100 mt-1 overflow-visible" : "max-h-0 opacity-0 overflow-hidden"
+        "overflow-hidden transition-all duration-300 ease-out",
+        isOpen ? "max-h-[5000px] opacity-100 mt-1" : "max-h-0 opacity-0"
       )}>
         <ul className="ms-5 border-s-2 border-sidebar-primary/20 ps-2.5 space-y-0.5 pb-1">
           {section.items.map(item => {
@@ -566,7 +566,7 @@ export function Sidebar({
       </div>
 
       {/* Scrollable sections */}
-      <ScrollArea className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-sidebar-border scrollbar-track-transparent">
         <nav className="p-2 space-y-0.5">
           {visibleSections.map(section => {
             const filtered = getFilteredItems(section);
@@ -600,7 +600,7 @@ export function Sidebar({
             </div>
           )}
         </nav>
-      </ScrollArea>
+      </div>
 
       {/* Footer */}
       <div className="p-3 border-t border-sidebar-border/50 space-y-2">
