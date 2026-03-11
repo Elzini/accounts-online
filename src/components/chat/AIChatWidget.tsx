@@ -154,7 +154,7 @@ export function AIChatWidget() {
       {!isOpen &&
       <button
         onClick={() => setIsOpen(true)}
-        className={cn('fixed bottom-24 md:bottom-6 z-[60] group', isAr ? 'right-5' : 'left-5')}
+        className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[60] group"
         aria-label="فتح المساعد الذكي">
         
           <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-primary/25">
