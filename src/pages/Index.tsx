@@ -177,10 +177,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const Index = () => {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
-  const [showModuleLauncher, setShowModuleLauncher] = useState(() => {
-    // Will be updated once company data loads
-    return true;
-  });
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const { data: stats, isLoading: isStatsLoading } = useStats();
   const { signOut, user, permissions } = useAuth();
