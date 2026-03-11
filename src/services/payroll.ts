@@ -438,6 +438,15 @@ export async function refreshPayrollAdvances(
   payrollId: string,
   companyId: string
 ): Promise<void> {
+  // Get payroll month/year for pro-rata
+  const { data: payrollRecord, error: prError } = await supabase
+    .from('payroll_records')
+    .select('month, year')
+    .eq('id', payrollId)
+    .single();
+  if (prError) throw prError;
+  const { month: payrollMonth, year: payrollYear } = payrollRecord;
+
   const { data: items, error: itemsError } = await supabase
     .from('payroll_items')
     .select('*, employee:employees_safe(*)')
@@ -490,42 +499,52 @@ export async function refreshPayrollAdvances(
   const newEmployees = allEmployees.filter(e => e.is_active && !existingEmployeeIds.has(e.id));
 
   if (newEmployees.length > 0) {
-    const newItems = newEmployees.map(emp => {
-      const empAdvances = pendingAdvances.filter(a => a.employee_id === emp.id);
-      const totalAdvances = empAdvances.reduce((sum, a) => {
-        const deduction = Number(a.monthly_deduction) > 0 
-          ? Math.min(Number(a.monthly_deduction), Number(a.remaining_amount || a.amount))
-          : Number(a.remaining_amount || a.amount);
-        return sum + deduction;
-      }, 0);
+    const newItems = newEmployees
+      .map(emp => {
+        const factor = calculateProRataFactor(emp.hire_date, payrollMonth, payrollYear);
+        if (factor === 0) return null; // Skip employees hired after this month
 
-      const grossSalary = Number(emp.base_salary) + Number(emp.housing_allowance) + Number(emp.transport_allowance);
-      const totalDeductions = totalAdvances;
-      const netSalary = grossSalary - totalDeductions;
+        const empAdvances = pendingAdvances.filter(a => a.employee_id === emp.id);
+        const totalAdvances = empAdvances.reduce((sum, a) => {
+          const deduction = Number(a.monthly_deduction) > 0 
+            ? Math.min(Number(a.monthly_deduction), Number(a.remaining_amount || a.amount))
+            : Number(a.remaining_amount || a.amount);
+          return sum + deduction;
+        }, 0);
 
-      return {
-        payroll_id: payrollId,
-        employee_id: emp.id,
-        base_salary: Number(emp.base_salary),
-        housing_allowance: Number(emp.housing_allowance),
-        transport_allowance: Number(emp.transport_allowance),
-        bonus: 0,
-        gratuity: 0,
-        overtime_hours: 0,
-        overtime_rate: 0,
-        overtime_amount: 0,
-        advances_deducted: totalAdvances,
-        absence_days: 0,
-        absence_amount: 0,
-        other_deductions: 0,
-        deduction_notes: null,
-        gross_salary: grossSalary,
-        total_deductions: totalDeductions,
-        net_salary: netSalary,
-      };
-    });
+        const proratedBase = proRate(Number(emp.base_salary), factor);
+        const proratedHousing = proRate(Number(emp.housing_allowance), factor);
+        const proratedTransport = proRate(Number(emp.transport_allowance), factor);
+        const grossSalary = proratedBase + proratedHousing + proratedTransport;
+        const totalDeductions = totalAdvances;
+        const netSalary = grossSalary - totalDeductions;
 
-    await supabase.from('payroll_items').insert(newItems);
+        return {
+          payroll_id: payrollId,
+          employee_id: emp.id,
+          base_salary: proratedBase,
+          housing_allowance: proratedHousing,
+          transport_allowance: proratedTransport,
+          bonus: 0,
+          gratuity: 0,
+          overtime_hours: 0,
+          overtime_rate: 0,
+          overtime_amount: 0,
+          advances_deducted: totalAdvances,
+          absence_days: 0,
+          absence_amount: 0,
+          other_deductions: 0,
+          deduction_notes: factor < 1 ? `راتب جزئي - تاريخ المباشرة: ${emp.hire_date}` : null,
+          gross_salary: grossSalary,
+          total_deductions: totalDeductions,
+          net_salary: netSalary,
+        };
+      })
+      .filter(Boolean);
+
+    if (newItems.length > 0) {
+      await supabase.from('payroll_items').insert(newItems);
+    }
   }
 }
 
