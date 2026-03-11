@@ -27,7 +27,7 @@ export function BranchComparisonPage() {
       const now = new Date();
       const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
       const { data } = await supabase.from('sales')
-        .select('sale_price, purchase_price, branch_id, customer_id')
+        .select('sale_price, purchase_price, customer_id')
         .eq('company_id', companyId!)
         .gte('sale_date', monthStart);
       return data || [];
