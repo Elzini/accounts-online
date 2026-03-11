@@ -97,6 +97,10 @@ import {
   IFRSPluginPage, ProjectMgmtPluginPage
 } from '@/components/plugins/pages';
 import { CashFlowForecastPage } from '@/components/cashflow/CashFlowForecastPage';
+import { ExecutiveKPIDashboard } from '@/components/kpi/ExecutiveKPIDashboard';
+import { CommissionsSystemPage } from '@/components/commissions/CommissionsSystemPage';
+import { BranchComparisonPage } from '@/components/branches/BranchComparisonPage';
+import { AISalesForecastPage } from '@/components/sales-forecast/AISalesForecastPage';
 import { PurchaseOrdersPage, GoodsReceiptPage, PurchaseReturnsPage, MaterialsRequestPage, ContractorPaymentPage } from '@/components/procurement';
 import { StockVouchersPage } from '@/components/inventory/StockVouchersPage';
 import { StocktakingPage } from '@/components/inventory/StocktakingPage';
