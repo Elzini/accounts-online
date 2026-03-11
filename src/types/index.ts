@@ -254,4 +254,5 @@ export type ActivePage =
      // New wired pages
      | 'data-import'
      | 'expense-ocr'
-     | 'overdue-invoices';
+     | 'overdue-invoices'
+     | 'cashflow-forecast';
