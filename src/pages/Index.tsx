@@ -444,10 +444,9 @@ const Index = () => {
     mobileSidebarRef.current?.open();
   };
 
-  // Wrap setActivePage to exit launcher mode
+  // Wrap setActivePage
   const handleSetActivePage = (page: ActivePage) => {
     setActivePage(page);
-    setShowModuleLauncher(false);
   };
 
   // Handle module selection from launcher
