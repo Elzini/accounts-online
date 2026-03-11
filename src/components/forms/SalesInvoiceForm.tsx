@@ -992,67 +992,82 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   return (
     <>
       <div className="max-w-full mx-auto animate-fade-in p-2 sm:p-4">
-        <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
+        <div className="bg-card rounded-xl border shadow-lg overflow-hidden">
           
-          {/* ===== Top Toolbar (dark header with nav + record count) ===== */}
-          <div className="bg-secondary text-secondary-foreground px-3 py-2 flex items-center justify-between gap-2 border-b">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-secondary-foreground hover:bg-secondary-foreground/10" onClick={handleLastSale} disabled={fiscalYearFilteredSales.length === 0}>
-                <ChevronRight className="w-4 h-4" /><ChevronRight className="w-4 h-4 -mr-2" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-secondary-foreground hover:bg-secondary-foreground/10" onClick={handleNextSale} disabled={currentInvoiceIndex >= fiscalYearFilteredSales.length - 1}>
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-              <span className="px-3 py-1 text-xs bg-secondary-foreground/10 rounded min-w-[60px] text-center font-mono">
-                {fiscalYearFilteredSales.length > 0 ? currentInvoiceIndex + 1 : 0} / {fiscalYearFilteredSales.length}
-              </span>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-secondary-foreground hover:bg-secondary-foreground/10" onClick={handlePreviousSale} disabled={currentInvoiceIndex <= 0}>
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-secondary-foreground hover:bg-secondary-foreground/10" onClick={handleFirstSale} disabled={fiscalYearFilteredSales.length === 0}>
-                <ChevronLeft className="w-4 h-4" /><ChevronLeft className="w-4 h-4 -ml-2" />
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm font-bold">{t.inv_sales_invoice}</h1>
-              <FileText className="w-4 h-4" />
-              {isViewingExisting && (
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse ${currentSaleStatus === 'approved' ? 'bg-success/20 text-success' : 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/30'}`}>
-                  {currentSaleStatus === 'approved' ? t.inv_status_approved : '⏳ ' + t.inv_status_draft}
+          {/* ===== Modern Header with Gradient ===== */}
+          <div className="bg-gradient-to-l from-emerald-600 via-emerald-500 to-teal-500 text-white px-4 py-3">
+            <div className="flex items-center justify-between">
+              {/* Navigation Controls */}
+              <div className="flex items-center gap-1 bg-white/15 backdrop-blur-sm rounded-lg p-1">
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleLastSale} disabled={fiscalYearFilteredSales.length === 0}>
+                  <ChevronRight className="w-4 h-4" /><ChevronRight className="w-4 h-4 -mr-2.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleNextSale} disabled={currentInvoiceIndex >= fiscalYearFilteredSales.length - 1}>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                <span className="px-3 py-1 text-xs bg-white/20 rounded-md min-w-[70px] text-center font-mono font-bold">
+                  {fiscalYearFilteredSales.length > 0 ? currentInvoiceIndex + 1 : 0} / {fiscalYearFilteredSales.length}
                 </span>
-              )}
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handlePreviousSale} disabled={currentInvoiceIndex <= 0}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleFirstSale} disabled={fiscalYearFilteredSales.length === 0}>
+                  <ChevronLeft className="w-4 h-4" /><ChevronLeft className="w-4 h-4 -ml-2.5" />
+                </Button>
+              </div>
+
+              {/* Title & Status */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 opacity-80" />
+                  <h1 className="text-lg font-bold tracking-wide">{t.inv_sales_invoice}</h1>
+                </div>
+                {isViewingExisting && (
+                  <span className={`text-[11px] px-3 py-1 rounded-full font-bold shadow-sm ${
+                    currentSaleStatus === 'approved' 
+                      ? 'bg-white text-emerald-700' 
+                      : 'bg-yellow-400 text-yellow-900 animate-pulse'
+                  }`}>
+                    {currentSaleStatus === 'approved' ? '✓ ' + t.inv_status_approved : '⏳ ' + t.inv_status_draft}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
           {/* ===== Draft Status Banner ===== */}
           {isViewingExisting && currentSaleStatus === 'draft' && (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-yellow-600 dark:text-yellow-400 text-lg">📋</span>
-                <span className="text-xs font-bold text-yellow-700 dark:text-yellow-300">
-                  هذه الفاتورة محفوظة كمسودة - يمكنك تعديلها أو اعتمادها محاسبياً
-                </span>
+            <div className="bg-amber-50 dark:bg-amber-900/20 border-b-2 border-amber-300 dark:border-amber-700 px-5 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center">
+                  <span className="text-lg">📋</span>
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-200 block">
+                    هذه الفاتورة محفوظة كمسودة
+                  </span>
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400">
+                    يمكنك تعديلها أو اعتمادها محاسبياً
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="gap-1 text-[10px] h-6 rounded bg-white dark:bg-card border-yellow-300 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-50"
-                  onClick={() => {
-                    setIsEditing(true);
-                    toast.info('تم تفعيل وضع التعديل');
-                  }}
+                  className="gap-1.5 text-xs h-8 rounded-lg bg-white dark:bg-card border-amber-300 text-amber-700 dark:text-amber-300 hover:bg-amber-50 shadow-sm"
+                  onClick={() => { setIsEditing(true); toast.info('تم تفعيل وضع التعديل'); }}
                 >
-                  <FileEdit className="w-3 h-3" />
+                  <FileEdit className="w-3.5 h-3.5" />
                   تعديل
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="gap-1 text-[10px] h-6 rounded bg-success/10 border-success/30 text-success hover:bg-success/20"
+                  className="gap-1.5 text-xs h-8 rounded-lg bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100 shadow-sm"
                   onClick={() => setApproveDialogOpen(true)}
                 >
-                  <CheckCircle className="w-3 h-3" />
+                  <CheckCircle className="w-3.5 h-3.5" />
                   اعتماد محاسبة
                 </Button>
               </div>
@@ -1060,7 +1075,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           )}
 
           {/* ===== Search Bar ===== */}
-          <div className="p-2 border-b bg-muted/20" ref={searchBarRef}>
+          <div className="p-3 border-b bg-muted/30" ref={searchBarRef}>
             <InvoiceSearchBar
               mode="sales"
               sales={fiscalYearFilteredSales}
@@ -1089,14 +1104,18 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             />
           </div>
 
-          {/* ===== Invoice Header Form (ERP Grid Style) ===== */}
-          <div className="p-3 border-b space-y-3 bg-card">
-            {/* Row 1: Currency, Warehouse, Customer Account, Invoice Number */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-2">
-              <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap min-w-[60px] text-muted-foreground">{t.inv_customer} *</Label>
+          {/* ===== Invoice Header Form - Modern Sections ===== */}
+          <div className="p-4 border-b space-y-4 bg-card">
+            {/* Section: Basic Info */}
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-1 h-5 bg-emerald-500 rounded-full"></div>
+              <span className="text-xs font-bold text-foreground tracking-wide">بيانات الفاتورة</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-5 gap-y-3">
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_customer} *</Label>
                 <Select value={invoiceData.customer_id} onValueChange={(v) => setInvoiceData({ ...invoiceData, customer_id: v })}>
-                  <SelectTrigger className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none">
+                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-emerald-500 shadow-none transition-colors">
                     <SelectValue placeholder={t.inv_select_customer} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1106,10 +1125,30 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap min-w-[50px] text-muted-foreground">{t.inv_warehouse}</Label>
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_invoice_number}</Label>
+                <Input
+                  value={invoiceData.invoice_number || nextInvoiceNumber}
+                  onChange={(e) => setInvoiceData({ ...invoiceData, invoice_number: e.target.value })}
+                  className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-emerald-500 shadow-none font-mono"
+                  placeholder={String(nextInvoiceNumber)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_date}</Label>
+                <Input
+                  type="date"
+                  value={invoiceData.sale_date}
+                  onChange={(e) => setInvoiceData({ ...invoiceData, sale_date: e.target.value })}
+                  className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-emerald-500 shadow-none"
+                  dir="ltr"
+                  disabled={isApproved}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_warehouse}</Label>
                 <Select value={invoiceData.warehouse} onValueChange={(v) => setInvoiceData({ ...invoiceData, warehouse: v })}>
-                  <SelectTrigger className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none">
+                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-emerald-500 shadow-none transition-colors">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1117,29 +1156,20 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap min-w-[60px] text-muted-foreground">{t.inv_cash_account}</Label>
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_cash_account}</Label>
                 <PaymentAccountSelector
                   value={invoiceData.payment_account_id}
                   onChange={(v) => setInvoiceData({ ...invoiceData, payment_account_id: v })}
                   type="receipt"
-                  className="h-8 border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none text-xs"
+                  className="h-9 border-0 border-b-2 border-border rounded-none bg-transparent focus:border-emerald-500 shadow-none text-xs"
                   hideLabel
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap min-w-[60px] text-muted-foreground">{t.inv_invoice_number}</Label>
-                <Input
-                  value={invoiceData.invoice_number || nextInvoiceNumber}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, invoice_number: e.target.value })}
-                  className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none"
-                  placeholder={String(nextInvoiceNumber)}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap min-w-[50px] text-muted-foreground">{t.inv_payment_method}</Label>
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_payment_method}</Label>
                 <Select defaultValue="cash">
-                  <SelectTrigger className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none">
+                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-emerald-500 shadow-none transition-colors">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1148,47 +1178,68 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   </SelectContent>
                 </Select>
               </div>
-              {selectedCustomer && (
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs whitespace-nowrap text-muted-foreground">{t.inv_balance}</Label>
-                  <span className="text-xs font-medium text-success">{formatCurrency(0)} {currency}</span>
-                </div>
-              )}
             </div>
 
-            {/* Row 2: Date, Salesman, Tax, Cost Center */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-2">
-              <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap min-w-[50px] text-muted-foreground">{t.inv_date}</Label>
-                <Input
-                  type="date"
-                  value={invoiceData.sale_date}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, sale_date: e.target.value })}
-                  className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none"
-                  dir="ltr"
-                  disabled={isApproved}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap min-w-[50px] text-muted-foreground">{t.inv_salesperson}</Label>
+            {/* Section: Additional Details */}
+            <div className="flex items-center gap-2 mt-4 mb-1">
+              <div className="w-1 h-5 bg-blue-500 rounded-full"></div>
+              <span className="text-xs font-bold text-foreground tracking-wide">تفاصيل إضافية</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-5 gap-y-3">
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_salesperson}</Label>
                 <Input
                   value={invoiceData.seller_name}
                   onChange={(e) => setInvoiceData({ ...invoiceData, seller_name: e.target.value })}
-                  className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none"
+                  className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none"
                   placeholder={t.inv_salesperson_name}
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap min-w-[60px] text-muted-foreground">{t.inv_cost_center}</Label>
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_commission}</Label>
                 <Input
                   type="number"
-                  value={invoiceData.other_expenses}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, other_expenses: e.target.value })}
-                  className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none"
+                  value={invoiceData.commission}
+                  onChange={(e) => setInvoiceData({ ...invoiceData, commission: e.target.value })}
+                  className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none"
                   placeholder="0"
                   dir="ltr"
                 />
               </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_cost_center}</Label>
+                <Input
+                  type="number"
+                  value={invoiceData.other_expenses}
+                  onChange={(e) => setInvoiceData({ ...invoiceData, other_expenses: e.target.value })}
+                  className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none"
+                  placeholder="0"
+                  dir="ltr"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">توقيت الإصدار</Label>
+                <Input
+                  type="time"
+                  value={invoiceData.issue_time}
+                  onChange={(e) => setInvoiceData({ ...invoiceData, issue_time: e.target.value })}
+                  className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none font-mono"
+                  disabled={isApproved}
+                />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_notes}</Label>
+                <Input
+                  value={invoiceData.notes}
+                  onChange={(e) => setInvoiceData({ ...invoiceData, notes: e.target.value })}
+                  placeholder="أضف ملاحظات..."
+                  className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none"
+                />
+              </div>
+            </div>
+
+            {/* Tax & Options Row */}
+            <div className="flex items-center gap-6 pt-3 border-t border-border/40">
               <div className="flex items-center gap-2">
                 <Checkbox 
                   id="price_includes_tax"
@@ -1202,42 +1253,26 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 </Label>
               </div>
               <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap min-w-[50px] text-muted-foreground">{t.inv_commission}</Label>
-                <Input
-                  type="number"
-                  value={invoiceData.commission}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, commission: e.target.value })}
-                  className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none"
-                  placeholder="0"
-                  dir="ltr"
+                <Checkbox 
+                  id="is_installment"
+                  checked={invoiceData.is_installment}
+                  onCheckedChange={(checked) => setInvoiceData({ ...invoiceData, is_installment: !!checked })}
+                  className="h-4 w-4"
                 />
+                <Label htmlFor="is_installment" className="text-xs cursor-pointer font-semibold text-primary">
+                  {t.inv_installment_sale}
+                </Label>
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap text-muted-foreground">{t.inv_notes}</Label>
-                <Input
-                  value={invoiceData.notes}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, notes: e.target.value })}
-                  placeholder=""
-                  className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none"
-                />
-              </div>
-            </div>
-
-            {/* Row 3: Installment checkbox */}
-            <div className="flex items-center gap-2 pt-1 border-t border-border/50">
-              <Checkbox 
-                id="is_installment"
-                checked={invoiceData.is_installment}
-                onCheckedChange={(checked) => setInvoiceData({ ...invoiceData, is_installment: !!checked })}
-                className="h-4 w-4"
-              />
-              <Label htmlFor="is_installment" className="text-xs cursor-pointer font-medium text-primary">
-                {t.inv_installment_sale}
-              </Label>
+              {selectedCustomer && (
+                <div className="flex items-center gap-2 mr-auto bg-muted/50 rounded-lg px-3 py-1.5">
+                  <Label className="text-[10px] text-muted-foreground">{t.inv_balance}</Label>
+                  <span className="text-xs font-bold text-success">{formatCurrency(0)} {currency}</span>
+                </div>
+              )}
             </div>
 
             {invoiceData.is_installment && (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 p-2 bg-primary/5 rounded border border-primary/20">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20 mt-2">
                 <div className="flex items-center gap-1">
                   <Label className="text-[10px] whitespace-nowrap text-muted-foreground">{t.inv_car_price}</Label>
                   <span className="text-xs font-medium">{formatCurrency(calculations.finalTotal)}</span>
@@ -1277,20 +1312,20 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             )}
           </div>
 
-          {/* ===== Items Table (ERP Grid with colored header) ===== */}
+          {/* ===== Items Table - Modern Design ===== */}
           <div className="overflow-x-auto">
             {isCarDealership ? (
               <>
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-primary/10 border-b-2 border-primary/30">
-                      <TableHead className="text-right text-[11px] font-bold w-8 text-primary">#</TableHead>
-                      <TableHead className="text-right text-[11px] font-bold min-w-[180px] text-primary">{t.inv_description}</TableHead>
-                      <TableHead className="text-center text-[11px] font-bold w-24 text-primary">الحالة</TableHead>
-                      <TableHead className="text-center text-[11px] font-bold w-16 text-primary">{t.inv_quantity}</TableHead>
-                      <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_price}</TableHead>
-                      <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_subtotal}</TableHead>
-                      <TableHead className="text-center text-[11px] font-bold w-28 text-primary">{t.inv_price_includes_tax}</TableHead>
+                    <TableRow className="bg-gradient-to-l from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border-b-2 border-emerald-200 dark:border-emerald-800">
+                      <TableHead className="text-right text-[11px] font-bold w-8 text-emerald-700 dark:text-emerald-400">#</TableHead>
+                      <TableHead className="text-right text-[11px] font-bold min-w-[180px] text-emerald-700 dark:text-emerald-400">{t.inv_description}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-24 text-emerald-700 dark:text-emerald-400">الحالة</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-16 text-emerald-700 dark:text-emerald-400">{t.inv_quantity}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-24 text-emerald-700 dark:text-emerald-400">{t.inv_price}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-24 text-emerald-700 dark:text-emerald-400">{t.inv_subtotal}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-28 text-emerald-700 dark:text-emerald-400">شامل الضريبة</TableHead>
                       <TableHead className="text-center text-[11px] font-bold w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1298,10 +1333,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                      {selectedCars.map((car, index) => {
                       const calcItem = calculations.items[index];
                       return (
-                        <TableRow key={car.id} className="hover:bg-primary/5 border-b bg-[hsl(var(--primary)/0.03)]">
-                          <TableCell className="text-center text-xs py-1">{index + 1}</TableCell>
-                          <TableCell className="text-xs py-1 font-medium">{car.car_name} {car.model} {car.color ? `- ${car.color}` : ''} {car.plate_number ? `- لوحة: ${car.plate_number}` : ''}</TableCell>
-                          <TableCell className="py-1">
+                        <TableRow key={car.id} className="hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 border-b transition-colors">
+                          <TableCell className="text-center text-xs py-2 font-mono text-muted-foreground">{index + 1}</TableCell>
+                          <TableCell className="text-xs py-2 font-medium">{car.car_name} {car.model} {car.color ? `- ${car.color}` : ''} {car.plate_number ? `- لوحة: ${car.plate_number}` : ''}</TableCell>
+                          <TableCell className="py-2">
                             <Select value={car.car_condition} onValueChange={(v) => handleCarChange(car.id, 'car_condition', v)} disabled={isApproved}>
                               <SelectTrigger className="h-7 text-[10px] border-0 border-b border-border rounded-none bg-transparent shadow-none w-20">
                                 <SelectValue />
@@ -1312,18 +1347,18 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                               </SelectContent>
                             </Select>
                           </TableCell>
-                          <TableCell className="text-center text-xs py-1">1</TableCell>
-                          <TableCell className="py-1">
+                          <TableCell className="text-center text-xs py-2">1</TableCell>
+                          <TableCell className="py-2">
                             <Input type="number" value={car.sale_price} onChange={(e) => handleCarChange(car.id, 'sale_price', e.target.value)} placeholder="0" className="h-7 text-xs text-center w-24 border-0 border-b border-border rounded-none bg-transparent" dir="ltr" disabled={isApproved} />
                           </TableCell>
-                          <TableCell className="text-center text-xs py-1 font-medium">{formatCurrency(calcItem?.baseAmount || 0)}</TableCell>
-                          <TableCell className="text-center text-xs py-1 font-medium">
+                          <TableCell className="text-center text-xs py-2 font-semibold">{formatCurrency(calcItem?.baseAmount || 0)}</TableCell>
+                          <TableCell className="text-center text-xs py-2 font-semibold">
                             {formatCurrency(calcItem?.total || 0)}
-                            {car.car_condition === 'used' && <span className="block text-[9px] text-muted-foreground">ضريبة هامش</span>}
+                            {car.car_condition === 'used' && <span className="block text-[9px] text-amber-600 dark:text-amber-400 font-normal">ضريبة هامش</span>}
                           </TableCell>
-                          <TableCell className="py-1">
+                          <TableCell className="py-2">
                             {selectedCars.length > 1 && (
-                              <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveCar(car.id)} className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10">
+                              <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveCar(car.id)} className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10 rounded-full">
                                 <X className="w-3 h-3" />
                               </Button>
                             )}
@@ -1331,18 +1366,17 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                         </TableRow>
                       );
                     })}
-                    {/* Empty rows for ERP look */}
-                    {Array.from({ length: Math.max(0, 4 - selectedCars.length) }).map((_, i) => (
-                      <TableRow key={`empty-${i}`} className="border-b">
-                        <TableCell className="text-center text-xs py-1 text-muted-foreground">{selectedCars.length + i + 1}</TableCell>
-                        <TableCell className="py-1" colSpan={7}></TableCell>
+                    {Array.from({ length: Math.max(0, 3 - selectedCars.length) }).map((_, i) => (
+                      <TableRow key={`empty-${i}`} className="border-b border-dashed">
+                        <TableCell className="text-center text-xs py-2 text-muted-foreground/40 font-mono">{selectedCars.length + i + 1}</TableCell>
+                        <TableCell className="py-2" colSpan={7}></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-                <div className="p-2 border-t flex gap-2 flex-wrap bg-muted/20">
+                <div className="p-3 border-t flex gap-2 flex-wrap bg-muted/20">
                   <Select onValueChange={handleAddCar}>
-                    <SelectTrigger className="w-[300px] h-8 text-xs">
+                    <SelectTrigger className="w-[300px] h-9 text-xs rounded-lg">
                       <SelectValue placeholder={t.inv_select_car_placeholder} />
                     </SelectTrigger>
                     <SelectContent>
@@ -1360,7 +1394,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                   {savedTemplates.length > 0 && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
+                        <Button variant="outline" size="sm" className="gap-2 h-9 text-xs rounded-lg">
                           <FileSpreadsheet className="w-3 h-3" />
                           {t.inv_import_template}
                           <ChevronDown className="w-3 h-3" />
@@ -1393,14 +1427,14 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 {/* Inventory Items Table */}
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-primary/10 border-b-2 border-primary/30">
-                      <TableHead className="text-right text-[11px] font-bold w-8 text-primary">#</TableHead>
-                      <TableHead className="text-right text-[11px] font-bold min-w-[180px] text-primary">{t.inv_item}</TableHead>
-                      <TableHead className="text-center text-[11px] font-bold w-16 text-primary">{t.inv_quantity}</TableHead>
-                      <TableHead className="text-center text-[11px] font-bold w-16 text-primary">{t.inv_available}</TableHead>
-                      <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_price}</TableHead>
-                      <TableHead className="text-center text-[11px] font-bold w-24 text-primary">{t.inv_subtotal}</TableHead>
-                      <TableHead className="text-center text-[11px] font-bold w-28 text-primary">{t.inv_price_includes_tax}</TableHead>
+                    <TableRow className="bg-gradient-to-l from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border-b-2 border-emerald-200 dark:border-emerald-800">
+                      <TableHead className="text-right text-[11px] font-bold w-8 text-emerald-700 dark:text-emerald-400">#</TableHead>
+                      <TableHead className="text-right text-[11px] font-bold min-w-[180px] text-emerald-700 dark:text-emerald-400">{t.inv_item}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-16 text-emerald-700 dark:text-emerald-400">{t.inv_quantity}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-16 text-emerald-700 dark:text-emerald-400">{t.inv_available}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-24 text-emerald-700 dark:text-emerald-400">{t.inv_price}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-24 text-emerald-700 dark:text-emerald-400">{t.inv_subtotal}</TableHead>
+                      <TableHead className="text-center text-[11px] font-bold w-28 text-emerald-700 dark:text-emerald-400">شامل الضريبة</TableHead>
                       <TableHead className="text-center text-[11px] font-bold w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1408,9 +1442,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                      {selectedInventoryItems.map((item, index) => {
                       const calcItem = calculations.inventoryItems[index];
                       return (
-                        <TableRow key={item.id} className="hover:bg-primary/5 border-b bg-[hsl(var(--primary)/0.03)]">
-                          <TableCell className="text-center text-xs py-1">{index + 1}</TableCell>
-                          <TableCell className="py-1">
+                        <TableRow key={item.id} className="hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 border-b transition-colors">
+                          <TableCell className="text-center text-xs py-2 font-mono text-muted-foreground">{index + 1}</TableCell>
+                          <TableCell className="py-2">
                             <Input 
                               value={item.item_name} 
                               onChange={(e) => handleInventoryItemChange(item.id, 'item_name', e.target.value)} 
@@ -1419,18 +1453,18 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                               disabled={isApproved}
                             />
                           </TableCell>
-                          <TableCell className="py-1">
+                          <TableCell className="py-2">
                             <Input type="number" min={1} max={item.available_quantity || undefined} value={item.quantity} onChange={(e) => handleInventoryItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)} className="h-7 text-xs text-center w-16 border-0 border-b border-border rounded-none bg-transparent" disabled={isApproved} />
                           </TableCell>
-                          <TableCell className="text-center text-xs py-1 text-muted-foreground">{item.available_quantity}</TableCell>
-                          <TableCell className="py-1">
+                          <TableCell className="text-center text-xs py-2 text-muted-foreground">{item.available_quantity}</TableCell>
+                          <TableCell className="py-2">
                             <Input type="number" value={item.sale_price} onChange={(e) => handleInventoryItemChange(item.id, 'sale_price', e.target.value)} placeholder="0" className="h-7 text-xs text-center w-24 border-0 border-b border-border rounded-none bg-transparent" dir="ltr" disabled={isApproved} />
                           </TableCell>
-                          <TableCell className="text-center text-xs py-1 font-medium">{formatCurrency(calcItem?.baseAmount || 0)}</TableCell>
-                          <TableCell className="text-center text-xs py-1 font-medium">{formatCurrency(calcItem?.total || 0)}</TableCell>
-                          <TableCell className="py-1">
+                          <TableCell className="text-center text-xs py-2 font-semibold">{formatCurrency(calcItem?.baseAmount || 0)}</TableCell>
+                          <TableCell className="text-center text-xs py-2 font-semibold">{formatCurrency(calcItem?.total || 0)}</TableCell>
+                          <TableCell className="py-2">
                             {selectedInventoryItems.length > 1 && (
-                              <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveInventoryItem(item.id)} className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10">
+                              <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveInventoryItem(item.id)} className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10 rounded-full">
                                 <X className="w-3 h-3" />
                               </Button>
                             )}
@@ -1438,23 +1472,22 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                         </TableRow>
                       );
                     })}
-                    {/* Empty rows for ERP look */}
-                    {Array.from({ length: Math.max(0, 4 - selectedInventoryItems.length) }).map((_, i) => (
-                      <TableRow key={`empty-${i}`} className="border-b">
-                        <TableCell className="text-center text-xs py-1 text-muted-foreground">{selectedInventoryItems.length + i + 1}</TableCell>
-                        <TableCell className="py-1" colSpan={7}></TableCell>
+                    {Array.from({ length: Math.max(0, 3 - selectedInventoryItems.length) }).map((_, i) => (
+                      <TableRow key={`empty-${i}`} className="border-b border-dashed">
+                        <TableCell className="text-center text-xs py-2 text-muted-foreground/40 font-mono">{selectedInventoryItems.length + i + 1}</TableCell>
+                        <TableCell className="py-2" colSpan={7}></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-                <div className="p-2 border-t flex gap-2 flex-wrap bg-muted/20">
-                  <Button type="button" variant="outline" size="sm" className="gap-2 h-8 text-xs" onClick={handleAddManualItem} disabled={isApproved}>
+                <div className="p-3 border-t flex gap-2 flex-wrap bg-muted/20">
+                  <Button type="button" variant="outline" size="sm" className="gap-2 h-9 text-xs rounded-lg" onClick={handleAddManualItem} disabled={isApproved}>
                     <Plus className="w-3 h-3" />
                     {t.inv_add_item || 'إضافة صنف'}
                   </Button>
                   {availableInventoryItems.length > 0 && (
                     <Select onValueChange={handleAddInventoryItem}>
-                      <SelectTrigger className="w-[250px] h-8 text-xs">
+                      <SelectTrigger className="w-[250px] h-9 text-xs rounded-lg">
                         <SelectValue placeholder={t.inv_select_item_placeholder || 'اختر من المخزون...'} />
                       </SelectTrigger>
                       <SelectContent>
@@ -1476,86 +1509,65 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             )}
           </div>
 
-          {/* ===== Middle Info Section (Account, Status, Barcode, Voucher) ===== */}
-          <div className="p-3 border-t bg-muted/20">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">{t.inv_cash_account}</Label>
-                <div className="text-xs font-medium bg-primary/5 border border-primary/20 rounded px-2 py-1.5 truncate">
-                  {accounts.find(a => a.id === invoiceData.payment_account_id)?.name || '-'}
-                </div>
+          {/* ===== Invoice Summary Info ===== */}
+          <div className="p-4 border-t bg-gradient-to-b from-muted/40 to-muted/10">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+              <div className="bg-card rounded-lg border p-2.5 text-center shadow-sm">
+                <Label className="text-[9px] text-muted-foreground block mb-1">{t.inv_cash_account}</Label>
+                <div className="text-[11px] font-semibold truncate">{accounts.find(a => a.id === invoiceData.payment_account_id)?.name || '-'}</div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">{t.inv_invoice_number}</Label>
-                <div className="text-xs font-mono font-medium bg-muted border border-border rounded px-2 py-1.5">
-                  {invoiceData.invoice_number || nextInvoiceNumber}
-                </div>
+              <div className="bg-card rounded-lg border p-2.5 text-center shadow-sm">
+                <Label className="text-[9px] text-muted-foreground block mb-1">{t.inv_invoice_number}</Label>
+                <div className="text-[11px] font-bold font-mono">{invoiceData.invoice_number || nextInvoiceNumber}</div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">{t.inv_status_label || 'الحالة'}</Label>
-                <div className={`text-xs font-medium rounded px-2 py-1.5 text-center ${
+              <div className="bg-card rounded-lg border p-2.5 text-center shadow-sm">
+                <Label className="text-[9px] text-muted-foreground block mb-1">{t.inv_status_label || 'الحالة'}</Label>
+                <div className={`text-[11px] font-bold rounded-full px-2 py-0.5 inline-block ${
                   isViewingExisting && currentSaleStatus === 'approved' 
-                    ? 'bg-success/15 text-success border border-success/30' 
-                    : 'bg-warning/15 text-warning border border-warning/30'
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                    : isViewingExisting 
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                 }`}>
-                  {isViewingExisting ? (currentSaleStatus === 'approved' ? (t.inv_status_approved || 'معتمدة (مؤرشفة)') : (t.inv_status_draft || 'مسودة')) : (t.inv_new || 'جديدة')}
+                  {isViewingExisting ? (currentSaleStatus === 'approved' ? (t.inv_status_approved || 'معتمدة') : (t.inv_status_draft || 'مسودة')) : (t.inv_new || 'جديدة')}
                 </div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">{t.inv_issue_time || 'توقيت إصدار الفاتورة'}</Label>
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="date"
-                    value={invoiceData.sale_date}
-                    onChange={(e) => setInvoiceData({ ...invoiceData, sale_date: e.target.value })}
-                    className="h-7 text-[11px] font-mono border-border rounded px-1.5 w-[120px]"
-                    disabled={isApproved}
-                  />
-                  <Input
-                    type="time"
-                    value={invoiceData.issue_time}
-                    onChange={(e) => setInvoiceData({ ...invoiceData, issue_time: e.target.value })}
-                    className="h-7 text-[11px] font-mono border-border rounded px-1.5 w-[90px]"
-                    disabled={isApproved}
-                  />
-                </div>
+              <div className="bg-card rounded-lg border p-2.5 text-center shadow-sm">
+                <Label className="text-[9px] text-muted-foreground block mb-1">توقيت الإصدار</Label>
+                <div className="text-[11px] font-mono font-semibold">{invoiceData.sale_date} {invoiceData.issue_time}</div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">{t.inv_voucher_number || 'رقم السند'}</Label>
-                <div className="text-xs font-bold bg-card border-2 border-border rounded px-2 py-1.5 text-center">
-                  {isViewingExisting ? (invoiceData.invoice_number || currentInvoiceIndex + 1) : '-'}
-                </div>
+              <div className="bg-card rounded-lg border p-2.5 text-center shadow-sm">
+                <Label className="text-[9px] text-muted-foreground block mb-1">{t.inv_voucher_number || 'رقم السند'}</Label>
+                <div className="text-[11px] font-bold">{isViewingExisting ? (invoiceData.invoice_number || currentInvoiceIndex + 1) : '-'}</div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">{t.inv_salesperson || 'البائع'}</Label>
-                <div className="text-xs font-medium bg-card border border-border rounded px-2 py-1.5 truncate">
-                  {invoiceData.seller_name || '-'}
-                </div>
+              <div className="bg-card rounded-lg border p-2.5 text-center shadow-sm">
+                <Label className="text-[9px] text-muted-foreground block mb-1">{t.inv_salesperson || 'البائع'}</Label>
+                <div className="text-[11px] font-semibold truncate">{invoiceData.seller_name || '-'}</div>
               </div>
             </div>
           </div>
 
-          {/* ===== Totals Section (Large colored boxes - ERP Style) ===== */}
-          <div className="p-3 border-t bg-card">
+          {/* ===== Totals Section - Modern Cards ===== */}
+          <div className="p-4 border-t bg-card">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {/* الإجمالي - Green box */}
-              <div className="bg-success/15 border-2 border-success/40 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-success">{formatCurrency(calculations.finalTotal)}</div>
-                <div className="text-[10px] text-success font-medium mt-1">{t.inv_net}</div>
+              {/* الإجمالي الصافي */}
+              <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-4 text-center text-white shadow-lg">
+                <div className="text-3xl font-black">{formatCurrency(calculations.finalTotal)}</div>
+                <div className="text-[11px] font-medium mt-1 opacity-90">{t.inv_net}</div>
               </div>
-              {/* المجموع - Blue box */}
-              <div className="bg-primary/10 border-2 border-primary/30 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-primary">{formatCurrency(calculations.subtotal)}</div>
-                <div className="text-[10px] text-primary font-medium mt-1">{t.inv_total}</div>
+              {/* المجموع */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4 text-center">
+                <div className="text-2xl font-black text-blue-700 dark:text-blue-400">{formatCurrency(calculations.subtotal)}</div>
+                <div className="text-[10px] text-blue-600 dark:text-blue-500 font-semibold mt-1">{t.inv_total}</div>
               </div>
-              {/* حسم الأقلام - Gray box */}
-              <div className="bg-muted border-2 border-border rounded-lg p-3 text-center">
+              {/* الخصم */}
+              <div className="bg-muted/60 border-2 border-border rounded-xl p-4 text-center">
                 <div className="flex items-center justify-center gap-2">
                   <Input
                     type="number"
                     value={discount}
                     onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                    className="h-8 text-lg font-bold text-center w-20 border-0 border-b border-border rounded-none bg-transparent"
+                    className="h-8 text-lg font-black text-center w-20 border-0 border-b-2 border-border rounded-none bg-transparent"
                     dir="ltr"
                   />
                   <Select value={discountType} onValueChange={(v: 'percentage' | 'amount') => setDiscountType(v)}>
@@ -1566,230 +1578,190 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="text-[10px] text-muted-foreground font-medium mt-1">{t.inv_discount}</div>
+                <div className="text-[10px] text-muted-foreground font-semibold mt-1">{t.inv_discount}</div>
               </div>
-              {/* القيمة المضافة - Outlined box */}
-              <div className="border-2 border-warning/40 rounded-lg p-3 text-center bg-warning/5">
-                <div className="text-2xl font-bold text-warning">{formatCurrency(calculations.totalVAT)}</div>
-                <div className="text-[10px] text-warning font-medium mt-1">{t.inv_tax_label} {taxRate}%</div>
+              {/* الضريبة */}
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 text-center">
+                <div className="text-2xl font-black text-amber-700 dark:text-amber-400">{formatCurrency(calculations.totalVAT)}</div>
+                <div className="text-[10px] text-amber-600 dark:text-amber-500 font-semibold mt-1">{t.inv_tax_label} {taxRate}%</div>
               </div>
-              {/* الربح - Profit box */}
-              <div className={`border-2 rounded-lg p-3 text-center ${calculations.profit >= 0 ? 'border-success/40 bg-success/5' : 'border-destructive/40 bg-destructive/5'}`}>
-                <div className={`text-2xl font-bold ${calculations.profit >= 0 ? 'text-success' : 'text-destructive'}`}>{formatCurrency(calculations.profit)}</div>
-                <div className={`text-[10px] font-medium mt-1 ${calculations.profit >= 0 ? 'text-success' : 'text-destructive'}`}>{t.inv_profit}</div>
+              {/* الربح */}
+              <div className={`border-2 rounded-xl p-4 text-center ${calculations.profit >= 0 ? 'bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-800'}`}>
+                <div className={`text-2xl font-black ${calculations.profit >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>{formatCurrency(calculations.profit)}</div>
+                <div className={`text-[10px] font-semibold mt-1 ${calculations.profit >= 0 ? 'text-emerald-600 dark:text-emerald-500' : 'text-red-600 dark:text-red-500'}`}>{t.inv_profit}</div>
               </div>
             </div>
 
             {/* Paid Amount + Terms */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 pt-3 border-t border-border/50">
-              <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap text-muted-foreground">{t.inv_paid_amount}</Label>
-                <Input type="number" value={paidAmount} onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)} className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none w-32" placeholder="0" dir="ltr" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-3 border-t border-border/40">
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_paid_amount}</Label>
+                <Input type="number" value={paidAmount} onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)} className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-emerald-500 shadow-none" placeholder="0" dir="ltr" />
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap text-muted-foreground">{t.inv_terms}</Label>
-                <Input placeholder={t.inv_terms_placeholder} className="h-8 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-primary shadow-none" />
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_terms}</Label>
+                <Input placeholder={t.inv_terms_placeholder} className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-emerald-500 shadow-none" />
               </div>
             </div>
           </div>
 
-          {/* ===== Bottom Action Bar - Row 1: Dropdown Menus (Al-Ameen ERP Style) ===== */}
-          <div className="border-t border-border bg-gradient-to-b from-muted/80 to-muted/40">
-            <div className="px-3 py-1.5 flex items-center gap-1.5 border-b border-border/50">
-              {/* عمليات الضرائب */}
+          {/* ===== Modern Action Bar ===== */}
+          <div className="border-t-2 border-emerald-100 dark:border-emerald-900 bg-gradient-to-b from-card to-muted/30">
+            {/* Quick Menu Row */}
+            <div className="px-4 py-2 flex items-center gap-2 border-b border-border/50 overflow-x-auto">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1 text-[11px] h-7 rounded bg-card border-border shadow-sm">
-                    عمليات الضرائب
-                    <ChevronDown className="w-3 h-3" />
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-[11px] h-8 rounded-lg hover:bg-muted">
+                    عمليات الضرائب <ChevronDown className="w-3 h-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
                   <DropdownMenuItem onClick={() => setActivePage('vat-return-report')}>
-                    <FileText className="w-3.5 h-3.5 ml-2" />
-                    إنشاء إقرار ضريبي
+                    <FileText className="w-3.5 h-3.5 ml-2" /> إنشاء إقرار ضريبي
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActivePage('tax-settings')}>
-                    <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />
-                    إعدادات الضريبة
+                    <FileSpreadsheet className="w-3.5 h-3.5 ml-2" /> إعدادات الضريبة
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* تقارير */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1 text-[11px] h-7 rounded bg-card border-border shadow-sm">
-                    تقارير
-                    <ChevronDown className="w-3 h-3" />
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-[11px] h-8 rounded-lg hover:bg-muted">
+                    تقارير <ChevronDown className="w-3 h-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
                   <DropdownMenuItem onClick={() => setActivePage('sales-report')}>
-                    <FileText className="w-3.5 h-3.5 ml-2" />
-                    تقرير المبيعات
+                    <FileText className="w-3.5 h-3.5 ml-2" /> تقرير المبيعات
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActivePage('profit-report')}>
-                    <FileText className="w-3.5 h-3.5 ml-2" />
-                    تقرير الأرباح
+                    <FileText className="w-3.5 h-3.5 ml-2" /> تقرير الأرباح
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActivePage('account-statement')}>
-                    <FileText className="w-3.5 h-3.5 ml-2" />
-                    كشف حساب
+                    <FileText className="w-3.5 h-3.5 ml-2" /> كشف حساب
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* عمليات */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1 text-[11px] h-7 rounded bg-card border-border shadow-sm">
-                    {t.inv_operations || 'عمليات'}
-                    <ChevronDown className="w-3 h-3" />
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-[11px] h-8 rounded-lg hover:bg-muted">
+                    {t.inv_operations || 'عمليات'} <ChevronDown className="w-3 h-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
                   <DropdownMenuItem onClick={() => setActivePage('medad-import')}>
-                    <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />
-                    {t.inv_import_data}
+                    <FileSpreadsheet className="w-3.5 h-3.5 ml-2" /> {t.inv_import_data}
                   </DropdownMenuItem>
-                  <DropdownMenuItem disabled={!isViewingExisting || isApproved} onClick={() => setReverseDialogOpen(true)} className="text-warning">
-                    <RotateCcw className="w-3.5 h-3.5 ml-2" />
-                    {t.inv_return}
+                  <DropdownMenuItem disabled={!isViewingExisting || isApproved} onClick={() => setReverseDialogOpen(true)} className="text-amber-600">
+                    <RotateCcw className="w-3.5 h-3.5 ml-2" /> {t.inv_return}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => toast.info('سيتم إضافة خاصية إرسال SMS قريباً')}>
-                    <MessageSquare className="w-3.5 h-3.5 ml-2" />
-                    إرسال SMS
+                    <MessageSquare className="w-3.5 h-3.5 ml-2" /> إرسال SMS
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* عرض */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1 text-[11px] h-7 rounded bg-card border-border shadow-sm">
-                    عرض
-                    <ChevronDown className="w-3 h-3" />
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-[11px] h-8 rounded-lg hover:bg-muted">
+                    عرض <ChevronDown className="w-3 h-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
                   <DropdownMenuItem onClick={handlePrintExisting} disabled={!isViewingExisting}>
-                    <Printer className="w-3.5 h-3.5 ml-2" />
-                    معاينة قبل الطباعة
+                    <Printer className="w-3.5 h-3.5 ml-2" /> معاينة قبل الطباعة
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActivePage('journal-entries')} disabled={!isViewingExisting || !isApproved}>
-                    <FileText className="w-3.5 h-3.5 ml-2" />
-                    عرض القيد المحاسبي
+                    <FileText className="w-3.5 h-3.5 ml-2" /> عرض القيد المحاسبي
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
 
-            {/* Row 2: Action Buttons */}
-            <div className="px-3 py-1.5 flex items-center gap-1.5 flex-wrap">
-              {/* إضافة / حفظ */}
+            {/* Primary Action Buttons */}
+            <div className="px-4 py-2.5 flex items-center gap-2 flex-wrap">
               {isViewingExisting ? (
                 <>
                   {!isApproved && isEditing && (
-                    <Button onClick={handleUpdateSale} size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border border-border text-foreground hover:bg-muted shadow-sm" variant="outline" disabled={updateSale.isPending}>
+                    <Button onClick={handleUpdateSale} size="sm" className="gap-1.5 text-xs h-9 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-md" disabled={updateSale.isPending}>
                       <Save className="w-3.5 h-3.5" />
                       {updateSale.isPending ? t.inv_saving : t.inv_save_changes}
                     </Button>
                   )}
                   {isApproved && (
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-success/10 text-success rounded border border-success/20 h-8">
+                    <div className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded-lg border border-emerald-200 dark:border-emerald-800 h-9">
                       <CheckCircle className="w-3.5 h-3.5" />
-                      <span className="text-[11px] font-medium">{t.inv_status_approved}</span>
+                      <span className="text-xs font-semibold">{t.inv_status_approved}</span>
                     </div>
                   )}
                 </>
               ) : (
-                <Button onClick={handleSubmit} size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border border-border text-foreground hover:bg-muted shadow-sm" variant="outline" disabled={addMultiCarSale.isPending}>
-                  <Plus className="w-3.5 h-3.5 text-primary" />
+                <Button onClick={handleSubmit} size="sm" className="gap-1.5 text-xs h-9 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-md" disabled={addMultiCarSale.isPending}>
+                  <Plus className="w-3.5 h-3.5" />
                   {addMultiCarSale.isPending ? t.inv_saving : 'إضافة'}
                 </Button>
               )}
 
-              <Button variant="outline" onClick={handleNewInvoice} size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm">
-                <FileText className="w-3.5 h-3.5 text-primary" />
-                جديد
+              <Button variant="outline" onClick={handleNewInvoice} size="sm" className="gap-1.5 text-xs h-9 rounded-lg shadow-sm">
+                <FileText className="w-3.5 h-3.5 text-emerald-600" /> جديد
               </Button>
 
               <Button 
                 variant="outline" 
                 size="sm" 
-                className={`gap-1.5 text-[11px] h-8 rounded shadow-sm ${isEditing ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-card border-border'}`}
+                className={`gap-1.5 text-xs h-9 rounded-lg shadow-sm ${isEditing ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-400' : ''}`}
                 disabled={!isViewingExisting || isApproved}
-                onClick={() => {
-                  setIsEditing(!isEditing);
-                  if (!isEditing) toast.info('تم تفعيل وضع التعديل');
-                }}
+                onClick={() => { setIsEditing(!isEditing); if (!isEditing) toast.info('تم تفعيل وضع التعديل'); }}
               >
                 <FileEdit className="w-3.5 h-3.5" />
                 {isEditing ? 'إلغاء التعديل' : 'تعديل'}
               </Button>
 
-              <Button variant="outline" size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm" disabled={!isViewingExisting || isApproved} onClick={() => setDeleteDialogOpen(true)}>
-                <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                حذف
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-9 rounded-lg shadow-sm" disabled={!isViewingExisting || isApproved} onClick={() => setDeleteDialogOpen(true)}>
+                <Trash2 className="w-3.5 h-3.5 text-destructive" /> حذف
               </Button>
 
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="gap-1.5 text-[11px] h-8 rounded bg-success/10 border border-success/30 text-success hover:bg-success/20 shadow-sm" 
+                className="gap-1.5 text-xs h-9 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 shadow-sm" 
                 disabled={!isViewingExisting || isApproved}
                 onClick={() => setApproveDialogOpen(true)}
               >
-                <CheckCircle className="w-3.5 h-3.5" />
-                محاسبة
+                <CheckCircle className="w-3.5 h-3.5" /> محاسبة
               </Button>
 
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm"
-                onClick={() => {
-                  searchBarRef.current?.scrollIntoView({ behavior: 'smooth' });
-                  const input = searchBarRef.current?.querySelector('input');
-                  if (input) setTimeout(() => input.focus(), 300);
-                }}
-              >
-                <Search className="w-3.5 h-3.5 text-muted-foreground" />
-                بحث
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-9 rounded-lg shadow-sm" onClick={() => { searchBarRef.current?.scrollIntoView({ behavior: 'smooth' }); const input = searchBarRef.current?.querySelector('input'); if (input) setTimeout(() => input.focus(), 300); }}>
+                <Search className="w-3.5 h-3.5 text-muted-foreground" /> بحث
               </Button>
 
-              <Button variant="outline" size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-[hsl(var(--primary)/0.08)] border-primary/30 shadow-sm" disabled={!isViewingExisting} onClick={handlePrintExisting}>
-                <Printer className="w-3.5 h-3.5 text-primary" />
-                طباعة
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-9 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 shadow-sm" disabled={!isViewingExisting} onClick={handlePrintExisting}>
+                <Printer className="w-3.5 h-3.5 text-emerald-600" /> طباعة
               </Button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-card border-border shadow-sm">
-                    مزيد..
-                    <ChevronDown className="w-3 h-3" />
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs h-9 rounded-lg shadow-sm">
+                    مزيد.. <ChevronDown className="w-3 h-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
                   <DropdownMenuItem onClick={() => setActivePage('medad-import')}>
-                    <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />
-                    {t.inv_import_data}
+                    <FileSpreadsheet className="w-3.5 h-3.5 ml-2" /> {t.inv_import_data}
                   </DropdownMenuItem>
-                  <DropdownMenuItem disabled={!isViewingExisting || isApproved} onClick={() => setReverseDialogOpen(true)} className="text-warning">
-                    <RotateCcw className="w-3.5 h-3.5 ml-2" />
-                    {t.inv_return}
+                  <DropdownMenuItem disabled={!isViewingExisting || isApproved} onClick={() => setReverseDialogOpen(true)} className="text-amber-600">
+                    <RotateCcw className="w-3.5 h-3.5 ml-2" /> {t.inv_return}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActivePage('installments')}>
-                    <FileText className="w-3.5 h-3.5 ml-2" />
-                    الأقساط
+                    <FileText className="w-3.5 h-3.5 ml-2" /> الأقساط
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button variant="outline" onClick={() => setActivePage('sales')} size="sm" className="gap-1.5 text-[11px] h-8 rounded bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20 shadow-sm">
-                <X className="w-3.5 h-3.5" />
-                إغلاق
+              <Button variant="outline" onClick={() => setActivePage('sales')} size="sm" className="gap-1.5 text-xs h-9 rounded-lg bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-100 shadow-sm">
+                <X className="w-3.5 h-3.5" /> إغلاق
               </Button>
             </div>
           </div>
