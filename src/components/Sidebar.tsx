@@ -213,8 +213,8 @@ function SidebarSection({
       </button>
 
       <div className={cn(
-        "overflow-hidden transition-all duration-300 ease-out",
-        isOpen ? "max-h-[2000px] opacity-100 mt-1" : "max-h-0 opacity-0"
+        "transition-all duration-300 ease-out",
+        isOpen ? "max-h-none opacity-100 mt-1 overflow-visible" : "max-h-0 opacity-0 overflow-hidden"
       )}>
         <ul className="ms-5 border-s-2 border-sidebar-primary/20 ps-2.5 space-y-0.5 pb-1">
           {section.items.map(item => {
