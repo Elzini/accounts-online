@@ -308,7 +308,7 @@ export function CashFlowForecastPage() {
                     <Tooltip formatter={(v: number) => v.toLocaleString('ar-SA')} />
                     <ReferenceLine y={0} stroke="hsl(var(--destructive))" strokeDasharray="3 3" />
                     <Area type="monotone" dataKey="net" stroke={summary.totalForecastNet >= 0 ? 'hsl(var(--chart-2))' : 'hsl(var(--destructive))'} fill={summary.totalForecastNet >= 0 ? 'hsl(var(--chart-2))' : 'hsl(var(--destructive))'} fillOpacity={0.15} strokeWidth={2} name="صافي التدفق" />
-                  </Area>
+                  </AreaChart>
                 </ResponsiveContainer>
                 <div className="mt-4 grid grid-cols-3 gap-3">
                   <div className="text-center p-3 rounded-lg bg-muted/50">
