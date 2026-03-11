@@ -96,6 +96,7 @@ import {
   BIAnalyticsPluginPage, POSPluginPage, WhatsAppPluginPage,
   IFRSPluginPage, ProjectMgmtPluginPage
 } from '@/components/plugins/pages';
+import { CashFlowForecastPage } from '@/components/cashflow/CashFlowForecastPage';
 import { PurchaseOrdersPage, GoodsReceiptPage, PurchaseReturnsPage, MaterialsRequestPage, ContractorPaymentPage } from '@/components/procurement';
 import { StockVouchersPage } from '@/components/inventory/StockVouchersPage';
 import { StocktakingPage } from '@/components/inventory/StocktakingPage';
@@ -356,6 +357,7 @@ const Index = () => {
       case 'plugin-advanced-hr': return <AdvancedHRPluginPage />;
       case 'plugin-multi-warehouse': return <MultiWarehousePluginPage />;
       case 'plugin-bi-analytics': return <BIAnalyticsPluginPage />;
+      case 'cashflow-forecast': return <CashFlowForecastPage />;
       case 'plugin-pos': return <POSPluginPage />;
       case 'plugin-whatsapp': return <WhatsAppPluginPage />;
       case 'plugin-ifrs': return <IFRSPluginPage />;

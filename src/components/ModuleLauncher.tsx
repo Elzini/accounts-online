@@ -175,6 +175,7 @@ export function ModuleLauncher({ setActivePage, onModuleSelect }: ModuleLauncher
         { id: 'aging-report', label: 'أعمار الديون', labelEn: 'Aging Report', icon: Clock },
         { id: 'budgets', label: 'الموازنات التقديرية', labelEn: 'Budgets', icon: BarChart3 },
         { id: 'financial-kpis', label: 'مؤشرات الأداء', labelEn: 'Financial KPIs', icon: Activity },
+        { id: 'cashflow-forecast', label: 'توقعات التدفق النقدي', labelEn: 'Cash Flow Forecast', icon: TrendingUp },
         { id: 'profit-report', label: 'تقرير الأرباح', labelEn: 'Profit Report', icon: TrendingUp, permission: 'reports' },
         { id: 'account-movement', label: 'حركة الحسابات', labelEn: 'Account Movement', icon: ClipboardList, permission: 'reports' },
       ],
