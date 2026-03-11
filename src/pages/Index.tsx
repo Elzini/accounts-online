@@ -357,6 +357,7 @@ const Index = () => {
       case 'plugin-advanced-hr': return <AdvancedHRPluginPage />;
       case 'plugin-multi-warehouse': return <MultiWarehousePluginPage />;
       case 'plugin-bi-analytics': return <BIAnalyticsPluginPage />;
+      case 'cashflow-forecast': return <CashFlowForecastPage />;
       case 'plugin-pos': return <POSPluginPage />;
       case 'plugin-whatsapp': return <WhatsAppPluginPage />;
       case 'plugin-ifrs': return <IFRSPluginPage />;
