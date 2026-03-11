@@ -20,7 +20,7 @@ export function BIAnalyticsPluginPage() {
 
   // Fetch sales data
   const { data: sales = [], isLoading: loadingSales } = useQuery({
-    queryKey: ['bi-sales', companyId, fiscalYearId],
+    queryKey: ['bi-sales', companyId],
     queryFn: async () => {
       const { data } = await supabase.from('sales').select('sale_date, sale_price, purchase_price, status, customer_id')
         .eq('company_id', companyId!);
