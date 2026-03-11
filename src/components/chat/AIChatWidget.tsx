@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 
 type Message = {role: 'user' | 'assistant';content: string;};
@@ -21,6 +22,8 @@ const smartQuestions = [
 
 export function AIChatWidget() {
   const { companyId } = useCompany();
+  const { language } = useLanguage();
+  const isAr = language === 'ar';
   const [isOpen, setIsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -138,8 +141,12 @@ export function AIChatWidget() {
     if (isFullscreen) {
       return 'fixed inset-0 z-50';
     }
-    return 'fixed bottom-24 md:bottom-6 left-32 z-[60] w-[360px] sm:w-[400px] h-[540px]';
-  }, [isFullscreen]);
+
+    return cn(
+      'fixed bottom-24 md:bottom-6 z-[60] w-[360px] sm:w-[400px] h-[540px]',
+      isAr ? 'right-5' : 'left-5'
+    );
+  }, [isFullscreen, isAr]);
 
   return (
     <>
@@ -147,7 +154,7 @@ export function AIChatWidget() {
       {!isOpen &&
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 md:bottom-6 left-32 z-[60] group"
+        className={cn('fixed bottom-24 md:bottom-6 z-[60] group', isAr ? 'right-5' : 'left-5')}
         aria-label="فتح المساعد الذكي">
         
           <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-primary/25">
