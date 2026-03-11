@@ -520,8 +520,16 @@ export function Sidebar({
     }
   }, [activePage]);
 
+  // Accordion behavior: opening one section closes others
   const toggleSection = (sectionId: string) => {
-    setOpenSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
+    setOpenSections(prev => {
+      const isCurrentlyOpen = prev[sectionId];
+      // Close all sections, then toggle the clicked one
+      const newState: Record<string, boolean> = {};
+      Object.keys(prev).forEach(key => { newState[key] = false; });
+      newState[sectionId] = !isCurrentlyOpen;
+      return newState;
+    });
   };
 
   return (
