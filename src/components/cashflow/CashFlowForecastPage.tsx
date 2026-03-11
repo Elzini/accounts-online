@@ -52,7 +52,7 @@ export function CashFlowForecastPage() {
   const { data: installments = [] } = useQuery({
     queryKey: ['cf-installments', companyId],
     queryFn: async () => {
-      const { data } = await supabase.from('installments').select('due_date, amount, status')
+      const { data } = await supabase.from('installments' as any).select('due_date, amount, status')
         .eq('company_id', companyId!).eq('status', 'pending');
       return data || [];
     },
