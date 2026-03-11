@@ -397,6 +397,7 @@ export function Sidebar({
     { id: 'aging-report' as ActivePage, label: t.nav_aging_report, icon: Clock },
     { id: 'budgets' as ActivePage, label: t.nav_budgets, icon: BarChart3 },
     { id: 'financial-kpis' as ActivePage, label: t.nav_financial_kpis, icon: Activity },
+    { id: 'cashflow-forecast' as ActivePage, label: 'توقعات التدفق النقدي', icon: TrendingUp },
     { id: 'account-movement' as ActivePage, label: t.nav_account_movement, icon: ClipboardList, permission: 'reports' },
     { id: 'item-categories' as ActivePage, label: t.nav_categories, icon: FolderTree },
     { id: 'units-of-measure' as ActivePage, label: t.nav_units, icon: Ruler },

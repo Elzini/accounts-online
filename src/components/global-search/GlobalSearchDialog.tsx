@@ -76,6 +76,7 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   { id: 'aging-report', label: 'أعمار الديون', labelEn: 'Aging Report', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'Clock', keywords: ['تقادم', 'ذمم', 'aging', 'ديون'] },
   { id: 'budgets', label: 'الموازنات التقديرية', labelEn: 'Budgets', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'BarChart3', keywords: ['موازنة', 'budget', 'تقديرية'] },
   { id: 'financial-kpis', label: 'مؤشرات الأداء', labelEn: 'Financial KPIs', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'Activity', keywords: ['مؤشر', 'kpi', 'أداء مالي'] },
+  { id: 'cashflow-forecast', label: 'توقعات التدفق النقدي', labelEn: 'Cash Flow Forecast', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'TrendingUp', keywords: ['تدفق', 'نقدي', 'cash flow', 'توقعات'] },
   { id: 'profit-report', label: 'تقرير الأرباح', labelEn: 'Profit Report', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'TrendingUp', keywords: ['ربح', 'أرباح', 'profit'] },
   { id: 'account-movement', label: 'حركة الحسابات', labelEn: 'Account Movement', section: 'المحاسبة', sectionEn: 'Accounting', icon: 'ClipboardList', keywords: ['حركة', 'movement'] },
 

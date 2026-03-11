@@ -50,6 +50,7 @@ const SEARCH_ITEMS: SearchItem[] = [
   { id: 'prepaid-expenses', label: 'المصروفات المقدمة', section: 'المالية', keywords: ['مصروف مقدم', 'prepaid', 'إيجار'] },
   { id: 'aging-report', label: 'تقادم الذمم', section: 'التقارير', keywords: ['تقادم', 'aging'] },
   { id: 'financial-kpis', label: 'مؤشرات الأداء', section: 'التقارير', keywords: ['مؤشر', 'kpi', 'أداء'] },
+  { id: 'cashflow-forecast', label: 'توقعات التدفق النقدي', section: 'المالية', keywords: ['تدفق', 'نقدي', 'cash flow', 'توقعات', 'forecast'] },
 ];
 
 interface GlobalSearchProps {
