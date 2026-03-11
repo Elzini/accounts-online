@@ -7,7 +7,7 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { Dashboard } from '@/components/Dashboard';
 import { FloatingMiniDashboard } from '@/components/dashboard/FloatingMiniDashboard';
 import { useFocusMode, FocusModeOverlay } from '@/components/dashboard/FocusMode';
-import { ModuleLauncher } from '@/components/ModuleLauncher';
+
 import { PWAInstallButton } from '@/components/PWAInstallButton';
 import { CheckUpdateButton } from '@/components/pwa/CheckUpdateButton';
 import { CustomerForm } from '@/components/forms/CustomerForm';
