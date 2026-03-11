@@ -149,6 +149,7 @@ import { FieldServicePage } from '@/components/field-service/FieldServicePage';
 import { PLMPage } from '@/components/plm/PLMPage';
 import { BarcodeScannerPage } from '@/components/barcode/BarcodeScannerPage';
 import { SupportContact } from '@/components/SupportContact';
+import { FloatingQuickActions } from '@/components/FloatingQuickActions';
 import { FieldLevelSecurityPage } from '@/components/security/FieldLevelSecurityPage';
 import { InvoiceApprovalWorkflow } from '@/components/approvals/InvoiceApprovalWorkflow';
 import { EcommerceIntegrationPage } from '@/components/integrations/EcommerceIntegrationPage';
