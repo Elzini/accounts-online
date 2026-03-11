@@ -214,7 +214,7 @@ function SidebarSection({
 
       <div className={cn(
         "overflow-hidden transition-all duration-300 ease-out",
-        isOpen ? "max-h-[600px] opacity-100 mt-1" : "max-h-0 opacity-0"
+        isOpen ? "max-h-[2000px] opacity-100 mt-1" : "max-h-0 opacity-0"
       )}>
         <ul className="ms-5 border-s-2 border-sidebar-primary/20 ps-2.5 space-y-0.5 pb-1">
           {section.items.map(item => {
