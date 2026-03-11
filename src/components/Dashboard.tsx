@@ -869,7 +869,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
                   if (!isCarDealership) return null;
                   return (
                     <EditableWidgetWrapper key={widget.id} {...props}>
-                      <TransfersWidget transfers={transfers || []} setActivePage={setActivePage} />
+                      <TransfersWidget transfers={transfers || []} transferredCars={allCars.filter((c: any) => c.status === 'transferred')} setActivePage={setActivePage} />
                     </EditableWidgetWrapper>
                   );
                 
