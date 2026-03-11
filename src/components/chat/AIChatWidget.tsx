@@ -138,7 +138,7 @@ export function AIChatWidget() {
     if (isFullscreen) {
       return 'fixed inset-0 z-50';
     }
-    return 'fixed bottom-24 md:bottom-6 left-4 z-50 w-[360px] sm:w-[400px] h-[540px]';
+    return 'fixed bottom-24 md:bottom-6 left-20 z-[60] w-[360px] sm:w-[400px] h-[540px]';
   }, [isFullscreen]);
 
   return (
