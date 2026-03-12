@@ -24,6 +24,7 @@ import { FormulaBuilderTab } from './tabs/FormulaBuilderTab';
 import { CardFormulasTab } from './tabs/CardFormulasTab';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { SecurityMonitoringDashboard } from '@/components/security/SecurityMonitoringDashboard';
+import { AccountingHealthDashboard } from '@/components/security/AccountingHealthDashboard';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function ControlCenterPage() {
@@ -79,7 +80,10 @@ export function ControlCenterPage() {
         </TabsList>
 
         <TabsContent value="security" className="mt-6"><TwoFactorSetup /></TabsContent>
-        <TabsContent value="security-monitor" className="mt-6"><SecurityMonitoringDashboard /></TabsContent>
+        <TabsContent value="security-monitor" className="mt-6">
+          <AccountingHealthDashboard />
+          <div className="mt-6"><SecurityMonitoringDashboard /></div>
+        </TabsContent>
         <TabsContent value="formula-builder" className="mt-6"><FormulaBuilderTab /></TabsContent>
         <TabsContent value="card-formulas" className="mt-6"><CardFormulasTab /></TabsContent>
         <TabsContent value="dashboard-config" className="mt-6"><DashboardConfigTab /></TabsContent>

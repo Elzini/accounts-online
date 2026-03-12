@@ -83,6 +83,7 @@ import { SupportCenter } from '@/components/super-admin/SupportCenter';
 import { RBACManagement } from '@/components/super-admin/RBACManagement';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { SecurityMonitoringDashboard } from '@/components/security/SecurityMonitoringDashboard';
+import { AccountingHealthDashboard } from '@/components/security/AccountingHealthDashboard';
 import { MenuConfigurationTab } from '@/components/control-center/tabs/MenuConfigurationTab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -489,6 +490,9 @@ export default function Companies() {
 
           <TabsContent value="monitoring">
             <SystemMonitoring />
+            <div className="mt-6">
+              <AccountingHealthDashboard />
+            </div>
             <div className="mt-6">
               <SecurityMonitoringDashboard />
             </div>
