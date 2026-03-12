@@ -581,7 +581,7 @@ const Index = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setOpen(true)}
+                    onClick={() => setShowGlobalSearch(true)}
                     className="h-8 w-8 text-muted-foreground hover:text-foreground lg:hidden"
                   >
                     <Search className="w-4 h-4" />
