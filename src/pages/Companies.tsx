@@ -470,6 +470,22 @@ export default function Companies() {
               <Activity className="w-4 h-4" />
               <span>صحة النظام</span>
             </TabsTrigger>
+            <TabsTrigger value="sensitive-ops" className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              <span>العمليات الحساسة</span>
+            </TabsTrigger>
+            <TabsTrigger value="performance" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span>أداء الشركات</span>
+            </TabsTrigger>
+            <TabsTrigger value="central-alerts" className="flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              <span>التنبيهات</span>
+            </TabsTrigger>
+            <TabsTrigger value="backup-mgmt" className="flex items-center gap-2">
+              <Monitor className="w-4 h-4" />
+              <span>النسخ الاحتياطية</span>
+            </TabsTrigger>
             <TabsTrigger value="report" className="flex items-center gap-2">
               <FileBarChart className="w-4 h-4" />
               <span>التقرير</span>
