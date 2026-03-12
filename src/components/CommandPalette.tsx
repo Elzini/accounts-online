@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Search } from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -14,13 +15,11 @@ import {
   Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard,
   FileCheck, Wallet, ClipboardList, Scale, Clock, Calendar,
   FileSpreadsheet, Settings2, Boxes, FileUp, Wrench, HandCoins,
-  MapPin, Warehouse, Ruler, FolderTree, Target, ClipboardCheck,
-  BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory,
+  Warehouse, FolderTree, Target, ClipboardCheck,
+  BarChart3, Activity, GitBranch, CalendarDays, Factory,
   Plug, Coins, GitFork, Workflow, ArrowDownToLine, RotateCcw,
-  RotateCw, Star, RefreshCw, CalendarCheck, Play, FileSignature,
-  Home, Award, Link2, BookMarked, TestTube, Globe, LayoutGrid,
-  Smartphone, QrCode, Code, Banknote, Fingerprint, LucideIcon,
-  Landmark, Sparkles, AlertCircle,
+  RotateCw, Star, RefreshCw, CalendarCheck, Globe,
+  LucideIcon, Landmark,
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -39,7 +38,6 @@ interface CommandItemData {
 }
 
 const COMMAND_ITEMS: CommandItemData[] = [
-  // لوحة التحكم
   { id: 'dashboard', label: 'لوحة التحكم', labelEn: 'Dashboard', icon: LayoutDashboard, group: 'رئيسي', keywords: 'home main رئيسي' },
 
   // المبيعات
@@ -101,7 +99,7 @@ const COMMAND_ITEMS: CommandItemData[] = [
   { id: 'backups', label: 'النسخ الاحتياطية', labelEn: 'Backups', icon: Boxes, group: 'النظام', keywords: 'نسخة احتياطية backup' },
   { id: 'audit-logs', label: 'سجل المراجعة', labelEn: 'Audit Logs', icon: ClipboardList, group: 'النظام', keywords: 'سجل مراجعة audit log' },
 
-  // الأدوات
+  // أدوات
   { id: 'tax-settings', label: 'إعدادات الضريبة', labelEn: 'Tax Settings', icon: Percent, group: 'أدوات', keywords: 'ضريبة قيمة مضافة tax vat' },
   { id: 'vat-return-report', label: 'إقرار ضريبي', labelEn: 'VAT Return', icon: Receipt, group: 'أدوات', keywords: 'اقرار ضريبي vat return' },
   { id: 'fixed-assets', label: 'الأصول الثابتة', labelEn: 'Fixed Assets', icon: Boxes, group: 'أدوات', keywords: 'اصل ثابت fixed asset' },
@@ -111,7 +109,7 @@ const COMMAND_ITEMS: CommandItemData[] = [
   { id: 'aging-report', label: 'تقرير الأعمار', labelEn: 'Aging Report', icon: Clock, group: 'أدوات', keywords: 'اعمار ذمم aging' },
   { id: 'medad-import', label: 'استيراد بيانات', labelEn: 'Data Import', icon: FileUp, group: 'أدوات', keywords: 'استيراد import medad' },
   { id: 'plugins', label: 'الإضافات', labelEn: 'Plugins', icon: Plug, group: 'أدوات', keywords: 'اضافة plugin addon' },
-  { id: 'integrations', label: 'التكاملات', labelEn: 'Integrations', icon: Link2, group: 'أدوات', keywords: 'تكامل ربط integration api' },
+  { id: 'integrations', label: 'التكاملات', labelEn: 'Integrations', icon: Plug, group: 'أدوات', keywords: 'تكامل ربط integration api' },
   { id: 'workflows', label: 'الدورات المستندية', labelEn: 'Workflows', icon: Workflow, group: 'أدوات', keywords: 'دورة مستندية workflow' },
   { id: 'crm', label: 'إدارة العملاء CRM', labelEn: 'CRM', icon: Users, group: 'أدوات', keywords: 'علاقات عملاء crm' },
   { id: 'loyalty', label: 'نقاط الولاء', labelEn: 'Loyalty', icon: Star, group: 'أدوات', keywords: 'ولاء نقاط loyalty' },
@@ -120,9 +118,10 @@ const COMMAND_ITEMS: CommandItemData[] = [
   { id: 'customer-portal', label: 'بوابة العملاء', labelEn: 'Customer Portal', icon: Globe, group: 'أدوات', keywords: 'بوابة عملاء portal' },
   { id: 'financial-kpis', label: 'مؤشرات الأداء', labelEn: 'Financial KPIs', icon: Activity, group: 'أدوات', keywords: 'مؤشر اداء kpi' },
   { id: 'cashflow-forecast', label: 'توقعات التدفق النقدي', labelEn: 'Cashflow Forecast', icon: TrendingUp, group: 'أدوات', keywords: 'تدفق نقدي cashflow forecast' },
+  { id: 'financing', label: 'التمويل', labelEn: 'Financing', icon: Landmark, group: 'أدوات', keywords: 'تمويل قرض financing loan' },
+  { id: 'subscriptions', label: 'الاشتراكات', labelEn: 'Subscriptions', icon: RefreshCw, group: 'أدوات', keywords: 'اشتراك subscription' },
 ];
 
-// Group items by their group
 function groupItems(items: CommandItemData[]): Record<string, CommandItemData[]> {
   return items.reduce((acc, item) => {
     if (!acc[item.group]) acc[item.group] = [];
@@ -135,7 +134,6 @@ export function CommandPalette({ setActivePage }: CommandPaletteProps) {
   const [open, setOpen] = useState(false);
   const { language } = useLanguage();
 
-  // Ctrl+K / Cmd+K handler
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
@@ -157,7 +155,7 @@ export function CommandPalette({ setActivePage }: CommandPaletteProps) {
 
   return (
     <>
-      {/* Search trigger button */}
+      {/* Desktop search trigger */}
       <button
         onClick={() => setOpen(true)}
         className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted/50 text-muted-foreground text-xs hover:bg-muted transition-colors min-w-[200px]"
@@ -214,6 +212,3 @@ export function CommandPalette({ setActivePage }: CommandPaletteProps) {
     </>
   );
 }
-
-// Missing import at the top - add Search icon
-import { Search } from 'lucide-react';
