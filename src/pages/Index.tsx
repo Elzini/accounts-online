@@ -158,6 +158,7 @@ import { InvoiceApprovalWorkflow } from '@/components/approvals/InvoiceApprovalW
 import { EcommerceIntegrationPage } from '@/components/integrations/EcommerceIntegrationPage';
 import { PublicApiDocsPage } from '@/components/api-docs/PublicApiDocsPage';
 import { DataImportPage } from '@/components/import/DataImportPage';
+import { AutomationPage } from '@/components/automation/AutomationPage';
 import { ExpenseOCRPage } from '@/components/expenses/ExpenseOCRPage';
 import { OverdueInvoicesPage } from '@/components/notifications/OverdueInvoicesPage';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
@@ -362,6 +363,7 @@ const Index = () => {
       case 'plugin-project-mgmt': return <ProjectMgmtPluginPage />;
       // Workflow Engine
       case 'workflows': return <WorkflowsPage />;
+      case 'automation': return <AutomationPage />;
       // Procurement
       case 'purchase-orders': return <PurchaseOrdersPage />;
       case 'goods-receipt': return <GoodsReceiptPage />;

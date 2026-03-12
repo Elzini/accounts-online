@@ -259,4 +259,5 @@ export type ActivePage =
      | 'executive-kpis'
      | 'commissions-system'
      | 'branch-comparison'
-     | 'ai-sales-forecast';
+     | 'ai-sales-forecast'
+     | 'automation';

@@ -19,7 +19,7 @@ import {
   BarChart3, Activity, GitBranch, CalendarDays, Factory,
   Plug, Coins, GitFork, Workflow, ArrowDownToLine, RotateCcw,
   RotateCw, Star, RefreshCw, CalendarCheck, Globe,
-  LucideIcon, Landmark,
+  LucideIcon, Landmark, Zap,
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -111,6 +111,7 @@ const COMMAND_ITEMS: CommandItemData[] = [
   { id: 'plugins', label: 'الإضافات', labelEn: 'Plugins', icon: Plug, group: 'أدوات', keywords: 'اضافة plugin addon' },
   { id: 'integrations', label: 'التكاملات', labelEn: 'Integrations', icon: Plug, group: 'أدوات', keywords: 'تكامل ربط integration api' },
   { id: 'workflows', label: 'الدورات المستندية', labelEn: 'Workflows', icon: Workflow, group: 'أدوات', keywords: 'دورة مستندية workflow' },
+  { id: 'automation', label: 'أتمتة العمليات', labelEn: 'Automation', icon: Zap, group: 'أدوات', keywords: 'أتمتة فواتير دورية تذكيرات تحصيل automation recurring collection' },
   { id: 'crm', label: 'إدارة العملاء CRM', labelEn: 'CRM', icon: Users, group: 'أدوات', keywords: 'علاقات عملاء crm' },
   { id: 'loyalty', label: 'نقاط الولاء', labelEn: 'Loyalty', icon: Star, group: 'أدوات', keywords: 'ولاء نقاط loyalty' },
   { id: 'bookings', label: 'الحجوزات', labelEn: 'Bookings', icon: CalendarCheck, group: 'أدوات', keywords: 'حجز booking reservation' },
