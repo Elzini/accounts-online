@@ -24,6 +24,7 @@ import { FormulaBuilderTab } from './tabs/FormulaBuilderTab';
 import { CardFormulasTab } from './tabs/CardFormulasTab';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { SecurityMonitoringDashboard } from '@/components/security/SecurityMonitoringDashboard';
+import { AccountingHealthDashboard } from '@/components/security/AccountingHealthDashboard';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function ControlCenterPage() {
