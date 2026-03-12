@@ -462,6 +462,10 @@ export default function Companies() {
               <Cog className="w-4 h-4" />
               <span>الإعدادات</span>
             </TabsTrigger>
+            <TabsTrigger value="accounting-health" className="flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              <span>صحة النظام</span>
+            </TabsTrigger>
             <TabsTrigger value="report" className="flex items-center gap-2">
               <FileBarChart className="w-4 h-4" />
               <span>التقرير</span>
@@ -537,6 +541,10 @@ export default function Companies() {
 
           <TabsContent value="default-settings">
             <DefaultCompanySettings />
+          </TabsContent>
+
+          <TabsContent value="accounting-health">
+            <AccountingHealthDashboard />
           </TabsContent>
 
           <TabsContent value="report">
