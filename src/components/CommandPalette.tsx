@@ -19,7 +19,7 @@ import {
   BarChart3, Activity, GitBranch, CalendarDays, Factory,
   Plug, Coins, GitFork, Workflow, ArrowDownToLine, RotateCcw,
   RotateCw, Star, RefreshCw, CalendarCheck, Globe,
-  LucideIcon, Landmark,
+  LucideIcon, Landmark, Zap,
 } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
