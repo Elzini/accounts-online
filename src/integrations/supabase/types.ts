@@ -366,6 +366,42 @@ export type Database = {
           },
         ]
       }
+      approval_delegations: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          delegate_user_id: string
+          delegator_user_id: string
+          end_date: string
+          id: string
+          is_active: boolean | null
+          reason: string | null
+          start_date: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          delegate_user_id: string
+          delegator_user_id: string
+          end_date: string
+          id?: string
+          is_active?: boolean | null
+          reason?: string | null
+          start_date: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          delegate_user_id?: string
+          delegator_user_id?: string
+          end_date?: string
+          id?: string
+          is_active?: boolean | null
+          reason?: string | null
+          start_date?: string
+        }
+        Relationships: []
+      }
       approval_requests: {
         Row: {
           company_id: string
@@ -11737,6 +11773,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      supplier_portal_tokens: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          last_accessed_at: string | null
+          supplier_id: string
+          supplier_name: string
+          token: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_accessed_at?: string | null
+          supplier_id: string
+          supplier_name: string
+          token?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_accessed_at?: string | null
+          supplier_id?: string
+          supplier_name?: string
+          token?: string
+        }
+        Relationships: []
       }
       suppliers: {
         Row: {
