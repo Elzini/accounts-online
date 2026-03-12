@@ -124,6 +124,10 @@ import { BookkeepingServicePage } from '@/components/bookkeeping/BookkeepingServ
 import { ZatcaSandboxPage } from '@/components/zatca-sandbox/ZatcaSandboxPage';
 import { ZatcaTechnicalDocPage } from '@/components/zatca-sandbox/ZatcaTechnicalDocPage';
 import { CustomerPortalPage } from '@/components/customer-portal/CustomerPortalPage';
+import { SupplierPortalPage } from '@/components/supplier-portal/SupplierPortalPage';
+import { ApprovalDashboard } from '@/components/approvals/ApprovalDashboard';
+import { WhatsAppIntegration } from '@/components/integrations/WhatsAppIntegration';
+import { AdvancedAnalyticsDashboard } from '@/components/reports/AdvancedAnalyticsDashboard';
 import { AdvancedProjectsPage } from '@/components/advanced-projects/AdvancedProjectsPage';
 import { MobileInventoryPage } from '@/components/mobile-inventory/MobileInventoryPage';
 import { MobileInvoiceReaderPage } from '@/components/mobile-invoice/MobileInvoiceReaderPage';
@@ -338,7 +342,7 @@ const Index = () => {
       case 'checks': return <ChecksPage />;
       case 'budgets': return <BudgetsPage />;
       case 'financial-kpis': return <FinancialKPIsPage />;
-      case 'approvals': return <ApprovalsPage />;
+      case 'approvals': return <ApprovalDashboard />;
       case 'attendance': return <AttendanceManagementHub />;
       case 'fingerprint-devices': return <FingerprintDevicesPage />;
       case 'leaves': return <LeavesPage />;
@@ -401,6 +405,9 @@ const Index = () => {
       case 'zatca-sandbox': return <ZatcaSandboxPage />;
       case 'zatca-technical-doc': return <ZatcaTechnicalDocPage />;
       case 'customer-portal': return <CustomerPortalPage />;
+      case 'supplier-portal': return <SupplierPortalPage />;
+      case 'whatsapp-integration': return <WhatsAppIntegration />;
+      case 'advanced-analytics': return <AdvancedAnalyticsDashboard />;
       case 'advanced-projects': return <AdvancedProjectsPage />;
       case 'mobile-inventory': return <MobileInventoryPage />;
       case 'mobile-invoice-reader': return <MobileInvoiceReaderPage />;

@@ -260,4 +260,7 @@ export type ActivePage =
      | 'commissions-system'
      | 'branch-comparison'
      | 'ai-sales-forecast'
-     | 'automation';
+      | 'automation'
+      | 'supplier-portal'
+      | 'whatsapp-integration'
+      | 'advanced-analytics';

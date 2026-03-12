@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 
-import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle, Monitor, MessageCircle, Workflow, ArrowDownToLine, ArrowUpFromLine, RotateCcw, RotateCw, Star, RefreshCw, CalendarCheck, Play, FileSignature, Home, Award, Link2, BookMarked, TestTube, LayoutGrid, Smartphone, QrCode, Code, Banknote, Fingerprint, MoreHorizontal, AlertCircle, Sparkles, Zap } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle, Monitor, MessageCircle, MessageSquare, Workflow, ArrowDownToLine, ArrowUpFromLine, RotateCcw, RotateCw, Star, RefreshCw, CalendarCheck, Play, FileSignature, Home, Award, Link2, BookMarked, TestTube, LayoutGrid, Smartphone, QrCode, Code, Banknote, Fingerprint, MoreHorizontal, AlertCircle, Sparkles, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
@@ -427,6 +427,9 @@ export function Sidebar({
     { id: 'trips' as ActivePage, label: t.nav_trips, icon: MapPin },
     { id: 'advanced-projects' as ActivePage, label: language === 'ar' ? 'مشاريع متقدمة' : 'Advanced Projects', icon: LayoutGrid },
     { id: 'customer-portal' as ActivePage, label: language === 'ar' ? 'بوابة العملاء' : 'Customer Portal', icon: Globe },
+    { id: 'supplier-portal' as ActivePage, label: language === 'ar' ? 'بوابة الموردين' : 'Supplier Portal', icon: Globe },
+    { id: 'whatsapp-integration' as ActivePage, label: language === 'ar' ? 'واتساب' : 'WhatsApp', icon: MessageSquare },
+    { id: 'advanced-analytics' as ActivePage, label: language === 'ar' ? 'تحليلات متقدمة' : 'Advanced Analytics', icon: BarChart3 },
     { id: 'bookkeeping-service' as ActivePage, label: language === 'ar' ? 'مسك الدفاتر' : 'Bookkeeping', icon: BookMarked },
     { id: 'subscriptions' as ActivePage, label: language === 'ar' ? 'الاشتراكات' : 'Subscriptions', icon: RefreshCw },
     { id: 'payment-gateway' as ActivePage, label: language === 'ar' ? 'بوابة الدفع' : 'Payment Gateway', icon: Link2 },
