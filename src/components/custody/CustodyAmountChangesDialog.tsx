@@ -230,7 +230,7 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive"
-                      onClick={() => { if (confirm('حذف هذا السجل؟')) deleteChangeMutation.mutate(change.id); }}>
+                      onClick={() => { if (confirm('حذف هذا السجل؟')) deleteChangeMutation.mutate(change); }}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </TableCell>
