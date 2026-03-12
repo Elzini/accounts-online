@@ -476,7 +476,7 @@ export function ApprovalDashboard() {
                 <SelectTrigger><SelectValue placeholder={isRtl ? 'اختر المستخدم' : 'Select user'} /></SelectTrigger>
                 <SelectContent>
                   {users.map((u: any) => (
-                    <SelectItem key={u.user_id} value={u.user_id}>{u.full_name || u.email}</SelectItem>
+                    <SelectItem key={u.user_id} value={u.user_id}>{u.username || u.user_id}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
