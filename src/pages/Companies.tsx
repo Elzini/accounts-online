@@ -567,6 +567,22 @@ export default function Companies() {
             <AccountingHealthDashboard />
           </TabsContent>
 
+          <TabsContent value="sensitive-ops">
+            <SensitiveOperationsLog />
+          </TabsContent>
+
+          <TabsContent value="performance">
+            <CompanyPerformanceComparison />
+          </TabsContent>
+
+          <TabsContent value="central-alerts">
+            <CentralSmartAlerts />
+          </TabsContent>
+
+          <TabsContent value="backup-mgmt">
+            <BackupManagementPanel />
+          </TabsContent>
+
           <TabsContent value="report">
             <CompaniesReport />
           </TabsContent>
