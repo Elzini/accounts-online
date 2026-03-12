@@ -94,7 +94,7 @@ export function ApprovalDashboard() {
       if (!companyId) return [];
       const { data } = await supabase
         .from('profiles')
-        .select('user_id, full_name, email')
+        .select('user_id, username')
         .eq('company_id', companyId);
       return data || [];
     },
