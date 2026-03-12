@@ -56,6 +56,7 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
 
   const addChangeMutation = useMutation({
     mutationFn: async (entry: { old_amount: number; new_amount: number; changed_at: string; notes: string }) => {
+      // 1. Record the change
       const { error } = await supabase.from('custody_amount_changes').insert({
         custody_id: custodyId,
         company_id: companyId,
@@ -65,10 +66,19 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
         notes: entry.notes,
       });
       if (error) throw error;
+
+      // 2. Actually update the custody amount in the custodies table
+      const { error: updateError } = await supabase
+        .from('custodies')
+        .update({ custody_amount: entry.new_amount })
+        .eq('id', custodyId);
+      if (updateError) throw updateError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custody-amount-changes', custodyId] });
-      toast.success('تم إضافة سجل التعديل بنجاح');
+      queryClient.invalidateQueries({ queryKey: ['custody', custodyId] });
+      queryClient.invalidateQueries({ queryKey: ['custodies'] });
+      toast.success('تم تعديل مبلغ العهدة بنجاح');
       setShowForm(false);
       setFormChangeAmount(''); setFormNotes('');
       setFormDate(new Date().toISOString().split('T')[0]);
