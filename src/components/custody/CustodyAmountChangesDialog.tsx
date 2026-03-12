@@ -55,24 +55,54 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
   });
 
   const addChangeMutation = useMutation({
-    mutationFn: async (entry: { old_amount: number; new_amount: number; changed_at: string; notes: string }) => {
-      // 1. Record the change
-      const { error } = await supabase.from('custody_amount_changes').insert({
-        custody_id: custodyId,
-        company_id: companyId,
-        old_amount: entry.old_amount,
-        new_amount: entry.new_amount,
-        changed_at: entry.changed_at,
-        notes: entry.notes,
-      });
-      if (error) throw error;
+    mutationFn: async (entry: { change_amount: number; changed_at: string; notes: string }) => {
+      if (!companyId) throw new Error('Company ID is required');
 
-      // 2. Actually update the custody amount in the custodies table
+      // Read current custody amount
+      const { data: currentCustody, error: custodyError } = await supabase
+        .from('custodies')
+        .select('custody_amount')
+        .eq('id', custodyId)
+        .eq('company_id', companyId)
+        .single();
+      if (custodyError) throw custodyError;
+
+      const oldAmount = Number(currentCustody?.custody_amount || 0);
+      const newAmount = oldAmount + entry.change_amount;
+
+      // Update custody amount (DB trigger creates the history row)
       const { error: updateError } = await supabase
         .from('custodies')
-        .update({ custody_amount: entry.new_amount })
-        .eq('id', custodyId);
+        .update({ custody_amount: newAmount })
+        .eq('id', custodyId)
+        .eq('company_id', companyId);
       if (updateError) throw updateError;
+
+      // Update the auto-created history row with selected date/notes
+      const { data: createdChange, error: createdChangeError } = await supabase
+        .from('custody_amount_changes')
+        .select('id')
+        .eq('custody_id', custodyId)
+        .eq('company_id', companyId)
+        .eq('old_amount', oldAmount)
+        .eq('new_amount', newAmount)
+        .order('changed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (createdChangeError) throw createdChangeError;
+
+      if (createdChange?.id) {
+        const { error: patchChangeError } = await supabase
+          .from('custody_amount_changes')
+          .update({
+            changed_at: entry.changed_at,
+            notes: entry.notes || null,
+          })
+          .eq('id', createdChange.id)
+          .eq('company_id', companyId);
+        if (patchChangeError) throw patchChangeError;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custody-amount-changes', custodyId] });
@@ -88,30 +118,22 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
 
   const deleteChangeMutation = useMutation({
     mutationFn: async (change: AmountChange) => {
-      const { error } = await supabase.from('custody_amount_changes').delete().eq('id', change.id);
-      if (error) throw error;
+      if (!companyId) throw new Error('Company ID is required');
 
-      // Revert custody amount by subtracting the deleted change
-      const { data: currentCustody } = await supabase
-        .from('custodies')
-        .select('custody_amount')
-        .eq('id', custodyId)
-        .single();
-      
-      if (currentCustody) {
-        const revertedAmount = Number(currentCustody.custody_amount) - change.change_amount;
-        const { error: updateError } = await supabase
-          .from('custodies')
-          .update({ custody_amount: revertedAmount })
-          .eq('id', custodyId);
-        if (updateError) throw updateError;
-      }
+      const { error } = await supabase
+        .from('custody_amount_changes')
+        .delete()
+        .eq('id', change.id)
+        .eq('custody_id', custodyId)
+        .eq('company_id', companyId);
+
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custody-amount-changes', custodyId] });
       queryClient.invalidateQueries({ queryKey: ['custody', custodyId] });
       queryClient.invalidateQueries({ queryKey: ['custodies'] });
-      toast.success('تم حذف السجل وتحديث مبلغ العهدة');
+      toast.success('تم حذف السجل بنجاح');
     },
     onError: (e: Error) => toast.error(`خطأ: ${e.message}`),
   });
@@ -119,12 +141,10 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
   const handleAdd = () => {
     const changeAmt = parseFloat(formChangeAmount);
     if (isNaN(changeAmt) || changeAmt === 0) { toast.error('يرجى إدخال مبلغ التعديل'); return; }
-    const lastNewAmount = changes.length > 0 ? changes[changes.length - 1].new_amount : 0;
-    const oldAmt = lastNewAmount;
-    const newAmt = oldAmt + changeAmt;
     addChangeMutation.mutate({
-      old_amount: oldAmt, new_amount: newAmt,
-      changed_at: formDate, notes: formNotes,
+      change_amount: changeAmt,
+      changed_at: formDate,
+      notes: formNotes,
     });
   };
 
