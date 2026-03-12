@@ -10,7 +10,11 @@ import {
   FunctionSquare,
   Code2,
   Shield,
-  ShieldCheck
+  ShieldCheck,
+  ShieldAlert,
+  Bell,
+  Users,
+  ClipboardList
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AccountMappingsTab } from './tabs/AccountMappingsTab';
@@ -25,6 +29,10 @@ import { CardFormulasTab } from './tabs/CardFormulasTab';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { SecurityMonitoringDashboard } from '@/components/security/SecurityMonitoringDashboard';
 import { AccountingHealthDashboard } from '@/components/security/AccountingHealthDashboard';
+import { CompanySensitiveOpsLog } from './tabs/CompanySensitiveOpsLog';
+import { CompanySmartAlerts } from './tabs/CompanySmartAlerts';
+import { EmployeePermissionsManager } from './tabs/EmployeePermissionsManager';
+import { UserActivityLog } from './tabs/UserActivityLog';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function ControlCenterPage() {
@@ -43,12 +51,24 @@ export function ControlCenterPage() {
       </div>
 
       <Tabs defaultValue="formula-builder" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-11 lg:w-auto lg:inline-grid overflow-x-auto">
+        <TabsList className="flex flex-wrap gap-1 h-auto p-1">
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Shield className="w-4 h-4" /><span className="hidden sm:inline">الأمان</span>
           </TabsTrigger>
           <TabsTrigger value="security-monitor" className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4" /><span className="hidden sm:inline">المراقبة الأمنية</span>
+          </TabsTrigger>
+          <TabsTrigger value="sensitive-ops" className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4" /><span className="hidden sm:inline">العمليات الحساسة</span>
+          </TabsTrigger>
+          <TabsTrigger value="smart-alerts" className="flex items-center gap-2">
+            <Bell className="w-4 h-4" /><span className="hidden sm:inline">التنبيهات</span>
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="flex items-center gap-2">
+            <Users className="w-4 h-4" /><span className="hidden sm:inline">الصلاحيات</span>
+          </TabsTrigger>
+          <TabsTrigger value="activity-log" className="flex items-center gap-2">
+            <ClipboardList className="w-4 h-4" /><span className="hidden sm:inline">سجل النشاط</span>
           </TabsTrigger>
           <TabsTrigger value="formula-builder" className="flex items-center gap-2">
             <FunctionSquare className="w-4 h-4" /><span className="hidden sm:inline">{t.cc_formula_builder}</span>
@@ -84,6 +104,10 @@ export function ControlCenterPage() {
           <AccountingHealthDashboard />
           <div className="mt-6"><SecurityMonitoringDashboard /></div>
         </TabsContent>
+        <TabsContent value="sensitive-ops" className="mt-6"><CompanySensitiveOpsLog /></TabsContent>
+        <TabsContent value="smart-alerts" className="mt-6"><CompanySmartAlerts /></TabsContent>
+        <TabsContent value="permissions" className="mt-6"><EmployeePermissionsManager /></TabsContent>
+        <TabsContent value="activity-log" className="mt-6"><UserActivityLog /></TabsContent>
         <TabsContent value="formula-builder" className="mt-6"><FormulaBuilderTab /></TabsContent>
         <TabsContent value="card-formulas" className="mt-6"><CardFormulasTab /></TabsContent>
         <TabsContent value="dashboard-config" className="mt-6"><DashboardConfigTab /></TabsContent>
