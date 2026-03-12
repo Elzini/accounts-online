@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { LogOut, Building2, Calendar, Eye, LayoutDashboard, Clock, Search } from 'lucide-react';
+import { CommandPalette } from '@/components/CommandPalette';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileSidebar, MobileSidebarRef } from '@/components/MobileSidebar';
@@ -576,11 +577,12 @@ const Index = () => {
                 </div>
                 {/* Right: Actions */}
                 <div className="flex items-center gap-1.5 shrink-0">
+                  <CommandPalette setActivePage={handleSetActivePage} />
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowGlobalSearch(true)}
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground lg:hidden"
                   >
                     <Search className="w-4 h-4" />
                   </Button>
