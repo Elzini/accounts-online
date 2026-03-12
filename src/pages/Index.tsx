@@ -589,6 +589,8 @@ const Index = () => {
                     <Search className="w-4 h-4" />
                   </Button>
                   <NotificationsBell />
+                  <PushNotificationManager />
+                  <OfflineDataIndicator />
                   <CarSearch />
                   <Button 
                     variant="ghost" 
