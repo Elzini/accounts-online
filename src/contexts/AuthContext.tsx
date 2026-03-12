@@ -153,18 +153,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // THEN check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      // Force re-login on fresh browser/tab open:
-      // If there's a persisted session but no sessionStorage flag,
-      // it means the user opened a new browser window/tab — sign them out.
-      const isSessionActive = sessionStorage.getItem(SESSION_ACTIVE_KEY);
-      if (session && !isSessionActive) {
-        await supabase.auth.signOut();
-        setSession(null);
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
