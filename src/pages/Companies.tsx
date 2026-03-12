@@ -503,7 +503,7 @@ export default function Companies() {
           </TabsContent>
 
           <TabsContent value="security-2fa">
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <h2 className="text-2xl font-bold flex items-center gap-2">
                   <Shield className="w-6 h-6" /> المصادقة الثنائية (2FA)
@@ -511,6 +511,7 @@ export default function Companies() {
                 <p className="text-muted-foreground">تفعيل وإدارة المصادقة الثنائية لحساب السوبر أدمن</p>
               </div>
               <TwoFactorSetup />
+              <SecurityMonitoringDashboard />
             </div>
           </TabsContent>
 
