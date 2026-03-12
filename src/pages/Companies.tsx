@@ -85,6 +85,10 @@ import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { SecurityMonitoringDashboard } from '@/components/security/SecurityMonitoringDashboard';
 import { AccountingHealthDashboard } from '@/components/security/AccountingHealthDashboard';
 import { MenuConfigurationTab } from '@/components/control-center/tabs/MenuConfigurationTab';
+import { SensitiveOperationsLog } from '@/components/super-admin/SensitiveOperationsLog';
+import { CompanyPerformanceComparison } from '@/components/super-admin/CompanyPerformanceComparison';
+import { CentralSmartAlerts } from '@/components/super-admin/CentralSmartAlerts';
+import { BackupManagementPanel } from '@/components/super-admin/BackupManagementPanel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import' | 'medical' | 'real_estate';
