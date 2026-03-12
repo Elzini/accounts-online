@@ -79,6 +79,7 @@ export function ControlCenterPage() {
         </TabsList>
 
         <TabsContent value="security" className="mt-6"><TwoFactorSetup /></TabsContent>
+        <TabsContent value="security-monitor" className="mt-6"><SecurityMonitoringDashboard /></TabsContent>
         <TabsContent value="formula-builder" className="mt-6"><FormulaBuilderTab /></TabsContent>
         <TabsContent value="card-formulas" className="mt-6"><CardFormulasTab /></TabsContent>
         <TabsContent value="dashboard-config" className="mt-6"><DashboardConfigTab /></TabsContent>
