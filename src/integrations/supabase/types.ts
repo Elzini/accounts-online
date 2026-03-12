@@ -2012,6 +2012,132 @@ export type Database = {
         }
         Relationships: []
       }
+      collection_reminder_rules: {
+        Row: {
+          company_id: string
+          created_at: string
+          days_offset: number
+          escalation_level: number
+          id: string
+          is_active: boolean
+          message_template: string | null
+          name: string
+          reminder_method: string
+          reminder_type: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          days_offset?: number
+          escalation_level?: number
+          id?: string
+          is_active?: boolean
+          message_template?: string | null
+          name: string
+          reminder_method?: string
+          reminder_type?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          days_offset?: number
+          escalation_level?: number
+          id?: string
+          is_active?: boolean
+          message_template?: string | null
+          name?: string
+          reminder_method?: string
+          reminder_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_reminder_rules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collection_reminders: {
+        Row: {
+          amount_due: number | null
+          company_id: string
+          created_at: string
+          customer_id: string | null
+          days_offset: number
+          escalation_level: number
+          id: string
+          invoice_id: string | null
+          reminder_method: string
+          reminder_type: string
+          response_at: string | null
+          response_note: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_due?: number | null
+          company_id: string
+          created_at?: string
+          customer_id?: string | null
+          days_offset?: number
+          escalation_level?: number
+          id?: string
+          invoice_id?: string | null
+          reminder_method?: string
+          reminder_type?: string
+          response_at?: string | null
+          response_note?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_due?: number | null
+          company_id?: string
+          created_at?: string
+          customer_id?: string | null
+          days_offset?: number
+          escalation_level?: number
+          id?: string
+          invoice_id?: string | null
+          reminder_method?: string
+          reminder_type?: string
+          response_at?: string | null
+          response_note?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_reminders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_reminders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_reminders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           address: string | null
@@ -9928,6 +10054,111 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recurring_invoices: {
+        Row: {
+          auto_approve: boolean
+          company_id: string
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          end_date: string | null
+          frequency: string
+          generated_count: number
+          id: string
+          invoice_type: string
+          is_active: boolean
+          last_generated_at: string | null
+          max_occurrences: number | null
+          next_due_date: string
+          notes: string | null
+          start_date: string
+          supplier_id: string | null
+          template_data: Json
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          auto_approve?: boolean
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          end_date?: string | null
+          frequency?: string
+          generated_count?: number
+          id?: string
+          invoice_type?: string
+          is_active?: boolean
+          last_generated_at?: string | null
+          max_occurrences?: number | null
+          next_due_date: string
+          notes?: string | null
+          start_date: string
+          supplier_id?: string | null
+          template_data?: Json
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          auto_approve?: boolean
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          end_date?: string | null
+          frequency?: string
+          generated_count?: number
+          id?: string
+          invoice_type?: string
+          is_active?: boolean
+          last_generated_at?: string | null
+          max_occurrences?: number | null
+          next_due_date?: string
+          notes?: string | null
+          start_date?: string
+          supplier_id?: string | null
+          template_data?: Json
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers_safe"
             referencedColumns: ["id"]
           },
         ]
