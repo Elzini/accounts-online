@@ -87,13 +87,31 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
   });
 
   const deleteChangeMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('custody_amount_changes').delete().eq('id', id);
+    mutationFn: async (change: AmountChange) => {
+      const { error } = await supabase.from('custody_amount_changes').delete().eq('id', change.id);
       if (error) throw error;
+
+      // Revert custody amount by subtracting the deleted change
+      const { data: currentCustody } = await supabase
+        .from('custodies')
+        .select('custody_amount')
+        .eq('id', custodyId)
+        .single();
+      
+      if (currentCustody) {
+        const revertedAmount = Number(currentCustody.custody_amount) - change.change_amount;
+        const { error: updateError } = await supabase
+          .from('custodies')
+          .update({ custody_amount: revertedAmount })
+          .eq('id', custodyId);
+        if (updateError) throw updateError;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custody-amount-changes', custodyId] });
-      toast.success('تم حذف السجل');
+      queryClient.invalidateQueries({ queryKey: ['custody', custodyId] });
+      queryClient.invalidateQueries({ queryKey: ['custodies'] });
+      toast.success('تم حذف السجل وتحديث مبلغ العهدة');
     },
     onError: (e: Error) => toast.error(`خطأ: ${e.message}`),
   });
