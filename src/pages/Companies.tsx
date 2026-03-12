@@ -82,6 +82,7 @@ import { SystemMonitoring } from '@/components/super-admin/SystemMonitoring';
 import { SupportCenter } from '@/components/super-admin/SupportCenter';
 import { RBACManagement } from '@/components/super-admin/RBACManagement';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
+import { SecurityMonitoringDashboard } from '@/components/security/SecurityMonitoringDashboard';
 import { MenuConfigurationTab } from '@/components/control-center/tabs/MenuConfigurationTab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
