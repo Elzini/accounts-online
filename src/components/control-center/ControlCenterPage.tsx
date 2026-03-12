@@ -42,9 +42,12 @@ export function ControlCenterPage() {
       </div>
 
       <Tabs defaultValue="formula-builder" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-10 lg:w-auto lg:inline-grid overflow-x-auto">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-11 lg:w-auto lg:inline-grid overflow-x-auto">
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Shield className="w-4 h-4" /><span className="hidden sm:inline">الأمان</span>
+          </TabsTrigger>
+          <TabsTrigger value="security-monitor" className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4" /><span className="hidden sm:inline">المراقبة الأمنية</span>
           </TabsTrigger>
           <TabsTrigger value="formula-builder" className="flex items-center gap-2">
             <FunctionSquare className="w-4 h-4" /><span className="hidden sm:inline">{t.cc_formula_builder}</span>
