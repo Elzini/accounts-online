@@ -9,7 +9,8 @@ import {
   LayoutGrid,
   FunctionSquare,
   Code2,
-  Shield
+  Shield,
+  ShieldCheck
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AccountMappingsTab } from './tabs/AccountMappingsTab';
@@ -22,6 +23,7 @@ import { DashboardConfigTab } from './tabs/DashboardConfigTab';
 import { FormulaBuilderTab } from './tabs/FormulaBuilderTab';
 import { CardFormulasTab } from './tabs/CardFormulasTab';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
+import { SecurityMonitoringDashboard } from '@/components/security/SecurityMonitoringDashboard';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function ControlCenterPage() {
