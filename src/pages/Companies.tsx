@@ -85,6 +85,10 @@ import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { SecurityMonitoringDashboard } from '@/components/security/SecurityMonitoringDashboard';
 import { AccountingHealthDashboard } from '@/components/security/AccountingHealthDashboard';
 import { MenuConfigurationTab } from '@/components/control-center/tabs/MenuConfigurationTab';
+import { SensitiveOperationsLog } from '@/components/super-admin/SensitiveOperationsLog';
+import { CompanyPerformanceComparison } from '@/components/super-admin/CompanyPerformanceComparison';
+import { CentralSmartAlerts } from '@/components/super-admin/CentralSmartAlerts';
+import { BackupManagementPanel } from '@/components/super-admin/BackupManagementPanel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import' | 'medical' | 'real_estate';
@@ -466,6 +470,22 @@ export default function Companies() {
               <Activity className="w-4 h-4" />
               <span>صحة النظام</span>
             </TabsTrigger>
+            <TabsTrigger value="sensitive-ops" className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              <span>العمليات الحساسة</span>
+            </TabsTrigger>
+            <TabsTrigger value="performance" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span>أداء الشركات</span>
+            </TabsTrigger>
+            <TabsTrigger value="central-alerts" className="flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              <span>التنبيهات</span>
+            </TabsTrigger>
+            <TabsTrigger value="backup-mgmt" className="flex items-center gap-2">
+              <Monitor className="w-4 h-4" />
+              <span>النسخ الاحتياطية</span>
+            </TabsTrigger>
             <TabsTrigger value="report" className="flex items-center gap-2">
               <FileBarChart className="w-4 h-4" />
               <span>التقرير</span>
@@ -545,6 +565,22 @@ export default function Companies() {
 
           <TabsContent value="accounting-health">
             <AccountingHealthDashboard />
+          </TabsContent>
+
+          <TabsContent value="sensitive-ops">
+            <SensitiveOperationsLog />
+          </TabsContent>
+
+          <TabsContent value="performance">
+            <CompanyPerformanceComparison />
+          </TabsContent>
+
+          <TabsContent value="central-alerts">
+            <CentralSmartAlerts />
+          </TabsContent>
+
+          <TabsContent value="backup-mgmt">
+            <BackupManagementPanel />
           </TabsContent>
 
           <TabsContent value="report">
