@@ -363,6 +363,7 @@ const Index = () => {
       case 'plugin-project-mgmt': return <ProjectMgmtPluginPage />;
       // Workflow Engine
       case 'workflows': return <WorkflowsPage />;
+      case 'automation': return <AutomationPage />;
       // Procurement
       case 'purchase-orders': return <PurchaseOrdersPage />;
       case 'goods-receipt': return <GoodsReceiptPage />;
