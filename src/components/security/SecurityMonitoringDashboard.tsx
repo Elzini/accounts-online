@@ -296,7 +296,7 @@ export function SecurityMonitoringDashboard() {
                         </div>
                         <div className="flex items-center gap-2">
                           {audit.integrity_hash && (
-                            <Shield className="h-3 w-3 text-green-500" title="مؤمّن بالهاش" />
+                            <Shield className="h-3 w-3 text-green-500" />
                           )}
                           <span className="text-xs text-muted-foreground">
                             {new Date(audit.created_at).toLocaleString('ar-SA')}

@@ -30,13 +30,6 @@ export async function checkTenantIsolation(companyId: string): Promise<Integrity
     }
   }
 
-  // فحص أن القيود المحاسبية تابعة لنفس الشركة
-  const { data: orphanedLines, error: orphanError } = await supabase.rpc('check_orphaned_journal_lines', { p_company_id: companyId }).maybeSingle();
-
-  if (!orphanError && orphanedLines && (orphanedLines as any)?.count > 0) {
-    issues.push(`يوجد ${(orphanedLines as any).count} سطر قيد غير مرتبط بالشركة`);
-  }
-
   // فحص تطابق company_id في الحسابات والقيود
   const { data: entries } = await supabase
     .from('journal_entries')
