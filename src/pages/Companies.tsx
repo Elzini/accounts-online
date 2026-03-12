@@ -82,6 +82,7 @@ import { SystemMonitoring } from '@/components/super-admin/SystemMonitoring';
 import { SupportCenter } from '@/components/super-admin/SupportCenter';
 import { RBACManagement } from '@/components/super-admin/RBACManagement';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
+import { SecurityMonitoringDashboard } from '@/components/security/SecurityMonitoringDashboard';
 import { MenuConfigurationTab } from '@/components/control-center/tabs/MenuConfigurationTab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -488,6 +489,9 @@ export default function Companies() {
 
           <TabsContent value="monitoring">
             <SystemMonitoring />
+            <div className="mt-6">
+              <SecurityMonitoringDashboard />
+            </div>
           </TabsContent>
 
           <TabsContent value="support">
@@ -499,7 +503,7 @@ export default function Companies() {
           </TabsContent>
 
           <TabsContent value="security-2fa">
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <h2 className="text-2xl font-bold flex items-center gap-2">
                   <Shield className="w-6 h-6" /> المصادقة الثنائية (2FA)
@@ -507,6 +511,7 @@ export default function Companies() {
                 <p className="text-muted-foreground">تفعيل وإدارة المصادقة الثنائية لحساب السوبر أدمن</p>
               </div>
               <TwoFactorSetup />
+              <SecurityMonitoringDashboard />
             </div>
           </TabsContent>
 
