@@ -543,6 +543,10 @@ export default function Companies() {
             <DefaultCompanySettings />
           </TabsContent>
 
+          <TabsContent value="accounting-health">
+            <AccountingHealthDashboard />
+          </TabsContent>
+
           <TabsContent value="report">
             <CompaniesReport />
           </TabsContent>
