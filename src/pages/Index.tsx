@@ -124,6 +124,10 @@ import { BookkeepingServicePage } from '@/components/bookkeeping/BookkeepingServ
 import { ZatcaSandboxPage } from '@/components/zatca-sandbox/ZatcaSandboxPage';
 import { ZatcaTechnicalDocPage } from '@/components/zatca-sandbox/ZatcaTechnicalDocPage';
 import { CustomerPortalPage } from '@/components/customer-portal/CustomerPortalPage';
+import { SupplierPortalPage } from '@/components/supplier-portal/SupplierPortalPage';
+import { ApprovalDashboard } from '@/components/approvals/ApprovalDashboard';
+import { WhatsAppIntegration } from '@/components/integrations/WhatsAppIntegration';
+import { AdvancedAnalyticsDashboard } from '@/components/reports/AdvancedAnalyticsDashboard';
 import { AdvancedProjectsPage } from '@/components/advanced-projects/AdvancedProjectsPage';
 import { MobileInventoryPage } from '@/components/mobile-inventory/MobileInventoryPage';
 import { MobileInvoiceReaderPage } from '@/components/mobile-invoice/MobileInvoiceReaderPage';
