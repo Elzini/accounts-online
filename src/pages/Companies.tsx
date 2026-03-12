@@ -491,6 +491,9 @@ export default function Companies() {
           <TabsContent value="monitoring">
             <SystemMonitoring />
             <div className="mt-6">
+              <AccountingHealthDashboard />
+            </div>
+            <div className="mt-6">
               <SecurityMonitoringDashboard />
             </div>
           </TabsContent>
