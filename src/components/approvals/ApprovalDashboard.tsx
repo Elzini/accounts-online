@@ -414,7 +414,7 @@ export function ApprovalDashboard() {
                     const delegateUser = users.find((u: any) => u.user_id === d.delegate_user_id);
                     return (
                       <TableRow key={d.id}>
-                        <TableCell>{delegateUser?.full_name || d.delegate_user_id?.slice(0, 8)}</TableCell>
+                        <TableCell>{delegateUser?.username || d.delegate_user_id?.slice(0, 8)}</TableCell>
                         <TableCell>{d.start_date}</TableCell>
                         <TableCell>{d.end_date}</TableCell>
                         <TableCell>{d.reason || '-'}</TableCell>
