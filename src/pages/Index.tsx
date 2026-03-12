@@ -342,7 +342,7 @@ const Index = () => {
       case 'checks': return <ChecksPage />;
       case 'budgets': return <BudgetsPage />;
       case 'financial-kpis': return <FinancialKPIsPage />;
-      case 'approvals': return <ApprovalsPage />;
+      case 'approvals': return <ApprovalDashboard />;
       case 'attendance': return <AttendanceManagementHub />;
       case 'fingerprint-devices': return <FingerprintDevicesPage />;
       case 'leaves': return <LeavesPage />;
