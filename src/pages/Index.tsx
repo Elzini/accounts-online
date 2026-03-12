@@ -11,6 +11,8 @@ import { useFocusMode, FocusModeOverlay } from '@/components/dashboard/FocusMode
 
 import { PWAInstallButton } from '@/components/PWAInstallButton';
 import { CheckUpdateButton } from '@/components/pwa/CheckUpdateButton';
+import { PushNotificationManager } from '@/components/pwa/PushNotificationManager';
+import { OfflineDataIndicator } from '@/components/pwa/OfflineDataIndicator';
 import { CustomerForm } from '@/components/forms/CustomerForm';
 import { SupplierForm } from '@/components/forms/SupplierForm';
 import { BatchPurchaseForm } from '@/components/forms/BatchPurchaseForm';
