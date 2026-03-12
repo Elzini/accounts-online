@@ -449,7 +449,7 @@ function RecurringInvoiceForm({ open, onClose, companyId, isAr }: { open: boolea
     queryKey: ['customers-list', companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data } = await supabase.from('customers').select('id, name').eq('company_id', companyId).eq('is_active', true);
+      const { data } = await (supabase.from('customers') as any).select('id, name').eq('company_id', companyId).eq('is_active', true);
       return data || [];
     },
     enabled: !!companyId && open,
