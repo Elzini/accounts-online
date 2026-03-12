@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { LogOut, Building2, Calendar, Eye, LayoutDashboard, Clock, Search } from 'lucide-react';
+import { CommandPalette } from '@/components/CommandPalette';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileSidebar, MobileSidebarRef } from '@/components/MobileSidebar';
