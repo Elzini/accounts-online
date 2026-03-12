@@ -386,6 +386,7 @@ export function Sidebar({
     { id: 'expense-ocr' as ActivePage, label: language === 'ar' ? 'مسح المصروفات' : 'Expense OCR', icon: Receipt, permission: 'admin' },
     { id: 'overdue-invoices' as ActivePage, label: language === 'ar' ? 'الفواتير المتأخرة' : 'Overdue Invoices', icon: AlertCircle },
     { id: 'mobile-invoice-reader' as ActivePage, label: language === 'ar' ? 'قراءة فاتورة' : 'Invoice Reader', icon: QrCode },
+    { id: 'automation' as ActivePage, label: language === 'ar' ? '⚡ أتمتة العمليات' : '⚡ Automation', icon: Zap },
   ];
 
   // ===== "المزيد" - Less used modules grouped together =====
