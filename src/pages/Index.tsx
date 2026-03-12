@@ -405,6 +405,9 @@ const Index = () => {
       case 'zatca-sandbox': return <ZatcaSandboxPage />;
       case 'zatca-technical-doc': return <ZatcaTechnicalDocPage />;
       case 'customer-portal': return <CustomerPortalPage />;
+      case 'supplier-portal': return <SupplierPortalPage />;
+      case 'whatsapp-integration': return <WhatsAppIntegration />;
+      case 'advanced-analytics': return <AdvancedAnalyticsDashboard />;
       case 'advanced-projects': return <AdvancedProjectsPage />;
       case 'mobile-inventory': return <MobileInventoryPage />;
       case 'mobile-invoice-reader': return <MobileInvoiceReaderPage />;
