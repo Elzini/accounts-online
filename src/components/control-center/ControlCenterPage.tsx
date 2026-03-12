@@ -9,7 +9,8 @@ import {
   LayoutGrid,
   FunctionSquare,
   Code2,
-  Shield
+  Shield,
+  ShieldCheck
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AccountMappingsTab } from './tabs/AccountMappingsTab';
@@ -22,6 +23,7 @@ import { DashboardConfigTab } from './tabs/DashboardConfigTab';
 import { FormulaBuilderTab } from './tabs/FormulaBuilderTab';
 import { CardFormulasTab } from './tabs/CardFormulasTab';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
+import { SecurityMonitoringDashboard } from '@/components/security/SecurityMonitoringDashboard';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function ControlCenterPage() {
@@ -40,9 +42,12 @@ export function ControlCenterPage() {
       </div>
 
       <Tabs defaultValue="formula-builder" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-10 lg:w-auto lg:inline-grid overflow-x-auto">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-11 lg:w-auto lg:inline-grid overflow-x-auto">
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Shield className="w-4 h-4" /><span className="hidden sm:inline">الأمان</span>
+          </TabsTrigger>
+          <TabsTrigger value="security-monitor" className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4" /><span className="hidden sm:inline">المراقبة الأمنية</span>
           </TabsTrigger>
           <TabsTrigger value="formula-builder" className="flex items-center gap-2">
             <FunctionSquare className="w-4 h-4" /><span className="hidden sm:inline">{t.cc_formula_builder}</span>
@@ -74,6 +79,7 @@ export function ControlCenterPage() {
         </TabsList>
 
         <TabsContent value="security" className="mt-6"><TwoFactorSetup /></TabsContent>
+        <TabsContent value="security-monitor" className="mt-6"><SecurityMonitoringDashboard /></TabsContent>
         <TabsContent value="formula-builder" className="mt-6"><FormulaBuilderTab /></TabsContent>
         <TabsContent value="card-formulas" className="mt-6"><CardFormulasTab /></TabsContent>
         <TabsContent value="dashboard-config" className="mt-6"><DashboardConfigTab /></TabsContent>

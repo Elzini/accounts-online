@@ -2540,6 +2540,62 @@ export type Database = {
           },
         ]
       }
+      critical_operation_otps: {
+        Row: {
+          admin_email: string
+          company_id: string
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string | null
+          expires_at: string
+          id: string
+          is_used: boolean | null
+          operation_description: string | null
+          operation_type: string
+          otp_code: string
+          requested_by: string
+          used_at: string | null
+        }
+        Insert: {
+          admin_email: string
+          company_id: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expires_at: string
+          id?: string
+          is_used?: boolean | null
+          operation_description?: string | null
+          operation_type: string
+          otp_code: string
+          requested_by: string
+          used_at?: string | null
+        }
+        Update: {
+          admin_email?: string
+          company_id?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expires_at?: string
+          id?: string
+          is_used?: boolean | null
+          operation_description?: string | null
+          operation_type?: string
+          otp_code?: string
+          requested_by?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "critical_operation_otps_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_activities: {
         Row: {
           activity_date: string
@@ -3164,6 +3220,50 @@ export type Database = {
             foreignKeyName: "dashboard_config_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_integrity_checks: {
+        Row: {
+          check_name: string
+          check_type: string
+          checked_by: string | null
+          company_id: string | null
+          created_at: string | null
+          details: Json | null
+          id: string
+          issues_found: number | null
+          status: string
+        }
+        Insert: {
+          check_name: string
+          check_type: string
+          checked_by?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          issues_found?: number | null
+          status?: string
+        }
+        Update: {
+          check_name?: string
+          check_type?: string
+          checked_by?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          issues_found?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_integrity_checks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
@@ -10547,6 +10647,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "security_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sensitive_operations_log: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          operation_description: string | null
+          operation_type: string
+          otp_verified: boolean | null
+          status: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          operation_description?: string | null
+          operation_type: string
+          otp_verified?: boolean | null
+          status?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          operation_description?: string | null
+          operation_type?: string
+          otp_verified?: boolean | null
+          status?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sensitive_operations_log_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
