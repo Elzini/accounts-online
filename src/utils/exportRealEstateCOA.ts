@@ -1,5 +1,5 @@
 
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 interface COAAccount {
   code: string;
