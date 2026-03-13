@@ -271,6 +271,50 @@ export function BankingPage() {
         </DialogContent>
       </Dialog>
       
+      {/* Edit Statement Dialog */}
+      <Dialog open={showEditStatementDialog} onOpenChange={setShowEditStatementDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{language === 'ar' ? 'تعديل كشف الحساب' : 'Edit Statement'}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>{t.bank_statement_date}</Label><Input type="date" value={editStatementForm.statement_date} onChange={e => setEditStatementForm({ ...editStatementForm, statement_date: e.target.value })} /></div>
+            <div><Label>{language === 'ar' ? 'اسم الملف' : 'File Name'}</Label><Input value={editStatementForm.file_name} onChange={e => setEditStatementForm({ ...editStatementForm, file_name: e.target.value })} /></div>
+            <div><Label>{t.notes}</Label><Textarea value={editStatementForm.notes} onChange={e => setEditStatementForm({ ...editStatementForm, notes: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditStatementDialog(false)}>{t.cancel}</Button>
+            <Button onClick={async () => {
+              if (!editingStatement) return;
+              try {
+                await updateStatement.mutateAsync({ id: editingStatement.id, updates: editStatementForm });
+                toast.success(language === 'ar' ? 'تم تحديث الكشف بنجاح' : 'Statement updated');
+                setShowEditStatementDialog(false);
+              } catch { toast.error(language === 'ar' ? 'حدث خطأ' : 'Error'); }
+            }} disabled={updateStatement.isPending}>{updateStatement.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t.save}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Statement Confirmation */}
+      <AlertDialog open={!!deleteStatementId} onOpenChange={(open) => !open && setDeleteStatementId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{language === 'ar' ? 'حذف كشف الحساب' : 'Delete Statement'}</AlertDialogTitle>
+            <AlertDialogDescription>{language === 'ar' ? 'هل أنت متأكد من حذف هذا الكشف؟ سيتم حذف جميع المعاملات المرتبطة به.' : 'Are you sure? All related transactions will be deleted.'}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
+              if (!deleteStatementId) return;
+              try {
+                await deleteStatement.mutateAsync(deleteStatementId);
+                toast.success(language === 'ar' ? 'تم حذف الكشف بنجاح' : 'Statement deleted');
+                setDeleteStatementId(null);
+              } catch { toast.error(language === 'ar' ? 'حدث خطأ أثناء الحذف' : 'Error deleting'); }
+            }}>{language === 'ar' ? 'حذف' : 'Delete'}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Transactions Dialog */}
       <TransactionsDialog open={showTransactionsDialog} onOpenChange={setShowTransactionsDialog} statement={selectedStatement} />
     </div>
