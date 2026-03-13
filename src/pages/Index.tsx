@@ -418,6 +418,10 @@ const Index = () => {
       case 're-projects': return <REProjectsPage />;
       case 're-units': return <REUnitsPage />;
       case 're-contractors': return <REContractorsPage />;
+      case 're-crm': return <RECRMPage />;
+      case 're-reports': return <REReportsPage />;
+      case 're-after-sales': return <REAfterSalesPage />;
+      case 're-client-portal': return <REClientPortalPage />;
       case 'mobile-inventory': return <MobileInventoryPage />;
       case 'mobile-invoice-reader': return <MobileInvoiceReaderPage />;
       case 'developer-api': return <DeveloperApiPage />;

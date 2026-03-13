@@ -267,6 +267,10 @@ export type ActivePage =
       | 'whatsapp-integration'
        | 'advanced-analytics'
        // Real Estate module
-       | 're-projects'
-       | 're-units'
-       | 're-contractors';
+        | 're-projects'
+        | 're-units'
+        | 're-contractors'
+        | 're-crm'
+        | 're-reports'
+        | 're-after-sales'
+        | 're-client-portal';
