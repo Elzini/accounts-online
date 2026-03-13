@@ -9971,6 +9971,63 @@ export type Database = {
           },
         ]
       }
+      re_follow_ups: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          follow_up_date: string
+          follow_up_type: string | null
+          id: string
+          lead_id: string
+          next_action: string | null
+          next_action_date: string | null
+          notes: string | null
+          outcome: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          follow_up_date: string
+          follow_up_type?: string | null
+          id?: string
+          lead_id: string
+          next_action?: string | null
+          next_action_date?: string | null
+          notes?: string | null
+          outcome?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          follow_up_date?: string
+          follow_up_type?: string | null
+          id?: string
+          lead_id?: string
+          next_action?: string | null
+          next_action_date?: string | null
+          notes?: string | null
+          outcome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_follow_ups_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_follow_ups_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "re_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       re_installments: {
         Row: {
           amount: number
@@ -10047,6 +10104,187 @@ export type Database = {
           },
           {
             foreignKeyName: "re_installments_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "re_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      re_leads: {
+        Row: {
+          assigned_to: string | null
+          budget_max: number | null
+          budget_min: number | null
+          company_id: string
+          converted_at: string | null
+          converted_customer_id: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          interest_project_id: string | null
+          interest_unit_type: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          source: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          budget_max?: number | null
+          budget_min?: number | null
+          company_id: string
+          converted_at?: string | null
+          converted_customer_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          interest_project_id?: string | null
+          interest_unit_type?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          budget_max?: number | null
+          budget_min?: number | null
+          company_id?: string
+          converted_at?: string | null
+          converted_customer_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          interest_project_id?: string | null
+          interest_unit_type?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_leads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_leads_converted_customer_id_fkey"
+            columns: ["converted_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_leads_converted_customer_id_fkey"
+            columns: ["converted_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_leads_interest_project_id_fkey"
+            columns: ["interest_project_id"]
+            isOneToOne: false
+            referencedRelation: "re_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      re_maintenance_requests: {
+        Row: {
+          actual_cost: number | null
+          assigned_to: string | null
+          category: string | null
+          company_id: string
+          created_at: string | null
+          customer_id: string | null
+          description: string
+          estimated_cost: number | null
+          id: string
+          priority: string | null
+          request_number: string | null
+          requested_at: string | null
+          resolution: string | null
+          resolved_at: string | null
+          status: string | null
+          unit_id: string
+          updated_at: string | null
+          warranty_covered: boolean | null
+        }
+        Insert: {
+          actual_cost?: number | null
+          assigned_to?: string | null
+          category?: string | null
+          company_id: string
+          created_at?: string | null
+          customer_id?: string | null
+          description: string
+          estimated_cost?: number | null
+          id?: string
+          priority?: string | null
+          request_number?: string | null
+          requested_at?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          unit_id: string
+          updated_at?: string | null
+          warranty_covered?: boolean | null
+        }
+        Update: {
+          actual_cost?: number | null
+          assigned_to?: string | null
+          category?: string | null
+          company_id?: string
+          created_at?: string | null
+          customer_id?: string | null
+          description?: string
+          estimated_cost?: number | null
+          id?: string
+          priority?: string | null
+          request_number?: string | null
+          requested_at?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          unit_id?: string
+          updated_at?: string | null
+          warranty_covered?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_maintenance_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_maintenance_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_maintenance_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_maintenance_requests_unit_id_fkey"
             columns: ["unit_id"]
             isOneToOne: false
             referencedRelation: "re_units"
