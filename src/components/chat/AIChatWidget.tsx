@@ -154,18 +154,20 @@ export function AIChatWidget() {
       {!isOpen &&
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[60] group"
+        className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[60] group flex items-center gap-2"
         aria-label="فتح المساعد الذكي">
         
+          <span className="text-xs font-semibold bg-card text-card-foreground px-3 py-2 rounded-full shadow-lg border border-border whitespace-nowrap hidden sm:inline-block opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+            {isAr ? 'تحدث مع مساعدك الذكي' : 'Talk to your AI assistant'}
+          </span>
           <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-primary/25">
             <MessageCircle className="w-6 h-6 transition-transform duration-300 group-hover:rotate-12" />
             {/* Pulse ring */}
-            <span className="absolute inset-0 rounded-full bg-primary/30 animate-ping opacity-30 font-serif text-sky-600" />
+            <span className="absolute inset-0 rounded-full bg-primary/30 animate-ping opacity-30" />
           </div>
-          {/* Tooltip */}
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-popover text-popover-foreground text-xs rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none border border-border">
-            المساعد الذكي 🤖
-          </div>
+          <span className="text-xs font-semibold bg-card text-card-foreground px-3 py-2 rounded-full shadow-lg border border-border whitespace-nowrap sm:hidden">
+            {isAr ? 'تحدث مع مساعدك الذكي' : 'Talk to your AI assistant'}
+          </span>
         </button>
       }
 
