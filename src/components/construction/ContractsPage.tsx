@@ -433,7 +433,8 @@ export function ContractsPage() {
               <Select
                 value={formData.project_id}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, project_id: value })
+                  setFormData({ ...formData, project_id: value === 'none' ? '' : value })
+                }
                 }
               >
                 <SelectTrigger>

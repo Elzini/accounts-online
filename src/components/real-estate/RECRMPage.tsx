@@ -166,7 +166,7 @@ export function RECRMPage() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
             </Select>
-            <Select value={form.interest_project_id} onValueChange={v => setForm({ ...form, interest_project_id: v })}>
+            <Select value={form.interest_project_id || 'none'} onValueChange={v => setForm({ ...form, interest_project_id: v === 'none' ? '' : v })}>
               <SelectTrigger><SelectValue placeholder="المشروع المهتم به" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">بدون</SelectItem>
