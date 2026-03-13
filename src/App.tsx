@@ -127,9 +127,10 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   useCartSync();
   return (
-    <Routes>
-      <Route 
-        path="/" 
+    <Suspense fallback={<LoadingSpinner />}>
+      <Routes>
+        <Route 
+          path="/" 
         element={
           <CompanyRoute>
             <Index />
