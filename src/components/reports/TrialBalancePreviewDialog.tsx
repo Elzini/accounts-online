@@ -222,7 +222,7 @@ export function TrialBalancePreviewDialog({
                   <tbody>
                     <tr class="sub-header"><td colspan="2">الخصوم المتداولة:</td></tr>
                     ${Object.entries(data.liabilities).map(([name, amount]) => `
-                      <tr><td class="indent">- ${name}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
+                      <tr><td class="indent">- ${escapeHtml(name)}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
                     `).join('')}
                     <tr class="total-row"><td>إجمالي الخصوم المتداولة</td><td class="text-left">${formatCurrency(calculations.totalLiabilities)}</td></tr>
                     <tr class="sub-header"><td colspan="2">حقوق الملكية:</td></tr>
