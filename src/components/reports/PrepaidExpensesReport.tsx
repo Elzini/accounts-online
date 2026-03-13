@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { escapeHtml } from '@/lib/utils';
 import { format, addMonths, isBefore, startOfMonth } from 'date-fns';
 import { FileText, Printer, Clock, CheckCircle, Play, AlertCircle, Banknote, BarChart3, ChevronDown, ChevronLeft } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
