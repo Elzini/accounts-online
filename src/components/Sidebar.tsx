@@ -344,6 +344,8 @@ export function Sidebar({
     { id: 'financial-statements' as ActivePage, label: t.nav_financial_statements, icon: FileText },
     { id: 'financial-reports' as ActivePage, label: s(settings?.financial_reports_title, t.nav_financial_reports), icon: PieChart },
     { id: 'profit-report' as ActivePage, label: s(settings?.profit_report_title, t.nav_profit_report), icon: TrendingUp, permission: 'reports' },
+    { id: 'tax-settings' as ActivePage, label: s(settings?.tax_settings_title, t.nav_tax_settings), icon: Percent },
+    { id: 'vat-return-report' as ActivePage, label: t.nav_vat_return, icon: Receipt },
   ];
 
   const warehouseMenuItems: MenuItem[] = [
