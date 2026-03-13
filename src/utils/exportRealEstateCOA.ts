@@ -33,11 +33,7 @@ const realEstateCOA: COAAccount[] = [
   { code: '1150', name: 'دفعات مقدمة للموردين', parentCode: '1100', type: 'أصول', nature: 'مدين', level: 2 },
   { code: '1160', name: 'عهد موظفين', parentCode: '1100', type: 'أصول', nature: 'مدين', level: 2 },
   { code: '1170', name: 'ذمم موظفين', parentCode: '1100', type: 'أصول', nature: 'مدين', level: 2 },
-  { code: '1180', name: 'ضريبة قيمة مضافة قابلة للاسترداد', parentCode: '1100', type: 'أصول', nature: 'مدين', level: 2 },
-  { code: '1181', name: 'ضريبة مدخلات مشاريع', parentCode: '1180', type: 'أصول', nature: 'مدين', level: 3 },
-  { code: '1182', name: 'ضريبة مدخلات إدارية', parentCode: '1180', type: 'أصول', nature: 'مدين', level: 3 },
-  { code: '1183', name: 'ضريبة مدخلات مقاولين', parentCode: '1180', type: 'أصول', nature: 'مدين', level: 3 },
-  { code: '1184', name: 'ضريبة تصرفات عقارية مدفوعة', parentCode: '1180', type: 'أصول', nature: 'مدين', level: 3 },
+  { code: '1180', name: 'ضريبة القيمة المضافة على المشتريات (مدخلات)', parentCode: '1100', type: 'أصول', nature: 'مدين', level: 2 },
   { code: '1190', name: 'مصروفات مدفوعة مقدماً', parentCode: '1100', type: 'أصول', nature: 'مدين', level: 2 },
   { code: '1191', name: 'إيجار مدفوع مقدماً', parentCode: '1190', type: 'أصول', nature: 'مدين', level: 3 },
   { code: '1192', name: 'تأمين مدفوع مقدماً', parentCode: '1190', type: 'أصول', nature: 'مدين', level: 3 },
@@ -113,10 +109,8 @@ const realEstateCOA: COAAccount[] = [
   { code: '2122', name: 'دفعات بيع على الخارطة', parentCode: '2120', type: 'خصوم', nature: 'دائن', level: 3 },
   { code: '2130', name: 'رواتب مستحقة', parentCode: '2100', type: 'خصوم', nature: 'دائن', level: 2 },
   { code: '2140', name: 'مصروفات مستحقة', parentCode: '2100', type: 'خصوم', nature: 'دائن', level: 2 },
-  { code: '2150', name: 'ضريبة القيمة المضافة المستحقة', parentCode: '2100', type: 'خصوم', nature: 'دائن', level: 2 },
+  { code: '2150', name: 'ضريبة القيمة المضافة على المبيعات (مخرجات)', parentCode: '2100', type: 'خصوم', nature: 'دائن', level: 2 },
   { code: '2155', name: 'حساب تسوية ضريبة القيمة المضافة', parentCode: '2100', type: 'خصوم', nature: 'دائن', level: 2 },
-  { code: '2156', name: 'ضريبة التصرفات العقارية المستحقة', parentCode: '2100', type: 'خصوم', nature: 'دائن', level: 2 },
-  { code: '2157', name: 'إعفاء المسكن الأول - وزارة الإسكان', parentCode: '2100', type: 'خصوم', nature: 'دائن', level: 2 },
   { code: '2160', name: 'التأمينات الاجتماعية', parentCode: '2100', type: 'خصوم', nature: 'دائن', level: 2 },
   { code: '2170', name: 'جاري الشركاء', parentCode: '2100', type: 'خصوم', nature: 'دائن', level: 2 },
   { code: '2180', name: 'مخصص الزكاة', parentCode: '2100', type: 'خصوم', nature: 'دائن', level: 2 },
@@ -178,7 +172,7 @@ const realEstateCOA: COAAccount[] = [
   { code: '6400', name: 'مصروفات مالية', parentCode: '6000', type: 'مصروفات', nature: 'مدين', level: 1 },
   { code: '6410', name: 'فوائد القروض', parentCode: '6400', type: 'مصروفات', nature: 'مدين', level: 2 },
   { code: '6420', name: 'رسوم بنكية', parentCode: '6400', type: 'مصروفات', nature: 'مدين', level: 2 },
-  { code: '6430', name: 'غرامات وجزاءات ضريبية', parentCode: '6400', type: 'مصروفات', nature: 'مدين', level: 2 },
+  
 ];
 
 export function exportRealEstateCOAToExcel() {
