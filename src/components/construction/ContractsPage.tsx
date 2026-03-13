@@ -440,7 +440,7 @@ export function ContractsPage() {
                   <SelectValue placeholder="اختر المشروع" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">بدون مشروع</SelectItem>
+                  <SelectItem value="none">بدون مشروع</SelectItem>
                   {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.project_name}

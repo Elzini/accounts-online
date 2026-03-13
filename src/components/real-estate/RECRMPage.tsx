@@ -169,7 +169,7 @@ export function RECRMPage() {
             <Select value={form.interest_project_id} onValueChange={v => setForm({ ...form, interest_project_id: v })}>
               <SelectTrigger><SelectValue placeholder="المشروع المهتم به" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">بدون</SelectItem>
+                <SelectItem value="none">بدون</SelectItem>
                 {(projects || []).map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
               </SelectContent>
             </Select>
