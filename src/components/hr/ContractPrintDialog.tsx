@@ -274,14 +274,14 @@ export function ContractPrintDialog({ open, onOpenChange, contract }: ContractPr
             <div className="px-6 py-6">
               <div className="grid grid-cols-2 gap-8 pt-8 border-t">
                 <div className="text-center">
-                  <div className="border-b border-gray-300 pb-12 mb-2"></div>
-                  <div className="text-sm text-muted-foreground">توقيع الموظف</div>
-                  <div className="text-xs text-muted-foreground mt-1">{contract.employee_name}</div>
+                  <div className="text-sm font-semibold text-gray-700 mb-1">توقيع الموظف</div>
+                  <div className="text-xs text-muted-foreground mb-2">{contract.employee_name}</div>
+                  <div className="border-b border-gray-300 pb-16"></div>
                 </div>
                 <div className="text-center">
-                  <div className="border-b border-gray-300 pb-12 mb-2"></div>
-                  <div className="text-sm text-muted-foreground">توقيع صاحب العمل</div>
-                  <div className="text-xs text-muted-foreground mt-1">{company?.name || ''}</div>
+                  <div className="text-sm font-semibold text-gray-700 mb-1">توقيع صاحب العمل</div>
+                  <div className="text-xs text-muted-foreground mb-2">{company?.name || ''}</div>
+                  <div className="border-b border-gray-300 pb-16"></div>
                 </div>
               </div>
             </div>
