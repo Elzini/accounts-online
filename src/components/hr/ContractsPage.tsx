@@ -11,13 +11,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { Plus, FileText, CheckCircle, AlertTriangle, Clock, Trash2, Lock, PlusCircle, MinusCircle } from 'lucide-react';
+import { Plus, FileText, CheckCircle, AlertTriangle, Clock, Trash2, Lock, PlusCircle, MinusCircle, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useHREmployees } from '@/hooks/useHR';
+import { ContractPrintDialog } from './ContractPrintDialog';
 
 interface AllowanceItem {
   name: string;
@@ -59,6 +60,7 @@ export function EmployeeContractsPage() {
   const [form, setForm] = useState(initialForm);
   const [otherAllowances, setOtherAllowances] = useState<AllowanceItem[]>([]);
   const [deductions, setDeductions] = useState<AllowanceItem[]>([]);
+  const [printContract, setPrintContract] = useState<any>(null);
 
   const { data: hrEmployees = [] } = useHREmployees();
 
@@ -548,9 +550,14 @@ export function EmployeeContractsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(c.id)}>
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPrintContract(c)} title="طباعة العقد">
+                        <Printer className="w-3 h-3" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(c.id)}>
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -558,6 +565,12 @@ export function EmployeeContractsPage() {
           </Table>
         )}
       </CardContent></Card>
+
+      <ContractPrintDialog
+        open={!!printContract}
+        onOpenChange={(open) => !open && setPrintContract(null)}
+        contract={printContract}
+      />
     </div>
   );
 }
