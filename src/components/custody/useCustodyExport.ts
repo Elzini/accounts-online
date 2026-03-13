@@ -86,7 +86,7 @@ export function useCustodyExport() {
       // Add summary rows
       tableData.push(
         ['', '', 'الإجمالي', summary.totalSpent.toLocaleString()],
-        ['', '', 'المبلغ المردود', summary.returnedAmount.toLocaleString()],
+        ['', '', 'رصيد الخزينة الآن', summary.returnedAmount.toLocaleString()],
         ['', '', 'الرصيد المرحل', summary.carriedBalance.toLocaleString()]
       );
 
