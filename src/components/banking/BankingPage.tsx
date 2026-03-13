@@ -285,7 +285,7 @@ export function BankingPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowImportDialog(false)}>{t.cancel}</Button>
-            <Button onClick={handleImportStatement} disabled={importStatement.isPending || !importData}>{importStatement.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t.import}</Button>
+            <Button onClick={handleImportStatement} disabled={importStatement.isPending || !importData || parsingFile}>{importStatement.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t.import}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
