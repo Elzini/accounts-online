@@ -498,10 +498,18 @@ export function Sidebar({
     return config?.label || defaultLabel;
   };
 
+  // Real Estate module (only for real_estate companies)
+  const realEstateItems: MenuItem[] = [
+    { id: 're-projects' as ActivePage, label: language === 'ar' ? 'المشاريع العقارية' : 'RE Projects', icon: Building2 },
+    { id: 're-units' as ActivePage, label: language === 'ar' ? 'الوحدات العقارية' : 'RE Units', icon: Home },
+    { id: 're-contractors' as ActivePage, label: language === 'ar' ? 'المقاولين والمستخلصات' : 'Contractors', icon: HardHat },
+  ];
+
   // ===== Build sections =====
   const coreSections: Section[] = [
     { id: 'sales', label: getSectionLabel('sales', language === 'ar' ? 'المبيعات' : 'Sales'), icon: DollarSign, items: salesMenuItems, showCondition: permissions.admin || permissions.sales },
     { id: 'purchases', label: getSectionLabel('purchases', language === 'ar' ? 'المشتريات' : 'Purchases'), icon: ShoppingCart, items: purchasesMenuItems, showCondition: permissions.admin || permissions.purchases },
+    ...(companyType === 'real_estate' ? [{ id: 'real-estate', label: language === 'ar' ? 'التطوير العقاري' : 'Real Estate', icon: Building2, items: realEstateItems, showCondition: true }] : []),
     { id: 'accounting', label: getSectionLabel('accounting', language === 'ar' ? 'الحسابات' : 'Accounts'), icon: Calculator, items: accountsMenuItems, showCondition: permissions.admin || permissions.reports || permissions.financial_accounting },
     { id: 'expenses-section', label: getSectionLabel('expenses-section', language === 'ar' ? 'المصروفات' : 'Expenses'), icon: Wallet, items: expensesItems, showCondition: permissions.admin || permissions.purchases || permissions.expenses },
     { id: 'inventory', label: getSectionLabel('inventory', language === 'ar' ? 'المستودعات' : 'Warehouses'), icon: Warehouse, items: warehouseMenuItems, showCondition: permissions.admin || permissions.purchases || permissions.warehouses },

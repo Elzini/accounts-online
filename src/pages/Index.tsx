@@ -131,6 +131,7 @@ import { ApprovalDashboard } from '@/components/approvals/ApprovalDashboard';
 import { WhatsAppIntegration } from '@/components/integrations/WhatsAppIntegration';
 import { AdvancedAnalyticsDashboard } from '@/components/reports/AdvancedAnalyticsDashboard';
 import { AdvancedProjectsPage } from '@/components/advanced-projects/AdvancedProjectsPage';
+import { REProjectsPage, REUnitsPage, REContractorsPage } from '@/components/real-estate';
 import { MobileInventoryPage } from '@/components/mobile-inventory/MobileInventoryPage';
 import { MobileInvoiceReaderPage } from '@/components/mobile-invoice/MobileInvoiceReaderPage';
 import { DeveloperApiPage } from '@/components/developer-api/DeveloperApiPage';
@@ -413,6 +414,10 @@ const Index = () => {
       case 'whatsapp-integration': return <WhatsAppIntegration />;
       case 'advanced-analytics': return <AdvancedAnalyticsDashboard />;
       case 'advanced-projects': return <AdvancedProjectsPage />;
+      // Real Estate module
+      case 're-projects': return <REProjectsPage />;
+      case 're-units': return <REUnitsPage />;
+      case 're-contractors': return <REContractorsPage />;
       case 'mobile-inventory': return <MobileInventoryPage />;
       case 'mobile-invoice-reader': return <MobileInvoiceReaderPage />;
       case 'developer-api': return <DeveloperApiPage />;
@@ -484,6 +489,7 @@ const Index = () => {
       construction: 'projects',
       restaurant: 'menu-management',
       export_import: 'shipments',
+      real_estate: 're-projects',
     };
     const firstPage = firstPages[moduleId];
     if (firstPage) {
