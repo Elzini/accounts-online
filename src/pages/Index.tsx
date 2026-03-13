@@ -131,6 +131,7 @@ import { ApprovalDashboard } from '@/components/approvals/ApprovalDashboard';
 import { WhatsAppIntegration } from '@/components/integrations/WhatsAppIntegration';
 import { AdvancedAnalyticsDashboard } from '@/components/reports/AdvancedAnalyticsDashboard';
 import { AdvancedProjectsPage } from '@/components/advanced-projects/AdvancedProjectsPage';
+import { REProjectsPage, REUnitsPage, REContractorsPage } from '@/components/real-estate';
 import { MobileInventoryPage } from '@/components/mobile-inventory/MobileInventoryPage';
 import { MobileInvoiceReaderPage } from '@/components/mobile-invoice/MobileInvoiceReaderPage';
 import { DeveloperApiPage } from '@/components/developer-api/DeveloperApiPage';
