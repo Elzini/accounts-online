@@ -161,7 +161,7 @@ export function CustomReportPreviewDialog({
         <table>
           <thead>
             <tr>
-              ${columns.map(col => `<th>${col.label}</th>`).join('')}
+              ${columns.map(col => `<th>${escapeHtml(col.label)}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
