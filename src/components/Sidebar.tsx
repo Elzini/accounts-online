@@ -503,6 +503,10 @@ export function Sidebar({
     { id: 're-projects' as ActivePage, label: language === 'ar' ? 'المشاريع العقارية' : 'RE Projects', icon: Building2 },
     { id: 're-units' as ActivePage, label: language === 'ar' ? 'الوحدات العقارية' : 'RE Units', icon: Home },
     { id: 're-contractors' as ActivePage, label: language === 'ar' ? 'المقاولين والمستخلصات' : 'Contractors', icon: HardHat },
+    { id: 're-crm' as ActivePage, label: language === 'ar' ? 'CRM العقاري' : 'RE CRM', icon: Users },
+    { id: 're-reports' as ActivePage, label: language === 'ar' ? 'التقارير العقارية' : 'RE Reports', icon: BarChart3 },
+    { id: 're-after-sales' as ActivePage, label: language === 'ar' ? 'ما بعد البيع' : 'After Sales', icon: Wrench },
+    { id: 're-client-portal' as ActivePage, label: language === 'ar' ? 'بوابة العملاء' : 'Client Portal', icon: Globe },
   ];
 
   // ===== Build sections =====
