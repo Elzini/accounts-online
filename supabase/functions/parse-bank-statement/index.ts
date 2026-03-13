@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// Bank statement parser - supports CSV, Excel (as text), and PDF (as base64)
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
