@@ -43,6 +43,10 @@ export function BankingPage() {
   const [editingStatement, setEditingStatement] = useState<any>(null);
   const [editStatementForm, setEditStatementForm] = useState({ statement_date: '', notes: '', file_name: '' });
   const [deleteStatementId, setDeleteStatementId] = useState<string | null>(null);
+  const [showEditAccountDialog, setShowEditAccountDialog] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<any>(null);
+  const [editAccountForm, setEditAccountForm] = useState({ account_name: '', bank_name: '', account_number_encrypted: '', iban_encrypted: '', account_category_id: '', opening_balance: 0, notes: '' });
+  const [deleteAccountId, setDeleteAccountId] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importData, setImportData] = useState<{ transactions: any[]; fileName: string } | null>(null);
