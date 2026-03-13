@@ -29,6 +29,31 @@ export function CustodyPage() {
   const [amountChangesCustody, setAmountChangesCustody] = useState<{ id: string; name: string } | null>(null);
   const currency = language === 'ar' ? 'ر.س' : 'SAR';
 
+  // Fetch all amount changes for all custodies
+  const custodyIds = custodies.map(c => c.id);
+  const { data: allAmountChanges = [] } = useQuery({
+    queryKey: ['all-custody-amount-changes', custodyIds],
+    queryFn: async () => {
+      if (custodyIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from('custody_amount_changes')
+        .select('custody_id, change_amount')
+        .in('custody_id', custodyIds);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: custodyIds.length > 0,
+  });
+
+  // Pre-compute net changes per custody
+  const netChangesByCustody = useMemo(() => {
+    const map: Record<string, number> = {};
+    allAmountChanges.forEach((c: any) => {
+      map[c.custody_id] = (map[c.custody_id] || 0) + (c.change_amount || 0);
+    });
+    return map;
+  }, [allAmountChanges]);
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
