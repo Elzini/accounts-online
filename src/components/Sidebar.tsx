@@ -348,6 +348,8 @@ export function Sidebar({
 
   const warehouseMenuItems: MenuItem[] = [
     { id: 'items-catalog' as ActivePage, label: t.nav_items, icon: Package },
+    { id: 'item-categories' as ActivePage, label: t.nav_categories, icon: FolderTree },
+    { id: 'units-of-measure' as ActivePage, label: t.nav_units, icon: Ruler },
     { id: 'stock-vouchers' as ActivePage, label: language === 'ar' ? 'الأذون المخزنية' : 'Stock Vouchers', icon: ArrowUpFromLine },
     { id: 'warehouses' as ActivePage, label: t.nav_warehouses, icon: Warehouse },
     { id: 'inventory-report' as ActivePage, label: s(settings?.inventory_report_title, t.nav_inventory_report), icon: Package, permission: 'reports' },
@@ -420,8 +422,6 @@ export function Sidebar({
     { id: 'branch-comparison' as ActivePage, label: 'مقارنة الفروع', icon: Building2 },
     { id: 'ai-sales-forecast' as ActivePage, label: 'توقعات AI للمبيعات', icon: Sparkles },
     { id: 'account-movement' as ActivePage, label: t.nav_account_movement, icon: ClipboardList, permission: 'reports' },
-    { id: 'item-categories' as ActivePage, label: t.nav_categories, icon: FolderTree },
-    { id: 'units-of-measure' as ActivePage, label: t.nav_units, icon: Ruler },
     { id: 'stocktaking' as ActivePage, label: language === 'ar' ? 'الجرد' : 'Stocktaking', icon: ClipboardList },
     { id: 'manufacturing' as ActivePage, label: t.nav_manufacturing, icon: Factory },
     { id: 'mobile-inventory' as ActivePage, label: language === 'ar' ? 'جرد بالجوال' : 'Mobile Inventory', icon: Smartphone },
