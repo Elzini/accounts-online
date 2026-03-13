@@ -41,6 +41,7 @@ export function PrepaidExpensesReport() {
   const { data: prepaidExpenses = [], isLoading } = usePrepaidExpenses();
   
   const [statusFilter, setStatusFilter] = useState('all');
+  const [monthFilter, setMonthFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
@@ -114,7 +115,7 @@ export function PrepaidExpensesReport() {
     </tr></thead><tbody>`);
 
     filteredExpenses.forEach((exp: any, idx: number) => {
-      const schedule = generateMonthlySchedule(exp);
+      const schedule = generateMonthlySchedule(exp).filter(m => monthFilter === 'all' ? true : m.status === monthFilter);
       // Main row
       win!.document.write(`<tr class="main-row">
         <td>${idx + 1}</td>
@@ -175,7 +176,7 @@ export function PrepaidExpensesReport() {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{isAr ? 'الحالة' : 'Status'}</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -188,7 +189,18 @@ export function PrepaidExpensesReport() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="col-span-2 md:col-span-2">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">{isAr ? 'الأشهر' : 'Months'}</label>
+              <Select value={monthFilter} onValueChange={setMonthFilter}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{isAr ? 'كل الأشهر' : 'All Months'}</SelectItem>
+                  <SelectItem value="consumed">{isAr ? 'المستهلك فقط' : 'Consumed Only'}</SelectItem>
+                  <SelectItem value="upcoming">{isAr ? 'القادمة فقط' : 'Upcoming Only'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2">
               <label className="text-xs text-muted-foreground mb-1 block">{isAr ? 'بحث' : 'Search'}</label>
               <Input placeholder={isAr ? 'بحث بالوصف...' : 'Search...'} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="h-9" />
             </div>
@@ -253,7 +265,7 @@ export function PrepaidExpensesReport() {
                   filteredExpenses.map((exp: any, idx: number) => {
                     const progress = exp.total_amount > 0 ? (exp.amortized_amount / exp.total_amount) * 100 : 0;
                     const isExpanded = expandedRows.has(exp.id);
-                    const schedule = isExpanded ? generateMonthlySchedule(exp) : [];
+                    const schedule = isExpanded ? generateMonthlySchedule(exp).filter(m => monthFilter === 'all' ? true : m.status === monthFilter) : [];
                     return (
                       <>
                         <TableRow key={exp.id} className="cursor-pointer hover:bg-muted/50 bg-primary/5 font-semibold" onClick={() => toggleRow(exp.id)}>
