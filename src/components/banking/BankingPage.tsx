@@ -66,11 +66,23 @@ export function BankingPage() {
     catch { toast.error(language === 'ar' ? 'حدث خطأ أثناء الإضافة' : 'Error adding'); }
   };
   
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => { try { const content = e.target?.result as string; const transactions = parseBankStatementCSV(content); if (transactions.length === 0) { toast.error(language === 'ar' ? 'لم يتم العثور على معاملات في الملف' : 'No transactions found'); return; } setImportData({ transactions, fileName: file.name }); toast.success(`${language === 'ar' ? 'تم قراءة' : 'Read'} ${transactions.length} ${language === 'ar' ? 'معاملة' : 'transactions'}`); } catch { toast.error(language === 'ar' ? 'حدث خطأ أثناء قراءة الملف' : 'Error reading file'); } };
-    reader.readAsText(file);
+    setParsingFile(true);
+    try {
+      const result = await parseBankStatementFile(file);
+      if (result.transactions.length === 0) {
+        toast.error(language === 'ar' ? 'لم يتم العثور على معاملات في الملف' : 'No transactions found');
+        setParsingFile(false);
+        return;
+      }
+      setImportData({ transactions: result.transactions, fileName: file.name, method: result.method });
+      const methodLabel = result.method === 'ai' ? (language === 'ar' ? ' (بالذكاء الاصطناعي)' : ' (via AI)') : result.method === 'excel' ? ' (Excel)' : ' (CSV)';
+      toast.success(`${language === 'ar' ? 'تم قراءة' : 'Read'} ${result.transactions.length} ${language === 'ar' ? 'معاملة' : 'transactions'}${methodLabel}`);
+    } catch (e: any) {
+      toast.error(e?.message || (language === 'ar' ? 'حدث خطأ أثناء قراءة الملف' : 'Error reading file'));
+    }
+    setParsingFile(false);
   };
   
   const handleImportStatement = async () => {
