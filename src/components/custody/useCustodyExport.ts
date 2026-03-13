@@ -50,7 +50,7 @@ export function useCustodyExport() {
     const cards = [
       { label: 'مبلغ العهدة', value: summary.custodyAmount, color: [59, 130, 246] },
       { label: 'إجمالي المصروفات', value: summary.totalSpent, color: [220, 38, 38] },
-      { label: 'المبلغ المردود', value: summary.returnedAmount, color: [22, 163, 74] },
+      { label: 'رصيد الخزينة الآن', value: summary.returnedAmount, color: [22, 163, 74] },
       { label: 'الرصيد المرحل', value: summary.carriedBalance, color: [234, 88, 12] },
     ];
 
