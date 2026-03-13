@@ -281,6 +281,9 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   const getCardLabel = useCallback((id: string, defaultLabel: string) => {
     if (language !== 'ar') return defaultLabel;
     const cfg = cardConfigs.find(c => c.id === id);
+    // Don't use stored label for industry-adaptive cards - always use industry label
+    const industryAdaptiveCards = ['availableCars', 'totalPurchases'];
+    if (industryAdaptiveCards.includes(id)) return defaultLabel;
     return cfg?.label || defaultLabel;
   }, [cardConfigs, language]);
 
