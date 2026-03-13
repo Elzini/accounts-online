@@ -14,6 +14,7 @@ export function TaxSettingsPage() {
   const { t, direction } = useLanguage();
   const { data: taxSettings, isLoading } = useTaxSettings();
   const upsertTaxSettings = useUpsertTaxSettings();
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const [formData, setFormData] = useState({
     tax_name: 'ضريبة القيمة المضافة',
@@ -31,7 +32,7 @@ export function TaxSettingsPage() {
   });
 
   useEffect(() => {
-    if (taxSettings) {
+    if (taxSettings && !isInitialized) {
       setFormData({
         tax_name: taxSettings.tax_name,
         tax_rate: taxSettings.tax_rate,
@@ -46,8 +47,9 @@ export function TaxSettingsPage() {
         postal_code: taxSettings.postal_code || '',
         building_number: taxSettings.building_number || '',
       });
+      setIsInitialized(true);
     }
-  }, [taxSettings]);
+  }, [taxSettings, isInitialized]);
 
   const handleSave = async () => {
     try {
