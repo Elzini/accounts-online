@@ -28,6 +28,8 @@ export function BankingPage() {
   
   const addBankAccount = useAddBankAccount();
   const importStatement = useImportBankStatement();
+  const updateStatement = useUpdateBankStatement();
+  const deleteStatement = useDeleteBankStatement();
   const createReconciliation = useCreateBankReconciliation();
   
   const [showAccountDialog, setShowAccountDialog] = useState(false);
