@@ -175,13 +175,12 @@ export function TaxSettingsPage() {
                 id="is_active"
                 checked={formData.is_active}
                 onCheckedChange={(checked) => {
-                  const newData = { ...formData, is_active: checked };
-                  setFormData(newData);
-                  upsertTaxSettings.mutate(newData, {
-                    onSuccess: () => toast.success(checked ? 'تم تفعيل الضريبة' : 'تم تعطيل الضريبة'),
-                    onError: () => toast.error(t.tax_save_error),
-                  });
+                  void handleQuickToggleSave(
+                    { ...formData, is_active: checked },
+                    checked ? 'تم تفعيل الضريبة' : 'تم تعطيل الضريبة'
+                  );
                 }}
+                disabled={isQuickSaving || upsertTaxSettings.isPending}
               />
             </div>
             <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
@@ -193,11 +192,9 @@ export function TaxSettingsPage() {
                 id="apply_to_sales"
                 checked={formData.apply_to_sales}
                 onCheckedChange={(checked) => {
-                  const newData = { ...formData, apply_to_sales: checked };
-                  setFormData(newData);
-                  upsertTaxSettings.mutate(newData);
+                  void handleQuickToggleSave({ ...formData, apply_to_sales: checked });
                 }}
-                disabled={!formData.is_active}
+                disabled={!formData.is_active || isQuickSaving || upsertTaxSettings.isPending}
               />
             </div>
             <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
@@ -209,16 +206,14 @@ export function TaxSettingsPage() {
                 id="apply_to_purchases"
                 checked={formData.apply_to_purchases}
                 onCheckedChange={(checked) => {
-                  const newData = { ...formData, apply_to_purchases: checked };
-                  setFormData(newData);
-                  upsertTaxSettings.mutate(newData);
+                  void handleQuickToggleSave({ ...formData, apply_to_purchases: checked });
                 }}
-                disabled={!formData.is_active}
+                disabled={!formData.is_active || isQuickSaving || upsertTaxSettings.isPending}
               />
             </div>
           </div>
-          <Button onClick={handleSave} disabled={upsertTaxSettings.isPending} className="w-full">
-            {upsertTaxSettings.isPending ? (
+          <Button onClick={handleSave} disabled={upsertTaxSettings.isPending || isQuickSaving} className="w-full">
+            {upsertTaxSettings.isPending || isQuickSaving ? (
               <><Loader2 className="w-4 h-4 ml-2 animate-spin" />{t.tax_saving}</>
             ) : (
               <><Save className="w-4 h-4 ml-2" />{t.tax_save}</>
