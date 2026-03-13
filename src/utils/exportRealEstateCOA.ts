@@ -1,5 +1,5 @@
 
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 interface COAAccount {
   code: string;
@@ -243,43 +243,50 @@ const realEstateCOA: COAAccount[] = [
   { code: '6520', name: 'خسائر انخفاض قيمة ذمم عملاء', parentCode: '6500', type: 'مصروفات', nature: 'مدين', level: 2 },
 ];
 
-export function exportRealEstateCOAToExcel() {
-  const data = realEstateCOA.map(account => {
-    const indent = '  '.repeat(account.level);
-    return {
-      'رقم الحساب': account.code,
-      'اسم الحساب': indent + account.name,
-      'الحساب الرئيسي': account.parentCode,
-      'التصنيف': account.type,
-      'الطبيعة (مدين/دائن)': account.nature,
-      'المستوى': account.level,
-    };
+export async function exportRealEstateCOAToExcel() {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Application';
+  workbook.created = new Date();
+
+  const ws = workbook.addWorksheet('شجرة الحسابات', {
+    views: [{ rightToLeft: true }],
   });
 
-  const ws = XLSX.utils.json_to_sheet(data, { header: [
-    'رقم الحساب',
-    'اسم الحساب', 
-    'الحساب الرئيسي',
-    'التصنيف',
-    'الطبيعة (مدين/دائن)',
-    'المستوى',
-  ]});
-
-  // تعديل عرض الأعمدة
-  ws['!cols'] = [
-    { wch: 15 },  // رقم الحساب
-    { wch: 45 },  // اسم الحساب
-    { wch: 15 },  // الحساب الرئيسي
-    { wch: 15 },  // التصنيف
-    { wch: 18 },  // الطبيعة
-    { wch: 10 },  // المستوى
+  // Headers
+  ws.columns = [
+    { header: 'رقم الحساب', key: 'code', width: 15 },
+    { header: 'اسم الحساب', key: 'name', width: 45 },
+    { header: 'الحساب الرئيسي', key: 'parentCode', width: 15 },
+    { header: 'التصنيف', key: 'type', width: 15 },
+    { header: 'الطبيعة (مدين/دائن)', key: 'nature', width: 18 },
+    { header: 'المستوى', key: 'level', width: 10 },
   ];
 
-  // RTL
-  ws['!dir'] = 'rtl';
+  // Style header row
+  const headerRow = ws.getRow(1);
+  headerRow.font = { bold: true };
+  headerRow.alignment = { horizontal: 'center' };
 
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'شجرة الحسابات');
+  // Add data
+  realEstateCOA.forEach(account => {
+    const indent = '  '.repeat(account.level);
+    ws.addRow({
+      code: account.code,
+      name: indent + account.name,
+      parentCode: account.parentCode,
+      type: account.type,
+      nature: account.nature,
+      level: account.level,
+    });
+  });
 
-  XLSX.writeFile(wb, 'شجرة_حسابات_التطوير_العقاري.xlsx');
+  // Generate and download
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'شجرة_حسابات_التطوير_العقاري.xlsx';
+  a.click();
+  URL.revokeObjectURL(url);
 }
