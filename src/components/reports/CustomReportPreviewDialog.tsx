@@ -156,8 +156,8 @@ export function CustomReportPreviewDialog({
         </style>
       </head>
       <body>
-        <h1>${report.name}</h1>
-        ${report.description ? `<p style="text-align: center; color: #666;">${report.description}</p>` : ''}
+        <h1>${escapeHtml(report.name)}</h1>
+        ${report.description ? `<p style="text-align: center; color: #666;">${escapeHtml(report.description)}</p>` : ''}
         <table>
           <thead>
             <tr>
