@@ -136,15 +136,6 @@ import { MobileInventoryPage } from '@/components/mobile-inventory/MobileInvento
 import { MobileInvoiceReaderPage } from '@/components/mobile-invoice/MobileInvoiceReaderPage';
 import { DeveloperApiPage } from '@/components/developer-api/DeveloperApiPage';
 import { EcommercePage } from '@/components/ecommerce/EcommercePage';
-import { EmailMarketingPage } from '@/components/email-marketing/EmailMarketingPage';
-import { HelpdeskPage } from '@/components/helpdesk/HelpdeskPage';
-import { CMSPage } from '@/components/cms/CMSPage';
-import { POSPage } from '@/components/pos/POSPage';
-import { RecruitmentPage } from '@/components/recruitment/RecruitmentPage';
-import { AppraisalsPage } from '@/components/appraisals/AppraisalsPage';
-import { FleetPage } from '@/components/fleet/FleetPage';
-import { MaintenancePage } from '@/components/maintenance/MaintenancePage';
-import { QualityControlPage } from '@/components/quality/QualityControlPage';
 import { SmsMarketingPage } from '@/components/marketing/SmsMarketingPage';
 import { SocialMarketingPage } from '@/components/marketing/SocialMarketingPage';
 import { EventsPage } from '@/components/events/EventsPage';
