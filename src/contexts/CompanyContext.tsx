@@ -171,7 +171,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (session) {
+    if (user) {
       fetchCompanyData();
     } else {
       queryClient.clear();
@@ -181,7 +181,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       setIsSuperAdmin(false);
       setLoading(false);
     }
-  }, [session, user]);
+  }, [user?.id]);
 
   const effectiveCompanyId = viewAsCompanyId || companyId;
   const effectiveCompany = viewAsCompanyId ? viewAsCompany : company;

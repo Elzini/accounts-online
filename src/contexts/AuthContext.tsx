@@ -119,26 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const SESSION_ACTIVE_KEY = 'app_session_active';
-
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-
-        // Fetch permissions when user logs in
-        if (session?.user) {
-          // Mark session as active in this browser tab/window
-          sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
-          setTimeout(() => {
-            fetchPermissions(session.user.id);
-          }, 0);
-        } else {
-          setPermissions({ ...DEFAULT_PERMISSIONS });
-        }
-      }
-    );
+    let initialSessionHandled = false;
 
     // Check if this is a redirect from login (cross-domain)
     const urlParams = new URLSearchParams(window.location.search);
@@ -151,17 +132,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.history.replaceState({}, '', cleanUrl);
     }
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Get initial session FIRST
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      initialSessionHandled = true;
+      setSession(initialSession);
+      setUser(initialSession?.user ?? null);
       setLoading(false);
 
-      if (session?.user) {
+      if (initialSession?.user) {
         sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
-        fetchPermissions(session.user.id);
+        fetchPermissions(initialSession.user.id);
       }
     });
+
+    // Set up auth state listener for SUBSEQUENT changes only
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        // Skip if this is the initial event and we already handled it
+        if (event === 'INITIAL_SESSION') return;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+
+        if (session?.user) {
+          sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
+          setTimeout(() => {
+            fetchPermissions(session.user.id);
+          }, 0);
+        } else {
+          setPermissions({ ...DEFAULT_PERMISSIONS });
+        }
+      }
+    );
 
     return () => {
       subscription.unsubscribe();
