@@ -489,6 +489,7 @@ const Index = () => {
       construction: 'projects',
       restaurant: 'menu-management',
       export_import: 'shipments',
+      real_estate: 're-projects',
     };
     const firstPage = firstPages[moduleId];
     if (firstPage) {
