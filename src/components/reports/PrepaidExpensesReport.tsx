@@ -176,7 +176,7 @@ export function PrepaidExpensesReport() {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{isAr ? 'الحالة' : 'Status'}</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -189,7 +189,18 @@ export function PrepaidExpensesReport() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="col-span-2 md:col-span-2">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">{isAr ? 'الأشهر' : 'Months'}</label>
+              <Select value={monthFilter} onValueChange={setMonthFilter}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{isAr ? 'كل الأشهر' : 'All Months'}</SelectItem>
+                  <SelectItem value="consumed">{isAr ? 'المستهلك فقط' : 'Consumed Only'}</SelectItem>
+                  <SelectItem value="upcoming">{isAr ? 'القادمة فقط' : 'Upcoming Only'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2">
               <label className="text-xs text-muted-foreground mb-1 block">{isAr ? 'بحث' : 'Search'}</label>
               <Input placeholder={isAr ? 'بحث بالوصف...' : 'Search...'} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="h-9" />
             </div>
