@@ -115,7 +115,7 @@ export function PrepaidExpensesReport() {
     </tr></thead><tbody>`);
 
     filteredExpenses.forEach((exp: any, idx: number) => {
-      const schedule = generateMonthlySchedule(exp);
+      const schedule = generateMonthlySchedule(exp).filter(m => monthFilter === 'all' ? true : m.status === monthFilter);
       // Main row
       win!.document.write(`<tr class="main-row">
         <td>${idx + 1}</td>
