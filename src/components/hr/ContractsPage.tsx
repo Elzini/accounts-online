@@ -18,6 +18,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useHREmployees } from '@/hooks/useHR';
+import { ContractPrintDialog } from './ContractPrintDialog';
 
 interface AllowanceItem {
   name: string;
