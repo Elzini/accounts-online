@@ -265,16 +265,16 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
     const cfg = getCardConfig(id);
     return {
       size: cfg.size,
-      bgColor: cfg.bgColor,
-      textColor: cfg.textColor,
-      gradientFrom: cfg.gradientFrom,
-      gradientTo: cfg.gradientTo,
+      bgColor: cfg.bgColor || undefined,
+      textColor: cfg.textColor || undefined,
+      gradientFrom: cfg.gradientFrom || undefined,
+      gradientTo: cfg.gradientTo || undefined,
       fontSize: cfg.fontSize,
       height: cfg.height,
       width: cfg.width,
       enable3D: cfg.enable3D,
       showTrend: cfg.showTrend ?? true,
-      trendColor: cfg.trendColor,
+      trendColor: cfg.trendColor || undefined,
     };
   }, [getCardConfig]);
 
