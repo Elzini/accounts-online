@@ -361,6 +361,12 @@ export function Sidebar({
     { id: 'employee-contracts' as ActivePage, label: language === 'ar' ? 'عقود الموظفين' : 'Employee Contracts', icon: FileSignature },
   ];
 
+  const expensesItems: MenuItem[] = [
+    { id: 'expenses' as ActivePage, label: language === 'ar' ? 'المصروفات' : 'Expenses', icon: Wallet, permission: 'purchases' },
+    { id: 'prepaid-expenses' as ActivePage, label: s(settings?.prepaid_expenses_title, t.nav_prepaid_expenses), icon: Clock, permission: 'purchases' },
+    { id: 'cost-centers' as ActivePage, label: t.nav_cost_centers, icon: Target },
+  ];
+
   const systemMenuItems: MenuItem[] = [
     { id: 'users-management' as ActivePage, label: s(settings?.users_management_title, t.nav_users_management), icon: UserCog },
     { id: 'field-level-security' as ActivePage, label: language === 'ar' ? 'صلاحيات الحقول' : 'Field Security', icon: Shield, permission: 'admin' },
@@ -397,10 +403,8 @@ export function Sidebar({
     { id: 'sales-targets' as ActivePage, label: language === 'ar' ? 'المبيعات المستهدفة' : 'Sales Targets', icon: Award, permission: 'sales' },
     { id: 'bookings' as ActivePage, label: language === 'ar' ? 'الحجوزات' : 'Bookings', icon: CalendarCheck, permission: 'sales' },
     { id: 'contractor-payment' as ActivePage, label: language === 'ar' ? 'سند صرف مقاول' : 'Contractor Payment', icon: Banknote, permission: 'purchases' },
-    { id: 'prepaid-expenses' as ActivePage, label: s(settings?.prepaid_expenses_title, t.nav_prepaid_expenses), icon: Clock, permission: 'purchases' },
     { id: 'currencies' as ActivePage, label: t.nav_currencies, icon: Coins },
     { id: 'financing' as ActivePage, label: s(settings?.financing_title, t.nav_financing), icon: Landmark },
-    { id: 'cost-centers' as ActivePage, label: t.nav_cost_centers, icon: Target },
     { id: 'tax-settings' as ActivePage, label: s(settings?.tax_settings_title, t.nav_tax_settings), icon: Percent },
     { id: 'vat-return-report' as ActivePage, label: t.nav_vat_return, icon: Receipt },
     { id: 'zakat-reports' as ActivePage, label: t.nav_zakat_reports, icon: Scale },
@@ -497,6 +501,7 @@ export function Sidebar({
     { id: 'sales', label: getSectionLabel('sales', language === 'ar' ? 'المبيعات' : 'Sales'), icon: DollarSign, items: salesMenuItems, showCondition: permissions.admin || permissions.sales },
     { id: 'purchases', label: getSectionLabel('purchases', language === 'ar' ? 'المشتريات' : 'Purchases'), icon: ShoppingCart, items: purchasesMenuItems, showCondition: permissions.admin || permissions.purchases },
     { id: 'accounting', label: getSectionLabel('accounting', language === 'ar' ? 'الحسابات' : 'Accounts'), icon: Calculator, items: accountsMenuItems, showCondition: permissions.admin || permissions.reports || permissions.financial_accounting },
+    { id: 'expenses-section', label: getSectionLabel('expenses-section', language === 'ar' ? 'المصروفات' : 'Expenses'), icon: Wallet, items: expensesItems, showCondition: permissions.admin || permissions.purchases || permissions.expenses },
     { id: 'inventory', label: getSectionLabel('inventory', language === 'ar' ? 'المستودعات' : 'Warehouses'), icon: Warehouse, items: warehouseMenuItems, showCondition: permissions.admin || permissions.purchases || permissions.warehouses },
     { id: 'hr', label: getSectionLabel('hr', t.nav_hr), icon: Users, items: hrItems, showCondition: permissions.admin || permissions.employees || permissions.payroll },
     { id: 'system', label: getSectionLabel('system', language === 'ar' ? 'النظام' : 'System'), icon: Settings2, items: systemMenuItems, showCondition: canManageUsers },
