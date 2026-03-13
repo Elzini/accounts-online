@@ -147,10 +147,21 @@ export function TaxSettingsPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
               <div>
-                <Label htmlFor="is_active" className="text-base font-medium">{t.tax_enable}</Label>
+                <Label htmlFor="is_active" className="text-base font-medium cursor-pointer">{t.tax_enable}</Label>
                 <p className="text-sm text-muted-foreground">{t.tax_enable_desc}</p>
               </div>
-              <Switch id="is_active" checked={formData.is_active} onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })} />
+              <Switch
+                id="is_active"
+                checked={formData.is_active}
+                onCheckedChange={(checked) => {
+                  const newData = { ...formData, is_active: checked };
+                  setFormData(newData);
+                  upsertTaxSettings.mutate(newData, {
+                    onSuccess: () => toast.success(checked ? 'تم تفعيل الضريبة' : 'تم تعطيل الضريبة'),
+                    onError: () => toast.error(t.tax_save_error),
+                  });
+                }}
+              />
             </div>
             <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
               <div>
