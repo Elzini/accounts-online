@@ -227,7 +227,7 @@ export function TrialBalancePreviewDialog({
                     <tr class="total-row"><td>إجمالي الخصوم المتداولة</td><td class="text-left">${formatCurrency(calculations.totalLiabilities)}</td></tr>
                     <tr class="sub-header"><td colspan="2">حقوق الملكية:</td></tr>
                     ${Object.entries(data.equity).map(([name, amount]) => `
-                      <tr><td class="indent">- ${name}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
+                      <tr><td class="indent">- ${escapeHtml(name)}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
                     `).join('')}
                     <tr><td class="indent">- صافي الربح / (الخسارة)</td><td class="text-left ${calculations.netIncome >= 0 ? 'text-green' : 'text-red'}">${formatCurrency(calculations.netIncome)}</td></tr>
                     <tr class="total-row"><td>إجمالي حقوق الملكية</td><td class="text-left">${formatCurrency(calculations.adjustedEquity)}</td></tr>
