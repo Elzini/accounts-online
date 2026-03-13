@@ -37,6 +37,10 @@ export function BankingPage() {
   const [showReconciliationDialog, setShowReconciliationDialog] = useState(false);
   const [showTransactionsDialog, setShowTransactionsDialog] = useState(false);
   const [selectedStatement, setSelectedStatement] = useState<any>(null);
+  const [showEditStatementDialog, setShowEditStatementDialog] = useState(false);
+  const [editingStatement, setEditingStatement] = useState<any>(null);
+  const [editStatementForm, setEditStatementForm] = useState({ statement_date: '', notes: '', file_name: '' });
+  const [deleteStatementId, setDeleteStatementId] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importData, setImportData] = useState<{ transactions: any[]; fileName: string } | null>(null);
