@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { format, addMonths, isBefore, isAfter, startOfMonth } from 'date-fns';
+import { format, addMonths, isBefore, startOfMonth } from 'date-fns';
 import { FileText, Printer, Clock, CheckCircle, Play, AlertCircle, Banknote, BarChart3, ChevronDown, ChevronLeft } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -89,13 +89,70 @@ export function PrepaidExpensesReport() {
     const win = window.open('', '_blank');
     if (!win) return;
     win.document.write(`<html dir="rtl"><head><title>تقرير المصروفات المقدمة</title>
-      <style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse;margin-top:16px}
-      th,td{border:1px solid #ddd;padding:8px;text-align:right;font-size:12px}th{background:#f5f5f5;font-weight:bold}
-      h1{font-size:20px;margin-bottom:8px}.sub-table{margin:8px 20px;}.sub-table th{background:#f0fdf4}
-      .progress{background:#e5e7eb;height:8px;border-radius:4px;overflow:hidden}
-      .progress-bar{background:#10b981;height:100%}</style></head><body>`);
-    win.document.write(printContent.innerHTML);
-    win.document.write('</body></html>');
+      <style>
+        body{font-family:sans-serif;padding:20px;font-size:11px}
+        table{width:100%;border-collapse:collapse;margin-top:10px}
+        th,td{border:1px solid #ccc;padding:6px 8px;text-align:center;font-size:11px}
+        th{background:#f0f0f0;font-weight:bold}
+        h1{font-size:18px;margin-bottom:4px;text-align:center}
+        .main-row{background:#f8f9fa;font-weight:bold}
+        .month-row td{font-size:10px;background:#fff}
+        .consumed{background:#f0fdf4 !important}
+        .total-row{background:#e5e7eb;font-weight:bold}
+        .text-green{color:#059669}.text-amber{color:#d97706}.text-red{color:#dc2626}
+        .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:9px}
+        .badge-green{background:#d1fae5;color:#065f46}
+        .badge-gray{background:#f3f4f6;color:#6b7280}
+        @media print{body{padding:10px}table{page-break-inside:auto}tr{page-break-inside:avoid}}
+      </style></head><body>`);
+    
+    win.document.write(`<h1>تقرير المصروفات المقدمة - جدول الاستهلاك الشهري</h1>`);
+    win.document.write(`<table>`);
+    win.document.write(`<thead><tr>
+      <th>#</th><th>الوصف</th><th>التاريخ</th>
+      <th>مدين</th><th>دائن</th><th>الرصيد</th><th>الحالة</th>
+    </tr></thead><tbody>`);
+
+    filteredExpenses.forEach((exp: any, idx: number) => {
+      const schedule = generateMonthlySchedule(exp);
+      // Main row
+      win!.document.write(`<tr class="main-row">
+        <td>${idx + 1}</td>
+        <td style="text-align:right">${exp.description || ''}</td>
+        <td>${format(new Date(exp.start_date), 'yyyy/MM/dd')}</td>
+        <td class="text-green">${formatNumber(exp.total_amount)}</td>
+        <td>-</td>
+        <td>${formatNumber(exp.total_amount)}</td>
+        <td>${exp.status === 'active' ? 'نشط' : exp.status === 'completed' ? 'مكتمل' : 'معلق'}</td>
+      </tr>`);
+      // Monthly rows
+      schedule.forEach((month) => {
+        const statusClass = month.status === 'consumed' ? 'consumed' : '';
+        const badgeClass = month.status === 'consumed' ? 'badge-green' : 'badge-gray';
+        const statusText = month.status === 'consumed' ? 'مستهلك' : 'قادم';
+        win!.document.write(`<tr class="month-row ${statusClass}">
+          <td>${month.number}</td>
+          <td style="text-align:right">الشهر ${month.number}</td>
+          <td>${format(month.date, 'yyyy/MM/dd')}</td>
+          <td>-</td>
+          <td class="text-red">${formatNumber(month.amount)}</td>
+          <td class="${Math.max(0, month.balance) <= 0 ? 'text-green' : 'text-amber'}">${formatNumber(Math.max(0, month.balance))}</td>
+          <td><span class="badge ${badgeClass}">${statusText}</span></td>
+        </tr>`);
+      });
+    });
+
+    // Total row
+    win.document.write(`<tr class="total-row">
+      <td colspan="2" style="text-align:right">الإجمالي</td>
+      <td>-</td>
+      <td class="text-green">${formatNumber(totalAmount)}</td>
+      <td class="text-red">${formatNumber(totalAmortized)}</td>
+      <td class="text-amber">${formatNumber(totalRemaining)}</td>
+      <td>-</td>
+    </tr>`);
+
+    win.document.write(`</tbody></table></body></html>`);
     win.document.close();
     win.print();
   };
@@ -181,20 +238,17 @@ export function PrepaidExpensesReport() {
                   <TableHead className="text-center w-10"></TableHead>
                   <TableHead className="text-center w-12">#</TableHead>
                   <TableHead>{isAr ? 'الوصف' : 'Description'}</TableHead>
-                  <TableHead>{isAr ? 'تاريخ البداية' : 'Start'}</TableHead>
-                  <TableHead>{isAr ? 'تاريخ النهاية' : 'End'}</TableHead>
-                  <TableHead className="text-center">{isAr ? 'المدة (شهر)' : 'Months'}</TableHead>
-                  <TableHead className="text-center">{isAr ? 'المبلغ الإجمالي' : 'Total'}</TableHead>
-                  <TableHead className="text-center">{isAr ? 'الشهري' : 'Monthly'}</TableHead>
-                  <TableHead className="text-center">{isAr ? 'المستهلك' : 'Amortized'}</TableHead>
-                  <TableHead className="text-center">{isAr ? 'المتبقي' : 'Remaining'}</TableHead>
+                  <TableHead className="text-center">{isAr ? 'التاريخ' : 'Date'}</TableHead>
+                  <TableHead className="text-center">{isAr ? 'مدين' : 'Debit'}</TableHead>
+                  <TableHead className="text-center">{isAr ? 'دائن' : 'Credit'}</TableHead>
+                  <TableHead className="text-center">{isAr ? 'الرصيد' : 'Balance'}</TableHead>
                   <TableHead className="text-center">{isAr ? 'نسبة الاستهلاك' : 'Progress'}</TableHead>
                   <TableHead className="text-center">{isAr ? 'الحالة' : 'Status'}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredExpenses.length === 0 ? (
-                  <TableRow><TableCell colSpan={12} className="text-center py-8 text-muted-foreground">{isAr ? 'لا توجد مصروفات مقدمة' : 'No prepaid expenses'}</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">{isAr ? 'لا توجد مصروفات مقدمة' : 'No prepaid expenses'}</TableCell></TableRow>
                 ) : (
                   filteredExpenses.map((exp: any, idx: number) => {
                     const progress = exp.total_amount > 0 ? (exp.amortized_amount / exp.total_amount) * 100 : 0;
@@ -202,7 +256,7 @@ export function PrepaidExpensesReport() {
                     const schedule = isExpanded ? generateMonthlySchedule(exp) : [];
                     return (
                       <>
-                        <TableRow key={exp.id} className="cursor-pointer hover:bg-muted/50 bg-primary/5" onClick={() => toggleRow(exp.id)}>
+                        <TableRow key={exp.id} className="cursor-pointer hover:bg-muted/50 bg-primary/5 font-semibold" onClick={() => toggleRow(exp.id)}>
                           <TableCell className="text-center">
                             {isExpanded 
                               ? <ChevronDown className="h-4 w-4 text-muted-foreground mx-auto" />
@@ -210,14 +264,11 @@ export function PrepaidExpensesReport() {
                             }
                           </TableCell>
                           <TableCell className="text-center text-muted-foreground">{idx + 1}</TableCell>
-                          <TableCell className="font-medium">{exp.description}</TableCell>
-                          <TableCell>{format(new Date(exp.start_date), 'yyyy/MM/dd')}</TableCell>
-                          <TableCell>{format(new Date(exp.end_date), 'yyyy/MM/dd')}</TableCell>
-                          <TableCell className="text-center">{exp.number_of_months}</TableCell>
-                          <TableCell className="text-center font-semibold">{formatNumber(exp.total_amount)} {isAr ? 'ر.س' : 'SAR'}</TableCell>
-                          <TableCell className="text-center">{formatNumber(exp.monthly_amount)} {isAr ? 'ر.س' : 'SAR'}</TableCell>
-                          <TableCell className="text-center text-emerald-600">{formatNumber(exp.amortized_amount)}</TableCell>
-                          <TableCell className="text-center text-amber-600 font-semibold">{formatNumber(exp.remaining_amount)}</TableCell>
+                          <TableCell className="font-bold">{exp.description}</TableCell>
+                          <TableCell className="text-center">{format(new Date(exp.start_date), 'yyyy/MM/dd')}</TableCell>
+                          <TableCell className="text-center text-emerald-600 font-bold">{formatNumber(exp.total_amount)}</TableCell>
+                          <TableCell className="text-center">-</TableCell>
+                          <TableCell className="text-center font-bold">{formatNumber(exp.total_amount)}</TableCell>
                           <TableCell className="text-center">
                             <div className="flex items-center gap-2">
                               <Progress value={progress} className="h-2 flex-1" />
@@ -232,14 +283,11 @@ export function PrepaidExpensesReport() {
                             <TableCell className="text-center text-muted-foreground text-xs">{month.number}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{isAr ? `الشهر ${month.number}` : `Month ${month.number}`}</TableCell>
                             <TableCell className="text-center text-sm">{format(month.date, 'yyyy/MM/dd')}</TableCell>
-                            <TableCell></TableCell>
-                            <TableCell></TableCell>
-                            <TableCell></TableCell>
-                            <TableCell className="text-center text-sm font-medium">{formatNumber(month.amount)} {isAr ? 'ريال' : 'SAR'}</TableCell>
-                            <TableCell className="text-center text-sm text-emerald-600">{formatNumber(month.amount)}</TableCell>
+                            <TableCell className="text-center text-sm">-</TableCell>
+                            <TableCell className="text-center text-sm text-red-600 font-medium">{formatNumber(month.amount)}</TableCell>
                             <TableCell className="text-center text-sm font-semibold">
-                              <span className={month.balance <= 0 ? 'text-emerald-600' : 'text-amber-600'}>
-                                {formatNumber(Math.max(0, month.balance))} {isAr ? 'ريال' : 'SAR'}
+                              <span className={Math.max(0, month.balance) <= 0 ? 'text-emerald-600' : 'text-amber-600'}>
+                                {formatNumber(Math.max(0, month.balance))}
                               </span>
                             </TableCell>
                             <TableCell></TableCell>
@@ -253,10 +301,9 @@ export function PrepaidExpensesReport() {
                 {filteredExpenses.length > 0 && (
                   <TableRow className="bg-muted/50 font-bold">
                     <TableCell></TableCell>
-                    <TableCell colSpan={5} className="text-start">{isAr ? 'الإجمالي' : 'Total'}</TableCell>
-                    <TableCell className="text-center">{formatNumber(totalAmount)} {isAr ? 'ر.س' : 'SAR'}</TableCell>
-                    <TableCell className="text-center">-</TableCell>
-                    <TableCell className="text-center text-emerald-700">{formatNumber(totalAmortized)}</TableCell>
+                    <TableCell colSpan={3} className="text-start">{isAr ? 'الإجمالي' : 'Total'}</TableCell>
+                    <TableCell className="text-center text-emerald-700">{formatNumber(totalAmount)}</TableCell>
+                    <TableCell className="text-center text-red-700">{formatNumber(totalAmortized)}</TableCell>
                     <TableCell className="text-center text-amber-700">{formatNumber(totalRemaining)}</TableCell>
                     <TableCell colSpan={2}></TableCell>
                   </TableRow>
