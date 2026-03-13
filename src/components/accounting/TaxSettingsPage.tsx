@@ -14,7 +14,7 @@ export function TaxSettingsPage() {
   const { t, direction } = useLanguage();
   const { data: taxSettings, isLoading } = useTaxSettings();
   const upsertTaxSettings = useUpsertTaxSettings();
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isQuickSaving, setIsQuickSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     tax_name: 'ضريبة القيمة المضافة',
@@ -31,32 +31,51 @@ export function TaxSettingsPage() {
     building_number: '',
   });
 
+  const mapToFormData = (settings: any) => ({
+    tax_name: settings.tax_name,
+    tax_rate: settings.tax_rate,
+    is_active: settings.is_active,
+    apply_to_sales: settings.apply_to_sales,
+    apply_to_purchases: settings.apply_to_purchases,
+    tax_number: settings.tax_number || '',
+    company_name_ar: settings.company_name_ar || '',
+    national_address: settings.national_address || '',
+    commercial_register: settings.commercial_register || '',
+    city: settings.city || '',
+    postal_code: settings.postal_code || '',
+    building_number: settings.building_number || '',
+  });
+
   useEffect(() => {
-    if (taxSettings && !isInitialized) {
-      setFormData({
-        tax_name: taxSettings.tax_name,
-        tax_rate: taxSettings.tax_rate,
-        is_active: taxSettings.is_active,
-        apply_to_sales: taxSettings.apply_to_sales,
-        apply_to_purchases: taxSettings.apply_to_purchases,
-        tax_number: taxSettings.tax_number || '',
-        company_name_ar: taxSettings.company_name_ar || '',
-        national_address: taxSettings.national_address || '',
-        commercial_register: taxSettings.commercial_register || '',
-        city: taxSettings.city || '',
-        postal_code: taxSettings.postal_code || '',
-        building_number: taxSettings.building_number || '',
-      });
-      setIsInitialized(true);
+    if (taxSettings) {
+      setFormData(mapToFormData(taxSettings));
     }
-  }, [taxSettings, isInitialized]);
+  }, [taxSettings]);
 
   const handleSave = async () => {
     try {
-      await upsertTaxSettings.mutateAsync(formData);
+      const saved = await upsertTaxSettings.mutateAsync(formData);
+      setFormData(mapToFormData(saved));
       toast.success(t.tax_saved);
     } catch (error) {
       toast.error(t.tax_save_error);
+    }
+  };
+
+  const handleQuickToggleSave = async (nextData: typeof formData, successMessage?: string) => {
+    const previousData = formData;
+    setFormData(nextData);
+    setIsQuickSaving(true);
+
+    try {
+      const saved = await upsertTaxSettings.mutateAsync(nextData);
+      setFormData(mapToFormData(saved));
+      if (successMessage) toast.success(successMessage);
+    } catch (error) {
+      setFormData(previousData);
+      toast.error(t.tax_save_error);
+    } finally {
+      setIsQuickSaving(false);
     }
   };
 
@@ -156,13 +175,12 @@ export function TaxSettingsPage() {
                 id="is_active"
                 checked={formData.is_active}
                 onCheckedChange={(checked) => {
-                  const newData = { ...formData, is_active: checked };
-                  setFormData(newData);
-                  upsertTaxSettings.mutate(newData, {
-                    onSuccess: () => toast.success(checked ? 'تم تفعيل الضريبة' : 'تم تعطيل الضريبة'),
-                    onError: () => toast.error(t.tax_save_error),
-                  });
+                  void handleQuickToggleSave(
+                    { ...formData, is_active: checked },
+                    checked ? 'تم تفعيل الضريبة' : 'تم تعطيل الضريبة'
+                  );
                 }}
+                disabled={isQuickSaving || upsertTaxSettings.isPending}
               />
             </div>
             <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
@@ -174,11 +192,9 @@ export function TaxSettingsPage() {
                 id="apply_to_sales"
                 checked={formData.apply_to_sales}
                 onCheckedChange={(checked) => {
-                  const newData = { ...formData, apply_to_sales: checked };
-                  setFormData(newData);
-                  upsertTaxSettings.mutate(newData);
+                  void handleQuickToggleSave({ ...formData, apply_to_sales: checked });
                 }}
-                disabled={!formData.is_active}
+                disabled={!formData.is_active || isQuickSaving || upsertTaxSettings.isPending}
               />
             </div>
             <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
@@ -190,16 +206,14 @@ export function TaxSettingsPage() {
                 id="apply_to_purchases"
                 checked={formData.apply_to_purchases}
                 onCheckedChange={(checked) => {
-                  const newData = { ...formData, apply_to_purchases: checked };
-                  setFormData(newData);
-                  upsertTaxSettings.mutate(newData);
+                  void handleQuickToggleSave({ ...formData, apply_to_purchases: checked });
                 }}
-                disabled={!formData.is_active}
+                disabled={!formData.is_active || isQuickSaving || upsertTaxSettings.isPending}
               />
             </div>
           </div>
-          <Button onClick={handleSave} disabled={upsertTaxSettings.isPending} className="w-full">
-            {upsertTaxSettings.isPending ? (
+          <Button onClick={handleSave} disabled={upsertTaxSettings.isPending || isQuickSaving} className="w-full">
+            {upsertTaxSettings.isPending || isQuickSaving ? (
               <><Loader2 className="w-4 h-4 ml-2 animate-spin" />{t.tax_saving}</>
             ) : (
               <><Save className="w-4 h-4 ml-2" />{t.tax_save}</>
