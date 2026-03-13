@@ -360,6 +360,10 @@ export function ChartOfAccountsPage() {
           <p className="text-muted-foreground">{t.coa_subtitle} • {accounts.length} {t.acc_account}</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={exportRealEstateCOAToExcel}>
+            <FileSpreadsheet className="w-4 h-4 ml-2" />
+            تصدير Excel
+          </Button>
           {accounts.length === 0 && (
             <Button variant="outline" onClick={handleCreateDefaults} disabled={createDefaultAccounts.isPending}>
               {createDefaultAccounts.isPending ? (
