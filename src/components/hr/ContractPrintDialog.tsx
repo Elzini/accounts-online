@@ -8,6 +8,9 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useCompanyId } from '@/hooks/useCompanyId';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { formatNumber } from '@/components/financial-statements/utils/numberFormatting';
 
 interface ContractPrintDialogProps {
@@ -20,7 +23,23 @@ export function ContractPrintDialog({ open, onOpenChange, contract }: ContractPr
   const printRef = useRef<HTMLDivElement>(null);
   const { t, language } = useLanguage();
   const { company } = useCompany();
+  const companyId = useCompanyId();
   const currentDate = new Date().toLocaleDateString('ar-SA');
+
+  const { data: taxSettings } = useQuery({
+    queryKey: ['tax-settings-print', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tax_settings')
+        .select('tax_number, company_name_ar, national_address, commercial_register, city, postal_code, building_number')
+        .eq('company_id', companyId!)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: open && !!companyId,
+  });
 
   const typeLabels: Record<string, string> = {
     'full-time': 'دوام كامل',
@@ -108,8 +127,13 @@ export function ContractPrintDialog({ open, onOpenChange, contract }: ContractPr
                   </div>
                 </div>
                 <div className="text-left text-sm text-blue-100">
-                  <div>{company?.name || ''}</div>
-                  <div>تاريخ الطباعة: {currentDate}</div>
+                  <div className="font-bold text-white text-base">{taxSettings?.company_name_ar || company?.name || ''}</div>
+                  {taxSettings?.tax_number && <div>الرقم الضريبي: {taxSettings.tax_number}</div>}
+                  {taxSettings?.commercial_register && <div>السجل التجاري: {taxSettings.commercial_register}</div>}
+                  {taxSettings?.national_address && <div>العنوان: {taxSettings.national_address}</div>}
+                  {taxSettings?.city && <div>المدينة: {taxSettings.city}</div>}
+                  {company?.phone && <div>هاتف: {company.phone}</div>}
+                  <div className="mt-1">تاريخ الطباعة: {currentDate}</div>
                 </div>
               </div>
             </div>
