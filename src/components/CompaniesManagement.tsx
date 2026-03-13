@@ -581,14 +581,6 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
               />
               <Label htmlFor="is_active">شركة نشطة</Label>
             </div>
-            <div className="flex items-center gap-3">
-              <Switch
-                id="show_module_launcher"
-                checked={formData.show_module_launcher}
-                onCheckedChange={(checked) => setFormData({ ...formData, show_module_launcher: checked })}
-              />
-              <Label htmlFor="show_module_launcher">إظهار واجهة الموديولات</Label>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
