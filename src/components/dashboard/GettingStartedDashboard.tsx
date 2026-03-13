@@ -23,10 +23,6 @@ interface GettingStartedDashboardProps {
   hasFiscalYear: boolean;
   hasTaxSettings: boolean;
   hasAccounts: boolean;
-  hasCustomers: boolean;
-  hasSuppliers: boolean;
-  hasSales: boolean;
-  hasPurchases: boolean;
 }
 
 export function GettingStartedDashboard({
@@ -34,10 +30,6 @@ export function GettingStartedDashboard({
   hasFiscalYear,
   hasTaxSettings,
   hasAccounts,
-  hasCustomers,
-  hasSuppliers,
-  hasSales,
-  hasPurchases,
 }: GettingStartedDashboardProps) {
   const { language } = useLanguage();
   const isAr = language === 'ar';
