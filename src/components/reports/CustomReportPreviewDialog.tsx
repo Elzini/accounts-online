@@ -144,7 +144,7 @@ export function CustomReportPreviewDialog({
       <html dir="rtl" lang="ar">
       <head>
         <meta charset="UTF-8">
-        <title>${report.name}</title>
+        <title>${escapeHtml(report.name)}</title>
         <style>
           body { font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; padding: 20px; }
           h1 { text-align: center; margin-bottom: 20px; }
