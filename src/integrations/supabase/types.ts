@@ -9906,6 +9906,669 @@ export type Database = {
           },
         ]
       }
+      re_contractors: {
+        Row: {
+          address: string | null
+          bank_name: string | null
+          company_id: string
+          created_at: string | null
+          email: string | null
+          iban: string | null
+          id: string
+          is_active: boolean | null
+          license_number: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          rating: number | null
+          specialty: string | null
+          tax_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          bank_name?: string | null
+          company_id: string
+          created_at?: string | null
+          email?: string | null
+          iban?: string | null
+          id?: string
+          is_active?: boolean | null
+          license_number?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          rating?: number | null
+          specialty?: string | null
+          tax_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          bank_name?: string | null
+          company_id?: string
+          created_at?: string | null
+          email?: string | null
+          iban?: string | null
+          id?: string
+          is_active?: boolean | null
+          license_number?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          rating?: number | null
+          specialty?: string | null
+          tax_number?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_contractors_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      re_installments: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string | null
+          customer_id: string | null
+          due_date: string
+          id: string
+          installment_number: number
+          notes: string | null
+          paid_amount: number | null
+          paid_date: string | null
+          payment_method: string | null
+          receipt_number: string | null
+          status: string | null
+          unit_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string | null
+          customer_id?: string | null
+          due_date: string
+          id?: string
+          installment_number: number
+          notes?: string | null
+          paid_amount?: number | null
+          paid_date?: string | null
+          payment_method?: string | null
+          receipt_number?: string | null
+          status?: string | null
+          unit_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string | null
+          customer_id?: string | null
+          due_date?: string
+          id?: string
+          installment_number?: number
+          notes?: string | null
+          paid_amount?: number | null
+          paid_date?: string | null
+          payment_method?: string | null
+          receipt_number?: string | null
+          status?: string | null
+          unit_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_installments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_installments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_installments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_installments_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "re_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      re_progress_billings: {
+        Row: {
+          approved_by: string | null
+          approved_date: string | null
+          attachments: Json | null
+          billing_date: string | null
+          billing_number: string | null
+          company_id: string
+          completion_percentage: number | null
+          contractor_id: string
+          created_at: string | null
+          gross_amount: number
+          id: string
+          journal_entry_id: string | null
+          net_amount: number | null
+          notes: string | null
+          payment_date: string | null
+          period_from: string | null
+          period_to: string | null
+          previous_payments: number | null
+          project_id: string
+          retention_amount: number | null
+          status: string | null
+          total_with_vat: number | null
+          updated_at: string | null
+          vat_amount: number | null
+          work_order_id: string
+        }
+        Insert: {
+          approved_by?: string | null
+          approved_date?: string | null
+          attachments?: Json | null
+          billing_date?: string | null
+          billing_number?: string | null
+          company_id: string
+          completion_percentage?: number | null
+          contractor_id: string
+          created_at?: string | null
+          gross_amount?: number
+          id?: string
+          journal_entry_id?: string | null
+          net_amount?: number | null
+          notes?: string | null
+          payment_date?: string | null
+          period_from?: string | null
+          period_to?: string | null
+          previous_payments?: number | null
+          project_id: string
+          retention_amount?: number | null
+          status?: string | null
+          total_with_vat?: number | null
+          updated_at?: string | null
+          vat_amount?: number | null
+          work_order_id: string
+        }
+        Update: {
+          approved_by?: string | null
+          approved_date?: string | null
+          attachments?: Json | null
+          billing_date?: string | null
+          billing_number?: string | null
+          company_id?: string
+          completion_percentage?: number | null
+          contractor_id?: string
+          created_at?: string | null
+          gross_amount?: number
+          id?: string
+          journal_entry_id?: string | null
+          net_amount?: number | null
+          notes?: string | null
+          payment_date?: string | null
+          period_from?: string | null
+          period_to?: string | null
+          previous_payments?: number | null
+          project_id?: string
+          retention_amount?: number | null
+          status?: string | null
+          total_with_vat?: number | null
+          updated_at?: string | null
+          vat_amount?: number | null
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_progress_billings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_progress_billings_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "re_contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_progress_billings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "re_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_progress_billings_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "re_work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      re_project_phases: {
+        Row: {
+          budget: number | null
+          company_id: string
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          notes: string | null
+          phase_order: number | null
+          progress_percentage: number | null
+          project_id: string
+          spent: number | null
+          start_date: string | null
+          status: string | null
+          updated_at: string | null
+          weight_percentage: number | null
+        }
+        Insert: {
+          budget?: number | null
+          company_id: string
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phase_order?: number | null
+          progress_percentage?: number | null
+          project_id: string
+          spent?: number | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+          weight_percentage?: number | null
+        }
+        Update: {
+          budget?: number | null
+          company_id?: string
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phase_order?: number | null
+          progress_percentage?: number | null
+          project_id?: string
+          spent?: number | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+          weight_percentage?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_project_phases_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_project_phases_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "re_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      re_projects: {
+        Row: {
+          actual_completion: string | null
+          city: string | null
+          code: string | null
+          company_id: string
+          construction_cost: number | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          district: string | null
+          escrow_account: string | null
+          expected_completion: string | null
+          id: string
+          image_url: string | null
+          land_area: number | null
+          land_cost: number | null
+          license_number: string | null
+          location: string | null
+          manager_name: string | null
+          name: string
+          notes: string | null
+          progress_percentage: number | null
+          project_type: string | null
+          start_date: string | null
+          status: string | null
+          total_budget: number | null
+          total_built_area: number | null
+          total_spent: number | null
+          total_units: number | null
+          updated_at: string | null
+          wafi_number: string | null
+        }
+        Insert: {
+          actual_completion?: string | null
+          city?: string | null
+          code?: string | null
+          company_id: string
+          construction_cost?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          district?: string | null
+          escrow_account?: string | null
+          expected_completion?: string | null
+          id?: string
+          image_url?: string | null
+          land_area?: number | null
+          land_cost?: number | null
+          license_number?: string | null
+          location?: string | null
+          manager_name?: string | null
+          name: string
+          notes?: string | null
+          progress_percentage?: number | null
+          project_type?: string | null
+          start_date?: string | null
+          status?: string | null
+          total_budget?: number | null
+          total_built_area?: number | null
+          total_spent?: number | null
+          total_units?: number | null
+          updated_at?: string | null
+          wafi_number?: string | null
+        }
+        Update: {
+          actual_completion?: string | null
+          city?: string | null
+          code?: string | null
+          company_id?: string
+          construction_cost?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          district?: string | null
+          escrow_account?: string | null
+          expected_completion?: string | null
+          id?: string
+          image_url?: string | null
+          land_area?: number | null
+          land_cost?: number | null
+          license_number?: string | null
+          location?: string | null
+          manager_name?: string | null
+          name?: string
+          notes?: string | null
+          progress_percentage?: number | null
+          project_type?: string | null
+          start_date?: string | null
+          status?: string | null
+          total_budget?: number | null
+          total_built_area?: number | null
+          total_spent?: number | null
+          total_units?: number | null
+          updated_at?: string | null
+          wafi_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_projects_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      re_units: {
+        Row: {
+          area: number | null
+          bathrooms: number | null
+          building_number: string | null
+          company_id: string
+          contract_number: string | null
+          cost: number | null
+          created_at: string | null
+          customer_id: string | null
+          deed_number: string | null
+          features: Json | null
+          floor_number: number | null
+          id: string
+          images: Json | null
+          notes: string | null
+          payment_plan: string | null
+          price: number | null
+          project_id: string
+          reservation_amount: number | null
+          reservation_date: string | null
+          rett_amount: number | null
+          rett_paid: boolean | null
+          rooms: number | null
+          sakani_eligible: boolean | null
+          sale_date: string | null
+          sale_price: number | null
+          status: string | null
+          unit_number: string
+          unit_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          area?: number | null
+          bathrooms?: number | null
+          building_number?: string | null
+          company_id: string
+          contract_number?: string | null
+          cost?: number | null
+          created_at?: string | null
+          customer_id?: string | null
+          deed_number?: string | null
+          features?: Json | null
+          floor_number?: number | null
+          id?: string
+          images?: Json | null
+          notes?: string | null
+          payment_plan?: string | null
+          price?: number | null
+          project_id: string
+          reservation_amount?: number | null
+          reservation_date?: string | null
+          rett_amount?: number | null
+          rett_paid?: boolean | null
+          rooms?: number | null
+          sakani_eligible?: boolean | null
+          sale_date?: string | null
+          sale_price?: number | null
+          status?: string | null
+          unit_number: string
+          unit_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          area?: number | null
+          bathrooms?: number | null
+          building_number?: string | null
+          company_id?: string
+          contract_number?: string | null
+          cost?: number | null
+          created_at?: string | null
+          customer_id?: string | null
+          deed_number?: string | null
+          features?: Json | null
+          floor_number?: number | null
+          id?: string
+          images?: Json | null
+          notes?: string | null
+          payment_plan?: string | null
+          price?: number | null
+          project_id?: string
+          reservation_amount?: number | null
+          reservation_date?: string | null
+          rett_amount?: number | null
+          rett_paid?: boolean | null
+          rooms?: number | null
+          sakani_eligible?: boolean | null
+          sale_date?: string | null
+          sale_price?: number | null
+          status?: string | null
+          unit_number?: string
+          unit_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_units_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_units_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_units_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_units_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "re_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      re_work_orders: {
+        Row: {
+          actual_end_date: string | null
+          company_id: string
+          contract_amount: number | null
+          contractor_id: string
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          order_number: string | null
+          paid_amount: number | null
+          phase_id: string | null
+          project_id: string
+          retention_amount: number | null
+          retention_percentage: number | null
+          start_date: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          work_type: string | null
+        }
+        Insert: {
+          actual_end_date?: string | null
+          company_id: string
+          contract_amount?: number | null
+          contractor_id: string
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          order_number?: string | null
+          paid_amount?: number | null
+          phase_id?: string | null
+          project_id: string
+          retention_amount?: number | null
+          retention_percentage?: number | null
+          start_date?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          work_type?: string | null
+        }
+        Update: {
+          actual_end_date?: string | null
+          company_id?: string
+          contract_amount?: number | null
+          contractor_id?: string
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          order_number?: string | null
+          paid_amount?: number | null
+          phase_id?: string | null
+          project_id?: string
+          retention_amount?: number | null
+          retention_percentage?: number | null
+          start_date?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          work_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_work_orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_work_orders_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "re_contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_work_orders_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "re_project_phases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_work_orders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "re_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recruitment_candidates: {
         Row: {
           applied_at: string | null
