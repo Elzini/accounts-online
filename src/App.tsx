@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,15 +13,17 @@ import { NetworkStatusIndicator } from "@/components/pwa/NetworkStatusIndicator"
 import { useCartSync } from "@/hooks/useCartSync";
 import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
-import Index from "./pages/Index";
-import AuthChoice from "./pages/AuthChoice";
-import Auth from "./pages/Auth";
-import SuperAdminAuth from "./pages/SuperAdminAuth";
-import Register from "./pages/Register";
-import Companies from "./pages/Companies";
-import Install from "./pages/Install";
-import NotFound from "./pages/NotFound";
-import RamadanGreeting from "./pages/RamadanGreeting";
+
+// Lazy load heavy pages
+const Index = lazy(() => import("./pages/Index"));
+const AuthChoice = lazy(() => import("./pages/AuthChoice"));
+const Auth = lazy(() => import("./pages/Auth"));
+const SuperAdminAuth = lazy(() => import("./pages/SuperAdminAuth"));
+const Register = lazy(() => import("./pages/Register"));
+const Companies = lazy(() => import("./pages/Companies"));
+const Install = lazy(() => import("./pages/Install"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const RamadanGreeting = lazy(() => import("./pages/RamadanGreeting"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -36,9 +38,12 @@ const queryClient = new QueryClient({
 function LoadingSpinner() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-muted-foreground">جاري التحميل...</p>
+      <div className="text-center space-y-4">
+        <div className="relative w-16 h-16 mx-auto">
+          <div className="absolute inset-0 border-4 border-muted rounded-full"></div>
+          <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <p className="text-muted-foreground text-sm font-medium">جاري التحميل...</p>
       </div>
     </div>
   );
@@ -125,9 +130,10 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   useCartSync();
   return (
-    <Routes>
-      <Route 
-        path="/" 
+    <Suspense fallback={<LoadingSpinner />}>
+      <Routes>
+        <Route 
+          path="/" 
         element={
           <CompanyRoute>
             <Index />
@@ -177,7 +183,8 @@ function AppRoutes() {
       <Route path="/install" element={<Install />} />
       <Route path="/ramadan" element={<RamadanGreeting />} />
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
 
