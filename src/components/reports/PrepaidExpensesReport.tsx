@@ -265,7 +265,7 @@ export function PrepaidExpensesReport() {
                   filteredExpenses.map((exp: any, idx: number) => {
                     const progress = exp.total_amount > 0 ? (exp.amortized_amount / exp.total_amount) * 100 : 0;
                     const isExpanded = expandedRows.has(exp.id);
-                    const schedule = isExpanded ? generateMonthlySchedule(exp) : [];
+                    const schedule = isExpanded ? generateMonthlySchedule(exp).filter(m => monthFilter === 'all' ? true : m.status === monthFilter) : [];
                     return (
                       <>
                         <TableRow key={exp.id} className="cursor-pointer hover:bg-muted/50 bg-primary/5 font-semibold" onClick={() => toggleRow(exp.id)}>
