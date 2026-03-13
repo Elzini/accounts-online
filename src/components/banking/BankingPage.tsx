@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { useBankAccounts, useBankStatements, useBankTransactions, useBankReconciliations, useAddBankAccount, useImportBankStatement, useUpdateBankStatement, useDeleteBankStatement, useMatchTransaction, useCreateBankReconciliation } from '@/hooks/useBanking';
+import { useBankAccounts, useBankStatements, useBankTransactions, useBankReconciliations, useAddBankAccount, useUpdateBankAccount, useDeleteBankAccount, useImportBankStatement, useUpdateBankStatement, useDeleteBankStatement, useMatchTransaction, useCreateBankReconciliation } from '@/hooks/useBanking';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAccounts } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
