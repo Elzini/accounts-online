@@ -11,7 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAccounts, useAddAccount, useUpdateAccount, useDeleteAccount, useCreateDefaultAccounts } from '@/hooks/useAccounting';
 import { toast } from 'sonner';
-import { Loader2, Plus, Edit, Trash2, RefreshCw, Search, ChevronDown, ChevronRight, Folder, FolderOpen, FileText, TreesIcon } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, RefreshCw, Search, ChevronDown, ChevronRight, Folder, FolderOpen, FileText, TreesIcon, FileSpreadsheet } from 'lucide-react';
+import { exportRealEstateCOAToExcel } from '@/utils/exportRealEstateCOA';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { AccountCategory, AccountType } from '@/services/accounting';
 import { cn } from '@/lib/utils';
@@ -359,6 +360,10 @@ export function ChartOfAccountsPage() {
           <p className="text-muted-foreground">{t.coa_subtitle} • {accounts.length} {t.acc_account}</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={exportRealEstateCOAToExcel}>
+            <FileSpreadsheet className="w-4 h-4 ml-2" />
+            تصدير Excel
+          </Button>
           {accounts.length === 0 && (
             <Button variant="outline" onClick={handleCreateDefaults} disabled={createDefaultAccounts.isPending}>
               {createDefaultAccounts.isPending ? (
