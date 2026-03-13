@@ -179,7 +179,7 @@ export function TrialBalancePreviewDialog({
                 <tr class="total-row"><td>مجمل الربح / (الخسارة)</td><td class="text-left">${formatCurrency(calculations.grossProfit)}</td></tr>
                 <tr class="sub-header"><td colspan="2">المصاريف التشغيلية:</td></tr>
                 ${Object.entries(data.expenses).map(([name, amount]) => `
-                  <tr><td class="indent">- ${name}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
+                  <tr><td class="indent">- ${escapeHtml(name)}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
                 `).join('')}
                 <tr><td class="text-red">إجمالي المصاريف التشغيلية</td><td class="text-left text-red">(${formatCurrency(calculations.totalExpenses)})</td></tr>
                 <tr class="total-row bg-primary">
