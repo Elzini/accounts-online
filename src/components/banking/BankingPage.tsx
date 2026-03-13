@@ -15,7 +15,7 @@ import { useBankAccounts, useBankStatements, useBankTransactions, useBankReconci
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAccounts } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
-import { parseBankStatementCSV } from '@/services/banking';
+import { parseBankStatementFile } from '@/services/bankStatementParser';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function BankingPage() {
