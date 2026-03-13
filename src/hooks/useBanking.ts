@@ -88,6 +88,28 @@ export function useImportBankStatement() {
   });
 }
 
+export function useUpdateBankStatement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: { statement_date?: string; notes?: string; file_name?: string } }) =>
+      updateBankStatement(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bankStatements'] });
+    },
+  });
+}
+
+export function useDeleteBankStatement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteBankStatement,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bankStatements'] });
+      queryClient.invalidateQueries({ queryKey: ['bankTransactions'] });
+    },
+  });
+}
+
 // Bank Transactions Hooks
 export function useBankTransactions(statementId: string) {
   return useQuery({
