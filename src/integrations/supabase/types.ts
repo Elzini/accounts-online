@@ -14517,6 +14517,10 @@ export type Database = {
         }
         Returns: string
       }
+      create_real_estate_accounts: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       create_tenant_db_role: { Args: { p_company_id: string }; Returns: string }
       create_tenant_schema: {
         Args: { p_company_id: string }
