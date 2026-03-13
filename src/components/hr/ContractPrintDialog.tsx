@@ -127,8 +127,13 @@ export function ContractPrintDialog({ open, onOpenChange, contract }: ContractPr
                   </div>
                 </div>
                 <div className="text-left text-sm text-blue-100">
-                  <div>{company?.name || ''}</div>
-                  <div>تاريخ الطباعة: {currentDate}</div>
+                  <div className="font-bold text-white text-base">{taxSettings?.company_name_ar || company?.name || ''}</div>
+                  {taxSettings?.tax_number && <div>الرقم الضريبي: {taxSettings.tax_number}</div>}
+                  {taxSettings?.commercial_register && <div>السجل التجاري: {taxSettings.commercial_register}</div>}
+                  {taxSettings?.national_address && <div>العنوان: {taxSettings.national_address}</div>}
+                  {taxSettings?.city && <div>المدينة: {taxSettings.city}</div>}
+                  {company?.phone && <div>هاتف: {company.phone}</div>}
+                  <div className="mt-1">تاريخ الطباعة: {currentDate}</div>
                 </div>
               </div>
             </div>
