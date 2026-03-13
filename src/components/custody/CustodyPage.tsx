@@ -194,6 +194,8 @@ export function CustodyPage() {
                   <TableHead className="text-right">{t.custody_name}</TableHead>
                   <TableHead className="text-right">{t.custody_recipient}</TableHead>
                   <TableHead className="text-right">{t.amount}</TableHead>
+                  <TableHead className="text-right">مبلغ التعديل</TableHead>
+                  <TableHead className="text-right">الإجمالي بعد التعديل</TableHead>
                   <TableHead className="text-right">{t.custody_spent}</TableHead>
                   <TableHead className="text-right">{t.custody_remaining}</TableHead>
                   <TableHead className="text-right">{t.date}</TableHead>
@@ -204,6 +206,9 @@ export function CustodyPage() {
               <TableBody>
                 {custodies.map((custody) => {
                   const summary = calculateCustodySummary(custody);
+                  const netChange = netChangesByCustody[custody.id] || 0;
+                  const hasChanges = netChange !== 0;
+                  const originalAmount = hasChanges ? (Number(custody.custody_amount) - netChange) : Number(custody.custody_amount);
                   return (
                     <TableRow key={custody.id}>
                       <TableCell className="font-medium">#{custody.custody_number}</TableCell>
@@ -215,7 +220,17 @@ export function CustodyPage() {
                       </TableCell>
                       <TableCell>{custody.custody_name}</TableCell>
                       <TableCell>{custody.employee?.name || '-'}</TableCell>
-                      <TableCell>{formatNumber(custody.custody_amount)} {currency}</TableCell>
+                      <TableCell>{formatNumber(originalAmount)} {currency}</TableCell>
+                      <TableCell>
+                        {hasChanges ? (
+                          <span className={netChange > 0 ? 'text-green-600' : 'text-destructive'}>
+                            {netChange > 0 ? '+' : ''}{formatNumber(netChange)} {currency}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-semibold">{formatNumber(custody.custody_amount)} {currency}</TableCell>
                       <TableCell className="text-destructive">{formatNumber(summary.totalSpent)} {currency}</TableCell>
                       <TableCell className="text-green-600 font-semibold">{formatNumber(summary.returnedAmount)} {currency}</TableCell>
                       <TableCell>{new Date(custody.custody_date).toLocaleDateString(locale)}</TableCell>
