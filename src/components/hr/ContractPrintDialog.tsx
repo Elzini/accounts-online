@@ -260,11 +260,66 @@ export function ContractPrintDialog({ open, onOpenChange, contract }: ContractPr
               </table>
             </div>
 
+            {/* Contract Terms - Saudi Labor Law */}
+            <div className="p-6 border-b">
+              <h3 className="text-lg font-bold mb-4 text-gray-700 border-b pb-2">بنود وشروط العقد</h3>
+              <div className="space-y-3 text-sm text-gray-700 leading-relaxed">
+                <div className="flex gap-2">
+                  <span className="font-bold text-blue-600 shrink-0">البند الأول:</span>
+                  <span>يعمل الطرف الثاني ({contract.employee_name}) لدى الطرف الأول ({taxSettings?.company_name_ar || company?.name || '___'}) بوظيفة ({contract.position || '___'}) وذلك اعتباراً من تاريخ {contract.start_date || '___'}.</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="font-bold text-blue-600 shrink-0">البند الثاني:</span>
+                  <span>مدة هذا العقد {contract.duration_type === 'duration' ? `(${contract.duration_value} ${durationUnitLabels[contract.duration_unit] || contract.duration_unit})` : contract.end_date ? `حتى تاريخ ${contract.end_date}` : 'غير محددة المدة'}{contract.auto_renew ? '، ويتجدد تلقائياً لمدة مماثلة ما لم يُخطر أحد الطرفين الآخر بعدم رغبته في التجديد قبل انتهاء العقد بمدة لا تقل عن ثلاثين يوماً.' : '.'}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="font-bold text-blue-600 shrink-0">البند الثالث:</span>
+                  <span>تُعتبر الأشهر الثلاثة الأولى من تاريخ مباشرة العمل ({contract.join_date || contract.start_date || '___'}) فترة تجربة{contract.probation_end_date ? ` تنتهي بتاريخ ${contract.probation_end_date}` : ''}، يحق لأي من الطرفين إنهاء العقد خلالها دون مكافأة أو تعويض.</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="font-bold text-blue-600 shrink-0">البند الرابع:</span>
+                  <span>يتقاضى الطرف الثاني راتباً شهرياً إجمالياً قدره ({formatNumber(salary + housing + transport)} {contract.currency || 'SAR'}) يشمل: الراتب الأساسي ({formatNumber(salary)} {contract.currency || 'SAR'}){housing > 0 ? `، بدل السكن (${formatNumber(housing)} ${contract.currency || 'SAR'})` : ''}{transport > 0 ? `، بدل النقل (${formatNumber(transport)} ${contract.currency || 'SAR'})` : ''}، يُصرف في نهاية كل شهر ميلادي.</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="font-bold text-blue-600 shrink-0">البند الخامس:</span>
+                  <span>يلتزم الطرف الثاني بأداء العمل المتفق عليه بنفسه وأن يبذل في تأديته العناية اللازمة، وأن يأتمر بأوامر صاحب العمل المتعلقة بتنفيذ العمل المتفق عليه وفقاً لأحكام نظام العمل السعودي.</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="font-bold text-blue-600 shrink-0">البند السادس:</span>
+                  <span>يحق للطرف الأول تكليف الطرف الثاني بأداء عمله في أي من فروع المنشأة أو الأماكن التابعة لها داخل المملكة العربية السعودية.</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="font-bold text-blue-600 shrink-0">البند السابع:</span>
+                  <span>يستحق الطرف الثاني إجازة سنوية مدفوعة الأجر لا تقل عن واحد وعشرين (21) يوماً، تُزاد إلى ثلاثين (30) يوماً إذا أمضى خمس سنوات متصلة في خدمة صاحب العمل، وفقاً لنظام العمل السعودي.</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="font-bold text-blue-600 shrink-0">البند الثامن:</span>
+                  <span>يلتزم الطرف الثاني بالمحافظة على أسرار العمل والمعلومات السرية التي يطلع عليها بحكم عمله، وعدم إفشائها أثناء سريان العقد أو بعد انتهائه.</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="font-bold text-blue-600 shrink-0">البند التاسع:</span>
+                  <span>يلتزم الطرف الأول بتوفير بيئة عمل آمنة وصحية للطرف الثاني وفقاً للأنظمة واللوائح المعمول بها في المملكة العربية السعودية.</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="font-bold text-blue-600 shrink-0">البند العاشر:</span>
+                  <span>يستحق الطرف الثاني مكافأة نهاية الخدمة وفقاً لأحكام نظام العمل السعودي عند انتهاء العقد.</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="font-bold text-blue-600 shrink-0">البند الحادي عشر:</span>
+                  <span>فيما لم يرد بشأنه نص في هذا العقد، تُطبق أحكام نظام العمل السعودي ولوائحه التنفيذية.</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="font-bold text-blue-600 shrink-0">البند الثاني عشر:</span>
+                  <span>حُرر هذا العقد من نسختين أصليتين، بيد كل طرف نسخة للعمل بموجبها{contract.signing_date ? `، وذلك بتاريخ ${contract.signing_date}` : ''}.</span>
+                </div>
+              </div>
+            </div>
+
             {/* Description */}
             {contract.description && (
               <div className="px-6 py-4 border-b">
                 <div className="bg-gray-50 rounded-lg p-4 border-r-4 border-blue-500">
-                  <div className="font-bold mb-2 text-gray-700">وصف العقد:</div>
+                  <div className="font-bold mb-2 text-gray-700">ملاحظات إضافية:</div>
                   <div className="text-gray-600 text-sm">{contract.description}</div>
                 </div>
               </div>
