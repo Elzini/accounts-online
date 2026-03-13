@@ -361,6 +361,12 @@ export function Sidebar({
     { id: 'employee-contracts' as ActivePage, label: language === 'ar' ? 'عقود الموظفين' : 'Employee Contracts', icon: FileSignature },
   ];
 
+  const expensesItems: MenuItem[] = [
+    { id: 'expenses' as ActivePage, label: language === 'ar' ? 'المصروفات' : 'Expenses', icon: Wallet, permission: 'purchases' },
+    { id: 'prepaid-expenses' as ActivePage, label: s(settings?.prepaid_expenses_title, t.nav_prepaid_expenses), icon: Clock, permission: 'purchases' },
+    { id: 'cost-centers' as ActivePage, label: t.nav_cost_centers, icon: Target },
+  ];
+
   const systemMenuItems: MenuItem[] = [
     { id: 'users-management' as ActivePage, label: s(settings?.users_management_title, t.nav_users_management), icon: UserCog },
     { id: 'field-level-security' as ActivePage, label: language === 'ar' ? 'صلاحيات الحقول' : 'Field Security', icon: Shield, permission: 'admin' },
