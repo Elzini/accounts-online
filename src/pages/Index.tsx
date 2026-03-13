@@ -420,16 +420,10 @@ const Index = () => {
       case 'developer-api': return <DeveloperApiPage />;
       // New modules
       case 'ecommerce': return <EcommercePage />;
-      case 'email-marketing': return <EmailMarketingPage />;
       case 'helpdesk': return <HelpdeskPage />;
       case 'cms': return <CMSPage />;
       // Odoo-parity modules
       case 'pos': return <POSPage />;
-      case 'recruitment': return <RecruitmentPage />;
-      case 'appraisals': return <AppraisalsPage />;
-      case 'fleet': return <FleetPage />;
-      case 'maintenance': return <MaintenancePage />;
-      case 'quality-control': return <QualityControlPage />;
       case 'sms-marketing': return <SmsMarketingPage />;
       case 'social-marketing': return <SocialMarketingPage />;
       case 'events': return <EventsPage />;
