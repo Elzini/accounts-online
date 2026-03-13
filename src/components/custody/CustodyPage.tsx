@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, FileText, Download, Wallet, CheckCircle, Clock, AlertCircle, Banknote, History } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +18,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import ExcelJS from 'exceljs';
 import { toast } from 'sonner';
 
+
+
 export function CustodyPage() {
   const { t, language } = useLanguage();
   const { custodies, isLoading, deleteCustody, isDeleting } = useCustody();
@@ -24,6 +28,31 @@ export function CustodyPage() {
   const [settlementCustodyId, setSettlementCustodyId] = useState<string | null>(null);
   const [amountChangesCustody, setAmountChangesCustody] = useState<{ id: string; name: string } | null>(null);
   const currency = language === 'ar' ? 'ر.س' : 'SAR';
+
+  // Fetch all amount changes for all custodies
+  const custodyIds = custodies.map(c => c.id);
+  const { data: allAmountChanges = [] } = useQuery({
+    queryKey: ['all-custody-amount-changes', custodyIds],
+    queryFn: async () => {
+      if (custodyIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from('custody_amount_changes')
+        .select('custody_id, change_amount')
+        .in('custody_id', custodyIds);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: custodyIds.length > 0,
+  });
+
+  // Pre-compute net changes per custody
+  const netChangesByCustody = useMemo(() => {
+    const map: Record<string, number> = {};
+    allAmountChanges.forEach((c: any) => {
+      map[c.custody_id] = (map[c.custody_id] || 0) + (c.change_amount || 0);
+    });
+    return map;
+  }, [allAmountChanges]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -165,6 +194,8 @@ export function CustodyPage() {
                   <TableHead className="text-right">{t.custody_name}</TableHead>
                   <TableHead className="text-right">{t.custody_recipient}</TableHead>
                   <TableHead className="text-right">{t.amount}</TableHead>
+                  <TableHead className="text-right">مبلغ التعديل</TableHead>
+                  <TableHead className="text-right">الإجمالي بعد التعديل</TableHead>
                   <TableHead className="text-right">{t.custody_spent}</TableHead>
                   <TableHead className="text-right">{t.custody_remaining}</TableHead>
                   <TableHead className="text-right">{t.date}</TableHead>
@@ -175,6 +206,9 @@ export function CustodyPage() {
               <TableBody>
                 {custodies.map((custody) => {
                   const summary = calculateCustodySummary(custody);
+                  const netChange = netChangesByCustody[custody.id] || 0;
+                  const hasChanges = netChange !== 0;
+                  const originalAmount = hasChanges ? (Number(custody.custody_amount) - netChange) : Number(custody.custody_amount);
                   return (
                     <TableRow key={custody.id}>
                       <TableCell className="font-medium">#{custody.custody_number}</TableCell>
@@ -186,7 +220,17 @@ export function CustodyPage() {
                       </TableCell>
                       <TableCell>{custody.custody_name}</TableCell>
                       <TableCell>{custody.employee?.name || '-'}</TableCell>
-                      <TableCell>{formatNumber(custody.custody_amount)} {currency}</TableCell>
+                      <TableCell>{formatNumber(originalAmount)} {currency}</TableCell>
+                      <TableCell>
+                        {hasChanges ? (
+                          <span className={netChange > 0 ? 'text-green-600' : 'text-destructive'}>
+                            {netChange > 0 ? '+' : ''}{formatNumber(netChange)} {currency}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-semibold">{formatNumber(custody.custody_amount)} {currency}</TableCell>
                       <TableCell className="text-destructive">{formatNumber(summary.totalSpent)} {currency}</TableCell>
                       <TableCell className="text-green-600 font-semibold">{formatNumber(summary.returnedAmount)} {currency}</TableCell>
                       <TableCell>{new Date(custody.custody_date).toLocaleDateString(locale)}</TableCell>
