@@ -116,27 +116,31 @@ export function parseExcel(arrayBuffer: ArrayBuffer): ParsedTransaction[] {
 
 /**
  * Parse PDF/complex files using AI
+ * For Excel files, converts to CSV text first for better AI parsing
  */
-export async function parseWithAI(file: File): Promise<ParsedTransaction[]> {
-  // Read file content as base64 for PDF, or text for others
-  const content = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    if (file.type === 'application/pdf') {
+export async function parseWithAI(file: File, excelCsvFallback?: string): Promise<ParsedTransaction[]> {
+  let content: string;
+  let fileType = file.type;
+
+  if (excelCsvFallback) {
+    // If we have Excel content converted to CSV, send that instead of binary
+    content = excelCsvFallback;
+    fileType = 'text/csv';
+  } else {
+    // Read file content as base64
+    content = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
       reader.onload = (e) => resolve(e.target?.result as string);
       reader.onerror = reject;
-      reader.readAsDataURL(file); // base64
-    } else {
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = reject;
-      reader.readAsText(file);
-    }
-  });
+      reader.readAsDataURL(file); // always base64
+    });
+  }
 
   const { data, error } = await supabase.functions.invoke('parse-bank-statement', {
     body: {
       fileContent: content,
       fileName: file.name,
-      fileType: file.type,
+      fileType: fileType,
     },
   });
 
@@ -163,12 +167,22 @@ export async function parseBankStatementFile(file: File): Promise<{ transactions
   }
   
   if (ext === 'xlsx' || ext === 'xls') {
-    const buffer = await file.arrayBuffer();
-    const transactions = parseExcel(buffer);
-    if (transactions.length > 0) return { transactions, method: 'excel' };
-    // Fallback to AI
-    const aiTransactions = await parseWithAI(file);
-    return { transactions: aiTransactions, method: 'ai' };
+    try {
+      const buffer = await file.arrayBuffer();
+      const transactions = parseExcel(buffer);
+      if (transactions.length > 0) return { transactions, method: 'excel' };
+      
+      // Fallback to AI - convert Excel to CSV text first
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const csvText = XLSX.utils.sheet_to_csv(sheet);
+      const aiTransactions = await parseWithAI(file, csvText);
+      return { transactions: aiTransactions, method: 'ai' };
+    } catch {
+      // If xlsx parsing completely fails, try AI with base64
+      const aiTransactions = await parseWithAI(file);
+      return { transactions: aiTransactions, method: 'ai' };
+    }
   }
   
   if (ext === 'pdf') {
