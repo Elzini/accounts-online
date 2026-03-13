@@ -47,7 +47,8 @@ export function useUpsertTaxSettings() {
       if (!companyId) throw new Error('Company ID required');
       return upsertTaxSettings(companyId, settings);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(['tax-settings', companyId], data);
       queryClient.invalidateQueries({ queryKey: ['tax-settings', companyId] });
     },
   });

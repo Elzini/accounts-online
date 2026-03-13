@@ -14,7 +14,7 @@ export function TaxSettingsPage() {
   const { t, direction } = useLanguage();
   const { data: taxSettings, isLoading } = useTaxSettings();
   const upsertTaxSettings = useUpsertTaxSettings();
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isQuickSaving, setIsQuickSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     tax_name: 'ضريبة القيمة المضافة',
@@ -31,29 +31,31 @@ export function TaxSettingsPage() {
     building_number: '',
   });
 
+  const mapToFormData = (settings: any) => ({
+    tax_name: settings.tax_name,
+    tax_rate: settings.tax_rate,
+    is_active: settings.is_active,
+    apply_to_sales: settings.apply_to_sales,
+    apply_to_purchases: settings.apply_to_purchases,
+    tax_number: settings.tax_number || '',
+    company_name_ar: settings.company_name_ar || '',
+    national_address: settings.national_address || '',
+    commercial_register: settings.commercial_register || '',
+    city: settings.city || '',
+    postal_code: settings.postal_code || '',
+    building_number: settings.building_number || '',
+  });
+
   useEffect(() => {
-    if (taxSettings && !isInitialized) {
-      setFormData({
-        tax_name: taxSettings.tax_name,
-        tax_rate: taxSettings.tax_rate,
-        is_active: taxSettings.is_active,
-        apply_to_sales: taxSettings.apply_to_sales,
-        apply_to_purchases: taxSettings.apply_to_purchases,
-        tax_number: taxSettings.tax_number || '',
-        company_name_ar: taxSettings.company_name_ar || '',
-        national_address: taxSettings.national_address || '',
-        commercial_register: taxSettings.commercial_register || '',
-        city: taxSettings.city || '',
-        postal_code: taxSettings.postal_code || '',
-        building_number: taxSettings.building_number || '',
-      });
-      setIsInitialized(true);
+    if (taxSettings) {
+      setFormData(mapToFormData(taxSettings));
     }
-  }, [taxSettings, isInitialized]);
+  }, [taxSettings]);
 
   const handleSave = async () => {
     try {
-      await upsertTaxSettings.mutateAsync(formData);
+      const saved = await upsertTaxSettings.mutateAsync(formData);
+      setFormData(mapToFormData(saved));
       toast.success(t.tax_saved);
     } catch (error) {
       toast.error(t.tax_save_error);
