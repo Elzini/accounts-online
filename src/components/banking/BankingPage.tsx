@@ -27,6 +27,8 @@ export function BankingPage() {
   const { data: accounts = [] } = useAccounts();
   
   const addBankAccount = useAddBankAccount();
+  const updateBankAccount = useUpdateBankAccount();
+  const deleteBankAccount = useDeleteBankAccount();
   const importStatement = useImportBankStatement();
   const updateStatement = useUpdateBankStatement();
   const deleteStatement = useDeleteBankStatement();
