@@ -114,15 +114,12 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   { id: 'bookkeeping-service', label: 'مسك الدفاتر', labelEn: 'Bookkeeping', section: 'العمليات', sectionEn: 'Operations', icon: 'BookMarked', keywords: ['دفاتر', 'bookkeeping'] },
   { id: 'subscriptions', label: 'الاشتراكات', labelEn: 'Subscriptions', section: 'العمليات', sectionEn: 'Operations', icon: 'RefreshCw', keywords: ['اشتراك', 'subscription'] },
   { id: 'payment-gateway', label: 'بوابة الدفع', labelEn: 'Payment Gateway', section: 'العمليات', sectionEn: 'Operations', icon: 'Link2', keywords: ['دفع', 'بوابة دفع', 'payment'] },
-  { id: 'fleet', label: 'إدارة الأسطول', labelEn: 'Fleet Management', section: 'العمليات', sectionEn: 'Operations', icon: 'Car', keywords: ['أسطول', 'مركبة', 'سيارات', 'fleet', 'vehicle'] },
-  { id: 'maintenance', label: 'الصيانة', labelEn: 'Maintenance', section: 'العمليات', sectionEn: 'Operations', icon: 'Hammer', keywords: ['صيانة', 'maintenance'] },
-  { id: 'quality-control', label: 'مراقبة الجودة', labelEn: 'Quality Control', section: 'العمليات', sectionEn: 'Operations', icon: 'SquareCheck', keywords: ['جودة', 'فحص', 'quality'] },
   { id: 'field-service', label: 'خدمة ميدانية', labelEn: 'Field Service', section: 'العمليات', sectionEn: 'Operations', icon: 'MapPinned', keywords: ['ميداني', 'فني', 'field'] },
   { id: 'helpdesk', label: 'الدعم الفني', labelEn: 'Helpdesk', section: 'العمليات', sectionEn: 'Operations', icon: 'Headphones', keywords: ['دعم', 'مساعدة', 'support', 'helpdesk'] },
   { id: 'appointments', label: 'حجز المواعيد', labelEn: 'Appointments', section: 'العمليات', sectionEn: 'Operations', icon: 'CalendarCheck', keywords: ['موعد', 'مواعيد', 'appointment'] },
 
   // === التسويق / Marketing ===
-  { id: 'email-marketing', label: 'حملات البريد', labelEn: 'Email Marketing', section: 'التسويق', sectionEn: 'Marketing', icon: 'Mail', keywords: ['بريد', 'إيميل', 'email', 'حملة'] },
+  
   { id: 'sms-marketing', label: 'رسائل SMS', labelEn: 'SMS Marketing', section: 'التسويق', sectionEn: 'Marketing', icon: 'Phone', keywords: ['رسالة', 'sms', 'رسائل'] },
   { id: 'social-marketing', label: 'وسائل التواصل', labelEn: 'Social Marketing', section: 'التسويق', sectionEn: 'Marketing', icon: 'Share2', keywords: ['تواصل', 'اجتماعي', 'social'] },
   { id: 'events', label: 'إدارة الفعاليات', labelEn: 'Events', section: 'التسويق', sectionEn: 'Marketing', icon: 'PartyPopper', keywords: ['فعالية', 'حدث', 'event'] },

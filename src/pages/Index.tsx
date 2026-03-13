@@ -136,15 +136,6 @@ import { MobileInventoryPage } from '@/components/mobile-inventory/MobileInvento
 import { MobileInvoiceReaderPage } from '@/components/mobile-invoice/MobileInvoiceReaderPage';
 import { DeveloperApiPage } from '@/components/developer-api/DeveloperApiPage';
 import { EcommercePage } from '@/components/ecommerce/EcommercePage';
-import { EmailMarketingPage } from '@/components/email-marketing/EmailMarketingPage';
-import { HelpdeskPage } from '@/components/helpdesk/HelpdeskPage';
-import { CMSPage } from '@/components/cms/CMSPage';
-import { POSPage } from '@/components/pos/POSPage';
-import { RecruitmentPage } from '@/components/recruitment/RecruitmentPage';
-import { AppraisalsPage } from '@/components/appraisals/AppraisalsPage';
-import { FleetPage } from '@/components/fleet/FleetPage';
-import { MaintenancePage } from '@/components/maintenance/MaintenancePage';
-import { QualityControlPage } from '@/components/quality/QualityControlPage';
 import { SmsMarketingPage } from '@/components/marketing/SmsMarketingPage';
 import { SocialMarketingPage } from '@/components/marketing/SocialMarketingPage';
 import { EventsPage } from '@/components/events/EventsPage';
@@ -184,7 +175,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
-
+import { HelpdeskPage } from '@/components/helpdesk/HelpdeskPage';
+import { CMSPage } from '@/components/cms/CMSPage';
+import { POSPage } from '@/components/pos/POSPage';
 const Index = () => {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
@@ -427,16 +420,10 @@ const Index = () => {
       case 'developer-api': return <DeveloperApiPage />;
       // New modules
       case 'ecommerce': return <EcommercePage />;
-      case 'email-marketing': return <EmailMarketingPage />;
       case 'helpdesk': return <HelpdeskPage />;
       case 'cms': return <CMSPage />;
       // Odoo-parity modules
       case 'pos': return <POSPage />;
-      case 'recruitment': return <RecruitmentPage />;
-      case 'appraisals': return <AppraisalsPage />;
-      case 'fleet': return <FleetPage />;
-      case 'maintenance': return <MaintenancePage />;
-      case 'quality-control': return <QualityControlPage />;
       case 'sms-marketing': return <SmsMarketingPage />;
       case 'social-marketing': return <SocialMarketingPage />;
       case 'events': return <EventsPage />;
