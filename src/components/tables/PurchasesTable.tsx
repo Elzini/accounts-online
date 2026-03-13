@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ShoppingCart, Car, Calendar, Wallet, Building2, CreditCard, Banknote, Hash, RefreshCw, Receipt } from 'lucide-react';
+import { ShoppingCart, Car, Calendar, Wallet, Building2, CreditCard, Banknote, Hash, RefreshCw, Receipt, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -11,11 +11,13 @@ import { useCars } from '@/hooks/useDatabase';
 import { useTaxSettings } from '@/hooks/useAccounting';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useExpenses } from '@/hooks/useExpenses';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useIndustryLabels } from '@/hooks/useIndustryLabels';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PurchasesTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -23,11 +25,29 @@ interface PurchasesTableProps {
 
 export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const queryClient = useQueryClient();
-  const { companyId } = useCompany();
+  const { companyId, company } = useCompany();
+  const isCarDealership = company?.company_type === 'car_dealership';
+  const industryLabels = useIndustryLabels();
   const { data: cars = [], isLoading, refetch } = useCars();
   const { data: allExpenses = [] } = useExpenses();
   const { data: taxSettings } = useTaxSettings();
   const { selectedFiscalYear } = useFiscalYear();
+
+  // Fetch purchase invoices for non-car companies
+  const { data: purchaseInvoices = [], isLoading: invoicesLoading } = useQuery({
+    queryKey: ['purchase-invoices', companyId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('invoices')
+        .select('*, supplier:suppliers!invoices_supplier_id_fkey(id, name)')
+        .eq('company_id', companyId!)
+        .eq('invoice_type', 'purchase')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId && !isCarDealership,
+  });
 
   // Build a map of car_id -> expenses
   const carExpensesMap = useMemo(() => {
@@ -53,6 +73,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await queryClient.invalidateQueries({ queryKey: ['cars', companyId] });
+    await queryClient.invalidateQueries({ queryKey: ['purchase-invoices', companyId] });
     await refetch();
     setIsRefreshing(false);
   };
@@ -71,7 +92,6 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
 
   const calculateTaxDetails = (purchasePrice: number, carCondition?: string) => {
     const baseAmount = purchasePrice;
-    // Used cars have 0% tax on purchases
     const effectiveTaxRate = carCondition === 'used' ? 0 : taxRate;
     const taxAmount = purchasePrice * (effectiveTaxRate / 100);
     const totalWithTax = purchasePrice + taxAmount;
@@ -101,11 +121,174 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
         return <Badge className="bg-orange-500 hover:bg-orange-600 text-xs">{t.status_transferred}</Badge>;
       case 'sold':
         return <Badge variant="secondary" className="text-xs">{t.status_sold}</Badge>;
+      case 'approved':
+        return <Badge className="bg-success hover:bg-success/90 text-xs">{language === 'ar' ? 'معتمدة' : 'Approved'}</Badge>;
+      case 'draft':
+        return <Badge variant="secondary" className="text-xs">{language === 'ar' ? 'مسودة' : 'Draft'}</Badge>;
       default:
         return <Badge variant="secondary" className="text-xs">{status}</Badge>;
     }
   };
 
+  // ===== NON-CAR COMPANY: Invoice-based purchases =====
+  if (!isCarDealership) {
+    const filteredInvoices = useMemo(() => {
+      let result = purchaseInvoices;
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        result = result.filter((inv: any) =>
+          inv.invoice_number?.toLowerCase().includes(query) ||
+          inv.supplier?.name?.toLowerCase().includes(query) ||
+          inv.notes?.toLowerCase().includes(query)
+        );
+      }
+      if (statusFilter !== 'all') {
+        result = result.filter((inv: any) => inv.status === statusFilter);
+      }
+      return result;
+    }, [purchaseInvoices, searchQuery, statusFilter]);
+
+    const invoiceTotals = useMemo(() => {
+      return filteredInvoices.reduce(
+        (acc: any, inv: any) => ({
+          subtotal: acc.subtotal + (inv.subtotal || 0),
+          vat: acc.vat + (inv.vat_amount || 0),
+          total: acc.total + (inv.total || 0),
+        }),
+        { subtotal: 0, vat: 0, total: 0 }
+      );
+    }, [filteredInvoices]);
+
+    const filterOptions = [
+      { value: 'draft', label: language === 'ar' ? 'مسودة' : 'Draft' },
+      { value: 'approved', label: language === 'ar' ? 'معتمدة' : 'Approved' },
+    ];
+
+    if (isLoading || invoicesLoading) {
+      return (
+        <div className="flex items-center justify-center p-12">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{t.nav_purchases}</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">{language === 'ar' ? 'إدارة فواتير المشتريات' : 'Manage purchase invoices'}</p>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing} className="h-10 sm:h-11">
+              <RefreshCw className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'} ${isRefreshing ? 'animate-spin' : ''}`} />
+              {t.btn_refresh}
+            </Button>
+            <Button onClick={() => setActivePage('add-purchase')} className="gradient-primary hover:opacity-90 flex-1 sm:flex-initial h-10 sm:h-11">
+              <ShoppingCart className={`w-5 h-5 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+              {language === 'ar' ? 'فاتورة مشتريات جديدة' : 'New Purchase Invoice'}
+            </Button>
+          </div>
+        </div>
+
+        <SearchFilter
+          searchPlaceholder={language === 'ar' ? 'البحث برقم الفاتورة أو المورد...' : 'Search by invoice number or supplier...'}
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          filterOptions={filterOptions}
+          filterValue={statusFilter}
+          onFilterChange={setStatusFilter}
+          filterPlaceholder={t.filter_status}
+        />
+
+        <div className="bg-card rounded-xl md:rounded-2xl card-shadow overflow-hidden overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="text-right font-bold">{language === 'ar' ? 'رقم الفاتورة' : 'Invoice #'}</TableHead>
+                <TableHead className="text-right font-bold">{language === 'ar' ? 'المورد' : 'Supplier'}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_base_amount}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_tax} ({taxRate}%)</TableHead>
+                <TableHead className="text-right font-bold">{t.th_total_with_tax}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_payment_method}</TableHead>
+                <TableHead className="text-right font-bold">{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
+                <TableHead className="text-right font-bold">{t.th_status}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredInvoices.map((inv: any) => {
+                const paymentInfo = getPaymentMethodInfo(inv.payment_method);
+                const PaymentIcon = paymentInfo.icon;
+                return (
+                  <TableRow key={inv.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-primary" />
+                        {inv.invoice_number}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-semibold">{inv.supplier?.name || inv.customer_name || '-'}</TableCell>
+                    <TableCell className="font-medium">{formatCurrency(inv.subtotal || 0)} {currency}</TableCell>
+                    <TableCell className="text-orange-600 font-medium">{formatCurrency(inv.vat_amount || 0)} {currency}</TableCell>
+                    <TableCell className="font-semibold text-primary">{formatCurrency(inv.total || 0)} {currency}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <PaymentIcon className={`w-4 h-4 ${paymentInfo.color}`} />
+                        <span className={paymentInfo.color}>{paymentInfo.label}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <span>{formatDate(inv.invoice_date || inv.created_at)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(inv.status)}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+
+          {filteredInvoices.length > 0 && (
+            <div className="border-t bg-muted/30 p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-card rounded-lg p-3 border">
+                  <p className="text-sm text-muted-foreground">{t.total_base_amount}</p>
+                  <p className="text-lg font-bold text-foreground">{formatCurrency(Math.round(invoiceTotals.subtotal))} {currency}</p>
+                </div>
+                <div className="bg-card rounded-lg p-3 border">
+                  <p className="text-sm text-muted-foreground">{t.total_tax} ({taxRate}%)</p>
+                  <p className="text-lg font-bold text-orange-600">{formatCurrency(Math.round(invoiceTotals.vat))} {currency}</p>
+                </div>
+                <div className="bg-card rounded-lg p-3 border">
+                  <p className="text-sm text-muted-foreground">{t.total_purchases_with_tax}</p>
+                  <p className="text-lg font-bold text-primary">{formatCurrency(Math.round(invoiceTotals.total))} {currency}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {purchaseInvoices.length === 0 && (
+            <div className="p-12 text-center">
+              <p className="text-muted-foreground">{language === 'ar' ? 'لا توجد فواتير مشتريات' : 'No purchase invoices'}</p>
+              <Button onClick={() => setActivePage('add-purchase')} className="mt-4 gradient-primary">
+                {language === 'ar' ? 'إضافة أول فاتورة مشتريات' : 'Add First Purchase Invoice'}
+              </Button>
+            </div>
+          )}
+
+          {purchaseInvoices.length > 0 && filteredInvoices.length === 0 && (
+            <div className="p-12 text-center">
+              <p className="text-muted-foreground">{t.no_search_results}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ===== CAR DEALERSHIP: Original car-based purchases =====
   const filteredCars = useMemo(() => {
     let result = cars;
 
@@ -222,31 +405,13 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                   actions={<CarActions car={car} />}
                 />
                 <div className="space-y-1">
-                  <MobileCardRow 
-                    label={t.th_inventory_number} 
-                    value={car.inventory_number}
-                    icon={<Hash className="w-3.5 h-3.5" />}
-                  />
-                  <MobileCardRow 
-                    label={t.th_chassis_number} 
-                    value={<span dir="ltr" className="font-mono text-xs">{car.chassis_number}</span>}
-                    icon={<Car className="w-3.5 h-3.5" />}
-                  />
-                  <MobileCardRow 
-                    label={t.th_base_amount} 
-                    value={`${formatCurrency(taxDetails.baseAmount)} ${currency}`}
-                    icon={<Wallet className="w-3.5 h-3.5" />}
-                  />
+                  <MobileCardRow label={t.th_inventory_number} value={car.inventory_number} icon={<Hash className="w-3.5 h-3.5" />} />
+                  <MobileCardRow label={t.th_chassis_number} value={<span dir="ltr" className="font-mono text-xs">{car.chassis_number}</span>} icon={<Car className="w-3.5 h-3.5" />} />
+                  <MobileCardRow label={t.th_base_amount} value={`${formatCurrency(taxDetails.baseAmount)} ${currency}`} icon={<Wallet className="w-3.5 h-3.5" />} />
                   {taxRate > 0 && (
-                    <MobileCardRow 
-                      label={`${t.th_tax} (${taxRate}%)`}
-                      value={<span className="text-orange-600">{formatCurrency(taxDetails.taxAmount)} {currency}</span>}
-                    />
+                    <MobileCardRow label={`${t.th_tax} (${taxRate}%)`} value={<span className="text-orange-600">{formatCurrency(taxDetails.taxAmount)} {currency}</span>} />
                   )}
-                  <MobileCardRow 
-                    label={t.th_total_with_tax} 
-                    value={<span className="text-primary font-bold">{formatCurrency(taxDetails.totalWithTax)} {currency}</span>}
-                  />
+                  <MobileCardRow label={t.th_total_with_tax} value={<span className="text-primary font-bold">{formatCurrency(taxDetails.totalWithTax)} {currency}</span>} />
                   {(() => {
                     const carExps = carExpensesMap[car.id] || [];
                     const expTotal = getCarExpensesTotal(car.id);
@@ -266,28 +431,17 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                           }
                           icon={<Receipt className="w-3.5 h-3.5" />}
                         />
-                        <MobileCardRow 
-                          label="إجمالي التكلفة"
-                          value={<span className="text-success font-bold">{formatCurrency(taxDetails.totalWithTax + expTotal)} {currency}</span>}
-                        />
+                        <MobileCardRow label="إجمالي التكلفة" value={<span className="text-success font-bold">{formatCurrency(taxDetails.totalWithTax + expTotal)} {currency}</span>} />
                       </>
                     ) : null;
                   })()}
-                  <MobileCardRow 
-                    label={t.th_purchase_date} 
-                    value={formatDate(car.purchase_date)}
-                    icon={<Calendar className="w-3.5 h-3.5" />}
-                  />
-                  <MobileCardRow 
-                    label={t.th_payment_method} 
-                    value={<span className={paymentInfo.color}>{paymentInfo.label}</span>}
-                  />
+                  <MobileCardRow label={t.th_purchase_date} value={formatDate(car.purchase_date)} icon={<Calendar className="w-3.5 h-3.5" />} />
+                  <MobileCardRow label={t.th_payment_method} value={<span className={paymentInfo.color}>{paymentInfo.label}</span>} />
                 </div>
               </MobileCard>
             );
           })}
           
-          {/* Summary Cards */}
           {filteredCars.length > 0 && (
             <div className="grid grid-cols-1 gap-3 mt-4">
               <div className="bg-card rounded-xl p-4 border">
@@ -310,12 +464,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
           {cars.length === 0 && (
             <div className="p-8 text-center bg-card rounded-xl border">
               <p className="text-muted-foreground mb-4">{t.no_cars_in_stock}</p>
-              <Button 
-                onClick={() => setActivePage('add-purchase')}
-                className="gradient-primary"
-              >
-                {t.add_first_car}
-              </Button>
+              <Button onClick={() => setActivePage('add-purchase')} className="gradient-primary">{t.add_first_car}</Button>
             </div>
           )}
 
@@ -446,12 +595,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
           {cars.length === 0 && (
             <div className="p-12 text-center">
               <p className="text-muted-foreground">{t.no_cars_in_stock}</p>
-              <Button 
-                onClick={() => setActivePage('add-purchase')}
-                className="mt-4 gradient-primary"
-              >
-                {t.add_first_car}
-              </Button>
+              <Button onClick={() => setActivePage('add-purchase')} className="mt-4 gradient-primary">{t.add_first_car}</Button>
             </div>
           )}
 
