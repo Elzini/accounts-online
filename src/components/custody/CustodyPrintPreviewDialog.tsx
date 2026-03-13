@@ -138,32 +138,63 @@ export function CustodyPrintPreviewDialog({
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-4 gap-4 p-6 bg-gray-50 border-b">
-              <div className="bg-white rounded-lg border border-blue-200 p-4 text-center">
-                <div className="text-sm text-muted-foreground mb-1">مبلغ العهدة</div>
-                <div className="text-xl font-bold text-blue-600">
-                  {formatNumber(summary.custodyAmount)} ر.س
+            {(() => {
+              const netChanges = amountChanges.reduce((s: number, c: any) => s + (c.change_amount || 0), 0);
+              const hasChanges = amountChanges.length > 0;
+              const originalAmount = hasChanges ? (summary.custodyAmount - netChanges) : summary.custodyAmount;
+              return (
+                <div className={`grid gap-4 p-6 bg-gray-50 border-b ${hasChanges ? 'grid-cols-7' : 'grid-cols-4'}`}>
+                  {hasChanges && (
+                    <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+                      <div className="text-xs text-muted-foreground mb-1">مبلغ العهدة الأصلي</div>
+                      <div className="text-lg font-bold text-primary">
+                        {formatNumber(originalAmount)} ر.س
+                      </div>
+                    </div>
+                  )}
+                  {hasChanges && (
+                    <div className="bg-white rounded-lg border border-blue-200 p-4 text-center">
+                      <div className="text-xs text-muted-foreground mb-1">مبلغ التعديل</div>
+                      <div className={`text-lg font-bold ${netChanges > 0 ? 'text-green-600' : 'text-destructive'}`}>
+                        {netChanges > 0 ? '+' : ''}{formatNumber(netChanges)} ر.س
+                      </div>
+                    </div>
+                  )}
+                  {hasChanges && (
+                    <div className="bg-white rounded-lg border border-primary/30 p-4 text-center">
+                      <div className="text-xs text-muted-foreground mb-1">الإجمالي بعد التعديل</div>
+                      <div className="text-lg font-bold text-primary">
+                        {formatNumber(summary.custodyAmount)} ر.س
+                      </div>
+                    </div>
+                  )}
+                  <div className="bg-white rounded-lg border border-blue-200 p-4 text-center">
+                    <div className="text-xs text-muted-foreground mb-1">{hasChanges ? 'مبلغ العهدة' : 'مبلغ العهدة'}</div>
+                    <div className="text-lg font-bold text-blue-600">
+                      {formatNumber(summary.custodyAmount)} ر.س
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg border border-red-200 p-4 text-center">
+                    <div className="text-xs text-muted-foreground mb-1">إجمالي المصروفات</div>
+                    <div className="text-lg font-bold text-red-600">
+                      {formatNumber(summary.totalSpent)} ر.س
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg border border-green-200 p-4 text-center">
+                    <div className="text-xs text-muted-foreground mb-1">رصيد الخزينة الآن</div>
+                    <div className="text-lg font-bold text-green-600">
+                      {formatNumber(summary.returnedAmount)} ر.س
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg border border-orange-200 p-4 text-center">
+                    <div className="text-xs text-muted-foreground mb-1">الرصيد المرحل</div>
+                    <div className="text-lg font-bold text-orange-600">
+                      {summary.carriedBalance > 0 ? formatNumber(summary.carriedBalance) : '-'} ر.س
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="bg-white rounded-lg border border-red-200 p-4 text-center">
-                <div className="text-sm text-muted-foreground mb-1">إجمالي المصروفات</div>
-                <div className="text-xl font-bold text-red-600">
-                  {formatNumber(summary.totalSpent)} ر.س
-                </div>
-              </div>
-              <div className="bg-white rounded-lg border border-green-200 p-4 text-center">
-                <div className="text-sm text-muted-foreground mb-1">رصيد الخزينة الآن</div>
-                <div className="text-xl font-bold text-green-600">
-                  {formatNumber(summary.returnedAmount)} ر.س
-                </div>
-              </div>
-              <div className="bg-white rounded-lg border border-orange-200 p-4 text-center">
-                <div className="text-sm text-muted-foreground mb-1">الرصيد المرحل</div>
-                <div className="text-xl font-bold text-orange-600">
-                  {summary.carriedBalance > 0 ? formatNumber(summary.carriedBalance) : '-'} ر.س
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Transactions Table */}
             <div className="p-6">
