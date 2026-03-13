@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { Plus, FileText, CheckCircle, AlertTriangle, Clock, Trash2, Lock, PlusCircle, MinusCircle } from 'lucide-react';
+import { Plus, FileText, CheckCircle, AlertTriangle, Clock, Trash2, Lock, PlusCircle, MinusCircle, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
