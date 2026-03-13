@@ -202,7 +202,7 @@ export function PrepaidExpensesReport() {
                     const schedule = isExpanded ? generateMonthlySchedule(exp) : [];
                     return (
                       <>
-                        <TableRow key={exp.id} className="cursor-pointer hover:bg-muted/50" onClick={() => toggleRow(exp.id)}>
+                        <TableRow key={exp.id} className="cursor-pointer hover:bg-muted/50 bg-primary/5" onClick={() => toggleRow(exp.id)}>
                           <TableCell className="text-center">
                             {isExpanded 
                               ? <ChevronDown className="h-4 w-4 text-muted-foreground mx-auto" />
@@ -226,44 +226,26 @@ export function PrepaidExpensesReport() {
                           </TableCell>
                           <TableCell className="text-center">{getStatusBadge(exp.status)}</TableCell>
                         </TableRow>
-                        {isExpanded && (
-                          <TableRow key={`${exp.id}-schedule`}>
-                            <TableCell colSpan={12} className="p-0 bg-muted/30">
-                              <div className="p-4">
-                                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                  <BarChart3 className="h-4 w-4 text-primary" />
-                                  {isAr ? `جدول الاستهلاك الشهري - ${exp.description}` : `Monthly Amortization Schedule - ${exp.description}`}
-                                </h4>
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow className="bg-emerald-50 dark:bg-emerald-950/20">
-                                      <TableHead className="text-center w-12">#</TableHead>
-                                      <TableHead className="text-center">{isAr ? 'التاريخ' : 'Date'}</TableHead>
-                                      <TableHead className="text-center">{isAr ? 'المبلغ' : 'Amount'}</TableHead>
-                                      <TableHead className="text-center">{isAr ? 'الرصيد المتبقي' : 'Remaining Balance'}</TableHead>
-                                      <TableHead className="text-center">{isAr ? 'الحالة' : 'Status'}</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {schedule.map((month) => (
-                                      <TableRow key={month.number} className={month.status === 'consumed' ? 'bg-emerald-50/50 dark:bg-emerald-950/10' : ''}>
-                                        <TableCell className="text-center text-muted-foreground">{month.number}</TableCell>
-                                        <TableCell className="text-center">{format(month.date, 'yyyy/MM/dd')}</TableCell>
-                                        <TableCell className="text-center font-medium">{formatNumber(month.amount)} {isAr ? 'ريال' : 'SAR'}</TableCell>
-                                        <TableCell className="text-center font-semibold">
-                                          <span className={month.balance <= 0 ? 'text-emerald-600' : 'text-amber-600'}>
-                                            {formatNumber(Math.max(0, month.balance))} {isAr ? 'ريال' : 'SAR'}
-                                          </span>
-                                        </TableCell>
-                                        <TableCell className="text-center">{getMonthStatusBadge(month.status)}</TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
+                        {isExpanded && schedule.map((month) => (
+                          <TableRow key={`${exp.id}-m-${month.number}`} className={month.status === 'consumed' ? 'bg-emerald-50/50 dark:bg-emerald-950/10' : 'bg-muted/20'}>
+                            <TableCell></TableCell>
+                            <TableCell className="text-center text-muted-foreground text-xs">{month.number}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{isAr ? `الشهر ${month.number}` : `Month ${month.number}`}</TableCell>
+                            <TableCell className="text-center text-sm">{format(month.date, 'yyyy/MM/dd')}</TableCell>
+                            <TableCell></TableCell>
+                            <TableCell></TableCell>
+                            <TableCell></TableCell>
+                            <TableCell className="text-center text-sm font-medium">{formatNumber(month.amount)} {isAr ? 'ريال' : 'SAR'}</TableCell>
+                            <TableCell className="text-center text-sm text-emerald-600">{formatNumber(month.amount)}</TableCell>
+                            <TableCell className="text-center text-sm font-semibold">
+                              <span className={month.balance <= 0 ? 'text-emerald-600' : 'text-amber-600'}>
+                                {formatNumber(Math.max(0, month.balance))} {isAr ? 'ريال' : 'SAR'}
+                              </span>
                             </TableCell>
+                            <TableCell></TableCell>
+                            <TableCell className="text-center">{getMonthStatusBadge(month.status)}</TableCell>
                           </TableRow>
-                        )}
+                        ))}
                       </>
                     );
                   })
