@@ -41,6 +41,7 @@ export function PrepaidExpensesReport() {
   const { data: prepaidExpenses = [], isLoading } = usePrepaidExpenses();
   
   const [statusFilter, setStatusFilter] = useState('all');
+  const [monthFilter, setMonthFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
