@@ -245,7 +245,7 @@ export function useCustodyExport() {
 
     // Returned amount row
     const returnedRow = worksheet.getRow(currentRow);
-    returnedRow.getCell(3).value = 'المبلغ المردود';
+    returnedRow.getCell(3).value = 'رصيد الخزينة الآن';
     returnedRow.getCell(3).font = { bold: true };
     returnedRow.getCell(4).value = { formula: `MAX(0, D3-D${currentRow - 1})` };
     returnedRow.getCell(4).font = { bold: true, color: { argb: 'FF16A34A' } };

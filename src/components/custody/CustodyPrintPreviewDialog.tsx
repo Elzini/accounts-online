@@ -222,7 +222,7 @@ export function CustodyPrintPreviewDialog({
                       colSpan={3}
                       className="p-3 text-left font-bold border border-green-200"
                     >
-                      المبلغ المردود
+                      رصيد الخزينة الآن
                     </td>
                     <td className="p-3 font-bold border border-green-200 text-green-600">
                       {formatNumber(summary.returnedAmount)}

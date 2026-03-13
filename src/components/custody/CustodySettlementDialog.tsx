@@ -349,7 +349,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                   {!isSettled && <TableCell />}
                 </TableRow>
                 <TableRow className="bg-green-50">
-                  <TableCell colSpan={4} className="text-right font-bold">المبلغ المردود</TableCell>
+                  <TableCell colSpan={4} className="text-right font-bold">رصيد الخزينة الآن</TableCell>
                   <TableCell className="font-bold text-green-600">{formatNumber(summary.returnedAmount)}</TableCell>
                   {!isSettled && <TableCell />}
                 </TableRow>
