@@ -64,18 +64,25 @@ export function FloatingQuickActions({ setActivePage }: FloatingQuickActionsProp
       </div>
 
       {/* Main FAB */}
-      <Button
-        size="icon"
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "w-14 h-14 rounded-full shadow-xl transition-all duration-300",
-          isOpen
-            ? "bg-destructive hover:bg-destructive/90 rotate-45"
-            : "bg-primary hover:bg-primary/90"
+      <div className={cn("flex items-center gap-2", isAr ? "flex-row" : "flex-row-reverse")}>
+        <Button
+          size="icon"
+          onClick={() => setIsOpen(!isOpen)}
+          className={cn(
+            "w-14 h-14 rounded-full shadow-xl transition-all duration-300",
+            isOpen
+              ? "bg-destructive hover:bg-destructive/90 rotate-45"
+              : "bg-primary hover:bg-primary/90"
+          )}
+        >
+          {isOpen ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
+        </Button>
+        {!isOpen && (
+          <span className="text-xs font-semibold bg-card text-card-foreground px-3 py-2 rounded-full shadow-lg border border-border whitespace-nowrap">
+            {isAr ? 'اختصارات' : 'Shortcuts'}
+          </span>
         )}
-      >
-        {isOpen ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
-      </Button>
+      </div>
 
       {/* Backdrop */}
       {isOpen && (
