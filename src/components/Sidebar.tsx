@@ -420,7 +420,6 @@ export function Sidebar({
     { id: 'manufacturing' as ActivePage, label: t.nav_manufacturing, icon: Factory },
     { id: 'mobile-inventory' as ActivePage, label: language === 'ar' ? 'جرد بالجوال' : 'Mobile Inventory', icon: Smartphone },
     { id: 'fingerprint-devices' as ActivePage, label: language === 'ar' ? 'أجهزة البصمة' : 'Fingerprint Devices', icon: Fingerprint },
-    { id: 'employee-contracts' as ActivePage, label: language === 'ar' ? 'عقود الموظفين' : 'Employee Contracts', icon: FileSignature },
     { id: 'org-structure' as ActivePage, label: language === 'ar' ? 'الهيكل التنظيمي' : 'Org Structure', icon: GitFork },
     { id: 'work-orders' as ActivePage, label: language === 'ar' ? 'أوامر العمل' : 'Work Orders', icon: Wrench },
     { id: 'time-tracking' as ActivePage, label: language === 'ar' ? 'تتبع الوقت' : 'Time Tracking', icon: Play },
