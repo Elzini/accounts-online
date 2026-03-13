@@ -207,6 +207,32 @@ export async function importBankStatement(
   return data as BankStatement;
 }
 
+export async function updateBankStatement(id: string, updates: { statement_date?: string; notes?: string; file_name?: string }): Promise<BankStatement> {
+  const { data, error } = await supabase
+    .from('bank_statements')
+    .update(updates)
+    .eq('id', id)
+    .select(`*, bank_account:bank_accounts(id, account_name, bank_name)`)
+    .single();
+  if (error) throw error;
+  return data as BankStatement;
+}
+
+export async function deleteBankStatement(id: string): Promise<void> {
+  // Delete transactions first
+  const { error: txnError } = await supabase
+    .from('bank_transactions')
+    .delete()
+    .eq('statement_id', id);
+  if (txnError) throw txnError;
+
+  const { error } = await supabase
+    .from('bank_statements')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
 // Bank Transactions
 export async function fetchBankTransactions(statementId: string): Promise<BankTransaction[]> {
   const { data, error } = await supabase
