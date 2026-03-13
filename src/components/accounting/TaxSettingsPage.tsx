@@ -165,17 +165,35 @@ export function TaxSettingsPage() {
             </div>
             <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
               <div>
-                <Label htmlFor="apply_to_sales" className="text-base font-medium">{t.tax_apply_sales}</Label>
+                <Label htmlFor="apply_to_sales" className="text-base font-medium cursor-pointer">{t.tax_apply_sales}</Label>
                 <p className="text-sm text-muted-foreground">{t.tax_apply_sales_desc}</p>
               </div>
-              <Switch id="apply_to_sales" checked={formData.apply_to_sales} onCheckedChange={(checked) => setFormData({ ...formData, apply_to_sales: checked })} disabled={!formData.is_active} />
+              <Switch
+                id="apply_to_sales"
+                checked={formData.apply_to_sales}
+                onCheckedChange={(checked) => {
+                  const newData = { ...formData, apply_to_sales: checked };
+                  setFormData(newData);
+                  upsertTaxSettings.mutate(newData);
+                }}
+                disabled={!formData.is_active}
+              />
             </div>
             <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
               <div>
-                <Label htmlFor="apply_to_purchases" className="text-base font-medium">{t.tax_apply_purchases}</Label>
+                <Label htmlFor="apply_to_purchases" className="text-base font-medium cursor-pointer">{t.tax_apply_purchases}</Label>
                 <p className="text-sm text-muted-foreground">{t.tax_apply_purchases_desc}</p>
               </div>
-              <Switch id="apply_to_purchases" checked={formData.apply_to_purchases} onCheckedChange={(checked) => setFormData({ ...formData, apply_to_purchases: checked })} disabled={!formData.is_active} />
+              <Switch
+                id="apply_to_purchases"
+                checked={formData.apply_to_purchases}
+                onCheckedChange={(checked) => {
+                  const newData = { ...formData, apply_to_purchases: checked };
+                  setFormData(newData);
+                  upsertTaxSettings.mutate(newData);
+                }}
+                disabled={!formData.is_active}
+              />
             </div>
           </div>
           <Button onClick={handleSave} disabled={upsertTaxSettings.isPending} className="w-full">
