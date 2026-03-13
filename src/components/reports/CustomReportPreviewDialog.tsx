@@ -167,7 +167,7 @@ export function CustomReportPreviewDialog({
           <tbody>
             ${data.map(row => `
               <tr>
-                ${columns.map(col => `<td>${formatCellValue(row[col.field], col.field)}</td>`).join('')}
+                ${columns.map(col => `<td>${escapeHtml(formatCellValue(row[col.field], col.field))}</td>`).join('')}
               </tr>
             `).join('')}
           </tbody>

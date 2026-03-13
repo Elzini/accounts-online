@@ -120,7 +120,7 @@ export function PrepaidExpensesReport() {
       // Main row
       win!.document.write(`<tr class="main-row">
         <td>${idx + 1}</td>
-        <td style="text-align:right">${exp.description || ''}</td>
+        <td style="text-align:right">${escapeHtml(exp.description)}</td>
         <td>${format(new Date(exp.start_date), 'yyyy/MM/dd')}</td>
         <td class="text-green">${formatNumber(exp.total_amount)}</td>
         <td>-</td>
