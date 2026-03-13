@@ -239,7 +239,7 @@ export async function importBankStatement(
   const normalizedTransactions = transactions.map((transaction) => {
     const debit = Math.max(0, toSafeNumber(transaction.debit));
     const credit = Math.max(0, toSafeNumber(transaction.credit));
-    const hasBalance = transaction.balance !== undefined && transaction.balance !== null && transaction.balance !== '';
+    const hasBalance = transaction.balance !== undefined && transaction.balance !== null;
 
     return {
       transaction_date: toISODate(transaction.transaction_date, normalizedStatementDate),
