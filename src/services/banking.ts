@@ -81,6 +81,76 @@ export interface BankReconciliation {
 
 export type BankAccountInsert = Omit<BankAccount, 'id' | 'created_at' | 'updated_at' | 'account_category'>;
 
+const normalizeArabicDigits = (value: string): string =>
+  value
+    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+    .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)));
+
+const toSafeNumber = (value: unknown): number => {
+  if (value === null || value === undefined || value === '') return 0;
+
+  const normalized = normalizeArabicDigits(String(value))
+    .replace(/٫/g, '.')
+    .replace(/[٬،]/g, ',')
+    .replace(/[^0-9,.-]/g, '')
+    .replace(/,/g, '');
+
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const isValidDateParts = (year: number, month: number, day: number): boolean => {
+  if (!year || !month || !day) return false;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() + 1 === month &&
+    date.getUTCDate() === day
+  );
+};
+
+const toISODate = (value: unknown, fallback: string): string => {
+  if (value === null || value === undefined || value === '') return fallback;
+
+  const raw = normalizeArabicDigits(String(value).trim());
+  if (!raw) return fallback;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+  const direct = new Date(raw);
+  if (!Number.isNaN(direct.getTime())) {
+    return direct.toISOString().slice(0, 10);
+  }
+
+  const normalized = raw.replace(/[.\-]/g, '/');
+  const parts = normalized.split('/').map((part) => Number.parseInt(part, 10));
+
+  if (parts.length === 3 && parts.every((part) => Number.isFinite(part))) {
+    if (String(parts[0]).length === 4) {
+      const [year, month, day] = parts;
+      if (isValidDateParts(year, month, day)) {
+        return `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      }
+    } else {
+      let [part1, part2, year] = parts;
+      if (year < 100) year += 2000;
+
+      const monthFirstValid = isValidDateParts(year, part1, part2);
+      const dayFirstValid = isValidDateParts(year, part2, part1);
+
+      if (monthFirstValid) {
+        return `${year.toString().padStart(4, '0')}-${part1.toString().padStart(2, '0')}-${part2.toString().padStart(2, '0')}`;
+      }
+
+      if (dayFirstValid) {
+        return `${year.toString().padStart(4, '0')}-${part2.toString().padStart(2, '0')}-${part1.toString().padStart(2, '0')}`;
+      }
+    }
+  }
+
+  return fallback;
+};
+
 // Bank Accounts
 // Use bank_accounts_safe view for read operations to mask sensitive fields (account numbers, IBAN)
 export async function fetchBankAccounts(): Promise<BankAccount[]> {
@@ -163,46 +233,84 @@ export async function importBankStatement(
   transactions: Omit<BankTransaction, 'id' | 'statement_id' | 'bank_account_id' | 'created_at' | 'is_matched'>[],
   fileName?: string
 ): Promise<BankStatement> {
+  const fallbackDate = new Date().toISOString().slice(0, 10);
+  const normalizedStatementDate = toISODate(statementDate, fallbackDate);
+
+  const normalizedTransactions = transactions.map((transaction) => {
+    const debit = Math.max(0, toSafeNumber(transaction.debit));
+    const credit = Math.max(0, toSafeNumber(transaction.credit));
+    const hasBalance = transaction.balance !== undefined && transaction.balance !== null;
+
+    return {
+      transaction_date: toISODate(transaction.transaction_date, normalizedStatementDate),
+      value_date: transaction.value_date ? toISODate(transaction.value_date, normalizedStatementDate) : null,
+      description: transaction.description?.toString().trim() || null,
+      reference: transaction.reference?.toString().trim() || null,
+      notes: transaction.notes?.toString().trim() || null,
+      debit,
+      credit,
+      balance: hasBalance ? toSafeNumber(transaction.balance) : null,
+    };
+  });
+
   // Create statement
   const { data: statement, error: stmtError } = await supabase
     .from('bank_statements')
     .insert({
       company_id: companyId,
       bank_account_id: bankAccountId,
-      statement_date: statementDate,
+      statement_date: normalizedStatementDate,
       file_name: fileName,
-      total_transactions: transactions.length,
+      total_transactions: normalizedTransactions.length,
       status: 'processing'
     })
     .select()
     .single();
-  
+
   if (stmtError) throw stmtError;
-  
+
   // Insert transactions
-  if (transactions.length > 0) {
-    const txns = transactions.map(t => ({
-      ...t,
+  if (normalizedTransactions.length > 0) {
+    const txns = normalizedTransactions.map((transaction) => ({
+      ...transaction,
       statement_id: statement.id,
       bank_account_id: bankAccountId,
-      is_matched: false
+      is_matched: false,
     }));
-    
-    const { error: txnError } = await supabase
-      .from('bank_transactions')
-      .insert(txns);
-    
-    if (txnError) throw txnError;
+
+    const chunkSize = 500;
+    for (let i = 0; i < txns.length; i += chunkSize) {
+      const chunk = txns.slice(i, i + chunkSize);
+      const { error: txnError } = await supabase
+        .from('bank_transactions')
+        .insert(chunk);
+
+      if (txnError) {
+        await supabase
+          .from('bank_statements')
+          .update({
+            status: 'error',
+            notes: `Import failed: ${txnError.message}`,
+          })
+          .eq('id', statement.id);
+
+        throw txnError;
+      }
+    }
   }
-  
+
   // Update statement status
   const { data, error } = await supabase
     .from('bank_statements')
-    .update({ status: 'completed' })
+    .update({
+      status: 'completed',
+      matched_transactions: 0,
+      unmatched_transactions: normalizedTransactions.length,
+    })
     .eq('id', statement.id)
     .select()
     .single();
-  
+
   if (error) throw error;
   return data as BankStatement;
 }

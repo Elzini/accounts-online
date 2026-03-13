@@ -88,7 +88,7 @@ export function BankingPage() {
   const handleImportStatement = async () => {
     if (!importForm.bank_account_id || !importData || !company?.id) { toast.error(t.voucher_fill_required); return; }
     try { await importStatement.mutateAsync({ bankAccountId: importForm.bank_account_id, companyId: company.id, statementDate: importForm.statement_date, transactions: importData.transactions, fileName: importData.fileName }); toast.success(language === 'ar' ? 'تم استيراد كشف الحساب بنجاح' : 'Statement imported'); setShowImportDialog(false); setImportData(null); }
-    catch { toast.error(language === 'ar' ? 'حدث خطأ أثناء الاستيراد' : 'Error importing'); }
+    catch (e: any) { toast.error(e?.message || (language === 'ar' ? 'حدث خطأ أثناء الاستيراد' : 'Error importing')); }
   };
   
   const handleCreateReconciliation = async () => {
