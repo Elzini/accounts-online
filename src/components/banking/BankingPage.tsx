@@ -255,11 +255,31 @@ export function BankingPage() {
             <div><Label>{language === 'ar' ? 'الحساب البنكي *' : 'Bank Account *'}</Label><Select value={importForm.bank_account_id} onValueChange={v => setImportForm({ ...importForm, bank_account_id: v })}><SelectTrigger><SelectValue placeholder={language === 'ar' ? 'اختر الحساب البنكي' : 'Select account'} /></SelectTrigger><SelectContent>{bankAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.account_name} - {a.bank_name}</SelectItem>)}</SelectContent></Select></div>
             <div><Label>{t.bank_statement_date}</Label><Input type="date" value={importForm.statement_date} onChange={e => setImportForm({ ...importForm, statement_date: e.target.value })} /></div>
             <div>
-              <Label>{language === 'ar' ? 'ملف الكشف (CSV)' : 'Statement File (CSV)'}</Label>
-              <input ref={fileInputRef} type="file" accept=".csv,.txt" onChange={handleFileUpload} className="hidden" />
-              <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors">
-                <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                {importData ? <div><p className="font-medium text-green-600">{importData.fileName}</p><p className="text-sm text-muted-foreground">{importData.transactions.length} {language === 'ar' ? 'معاملة' : 'transactions'}</p></div> : <div><p className="font-medium">{language === 'ar' ? 'اضغط لاختيار ملف CSV' : 'Click to select CSV file'}</p></div>}
+              <Label>{language === 'ar' ? 'ملف الكشف (CSV, Excel, PDF)' : 'Statement File (CSV, Excel, PDF)'}</Label>
+              <input ref={fileInputRef} type="file" accept=".csv,.txt,.xlsx,.xls,.pdf" onChange={handleFileUpload} className="hidden" />
+              <div onClick={() => !parsingFile && fileInputRef.current?.click()} className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors ${parsingFile ? 'opacity-70 pointer-events-none' : ''}`}>
+                {parsingFile ? (
+                  <div className="space-y-2">
+                    <Loader2 className="w-8 h-8 mx-auto animate-spin text-primary" />
+                    <p className="font-medium text-primary">{language === 'ar' ? 'جارِ تحليل الملف بالذكاء الاصطناعي...' : 'Analyzing file with AI...'}</p>
+                  </div>
+                ) : importData ? (
+                  <div className="space-y-1">
+                    <CheckCircle className="w-8 h-8 mx-auto text-green-600" />
+                    <p className="font-medium text-green-600">{importData.fileName}</p>
+                    <p className="text-sm text-muted-foreground">{importData.transactions.length} {language === 'ar' ? 'معاملة' : 'transactions'}</p>
+                    {importData.method === 'ai' && <Badge className="bg-purple-100 text-purple-800"><Brain className="w-3 h-3 ml-1" />{language === 'ar' ? 'تم التحليل بالذكاء الاصطناعي' : 'Parsed by AI'}</Badge>}
+                    {importData.method === 'excel' && <Badge className="bg-green-100 text-green-800"><Table2 className="w-3 h-3 ml-1" />Excel</Badge>}
+                    {importData.method === 'csv' && <Badge className="bg-blue-100 text-blue-800"><FileText className="w-3 h-3 ml-1" />CSV</Badge>}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Upload className="w-8 h-8 mx-auto text-muted-foreground" />
+                    <p className="font-medium">{language === 'ar' ? 'اضغط لاختيار ملف' : 'Click to select file'}</p>
+                    <p className="text-xs text-muted-foreground">CSV, Excel (.xlsx, .xls), PDF</p>
+                    <div className="flex items-center justify-center gap-1 text-xs text-purple-600"><Brain className="w-3 h-3" />{language === 'ar' ? 'يدعم القراءة بالذكاء الاصطناعي' : 'AI-powered parsing'}</div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
