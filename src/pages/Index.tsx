@@ -414,6 +414,10 @@ const Index = () => {
       case 'whatsapp-integration': return <WhatsAppIntegration />;
       case 'advanced-analytics': return <AdvancedAnalyticsDashboard />;
       case 'advanced-projects': return <AdvancedProjectsPage />;
+      // Real Estate module
+      case 're-projects': return <REProjectsPage />;
+      case 're-units': return <REUnitsPage />;
+      case 're-contractors': return <REContractorsPage />;
       case 'mobile-inventory': return <MobileInventoryPage />;
       case 'mobile-invoice-reader': return <MobileInvoiceReaderPage />;
       case 'developer-api': return <DeveloperApiPage />;

@@ -265,4 +265,8 @@ export type ActivePage =
       | 'automation'
       | 'supplier-portal'
       | 'whatsapp-integration'
-      | 'advanced-analytics';
+       | 'advanced-analytics'
+       // Real Estate module
+       | 're-projects'
+       | 're-units'
+       | 're-contractors';
