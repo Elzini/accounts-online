@@ -60,6 +60,7 @@ export function EmployeeContractsPage() {
   const [form, setForm] = useState(initialForm);
   const [otherAllowances, setOtherAllowances] = useState<AllowanceItem[]>([]);
   const [deductions, setDeductions] = useState<AllowanceItem[]>([]);
+  const [printContract, setPrintContract] = useState<any>(null);
 
   const { data: hrEmployees = [] } = useHREmployees();
 
