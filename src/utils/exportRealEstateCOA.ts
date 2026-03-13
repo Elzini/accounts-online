@@ -178,7 +178,7 @@ const realEstateCOA: COAAccount[] = [
   { code: '6400', name: 'مصروفات مالية', parentCode: '6000', type: 'مصروفات', nature: 'مدين', level: 1 },
   { code: '6410', name: 'فوائد القروض', parentCode: '6400', type: 'مصروفات', nature: 'مدين', level: 2 },
   { code: '6420', name: 'رسوم بنكية', parentCode: '6400', type: 'مصروفات', nature: 'مدين', level: 2 },
-  
+  { code: '6430', name: 'غرامات وجزاءات ضريبية', parentCode: '6400', type: 'مصروفات', nature: 'مدين', level: 2 },
 ];
 
 export function exportRealEstateCOAToExcel() {
