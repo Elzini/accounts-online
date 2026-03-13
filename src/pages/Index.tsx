@@ -290,6 +290,8 @@ const Index = () => {
       case 'general-ledger': return <GeneralLedgerPage />;
       case 'expenses': return <ExpensesPage />;
       case 'prepaid-expenses': return <PrepaidExpensesPage />;
+      case 'expenses-report': return <ExpensesReport />;
+      case 'prepaid-expenses-report': return <PrepaidExpensesReport />;
       case 'quotations': return <QuotationsPage />;
       case 'installments': return <InstallmentsPage />;
       case 'vouchers': return <VouchersPage />;
