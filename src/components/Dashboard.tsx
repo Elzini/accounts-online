@@ -560,10 +560,6 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
           hasFiscalYear={fiscalYears.length > 0}
           hasTaxSettings={!!taxSettings?.is_active}
           hasAccounts={accountsList.length > 0}
-          hasCustomers={customers.length > 0}
-          hasSuppliers={suppliers.length > 0}
-          hasSales={allSales.length > 0}
-          hasPurchases={allCars.length > 0}
         />
       </div>
     );

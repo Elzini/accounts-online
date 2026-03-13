@@ -1,4 +1,4 @@
-import { CheckCircle2, ArrowLeft, Users, Truck, DollarSign, ShoppingCart, Receipt, Calendar, BookOpen, FileText } from 'lucide-react';
+import { CheckCircle2, ArrowLeft, Receipt, Calendar, BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,10 +23,6 @@ interface GettingStartedDashboardProps {
   hasFiscalYear: boolean;
   hasTaxSettings: boolean;
   hasAccounts: boolean;
-  hasCustomers: boolean;
-  hasSuppliers: boolean;
-  hasSales: boolean;
-  hasPurchases: boolean;
 }
 
 export function GettingStartedDashboard({
@@ -34,10 +30,6 @@ export function GettingStartedDashboard({
   hasFiscalYear,
   hasTaxSettings,
   hasAccounts,
-  hasCustomers,
-  hasSuppliers,
-  hasSales,
-  hasPurchases,
 }: GettingStartedDashboardProps) {
   const { language } = useLanguage();
   const isAr = language === 'ar';
@@ -72,46 +64,6 @@ export function GettingStartedDashboard({
       icon: BookOpen,
       page: 'chart-of-accounts' as ActivePage,
       done: hasAccounts,
-    },
-    {
-      id: 'customer',
-      title: 'إضافة أول عميل',
-      titleEn: 'Add First Customer',
-      description: 'سجّل بيانات أول عميل لبدء البيع',
-      descriptionEn: 'Register your first customer to start selling',
-      icon: Users,
-      page: 'customers' as ActivePage,
-      done: hasCustomers,
-    },
-    {
-      id: 'supplier',
-      title: 'إضافة أول مورد',
-      titleEn: 'Add First Supplier',
-      description: 'سجّل بيانات أول مورد لبدء المشتريات',
-      descriptionEn: 'Register your first supplier to start purchasing',
-      icon: Truck,
-      page: 'suppliers' as ActivePage,
-      done: hasSuppliers,
-    },
-    {
-      id: 'purchase',
-      title: 'أول عملية شراء',
-      titleEn: 'First Purchase',
-      description: 'أنشئ أول فاتورة مشتريات',
-      descriptionEn: 'Create your first purchase invoice',
-      icon: ShoppingCart,
-      page: 'purchases' as ActivePage,
-      done: hasPurchases,
-    },
-    {
-      id: 'sale',
-      title: 'أول عملية بيع',
-      titleEn: 'First Sale',
-      description: 'أنشئ أول فاتورة مبيعات',
-      descriptionEn: 'Create your first sales invoice',
-      icon: DollarSign,
-      page: 'sales' as ActivePage,
-      done: hasSales,
     },
   ];
 
