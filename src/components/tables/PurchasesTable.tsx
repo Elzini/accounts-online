@@ -130,35 +130,37 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
     }
   };
 
+  // ===== Invoice-based data for non-car companies =====
+  const filteredInvoices = useMemo(() => {
+    if (isCarDealership) return [];
+    let result = purchaseInvoices;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter((inv: any) =>
+        inv.invoice_number?.toLowerCase().includes(query) ||
+        inv.supplier?.name?.toLowerCase().includes(query) ||
+        inv.notes?.toLowerCase().includes(query)
+      );
+    }
+    if (statusFilter !== 'all') {
+      result = result.filter((inv: any) => inv.status === statusFilter);
+    }
+    return result;
+  }, [isCarDealership, purchaseInvoices, searchQuery, statusFilter]);
+
+  const invoiceTotals = useMemo(() => {
+    return filteredInvoices.reduce(
+      (acc: any, inv: any) => ({
+        subtotal: acc.subtotal + (inv.subtotal || 0),
+        vat: acc.vat + (inv.vat_amount || 0),
+        total: acc.total + (inv.total || 0),
+      }),
+      { subtotal: 0, vat: 0, total: 0 }
+    );
+  }, [filteredInvoices]);
+
   // ===== NON-CAR COMPANY: Invoice-based purchases =====
   if (!isCarDealership) {
-    const filteredInvoices = useMemo(() => {
-      let result = purchaseInvoices;
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        result = result.filter((inv: any) =>
-          inv.invoice_number?.toLowerCase().includes(query) ||
-          inv.supplier?.name?.toLowerCase().includes(query) ||
-          inv.notes?.toLowerCase().includes(query)
-        );
-      }
-      if (statusFilter !== 'all') {
-        result = result.filter((inv: any) => inv.status === statusFilter);
-      }
-      return result;
-    }, [purchaseInvoices, searchQuery, statusFilter]);
-
-    const invoiceTotals = useMemo(() => {
-      return filteredInvoices.reduce(
-        (acc: any, inv: any) => ({
-          subtotal: acc.subtotal + (inv.subtotal || 0),
-          vat: acc.vat + (inv.vat_amount || 0),
-          total: acc.total + (inv.total || 0),
-        }),
-        { subtotal: 0, vat: 0, total: 0 }
-      );
-    }, [filteredInvoices]);
-
     const filterOptions = [
       { value: 'draft', label: language === 'ar' ? 'مسودة' : 'Draft' },
       { value: 'approved', label: language === 'ar' ? 'معتمدة' : 'Approved' },
