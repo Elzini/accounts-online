@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { escapeHtml } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -298,9 +299,9 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
       </head>
       <body>
         <div class="header">
-          <h1>تقرير ${data.title}</h1>
-          <div class="value">${data.value}</div>
-          ${data.subtitle ? `<p>${data.subtitle}</p>` : ''}
+          <h1>تقرير ${escapeHtml(data.title)}</h1>
+          <div class="value">${escapeHtml(data.value)}</div>
+          ${data.subtitle ? `<p>${escapeHtml(data.subtitle)}</p>` : ''}
           <p>تاريخ التصدير: ${new Date().toLocaleDateString('ar-SA')}</p>
         </div>
         

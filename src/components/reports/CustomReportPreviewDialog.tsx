@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { escapeHtml } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -143,7 +144,7 @@ export function CustomReportPreviewDialog({
       <html dir="rtl" lang="ar">
       <head>
         <meta charset="UTF-8">
-        <title>${report.name}</title>
+        <title>${escapeHtml(report.name)}</title>
         <style>
           body { font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; padding: 20px; }
           h1 { text-align: center; margin-bottom: 20px; }
@@ -155,18 +156,18 @@ export function CustomReportPreviewDialog({
         </style>
       </head>
       <body>
-        <h1>${report.name}</h1>
-        ${report.description ? `<p style="text-align: center; color: #666;">${report.description}</p>` : ''}
+        <h1>${escapeHtml(report.name)}</h1>
+        ${report.description ? `<p style="text-align: center; color: #666;">${escapeHtml(report.description)}</p>` : ''}
         <table>
           <thead>
             <tr>
-              ${columns.map(col => `<th>${col.label}</th>`).join('')}
+              ${columns.map(col => `<th>${escapeHtml(col.label)}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
             ${data.map(row => `
               <tr>
-                ${columns.map(col => `<td>${formatCellValue(row[col.field], col.field)}</td>`).join('')}
+                ${columns.map(col => `<td>${escapeHtml(formatCellValue(row[col.field], col.field))}</td>`).join('')}
               </tr>
             `).join('')}
           </tbody>

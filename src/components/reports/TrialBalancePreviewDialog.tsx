@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { escapeHtml } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Printer, Download, X } from 'lucide-react';
@@ -159,7 +160,7 @@ export function TrialBalancePreviewDialog({
       </head>
       <body>
         <div class="header">
-          <h1>${data.companyName || 'الشركة'}</h1>
+          <h1>${escapeHtml(data.companyName) || 'الشركة'}</h1>
           <p>تحليل ميزان المراجعة - للفترة من ${data.period.from || '-'} إلى ${data.period.to || '-'}</p>
           <p style="margin-top: 5px; font-size: 12px;">تاريخ التقرير: ${currentDate}</p>
         </div>
@@ -178,7 +179,7 @@ export function TrialBalancePreviewDialog({
                 <tr class="total-row"><td>مجمل الربح / (الخسارة)</td><td class="text-left">${formatCurrency(calculations.grossProfit)}</td></tr>
                 <tr class="sub-header"><td colspan="2">المصاريف التشغيلية:</td></tr>
                 ${Object.entries(data.expenses).map(([name, amount]) => `
-                  <tr><td class="indent">- ${name}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
+                  <tr><td class="indent">- ${escapeHtml(name)}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
                 `).join('')}
                 <tr><td class="text-red">إجمالي المصاريف التشغيلية</td><td class="text-left text-red">(${formatCurrency(calculations.totalExpenses)})</td></tr>
                 <tr class="total-row bg-primary">
@@ -202,12 +203,12 @@ export function TrialBalancePreviewDialog({
                   <tbody>
                     <tr class="sub-header"><td colspan="2">الأصول الثابتة:</td></tr>
                     ${Object.entries(data.fixedAssets).map(([name, amount]) => `
-                      <tr><td class="indent">- ${name}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
+                      <tr><td class="indent">- ${escapeHtml(name)}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
                     `).join('')}
                     <tr class="total-row"><td>إجمالي الأصول الثابتة</td><td class="text-left">${formatCurrency(calculations.totalFixedAssets)}</td></tr>
                     <tr class="sub-header"><td colspan="2">الأصول المتداولة:</td></tr>
                     ${Object.entries(data.currentAssets).map(([name, amount]) => `
-                      <tr><td class="indent">- ${name}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
+                      <tr><td class="indent">- ${escapeHtml(name)}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
                     `).join('')}
                     <tr class="total-row"><td>إجمالي الأصول المتداولة</td><td class="text-left">${formatCurrency(calculations.totalCurrentAssets)}</td></tr>
                     <tr class="total-row bg-primary"><td class="font-bold">إجمالي الأصول</td><td class="text-left font-bold">${formatCurrency(calculations.totalAssets)}</td></tr>
@@ -221,12 +222,12 @@ export function TrialBalancePreviewDialog({
                   <tbody>
                     <tr class="sub-header"><td colspan="2">الخصوم المتداولة:</td></tr>
                     ${Object.entries(data.liabilities).map(([name, amount]) => `
-                      <tr><td class="indent">- ${name}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
+                      <tr><td class="indent">- ${escapeHtml(name)}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
                     `).join('')}
                     <tr class="total-row"><td>إجمالي الخصوم المتداولة</td><td class="text-left">${formatCurrency(calculations.totalLiabilities)}</td></tr>
                     <tr class="sub-header"><td colspan="2">حقوق الملكية:</td></tr>
                     ${Object.entries(data.equity).map(([name, amount]) => `
-                      <tr><td class="indent">- ${name}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
+                      <tr><td class="indent">- ${escapeHtml(name)}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
                     `).join('')}
                     <tr><td class="indent">- صافي الربح / (الخسارة)</td><td class="text-left ${calculations.netIncome >= 0 ? 'text-green' : 'text-red'}">${formatCurrency(calculations.netIncome)}</td></tr>
                     <tr class="total-row"><td>إجمالي حقوق الملكية</td><td class="text-left">${formatCurrency(calculations.adjustedEquity)}</td></tr>
