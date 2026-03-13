@@ -532,18 +532,16 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
     return Math.round((now.getDate() / daysInMonth) * 100);
   }, []);
 
-  // Detect if the system is freshly set up (no meaningful data)
+  // Detect if the system is freshly set up (core setup not complete)
   const isNewSystem = useMemo(() => {
     // Skip onboarding if explicitly disabled in dashboard config
     if ((dashboardConfig?.layout_settings as any)?.skip_onboarding) return false;
-    const hasNoSales = !allSales || allSales.length === 0;
-    const hasNoPurchases = !allCars || allCars.length === 0;
-    const hasNoCustomers = !customers || customers.length === 0;
-    const hasNoSuppliers = !suppliers || suppliers.length === 0;
-    // Show getting started if at least 4 of these are empty
-    const emptyCount = [hasNoSales, hasNoPurchases, hasNoCustomers, hasNoSuppliers, fiscalYears.length === 0, accountsList.length === 0].filter(Boolean).length;
-    return emptyCount >= 4;
-  }, [allSales, allCars, customers, suppliers, fiscalYears, accountsList, dashboardConfig]);
+    // Only check core setup steps: fiscal year, tax settings, chart of accounts
+    const hasFiscalYear = fiscalYears.length > 0;
+    const hasTaxSettings = !!taxSettings?.is_active;
+    const hasAccounts = accountsList.length > 0;
+    return !(hasFiscalYear && hasTaxSettings && hasAccounts);
+  }, [fiscalYears, taxSettings, accountsList, dashboardConfig]);
 
   if (isNewSystem && !isLoading) {
     return (
