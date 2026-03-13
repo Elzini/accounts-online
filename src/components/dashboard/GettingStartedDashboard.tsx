@@ -1,4 +1,4 @@
-import { CheckCircle2, ArrowLeft, Users, Truck, DollarSign, ShoppingCart, Receipt, Calendar, BookOpen, FileText } from 'lucide-react';
+import { CheckCircle2, ArrowLeft, Receipt, Calendar, BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
