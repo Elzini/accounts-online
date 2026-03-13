@@ -175,7 +175,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
-
+import { HelpdeskPage } from '@/components/helpdesk/HelpdeskPage';
+import { CMSPage } from '@/components/cms/CMSPage';
+import { POSPage } from '@/components/pos/POSPage';
 const Index = () => {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
