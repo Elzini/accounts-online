@@ -358,6 +358,7 @@ export function Sidebar({
     { id: 'payroll' as ActivePage, label: t.nav_payroll, icon: CreditCard },
     { id: 'attendance' as ActivePage, label: t.nav_attendance, icon: Clock },
     { id: 'leaves' as ActivePage, label: t.nav_leaves, icon: CalendarDays },
+    { id: 'employee-contracts' as ActivePage, label: language === 'ar' ? 'عقود الموظفين' : 'Employee Contracts', icon: FileSignature },
   ];
 
   const systemMenuItems: MenuItem[] = [
