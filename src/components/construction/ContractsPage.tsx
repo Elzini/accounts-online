@@ -431,10 +431,9 @@ export function ContractsPage() {
             <div className="space-y-2">
               <Label>المشروع</Label>
               <Select
-                value={formData.project_id}
+                value={formData.project_id || 'none'}
                 onValueChange={(value) =>
                   setFormData({ ...formData, project_id: value === 'none' ? '' : value })
-                }
                 }
               >
                 <SelectTrigger>
