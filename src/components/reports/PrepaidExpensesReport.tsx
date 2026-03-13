@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { format } from 'date-fns';
-import { FileText, Printer, Clock, CheckCircle, Play, AlertCircle, Banknote, BarChart3 } from 'lucide-react';
+import { format, addMonths, isBefore, isAfter, startOfMonth } from 'date-fns';
+import { FileText, Printer, Clock, CheckCircle, Play, AlertCircle, Banknote, BarChart3, ChevronDown, ChevronLeft } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,30 @@ import { Progress } from '@/components/ui/progress';
 import { usePrepaidExpenses } from '@/hooks/usePrepaidExpenses';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+function generateMonthlySchedule(exp: any) {
+  if (!exp.start_date || !exp.number_of_months || !exp.monthly_amount) return [];
+  const months = [];
+  const startDate = new Date(exp.start_date);
+  const now = startOfMonth(new Date());
+  let balance = exp.total_amount || 0;
+
+  for (let i = 0; i < exp.number_of_months; i++) {
+    const monthDate = addMonths(startDate, i);
+    const isPast = isBefore(monthDate, addMonths(now, 1));
+    const amount = exp.monthly_amount;
+    if (isPast) balance -= amount;
+    months.push({
+      number: i + 1,
+      date: monthDate,
+      amount,
+      balance: isPast ? balance : balance,
+      status: isPast ? 'consumed' : 'upcoming',
+    });
+    if (!isPast) balance -= amount;
+  }
+  return months;
+}
+
 export function PrepaidExpensesReport() {
   const { language } = useLanguage();
   const isAr = language === 'ar';
@@ -18,6 +42,15 @@ export function PrepaidExpensesReport() {
   
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleRow = (id: string) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const filteredExpenses = useMemo(() => {
     return prepaidExpenses.filter((exp: any) => {
@@ -34,7 +67,7 @@ export function PrepaidExpensesReport() {
   const totalRemaining = filteredExpenses.reduce((sum: number, exp: any) => sum + (exp.remaining_amount || 0), 0);
   const activeCount = filteredExpenses.filter((e: any) => e.status === 'active').length;
 
-  const formatNumber = (n: number) => n.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatNumber = (n: number) => Math.round(n).toLocaleString('en-US');
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -45,6 +78,11 @@ export function PrepaidExpensesReport() {
     }
   };
 
+  const getMonthStatusBadge = (status: string) => {
+    if (status === 'consumed') return <Badge className="bg-emerald-500 text-white gap-1"><CheckCircle className="h-3 w-3" />{isAr ? 'مستهلك' : 'Consumed'}</Badge>;
+    return <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" />{isAr ? 'قادم' : 'Upcoming'}</Badge>;
+  };
+
   const handlePrint = () => {
     const printContent = document.getElementById('prepaid-report-print');
     if (!printContent) return;
@@ -53,7 +91,8 @@ export function PrepaidExpensesReport() {
     win.document.write(`<html dir="rtl"><head><title>تقرير المصروفات المقدمة</title>
       <style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse;margin-top:16px}
       th,td{border:1px solid #ddd;padding:8px;text-align:right;font-size:12px}th{background:#f5f5f5;font-weight:bold}
-      h1{font-size:20px;margin-bottom:8px}.progress{background:#e5e7eb;height:8px;border-radius:4px;overflow:hidden}
+      h1{font-size:20px;margin-bottom:8px}.sub-table{margin:8px 20px;}.sub-table th{background:#f0fdf4}
+      .progress{background:#e5e7eb;height:8px;border-radius:4px;overflow:hidden}
       .progress-bar{background:#10b981;height:100%}</style></head><body>`);
     win.document.write(printContent.innerHTML);
     win.document.write('</body></html>');
@@ -106,21 +145,21 @@ export function PrepaidExpensesReport() {
           <CardContent className="p-4 text-center">
             <Banknote className="h-5 w-5 text-blue-600 mx-auto mb-1" />
             <p className="text-xs text-muted-foreground">{isAr ? 'إجمالي المبالغ' : 'Total Amount'}</p>
-            <p className="text-lg font-bold text-blue-700 dark:text-blue-400">{formatNumber(totalAmount)}</p>
+            <p className="text-lg font-bold text-blue-700 dark:text-blue-400">{formatNumber(totalAmount)} {isAr ? 'ر.س' : 'SAR'}</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/20 border-emerald-200 dark:border-emerald-800">
           <CardContent className="p-4 text-center">
             <CheckCircle className="h-5 w-5 text-emerald-600 mx-auto mb-1" />
             <p className="text-xs text-muted-foreground">{isAr ? 'المستهلك' : 'Amortized'}</p>
-            <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{formatNumber(totalAmortized)}</p>
+            <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{formatNumber(totalAmortized)} {isAr ? 'ر.س' : 'SAR'}</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/20 border-amber-200 dark:border-amber-800">
           <CardContent className="p-4 text-center">
             <AlertCircle className="h-5 w-5 text-amber-600 mx-auto mb-1" />
             <p className="text-xs text-muted-foreground">{isAr ? 'المتبقي' : 'Remaining'}</p>
-            <p className="text-lg font-bold text-amber-700 dark:text-amber-400">{formatNumber(totalRemaining)}</p>
+            <p className="text-lg font-bold text-amber-700 dark:text-amber-400">{formatNumber(totalRemaining)} {isAr ? 'ر.س' : 'SAR'}</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/20 border-purple-200 dark:border-purple-800">
@@ -139,6 +178,7 @@ export function PrepaidExpensesReport() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="text-center w-10"></TableHead>
                   <TableHead className="text-center w-12">#</TableHead>
                   <TableHead>{isAr ? 'الوصف' : 'Description'}</TableHead>
                   <TableHead>{isAr ? 'تاريخ البداية' : 'Start'}</TableHead>
@@ -154,36 +194,85 @@ export function PrepaidExpensesReport() {
               </TableHeader>
               <TableBody>
                 {filteredExpenses.length === 0 ? (
-                  <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">{isAr ? 'لا توجد مصروفات مقدمة' : 'No prepaid expenses'}</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={12} className="text-center py-8 text-muted-foreground">{isAr ? 'لا توجد مصروفات مقدمة' : 'No prepaid expenses'}</TableCell></TableRow>
                 ) : (
                   filteredExpenses.map((exp: any, idx: number) => {
                     const progress = exp.total_amount > 0 ? (exp.amortized_amount / exp.total_amount) * 100 : 0;
+                    const isExpanded = expandedRows.has(exp.id);
+                    const schedule = isExpanded ? generateMonthlySchedule(exp) : [];
                     return (
-                      <TableRow key={exp.id}>
-                        <TableCell className="text-center text-muted-foreground">{idx + 1}</TableCell>
-                        <TableCell className="font-medium">{exp.description}</TableCell>
-                        <TableCell>{format(new Date(exp.start_date), 'yyyy/MM/dd')}</TableCell>
-                        <TableCell>{format(new Date(exp.end_date), 'yyyy/MM/dd')}</TableCell>
-                        <TableCell className="text-center">{exp.number_of_months}</TableCell>
-                        <TableCell className="text-center font-semibold">{formatNumber(exp.total_amount)}</TableCell>
-                        <TableCell className="text-center">{formatNumber(exp.monthly_amount)}</TableCell>
-                        <TableCell className="text-center text-emerald-600">{formatNumber(exp.amortized_amount)}</TableCell>
-                        <TableCell className="text-center text-amber-600 font-semibold">{formatNumber(exp.remaining_amount)}</TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center gap-2">
-                            <Progress value={progress} className="h-2 flex-1" />
-                            <span className="text-xs text-muted-foreground w-10">{progress.toFixed(0)}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">{getStatusBadge(exp.status)}</TableCell>
-                      </TableRow>
+                      <>
+                        <TableRow key={exp.id} className="cursor-pointer hover:bg-muted/50" onClick={() => toggleRow(exp.id)}>
+                          <TableCell className="text-center">
+                            {isExpanded 
+                              ? <ChevronDown className="h-4 w-4 text-muted-foreground mx-auto" />
+                              : <ChevronLeft className="h-4 w-4 text-muted-foreground mx-auto" />
+                            }
+                          </TableCell>
+                          <TableCell className="text-center text-muted-foreground">{idx + 1}</TableCell>
+                          <TableCell className="font-medium">{exp.description}</TableCell>
+                          <TableCell>{format(new Date(exp.start_date), 'yyyy/MM/dd')}</TableCell>
+                          <TableCell>{format(new Date(exp.end_date), 'yyyy/MM/dd')}</TableCell>
+                          <TableCell className="text-center">{exp.number_of_months}</TableCell>
+                          <TableCell className="text-center font-semibold">{formatNumber(exp.total_amount)} {isAr ? 'ر.س' : 'SAR'}</TableCell>
+                          <TableCell className="text-center">{formatNumber(exp.monthly_amount)} {isAr ? 'ر.س' : 'SAR'}</TableCell>
+                          <TableCell className="text-center text-emerald-600">{formatNumber(exp.amortized_amount)}</TableCell>
+                          <TableCell className="text-center text-amber-600 font-semibold">{formatNumber(exp.remaining_amount)}</TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center gap-2">
+                              <Progress value={progress} className="h-2 flex-1" />
+                              <span className="text-xs text-muted-foreground w-10">{progress.toFixed(0)}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">{getStatusBadge(exp.status)}</TableCell>
+                        </TableRow>
+                        {isExpanded && (
+                          <TableRow key={`${exp.id}-schedule`}>
+                            <TableCell colSpan={12} className="p-0 bg-muted/30">
+                              <div className="p-4">
+                                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                  <BarChart3 className="h-4 w-4 text-primary" />
+                                  {isAr ? `جدول الاستهلاك الشهري - ${exp.description}` : `Monthly Amortization Schedule - ${exp.description}`}
+                                </h4>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow className="bg-emerald-50 dark:bg-emerald-950/20">
+                                      <TableHead className="text-center w-12">#</TableHead>
+                                      <TableHead className="text-center">{isAr ? 'التاريخ' : 'Date'}</TableHead>
+                                      <TableHead className="text-center">{isAr ? 'المبلغ' : 'Amount'}</TableHead>
+                                      <TableHead className="text-center">{isAr ? 'الرصيد المتبقي' : 'Remaining Balance'}</TableHead>
+                                      <TableHead className="text-center">{isAr ? 'الحالة' : 'Status'}</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {schedule.map((month) => (
+                                      <TableRow key={month.number} className={month.status === 'consumed' ? 'bg-emerald-50/50 dark:bg-emerald-950/10' : ''}>
+                                        <TableCell className="text-center text-muted-foreground">{month.number}</TableCell>
+                                        <TableCell className="text-center">{format(month.date, 'yyyy/MM/dd')}</TableCell>
+                                        <TableCell className="text-center font-medium">{formatNumber(month.amount)} {isAr ? 'ريال' : 'SAR'}</TableCell>
+                                        <TableCell className="text-center font-semibold">
+                                          <span className={month.balance <= 0 ? 'text-emerald-600' : 'text-amber-600'}>
+                                            {formatNumber(Math.max(0, month.balance))} {isAr ? 'ريال' : 'SAR'}
+                                          </span>
+                                        </TableCell>
+                                        <TableCell className="text-center">{getMonthStatusBadge(month.status)}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
                     );
                   })
                 )}
                 {filteredExpenses.length > 0 && (
                   <TableRow className="bg-muted/50 font-bold">
+                    <TableCell></TableCell>
                     <TableCell colSpan={5} className="text-start">{isAr ? 'الإجمالي' : 'Total'}</TableCell>
-                    <TableCell className="text-center">{formatNumber(totalAmount)}</TableCell>
+                    <TableCell className="text-center">{formatNumber(totalAmount)} {isAr ? 'ر.س' : 'SAR'}</TableCell>
                     <TableCell className="text-center">-</TableCell>
                     <TableCell className="text-center text-emerald-700">{formatNumber(totalAmortized)}</TableCell>
                     <TableCell className="text-center text-amber-700">{formatNumber(totalRemaining)}</TableCell>
