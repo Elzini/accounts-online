@@ -180,7 +180,8 @@ function AppRoutes() {
       <Route path="/install" element={<Install />} />
       <Route path="/ramadan" element={<RamadanGreeting />} />
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
 
