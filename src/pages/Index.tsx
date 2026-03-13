@@ -34,6 +34,8 @@ import { SuppliersReport } from '@/components/reports/SuppliersReport';
 import { CommissionsReport } from '@/components/reports/CommissionsReport';
 import { TransfersReport } from '@/components/reports/TransfersReport';
 import { PartnerDealershipReport } from '@/components/reports/PartnerDealershipReport';
+import { ExpensesReport } from '@/components/reports/ExpensesReport';
+import { PrepaidExpensesReport } from '@/components/reports/PrepaidExpensesReport';
 import { UsersManagement } from '@/components/UsersManagement';
 import { AppSettingsPage } from '@/components/AppSettings';
 import { CarSearch } from '@/components/CarSearch';
@@ -288,6 +290,8 @@ const Index = () => {
       case 'general-ledger': return <GeneralLedgerPage />;
       case 'expenses': return <ExpensesPage />;
       case 'prepaid-expenses': return <PrepaidExpensesPage />;
+      case 'expenses-report': return <ExpensesReport />;
+      case 'prepaid-expenses-report': return <PrepaidExpensesReport />;
       case 'quotations': return <QuotationsPage />;
       case 'installments': return <InstallmentsPage />;
       case 'vouchers': return <VouchersPage />;

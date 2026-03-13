@@ -365,6 +365,8 @@ export function Sidebar({
     { id: 'expenses' as ActivePage, label: language === 'ar' ? 'المصروفات' : 'Expenses', icon: Wallet, permission: 'purchases' },
     { id: 'prepaid-expenses' as ActivePage, label: s(settings?.prepaid_expenses_title, t.nav_prepaid_expenses), icon: Clock, permission: 'purchases' },
     { id: 'cost-centers' as ActivePage, label: t.nav_cost_centers, icon: Target },
+    { id: 'expenses-report' as ActivePage, label: language === 'ar' ? 'تقرير المصروفات' : 'Expenses Report', icon: FileText, permission: 'reports' },
+    { id: 'prepaid-expenses-report' as ActivePage, label: language === 'ar' ? 'تقرير المصروفات المقدمة' : 'Prepaid Expenses Report', icon: FileText, permission: 'reports' },
   ];
 
   const systemMenuItems: MenuItem[] = [
