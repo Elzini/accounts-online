@@ -208,7 +208,7 @@ export function TrialBalancePreviewDialog({
                     <tr class="total-row"><td>إجمالي الأصول الثابتة</td><td class="text-left">${formatCurrency(calculations.totalFixedAssets)}</td></tr>
                     <tr class="sub-header"><td colspan="2">الأصول المتداولة:</td></tr>
                     ${Object.entries(data.currentAssets).map(([name, amount]) => `
-                      <tr><td class="indent">- ${name}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
+                      <tr><td class="indent">- ${escapeHtml(name)}</td><td class="text-left">${formatCurrency(amount)}</td></tr>
                     `).join('')}
                     <tr class="total-row"><td>إجمالي الأصول المتداولة</td><td class="text-left">${formatCurrency(calculations.totalCurrentAssets)}</td></tr>
                     <tr class="total-row bg-primary"><td class="font-bold">إجمالي الأصول</td><td class="text-left font-bold">${formatCurrency(calculations.totalAssets)}</td></tr>
