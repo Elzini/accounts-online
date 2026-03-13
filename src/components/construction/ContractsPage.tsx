@@ -431,16 +431,16 @@ export function ContractsPage() {
             <div className="space-y-2">
               <Label>المشروع</Label>
               <Select
-                value={formData.project_id}
+                value={formData.project_id || 'none'}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, project_id: value })
+                  setFormData({ ...formData, project_id: value === 'none' ? '' : value })
                 }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="اختر المشروع" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">بدون مشروع</SelectItem>
+                  <SelectItem value="none">بدون مشروع</SelectItem>
                   {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.project_name}

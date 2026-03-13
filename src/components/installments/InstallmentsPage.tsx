@@ -270,7 +270,7 @@ export function InstallmentsPage() {
                 <SelectTrigger><SelectValue placeholder={t.select_sale} /></SelectTrigger>
                 <SelectContent>
                   {availableSalesForInstallment.length === 0 ? (
-                    <SelectItem value="" disabled>{t.no_data}</SelectItem>
+                    <SelectItem value="no-data" disabled>{t.no_data}</SelectItem>
                   ) : (
                     availableSalesForInstallment.map((sale) => (
                       <SelectItem key={sale.id} value={sale.id}>{sale.customer?.name || t.customer_col} - {sale.car?.name || t.car_col} ({formatCurrency(Number(sale.sale_price))})</SelectItem>
