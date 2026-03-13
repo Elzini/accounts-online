@@ -550,9 +550,14 @@ export function EmployeeContractsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(c.id)}>
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPrintContract(c)} title="طباعة العقد">
+                        <Printer className="w-3 h-3" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(c.id)}>
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -560,6 +565,12 @@ export function EmployeeContractsPage() {
           </Table>
         )}
       </CardContent></Card>
+
+      <ContractPrintDialog
+        open={!!printContract}
+        onOpenChange={(open) => !open && setPrintContract(null)}
+        contract={printContract}
+      />
     </div>
   );
 }
