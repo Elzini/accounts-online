@@ -160,7 +160,7 @@ export function TrialBalancePreviewDialog({
       </head>
       <body>
         <div class="header">
-          <h1>${data.companyName || 'الشركة'}</h1>
+          <h1>${escapeHtml(data.companyName) || 'الشركة'}</h1>
           <p>تحليل ميزان المراجعة - للفترة من ${data.period.from || '-'} إلى ${data.period.to || '-'}</p>
           <p style="margin-top: 5px; font-size: 12px;">تاريخ التقرير: ${currentDate}</p>
         </div>
