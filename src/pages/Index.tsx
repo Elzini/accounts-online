@@ -34,6 +34,8 @@ import { SuppliersReport } from '@/components/reports/SuppliersReport';
 import { CommissionsReport } from '@/components/reports/CommissionsReport';
 import { TransfersReport } from '@/components/reports/TransfersReport';
 import { PartnerDealershipReport } from '@/components/reports/PartnerDealershipReport';
+import { ExpensesReport } from '@/components/reports/ExpensesReport';
+import { PrepaidExpensesReport } from '@/components/reports/PrepaidExpensesReport';
 import { UsersManagement } from '@/components/UsersManagement';
 import { AppSettingsPage } from '@/components/AppSettings';
 import { CarSearch } from '@/components/CarSearch';
