@@ -119,7 +119,7 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   { id: 'appointments', label: 'حجز المواعيد', labelEn: 'Appointments', section: 'العمليات', sectionEn: 'Operations', icon: 'CalendarCheck', keywords: ['موعد', 'مواعيد', 'appointment'] },
 
   // === التسويق / Marketing ===
-  { id: 'email-marketing', label: 'حملات البريد', labelEn: 'Email Marketing', section: 'التسويق', sectionEn: 'Marketing', icon: 'Mail', keywords: ['بريد', 'إيميل', 'email', 'حملة'] },
+  
   { id: 'sms-marketing', label: 'رسائل SMS', labelEn: 'SMS Marketing', section: 'التسويق', sectionEn: 'Marketing', icon: 'Phone', keywords: ['رسالة', 'sms', 'رسائل'] },
   { id: 'social-marketing', label: 'وسائل التواصل', labelEn: 'Social Marketing', section: 'التسويق', sectionEn: 'Marketing', icon: 'Share2', keywords: ['تواصل', 'اجتماعي', 'social'] },
   { id: 'events', label: 'إدارة الفعاليات', labelEn: 'Events', section: 'التسويق', sectionEn: 'Marketing', icon: 'PartyPopper', keywords: ['فعالية', 'حدث', 'event'] },
