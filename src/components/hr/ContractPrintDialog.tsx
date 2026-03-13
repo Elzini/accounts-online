@@ -280,5 +280,3 @@ export function ContractPrintDialog({ open, onOpenChange, contract }: ContractPr
   );
 }
 
-// Need Badge import
-import { Badge } from '@/components/ui/badge';
