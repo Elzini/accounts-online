@@ -6,6 +6,8 @@ import {
   deleteBankAccount,
   fetchBankStatements,
   importBankStatement,
+  updateBankStatement,
+  deleteBankStatement,
   fetchBankTransactions,
   matchTransaction,
   unmatchTransaction,
@@ -79,6 +81,28 @@ export function useImportBankStatement() {
       transactions: Omit<BankTransaction, 'id' | 'statement_id' | 'bank_account_id' | 'created_at' | 'is_matched'>[];
       fileName?: string;
     }) => importBankStatement(bankAccountId, companyId, statementDate, transactions, fileName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bankStatements'] });
+      queryClient.invalidateQueries({ queryKey: ['bankTransactions'] });
+    },
+  });
+}
+
+export function useUpdateBankStatement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: { statement_date?: string; notes?: string; file_name?: string } }) =>
+      updateBankStatement(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bankStatements'] });
+    },
+  });
+}
+
+export function useDeleteBankStatement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteBankStatement,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bankStatements'] });
       queryClient.invalidateQueries({ queryKey: ['bankTransactions'] });

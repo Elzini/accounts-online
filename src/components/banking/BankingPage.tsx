@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Building2, FileSpreadsheet, Scale, Plus, Upload, Eye, Loader2, CheckCircle, XCircle, Link2 } from 'lucide-react';
+import { Building2, FileSpreadsheet, Scale, Plus, Upload, Eye, Loader2, CheckCircle, XCircle, Link2, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { useBankAccounts, useBankStatements, useBankTransactions, useBankReconciliations, useAddBankAccount, useImportBankStatement, useMatchTransaction, useCreateBankReconciliation } from '@/hooks/useBanking';
+import { useBankAccounts, useBankStatements, useBankTransactions, useBankReconciliations, useAddBankAccount, useImportBankStatement, useUpdateBankStatement, useDeleteBankStatement, useMatchTransaction, useCreateBankReconciliation } from '@/hooks/useBanking';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAccounts } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
 import { parseBankStatementCSV } from '@/services/banking';
@@ -27,6 +28,8 @@ export function BankingPage() {
   
   const addBankAccount = useAddBankAccount();
   const importStatement = useImportBankStatement();
+  const updateStatement = useUpdateBankStatement();
+  const deleteStatement = useDeleteBankStatement();
   const createReconciliation = useCreateBankReconciliation();
   
   const [showAccountDialog, setShowAccountDialog] = useState(false);
@@ -34,6 +37,10 @@ export function BankingPage() {
   const [showReconciliationDialog, setShowReconciliationDialog] = useState(false);
   const [showTransactionsDialog, setShowTransactionsDialog] = useState(false);
   const [selectedStatement, setSelectedStatement] = useState<any>(null);
+  const [showEditStatementDialog, setShowEditStatementDialog] = useState(false);
+  const [editingStatement, setEditingStatement] = useState<any>(null);
+  const [editStatementForm, setEditStatementForm] = useState({ statement_date: '', notes: '', file_name: '' });
+  const [deleteStatementId, setDeleteStatementId] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importData, setImportData] = useState<{ transactions: any[]; fileName: string } | null>(null);
@@ -151,7 +158,13 @@ export function BankingPage() {
                   <TableCell className="text-green-600"><div className="flex items-center gap-1"><CheckCircle className="w-4 h-4" />{statement.matched_transactions}</div></TableCell>
                   <TableCell className="text-orange-600"><div className="flex items-center gap-1"><XCircle className="w-4 h-4" />{statement.unmatched_transactions}</div></TableCell>
                   <TableCell><Badge className={statement.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>{statement.status === 'completed' ? t.bank_completed : t.bank_processing}</Badge></TableCell>
-                  <TableCell><Button variant="ghost" size="sm" onClick={() => { setSelectedStatement(statement); setShowTransactionsDialog(true); }}><Eye className="w-4 h-4" /></Button></TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => { setSelectedStatement(statement); setShowTransactionsDialog(true); }}><Eye className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => { setEditingStatement(statement); setEditStatementForm({ statement_date: statement.statement_date, notes: statement.notes || '', file_name: statement.file_name || '' }); setShowEditStatementDialog(true); }}><Edit className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeleteStatementId(statement.id)}><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
               {statements.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t.bank_no_statements}</TableCell></TableRow>}
@@ -258,6 +271,50 @@ export function BankingPage() {
         </DialogContent>
       </Dialog>
       
+      {/* Edit Statement Dialog */}
+      <Dialog open={showEditStatementDialog} onOpenChange={setShowEditStatementDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{language === 'ar' ? 'تعديل كشف الحساب' : 'Edit Statement'}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>{t.bank_statement_date}</Label><Input type="date" value={editStatementForm.statement_date} onChange={e => setEditStatementForm({ ...editStatementForm, statement_date: e.target.value })} /></div>
+            <div><Label>{language === 'ar' ? 'اسم الملف' : 'File Name'}</Label><Input value={editStatementForm.file_name} onChange={e => setEditStatementForm({ ...editStatementForm, file_name: e.target.value })} /></div>
+            <div><Label>{t.notes}</Label><Textarea value={editStatementForm.notes} onChange={e => setEditStatementForm({ ...editStatementForm, notes: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditStatementDialog(false)}>{t.cancel}</Button>
+            <Button onClick={async () => {
+              if (!editingStatement) return;
+              try {
+                await updateStatement.mutateAsync({ id: editingStatement.id, updates: editStatementForm });
+                toast.success(language === 'ar' ? 'تم تحديث الكشف بنجاح' : 'Statement updated');
+                setShowEditStatementDialog(false);
+              } catch { toast.error(language === 'ar' ? 'حدث خطأ' : 'Error'); }
+            }} disabled={updateStatement.isPending}>{updateStatement.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t.save}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Statement Confirmation */}
+      <AlertDialog open={!!deleteStatementId} onOpenChange={(open) => !open && setDeleteStatementId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{language === 'ar' ? 'حذف كشف الحساب' : 'Delete Statement'}</AlertDialogTitle>
+            <AlertDialogDescription>{language === 'ar' ? 'هل أنت متأكد من حذف هذا الكشف؟ سيتم حذف جميع المعاملات المرتبطة به.' : 'Are you sure? All related transactions will be deleted.'}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
+              if (!deleteStatementId) return;
+              try {
+                await deleteStatement.mutateAsync(deleteStatementId);
+                toast.success(language === 'ar' ? 'تم حذف الكشف بنجاح' : 'Statement deleted');
+                setDeleteStatementId(null);
+              } catch { toast.error(language === 'ar' ? 'حدث خطأ أثناء الحذف' : 'Error deleting'); }
+            }}>{language === 'ar' ? 'حذف' : 'Delete'}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Transactions Dialog */}
       <TransactionsDialog open={showTransactionsDialog} onOpenChange={setShowTransactionsDialog} statement={selectedStatement} />
     </div>
