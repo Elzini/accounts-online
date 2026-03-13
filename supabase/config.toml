@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.send-critical-otp]
 verify_jwt = false
+
+[functions.parse-bank-statement]
+verify_jwt = false
