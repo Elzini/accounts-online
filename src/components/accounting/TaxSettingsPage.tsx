@@ -62,6 +62,23 @@ export function TaxSettingsPage() {
     }
   };
 
+  const handleQuickToggleSave = async (nextData: typeof formData, successMessage?: string) => {
+    const previousData = formData;
+    setFormData(nextData);
+    setIsQuickSaving(true);
+
+    try {
+      const saved = await upsertTaxSettings.mutateAsync(nextData);
+      setFormData(mapToFormData(saved));
+      if (successMessage) toast.success(successMessage);
+    } catch (error) {
+      setFormData(previousData);
+      toast.error(t.tax_save_error);
+    } finally {
+      setIsQuickSaving(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
