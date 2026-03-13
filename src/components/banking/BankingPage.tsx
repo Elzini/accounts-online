@@ -328,6 +328,56 @@ export function BankingPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Edit Bank Account Dialog */}
+      <Dialog open={showEditAccountDialog} onOpenChange={setShowEditAccountDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{language === 'ar' ? 'تعديل الحساب البنكي' : 'Edit Bank Account'}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>{t.bank_account_name} *</Label><Input value={editAccountForm.account_name} onChange={e => setEditAccountForm({ ...editAccountForm, account_name: e.target.value })} /></div>
+            <div><Label>{t.bank_name_label} *</Label><Input value={editAccountForm.bank_name} onChange={e => setEditAccountForm({ ...editAccountForm, bank_name: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>{t.bank_account_number}</Label><Input value={editAccountForm.account_number_encrypted} onChange={e => setEditAccountForm({ ...editAccountForm, account_number_encrypted: e.target.value })} dir="ltr" /></div>
+              <div><Label>IBAN</Label><Input value={editAccountForm.iban_encrypted} onChange={e => setEditAccountForm({ ...editAccountForm, iban_encrypted: e.target.value })} dir="ltr" placeholder="SA..." /></div>
+            </div>
+            <div><Label>{language === 'ar' ? 'ربط مع حساب في دليل الحسابات' : 'Link to Chart of Accounts'}</Label><Select value={editAccountForm.account_category_id} onValueChange={v => setEditAccountForm({ ...editAccountForm, account_category_id: v })}><SelectTrigger><SelectValue placeholder={language === 'ar' ? 'اختر الحساب المحاسبي' : 'Select account'} /></SelectTrigger><SelectContent>{bankCategoryAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.code} - {a.name}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>{language === 'ar' ? 'الرصيد الافتتاحي' : 'Opening Balance'}</Label><Input type="number" value={editAccountForm.opening_balance} onChange={e => setEditAccountForm({ ...editAccountForm, opening_balance: Number(e.target.value) })} /></div>
+            <div><Label>{t.notes}</Label><Textarea value={editAccountForm.notes} onChange={e => setEditAccountForm({ ...editAccountForm, notes: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditAccountDialog(false)}>{t.cancel}</Button>
+            <Button onClick={async () => {
+              if (!editingAccount || !editAccountForm.account_name || !editAccountForm.bank_name) { toast.error(t.voucher_fill_required); return; }
+              try {
+                await updateBankAccount.mutateAsync({ id: editingAccount.id, data: editAccountForm });
+                toast.success(language === 'ar' ? 'تم تحديث الحساب البنكي بنجاح' : 'Bank account updated');
+                setShowEditAccountDialog(false);
+              } catch { toast.error(language === 'ar' ? 'حدث خطأ أثناء التحديث' : 'Error updating'); }
+            }} disabled={updateBankAccount.isPending}>{updateBankAccount.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t.save}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Bank Account Confirmation */}
+      <AlertDialog open={!!deleteAccountId} onOpenChange={(open) => !open && setDeleteAccountId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{language === 'ar' ? 'حذف الحساب البنكي' : 'Delete Bank Account'}</AlertDialogTitle>
+            <AlertDialogDescription>{language === 'ar' ? 'هل أنت متأكد من حذف هذا الحساب البنكي؟ لا يمكن التراجع عن هذا الإجراء.' : 'Are you sure? This action cannot be undone.'}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
+              if (!deleteAccountId) return;
+              try {
+                await deleteBankAccount.mutateAsync(deleteAccountId);
+                toast.success(language === 'ar' ? 'تم حذف الحساب البنكي بنجاح' : 'Bank account deleted');
+                setDeleteAccountId(null);
+              } catch { toast.error(language === 'ar' ? 'حدث خطأ أثناء الحذف' : 'Error deleting'); }
+            }}>{language === 'ar' ? 'حذف' : 'Delete'}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Transactions Dialog */}
       <TransactionsDialog open={showTransactionsDialog} onOpenChange={setShowTransactionsDialog} statement={selectedStatement} />
     </div>
