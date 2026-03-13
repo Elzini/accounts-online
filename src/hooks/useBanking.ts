@@ -6,6 +6,8 @@ import {
   deleteBankAccount,
   fetchBankStatements,
   importBankStatement,
+  updateBankStatement,
+  deleteBankStatement,
   fetchBankTransactions,
   matchTransaction,
   unmatchTransaction,
