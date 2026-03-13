@@ -152,7 +152,7 @@ export function CustodyPrintPreviewDialog({
                 </div>
               </div>
               <div className="bg-white rounded-lg border border-green-200 p-4 text-center">
-                <div className="text-sm text-muted-foreground mb-1">المبلغ المردود</div>
+                <div className="text-sm text-muted-foreground mb-1">رصيد الخزينة الآن</div>
                 <div className="text-xl font-bold text-green-600">
                   {formatNumber(summary.returnedAmount)} ر.س
                 </div>
@@ -222,7 +222,7 @@ export function CustodyPrintPreviewDialog({
                       colSpan={3}
                       className="p-3 text-left font-bold border border-green-200"
                     >
-                      المبلغ المردود
+                      رصيد الخزينة الآن
                     </td>
                     <td className="p-3 font-bold border border-green-200 text-green-600">
                       {formatNumber(summary.returnedAmount)}

@@ -50,7 +50,7 @@ export function useCustodyExport() {
     const cards = [
       { label: 'مبلغ العهدة', value: summary.custodyAmount, color: [59, 130, 246] },
       { label: 'إجمالي المصروفات', value: summary.totalSpent, color: [220, 38, 38] },
-      { label: 'المبلغ المردود', value: summary.returnedAmount, color: [22, 163, 74] },
+      { label: 'رصيد الخزينة الآن', value: summary.returnedAmount, color: [22, 163, 74] },
       { label: 'الرصيد المرحل', value: summary.carriedBalance, color: [234, 88, 12] },
     ];
 
@@ -86,7 +86,7 @@ export function useCustodyExport() {
       // Add summary rows
       tableData.push(
         ['', '', 'الإجمالي', summary.totalSpent.toLocaleString()],
-        ['', '', 'المبلغ المردود', summary.returnedAmount.toLocaleString()],
+        ['', '', 'رصيد الخزينة الآن', summary.returnedAmount.toLocaleString()],
         ['', '', 'الرصيد المرحل', summary.carriedBalance.toLocaleString()]
       );
 
@@ -245,7 +245,7 @@ export function useCustodyExport() {
 
     // Returned amount row
     const returnedRow = worksheet.getRow(currentRow);
-    returnedRow.getCell(3).value = 'المبلغ المردود';
+    returnedRow.getCell(3).value = 'رصيد الخزينة الآن';
     returnedRow.getCell(3).font = { bold: true };
     returnedRow.getCell(4).value = { formula: `MAX(0, D3-D${currentRow - 1})` };
     returnedRow.getCell(4).font = { bold: true, color: { argb: 'FF16A34A' } };
