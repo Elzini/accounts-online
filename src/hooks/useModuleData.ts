@@ -78,41 +78,6 @@ export const usePlmEcos = () => useModuleQuery<any>('plm_engineering_changes', '
 export const useAddPlmEco = () => useModuleAdd('plm_engineering_changes', 'plm-ecos');
 export const useUpdatePlmEco = () => useModuleUpdate('plm_engineering_changes', 'plm-ecos');
 
-// ===== Recruitment =====
-export const useRecruitmentJobs = () => useModuleQuery<any>('recruitment_jobs', 'recruitment-jobs');
-export const useAddRecruitmentJob = () => useModuleAdd('recruitment_jobs', 'recruitment-jobs');
-export const useUpdateRecruitmentJob = () => useModuleUpdate('recruitment_jobs', 'recruitment-jobs');
-export const useDeleteRecruitmentJob = () => useModuleDelete('recruitment_jobs', 'recruitment-jobs');
-
-export const useRecruitmentCandidates = () => useModuleQuery<any>('recruitment_candidates', 'recruitment-candidates');
-export const useAddRecruitmentCandidate = () => useModuleAdd('recruitment_candidates', 'recruitment-candidates');
-export const useUpdateRecruitmentCandidate = () => useModuleUpdate('recruitment_candidates', 'recruitment-candidates');
-export const useDeleteRecruitmentCandidate = () => useModuleDelete('recruitment_candidates', 'recruitment-candidates');
-
-// ===== Fleet =====
-export const useFleetVehicles = () => useModuleQuery<any>('fleet_vehicles', 'fleet-vehicles');
-export const useAddFleetVehicle = () => useModuleAdd('fleet_vehicles', 'fleet-vehicles');
-export const useUpdateFleetVehicle = () => useModuleUpdate('fleet_vehicles', 'fleet-vehicles');
-export const useDeleteFleetVehicle = () => useModuleDelete('fleet_vehicles', 'fleet-vehicles');
-
-export const useFleetServiceLogs = () => useModuleQuery<any>('fleet_service_logs', 'fleet-services');
-export const useAddFleetServiceLog = () => useModuleAdd('fleet_service_logs', 'fleet-services');
-
-// ===== Maintenance =====
-export const useMaintenanceEquipment = () => useModuleQuery<any>('maintenance_equipment', 'maint-equipment');
-export const useAddMaintenanceEquipment = () => useModuleAdd('maintenance_equipment', 'maint-equipment');
-export const useUpdateMaintenanceEquipment = () => useModuleUpdate('maintenance_equipment', 'maint-equipment');
-export const useDeleteMaintenanceEquipment = () => useModuleDelete('maintenance_equipment', 'maint-equipment');
-
-export const useMaintenanceRequests = () => useModuleQuery<any>('maintenance_requests', 'maint-requests');
-export const useAddMaintenanceRequest = () => useModuleAdd('maintenance_requests', 'maint-requests');
-export const useUpdateMaintenanceRequest = () => useModuleUpdate('maintenance_requests', 'maint-requests');
-
-// ===== Quality =====
-export const useQualityChecks = () => useModuleQuery<any>('quality_checks', 'quality-checks');
-export const useAddQualityCheck = () => useModuleAdd('quality_checks', 'quality-checks');
-export const useUpdateQualityCheck = () => useModuleUpdate('quality_checks', 'quality-checks');
-
 // ===== Events =====
 export const useEvents = () => useModuleQuery<any>('events', 'events');
 export const useAddEvent = () => useModuleAdd('events', 'events');
