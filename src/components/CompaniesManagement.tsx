@@ -65,7 +65,6 @@ interface Company {
   address: string | null;
   logo_url: string | null;
   is_active: boolean;
-  show_module_launcher: boolean;
   company_type: 'car_dealership' | 'construction' | 'general_trading';
   subdomain: string | null;
   created_at: string;
