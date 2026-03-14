@@ -151,15 +151,15 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
             ${data.cars.map((car, idx) => `
               <tr>
                 <td>${idx + 1}</td>
-                <td>${car.name}</td>
-                <td>${car.model || '-'}</td>
-                <td style="font-family: monospace; font-size: 11px;">${car.chassisNumber || '-'}</td>
-                <td>${formatCurrencyForExport(car.purchasePrice)}</td>
-                <td>${car.salePrice !== undefined ? formatCurrencyForExport(car.salePrice) : '-'}</td>
+                <td>${escapeHtml(car.name)}</td>
+                <td>${escapeHtml(car.model || '-')}</td>
+                <td style="font-family: monospace; font-size: 11px;">${escapeHtml(car.chassisNumber || '-')}</td>
+                <td>${escapeHtml(formatCurrencyForExport(car.purchasePrice))}</td>
+                <td>${car.salePrice !== undefined ? escapeHtml(formatCurrencyForExport(car.salePrice)) : '-'}</td>
                 <td class="${(car.profit || 0) >= 0 ? 'profit-positive' : 'profit-negative'}">
-                  ${car.profit !== undefined ? formatCurrencyForExport(car.profit) : '-'}
+                  ${car.profit !== undefined ? escapeHtml(formatCurrencyForExport(car.profit)) : '-'}
                 </td>
-                <td>${car.saleDate ? formatDate(car.saleDate) : '-'}</td>
+                <td>${car.saleDate ? escapeHtml(formatDate(car.saleDate)) : '-'}</td>
               </tr>
             `).join('')}
           </tbody>
