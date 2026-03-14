@@ -102,7 +102,6 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
     address: '',
     subdomain: '',
     is_active: true,
-    show_module_launcher: false,
     company_type: 'car_dealership' as 'car_dealership' | 'construction' | 'general_trading',
   });
 
