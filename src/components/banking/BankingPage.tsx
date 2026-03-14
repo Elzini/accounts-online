@@ -18,6 +18,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { parseBankStatementFile } from '@/services/bankStatementParser';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { classifyTransactions, createJournalEntriesFromTransactions, ClassifiedTransaction } from '@/services/bankJournalEntries';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 
 export function BankingPage() {
   const { t, language } = useLanguage();
@@ -481,12 +482,14 @@ function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; 
   const { data: accounts = [] } = useAccounts();
   const { data: transactions = [], isLoading, refetch } = useBankTransactions(statement?.id || '');
   const { data: bankAccounts = [] } = useBankAccounts();
+  const { selectedFiscalYear } = useFiscalYear();
   const formatCurrency = (value: number) => new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-SA').format(value);
   
   const [classifying, setClassifying] = useState(false);
   const [creatingEntries, setCreatingEntries] = useState(false);
   const [classified, setClassified] = useState<ClassifiedTransaction[]>([]);
   const [showClassification, setShowClassification] = useState(false);
+  const [entryErrors, setEntryErrors] = useState<string[]>([]);
   
   if (!statement) return null;
 
@@ -569,12 +572,14 @@ function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; 
       return;
     }
     setCreatingEntries(true);
+    setEntryErrors([]);
     try {
       const result = await createJournalEntriesFromTransactions(
         classified.filter(t => t.classified_account_id),
         bankAccountCategoryId,
         company.id,
         statement.id,
+        selectedFiscalYear?.id || null,
       );
       
       if (result.created > 0) {
@@ -582,11 +587,13 @@ function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; 
         refetch();
       }
       if (result.errors.length > 0) {
+        setEntryErrors(result.errors);
         toast.error(language === 'ar' ? `${result.errors.length} أخطاء أثناء الإنشاء` : `${result.errors.length} errors`);
         console.error('Journal entry errors:', result.errors);
+      } else {
+        setShowClassification(false);
+        setClassified([]);
       }
-      setShowClassification(false);
-      setClassified([]);
     } catch (e: any) {
       toast.error(e?.message || (language === 'ar' ? 'خطأ في إنشاء القيود' : 'Error creating entries'));
     }
@@ -613,7 +620,7 @@ function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; 
   };
   
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) { setShowClassification(false); setClassified([]); } onOpenChange(v); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { setShowClassification(false); setClassified([]); setEntryErrors([]); } onOpenChange(v); }}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -706,6 +713,23 @@ function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; 
                 ))}
               </TableBody>
             </Table>
+          </div>
+        )}
+
+        {/* Error Details Panel */}
+        {entryErrors.length > 0 && (
+          <div className="space-y-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg max-h-[200px] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-destructive text-sm">
+                {language === 'ar' ? `${entryErrors.length} خطأ أثناء إنشاء القيود:` : `${entryErrors.length} errors:`}
+              </span>
+              <Button variant="ghost" size="sm" onClick={() => setEntryErrors([])} className="h-6 px-2 text-xs">✕</Button>
+            </div>
+            {entryErrors.map((err, i) => (
+              <p key={i} className="text-xs text-destructive/80 border-b border-destructive/10 pb-1">
+                {i + 1}. {err}
+              </p>
+            ))}
           </div>
         )}
 
