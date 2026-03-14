@@ -36,7 +36,7 @@ serve(async (req) => {
     if (accErr) throw accErr;
 
     const accountsList = (accounts || [])
-      .map(a => `${a.code} | ${a.name} | ${a.type}`)
+      .map(a => `${a.id} | ${a.code} | ${a.name} | ${a.type}`)
       .join('\n');
 
     // Prepare transactions summary for AI
