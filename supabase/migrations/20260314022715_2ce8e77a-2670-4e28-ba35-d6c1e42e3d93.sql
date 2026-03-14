@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "supplier_portal_tokens_public_read" ON public.supplier_portal_tokens;
