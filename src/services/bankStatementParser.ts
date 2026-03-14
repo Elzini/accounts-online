@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ParsedTransaction {
@@ -48,25 +48,35 @@ export function parseCSV(content: string): ParsedTransaction[] {
 }
 
 /**
- * Parse Excel bank statement
+ * Convert ExcelJS cell value to string
  */
-export function parseExcel(arrayBuffer: ArrayBuffer): ParsedTransaction[] {
-  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-  const sheetName = workbook.SheetNames[0];
-  const sheet = workbook.Sheets[sheetName];
-  
-  // Convert to CSV and use CSV parser
-  const csv = XLSX.utils.sheet_to_csv(sheet);
-  const csvResult = parseCSV(csv);
-  
-  if (csvResult.length > 0) return csvResult;
+function cellToString(cell: ExcelJS.Cell | undefined): string {
+  if (!cell || cell.value === null || cell.value === undefined) return '';
+  if (cell.value instanceof Date) {
+    const d = cell.value;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  if (typeof cell.value === 'object' && 'result' in cell.value) {
+    return String((cell.value as any).result ?? '');
+  }
+  return String(cell.value);
+}
 
-  // Fallback: try to parse rows directly with AI-like column detection
-  const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-  if (rows.length < 2) return [];
+/**
+ * Parse Excel bank statement using ExcelJS
+ */
+export async function parseExcel(arrayBuffer: ArrayBuffer): Promise<ParsedTransaction[]> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(arrayBuffer);
+  const sheet = workbook.worksheets[0];
+  if (!sheet || sheet.rowCount < 2) return [];
 
-  const headers = rows[0].map((h: any) => String(h || '').trim().toLowerCase());
-  const transactions: ParsedTransaction[] = [];
+  // Get headers from first row
+  const headerRow = sheet.getRow(1);
+  const headers: string[] = [];
+  headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    headers[colNumber] = String(cell.value || '').trim().toLowerCase();
+  });
 
   // Map columns
   const dateIdx = headers.findIndex(h => /date|تاريخ|التاريخ/i.test(h));
@@ -77,62 +87,74 @@ export function parseExcel(arrayBuffer: ArrayBuffer): ParsedTransaction[] {
   const balanceIdx = headers.findIndex(h => /balance|رصيد/i.test(h));
   const amountIdx = headers.findIndex(h => /amount|مبلغ|قيمة/i.test(h));
 
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    if (!row || row.length === 0) continue;
+  const transactions: ParsedTransaction[] = [];
 
-    let dateVal = dateIdx >= 0 ? row[dateIdx] : undefined;
-    if (!dateVal) continue;
+  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) return; // skip header
 
-    // Handle Excel date serial numbers
-    if (typeof dateVal === 'number') {
-      const date = XLSX.SSF.parse_date_code(dateVal);
-      if (date) dateVal = `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
-    }
+    const dateVal = dateIdx > 0 ? cellToString(row.getCell(dateIdx)) : '';
+    if (!dateVal) return;
 
     let debit = 0, credit = 0;
-    if (debitIdx >= 0) debit = parseFloat(String(row[debitIdx] || '0').replace(/[^0-9.-]/g, '')) || 0;
-    if (creditIdx >= 0) credit = parseFloat(String(row[creditIdx] || '0').replace(/[^0-9.-]/g, '')) || 0;
-    
-    // If single amount column
-    if (amountIdx >= 0 && debitIdx < 0 && creditIdx < 0) {
-      const amount = parseFloat(String(row[amountIdx] || '0').replace(/[^0-9.-]/g, '')) || 0;
+    if (debitIdx > 0) debit = parseFloat(cellToString(row.getCell(debitIdx)).replace(/[^0-9.-]/g, '')) || 0;
+    if (creditIdx > 0) credit = parseFloat(cellToString(row.getCell(creditIdx)).replace(/[^0-9.-]/g, '')) || 0;
+
+    if (amountIdx > 0 && debitIdx <= 0 && creditIdx <= 0) {
+      const amount = parseFloat(cellToString(row.getCell(amountIdx)).replace(/[^0-9.-]/g, '')) || 0;
       if (amount < 0) debit = Math.abs(amount);
       else credit = amount;
     }
 
     transactions.push({
-      transaction_date: String(dateVal),
-      description: descIdx >= 0 ? String(row[descIdx] || '') : '',
-      reference: refIdx >= 0 ? String(row[refIdx] || '') : '',
+      transaction_date: dateVal,
+      description: descIdx > 0 ? cellToString(row.getCell(descIdx)) : '',
+      reference: refIdx > 0 ? cellToString(row.getCell(refIdx)) : '',
       debit,
       credit,
-      balance: balanceIdx >= 0 ? (parseFloat(String(row[balanceIdx] || '').replace(/[^0-9.-]/g, '')) || undefined) : undefined,
+      balance: balanceIdx > 0 ? (parseFloat(cellToString(row.getCell(balanceIdx)).replace(/[^0-9.-]/g, '')) || undefined) : undefined,
     });
-  }
+  });
 
   return transactions;
 }
 
 /**
+ * Convert Excel to CSV text using ExcelJS (for AI fallback)
+ */
+async function excelToCSV(arrayBuffer: ArrayBuffer): Promise<string> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(arrayBuffer);
+  const sheet = workbook.worksheets[0];
+  if (!sheet) return '';
+
+  const lines: string[] = [];
+  sheet.eachRow({ includeEmpty: false }, (row) => {
+    const cells: string[] = [];
+    row.eachCell({ includeEmpty: true }, (cell) => {
+      const val = cellToString(cell);
+      cells.push(val.includes(',') ? `"${val}"` : val);
+    });
+    lines.push(cells.join(','));
+  });
+  return lines.join('\n');
+}
+
+/**
  * Parse PDF/complex files using AI
- * For Excel files, converts to CSV text first for better AI parsing
  */
 export async function parseWithAI(file: File, excelCsvFallback?: string): Promise<ParsedTransaction[]> {
   let content: string;
   let fileType = file.type;
 
   if (excelCsvFallback) {
-    // If we have Excel content converted to CSV, send that instead of binary
     content = excelCsvFallback;
     fileType = 'text/csv';
   } else {
-    // Read file content as base64
     content = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => resolve(e.target?.result as string);
       reader.onerror = reject;
-      reader.readAsDataURL(file); // always base64
+      reader.readAsDataURL(file);
     });
   }
 
@@ -145,9 +167,7 @@ export async function parseWithAI(file: File, excelCsvFallback?: string): Promis
   });
 
   if (error) throw new Error(error.message || 'فشل في تحليل الملف');
-  
   if (data?.error) throw new Error(data.error);
-  
   return (data?.transactions || []) as ParsedTransaction[];
 }
 
@@ -156,39 +176,35 @@ export async function parseWithAI(file: File, excelCsvFallback?: string): Promis
  */
 export async function parseBankStatementFile(file: File): Promise<{ transactions: ParsedTransaction[]; method: 'csv' | 'excel' | 'ai' }> {
   const ext = file.name.split('.').pop()?.toLowerCase();
-  
+
   if (ext === 'csv' || ext === 'txt') {
     const text = await file.text();
     const transactions = parseCSV(text);
     if (transactions.length > 0) return { transactions, method: 'csv' };
-    // Fallback to AI if CSV parsing fails
     const aiTransactions = await parseWithAI(file);
     return { transactions: aiTransactions, method: 'ai' };
   }
-  
+
   if (ext === 'xlsx' || ext === 'xls') {
     try {
       const buffer = await file.arrayBuffer();
-      const transactions = parseExcel(buffer);
+      const transactions = await parseExcel(buffer);
       if (transactions.length > 0) return { transactions, method: 'excel' };
-      
+
       // Fallback to AI - convert Excel to CSV text first
-      const workbook = XLSX.read(buffer, { type: 'array' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const csvText = XLSX.utils.sheet_to_csv(sheet);
+      const csvText = await excelToCSV(buffer);
       const aiTransactions = await parseWithAI(file, csvText);
       return { transactions: aiTransactions, method: 'ai' };
     } catch {
-      // If xlsx parsing completely fails, try AI with base64
       const aiTransactions = await parseWithAI(file);
       return { transactions: aiTransactions, method: 'ai' };
     }
   }
-  
+
   if (ext === 'pdf') {
     const transactions = await parseWithAI(file);
     return { transactions, method: 'ai' };
   }
-  
+
   throw new Error('صيغة الملف غير مدعومة');
 }
