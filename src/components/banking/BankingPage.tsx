@@ -601,18 +601,12 @@ function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; 
                     <TableCell className="text-red-600 text-sm">{txn.debit > 0 ? formatCurrency(txn.debit) : '-'}</TableCell>
                     <TableCell className="text-green-600 text-sm">{txn.credit > 0 ? formatCurrency(txn.credit) : '-'}</TableCell>
                     <TableCell>
-                      <Select value={txn.classified_account_id || ''} onValueChange={(v) => updateClassifiedAccount(idx, v)}>
-                        <SelectTrigger className="h-8 text-xs w-[200px]">
-                          <SelectValue placeholder={language === 'ar' ? 'اختر حساب' : 'Select'} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {accounts.map(a => (
-                            <SelectItem key={a.id} value={a.id} className="text-xs">
-                              {a.code} - {a.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <AccountSearchSelect
+                        accounts={accounts}
+                        value={txn.classified_account_id || ''}
+                        onChange={(v) => updateClassifiedAccount(idx, v)}
+                        language={language}
+                      />
                     </TableCell>
                     <TableCell>{confidenceBadge(txn.confidence)}</TableCell>
                   </TableRow>
