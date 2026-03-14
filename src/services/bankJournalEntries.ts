@@ -12,11 +12,11 @@ export interface TransactionClassification {
 export interface ClassifiedTransaction {
   id: string;
   transaction_date: string;
-  description: string | null | undefined;
-  reference: string | null;
+  description?: string | null;
+  reference?: string | null;
   debit: number;
   credit: number;
-  balance: number | null;
+  balance?: number | null;
   // Classification fields
   classified_account_id?: string;
   classified_account_code?: string;
