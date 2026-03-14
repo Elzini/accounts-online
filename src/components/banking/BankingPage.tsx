@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { Building2, FileSpreadsheet, Scale, Plus, Upload, Eye, Loader2, CheckCircle, XCircle, Link2, Edit, Trash2, Brain, FileText, Table2 } from 'lucide-react';
+import { useState, useRef, useMemo } from 'react';
+import { Building2, FileSpreadsheet, Scale, Plus, Upload, Eye, Loader2, CheckCircle, XCircle, Link2, Edit, Trash2, Brain, FileText, Table2, Search, ChevronsUpDown, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -418,6 +418,63 @@ export function BankingPage() {
   );
 }
 
+function AccountSearchSelect({ accounts, value, onChange, language }: { accounts: any[]; value: string; onChange: (id: string) => void; language: string }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return accounts.slice(0, 50);
+    const q = search.toLowerCase();
+    return accounts.filter((a: any) => a.code.includes(q) || a.name.toLowerCase().includes(q)).slice(0, 50);
+  }, [accounts, search]);
+
+  const selected = accounts.find((a: any) => a.id === value);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between h-8 w-[220px] rounded-md border border-input bg-background px-2 text-xs hover:bg-accent"
+      >
+        <span className="truncate">{selected ? `${selected.code} - ${selected.name}` : (language === 'ar' ? 'اختر حساب' : 'Select')}</span>
+        <ChevronsUpDown className="w-3 h-3 opacity-50 shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-1 w-[280px] rounded-md border bg-popover shadow-lg" style={{ [language === 'ar' ? 'right' : 'left']: 0 }}>
+          <div className="flex items-center gap-1 border-b px-2 py-1.5">
+            <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <input
+              autoFocus
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={language === 'ar' ? 'بحث بالكود أو الاسم...' : 'Search...'}
+              className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+          <div className="max-h-[200px] overflow-y-auto p-1">
+            {filtered.length === 0 && (
+              <p className="text-center text-xs text-muted-foreground py-3">{language === 'ar' ? 'لا توجد نتائج' : 'No results'}</p>
+            )}
+            {filtered.map((a: any) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => { onChange(a.id); setOpen(false); setSearch(''); }}
+                className={`w-full text-right flex items-center gap-1.5 rounded px-2 py-1.5 text-xs hover:bg-accent cursor-pointer ${value === a.id ? 'bg-accent' : ''}`}
+              >
+                {value === a.id && <Check className="w-3 h-3 text-primary shrink-0" />}
+                <span className="truncate">{a.code} - {a.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {open && <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setSearch(''); }} />}
+    </div>
+  );
+}
+
 function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; onOpenChange: (open: boolean) => void; statement: any }) {
   const { t, language } = useLanguage();
   const { company } = useCompany();
@@ -601,18 +658,12 @@ function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; 
                     <TableCell className="text-red-600 text-sm">{txn.debit > 0 ? formatCurrency(txn.debit) : '-'}</TableCell>
                     <TableCell className="text-green-600 text-sm">{txn.credit > 0 ? formatCurrency(txn.credit) : '-'}</TableCell>
                     <TableCell>
-                      <Select value={txn.classified_account_id || ''} onValueChange={(v) => updateClassifiedAccount(idx, v)}>
-                        <SelectTrigger className="h-8 text-xs w-[200px]">
-                          <SelectValue placeholder={language === 'ar' ? 'اختر حساب' : 'Select'} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {accounts.map(a => (
-                            <SelectItem key={a.id} value={a.id} className="text-xs">
-                              {a.code} - {a.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <AccountSearchSelect
+                        accounts={accounts}
+                        value={txn.classified_account_id || ''}
+                        onChange={(v) => updateClassifiedAccount(idx, v)}
+                        language={language}
+                      />
                     </TableCell>
                     <TableCell>{confidenceBadge(txn.confidence)}</TableCell>
                   </TableRow>
