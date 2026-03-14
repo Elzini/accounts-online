@@ -1,0 +1,3 @@
+ALTER TABLE public.journal_entries DROP CONSTRAINT journal_entries_reference_type_check;
+ALTER TABLE public.journal_entries ADD CONSTRAINT journal_entries_reference_type_check 
+  CHECK (reference_type = ANY (ARRAY['sale','purchase','manual','adjustment','opening','expense','voucher','financing','bank_reconciliation','payroll','prepaid_expense','custody','custody_transaction','invoice_sale','invoice_purchase','invoice','bank_transaction']));
