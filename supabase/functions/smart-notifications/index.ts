@@ -151,24 +151,36 @@ serve(async (req) => {
         });
       }
 
-      // === 6. Low Inventory (Cars) - Less than 5 available ===
-      const { data: availableCars, count: carCount } = await supabase
-        .from('cars')
-        .select('id', { count: 'exact' })
-        .eq('company_id', companyId)
-        .eq('status', 'available');
+      // === 6. Low Inventory - Adapt based on company type ===
+      // Get company type to customize inventory alerts
+      const { data: companyData } = await supabase
+        .from('companies')
+        .select('company_type')
+        .eq('id', companyId)
+        .single();
 
-      if (carCount !== null && carCount < 5 && carCount >= 0) {
-        notifications.push({
-          type: carCount === 0 ? 'danger' : 'warning',
-          title: 'تنبيه المخزون',
-          message: carCount === 0
-            ? 'لا توجد سيارات متاحة في المخزون!'
-            : `المخزون منخفض: ${carCount} سيارات متاحة فقط`,
-          entity_type: 'inventory',
-          entity_id: null,
-          category: 'low_inventory',
-        });
+      const companyType = companyData?.company_type || '';
+      const isCarDealership = ['car_dealership', 'used_cars', 'new_cars'].includes(companyType);
+
+      if (isCarDealership) {
+        const { count: carCount } = await supabase
+          .from('cars')
+          .select('id', { count: 'exact' })
+          .eq('company_id', companyId)
+          .eq('status', 'available');
+
+        if (carCount !== null && carCount < 5 && carCount >= 0) {
+          notifications.push({
+            type: carCount === 0 ? 'danger' : 'warning',
+            title: 'تنبيه المخزون',
+            message: carCount === 0
+              ? 'لا توجد سيارات متاحة في المخزون!'
+              : `المخزون منخفض: ${carCount} سيارات متاحة فقط`,
+            entity_type: 'inventory',
+            entity_id: null,
+            category: 'low_inventory',
+          });
+        }
       }
 
       // === 7. Items Low Stock (Inventory Module) ===
