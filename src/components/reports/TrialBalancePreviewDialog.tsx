@@ -69,7 +69,7 @@ export function TrialBalancePreviewDialog({
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>تحليل ميزان المراجعة - ${data.companyName}</title>
+        <title>تحليل ميزان المراجعة - ${escapeHtml(data.companyName)}</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           @page { size: A4 portrait; margin: 15mm; }
