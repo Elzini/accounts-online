@@ -122,8 +122,8 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
               <span class="breakdown-icon">
                 ${item.type === 'add' ? '+' : item.type === 'subtract' ? '−' : item.type === 'total' ? '=' : ''}
               </span>
-              <span class="breakdown-label">${item.label}</span>
-              <span class="breakdown-value ${item.type || ''}">${formatCurrencyForExport(item.value)}</span>
+              <span class="breakdown-label">${escapeHtml(item.label)}</span>
+              <span class="breakdown-value ${item.type || ''}">${escapeHtml(formatCurrencyForExport(item.value))}</span>
             </div>
           `).join('')}
         </div>
@@ -151,15 +151,15 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
             ${data.cars.map((car, idx) => `
               <tr>
                 <td>${idx + 1}</td>
-                <td>${car.name}</td>
-                <td>${car.model || '-'}</td>
-                <td style="font-family: monospace; font-size: 11px;">${car.chassisNumber || '-'}</td>
-                <td>${formatCurrencyForExport(car.purchasePrice)}</td>
-                <td>${car.salePrice !== undefined ? formatCurrencyForExport(car.salePrice) : '-'}</td>
+                <td>${escapeHtml(car.name)}</td>
+                <td>${escapeHtml(car.model || '-')}</td>
+                <td style="font-family: monospace; font-size: 11px;">${escapeHtml(car.chassisNumber || '-')}</td>
+                <td>${escapeHtml(formatCurrencyForExport(car.purchasePrice))}</td>
+                <td>${car.salePrice !== undefined ? escapeHtml(formatCurrencyForExport(car.salePrice)) : '-'}</td>
                 <td class="${(car.profit || 0) >= 0 ? 'profit-positive' : 'profit-negative'}">
-                  ${car.profit !== undefined ? formatCurrencyForExport(car.profit) : '-'}
+                  ${car.profit !== undefined ? escapeHtml(formatCurrencyForExport(car.profit)) : '-'}
                 </td>
-                <td>${car.saleDate ? formatDate(car.saleDate) : '-'}</td>
+                <td>${car.saleDate ? escapeHtml(formatDate(car.saleDate)) : '-'}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -177,7 +177,7 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
       <html dir="rtl" lang="ar">
       <head>
         <meta charset="UTF-8">
-        <title>تقرير ${data.title}</title>
+        <title>تقرير ${escapeHtml(data.title)}</title>
         <style>
           @page { size: A4 landscape; margin: 15mm; }
           * { box-sizing: border-box; }
