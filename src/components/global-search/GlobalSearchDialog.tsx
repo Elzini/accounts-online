@@ -100,8 +100,6 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   { id: 'fingerprint-devices', label: 'أجهزة البصمة', labelEn: 'Fingerprint Devices', section: 'الموارد البشرية', sectionEn: 'HR', icon: 'Fingerprint', keywords: ['بصمة', 'جهاز', 'fingerprint'] },
   { id: 'employee-contracts', label: 'عقود الموظفين', labelEn: 'Employee Contracts', section: 'الموارد البشرية', sectionEn: 'HR', icon: 'FileSignature', keywords: ['عقد', 'عقود', 'contract'] },
   { id: 'org-structure', label: 'الهيكل التنظيمي', labelEn: 'Org Structure', section: 'الموارد البشرية', sectionEn: 'HR', icon: 'GitFork', keywords: ['هيكل', 'تنظيمي', 'org'] },
-  { id: 'recruitment', label: 'إدارة التوظيف', labelEn: 'Recruitment', section: 'الموارد البشرية', sectionEn: 'HR', icon: 'Users', keywords: ['توظيف', 'تعيين', 'recruitment', 'hiring'] },
-  { id: 'appraisals', label: 'تقييم الأداء', labelEn: 'Appraisals', section: 'الموارد البشرية', sectionEn: 'HR', icon: 'ClipboardPenLine', keywords: ['تقييم', 'أداء', 'appraisal'] },
   { id: 'planning', label: 'جدولة الورديات', labelEn: 'Planning', section: 'الموارد البشرية', sectionEn: 'HR', icon: 'CalendarRange', keywords: ['وردية', 'جدول', 'shift', 'planning'] },
 
   // === العمليات / Operations ===

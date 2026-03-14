@@ -248,7 +248,6 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
       address: company.address || '',
       subdomain: company.subdomain || '',
       is_active: company.is_active,
-      show_module_launcher: company.show_module_launcher ?? false,
       company_type: company.company_type || 'car_dealership',
     });
     setEditDialogOpen(true);

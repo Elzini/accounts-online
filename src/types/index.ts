@@ -220,16 +220,10 @@ export type ActivePage =
      | 'contractor-payment'
      // New modules
      | 'ecommerce'
-     | 'email-marketing'
      | 'helpdesk'
      | 'cms'
      // New Odoo-parity modules
      | 'pos'
-     | 'recruitment'
-     | 'appraisals'
-     | 'fleet'
-     | 'maintenance'
-     | 'quality-control'
      | 'sms-marketing'
      | 'social-marketing'
      | 'events'
