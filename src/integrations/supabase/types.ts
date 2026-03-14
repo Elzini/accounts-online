@@ -2715,6 +2715,7 @@ export type Database = {
           operation_description: string | null
           operation_type: string
           otp_code: string
+          otp_hash: string | null
           requested_by: string
           used_at: string | null
         }
@@ -2730,6 +2731,7 @@ export type Database = {
           operation_description?: string | null
           operation_type: string
           otp_code: string
+          otp_hash?: string | null
           requested_by: string
           used_at?: string | null
         }
@@ -2745,6 +2747,7 @@ export type Database = {
           operation_description?: string | null
           operation_type?: string
           otp_code?: string
+          otp_hash?: string | null
           requested_by?: string
           used_at?: string | null
         }
