@@ -620,7 +620,7 @@ function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; 
   };
   
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) { setShowClassification(false); setClassified([]); } onOpenChange(v); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { setShowClassification(false); setClassified([]); setEntryErrors([]); } onOpenChange(v); }}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
