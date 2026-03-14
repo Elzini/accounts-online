@@ -627,7 +627,14 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
           </div>
 
           {isLoading || isDashboardConfigLoading ? (
-            <div className="grid gap-3 sm:gap-5" style={{ gridTemplateColumns: `repeat(${displaySettings.kpiColumns}, minmax(0, 1fr))` }}>
+            <div className={cn(
+              "grid grid-cols-2 gap-3 sm:gap-5",
+              displaySettings.kpiColumns === 2 && 'md:grid-cols-2',
+              displaySettings.kpiColumns === 3 && 'md:grid-cols-3',
+              displaySettings.kpiColumns === 4 && 'md:grid-cols-4',
+              displaySettings.kpiColumns === 5 && 'md:grid-cols-5',
+              displaySettings.kpiColumns === 6 && 'md:grid-cols-6',
+            )}>
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="rounded-xl border border-border/50 overflow-hidden animate-pulse">
                   <div className="h-9 bg-muted/60" />
