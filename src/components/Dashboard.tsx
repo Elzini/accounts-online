@@ -648,25 +648,14 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
           <div 
             className={cn(
               "grid grid-cols-2",
-              displaySettings.density === 'compact' ? 'gap-2' : displaySettings.density === 'spacious' ? 'gap-6' : 'gap-3 sm:gap-5'
+              displaySettings.density === 'compact' ? 'gap-2' : displaySettings.density === 'spacious' ? 'gap-6' : 'gap-3 sm:gap-5',
+              // Apply user kpiColumns only on md+ screens
+              displaySettings.kpiColumns === 2 && 'md:grid-cols-2',
+              displaySettings.kpiColumns === 3 && 'md:grid-cols-3',
+              displaySettings.kpiColumns === 4 && 'md:grid-cols-4',
+              displaySettings.kpiColumns === 5 && 'md:grid-cols-5',
+              displaySettings.kpiColumns === 6 && 'md:grid-cols-6',
             )}
-            style={{ 
-              gridTemplateColumns: undefined,
-            }}
-            ref={(el) => {
-              if (el) {
-                // Apply responsive columns: 2 on mobile, user setting on desktop
-                const mq = window.matchMedia('(min-width: 768px)');
-                const apply = () => {
-                  el.style.gridTemplateColumns = mq.matches 
-                    ? `repeat(${displaySettings.kpiColumns}, minmax(0, 1fr))`
-                    : 'repeat(2, minmax(0, 1fr))';
-                };
-                apply();
-                mq.addEventListener('change', apply);
-                (el as any).__mqCleanup = () => mq.removeEventListener('change', apply);
-              }
-            }}
             onDrop={isEditMode ? handleGridDrop : undefined}
             onDragOver={isEditMode ? handleGridDragOver : undefined}
           >
