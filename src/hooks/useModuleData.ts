@@ -149,11 +149,6 @@ export const useAddFieldServiceOrder = () => useModuleAdd('field_service_orders'
 export const useUpdateFieldServiceOrder = () => useModuleUpdate('field_service_orders', 'field-service');
 export const useDeleteFieldServiceOrder = () => useModuleDelete('field_service_orders', 'field-service');
 
-// ===== Appraisals =====
-export const useAppraisals = () => useModuleQuery<any>('appraisals', 'appraisals');
-export const useAddAppraisal = () => useModuleAdd('appraisals', 'appraisals');
-export const useUpdateAppraisal = () => useModuleUpdate('appraisals', 'appraisals');
-export const useDeleteAppraisal = () => useModuleDelete('appraisals', 'appraisals');
 
 // ===== POS =====
 export const usePOSSessions = () => useModuleQuery<any>('pos_sessions', 'pos-sessions');
