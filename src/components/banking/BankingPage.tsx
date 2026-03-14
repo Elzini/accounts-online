@@ -419,40 +419,236 @@ export function BankingPage() {
 
 function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; onOpenChange: (open: boolean) => void; statement: any }) {
   const { t, language } = useLanguage();
-  const { data: transactions = [], isLoading } = useBankTransactions(statement?.id || '');
+  const { company } = useCompany();
+  const { data: accounts = [] } = useAccounts();
+  const { data: transactions = [], isLoading, refetch } = useBankTransactions(statement?.id || '');
+  const { data: bankAccounts = [] } = useBankAccounts();
   const formatCurrency = (value: number) => new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-SA').format(value);
   
+  const [classifying, setClassifying] = useState(false);
+  const [creatingEntries, setCreatingEntries] = useState(false);
+  const [classified, setClassified] = useState<ClassifiedTransaction[]>([]);
+  const [showClassification, setShowClassification] = useState(false);
+  
   if (!statement) return null;
+
+  const unmatchedTransactions = transactions.filter(txn => !txn.is_matched);
+  const bankAccount = bankAccounts.find(ba => ba.id === statement.bank_account_id);
+  const bankAccountCategoryId = bankAccount?.account_category_id;
+
+  const handleClassify = async () => {
+    if (!company?.id || unmatchedTransactions.length === 0) return;
+    setClassifying(true);
+    try {
+      const classifications = await classifyTransactions(unmatchedTransactions, company.id);
+      
+      const classifiedTxns: ClassifiedTransaction[] = unmatchedTransactions.map((txn, idx) => {
+        const cls = classifications.find(c => c.index === idx);
+        return {
+          ...txn,
+          debit: Number(txn.debit),
+          credit: Number(txn.credit),
+          balance: txn.balance ? Number(txn.balance) : null,
+          classified_account_id: cls?.account_id,
+          classified_account_code: cls?.account_code,
+          classified_account_name: cls?.account_name,
+          confidence: cls?.confidence,
+          reason: cls?.reason,
+        };
+      });
+      
+      setClassified(classifiedTxns);
+      setShowClassification(true);
+      toast.success(language === 'ar' ? `تم تصنيف ${classifications.length} معاملة بالذكاء الاصطناعي` : `${classifications.length} transactions classified`);
+    } catch (e: any) {
+      toast.error(e?.message || (language === 'ar' ? 'خطأ في التصنيف' : 'Classification error'));
+    }
+    setClassifying(false);
+  };
+
+  const handleCreateEntries = async () => {
+    if (!company?.id || !bankAccountCategoryId || classified.length === 0) {
+      if (!bankAccountCategoryId) {
+        toast.error(language === 'ar' ? 'يجب ربط الحساب البنكي بحساب في شجرة الحسابات أولاً' : 'Bank account must be linked to chart of accounts first');
+        return;
+      }
+      return;
+    }
+    setCreatingEntries(true);
+    try {
+      const result = await createJournalEntriesFromTransactions(
+        classified.filter(t => t.classified_account_id),
+        bankAccountCategoryId,
+        company.id,
+        statement.id,
+      );
+      
+      if (result.created > 0) {
+        toast.success(language === 'ar' ? `تم إنشاء ${result.created} قيد محاسبي بنجاح` : `${result.created} journal entries created`);
+        refetch();
+      }
+      if (result.errors.length > 0) {
+        toast.error(language === 'ar' ? `${result.errors.length} أخطاء أثناء الإنشاء` : `${result.errors.length} errors`);
+        console.error('Journal entry errors:', result.errors);
+      }
+      setShowClassification(false);
+      setClassified([]);
+    } catch (e: any) {
+      toast.error(e?.message || (language === 'ar' ? 'خطأ في إنشاء القيود' : 'Error creating entries'));
+    }
+    setCreatingEntries(false);
+  };
+
+  const updateClassifiedAccount = (index: number, accountId: string) => {
+    const account = accounts.find(a => a.id === accountId);
+    if (!account) return;
+    setClassified(prev => prev.map((t, i) => i === index ? {
+      ...t,
+      classified_account_id: account.id,
+      classified_account_code: account.code,
+      classified_account_name: account.name,
+      confidence: 'high' as const,
+      reason: 'تعديل يدوي',
+    } : t));
+  };
+
+  const confidenceBadge = (c?: string) => {
+    if (c === 'high') return <Badge className="bg-green-100 text-green-800 text-xs">{language === 'ar' ? 'عالية' : 'High'}</Badge>;
+    if (c === 'medium') return <Badge className="bg-yellow-100 text-yellow-800 text-xs">{language === 'ar' ? 'متوسطة' : 'Medium'}</Badge>;
+    return <Badge className="bg-red-100 text-red-800 text-xs">{language === 'ar' ? 'منخفضة' : 'Low'}</Badge>;
+  };
   
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{language === 'ar' ? 'معاملات كشف الحساب' : 'Statement Transactions'} - {statement.bank_account?.account_name}</DialogTitle></DialogHeader>
-        {isLoading ? <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin" /></div> : (
-          <Table>
-            <TableHeader><TableRow>
-              <TableHead className="text-right">{t.date}</TableHead>
-              <TableHead className="text-right">{t.description}</TableHead>
-              <TableHead className="text-right">{language === 'ar' ? 'المرجع' : 'Reference'}</TableHead>
-              <TableHead className="text-right">{language === 'ar' ? 'مدين' : 'Debit'}</TableHead>
-              <TableHead className="text-right">{language === 'ar' ? 'دائن' : 'Credit'}</TableHead>
-              <TableHead className="text-right">{language === 'ar' ? 'الرصيد' : 'Balance'}</TableHead>
-              <TableHead className="text-right">{t.status}</TableHead>
-            </TableRow></TableHeader>
-            <TableBody>
-              {transactions.map(txn => (
-                <TableRow key={txn.id} className={txn.is_matched ? 'bg-green-50' : ''}>
-                  <TableCell>{txn.transaction_date}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">{txn.description || '-'}</TableCell>
-                  <TableCell>{txn.reference || '-'}</TableCell>
-                  <TableCell className="text-red-600">{Number(txn.debit) > 0 ? formatCurrency(Number(txn.debit)) : '-'}</TableCell>
-                  <TableCell className="text-green-600">{Number(txn.credit) > 0 ? formatCurrency(Number(txn.credit)) : '-'}</TableCell>
-                  <TableCell>{txn.balance ? formatCurrency(Number(txn.balance)) : '-'}</TableCell>
-                  <TableCell>{txn.is_matched ? <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 ml-1" />{t.bank_matched}</Badge> : <Badge className="bg-orange-100 text-orange-800">{t.bank_unmatched}</Badge>}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { setShowClassification(false); setClassified([]); } onOpenChange(v); }}>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle>{language === 'ar' ? 'معاملات كشف الحساب' : 'Statement Transactions'} - {statement.bank_account?.account_name}</DialogTitle>
+          </div>
+        </DialogHeader>
+        
+        {/* Action buttons */}
+        {!showClassification && unmatchedTransactions.length > 0 && (
+          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+            <Brain className="w-5 h-5 text-purple-600" />
+            <span className="text-sm flex-1">
+              {language === 'ar' 
+                ? `${unmatchedTransactions.length} معاملة غير مصنفة - يمكنك تصنيفها وإنشاء قيود محاسبية تلقائياً`
+                : `${unmatchedTransactions.length} unmatched transactions - classify and create journal entries`}
+            </span>
+            <Button 
+              onClick={handleClassify} 
+              disabled={classifying}
+              size="sm"
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {classifying ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Brain className="w-4 h-4 ml-2" />}
+              {language === 'ar' ? 'تصنيف بالذكاء الاصطناعي' : 'AI Classify'}
+            </Button>
+          </div>
+        )}
+
+        {/* Classification Review */}
+        {showClassification && classified.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">
+              <div className="flex items-center gap-2">
+                <Brain className="w-5 h-5 text-purple-600" />
+                <span className="font-medium text-purple-900">
+                  {language === 'ar' ? 'مراجعة التصنيف - يمكنك تعديل الحساب المقابل لكل معاملة' : 'Review classification - you can adjust accounts'}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setShowClassification(false); setClassified([]); }}>
+                  {t.cancel}
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={handleCreateEntries} 
+                  disabled={creatingEntries || !bankAccountCategoryId}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {creatingEntries ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <CheckCircle className="w-4 h-4 ml-2" />}
+                  {language === 'ar' ? `إنشاء ${classified.filter(t => t.classified_account_id).length} قيد` : `Create ${classified.filter(t => t.classified_account_id).length} entries`}
+                </Button>
+              </div>
+            </div>
+            
+            {!bankAccountCategoryId && (
+              <div className="p-3 bg-red-50 rounded-lg border border-red-200 text-red-700 text-sm">
+                ⚠️ {language === 'ar' ? 'يجب ربط الحساب البنكي بحساب في شجرة الحسابات أولاً من إعدادات الحسابات البنكية' : 'Link bank account to chart of accounts first'}
+              </div>
+            )}
+
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead className="text-right">{t.date}</TableHead>
+                <TableHead className="text-right">{t.description}</TableHead>
+                <TableHead className="text-right">{language === 'ar' ? 'مدين' : 'Debit'}</TableHead>
+                <TableHead className="text-right">{language === 'ar' ? 'دائن' : 'Credit'}</TableHead>
+                <TableHead className="text-right">{language === 'ar' ? 'الحساب المقابل' : 'Counter Account'}</TableHead>
+                <TableHead className="text-right">{language === 'ar' ? 'الثقة' : 'Confidence'}</TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {classified.map((txn, idx) => (
+                  <TableRow key={txn.id} className={txn.confidence === 'low' ? 'bg-red-50/50' : txn.confidence === 'high' ? 'bg-green-50/50' : ''}>
+                    <TableCell className="text-sm">{txn.transaction_date}</TableCell>
+                    <TableCell className="max-w-[180px] truncate text-sm" title={txn.description || ''}>
+                      {txn.description || '-'}
+                      {txn.reason && <p className="text-xs text-muted-foreground mt-0.5">{txn.reason}</p>}
+                    </TableCell>
+                    <TableCell className="text-red-600 text-sm">{txn.debit > 0 ? formatCurrency(txn.debit) : '-'}</TableCell>
+                    <TableCell className="text-green-600 text-sm">{txn.credit > 0 ? formatCurrency(txn.credit) : '-'}</TableCell>
+                    <TableCell>
+                      <Select value={txn.classified_account_id || ''} onValueChange={(v) => updateClassifiedAccount(idx, v)}>
+                        <SelectTrigger className="h-8 text-xs w-[200px]">
+                          <SelectValue placeholder={language === 'ar' ? 'اختر حساب' : 'Select'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {accounts.map(a => (
+                            <SelectItem key={a.id} value={a.id} className="text-xs">
+                              {a.code} - {a.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>{confidenceBadge(txn.confidence)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        {/* Normal transactions view */}
+        {!showClassification && (
+          isLoading ? <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin" /></div> : (
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead className="text-right">{t.date}</TableHead>
+                <TableHead className="text-right">{t.description}</TableHead>
+                <TableHead className="text-right">{language === 'ar' ? 'المرجع' : 'Reference'}</TableHead>
+                <TableHead className="text-right">{language === 'ar' ? 'مدين' : 'Debit'}</TableHead>
+                <TableHead className="text-right">{language === 'ar' ? 'دائن' : 'Credit'}</TableHead>
+                <TableHead className="text-right">{language === 'ar' ? 'الرصيد' : 'Balance'}</TableHead>
+                <TableHead className="text-right">{t.status}</TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {transactions.map(txn => (
+                  <TableRow key={txn.id} className={txn.is_matched ? 'bg-green-50' : ''}>
+                    <TableCell>{txn.transaction_date}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">{txn.description || '-'}</TableCell>
+                    <TableCell>{txn.reference || '-'}</TableCell>
+                    <TableCell className="text-red-600">{Number(txn.debit) > 0 ? formatCurrency(Number(txn.debit)) : '-'}</TableCell>
+                    <TableCell className="text-green-600">{Number(txn.credit) > 0 ? formatCurrency(Number(txn.credit)) : '-'}</TableCell>
+                    <TableCell>{txn.balance ? formatCurrency(Number(txn.balance)) : '-'}</TableCell>
+                    <TableCell>{txn.is_matched ? <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 ml-1" />{t.bank_matched}</Badge> : <Badge className="bg-orange-100 text-orange-800">{t.bank_unmatched}</Badge>}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )
         )}
       </DialogContent>
     </Dialog>
