@@ -646,8 +646,27 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
             </div>
           ) : (
           <div 
-            className={cn("grid", displaySettings.density === 'compact' ? 'gap-2' : displaySettings.density === 'spacious' ? 'gap-6' : 'gap-3 sm:gap-5')}
-            style={{ gridTemplateColumns: `repeat(${displaySettings.kpiColumns}, minmax(0, 1fr))` }}
+            className={cn(
+              "grid grid-cols-2",
+              displaySettings.density === 'compact' ? 'gap-2' : displaySettings.density === 'spacious' ? 'gap-6' : 'gap-3 sm:gap-5'
+            )}
+            style={{ 
+              gridTemplateColumns: undefined,
+            }}
+            ref={(el) => {
+              if (el) {
+                // Apply responsive columns: 2 on mobile, user setting on desktop
+                const mq = window.matchMedia('(min-width: 768px)');
+                const apply = () => {
+                  el.style.gridTemplateColumns = mq.matches 
+                    ? `repeat(${displaySettings.kpiColumns}, minmax(0, 1fr))`
+                    : 'repeat(2, minmax(0, 1fr))';
+                };
+                apply();
+                mq.addEventListener('change', apply);
+                (el as any).__mqCleanup = () => mq.removeEventListener('change', apply);
+              }
+            }}
             onDrop={isEditMode ? handleGridDrop : undefined}
             onDragOver={isEditMode ? handleGridDragOver : undefined}
           >
