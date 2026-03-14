@@ -716,6 +716,23 @@ function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; 
           </div>
         )}
 
+        {/* Error Details Panel */}
+        {entryErrors.length > 0 && (
+          <div className="space-y-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg max-h-[200px] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-destructive text-sm">
+                {language === 'ar' ? `${entryErrors.length} خطأ أثناء إنشاء القيود:` : `${entryErrors.length} errors:`}
+              </span>
+              <Button variant="ghost" size="sm" onClick={() => setEntryErrors([])} className="h-6 px-2 text-xs">✕</Button>
+            </div>
+            {entryErrors.map((err, i) => (
+              <p key={i} className="text-xs text-destructive/80 border-b border-destructive/10 pb-1">
+                {i + 1}. {err}
+              </p>
+            ))}
+          </div>
+        )}
+
         {/* Normal transactions view */}
         {!showClassification && (
           isLoading ? <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin" /></div> : (
