@@ -481,12 +481,14 @@ function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; 
   const { data: accounts = [] } = useAccounts();
   const { data: transactions = [], isLoading, refetch } = useBankTransactions(statement?.id || '');
   const { data: bankAccounts = [] } = useBankAccounts();
+  const { selectedFiscalYear } = useFiscalYear();
   const formatCurrency = (value: number) => new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-SA').format(value);
   
   const [classifying, setClassifying] = useState(false);
   const [creatingEntries, setCreatingEntries] = useState(false);
   const [classified, setClassified] = useState<ClassifiedTransaction[]>([]);
   const [showClassification, setShowClassification] = useState(false);
+  const [entryErrors, setEntryErrors] = useState<string[]>([]);
   
   if (!statement) return null;
 
