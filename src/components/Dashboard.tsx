@@ -602,7 +602,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
           />
 
           {/* Top Toolbar with Users & Notifications */}
-          <div className="flex items-center justify-between flex-wrap gap-2 mb-3 sm:mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 sm:mb-4">
             <CustomizeInterfaceButton 
               setActivePage={setActivePage} 
               onCardsConfigChange={handleCardsConfigChange}
@@ -610,7 +610,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
               isEditMode={isEditMode}
             />
             
-            <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end">
+            <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end overflow-x-auto scrollbar-hide">
               <DisplaySettingsDialog settings={displaySettings} onUpdate={updateDisplaySettings} />
               <WidgetVisibilityPanel 
                 widgets={widgetConfigs} 
@@ -618,11 +618,12 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
                 onReset={() => setWidgetConfigs(DEFAULT_WIDGETS.map((w, i) => ({ ...w, order: i })))}
               />
               {onToggleFocusMode && <FocusModeToggle isFocusMode={isFocusMode} onToggle={onToggleFocusMode} />}
-              <ExportImportSettings />
-              <FloatingPanelToggle />
+              <div className="hidden sm:flex items-center gap-1.5">
+                <ExportImportSettings />
+                <FloatingPanelToggle />
+              </div>
               <OnlineUsersPopover />
               <PaymentRemindersPopover setActivePage={setActivePage} />
-              
             </div>
           </div>
 
