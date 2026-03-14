@@ -122,8 +122,8 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
               <span class="breakdown-icon">
                 ${item.type === 'add' ? '+' : item.type === 'subtract' ? '−' : item.type === 'total' ? '=' : ''}
               </span>
-              <span class="breakdown-label">${item.label}</span>
-              <span class="breakdown-value ${item.type || ''}">${formatCurrencyForExport(item.value)}</span>
+              <span class="breakdown-label">${escapeHtml(item.label)}</span>
+              <span class="breakdown-value ${item.type || ''}">${escapeHtml(formatCurrencyForExport(item.value))}</span>
             </div>
           `).join('')}
         </div>
