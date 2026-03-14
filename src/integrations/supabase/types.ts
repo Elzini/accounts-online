@@ -15669,6 +15669,10 @@ export type Database = {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
       }
+      validate_portal_token: {
+        Args: { p_token: string; p_type: string }
+        Returns: Json
+      }
       validate_tenant_complete: {
         Args: { p_company_id: string }
         Returns: Json
