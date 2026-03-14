@@ -188,7 +188,6 @@ export function CompaniesManagement({ setActivePage }: CompaniesManagementProps)
           address: data.address || null,
           subdomain: data.subdomain || null,
           is_active: data.is_active,
-          show_module_launcher: data.show_module_launcher,
         })
         .eq('id', id)
         .select()
