@@ -572,12 +572,14 @@ function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; 
       return;
     }
     setCreatingEntries(true);
+    setEntryErrors([]);
     try {
       const result = await createJournalEntriesFromTransactions(
         classified.filter(t => t.classified_account_id),
         bankAccountCategoryId,
         company.id,
         statement.id,
+        selectedFiscalYear?.id || null,
       );
       
       if (result.created > 0) {
@@ -585,11 +587,13 @@ function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; 
         refetch();
       }
       if (result.errors.length > 0) {
+        setEntryErrors(result.errors);
         toast.error(language === 'ar' ? `${result.errors.length} أخطاء أثناء الإنشاء` : `${result.errors.length} errors`);
         console.error('Journal entry errors:', result.errors);
+      } else {
+        setShowClassification(false);
+        setClassified([]);
       }
-      setShowClassification(false);
-      setClassified([]);
     } catch (e: any) {
       toast.error(e?.message || (language === 'ar' ? 'خطأ في إنشاء القيود' : 'Error creating entries'));
     }
