@@ -602,7 +602,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
           />
 
           {/* Top Toolbar with Users & Notifications */}
-          <div className="flex items-center justify-between flex-wrap gap-2 mb-3 sm:mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 sm:mb-4">
             <CustomizeInterfaceButton 
               setActivePage={setActivePage} 
               onCardsConfigChange={handleCardsConfigChange}
@@ -610,7 +610,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
               isEditMode={isEditMode}
             />
             
-            <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end">
+            <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end overflow-x-auto scrollbar-hide">
               <DisplaySettingsDialog settings={displaySettings} onUpdate={updateDisplaySettings} />
               <WidgetVisibilityPanel 
                 widgets={widgetConfigs} 
@@ -618,16 +618,24 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
                 onReset={() => setWidgetConfigs(DEFAULT_WIDGETS.map((w, i) => ({ ...w, order: i })))}
               />
               {onToggleFocusMode && <FocusModeToggle isFocusMode={isFocusMode} onToggle={onToggleFocusMode} />}
-              <ExportImportSettings />
-              <FloatingPanelToggle />
+              <div className="hidden sm:flex items-center gap-1.5">
+                <ExportImportSettings />
+                <FloatingPanelToggle />
+              </div>
               <OnlineUsersPopover />
               <PaymentRemindersPopover setActivePage={setActivePage} />
-              
             </div>
           </div>
 
           {isLoading || isDashboardConfigLoading ? (
-            <div className="grid gap-3 sm:gap-5" style={{ gridTemplateColumns: `repeat(${displaySettings.kpiColumns}, minmax(0, 1fr))` }}>
+            <div className={cn(
+              "grid grid-cols-2 gap-3 sm:gap-5",
+              displaySettings.kpiColumns === 2 && 'md:grid-cols-2',
+              displaySettings.kpiColumns === 3 && 'md:grid-cols-3',
+              displaySettings.kpiColumns === 4 && 'md:grid-cols-4',
+              displaySettings.kpiColumns === 5 && 'md:grid-cols-5',
+              displaySettings.kpiColumns === 6 && 'md:grid-cols-6',
+            )}>
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="rounded-xl border border-border/50 overflow-hidden animate-pulse">
                   <div className="h-9 bg-muted/60" />
@@ -646,8 +654,16 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
             </div>
           ) : (
           <div 
-            className={cn("grid", displaySettings.density === 'compact' ? 'gap-2' : displaySettings.density === 'spacious' ? 'gap-6' : 'gap-3 sm:gap-5')}
-            style={{ gridTemplateColumns: `repeat(${displaySettings.kpiColumns}, minmax(0, 1fr))` }}
+            className={cn(
+              "grid grid-cols-2",
+              displaySettings.density === 'compact' ? 'gap-2' : displaySettings.density === 'spacious' ? 'gap-6' : 'gap-3 sm:gap-5',
+              // Apply user kpiColumns only on md+ screens
+              displaySettings.kpiColumns === 2 && 'md:grid-cols-2',
+              displaySettings.kpiColumns === 3 && 'md:grid-cols-3',
+              displaySettings.kpiColumns === 4 && 'md:grid-cols-4',
+              displaySettings.kpiColumns === 5 && 'md:grid-cols-5',
+              displaySettings.kpiColumns === 6 && 'md:grid-cols-6',
+            )}
             onDrop={isEditMode ? handleGridDrop : undefined}
             onDragOver={isEditMode ? handleGridDragOver : undefined}
           >

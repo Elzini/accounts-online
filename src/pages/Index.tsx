@@ -588,7 +588,7 @@ const Index = () => {
                   )}
                 </div>
                 {/* Right: Actions */}
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                   <CommandPalette setActivePage={handleSetActivePage} />
                   <Button
                     variant="ghost"
@@ -599,9 +599,11 @@ const Index = () => {
                     <Search className="w-4 h-4" />
                   </Button>
                   <NotificationsBell />
-                  <PushNotificationManager />
-                  <OfflineDataIndicator />
-                  <CarSearch />
+                  <div className="hidden sm:flex items-center gap-1">
+                    <PushNotificationManager />
+                    <OfflineDataIndicator />
+                    <CarSearch />
+                  </div>
                   <Button 
                     variant="ghost" 
                     size="icon"
