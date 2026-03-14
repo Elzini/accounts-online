@@ -502,14 +502,50 @@ function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; 
       
       const classifiedTxns: ClassifiedTransaction[] = unmatchedTransactions.map((txn, idx) => {
         const cls = classifications.find(c => c.index === idx);
+        
+        // Resolve account: try by ID first, then by code
+        let resolvedAccountId = cls?.account_id;
+        let resolvedAccountCode = cls?.account_code;
+        let resolvedAccountName = cls?.account_name;
+        
+        if (cls) {
+          const byId = accounts.find(a => a.id === cls.account_id);
+          if (byId) {
+            resolvedAccountId = byId.id;
+            resolvedAccountCode = byId.code;
+            resolvedAccountName = byId.name;
+          } else {
+            // Fallback: match by code
+            const byCode = accounts.find(a => a.code === cls.account_code);
+            if (byCode) {
+              resolvedAccountId = byCode.id;
+              resolvedAccountCode = byCode.code;
+              resolvedAccountName = byCode.name;
+            } else {
+              // Fallback: fuzzy match by name
+              const byName = accounts.find(a => 
+                a.name.includes(cls.account_name || '') || 
+                (cls.account_name || '').includes(a.name)
+              );
+              if (byName) {
+                resolvedAccountId = byName.id;
+                resolvedAccountCode = byName.code;
+                resolvedAccountName = byName.name;
+              } else {
+                resolvedAccountId = undefined;
+              }
+            }
+          }
+        }
+        
         return {
           ...txn,
           debit: Number(txn.debit),
           credit: Number(txn.credit),
           balance: txn.balance ? Number(txn.balance) : null,
-          classified_account_id: cls?.account_id,
-          classified_account_code: cls?.account_code,
-          classified_account_name: cls?.account_name,
+          classified_account_id: resolvedAccountId,
+          classified_account_code: resolvedAccountCode,
+          classified_account_name: resolvedAccountName,
           confidence: cls?.confidence,
           reason: cls?.reason,
         };
