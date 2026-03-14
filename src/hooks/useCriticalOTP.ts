@@ -92,42 +92,34 @@ export function useCriticalOTP() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // التحقق من الكود في قاعدة البيانات
-      const { data: otpRecord, error } = await supabase
-        .from('critical_operation_otps')
-        .select('*')
-        .eq('id', state.otpId)
-        .eq('company_id', companyId)
-        .eq('otp_code', code)
-        .eq('is_used', false)
-        .single();
-
-      if (error || !otpRecord) {
-        setState(prev => ({ ...prev, isLoading: false, error: 'كود التحقق غير صحيح' }));
-        return false;
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.access_token) {
+        throw new Error('غير مسجل الدخول');
       }
 
-      // التحقق من انتهاء الصلاحية
-      if (new Date(otpRecord.expires_at) < new Date()) {
-        setState(prev => ({ ...prev, isLoading: false, error: 'انتهت صلاحية كود التحقق' }));
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/verify-critical-otp`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.session.access_token}`,
+          },
+          body: JSON.stringify({
+            otpId: state.otpId,
+            code,
+            companyId,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!result.valid) {
+        setState(prev => ({ ...prev, isLoading: false, error: result.error || 'كود التحقق غير صحيح' }));
         return false;
       }
-
-      // تحديث الكود كمستخدم
-      await supabase
-        .from('critical_operation_otps')
-        .update({ is_used: true, used_at: new Date().toISOString() })
-        .eq('id', state.otpId);
-
-      // تحديث سجل العمليات الحساسة
-      await supabase
-        .from('sensitive_operations_log')
-        .update({ otp_verified: true, status: 'approved' })
-        .eq('company_id', companyId)
-        .eq('operation_type', otpRecord.operation_type)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(1);
 
       setState(prev => ({ ...prev, isLoading: false, isOpen: false }));
       toast.success('تم التحقق بنجاح ✅');

@@ -14,6 +14,14 @@ function generateOTP(): string {
   return otp;
 }
 
+async function hashOTP(code: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(code);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -94,11 +102,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // توليد كود OTP
+    // توليد كود OTP وتجزئته
     const otpCode = generateOTP();
+    const otpHash = await hashOTP(otpCode);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 دقائق
 
-    // حفظ الكود في قاعدة البيانات
+    // حفظ الهاش فقط في قاعدة البيانات (لا يُخزّن الكود الأصلي)
     const { data: otpRecord, error: insertError } = await supabase
       .from('critical_operation_otps')
       .insert({
@@ -108,7 +117,8 @@ Deno.serve(async (req) => {
         operation_description: operationDescription || '',
         entity_type: entityType || '',
         entity_id: entityId || '',
-        otp_code: otpCode,
+        otp_code: '******', // Never store plaintext - masked placeholder
+        otp_hash: otpHash,
         admin_email: adminEmail,
         expires_at: expiresAt,
       })
@@ -185,7 +195,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       otpId: otpRecord.id,
-      adminEmail: adminEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3'), // إخفاء جزء من البريد
+      adminEmail: adminEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
       expiresAt,
       message: 'تم إرسال كود التحقق إلى المسؤول'
     }), {
