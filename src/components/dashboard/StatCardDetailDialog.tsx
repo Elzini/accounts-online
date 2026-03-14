@@ -177,7 +177,7 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
       <html dir="rtl" lang="ar">
       <head>
         <meta charset="UTF-8">
-        <title>تقرير ${data.title}</title>
+        <title>تقرير ${escapeHtml(data.title)}</title>
         <style>
           @page { size: A4 landscape; margin: 15mm; }
           * { box-sizing: border-box; }
