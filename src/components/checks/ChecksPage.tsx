@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
