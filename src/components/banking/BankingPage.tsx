@@ -19,6 +19,7 @@ import { parseBankStatementFile } from '@/services/bankStatementParser';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { classifyTransactions, createJournalEntriesFromTransactions, ClassifiedTransaction } from '@/services/bankJournalEntries';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 export function BankingPage() {
   const { t, language } = useLanguage();
