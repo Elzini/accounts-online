@@ -117,7 +117,7 @@ export function ChecksPage() {
       );
     }
     return result;
-  }, [checks, search]);
+  }, [checks, search, filterByFiscalYear]);
 
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
   const fmt = (n: number) => n?.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) || '0';
