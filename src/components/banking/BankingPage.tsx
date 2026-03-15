@@ -413,7 +413,13 @@ export function BankingPage() {
                 await deleteBankAccount.mutateAsync(deleteAccountId);
                 toast.success(language === 'ar' ? 'تم حذف الحساب البنكي بنجاح' : 'Bank account deleted');
                 setDeleteAccountId(null);
-              } catch { toast.error(language === 'ar' ? 'حدث خطأ أثناء الحذف' : 'Error deleting'); }
+              } catch (err: any) {
+                if (err?.message === 'HAS_RELATED_DATA') {
+                  toast.error(language === 'ar' ? 'لا يمكن حذف الحساب البنكي لوجود كشوف حساب أو تسويات مرتبطة به. احذف الكشوف أولاً.' : 'Cannot delete: account has related statements or reconciliations. Delete them first.');
+                } else {
+                  toast.error(language === 'ar' ? 'حدث خطأ أثناء الحذف' : 'Error deleting');
+                }
+              }
             }}>{language === 'ar' ? 'حذف' : 'Delete'}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
