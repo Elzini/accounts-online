@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -24,6 +25,7 @@ export function ChecksPage() {
   const [showForm, setShowForm] = useState(false);
   const companyId = useCompanyId();
   const { selectedFiscalYear } = useFiscalYear();
+  const { filterByFiscalYear } = useFiscalYearFilter();
   const queryClient = useQueryClient();
   const { exportToExcel } = useExcelExport();
 
@@ -103,15 +105,19 @@ export function ChecksPage() {
   });
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return checks;
-    const q = search.toLowerCase();
-    return checks.filter((c: any) =>
-      c.check_number?.toLowerCase().includes(q) ||
-      c.drawer_name?.toLowerCase().includes(q) ||
-      c.payee_name?.toLowerCase().includes(q) ||
-      c.bank_name?.toLowerCase().includes(q)
-    );
-  }, [checks, search]);
+    // First apply fiscal year filtering by issue_date
+    let result = filterByFiscalYear(checks, 'issue_date');
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((c: any) =>
+        c.check_number?.toLowerCase().includes(q) ||
+        c.drawer_name?.toLowerCase().includes(q) ||
+        c.payee_name?.toLowerCase().includes(q) ||
+        c.bank_name?.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [checks, search, filterByFiscalYear]);
 
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
   const fmt = (n: number) => n?.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) || '0';

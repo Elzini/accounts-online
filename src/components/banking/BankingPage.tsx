@@ -19,14 +19,20 @@ import { parseBankStatementFile } from '@/services/bankStatementParser';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { classifyTransactions, createJournalEntriesFromTransactions, ClassifiedTransaction } from '@/services/bankJournalEntries';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 export function BankingPage() {
   const { t, language } = useLanguage();
   const { company } = useCompany();
   const { data: bankAccounts = [], isLoading: loadingAccounts } = useBankAccounts();
-  const { data: statements = [] } = useBankStatements();
-  const { data: reconciliations = [] } = useBankReconciliations();
+  const { data: allStatements = [] } = useBankStatements();
+  const { data: allReconciliations = [] } = useBankReconciliations();
   const { data: accounts = [] } = useAccounts();
+  const { filterByFiscalYear } = useFiscalYearFilter();
+  
+  // Apply fiscal year filtering to statements and reconciliations
+  const statements = useMemo(() => filterByFiscalYear(allStatements, 'statement_date'), [allStatements, filterByFiscalYear]);
+  const reconciliations = useMemo(() => filterByFiscalYear(allReconciliations, 'reconciliation_date'), [allReconciliations, filterByFiscalYear]);
   
   const addBankAccount = useAddBankAccount();
   const updateBankAccount = useUpdateBankAccount();
