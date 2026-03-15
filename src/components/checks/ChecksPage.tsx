@@ -105,14 +105,18 @@ export function ChecksPage() {
   });
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return checks;
-    const q = search.toLowerCase();
-    return checks.filter((c: any) =>
-      c.check_number?.toLowerCase().includes(q) ||
-      c.drawer_name?.toLowerCase().includes(q) ||
-      c.payee_name?.toLowerCase().includes(q) ||
-      c.bank_name?.toLowerCase().includes(q)
-    );
+    // First apply fiscal year filtering by issue_date
+    let result = filterByFiscalYear(checks, 'issue_date');
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((c: any) =>
+        c.check_number?.toLowerCase().includes(q) ||
+        c.drawer_name?.toLowerCase().includes(q) ||
+        c.payee_name?.toLowerCase().includes(q) ||
+        c.bank_name?.toLowerCase().includes(q)
+      );
+    }
+    return result;
   }, [checks, search]);
 
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
