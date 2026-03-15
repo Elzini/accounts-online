@@ -199,6 +199,26 @@ export async function updateBankAccount(id: string, updates: Partial<BankAccount
 }
 
 export async function deleteBankAccount(id: string): Promise<void> {
+  // Check for related statements first
+  const { count: statementsCount } = await supabase
+    .from('bank_statements')
+    .select('*', { count: 'exact', head: true })
+    .eq('bank_account_id', id);
+
+  if (statementsCount && statementsCount > 0) {
+    throw new Error('HAS_RELATED_DATA');
+  }
+
+  // Check for related reconciliations
+  const { count: reconCount } = await supabase
+    .from('bank_reconciliations')
+    .select('*', { count: 'exact', head: true })
+    .eq('bank_account_id', id);
+
+  if (reconCount && reconCount > 0) {
+    throw new Error('HAS_RELATED_DATA');
+  }
+
   const { error } = await supabase
     .from('bank_accounts')
     .delete()
