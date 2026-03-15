@@ -25,6 +25,7 @@ export function ChecksPage() {
   const [showForm, setShowForm] = useState(false);
   const companyId = useCompanyId();
   const { selectedFiscalYear } = useFiscalYear();
+  const { filterByFiscalYear } = useFiscalYearFilter();
   const queryClient = useQueryClient();
   const { exportToExcel } = useExcelExport();
 
