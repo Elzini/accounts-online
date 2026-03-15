@@ -2714,7 +2714,6 @@ export type Database = {
           is_used: boolean | null
           operation_description: string | null
           operation_type: string
-          otp_code: string
           otp_hash: string | null
           requested_by: string
           used_at: string | null
@@ -2730,7 +2729,6 @@ export type Database = {
           is_used?: boolean | null
           operation_description?: string | null
           operation_type: string
-          otp_code: string
           otp_hash?: string | null
           requested_by: string
           used_at?: string | null
@@ -2746,7 +2744,6 @@ export type Database = {
           is_used?: boolean | null
           operation_description?: string | null
           operation_type?: string
-          otp_code?: string
           otp_hash?: string | null
           requested_by?: string
           used_at?: string | null
