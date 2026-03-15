@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
         operation_description: operationDescription || '',
         entity_type: entityType || '',
         entity_id: entityId || '',
-        otp_code: '******', // Never store plaintext - masked placeholder
+        // otp_code column removed - only otp_hash is stored
         otp_hash: otpHash,
         admin_email: adminEmail,
         expires_at: expiresAt,
