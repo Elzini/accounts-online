@@ -747,32 +747,76 @@ function TransactionsDialog({ open, onOpenChange, statement }: { open: boolean; 
 
         {/* Normal transactions view */}
         {!showClassification && (
-          isLoading ? <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin" /></div> : (
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead className="text-right">{t.date}</TableHead>
-                <TableHead className="text-right">{t.description}</TableHead>
-                <TableHead className="text-right">{language === 'ar' ? 'المرجع' : 'Reference'}</TableHead>
-                <TableHead className="text-right">{language === 'ar' ? 'مدين' : 'Debit'}</TableHead>
-                <TableHead className="text-right">{language === 'ar' ? 'دائن' : 'Credit'}</TableHead>
-                <TableHead className="text-right">{language === 'ar' ? 'الرصيد' : 'Balance'}</TableHead>
-                <TableHead className="text-right">{t.status}</TableHead>
-              </TableRow></TableHeader>
-              <TableBody>
-                {transactions.map(txn => (
-                  <TableRow key={txn.id} className={txn.is_matched ? 'bg-green-50' : ''}>
-                    <TableCell>{txn.transaction_date}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">{txn.description || '-'}</TableCell>
-                    <TableCell>{txn.reference || '-'}</TableCell>
-                    <TableCell className="text-red-600">{Number(txn.debit) > 0 ? formatCurrency(Number(txn.debit)) : '-'}</TableCell>
-                    <TableCell className="text-green-600">{Number(txn.credit) > 0 ? formatCurrency(Number(txn.credit)) : '-'}</TableCell>
-                    <TableCell>{txn.balance ? formatCurrency(Number(txn.balance)) : '-'}</TableCell>
-                    <TableCell>{txn.is_matched ? <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 ml-1" />{t.bank_matched}</Badge> : <Badge className="bg-orange-100 text-orange-800">{t.bank_unmatched}</Badge>}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )
+          isLoading ? <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin" /></div> : (() => {
+            const openingBalance = Number(bankAccount?.opening_balance || 0);
+            const totalDebit = transactions.reduce((s, txn) => s + Number(txn.debit || 0), 0);
+            const totalCredit = transactions.reduce((s, txn) => s + Number(txn.credit || 0), 0);
+            const closingBalance = openingBalance + totalCredit - totalDebit;
+            
+            return (
+              <div className="space-y-4">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="p-3 rounded-lg border bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-600">{language === 'ar' ? 'الرصيد الافتتاحي' : 'Opening Balance'}</p>
+                    <p className="text-lg font-bold text-blue-700">{formatCurrency(openingBalance)}</p>
+                  </div>
+                  <div className="p-3 rounded-lg border bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800">
+                    <p className="text-xs text-red-600">{language === 'ar' ? 'إجمالي المدين' : 'Total Debit'}</p>
+                    <p className="text-lg font-bold text-red-700">{formatCurrency(totalDebit)}</p>
+                  </div>
+                  <div className="p-3 rounded-lg border bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
+                    <p className="text-xs text-green-600">{language === 'ar' ? 'إجمالي الدائن' : 'Total Credit'}</p>
+                    <p className="text-lg font-bold text-green-700">{formatCurrency(totalCredit)}</p>
+                  </div>
+                  <div className={`p-3 rounded-lg border ${closingBalance >= 0 ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800'}`}>
+                    <p className={`text-xs ${closingBalance >= 0 ? 'text-emerald-600' : 'text-orange-600'}`}>{language === 'ar' ? 'رصيد الإقفال' : 'Closing Balance'}</p>
+                    <p className={`text-lg font-bold ${closingBalance >= 0 ? 'text-emerald-700' : 'text-orange-700'}`}>{formatCurrency(closingBalance)}</p>
+                  </div>
+                </div>
+
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead className="text-right">{t.date}</TableHead>
+                    <TableHead className="text-right">{t.description}</TableHead>
+                    <TableHead className="text-right">{language === 'ar' ? 'المرجع' : 'Reference'}</TableHead>
+                    <TableHead className="text-right">{language === 'ar' ? 'مدين' : 'Debit'}</TableHead>
+                    <TableHead className="text-right">{language === 'ar' ? 'دائن' : 'Credit'}</TableHead>
+                    <TableHead className="text-right">{language === 'ar' ? 'الرصيد' : 'Balance'}</TableHead>
+                    <TableHead className="text-right">{t.status}</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {transactions.map(txn => (
+                      <TableRow key={txn.id} className={txn.is_matched ? 'bg-green-50' : ''}>
+                        <TableCell>{txn.transaction_date}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{txn.description || '-'}</TableCell>
+                        <TableCell>{txn.reference || '-'}</TableCell>
+                        <TableCell className="text-red-600">{Number(txn.debit) > 0 ? formatCurrency(Number(txn.debit)) : '-'}</TableCell>
+                        <TableCell className="text-green-600">{Number(txn.credit) > 0 ? formatCurrency(Number(txn.credit)) : '-'}</TableCell>
+                        <TableCell>{txn.balance ? formatCurrency(Number(txn.balance)) : '-'}</TableCell>
+                        <TableCell>{txn.is_matched ? <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 ml-1" />{t.bank_matched}</Badge> : <Badge className="bg-orange-100 text-orange-800">{t.bank_unmatched}</Badge>}</TableCell>
+                      </TableRow>
+                    ))}
+                    {/* Totals Row */}
+                    <TableRow className="bg-muted/50 font-bold border-t-2">
+                      <TableCell colSpan={3} className="text-right">{language === 'ar' ? 'الإجمالي' : 'Total'}</TableCell>
+                      <TableCell className="text-red-600">{formatCurrency(totalDebit)}</TableCell>
+                      <TableCell className="text-green-600">{formatCurrency(totalCredit)}</TableCell>
+                      <TableCell colSpan={2}></TableCell>
+                    </TableRow>
+                    {/* Closing Balance Row */}
+                    <TableRow className={`font-bold ${closingBalance >= 0 ? 'bg-emerald-50' : 'bg-orange-50'}`}>
+                      <TableCell colSpan={3} className="text-right">{language === 'ar' ? 'رصيد الإقفال' : 'Closing Balance'}</TableCell>
+                      <TableCell colSpan={3} className={`text-center text-lg ${closingBalance >= 0 ? 'text-emerald-700' : 'text-orange-700'}`}>
+                        {formatCurrency(closingBalance)}
+                      </TableCell>
+                      <TableCell></TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            );
+          })()
         )}
       </DialogContent>
     </Dialog>
