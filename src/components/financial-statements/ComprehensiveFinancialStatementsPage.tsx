@@ -718,50 +718,133 @@ export function ComprehensiveFinancialStatementsPage() {
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Calculator className="w-5 h-5" />
-                      تسوية صافي الربح (مقارنة المصادر)
+                      {isCarDealership ? 'تسوية صافي الربح (مقارنة المصادر)' : 'صافي الربح من القيود المحاسبية'}
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleFixMissingCogs}
-                      disabled={isFixingCogs}
-                      className="gap-2"
-                    >
-                      <Wrench className="w-4 h-4" />
-                      {isFixingCogs ? 'جاري الإصلاح...' : 'إصلاح القيود'}
-                    </Button>
+                    {isCarDealership && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleFixMissingCogs}
+                        disabled={isFixingCogs}
+                        className="gap-2"
+                      >
+                        <Wrench className="w-4 h-4" />
+                        {isFixingCogs ? 'جاري الإصلاح...' : 'إصلاح القيود الناقصة'}
+                      </Button>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <h4 className="font-semibold mb-2">من القيود المحاسبية</h4>
-                      <p className={`text-2xl font-bold ${data.incomeStatement.netProfit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
-                        {formatCurrency(data.incomeStatement.netProfit)} {currencySymbol}
-                      </p>
+                  {isCarDealership ? (
+                    <>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30">
+                          <h4 className="font-semibold mb-3 flex items-center gap-2">
+                            <BookOpen className="w-4 h-4" />
+                            صافي الربح من القيود المحاسبية
+                          </h4>
+                          <div className="space-y-2 text-sm mb-3">
+                            <div className="flex justify-between">
+                              <span>إجمالي الإيرادات (حساب 41xx)</span>
+                              <span>{formatCurrency(data.incomeStatement.revenue)} {currencySymbol}</span>
+                            </div>
+                            <div className="flex justify-between text-destructive">
+                              <span>(-) تكلفة المبيعات (حساب 5101)</span>
+                              <span>({formatCurrency(Math.abs(data.incomeStatement.costOfRevenue))})</span>
+                            </div>
+                            <Separator />
+                            <div className="flex justify-between font-semibold">
+                              <span>مجمل الربح</span>
+                              <span>{formatCurrency(data.incomeStatement.revenue - Math.abs(data.incomeStatement.costOfRevenue))} {currencySymbol}</span>
+                            </div>
+                            <div className="flex justify-between text-destructive">
+                              <span>(-) المصاريف التشغيلية</span>
+                              <span>({formatCurrency(Math.abs(data.incomeStatement.operatingExpenses))})</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-between font-bold text-lg border-t pt-2">
+                            <span>صافي الربح</span>
+                            <span className={data.incomeStatement.netProfit >= 0 ? 'text-green-600' : 'text-destructive'}>
+                              {formatCurrency(data.incomeStatement.netProfit)} {currencySymbol}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="p-4 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30">
+                          <h4 className="font-semibold mb-3 flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4" />
+                            صافي الربح من تقرير الأرباح (المبيعات)
+                          </h4>
+                          <div className="space-y-2 text-sm mb-3">
+                            <div className="flex justify-between">
+                              <span>إجمالي الربح (سعر البيع - سعر الشراء)</span>
+                              <span>{formatCurrency(profitReportData.totalGrossProfit)} {currencySymbol}</span>
+                            </div>
+                            <div className="flex justify-between text-destructive">
+                              <span>(-) مصاريف السيارات المباعة</span>
+                              <span>({formatCurrency(profitReportData.carExpenses)})</span>
+                            </div>
+                            <div className="flex justify-between text-destructive">
+                              <span>(-) المصاريف العامة</span>
+                              <span>({formatCurrency(profitReportData.generalExpenses)})</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-between font-bold text-lg border-t pt-2">
+                            <span>صافي الربح</span>
+                            <span className={profitReportData.netProfit >= 0 ? 'text-green-600' : 'text-destructive'}>
+                              {formatCurrency(profitReportData.netProfit)} {currencySymbol}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex items-center justify-between p-3 rounded-lg border-2">
+                        <div className="flex items-center gap-2">
+                          {Math.abs(data.incomeStatement.netProfit - profitReportData.netProfit) < 1 ? (
+                            <>
+                              <CheckCircle2 className="w-5 h-5 text-green-600" />
+                              <span className="font-semibold text-green-600">الأرقام متطابقة ✓</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertTriangle className="w-5 h-5 text-amber-600" />
+                              <span className="text-amber-600">الفرق: {formatCurrency(data.incomeStatement.netProfit - profitReportData.netProfit)} {currencySymbol}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="p-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30">
+                      <h4 className="font-semibold mb-3 flex items-center gap-2">
+                        <BookOpen className="w-4 h-4" />
+                        صافي الربح من القيود المحاسبية
+                      </h4>
+                      <div className="space-y-2 text-sm mb-3">
+                        <div className="flex justify-between">
+                          <span>إجمالي الإيرادات</span>
+                          <span>{formatCurrency(data.incomeStatement.revenue)} {currencySymbol}</span>
+                        </div>
+                        <div className="flex justify-between text-destructive">
+                          <span>(-) تكلفة المبيعات</span>
+                          <span>({formatCurrency(Math.abs(data.incomeStatement.costOfRevenue))})</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between font-semibold">
+                          <span>مجمل الربح</span>
+                          <span>{formatCurrency(data.incomeStatement.revenue - Math.abs(data.incomeStatement.costOfRevenue))} {currencySymbol}</span>
+                        </div>
+                        <div className="flex justify-between text-destructive">
+                          <span>(-) المصاريف التشغيلية</span>
+                          <span>({formatCurrency(Math.abs(data.incomeStatement.operatingExpenses))})</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between font-bold text-lg border-t pt-2">
+                        <span>صافي الربح</span>
+                        <span className={`text-2xl ${data.incomeStatement.netProfit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+                          {formatCurrency(data.incomeStatement.netProfit)} {currencySymbol}
+                        </span>
+                      </div>
                     </div>
-                    <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
-                      <h4 className="font-semibold mb-2">من تقرير الأرباح (المبيعات)</h4>
-                      <p className={`text-2xl font-bold ${profitReportData.netProfit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
-                        {formatCurrency(profitReportData.netProfit)} {currencySymbol}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between p-3 rounded-lg border-2">
-                    <div className="flex items-center gap-2">
-                      {Math.abs(data.incomeStatement.netProfit - profitReportData.netProfit) < 1 ? (
-                        <>
-                          <CheckCircle2 className="w-5 h-5 text-green-600" />
-                          <span className="font-semibold text-green-600">الأرقام متطابقة ✓</span>
-                        </>
-                      ) : (
-                        <>
-                          <AlertTriangle className="w-5 h-5 text-amber-600" />
-                          <span className="text-amber-600">فرق: {formatCurrency(data.incomeStatement.netProfit - profitReportData.netProfit)} {currencySymbol}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
