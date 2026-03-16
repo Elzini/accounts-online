@@ -489,6 +489,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             notes: invoiceData.notes || null,
             project_id: invoiceData.project_id || null,
             supplier_invoice_number: invoiceData.supplier_invoice_number || null,
+            payment_account_id: invoiceData.payment_account_id || null,
           })
           .select()
           .single();
