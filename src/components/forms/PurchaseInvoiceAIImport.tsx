@@ -399,6 +399,24 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                 </Table>
               </div>
 
+              {/* Cost Center Selector */}
+              {costCenters.filter(cc => cc.is_active).length > 0 && (
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+                  <Label className="text-sm font-medium whitespace-nowrap">مركز التكلفة:</Label>
+                  <Select value={selectedCostCenterId || 'none'} onValueChange={(v) => setSelectedCostCenterId(v === 'none' ? null : v)}>
+                    <SelectTrigger className="h-9 text-xs max-w-[250px]">
+                      <SelectValue placeholder="اختر مركز التكلفة" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">بدون مركز تكلفة</SelectItem>
+                      {costCenters.filter(cc => cc.is_active).map((cc) => (
+                        <SelectItem key={cc.id} value={cc.id}>{cc.code} - {cc.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="flex gap-2 justify-end pt-2">
                 <Button variant="outline" onClick={handleClose}>إغلاق</Button>
                 {onBatchImport && (
