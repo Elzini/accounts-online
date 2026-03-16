@@ -726,6 +726,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           toast.error('فشل إنشاء المورد');
         } else if (newSupplier) {
           supplierId = newSupplier.id;
+          queryClient.invalidateQueries({ queryKey: ['suppliers'] });
           toast.success(`تم إنشاء المورد: ${data.supplier_name}`);
         }
       }
