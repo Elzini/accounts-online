@@ -266,12 +266,17 @@ export function JournalEntriesPage() {
 
   return (
     <div className="space-y-6" dir={direction}>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{t.je_title}</h1>
           <p className="text-muted-foreground">{t.je_subtitle}</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={printJournalSheet} className="gap-2">
+            <FileText className="w-4 h-4" />
+            {language === 'ar' ? 'طباعة كشف القيود' : 'Print Journal Sheet'}
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
           setIsDialogOpen(open);
           if (!open) resetForm();
         }}>
