@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
