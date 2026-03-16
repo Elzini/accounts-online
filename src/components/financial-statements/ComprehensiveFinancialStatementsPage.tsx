@@ -55,6 +55,7 @@ export function ComprehensiveFinancialStatementsPage() {
   const { company, companyId } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
   const { filterByFiscalYear } = useFiscalYearFilter();
+  const { decimals: numDecimals } = useNumberFormat();
   
   const { data: sales = [] } = useSales();
   const { data: expenses = [] } = useExpenses();
