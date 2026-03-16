@@ -42,8 +42,14 @@ export function REProjectsPage() {
   const saveProject = useSaveREProject();
   const deleteProject = useDeleteREProject();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailProjectId, setDetailProjectId] = useState<string | null>(null);
   const [form, setForm] = useState<any>(emptyProject);
   const [search, setSearch] = useState('');
+  
+  // Financial data for detail view
+  const { data: projectInvoices = [] } = useREProjectInvoices(detailProjectId);
+  const { data: projectEntries = [] } = useREProjectJournalEntries(detailProjectId);
+  const detailProject = (projects as any[]).find((p: any) => p.id === detailProjectId);
 
   const openNew = () => { setForm(emptyProject); setDialogOpen(true); };
   const openEdit = (p: any) => { setForm(p); setDialogOpen(true); };
