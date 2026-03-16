@@ -6748,6 +6748,7 @@ export type Database = {
           notes: string | null
           payment_method: string | null
           payment_status: string | null
+          project_id: string | null
           sale_id: string | null
           status: string
           subtotal: number
@@ -6783,6 +6784,7 @@ export type Database = {
           notes?: string | null
           payment_method?: string | null
           payment_status?: string | null
+          project_id?: string | null
           sale_id?: string | null
           status?: string
           subtotal?: number
@@ -6818,6 +6820,7 @@ export type Database = {
           notes?: string | null
           payment_method?: string | null
           payment_status?: string | null
+          project_id?: string | null
           sale_id?: string | null
           status?: string
           subtotal?: number
@@ -6866,6 +6869,13 @@ export type Database = {
             columns: ["journal_entry_id"]
             isOneToOne: false
             referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "re_projects"
             referencedColumns: ["id"]
           },
           {
@@ -7117,6 +7127,7 @@ export type Database = {
           fiscal_year_id: string | null
           id: string
           is_posted: boolean
+          project_id: string | null
           reference_id: string | null
           reference_type: string | null
           total_credit: number
@@ -7133,6 +7144,7 @@ export type Database = {
           fiscal_year_id?: string | null
           id?: string
           is_posted?: boolean
+          project_id?: string | null
           reference_id?: string | null
           reference_type?: string | null
           total_credit?: number
@@ -7149,6 +7161,7 @@ export type Database = {
           fiscal_year_id?: string | null
           id?: string
           is_posted?: boolean
+          project_id?: string | null
           reference_id?: string | null
           reference_type?: string | null
           total_credit?: number
@@ -7168,6 +7181,13 @@ export type Database = {
             columns: ["fiscal_year_id"]
             isOneToOne: false
             referencedRelation: "fiscal_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "re_projects"
             referencedColumns: ["id"]
           },
         ]

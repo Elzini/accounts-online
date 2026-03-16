@@ -50,6 +50,7 @@ import { PurchaseInvoiceDialog } from '@/components/invoices/PurchaseInvoiceDial
 import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { PaymentAccountSelector } from './PaymentAccountSelector';
+import { ProjectSelector } from './ProjectSelector';
 import { InvoiceSearchBar } from './InvoiceSearchBar';
 import { useItems, useUnits } from '@/hooks/useInventory';
 import { useCompanyId } from '@/hooks/useCompanyId';
@@ -216,6 +217,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     warehouse: 'main',
     notes: '',
     price_includes_tax: true,
+    project_id: null as string | null,
   });
 
   useEffect(() => {
@@ -426,6 +428,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             status: 'active',
             fiscal_year_id: selectedFiscalYear?.id || null,
             notes: invoiceData.notes || null,
+            project_id: invoiceData.project_id || null,
           })
           .select()
           .single();
@@ -469,6 +472,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       warehouse: 'main',
       notes: '',
       price_includes_tax: true,
+      project_id: null,
     });
     setCars([createEmptyCar()]);
     setDiscount(0);
@@ -530,6 +534,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       warehouse: 'main',
       notes: batch.notes || '',
       price_includes_tax: false,
+      project_id: null,
     });
 
     const batchCars = batch.cars || [];
@@ -809,6 +814,11 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   className="h-9 border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none text-xs"
                 />
               </div>
+              <ProjectSelector
+                value={invoiceData.project_id}
+                onChange={(v) => setInvoiceData({ ...invoiceData, project_id: v })}
+                className="h-9 border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none text-xs"
+              />
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_payment_method}</Label>
                 <Select defaultValue="cash">

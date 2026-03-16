@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { useJournalEntries, useAccounts, useCreateJournalEntry, useDeleteJournalEntry, useJournalEntry } from '@/hooks/useAccounting';
 import { useCostCenters } from '@/hooks/useCostCenters';
+import { ProjectSelector } from '@/components/forms/ProjectSelector';
 import { toast } from 'sonner';
 import { Loader2, Plus, Eye, Trash2, BookOpen, CalendarIcon, X, Printer, FileDown, Paperclip } from 'lucide-react';
 import { JournalEntryEditDialog } from './JournalEntryEditDialog';
@@ -64,6 +65,7 @@ export function JournalEntriesPage() {
   const [vatType, setVatType] = useState<'sales' | 'purchases'>('purchases');
   const [taxNumber, setTaxNumber] = useState('');
   const [supplierCustomer, setSupplierCustomer] = useState('');
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [lines, setLines] = useState<JournalLine[]>([
     { account_id: '', description: '', debit: 0, credit: 0, reference: '', line_date: format(new Date(), 'yyyy-MM-dd'), cost_center: '' },
     { account_id: '', description: '', debit: 0, credit: 0, reference: '', line_date: format(new Date(), 'yyyy-MM-dd'), cost_center: '' },
@@ -78,6 +80,7 @@ export function JournalEntriesPage() {
     setVatType('purchases');
     setTaxNumber('');
     setSupplierCustomer('');
+    setProjectId(null);
     setLines([
       { account_id: '', description: '', debit: 0, credit: 0, reference: '', line_date: format(new Date(), 'yyyy-MM-dd'), cost_center: '' },
       { account_id: '', description: '', debit: 0, credit: 0, reference: '', line_date: format(new Date(), 'yyyy-MM-dd'), cost_center: '' },
@@ -150,6 +153,7 @@ export function JournalEntriesPage() {
           reference_type: 'manual',
           reference_id: null,
           created_by: null,
+          project_id: projectId || null,
         },
         lines: validLines.map(line => ({
           account_id: line.account_id,
@@ -306,6 +310,9 @@ export function JournalEntriesPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Project Selector (Real Estate only) */}
+              <ProjectSelector value={projectId} onChange={setProjectId} />
 
               {/* Lines Table */}
               <div className="border rounded-lg">

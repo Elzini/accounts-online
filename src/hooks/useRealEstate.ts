@@ -357,3 +357,40 @@ export function useREDashboardStats() {
     enabled: !!companyId,
   });
 }
+
+// =================== Project Financial Links ===================
+export function useREProjectInvoices(projectId: string | null) {
+  const companyId = useCompanyId();
+  return useQuery({
+    queryKey: ['re-project-invoices', projectId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('id, invoice_number, invoice_type, invoice_date, total, vat_amount, supplier_id, customer_name, status, payment_status')
+        .eq('company_id', companyId!)
+        .eq('project_id', projectId!)
+        .order('invoice_date', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!projectId && !!companyId,
+  });
+}
+
+export function useREProjectJournalEntries(projectId: string | null) {
+  const companyId = useCompanyId();
+  return useQuery({
+    queryKey: ['re-project-journal-entries', projectId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('id, entry_number, entry_date, description, total_debit, total_credit, reference_type, is_posted')
+        .eq('company_id', companyId!)
+        .eq('project_id', projectId!)
+        .order('entry_date', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!projectId && !!companyId,
+  });
+}
