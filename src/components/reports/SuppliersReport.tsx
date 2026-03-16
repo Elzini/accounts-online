@@ -53,6 +53,8 @@ export function SuppliersReport() {
         supplier_id: car.supplier_id,
         date: car.purchase_date,
         amount: Number(car.purchase_price),
+        taxable_amount: Number(car.purchase_price),
+        vat_amount: 0,
         status: car.status,
         name: car.name,
         model: car.model || '-',
