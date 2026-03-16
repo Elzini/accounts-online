@@ -16,6 +16,7 @@ import {
   Shield, Activity, Download
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 import {
   ImportedTrialBalance,
   TrialBalanceRow,
