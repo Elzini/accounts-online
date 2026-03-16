@@ -302,6 +302,9 @@ export function JournalEntriesPage() {
             <FileText className="w-4 h-4" />
             {language === 'ar' ? 'طباعة كشف القيود' : 'Print Journal Sheet'}
           </Button>
+          {isRealEstate && (
+            <RealEstateJournalTemplates onSelectTemplate={handleTemplateSelect} />
+          )}
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
           setIsDialogOpen(open);
           if (!open) resetForm();
