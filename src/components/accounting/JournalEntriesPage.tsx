@@ -15,7 +15,7 @@ import { useJournalEntries, useAccounts, useCreateJournalEntry, useDeleteJournal
 import { useCostCenters } from '@/hooks/useCostCenters';
 import { ProjectSelector } from '@/components/forms/ProjectSelector';
 import { toast } from 'sonner';
-import { Loader2, Plus, Eye, Trash2, BookOpen, CalendarIcon, X, Printer, FileDown, Paperclip } from 'lucide-react';
+import { Loader2, Plus, Eye, Trash2, BookOpen, CalendarIcon, X, Printer, FileDown, Paperclip, FileText } from 'lucide-react';
 import { JournalEntryEditDialog } from './JournalEntryEditDialog';
 import { JournalAttachments } from './JournalAttachments';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -26,6 +26,7 @@ import { AccountSearchSelect } from './AccountSearchSelect';
 import { JournalEntryPrintDialog } from './JournalEntryPrintDialog';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useUnifiedPrintReport } from '@/hooks/useUnifiedPrintReport';
 
 interface JournalLine {
   account_id: string;
@@ -41,11 +42,12 @@ interface JournalLine {
 }
 
 export function JournalEntriesPage() {
-  const { t, direction } = useLanguage();
+  const { t, direction, language } = useLanguage();
   const { data: entries = [], isLoading } = useJournalEntries();
   const { data: accounts = [] } = useAccounts();
   const { data: costCenters = [] } = useCostCenters();
   const { filterByFiscalYear } = useFiscalYearFilter();
+  const { printReport } = useUnifiedPrintReport();
   const createJournalEntry = useCreateJournalEntry();
   const deleteJournalEntry = useDeleteJournalEntry();
   
@@ -204,6 +206,56 @@ export function JournalEntriesPage() {
   // Get next entry number
   const nextEntryNumber = filteredEntries.length > 0 ? Math.max(...filteredEntries.map(e => e.entry_number)) + 1 : 1;
 
+  const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
+
+  const printJournalSheet = () => {
+    if (!filteredEntries.length) {
+      toast.error(language === 'ar' ? 'لا توجد قيود للطباعة' : 'No entries to print');
+      return;
+    }
+    const columns = [
+      { header: t.je_col_number, key: 'entry_number' },
+      { header: t.je_col_date, key: 'date' },
+      { header: t.je_col_type, key: 'type' },
+      { header: t.je_col_desc, key: 'description' },
+      { header: t.je_col_debit, key: 'debit' },
+      { header: t.je_col_credit, key: 'credit' },
+      { header: t.je_col_status, key: 'status' },
+    ];
+    const data = filteredEntries.map((entry: any) => ({
+      entry_number: entry.entry_number,
+      date: format(new Date(entry.entry_date), 'yyyy/MM/dd'),
+      type: getReferenceTypeLabel(entry.reference_type),
+      description: entry.description,
+      debit: fmt(entry.total_debit),
+      credit: fmt(entry.total_credit),
+      status: entry.is_posted ? (language === 'ar' ? 'مرحّل' : 'Posted') : (language === 'ar' ? 'مسودة' : 'Draft'),
+    }));
+    const totalDebitAll = filteredEntries.reduce((sum: number, e: any) => sum + e.total_debit, 0);
+    const totalCreditAll = filteredEntries.reduce((sum: number, e: any) => sum + e.total_credit, 0);
+    const headerInfo = [
+      { label: language === 'ar' ? 'عدد القيود' : 'Entries Count', value: filteredEntries.length.toString() },
+      { label: language === 'ar' ? 'إجمالي المدين' : 'Total Debit', value: fmt(totalDebitAll) + ' ر.س' },
+      { label: language === 'ar' ? 'إجمالي الدائن' : 'Total Credit', value: fmt(totalCreditAll) + ' ر.س' },
+    ];
+    const summaryRow: Record<string, any> = {
+      entry_number: '',
+      date: '',
+      type: '',
+      description: language === 'ar' ? 'الإجمالي' : 'Total',
+      debit: fmt(totalDebitAll),
+      credit: fmt(totalCreditAll),
+      status: '',
+    };
+    printReport({
+      title: language === 'ar' ? 'كشف القيود اليومية' : 'Journal Entries Sheet',
+      columns,
+      data,
+      headerInfo,
+      summaryRow,
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -214,12 +266,17 @@ export function JournalEntriesPage() {
 
   return (
     <div className="space-y-6" dir={direction}>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{t.je_title}</h1>
           <p className="text-muted-foreground">{t.je_subtitle}</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={printJournalSheet} className="gap-2">
+            <FileText className="w-4 h-4" />
+            {language === 'ar' ? 'طباعة كشف القيود' : 'Print Journal Sheet'}
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
           setIsDialogOpen(open);
           if (!open) resetForm();
         }}>
@@ -537,6 +594,7 @@ export function JournalEntriesPage() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* View/Edit Entry Dialog */}
