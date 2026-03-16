@@ -824,7 +824,6 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         amount_paid: invoiceData.payment_status === 'paid' ? calculations.finalTotal : 0,
         supplier_invoice_number: invoiceData.supplier_invoice_number || null,
         payment_account_id: invoiceData.payment_account_id || null,
-        cost_center_id: invoiceData.cost_center_id || null,
       };
 
       if (!isProtected) {
