@@ -70,7 +70,8 @@ export function PrepaidExpensesReport() {
   const totalRemaining = filteredExpenses.reduce((sum: number, exp: any) => sum + (exp.remaining_amount || 0), 0);
   const activeCount = filteredExpenses.filter((e: any) => e.status === 'active').length;
 
-  const formatNumber = (n: number) => Math.round(n).toLocaleString('en-US');
+  const { formatNumber: globalFormatNumber } = useNumberFormat();
+  const formatNumber = (n: number) => globalFormatNumber(n) || '0';
 
   const getStatusBadge = (status: string) => {
     switch (status) {
