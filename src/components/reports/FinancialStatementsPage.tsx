@@ -26,6 +26,7 @@ import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { usePdfExport } from '@/hooks/usePdfExport';
 import { toast } from 'sonner';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 
 // ===== Types =====
 interface BalanceSheetData {
