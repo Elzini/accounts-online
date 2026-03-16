@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 import {
   useCardFormulas,
   FORMULA_VARIABLES,

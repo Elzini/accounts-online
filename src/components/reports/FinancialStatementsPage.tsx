@@ -189,6 +189,7 @@ const emptyFinancialData: FinancialData = {
 
 export function FinancialStatementsPage() {
   const { companyId, company } = useCompany();
+  const { decimals: numDecimals } = useNumberFormat();
   const [data, setData] = useState<FinancialData>(emptyFinancialData);
   const [isLoading, setIsLoading] = useState(false);
   const [dataSource, setDataSource] = useState<'none' | 'excel' | 'system'>('none');
