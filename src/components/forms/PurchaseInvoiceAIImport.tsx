@@ -123,14 +123,8 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
     if (!files || files.length === 0) return;
 
     const fileArray = Array.from(files);
-    const maxSize = 10 * 1024 * 1024;
-
     // Validate files
     const validFiles = fileArray.filter(f => {
-      if (f.size > maxSize) {
-        toast.error(`الملف ${f.name} كبير جداً`);
-        return false;
-      }
       if (!f.type.startsWith('image/') && !f.name.toLowerCase().endsWith('.pdf')) {
         toast.error(`الملف ${f.name} غير مدعوم`);
         return false;
