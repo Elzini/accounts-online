@@ -266,22 +266,19 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
   const handleUpdateExisting = async (result: ReconciliationResult) => {
     if (!result.matchedInvoice || !companyId) return;
     const data = result.parsed.data;
-    const isProtected = ['issued', 'approved', 'posted'].includes(result.matchedInvoice.status || '');
     
     try {
-      // Build update payload based on protection status
+      // Always update header fields including financial amounts
+      // The reconciliation update is an explicit user action to sync data
       const headerUpdate: Record<string, any> = {
         supplier_invoice_number: data.invoice_number || result.matchedInvoice.supplier_invoice_number,
         invoice_date: data.invoice_date || result.matchedInvoice.invoice_date,
         customer_name: data.supplier_name || result.matchedInvoice.customer_name,
+        // Always update financial fields to match imported invoice exactly
+        subtotal: data.subtotal || (data.total_amount - data.vat_amount),
+        vat_amount: data.vat_amount,
+        total: data.total_amount,
       };
-
-      // Only update financial fields if the invoice is NOT in a protected status
-      if (!isProtected) {
-        headerUpdate.subtotal = data.subtotal || (data.total_amount - data.vat_amount);
-        headerUpdate.vat_amount = data.vat_amount;
-        headerUpdate.total = data.total_amount;
-      }
 
       const { error: headerError } = await (supabase as any)
         .from('invoices')
@@ -290,15 +287,15 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
 
       if (headerError) throw headerError;
 
-      // Update items if available (only for non-protected invoices)
-      if (data.items && data.items.length > 0 && !isProtected) {
+      // Always update items from parsed data to match the imported invoice
+      if (data.items && data.items.length > 0) {
         // Delete existing items
         await (supabase as any)
           .from('invoice_items')
           .delete()
           .eq('invoice_id', result.matchedInvoice.id);
 
-        // Insert new items from parsed data
+        // Insert new items from parsed data - preserve exact numbers without rounding
         const newItems = data.items.map((item: any) => ({
           invoice_id: result.matchedInvoice!.id,
           company_id: companyId,
@@ -327,7 +324,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
         ) || null);
       }
 
-      const msg = isProtected 
+      toast.success(`تم تحديث الفاتورة ${result.matchedInvoice.invoice_number} بالبيانات المستوردة بنجاح`);
         ? `تم تحديث البيانات الوصفية للفاتورة ${result.matchedInvoice.invoice_number} (البيانات المالية محمية)`
         : `تم تحديث الفاتورة ${result.matchedInvoice.invoice_number} بنجاح`;
       toast.success(msg);
