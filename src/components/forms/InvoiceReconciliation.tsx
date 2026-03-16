@@ -87,24 +87,26 @@ export function matchInvoices(
       }
 
       // Match by subtotal (before VAT)
+      const parsedSubtotal = data.subtotal ?? (data.total_amount - (data.vat_amount ?? 0));
       let subtotalMatch = false;
-      if (data.subtotal !== undefined && existing.subtotal !== undefined) {
-        const subtotalHalalahDiff = Math.abs(toHalalah(data.subtotal) - toHalalah(existing.subtotal));
+      if (existing.subtotal !== undefined) {
+        const subtotalHalalahDiff = Math.abs(toHalalah(parsedSubtotal) - toHalalah(existing.subtotal));
         subtotalMatch = subtotalHalalahDiff === 0;
         if (!subtotalMatch) {
-          tempDiffs.push(`الإجمالي قبل الضريبة: ${formatAmount(data.subtotal)} ≠ ${formatAmount(existing.subtotal)} (فرق: ${(subtotalHalalahDiff / 100).toFixed(2)} ر.س)`);
+          tempDiffs.push(`الإجمالي قبل الضريبة: ${formatAmount(parsedSubtotal)} ≠ ${formatAmount(existing.subtotal)} (فرق: ${(subtotalHalalahDiff / 100).toFixed(2)} ر.س)`);
         }
       }
 
       // Match by VAT amount (zero tolerance)
+      const parsedVatAmount = data.vat_amount ?? (data.total_amount - parsedSubtotal);
       let vatMatch = false;
-      if (data.vat_amount !== undefined && existing.vat_amount !== undefined) {
-        const vatHalalahDiff = Math.abs(toHalalah(data.vat_amount) - toHalalah(existing.vat_amount));
+      if (existing.vat_amount !== undefined) {
+        const vatHalalahDiff = Math.abs(toHalalah(parsedVatAmount) - toHalalah(existing.vat_amount));
         vatMatch = vatHalalahDiff === 0;
         if (vatMatch) {
           score += 10;
         } else {
-          tempDiffs.push(`الضريبة: ${formatAmount(data.vat_amount)} ≠ ${formatAmount(existing.vat_amount)} (فرق: ${(vatHalalahDiff / 100).toFixed(2)} ر.س)`);
+          tempDiffs.push(`الضريبة: ${formatAmount(parsedVatAmount)} ≠ ${formatAmount(existing.vat_amount)} (فرق: ${(vatHalalahDiff / 100).toFixed(2)} ر.س)`);
         }
       }
 
