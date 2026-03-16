@@ -212,7 +212,7 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
       company_id: companyId,
       entry_date: invoice.invoice_date || new Date().toISOString().split('T')[0],
       description,
-      reference_type: isPurchase ? 'purchase_invoice' : 'sales_invoice',
+      reference_type: isPurchase ? 'invoice_purchase' : 'invoice_sale',
       reference_id: invoiceId,
       total_debit: totalDebit,
       total_credit: totalCredit,
