@@ -93,6 +93,28 @@ export function JournalEntriesPage() {
     ]);
   };
 
+  const handleTemplateSelect = (template: JournalTemplate) => {
+    resetForm();
+    setDescription(template.defaultDescription);
+    const templateLines = template.lines.map(tl => {
+      const account = accounts.find(a => a.code === tl.accountCode);
+      return {
+        account_id: account?.id || '',
+        account_code: account?.code || tl.accountCode,
+        account_name: account?.name || tl.accountName,
+        description: tl.description,
+        debit: tl.side === 'debit' ? 0 : 0,
+        credit: tl.side === 'credit' ? 0 : 0,
+        reference: '',
+        line_date: format(new Date(), 'yyyy-MM-dd'),
+        cost_center: '',
+      };
+    });
+    setLines(templateLines);
+    setIsDialogOpen(true);
+    toast.success(`تم تحميل قالب: ${template.name} — أدخل المبالغ`);
+  };
+
   const addLine = () => {
     setLines([...lines, { 
       account_id: '', 
