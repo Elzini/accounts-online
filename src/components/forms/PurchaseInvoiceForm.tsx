@@ -252,13 +252,13 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       return purchaseBatches.length + 1;
     }
 
-    const maxInvoiceNumber = purchaseInvoices.reduce((max: number, inv: any) => {
+    const maxInvoiceNumber = filteredPurchaseInvoices.reduce((max: number, inv: any) => {
       const parsed = parseInt(String(inv.invoice_number || ''), 10);
       return Number.isNaN(parsed) ? max : Math.max(max, parsed);
     }, 0);
 
     return maxInvoiceNumber + 1;
-  }, [isCarDealership, purchaseBatches, purchaseInvoices]);
+  }, [isCarDealership, purchaseBatches, filteredPurchaseInvoices]);
 
   const [invoiceData, setInvoiceData] = useState({
     invoice_number: '',
