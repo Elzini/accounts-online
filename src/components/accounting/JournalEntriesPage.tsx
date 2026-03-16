@@ -594,6 +594,7 @@ export function JournalEntriesPage() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* View/Edit Entry Dialog */}
