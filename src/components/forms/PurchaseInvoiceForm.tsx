@@ -295,6 +295,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const [currentInvoiceIndex, setCurrentInvoiceIndex] = useState(0);
   const [isViewingExisting, setIsViewingExisting] = useState(false);
   const [currentBatchId, setCurrentBatchId] = useState<string | null>(null);
+  const [currentInvoiceStatus, setCurrentInvoiceStatus] = useState<string>('draft');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
