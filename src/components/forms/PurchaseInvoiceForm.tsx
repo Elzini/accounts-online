@@ -604,6 +604,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         price_includes_tax: false,
         project_id: null,
         cost_center_id: null,
+        payment_status: 'unpaid',
       });
 
       const batchCars = record.cars || [];
