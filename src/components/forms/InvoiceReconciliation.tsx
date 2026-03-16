@@ -3,9 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   CheckCircle, XCircle, AlertTriangle, ArrowLeftRight, 
-  FileText, Plus, Eye, ChevronDown, ChevronUp 
+  FileText, Plus, Eye, ChevronDown, ChevronUp, RefreshCw, Loader2, HelpCircle
 } from 'lucide-react';
 import { ParsedInvoiceData, BatchParsedResult } from './PurchaseInvoiceAIImport';
 
@@ -35,6 +36,7 @@ interface InvoiceReconciliationProps {
   formatCurrency: (val: number) => string;
   onImportSelected: (selected: BatchParsedResult[]) => void;
   onViewDetails: (result: BatchParsedResult) => void;
+  onUpdateExisting?: (result: ReconciliationResult) => Promise<void>;
   onClose: () => void;
 }
 
@@ -120,6 +122,7 @@ export function InvoiceReconciliation({
   formatCurrency,
   onImportSelected,
   onViewDetails,
+  onUpdateExisting,
   onClose,
 }: InvoiceReconciliationProps) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(() => {
@@ -132,6 +135,7 @@ export function InvoiceReconciliation({
   });
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [filter, setFilter] = useState<'all' | 'matched' | 'unmatched' | 'partial'>('all');
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const stats = useMemo(() => ({
     total: results.length,
@@ -222,13 +226,23 @@ export function InvoiceReconciliation({
           <div className="text-lg font-bold text-green-600">{stats.exact}</div>
           <div className="text-[10px] text-muted-foreground">مطابقة</div>
         </button>
-        <button
-          onClick={() => setFilter('partial')}
-          className={`p-3 rounded-lg border text-center transition-all ${filter === 'partial' ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20 ring-1 ring-yellow-500' : 'hover:bg-muted/50'}`}
-        >
-          <div className="text-lg font-bold text-yellow-600">{stats.partial}</div>
-          <div className="text-[10px] text-muted-foreground">جزئية</div>
-        </button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setFilter('partial')}
+                className={`p-3 rounded-lg border text-center transition-all ${filter === 'partial' ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20 ring-1 ring-yellow-500' : 'hover:bg-muted/50'}`}
+              >
+                <div className="text-lg font-bold text-yellow-600">{stats.partial}</div>
+                <div className="text-[10px] text-muted-foreground flex items-center justify-center gap-1">جزئية <HelpCircle className="w-3 h-3" /></div>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs text-xs">
+              <p className="font-bold mb-1">مطابقة جزئية تعني:</p>
+              <p>الفاتورة موجودة في النظام لكن بعض البيانات مختلفة (مثل المبلغ أو التاريخ أو رقم الفاتورة). يمكنك تحديث الفاتورة الحالية لتطابق البيانات المستوردة.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <button
           onClick={() => setFilter('unmatched')}
           className={`p-3 rounded-lg border text-center transition-all ${filter === 'unmatched' ? 'border-red-500 bg-red-50 dark:bg-red-950/20 ring-1 ring-red-500' : 'hover:bg-muted/50'}`}
@@ -340,6 +354,30 @@ export function InvoiceReconciliation({
                             <Eye className="w-3 h-3" />
                             عرض التفاصيل
                           </Button>
+                          {r.matchType !== 'none' && r.matchType !== 'exact' && r.matchedInvoice && onUpdateExisting && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="text-xs h-7 gap-1"
+                              disabled={updatingId === r.parsed.index}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                setUpdatingId(r.parsed.index);
+                                try {
+                                  await onUpdateExisting(r);
+                                } finally {
+                                  setUpdatingId(null);
+                                }
+                              }}
+                            >
+                              {updatingId === r.parsed.index ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <RefreshCw className="w-3 h-3" />
+                              )}
+                              تحديث الفاتورة الحالية
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </TableCell>
