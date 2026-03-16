@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { ShoppingCart, Car, Calendar, Wallet, Building2, CreditCard, Banknote, Hash, RefreshCw, Receipt, FileText } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { ShoppingCart, Car, Calendar, Wallet, Building2, CreditCard, Banknote, Hash, RefreshCw, Receipt, FileText, Edit, CheckCircle, Trash2, MoreHorizontal, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -16,8 +16,11 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useExpenses } from '@/hooks/useExpenses';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface PurchasesTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -67,8 +70,42 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const { t, language } = useLanguage();
+
+  const handleApproveInvoice = useCallback(async (invoiceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .update({ status: 'issued' })
+        .eq('id', invoiceId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+      toast.success(language === 'ar' ? 'تم اعتماد الفاتورة بنجاح' : 'Invoice approved successfully');
+    } catch (err) {
+      console.error('Approve error:', err);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء اعتماد الفاتورة' : 'Error approving invoice');
+    }
+  }, [queryClient, language]);
+
+  const handleDeleteInvoice = useCallback(async (invoiceId: string) => {
+    try {
+      // Delete invoice items first
+      await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId);
+      const { error } = await supabase.from('invoices').delete().eq('id', invoiceId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast.success(language === 'ar' ? 'تم حذف الفاتورة بنجاح' : 'Invoice deleted successfully');
+    } catch (err) {
+      console.error('Delete error:', err);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء حذف الفاتورة' : 'Error deleting invoice');
+    }
+    setDeleteInvoiceId(null);
+  }, [queryClient, language]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -215,6 +252,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                 <TableHead className="text-right font-bold">{t.th_payment_method}</TableHead>
                 <TableHead className="text-right font-bold">{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_status}</TableHead>
+                <TableHead className="text-center font-bold">{language === 'ar' ? 'إجراءات' : 'Actions'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -246,6 +284,35 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(inv.status)}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {inv.status === 'draft' && (
+                            <>
+                              <DropdownMenuItem onClick={() => handleApproveInvoice(inv.id)}>
+                                <CheckCircle className="w-4 h-4 ml-2 text-green-600" />
+                                {language === 'ar' ? 'اعتماد الفاتورة' : 'Approve Invoice'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setDeleteInvoiceId(inv.id)} className="text-destructive">
+                                <Trash2 className="w-4 h-4 ml-2" />
+                                {language === 'ar' ? 'حذف' : 'Delete'}
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {inv.status !== 'draft' && (
+                            <DropdownMenuItem disabled>
+                              <Eye className="w-4 h-4 ml-2" />
+                              {language === 'ar' ? 'عرض' : 'View'}
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -286,6 +353,23 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
             </div>
           )}
         </div>
+
+        <AlertDialog open={!!deleteInvoiceId} onOpenChange={() => setDeleteInvoiceId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{language === 'ar' ? 'تأكيد الحذف' : 'Confirm Delete'}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {language === 'ar' ? 'هل أنت متأكد من حذف هذه الفاتورة؟ لا يمكن التراجع عن هذا الإجراء.' : 'Are you sure you want to delete this invoice? This action cannot be undone.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{language === 'ar' ? 'إلغاء' : 'Cancel'}</AlertDialogCancel>
+              <AlertDialogAction onClick={() => deleteInvoiceId && handleDeleteInvoice(deleteInvoiceId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {language === 'ar' ? 'حذف' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
