@@ -78,6 +78,7 @@ import { SaaSExecutiveDashboard } from '@/components/super-admin/SaaSExecutiveDa
 import { PlansManagement } from '@/components/super-admin/PlansManagement';
 import { RevenueControl } from '@/components/super-admin/RevenueControl';
 import { SystemControlCenter } from '@/components/super-admin/SystemControlCenter';
+import { EnterpriseSecurityDashboard } from '@/components/super-admin/EnterpriseSecurityDashboard';
 import { SystemMonitoring } from '@/components/super-admin/SystemMonitoring';
 import { SupportCenter } from '@/components/super-admin/SupportCenter';
 import { RBACManagement } from '@/components/super-admin/RBACManagement';
