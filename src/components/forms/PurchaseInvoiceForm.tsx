@@ -272,6 +272,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     project_id: null as string | null,
     cost_center_id: null as string | null,
     payment_status: 'unpaid' as string,
+    supplier_invoice_number: '',
   });
 
   useEffect(() => {
@@ -484,6 +485,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             fiscal_year_id: selectedFiscalYear?.id || null,
             notes: invoiceData.notes || null,
             project_id: invoiceData.project_id || null,
+            supplier_invoice_number: invoiceData.supplier_invoice_number || null,
           })
           .select()
           .single();
@@ -543,6 +545,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       project_id: null,
       cost_center_id: null,
       payment_status: 'unpaid',
+      supplier_invoice_number: '',
     });
     setCars([createEmptyCar()]);
     setDiscount(0);
@@ -609,6 +612,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         project_id: null,
         cost_center_id: null,
         payment_status: 'unpaid',
+        supplier_invoice_number: '',
       });
 
       const batchCars = record.cars || [];
@@ -642,6 +646,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         project_id: record.project_id || null,
         cost_center_id: null,
         payment_status: record.payment_status || 'unpaid',
+        supplier_invoice_number: record.supplier_invoice_number || '',
       });
 
       const items = record.invoice_items || [];
@@ -1070,12 +1075,14 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         }
 
         // Create invoice
-        const invoiceNumber = data.invoice_number || `PUR-${Date.now()}-${result.index}`;
+        const supplierInvNumber = data.invoice_number || '';
+        const invoiceNumber = `PUR-${Date.now()}-${result.index}`;
         const { data: invoice, error: invoiceError } = await supabase
           .from('invoices')
           .insert({
             company_id: companyId,
             invoice_number: invoiceNumber,
+            supplier_invoice_number: supplierInvNumber || null,
             invoice_type: 'purchase',
             supplier_id: supplierId,
             customer_name: data.supplier_name,
@@ -1320,7 +1327,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               </div>
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_supplier_invoice}</Label>
-                <Input className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-indigo-500 shadow-none" placeholder={t.inv_reference} />
+                <Input value={invoiceData.supplier_invoice_number} onChange={(e) => setInvoiceData({ ...invoiceData, supplier_invoice_number: e.target.value })} className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-indigo-500 shadow-none" placeholder={t.inv_reference} />
               </div>
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">مركز التكلفة</Label>
