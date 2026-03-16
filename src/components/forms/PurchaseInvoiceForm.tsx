@@ -1043,7 +1043,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             .insert({
               name: data.supplier_name,
               id_number: data.supplier_tax_number || null,
-              phone: data.supplier_phone || null,
+              phone: data.supplier_phone ? data.supplier_phone.split(/[-–،,\s]+/).filter((p: string) => p.match(/^\d{7,15}$/))[0] || data.supplier_phone.substring(0, 20) : null,
               address: data.supplier_address || null,
               company_id: companyId,
             })
