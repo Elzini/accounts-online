@@ -229,9 +229,48 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
     setTotalFiles(0);
     setSelectedBatchIndex(null);
     setSelectedCostCenterId(null);
+    setReconciliationResults(null);
+    setIsReconciling(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (batchFileInputRef.current) batchFileInputRef.current.value = '';
     onOpenChange(false);
+  };
+
+  const handleReconcile = async () => {
+    if (!companyId || batchResults.length === 0) return;
+    setIsReconciling(true);
+    try {
+      // Fetch all existing purchase invoices for this company
+      const { data: existingInvoices, error } = await (supabase as any)
+        .from('invoices')
+        .select('id, invoice_number, supplier_invoice_number, supplier_id, customer_name, invoice_date, total, vat_amount, status, payment_status')
+        .eq('company_id', companyId)
+        .eq('invoice_type', 'purchase')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const results = matchInvoices(batchResults, existingInvoices || []);
+      setReconciliationResults(results);
+
+      const matched = results.filter(r => r.matchType === 'exact').length;
+      const partial = results.filter(r => r.matchType === 'partial' || r.matchType === 'amount_only').length;
+      const unmatched = results.filter(r => r.matchType === 'none').length;
+      
+      toast.success(`تمت المطابقة: ${matched} مطابقة تامة، ${partial} جزئية، ${unmatched} غير موجودة`);
+    } catch (error: any) {
+      console.error('Reconciliation error:', error);
+      toast.error('حدث خطأ أثناء المطابقة');
+    } finally {
+      setIsReconciling(false);
+    }
+  };
+
+  const handleImportFromReconciliation = (selected: BatchParsedResult[]) => {
+    if (onBatchImport) {
+      onBatchImport(selected, selectedCostCenterId);
+    }
+    handleClose();
   };
 
   const formatCurrency = (val: number) =>
