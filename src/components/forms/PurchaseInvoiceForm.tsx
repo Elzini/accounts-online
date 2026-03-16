@@ -268,7 +268,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     payment_account_id: '',
     warehouse: 'main',
     notes: '',
-    price_includes_tax: true,
+    price_includes_tax: false,
     project_id: null as string | null,
     cost_center_id: null as string | null,
     payment_status: 'unpaid' as string,
