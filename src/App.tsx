@@ -54,6 +54,8 @@ function CompanyRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const { companyId, isSuperAdmin, loading: companyLoading } = useCompany();
 
+  console.log('[CompanyRoute] authLoading:', authLoading, 'companyLoading:', companyLoading, 'user:', !!user, 'companyId:', companyId);
+
   if (authLoading || companyLoading) {
     return <LoadingSpinner />;
   }
