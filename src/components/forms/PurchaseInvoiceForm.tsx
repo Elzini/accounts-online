@@ -211,19 +211,41 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   }, [existingCars, selectedFiscalYear]);
 
   const { data: purchaseInvoices = [] } = useQuery({
-    queryKey: ['purchase-invoice-sequence', companyId],
+    queryKey: ['purchase-invoices-nav', companyId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoices')
-        .select('invoice_number')
+        .select('*, invoice_items(*), supplier:suppliers(name, tax_number)')
         .eq('company_id', companyId!)
-        .eq('invoice_type', 'purchase');
+        .eq('invoice_type', 'purchase')
+        .order('invoice_date', { ascending: true });
 
       if (error) throw error;
       return data || [];
     },
     enabled: !!companyId && !isCarDealership,
   });
+
+  const filteredPurchaseInvoices = useMemo(() => {
+    if (isCarDealership) return [];
+    let filtered = purchaseInvoices;
+    if (selectedFiscalYear) {
+      const fyStart = new Date(selectedFiscalYear.start_date);
+      fyStart.setHours(0, 0, 0, 0);
+      const fyEnd = new Date(selectedFiscalYear.end_date);
+      fyEnd.setHours(23, 59, 59, 999);
+      filtered = purchaseInvoices.filter((inv: any) => {
+        const d = new Date(inv.invoice_date);
+        return d >= fyStart && d <= fyEnd;
+      });
+    }
+    return filtered;
+  }, [purchaseInvoices, selectedFiscalYear, isCarDealership]);
+
+  // Unified navigation records
+  const navigationRecords = useMemo(() => {
+    return isCarDealership ? fiscalYearFilteredBatches : filteredPurchaseInvoices;
+  }, [isCarDealership, fiscalYearFilteredBatches, filteredPurchaseInvoices]);
 
   const nextInvoiceNumber = useMemo(() => {
     if (isCarDealership) {
