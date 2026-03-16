@@ -201,6 +201,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       const query = searchQuery.toLowerCase();
       result = result.filter((inv: any) =>
         inv.invoice_number?.toLowerCase().includes(query) ||
+        inv.supplier_invoice_number?.toLowerCase().includes(query) ||
         inv.supplier?.name?.toLowerCase().includes(query) ||
         inv.notes?.toLowerCase().includes(query)
       );
@@ -263,7 +264,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
         </div>
 
         <SearchFilter
-          searchPlaceholder={language === 'ar' ? 'البحث برقم الفاتورة أو المورد...' : 'Search by invoice number or supplier...'}
+          searchPlaceholder={language === 'ar' ? 'البحث برقم الفاتورة أو رقم فاتورة المورد...' : 'Search by invoice number or supplier invoice...'}
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           filterOptions={filterOptions}
