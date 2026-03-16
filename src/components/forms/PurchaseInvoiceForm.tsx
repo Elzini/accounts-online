@@ -271,6 +271,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     price_includes_tax: true,
     project_id: null as string | null,
     cost_center_id: null as string | null,
+    payment_status: 'unpaid' as string,
   });
 
   useEffect(() => {
@@ -477,8 +478,8 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             vat_amount: calculations.totalVAT,
             total: calculations.finalTotal,
             discount_amount: calculations.discountAmount,
-            amount_paid: 0,
-            payment_status: 'unpaid',
+            amount_paid: invoiceData.payment_status === 'paid' ? calculations.finalTotal : 0,
+            payment_status: invoiceData.payment_status || 'unpaid',
             status: 'draft',
             fiscal_year_id: selectedFiscalYear?.id || null,
             notes: invoiceData.notes || null,
@@ -537,6 +538,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       price_includes_tax: true,
       project_id: null,
       cost_center_id: null,
+      payment_status: 'unpaid',
     });
     setCars([createEmptyCar()]);
     setDiscount(0);
@@ -602,6 +604,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         price_includes_tax: false,
         project_id: null,
         cost_center_id: null,
+        payment_status: 'unpaid',
       });
 
       const batchCars = record.cars || [];
@@ -634,6 +637,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         price_includes_tax: true,
         project_id: record.project_id || null,
         cost_center_id: null,
+        payment_status: record.payment_status || 'unpaid',
       });
 
       const items = record.invoice_items || [];
@@ -806,6 +810,8 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           discount_amount: calculations.discountAmount,
           notes: invoiceData.notes || null,
           project_id: invoiceData.project_id || null,
+          payment_status: invoiceData.payment_status || 'unpaid',
+          amount_paid: invoiceData.payment_status === 'paid' ? calculations.finalTotal : 0,
         })
         .eq('id', currentBatchId)
         .eq('company_id', companyId);
@@ -1180,6 +1186,19 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                     {costCenters.filter(cc => cc.is_active).map((cc) => (
                       <SelectItem key={cc.id} value={cc.id}>{cc.code} - {cc.name}</SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">حالة الدفع</Label>
+                <Select value={invoiceData.payment_status} onValueChange={(v) => setInvoiceData({ ...invoiceData, payment_status: v })}>
+                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-indigo-500 shadow-none transition-colors">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unpaid">غير مدفوع</SelectItem>
+                    <SelectItem value="paid">مدفوع</SelectItem>
+                    <SelectItem value="partial">مدفوع جزئياً</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
