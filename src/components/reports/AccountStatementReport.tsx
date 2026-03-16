@@ -73,8 +73,9 @@ export function AccountStatementReport() {
     return types[type] || type;
   };
 
+  const { decimals } = useNumberFormat();
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(value) : value);
   };
 
   const formatDate = (dateStr: string) => {

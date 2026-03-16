@@ -110,11 +110,12 @@ export function AccountMovementReport() {
     }
   };
 
+  const { decimals } = useNumberFormat();
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ar-SA', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(decimals === 0 ? Math.round(value) : value);
   };
 
   const formatDate = (dateStr: string) => {
