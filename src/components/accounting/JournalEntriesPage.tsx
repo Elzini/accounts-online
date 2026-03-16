@@ -311,6 +311,9 @@ export function JournalEntriesPage() {
                 </div>
               </div>
 
+              {/* Project Selector (Real Estate only) */}
+              <ProjectSelector value={projectId} onChange={setProjectId} />
+
               {/* Lines Table */}
               <div className="border rounded-lg">
                 <div className="bg-muted/50 p-2 flex items-center gap-2 border-b">
