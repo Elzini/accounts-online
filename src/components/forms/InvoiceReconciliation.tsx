@@ -334,38 +334,60 @@ export function InvoiceReconciliation({
                     <TableCell colSpan={8} className="p-0">
                       <div className="p-3 bg-muted/20 border-t space-y-2">
                         {r.matchedInvoice ? (
-                          <div className="space-y-2">
-                            <div className="text-xs font-semibold text-muted-foreground">الفاتورة المطابقة في النظام:</div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                              <div>
-                                <span className="text-muted-foreground">الرقم الداخلي: </span>
-                                <span className="font-mono font-bold">{r.matchedInvoice.invoice_number}</span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">رقم فاتورة المورد: </span>
-                                <span className="font-mono">{r.matchedInvoice.supplier_invoice_number || '-'}</span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">المبلغ: </span>
-                                <span className="font-mono">{formatCurrency(r.matchedInvoice.total)}</span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">الحالة: </span>
-                                <Badge variant="outline" className="text-[10px]">
-                                  {r.matchedInvoice.status === 'draft' ? 'مسودة' : r.matchedInvoice.status === 'issued' ? 'معتمدة' : r.matchedInvoice.status}
-                                </Badge>
-                              </div>
+                          <div className="space-y-3">
+                            <div className="text-xs font-semibold text-muted-foreground">مقارنة تفصيلية - الفاتورة المستوردة مع النظام ({r.matchedInvoice.invoice_number}):</div>
+                            <div className="border rounded overflow-hidden">
+                              <table className="w-full text-[11px]">
+                                <thead>
+                                  <tr className="bg-muted/40">
+                                    <th className="text-right p-1.5 font-semibold">البيان</th>
+                                    <th className="text-right p-1.5 font-semibold text-blue-600">المستورد (PDF)</th>
+                                    <th className="text-right p-1.5 font-semibold text-purple-600">النظام الحالي</th>
+                                    <th className="text-center p-1.5 font-semibold">الحالة</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(() => {
+                                    const d = r.parsed.data;
+                                    const e = r.matchedInvoice!;
+                                    const rows = [
+                                      { label: 'رقم فاتورة المورد', imported: d.invoice_number, system: e.supplier_invoice_number || '-' },
+                                      { label: 'التاريخ', imported: d.invoice_date?.split('T')[0] || '-', system: e.invoice_date?.split('T')[0] || '-' },
+                                      { label: 'الإجمالي قبل الضريبة', imported: d.subtotal?.toFixed(2) || '-', system: e.subtotal?.toFixed(2) || '-' },
+                                      { label: 'الضريبة', imported: d.vat_amount?.toFixed(2) || '-', system: e.vat_amount?.toFixed(2) || '-' },
+                                      { label: 'الإجمالي شامل الضريبة', imported: d.total_amount?.toFixed(2), system: e.total?.toFixed(2) },
+                                      { label: 'عدد الأصناف', imported: String(d.items?.length || 0), system: '-' },
+                                    ];
+                                    return rows.map((row, i) => {
+                                      const match = row.imported === row.system;
+                                      const hasDiff = !match && row.imported !== '-' && row.system !== '-';
+                                      return (
+                                        <tr key={i} className={hasDiff ? 'bg-yellow-50 dark:bg-yellow-950/20' : ''}>
+                                          <td className="p-1.5 font-medium border-t">{row.label}</td>
+                                          <td className="p-1.5 font-mono border-t text-blue-700 dark:text-blue-400">{row.imported}</td>
+                                          <td className="p-1.5 font-mono border-t text-purple-700 dark:text-purple-400">{row.system}</td>
+                                          <td className="p-1.5 border-t text-center">
+                                            {match ? (
+                                              <CheckCircle className="w-3.5 h-3.5 text-green-500 inline" />
+                                            ) : hasDiff ? (
+                                              <AlertTriangle className="w-3.5 h-3.5 text-yellow-500 inline" />
+                                            ) : (
+                                              <span className="text-muted-foreground">-</span>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      );
+                                    });
+                                  })()}
+                                </tbody>
+                              </table>
                             </div>
-                            {r.differences.length > 0 && (
-                              <div className="space-y-1">
-                                <div className="text-[10px] font-semibold text-yellow-600">الفروقات:</div>
-                                {r.differences.map((d, i) => (
-                                  <div key={i} className="text-[10px] text-yellow-600 flex items-center gap-1">
-                                    <AlertTriangle className="w-3 h-3" /> {d}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2 text-[10px]">
+                              <Badge variant="outline" className="text-[10px]">
+                                {r.matchedInvoice.status === 'draft' ? 'مسودة' : r.matchedInvoice.status === 'issued' ? 'معتمدة' : r.matchedInvoice.status}
+                              </Badge>
+                              <span className="text-muted-foreground">نقاط التطابق: {r.matchScore}/100</span>
+                            </div>
                           </div>
                         ) : (
                           <div className="flex items-center gap-2 text-xs text-red-600">
