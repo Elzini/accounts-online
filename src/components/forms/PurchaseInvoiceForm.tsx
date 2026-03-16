@@ -17,7 +17,8 @@ import {
   ChevronDown,
   CheckCircle,
   FileEdit,
-  Search
+  Search,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +45,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSuppliers, useAddPurchaseBatch, useCars, useUpdateCar, useDeleteCar, usePurchaseBatches } from '@/hooks/useDatabase';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { PurchaseInvoiceDialog } from '@/components/invoices/PurchaseInvoiceDialog';
@@ -56,6 +58,7 @@ import { useItems, useUnits } from '@/hooks/useInventory';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { PurchaseInvoiceAIImport, ParsedInvoiceData } from './PurchaseInvoiceAIImport';
 
 interface PurchaseInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -98,6 +101,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const deleteCar = useDeleteCar();
   const companyId = useCompanyId();
   const { t, language } = useLanguage();
+  const queryClient = useQueryClient();
 
   // Inventory hooks
   const { data: inventoryItems = [] } = useItems();
@@ -241,6 +245,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
+  const [aiImportOpen, setAiImportOpen] = useState(false);
 
   const selectedSupplier = suppliers.find(s => s.id === invoiceData.supplier_id);
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_purchases ? (taxSettings?.tax_rate || 15) : 0;
@@ -691,6 +696,101 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     };
   }, [savedBatchData, invoiceData, selectedSupplier, calculations, taxSettings, company, taxRate, nextInvoiceNumber]);
 
+  const handleAIImport = async (data: ParsedInvoiceData) => {
+    try {
+      // Check if supplier exists, if not create one
+      let supplierId = '';
+      const existingSupplier = suppliers.find(s => 
+        s.name === data.supplier_name || 
+        (data.supplier_tax_number && (s as any).id_number === data.supplier_tax_number)
+      );
+
+      if (existingSupplier) {
+        supplierId = existingSupplier.id;
+      } else if (companyId) {
+        // Create new supplier
+        const { data: newSupplier, error } = await supabase
+          .from('suppliers')
+          .insert({
+            name: data.supplier_name,
+            id_number: data.supplier_tax_number || null,
+            phone: data.supplier_phone || null,
+            address: data.supplier_address || null,
+            company_id: companyId,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating supplier:', error);
+          toast.error('فشل إنشاء المورد');
+        } else if (newSupplier) {
+          supplierId = newSupplier.id;
+          queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+          toast.success(`تم إنشاء المورد: ${data.supplier_name}`);
+        }
+      }
+
+      // Fill invoice data
+      setInvoiceData(prev => ({
+        ...prev,
+        supplier_id: supplierId,
+        invoice_number: data.invoice_number || prev.invoice_number,
+        purchase_date: data.invoice_date || prev.purchase_date,
+        due_date: data.due_date || prev.due_date,
+        notes: data.notes || prev.notes,
+        price_includes_tax: data.price_includes_tax ?? prev.price_includes_tax,
+      }));
+
+      // Fill items
+      if (data.items && data.items.length > 0) {
+        if (isCarDealership) {
+          const carItems: CarItem[] = data.items.map(item => ({
+            id: crypto.randomUUID(),
+            chassis_number: '',
+            plate_number: '',
+            name: item.description,
+            model: '',
+            color: '',
+            purchase_price: String(item.unit_price),
+            quantity: item.quantity,
+            unit: t.inv_car_unit,
+            car_condition: 'new' as const,
+          }));
+          setCars(carItems);
+        } else {
+          const invItems: PurchaseInventoryItem[] = data.items.map(item => ({
+            id: crypto.randomUUID(),
+            item_id: null,
+            item_name: item.description,
+            barcode: '',
+            unit_name: t.inv_unit,
+            unit_id: null,
+            purchase_price: String(item.unit_price),
+            quantity: item.quantity,
+          }));
+          setPurchaseInventoryItems(invItems);
+        }
+      }
+
+      // Set discount if any
+      if (data.discount && data.discount > 0) {
+        setDiscount(data.discount);
+        setDiscountType('amount');
+      }
+
+      // Reset navigation state
+      setIsViewingExisting(false);
+      setCurrentBatchId(null);
+      setIsEditing(false);
+
+      toast.success('تم تعبئة بيانات الفاتورة بنجاح');
+    } catch (error) {
+      console.error('Error processing AI import:', error);
+      toast.error('حدث خطأ أثناء معالجة البيانات');
+    }
+  };
+
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
   return (
@@ -722,6 +822,15 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
               {/* Title */}
               <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/20 gap-1.5 text-xs"
+                  onClick={() => setAiImportOpen(true)}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  استيراد ذكي (PDF)
+                </Button>
                 <div className="flex items-center gap-2">
                   <FileText className="w-5 h-5 opacity-80" />
                   <h1 className="text-lg font-bold tracking-wide">{t.inv_purchase_invoice}</h1>
@@ -1302,6 +1411,12 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* AI Import Dialog */}
+      <PurchaseInvoiceAIImport
+        open={aiImportOpen}
+        onOpenChange={setAiImportOpen}
+        onImport={handleAIImport}
+      />
     </>
   );
 }
