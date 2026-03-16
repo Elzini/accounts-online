@@ -643,7 +643,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         supplier_id: record.supplier_id || '',
         purchase_date: record.invoice_date || '',
         due_date: record.due_date || record.invoice_date || '',
-        payment_account_id: '',
+        payment_account_id: record.payment_account_id || '',
         warehouse: 'main',
         notes: record.notes || '',
         price_includes_tax: false,
