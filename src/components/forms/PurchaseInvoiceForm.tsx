@@ -17,7 +17,8 @@ import {
   ChevronDown,
   CheckCircle,
   FileEdit,
-  Search
+  Search,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
