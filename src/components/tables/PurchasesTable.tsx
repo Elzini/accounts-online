@@ -85,6 +85,10 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+      queryClient.invalidateQueries({ queryKey: ['advanced-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-chart-data'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-recent-invoices'] });
       toast.success(language === 'ar' ? 'تم اعتماد الفاتورة بنجاح' : 'Invoice approved successfully');
     } catch (err) {
       console.error('Approve error:', err);
