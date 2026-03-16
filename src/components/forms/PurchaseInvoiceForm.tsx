@@ -216,6 +216,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     warehouse: 'main',
     notes: '',
     price_includes_tax: true,
+    project_id: null as string | null,
   });
 
   useEffect(() => {
