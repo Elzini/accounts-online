@@ -42,7 +42,7 @@ interface JournalLine {
 }
 
 export function JournalEntriesPage() {
-  const { t, direction } = useLanguage();
+  const { t, direction, language } = useLanguage();
   const { data: entries = [], isLoading } = useJournalEntries();
   const { data: accounts = [] } = useAccounts();
   const { data: costCenters = [] } = useCostCenters();
