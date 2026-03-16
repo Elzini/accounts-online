@@ -127,7 +127,7 @@ export function AccountStatementReport() {
       data.push({ entryNumber: '', date: '', description: t.as_previous_balance, type: '', debit: '', credit: processedData.openingBalance < 0 ? Math.abs(processedData.openingBalance) : '', balance: processedData.openingBalance });
     }
     processedData.entries.forEach((entry: any) => {
-      data.push({ entryNumber: entry.entry_number, date: formatDate(entry.entry_date), description: entry.description, type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : '', credit: entry.credit > 0 ? entry.credit : '', balance: entry.balance });
+      data.push({ entryNumber: entry.entry_number, date: formatDate(entry.date), description: entry.description, type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : '', credit: entry.credit > 0 ? entry.credit : '', balance: entry.balance });
     });
     printReport({
       title: t.as_title,
