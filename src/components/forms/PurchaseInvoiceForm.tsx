@@ -1082,7 +1082,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
         // Create invoice
         const supplierInvNumber = data.invoice_number || '';
-        const invoiceNumber = `PUR-${Date.now()}-${result.index}`;
+        const invoiceNumber = await getNextInvoiceNumber(companyId, 'purchase');
         const { data: invoice, error: invoiceError } = await supabase
           .from('invoices')
           .insert({
