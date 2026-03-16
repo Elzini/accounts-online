@@ -513,6 +513,10 @@ export default function Companies() {
             <RevenueControl />
           </TabsContent>
 
+          <TabsContent value="enterprise-security">
+            <EnterpriseSecurityDashboard />
+          </TabsContent>
+
           <TabsContent value="system-control">
             <SystemControlCenter />
           </TabsContent>
