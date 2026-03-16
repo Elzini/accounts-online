@@ -211,13 +211,14 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   }, [existingCars, selectedFiscalYear]);
 
   const { data: purchaseInvoices = [] } = useQuery({
-    queryKey: ['purchase-invoice-sequence', companyId],
+    queryKey: ['purchase-invoices-nav', companyId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoices')
-        .select('invoice_number')
+        .select('*, invoice_items(*), supplier:suppliers(name, tax_number)')
         .eq('company_id', companyId!)
-        .eq('invoice_type', 'purchase');
+        .eq('invoice_type', 'purchase')
+        .order('invoice_date', { ascending: true });
 
       if (error) throw error;
       return data || [];
@@ -225,18 +226,39 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     enabled: !!companyId && !isCarDealership,
   });
 
+  const filteredPurchaseInvoices = useMemo(() => {
+    if (isCarDealership) return [];
+    let filtered = purchaseInvoices;
+    if (selectedFiscalYear) {
+      const fyStart = new Date(selectedFiscalYear.start_date);
+      fyStart.setHours(0, 0, 0, 0);
+      const fyEnd = new Date(selectedFiscalYear.end_date);
+      fyEnd.setHours(23, 59, 59, 999);
+      filtered = purchaseInvoices.filter((inv: any) => {
+        const d = new Date(inv.invoice_date);
+        return d >= fyStart && d <= fyEnd;
+      });
+    }
+    return filtered;
+  }, [purchaseInvoices, selectedFiscalYear, isCarDealership]);
+
+  // Unified navigation records
+  const navigationRecords = useMemo(() => {
+    return isCarDealership ? fiscalYearFilteredBatches : filteredPurchaseInvoices;
+  }, [isCarDealership, fiscalYearFilteredBatches, filteredPurchaseInvoices]);
+
   const nextInvoiceNumber = useMemo(() => {
     if (isCarDealership) {
       return purchaseBatches.length + 1;
     }
 
-    const maxInvoiceNumber = purchaseInvoices.reduce((max: number, inv: any) => {
+    const maxInvoiceNumber = filteredPurchaseInvoices.reduce((max: number, inv: any) => {
       const parsed = parseInt(String(inv.invoice_number || ''), 10);
       return Number.isNaN(parsed) ? max : Math.max(max, parsed);
     }, 0);
 
     return maxInvoiceNumber + 1;
-  }, [isCarDealership, purchaseBatches, purchaseInvoices]);
+  }, [isCarDealership, purchaseBatches, filteredPurchaseInvoices]);
 
   const [invoiceData, setInvoiceData] = useState({
     invoice_number: '',
@@ -488,7 +510,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         
         // Invalidate all related queries so data appears in tables and reports
         queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
-        queryClient.invalidateQueries({ queryKey: ['purchase-invoice-sequence', companyId] });
+        queryClient.invalidateQueries({ queryKey: ['purchase-invoices-nav', companyId] });
         queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
         queryClient.invalidateQueries({ queryKey: ['invoices'] });
         queryClient.invalidateQueries({ queryKey: ['purchases-report'] });
@@ -532,9 +554,9 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   };
 
   const handleFirstPurchase = () => {
-    if (fiscalYearFilteredBatches.length > 0) {
+    if (navigationRecords.length > 0) {
       setCurrentInvoiceIndex(0);
-      loadBatchData(fiscalYearFilteredBatches[0]);
+      loadRecordData(navigationRecords[0]);
     }
   };
 
@@ -542,60 +564,100 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     if (currentInvoiceIndex > 0) {
       const newIndex = currentInvoiceIndex - 1;
       setCurrentInvoiceIndex(newIndex);
-      loadBatchData(fiscalYearFilteredBatches[newIndex]);
+      loadRecordData(navigationRecords[newIndex]);
     }
   };
 
   const handleNextPurchase = () => {
-    if (currentInvoiceIndex < fiscalYearFilteredBatches.length - 1) {
+    if (currentInvoiceIndex < navigationRecords.length - 1) {
       const newIndex = currentInvoiceIndex + 1;
       setCurrentInvoiceIndex(newIndex);
-      loadBatchData(fiscalYearFilteredBatches[newIndex]);
+      loadRecordData(navigationRecords[newIndex]);
     }
   };
 
   const handleLastPurchase = () => {
-    if (fiscalYearFilteredBatches.length > 0) {
-      const lastIndex = fiscalYearFilteredBatches.length - 1;
+    if (navigationRecords.length > 0) {
+      const lastIndex = navigationRecords.length - 1;
       setCurrentInvoiceIndex(lastIndex);
-      loadBatchData(fiscalYearFilteredBatches[lastIndex]);
+      loadRecordData(navigationRecords[lastIndex]);
     }
   };
 
-  const loadBatchData = (batch: any) => {
+  const loadRecordData = (record: any) => {
     setIsViewingExisting(true);
-    setCurrentBatchId(batch.id);
+    setCurrentBatchId(record.id);
     setIsEditing(false);
-    
-    setInvoiceData({
-      invoice_number: String(currentInvoiceIndex + 1),
-      supplier_id: batch.supplier_id || '',
-      purchase_date: batch.purchase_date,
-      due_date: batch.purchase_date,
-      payment_account_id: batch.payment_account_id || '',
-      warehouse: 'main',
-      notes: batch.notes || '',
-      price_includes_tax: false,
-      project_id: null,
-      cost_center_id: null,
-    });
 
-    const batchCars = batch.cars || [];
-    if (batchCars.length > 0) {
-      setCars(batchCars.map((car: any) => ({
-        id: crypto.randomUUID(),
-        chassis_number: car.chassis_number,
-        plate_number: car.plate_number || '',
-        name: car.name,
-        model: car.model || '',
-        color: car.color || '',
-        purchase_price: String(car.purchase_price),
-        quantity: 1,
-        unit: t.inv_car_unit,
-        car_condition: ((car.car_condition || 'new') as 'new' | 'used'),
-      })));
+    if (isCarDealership) {
+      // Load batch data for car dealerships
+      setInvoiceData({
+        invoice_number: String(currentInvoiceIndex + 1),
+        supplier_id: record.supplier_id || '',
+        purchase_date: record.purchase_date,
+        due_date: record.purchase_date,
+        payment_account_id: record.payment_account_id || '',
+        warehouse: 'main',
+        notes: record.notes || '',
+        price_includes_tax: false,
+        project_id: null,
+        cost_center_id: null,
+      });
+
+      const batchCars = record.cars || [];
+      if (batchCars.length > 0) {
+        setCars(batchCars.map((car: any) => ({
+          id: crypto.randomUUID(),
+          chassis_number: car.chassis_number,
+          plate_number: car.plate_number || '',
+          name: car.name,
+          model: car.model || '',
+          color: car.color || '',
+          purchase_price: String(car.purchase_price),
+          quantity: 1,
+          unit: t.inv_car_unit,
+          car_condition: ((car.car_condition || 'new') as 'new' | 'used'),
+        })));
+      } else {
+        setCars([createEmptyCar()]);
+      }
     } else {
-      setCars([createEmptyCar()]);
+      // Load invoice data for non-car companies
+      setInvoiceData({
+        invoice_number: String(record.invoice_number || ''),
+        supplier_id: record.supplier_id || '',
+        purchase_date: record.invoice_date || '',
+        due_date: record.due_date || record.invoice_date || '',
+        payment_account_id: '',
+        warehouse: 'main',
+        notes: record.notes || '',
+        price_includes_tax: true,
+        project_id: record.project_id || null,
+        cost_center_id: null,
+      });
+
+      const items = record.invoice_items || [];
+      if (items.length > 0) {
+        setPurchaseInventoryItems(items.map((item: any) => ({
+          id: crypto.randomUUID(),
+          item_id: item.inventory_item_id || null,
+          item_name: item.item_description || '',
+          barcode: item.item_code || '',
+          unit_name: item.unit || t.inv_unit,
+          unit_id: null,
+          purchase_price: String(item.unit_price || ''),
+          quantity: item.quantity || 1,
+        })));
+      } else {
+        setPurchaseInventoryItems([createEmptyInventoryItem()]);
+      }
+
+      if (record.discount_amount && record.discount_amount > 0) {
+        setDiscount(record.discount_amount);
+        setDiscountType('amount');
+      } else {
+        setDiscount(0);
+      }
     }
   };
 
@@ -841,19 +903,19 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             <div className="flex items-center justify-between">
               {/* Navigation Controls */}
               <div className="flex items-center gap-1 bg-white/15 backdrop-blur-sm rounded-lg p-1">
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleLastPurchase} disabled={fiscalYearFilteredBatches.length === 0}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleLastPurchase} disabled={navigationRecords.length === 0}>
                   <ChevronRight className="w-4 h-4" /><ChevronRight className="w-4 h-4 -mr-2.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleNextPurchase} disabled={currentInvoiceIndex >= fiscalYearFilteredBatches.length - 1}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleNextPurchase} disabled={currentInvoiceIndex >= navigationRecords.length - 1}>
                   <ChevronRight className="w-4 h-4" />
                 </Button>
                 <span className="px-3 py-1 text-xs bg-white/20 rounded-md min-w-[70px] text-center font-mono font-bold">
-                  {fiscalYearFilteredBatches.length > 0 ? currentInvoiceIndex + 1 : 0} / {fiscalYearFilteredBatches.length}
+                  {navigationRecords.length > 0 ? currentInvoiceIndex + 1 : 0} / {navigationRecords.length}
                 </span>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handlePreviousPurchase} disabled={currentInvoiceIndex <= 0}>
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleFirstPurchase} disabled={fiscalYearFilteredBatches.length === 0}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleFirstPurchase} disabled={navigationRecords.length === 0}>
                   <ChevronLeft className="w-4 h-4" /><ChevronLeft className="w-4 h-4 -ml-2.5" />
                 </Button>
               </div>
@@ -886,22 +948,22 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               onSelectResult={(result) => {
                 if (result.type === 'invoice' || result.type === 'car') {
                   const car = result.data;
-                  const batchIndex = fiscalYearFilteredBatches.findIndex(b => 
+                  const batchIndex = navigationRecords.findIndex((b: any) => 
                     b.cars?.some((c: any) => c.id === car.id)
                   );
                   if (batchIndex >= 0) {
                     setCurrentInvoiceIndex(batchIndex);
-                    loadBatchData(fiscalYearFilteredBatches[batchIndex]);
+                    loadRecordData(navigationRecords[batchIndex]);
                   }
                 } else if (result.type === 'supplier') {
-                  const supplierBatches = fiscalYearFilteredBatches.filter(b => 
+                  const supplierRecords = navigationRecords.filter((b: any) => 
                     b.supplier_id === result.id
                   );
-                  if (supplierBatches.length > 0) {
-                    const batchIndex = fiscalYearFilteredBatches.findIndex(b => b.id === supplierBatches[0].id);
-                    if (batchIndex >= 0) {
-                      setCurrentInvoiceIndex(batchIndex);
-                      loadBatchData(fiscalYearFilteredBatches[batchIndex]);
+                  if (supplierRecords.length > 0) {
+                    const idx = navigationRecords.findIndex((b: any) => b.id === supplierRecords[0].id);
+                    if (idx >= 0) {
+                      setCurrentInvoiceIndex(idx);
+                      loadRecordData(navigationRecords[idx]);
                     }
                   } else {
                     setInvoiceData(prev => ({ ...prev, supplier_id: result.id }));
