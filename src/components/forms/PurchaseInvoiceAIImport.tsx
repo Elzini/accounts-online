@@ -363,8 +363,43 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
             />
           )}
 
+          {/* Reconciliation View */}
+          {reconciliationResults && !selectedBatchResult && (
+            <div className="space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setReconciliationResults(null)} className="gap-1">
+                ← العودة لنتائج التحليل
+              </Button>
+              
+              {/* Cost Center Selector */}
+              {costCenters.filter(cc => cc.is_active).length > 0 && (
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+                  <Label className="text-sm font-medium whitespace-nowrap">مركز التكلفة:</Label>
+                  <Select value={selectedCostCenterId || 'none'} onValueChange={(v) => setSelectedCostCenterId(v === 'none' ? null : v)}>
+                    <SelectTrigger className="h-9 text-xs max-w-[250px]">
+                      <SelectValue placeholder="اختر مركز التكلفة" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">بدون مركز تكلفة</SelectItem>
+                      {costCenters.filter(cc => cc.is_active).map((cc) => (
+                        <SelectItem key={cc.id} value={cc.id}>{cc.code} - {cc.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <InvoiceReconciliation
+                results={reconciliationResults}
+                formatCurrency={formatCurrency}
+                onImportSelected={handleImportFromReconciliation}
+                onViewDetails={(result) => setSelectedBatchIndex(result.index)}
+                onClose={handleClose}
+              />
+            </div>
+          )}
+
           {/* Batch results */}
-          {!isLoading && isBatchMode && batchResults.length > 0 && !selectedBatchResult && (
+          {!isLoading && isBatchMode && batchResults.length > 0 && !selectedBatchResult && !reconciliationResults && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-800">
                 <CheckCircle className="w-5 h-5" />
@@ -463,6 +498,15 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
 
               <div className="flex gap-2 justify-end pt-2">
                 <Button variant="outline" onClick={handleClose}>إغلاق</Button>
+                <Button 
+                  variant="secondary" 
+                  onClick={handleReconcile} 
+                  disabled={isReconciling}
+                  className="gap-2"
+                >
+                  {isReconciling ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowLeftRight className="w-4 h-4" />}
+                  مطابقة مع فواتير النظام
+                </Button>
                 {onBatchImport && (
                   <Button onClick={handleConfirmBatchImport} className="gap-2">
                     <CheckCircle className="w-4 h-4" />
