@@ -430,7 +430,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             discount_amount: calculations.discountAmount,
             amount_paid: 0,
             payment_status: 'unpaid',
-            status: 'active',
+            status: 'draft',
             fiscal_year_id: selectedFiscalYear?.id || null,
             notes: invoiceData.notes || null,
             project_id: invoiceData.project_id || null,
