@@ -299,6 +299,159 @@ export function REProjectsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Project Detail Dialog */}
+      <Dialog open={!!detailProjectId} onOpenChange={(open) => { if (!open) setDetailProjectId(null); }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-primary" />
+              {detailProject?.name || 'تفاصيل المشروع'}
+              {detailProject?.status && (
+                <Badge className={STATUS_MAP[detailProject.status]?.color || ''}>
+                  {STATUS_MAP[detailProject.status]?.label || detailProject.status}
+                </Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          {detailProject && (
+            <div className="space-y-4">
+              {/* Project Summary */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <p className="text-lg font-bold">{detailProject.total_units || 0}</p>
+                  <p className="text-xs text-muted-foreground">وحدة</p>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <p className="text-lg font-bold">{fmt(Number(detailProject.total_budget || 0))}</p>
+                  <p className="text-xs text-muted-foreground">الميزانية</p>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <p className="text-lg font-bold text-primary">{projectInvoices.length}</p>
+                  <p className="text-xs text-muted-foreground">فاتورة مشتريات</p>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <p className="text-lg font-bold text-primary">{projectEntries.length}</p>
+                  <p className="text-xs text-muted-foreground">قيد محاسبي</p>
+                </div>
+              </div>
+
+              <Tabs defaultValue="invoices" className="w-full">
+                <TabsList className="w-full">
+                  <TabsTrigger value="invoices" className="flex-1 gap-1.5">
+                    <FileText className="w-4 h-4" />
+                    الفواتير ({projectInvoices.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="entries" className="flex-1 gap-1.5">
+                    <BookOpen className="w-4 h-4" />
+                    القيود ({projectEntries.length})
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="invoices">
+                  {projectInvoices.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileText className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                      <p>لا توجد فواتير مرتبطة بهذا المشروع</p>
+                      <p className="text-xs mt-1">يمكنك ربط الفواتير عند إنشائها من صفحة المشتريات</p>
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>رقم الفاتورة</TableHead>
+                            <TableHead>التاريخ</TableHead>
+                            <TableHead>النوع</TableHead>
+                            <TableHead>المبلغ</TableHead>
+                            <TableHead>الضريبة</TableHead>
+                            <TableHead>الإجمالي</TableHead>
+                            <TableHead>الحالة</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {projectInvoices.map((inv: any) => (
+                            <TableRow key={inv.id}>
+                              <TableCell className="font-mono text-sm">{inv.invoice_number}</TableCell>
+                              <TableCell>{inv.invoice_date}</TableCell>
+                              <TableCell>
+                                <Badge variant={inv.invoice_type === 'purchase' ? 'secondary' : 'default'}>
+                                  {inv.invoice_type === 'purchase' ? 'مشتريات' : 'مبيعات'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{fmt(Number(inv.total) - Number(inv.vat_amount || 0))}</TableCell>
+                              <TableCell>{fmt(Number(inv.vat_amount || 0))}</TableCell>
+                              <TableCell className="font-semibold">{fmt(Number(inv.total))}</TableCell>
+                              <TableCell>
+                                <Badge variant={inv.payment_status === 'paid' ? 'default' : 'outline'}>
+                                  {inv.payment_status === 'paid' ? 'مدفوع' : inv.payment_status === 'partial' ? 'جزئي' : 'غير مدفوع'}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow className="bg-muted/30 font-bold">
+                            <TableCell colSpan={5}>الإجمالي</TableCell>
+                            <TableCell>{fmt(projectInvoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0))}</TableCell>
+                            <TableCell></TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="entries">
+                  {projectEntries.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <BookOpen className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                      <p>لا توجد قيود محاسبية مرتبطة بهذا المشروع</p>
+                      <p className="text-xs mt-1">يمكنك ربط القيود عند إنشائها من صفحة القيود المحاسبية</p>
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>رقم القيد</TableHead>
+                            <TableHead>التاريخ</TableHead>
+                            <TableHead>البيان</TableHead>
+                            <TableHead>مدين</TableHead>
+                            <TableHead>دائن</TableHead>
+                            <TableHead>النوع</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {projectEntries.map((entry: any) => (
+                            <TableRow key={entry.id}>
+                              <TableCell className="font-mono">{entry.entry_number}</TableCell>
+                              <TableCell>{entry.entry_date}</TableCell>
+                              <TableCell className="max-w-[200px] truncate">{entry.description}</TableCell>
+                              <TableCell>{fmt(Number(entry.total_debit))}</TableCell>
+                              <TableCell>{fmt(Number(entry.total_credit))}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {entry.reference_type === 'manual' ? 'يدوي' : entry.reference_type === 'invoice_purchase' ? 'فاتورة مشتريات' : entry.reference_type || '-'}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow className="bg-muted/30 font-bold">
+                            <TableCell colSpan={3}>الإجمالي</TableCell>
+                            <TableCell>{fmt(projectEntries.reduce((s: number, e: any) => s + Number(e.total_debit || 0), 0))}</TableCell>
+                            <TableCell>{fmt(projectEntries.reduce((s: number, e: any) => s + Number(e.total_credit || 0), 0))}</TableCell>
+                            <TableCell></TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
