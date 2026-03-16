@@ -427,6 +427,10 @@ export default function Companies() {
               <Settings className="w-4 h-4" />
               <span>التحكم</span>
             </TabsTrigger>
+            <TabsTrigger value="enterprise-security" className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              <span>الأمان المؤسسي</span>
+            </TabsTrigger>
             <TabsTrigger value="monitoring" className="flex items-center gap-2">
               <Monitor className="w-4 h-4" />
               <span>المراقبة</span>
