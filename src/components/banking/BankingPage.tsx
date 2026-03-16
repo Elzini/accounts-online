@@ -436,9 +436,9 @@ function AccountSearchSelect({ accounts, value, onChange, language }: { accounts
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return accounts.slice(0, 50);
+    if (!search.trim()) return accounts;
     const q = search.toLowerCase();
-    return accounts.filter((a: any) => a.code.includes(q) || a.name.toLowerCase().includes(q)).slice(0, 50);
+    return accounts.filter((a: any) => a.code.includes(q) || a.name.toLowerCase().includes(q));
   }, [accounts, search]);
 
   const selected = accounts.find((a: any) => a.id === value);
