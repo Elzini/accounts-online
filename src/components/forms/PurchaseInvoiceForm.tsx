@@ -61,6 +61,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { PurchaseInvoiceAIImport, ParsedInvoiceData, BatchParsedResult } from './PurchaseInvoiceAIImport';
 import { useCostCenters } from '@/hooks/useCostCenters';
+import { getNextInvoiceNumber } from '@/utils/invoiceNumberGenerator';
 
 interface PurchaseInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -463,7 +464,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
       try {
         if (!companyId) throw new Error(t.inv_toast_company_not_found);
-        const invoiceNumber = `PUR-${Date.now()}`;
+        const invoiceNumber = await getNextInvoiceNumber(companyId, 'purchase');
 
         const { data: invoice, error: invoiceError } = await supabase
           .from('invoices')
@@ -1081,7 +1082,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
         // Create invoice
         const supplierInvNumber = data.invoice_number || '';
-        const invoiceNumber = `PUR-${Date.now()}-${result.index}`;
+        const invoiceNumber = await getNextInvoiceNumber(companyId, 'purchase');
         const { data: invoice, error: invoiceError } = await supabase
           .from('invoices')
           .insert({
