@@ -539,59 +539,13 @@ export function JournalEntriesPage() {
         </Dialog>
       </div>
 
-      {/* View Entry Dialog */}
-      <Dialog open={!!viewingEntryId} onOpenChange={(open) => !open && setViewingEntryId(null)}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{t.je_details_title} #{viewingEntry?.entry_number}</DialogTitle>
-            <DialogDescription>
-              {viewingEntry && format(new Date(viewingEntry.entry_date), "PPP", { locale: ar })}
-            </DialogDescription>
-          </DialogHeader>
-          {viewingEntry && (
-            <div className="space-y-4">
-              <div className="p-4 bg-muted/30 rounded-lg">
-                <p className="text-foreground font-medium">{viewingEntry.description}</p>
-              </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t.je_col_account}</TableHead>
-                    <TableHead>{t.je_col_statement}</TableHead>
-                    <TableHead className="text-center">{t.je_col_debit}</TableHead>
-                    <TableHead className="text-center">{t.je_col_credit}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {viewingEntry.lines?.map((line) => (
-                    <TableRow key={line.id}>
-                      <TableCell className="font-mono">{getAccountName(line.account_id)}</TableCell>
-                      <TableCell>{line.description || '-'}</TableCell>
-                      <TableCell className="text-center">{line.debit > 0 ? line.debit.toLocaleString() : '-'}</TableCell>
-                      <TableCell className="text-center">{line.credit > 0 ? line.credit.toLocaleString() : '-'}</TableCell>
-                    </TableRow>
-                  ))}
-                  <TableRow className="bg-muted/50 font-bold">
-                    <TableCell colSpan={2}>{t.total}</TableCell>
-                    <TableCell className="text-center">{viewingEntry.total_debit.toLocaleString()}</TableCell>
-                    <TableCell className="text-center">{viewingEntry.total_credit.toLocaleString()}</TableCell>
-                  </TableRow>
-                </TableBody>
-                </Table>
-              {viewingEntryId && <JournalAttachments journalEntryId={viewingEntryId} />}
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setViewingEntryId(null)}>
-                  {t.close}
-                </Button>
-                <Button variant="outline">
-                  <Printer className="w-4 h-4 ml-2" />
-                  {t.print}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* View/Edit Entry Dialog */}
+      <JournalEntryEditDialog
+        entryId={viewingEntryId}
+        open={!!viewingEntryId}
+        onOpenChange={(open) => !open && setViewingEntryId(null)}
+        title={t.je_details_title}
+      />
 
       {/* Entries List */}
       <Card>
