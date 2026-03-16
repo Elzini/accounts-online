@@ -485,6 +485,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             fiscal_year_id: selectedFiscalYear?.id || null,
             notes: invoiceData.notes || null,
             project_id: invoiceData.project_id || null,
+            supplier_invoice_number: invoiceData.supplier_invoice_number || null,
           })
           .select()
           .single();
