@@ -264,7 +264,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
         </div>
 
         <SearchFilter
-          searchPlaceholder={language === 'ar' ? 'البحث برقم الفاتورة أو المورد...' : 'Search by invoice number or supplier...'}
+          searchPlaceholder={language === 'ar' ? 'البحث برقم الفاتورة أو رقم فاتورة المورد...' : 'Search by invoice number or supplier invoice...'}
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           filterOptions={filterOptions}
