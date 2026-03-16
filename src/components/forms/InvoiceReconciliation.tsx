@@ -63,28 +63,35 @@ export function matchInvoices(
       if (parsedInvNum && existingInvNum && parsedInvNum === existingInvNum) {
         score += 40;
       } else if (parsedInvNum && existingInvNum) {
-        tempDiffs.push(`رقم الفاتورة: ${data.invoice_number} ≠ ${existing.supplier_invoice_number}`);
+        tempDiffs.push(`رقم فاتورة المورد: ${data.invoice_number} ≠ ${existing.supplier_invoice_number}`);
       }
 
-      // Match by exact amount (use exact comparison with small halalah tolerance: 0.05 SAR)
+      // Match by exact total amount (zero tolerance - detect even 1 halalah)
       const totalDiff = Math.abs(data.total_amount - existing.total);
-      if (totalDiff <= 0.05) {
+      if (totalDiff === 0) {
         score += 25;
       } else if (totalDiff <= 1) {
-        // Within 1 SAR - partial amount match
         score += 15;
-        tempDiffs.push(`فرق في المبلغ: ${data.total_amount} ≠ ${existing.total} (فرق: ${totalDiff.toFixed(2)})`);
+        tempDiffs.push(`الإجمالي شامل الضريبة: ${data.total_amount.toFixed(2)} ≠ ${existing.total.toFixed(2)} (فرق: ${totalDiff.toFixed(2)} ر.س)`);
       } else {
-        tempDiffs.push(`المبلغ: ${data.total_amount} ≠ ${existing.total}`);
+        tempDiffs.push(`الإجمالي شامل الضريبة: ${data.total_amount.toFixed(2)} ≠ ${existing.total.toFixed(2)}`);
       }
 
-      // Match by VAT amount (exact comparison)
+      // Match by subtotal (before VAT)
+      if (data.subtotal !== undefined && existing.subtotal !== undefined) {
+        const subtotalDiff = Math.abs(data.subtotal - existing.subtotal);
+        if (subtotalDiff > 0) {
+          tempDiffs.push(`الإجمالي قبل الضريبة: ${data.subtotal.toFixed(2)} ≠ ${existing.subtotal.toFixed(2)} (فرق: ${subtotalDiff.toFixed(2)} ر.س)`);
+        }
+      }
+
+      // Match by VAT amount (zero tolerance)
       if (data.vat_amount !== undefined && existing.vat_amount !== undefined) {
         const vatDiff = Math.abs(data.vat_amount - existing.vat_amount);
-        if (vatDiff <= 0.05) {
+        if (vatDiff === 0) {
           score += 10;
         } else {
-          tempDiffs.push(`الضريبة: ${data.vat_amount} ≠ ${existing.vat_amount}`);
+          tempDiffs.push(`الضريبة: ${data.vat_amount.toFixed(2)} ≠ ${existing.vat_amount.toFixed(2)} (فرق: ${vatDiff.toFixed(2)} ر.س)`);
         }
       }
 
@@ -103,6 +110,11 @@ export function matchInvoices(
         score += 10;
       } else if (parsedDate && existingDate) {
         tempDiffs.push(`التاريخ: ${parsedDate} ≠ ${existingDate}`);
+      }
+
+      // Check items count difference
+      if (data.items && data.items.length > 0) {
+        tempDiffs.push(`عدد الأصناف المستوردة: ${data.items.length}`);
       }
 
       if (score > bestScore) {
