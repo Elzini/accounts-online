@@ -170,11 +170,14 @@ function SystemChangeLog() {
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['system-change-log'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('system_change_log' as any)
+      const { data, error } = await (supabase.from as any)('system_change_log')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
+      if (error) throw error;
+      return data || [];
+    },
+  });
       if (error) throw error;
       return data || [];
     },
