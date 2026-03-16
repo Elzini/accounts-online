@@ -6746,6 +6746,7 @@ export type Database = {
           invoice_type: string
           journal_entry_id: string | null
           notes: string | null
+          payment_account_id: string | null
           payment_method: string | null
           payment_status: string | null
           project_id: string | null
@@ -6783,6 +6784,7 @@ export type Database = {
           invoice_type?: string
           journal_entry_id?: string | null
           notes?: string | null
+          payment_account_id?: string | null
           payment_method?: string | null
           payment_status?: string | null
           project_id?: string | null
@@ -6820,6 +6822,7 @@ export type Database = {
           invoice_type?: string
           journal_entry_id?: string | null
           notes?: string | null
+          payment_account_id?: string | null
           payment_method?: string | null
           payment_status?: string | null
           project_id?: string | null
@@ -6872,6 +6875,13 @@ export type Database = {
             columns: ["journal_entry_id"]
             isOneToOne: false
             referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_payment_account_id_fkey"
+            columns: ["payment_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
             referencedColumns: ["id"]
           },
           {
