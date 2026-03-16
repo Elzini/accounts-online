@@ -61,7 +61,7 @@ function FreezeModePanel() {
 
       // Log the change
       const { data: { user } } = await supabase.auth.getUser();
-      await supabase.from('system_change_log' as any).insert({
+      await (supabase.from as any)('system_change_log').insert({
         user_id: user?.id,
         change_type: 'config_change',
         module: 'system_freeze',
