@@ -446,6 +446,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                 formatCurrency={formatCurrency}
                 onImportSelected={handleImportFromReconciliation}
                 onViewDetails={(result) => setSelectedBatchIndex(result.index)}
+                onUpdateExisting={handleUpdateExisting}
                 onClose={handleClose}
               />
             </div>
