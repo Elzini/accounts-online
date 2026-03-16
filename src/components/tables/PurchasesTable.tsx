@@ -82,6 +82,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
         .eq('id', invoiceId);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
       toast.success(language === 'ar' ? 'تم اعتماد الفاتورة بنجاح' : 'Invoice approved successfully');
@@ -89,7 +90,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       console.error('Approve error:', err);
       toast.error(language === 'ar' ? 'حدث خطأ أثناء اعتماد الفاتورة' : 'Error approving invoice');
     }
-  }, [queryClient, language]);
+  }, [queryClient, language, companyId]);
 
   const handleDeleteInvoice = useCallback(async (invoiceId: string) => {
     try {
@@ -98,6 +99,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       const { error } = await supabase.from('invoices').delete().eq('id', invoiceId);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success(language === 'ar' ? 'تم حذف الفاتورة بنجاح' : 'Invoice deleted successfully');
     } catch (err) {
@@ -105,7 +107,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       toast.error(language === 'ar' ? 'حدث خطأ أثناء حذف الفاتورة' : 'Error deleting invoice');
     }
     setDeleteInvoiceId(null);
-  }, [queryClient, language]);
+  }, [queryClient, language, companyId]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

@@ -45,7 +45,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useSuppliers, useAddPurchaseBatch, useCars, useUpdateCar, useDeleteCar, usePurchaseBatches } from '@/hooks/useDatabase';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { PurchaseInvoiceDialog } from '@/components/invoices/PurchaseInvoiceDialog';
@@ -208,9 +208,33 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     });
   }, [existingCars, selectedFiscalYear]);
 
+  const { data: purchaseInvoices = [] } = useQuery({
+    queryKey: ['purchase-invoice-sequence', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('invoice_number')
+        .eq('company_id', companyId!)
+        .eq('invoice_type', 'purchase');
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId && !isCarDealership,
+  });
+
   const nextInvoiceNumber = useMemo(() => {
-    return purchaseBatches.length + 1;
-  }, [purchaseBatches]);
+    if (isCarDealership) {
+      return purchaseBatches.length + 1;
+    }
+
+    const maxInvoiceNumber = purchaseInvoices.reduce((max: number, inv: any) => {
+      const parsed = parseInt(String(inv.invoice_number || ''), 10);
+      return Number.isNaN(parsed) ? max : Math.max(max, parsed);
+    }, 0);
+
+    return maxInvoiceNumber + 1;
+  }, [isCarDealership, purchaseBatches, purchaseInvoices]);
 
   const [invoiceData, setInvoiceData] = useState({
     invoice_number: '',
@@ -461,10 +485,12 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         
         // Invalidate all related queries so data appears in tables and reports
         queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+        queryClient.invalidateQueries({ queryKey: ['purchase-invoice-sequence', companyId] });
+        queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
         queryClient.invalidateQueries({ queryKey: ['invoices'] });
         queryClient.invalidateQueries({ queryKey: ['purchases-report'] });
         queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
-        
+
         toast.success(t.inv_toast_purchase_inv_success);
         setInvoiceOpen(true);
       } catch (error: any) {
