@@ -273,7 +273,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
         .update({
           supplier_invoice_number: data.invoice_number || result.matchedInvoice.supplier_invoice_number,
           invoice_date: data.invoice_date || result.matchedInvoice.invoice_date,
-          subtotal: data.subtotal_amount,
+          subtotal: data.subtotal || (data.total_amount - data.vat_amount),
           vat_amount: data.vat_amount,
           total: data.total_amount,
           customer_name: data.supplier_name || result.matchedInvoice.customer_name,
