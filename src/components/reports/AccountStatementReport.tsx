@@ -127,7 +127,7 @@ export function AccountStatementReport() {
       data.push({ entryNumber: '', date: '', description: t.as_previous_balance, type: '', debit: '', credit: processedData.openingBalance < 0 ? Math.abs(processedData.openingBalance) : '', balance: processedData.openingBalance });
     }
     processedData.entries.forEach((entry: any) => {
-      data.push({ entryNumber: entry.entry_number, date: formatDate(entry.entry_date), description: entry.description, type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : '', credit: entry.credit > 0 ? entry.credit : '', balance: entry.balance });
+      data.push({ entryNumber: entry.entry_number, date: formatDate(entry.date), description: entry.description, type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : '', credit: entry.credit > 0 ? entry.credit : '', balance: entry.balance });
     });
     printReport({
       title: t.as_title,
@@ -157,7 +157,7 @@ export function AccountStatementReport() {
       data.push({ entryNumber: '', date: '', description: t.as_previous_balance, type: '', debit: 0, credit: processedData.openingBalance < 0 ? Math.abs(processedData.openingBalance) : 0, balance: processedData.openingBalance });
     }
     processedData.entries.forEach((entry: any) => {
-      data.push({ entryNumber: entry.entry_number, date: formatDate(entry.entry_date), description: entry.description, type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : 0, credit: entry.credit > 0 ? entry.credit : 0, balance: entry.balance });
+      data.push({ entryNumber: entry.entry_number, date: formatDate(entry.date), description: entry.description, type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : 0, credit: entry.credit > 0 ? entry.credit : 0, balance: entry.balance });
     });
     exportToExcel({
       title: `${t.as_title} - ${selectedAccount.name}`,
@@ -335,7 +335,7 @@ export function AccountStatementReport() {
                       processedData.entries.map((entry: any, index: number) => (
                         <TableRow key={index}>
                           <TableCell className="text-center">{entry.entry_number}</TableCell>
-                          <TableCell className="text-center">{formatDate(entry.entry_date)}</TableCell>
+                          <TableCell className="text-center">{formatDate(entry.date)}</TableCell>
                           <TableCell>{entry.description}</TableCell>
                           <TableCell className="text-center text-xs">{getDocumentTypeLabel(entry.reference_type)}</TableCell>
                           <TableCell className="text-right font-mono text-green-600 dark:text-green-400">
