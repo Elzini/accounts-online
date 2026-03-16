@@ -11,8 +11,13 @@ import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCompany } from '@/contexts/CompanyContext';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export function SuppliersReport() {
+  const { companyId, company } = useCompany();
+  const isCarDealership = company?.company_type === 'car_dealership';
   const { data: suppliers, isLoading: suppliersLoading } = useSuppliers();
   const { data: cars, isLoading: carsLoading } = useCars();
   const [startDate, setStartDate] = useState('');
@@ -24,50 +29,104 @@ export function SuppliersReport() {
   const { t, language } = useLanguage();
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
 
-  // Filter cars by date and supplier
-  const filteredCars = useMemo(() => {
-    if (!cars) return [];
-    
-    return cars.filter(car => {
-      const purchaseDate = new Date(car.purchase_date);
-      if (startDate && purchaseDate < new Date(startDate)) return false;
-      if (endDate && purchaseDate > new Date(endDate + 'T23:59:59')) return false;
-      if (selectedSupplier !== 'all' && car.supplier_id !== selectedSupplier) return false;
+  // Fetch purchase invoices for non-car companies
+  const { data: purchaseInvoices = [], isLoading: invoicesLoading } = useQuery({
+    queryKey: ['suppliers-report-invoices', companyId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('invoices')
+        .select('*, invoice_items(*)')
+        .eq('company_id', companyId!)
+        .eq('invoice_type', 'purchase')
+        .order('invoice_date', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId && !isCarDealership,
+  });
+
+  // Unified items: either cars or invoices
+  const items = useMemo(() => {
+    if (isCarDealership) {
+      return (cars || []).map(car => ({
+        id: car.id,
+        supplier_id: car.supplier_id,
+        date: car.purchase_date,
+        amount: Number(car.purchase_price),
+        status: car.status,
+        name: car.name,
+        model: car.model || '-',
+        reference: String(car.inventory_number),
+        chassis: car.chassis_number,
+      }));
+    }
+    return purchaseInvoices.map((inv: any) => ({
+      id: inv.id,
+      supplier_id: inv.supplier_id,
+      date: inv.invoice_date,
+      amount: Number(inv.total || 0),
+      status: inv.status || 'draft',
+      name: inv.customer_name || '-',
+      model: inv.invoice_number || '-',
+      reference: inv.supplier_invoice_number || inv.invoice_number || '-',
+      chassis: '',
+    }));
+  }, [isCarDealership, cars, purchaseInvoices]);
+
+  // Filter items by date and supplier
+  const filteredItems = useMemo(() => {
+    return items.filter(item => {
+      const itemDate = new Date(item.date);
+      if (startDate && itemDate < new Date(startDate)) return false;
+      if (endDate && itemDate > new Date(endDate + 'T23:59:59')) return false;
+      if (selectedSupplier !== 'all' && item.supplier_id !== selectedSupplier) return false;
       return true;
     });
-  }, [cars, startDate, endDate, selectedSupplier]);
+  }, [items, startDate, endDate, selectedSupplier]);
 
   // Calculate stats per supplier
   const supplierStats = useMemo(() => {
-    if (!suppliers || !cars) return [];
+    if (!suppliers) return [];
 
-    const relevantCars = cars.filter(car => {
-      const purchaseDate = new Date(car.purchase_date);
-      if (startDate && purchaseDate < new Date(startDate)) return false;
-      if (endDate && purchaseDate > new Date(endDate + 'T23:59:59')) return false;
+    const relevantItems = items.filter(item => {
+      const itemDate = new Date(item.date);
+      if (startDate && itemDate < new Date(startDate)) return false;
+      if (endDate && itemDate > new Date(endDate + 'T23:59:59')) return false;
       return true;
     });
 
     return suppliers.map(supplier => {
-      const supplierCars = relevantCars.filter(car => car.supplier_id === supplier.id);
-      const totalPurchases = supplierCars.reduce((sum, car) => sum + Number(car.purchase_price), 0);
-      const availableCars = supplierCars.filter(car => car.status === 'available').length;
-      const soldCars = supplierCars.filter(car => car.status === 'sold').length;
+      const supplierItems = relevantItems.filter(item => item.supplier_id === supplier.id);
+      const totalPurchases = supplierItems.reduce((sum, item) => sum + item.amount, 0);
+      
+      let availableCount = 0;
+      let soldCount = 0;
+      if (isCarDealership) {
+        availableCount = supplierItems.filter(item => item.status === 'available').length;
+        soldCount = supplierItems.filter(item => item.status === 'sold').length;
+      } else {
+        const approvedStatuses = ['issued', 'approved', 'معتمدة', 'معتمد'];
+        const draftStatuses = ['draft', 'مسودة'];
+        availableCount = supplierItems.filter(item => approvedStatuses.includes(item.status.toLowerCase())).length;
+        soldCount = supplierItems.filter(item => draftStatuses.includes(item.status.toLowerCase())).length;
+      }
       
       return {
         ...supplier,
-        carsCount: supplierCars.length,
-        availableCars,
-        soldCars,
+        carsCount: supplierItems.length,
+        availableCars: availableCount,
+        soldCars: soldCount,
         totalPurchases,
-        lastPurchaseDate: supplierCars.length > 0 
-          ? supplierCars.sort((a, b) => new Date(b.purchase_date).getTime() - new Date(a.purchase_date).getTime())[0].purchase_date
+        lastPurchaseDate: supplierItems.length > 0 
+          ? supplierItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0].date
           : null
       };
     }).filter(s => selectedSupplier === 'all' || s.id === selectedSupplier);
-  }, [suppliers, cars, startDate, endDate, selectedSupplier]);
+  }, [suppliers, items, startDate, endDate, selectedSupplier, isCarDealership]);
 
-  if (suppliersLoading || carsLoading) {
+  const isLoading = suppliersLoading || (isCarDealership ? carsLoading : invoicesLoading);
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -88,7 +147,21 @@ export function SuppliersReport() {
   }).format(amount);
   const formatCurrencySimple = (value: number) => new Intl.NumberFormat(locale).format(value);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(locale);
-  const getStatusText = (status: string) => status === 'available' ? t.rpt_status_available : status === 'transferred' ? t.rpt_status_transferred : t.rpt_status_sold;
+  
+  const getStatusText = (status: string) => {
+    if (isCarDealership) {
+      return status === 'available' ? t.rpt_status_available : status === 'transferred' ? t.rpt_status_transferred : t.rpt_status_sold;
+    }
+    const normalized = status.toLowerCase().trim();
+    if (['issued', 'approved', 'معتمدة', 'معتمد'].includes(normalized)) return language === 'ar' ? 'معتمدة' : 'Approved';
+    if (['draft', 'مسودة'].includes(normalized)) return language === 'ar' ? 'مسودة' : 'Draft';
+    return status;
+  };
+
+  const col2Label = isCarDealership ? labels.itemName : (language === 'ar' ? 'اسم المورد' : 'Supplier');
+  const col3Label = isCarDealership ? t.rpt_purch_col_model : (language === 'ar' ? 'رقم الفاتورة' : 'Invoice #');
+  const availableLabel = isCarDealership ? t.rpt_supp_col_available : (language === 'ar' ? 'معتمدة' : 'Approved');
+  const soldLabel = isCarDealership ? t.rpt_supp_col_sold : (language === 'ar' ? 'مسودة' : 'Draft');
 
   const reportTitle = selectedSupplier === 'all' 
     ? `${t.rpt_supp_title} - ${t.rpt_supp_select_all}` 
@@ -101,15 +174,15 @@ export function SuppliersReport() {
       columns: selectedSupplier === 'all' ? [
         { header: t.rpt_supp_col_name, key: 'name' },
         { header: t.rpt_supp_col_phone, key: 'phone' },
-        { header: `${t.rpt_supp_items_count}`, key: 'cars_count' },
-        { header: t.rpt_supp_col_available, key: 'available' },
-        { header: t.rpt_supp_col_sold, key: 'sold' },
+        { header: t.rpt_supp_items_count, key: 'cars_count' },
+        { header: availableLabel, key: 'available' },
+        { header: soldLabel, key: 'sold' },
         { header: t.rpt_supp_purchases_total, key: 'total_purchases' },
       ] : [
-        { header: t.rpt_purch_col_number, key: 'inventory_number' },
-        { header: labels.itemName, key: 'car' },
-        { header: t.rpt_purch_col_model, key: 'model' },
-        { header: t.rpt_purch_col_price, key: 'purchase_price' },
+        { header: isCarDealership ? t.rpt_purch_col_number : (language === 'ar' ? 'المرجع' : 'Ref'), key: 'reference' },
+        { header: col2Label, key: 'name' },
+        { header: col3Label, key: 'model' },
+        { header: t.rpt_purch_col_price, key: 'amount' },
         { header: t.rpt_purch_col_status, key: 'status' },
         { header: t.rpt_purch_col_date, key: 'date' },
       ],
@@ -122,13 +195,13 @@ export function SuppliersReport() {
             sold: supplier.soldCars,
             total_purchases: `${formatCurrencySimple(supplier.totalPurchases)} ${t.rpt_currency}`,
           }))
-        : filteredCars.map(car => ({
-            inventory_number: car.inventory_number,
-            car: car.name,
-            model: car.model || '-',
-            purchase_price: `${formatCurrencySimple(Number(car.purchase_price))} ${t.rpt_currency}`,
-            status: getStatusText(car.status),
-            date: formatDate(car.purchase_date),
+        : filteredItems.map(item => ({
+            reference: item.reference,
+            name: item.name,
+            model: item.model,
+            amount: `${formatCurrencySimple(item.amount)} ${t.rpt_currency}`,
+            status: getStatusText(item.status),
+            date: formatDate(item.date),
           })),
       summaryCards: [
         { label: selectedSupplier === 'all' ? t.rpt_supp_total : t.rpt_supp_select, value: selectedSupplier === 'all' ? String(totalSuppliers) : selectedSupplierData?.name || '' },
@@ -147,16 +220,16 @@ export function SuppliersReport() {
         { header: t.rpt_supp_col_phone, key: 'phone' },
         { header: t.rpt_cust_col_address, key: 'address' },
         { header: t.rpt_supp_items_count, key: 'cars_count' },
-        { header: t.rpt_supp_col_available, key: 'available' },
-        { header: t.rpt_supp_col_sold, key: 'sold' },
+        { header: availableLabel, key: 'available' },
+        { header: soldLabel, key: 'sold' },
         { header: t.rpt_supp_purchases_total, key: 'total_purchases' },
         { header: t.rpt_supp_col_notes, key: 'notes' },
       ] : [
-        { header: t.rpt_purch_col_number, key: 'inventory_number' },
-        { header: labels.itemName, key: 'car' },
-        { header: t.rpt_purch_col_model, key: 'model' },
-        { header: t.rpt_purch_col_chassis, key: 'chassis' },
-        { header: t.rpt_purch_col_price, key: 'purchase_price' },
+        { header: isCarDealership ? t.rpt_purch_col_number : (language === 'ar' ? 'المرجع' : 'Ref'), key: 'reference' },
+        { header: col2Label, key: 'name' },
+        { header: col3Label, key: 'model' },
+        ...(isCarDealership ? [{ header: t.rpt_purch_col_chassis, key: 'chassis' }] : []),
+        { header: t.rpt_purch_col_price, key: 'amount' },
         { header: t.rpt_purch_col_status, key: 'status' },
         { header: t.rpt_purch_col_date, key: 'date' },
       ],
@@ -172,14 +245,14 @@ export function SuppliersReport() {
             total_purchases: supplier.totalPurchases,
             notes: supplier.notes || '-',
           }))
-        : filteredCars.map(car => ({
-            inventory_number: car.inventory_number,
-            car: car.name,
-            model: car.model || '-',
-            chassis: car.chassis_number,
-            purchase_price: Number(car.purchase_price),
-            status: getStatusText(car.status),
-            date: formatDate(car.purchase_date),
+        : filteredItems.map(item => ({
+            reference: item.reference,
+            name: item.name,
+            model: item.model,
+            chassis: item.chassis,
+            amount: item.amount,
+            status: getStatusText(item.status),
+            date: formatDate(item.date),
           })),
       summaryData: [
         { label: selectedSupplier === 'all' ? t.rpt_supp_total : t.rpt_supp_select, value: selectedSupplier === 'all' ? totalSuppliers : selectedSupplierData?.name || '' },
@@ -321,11 +394,11 @@ export function SuppliersReport() {
                 <p className="font-medium">{selectedSupplierData.notes || '-'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{t.rpt_supp_col_available}</p>
+                <p className="text-sm text-muted-foreground">{availableLabel}</p>
                 <p className="font-medium text-green-600">{selectedSupplierData.availableCars}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{t.rpt_supp_col_sold}</p>
+                <p className="text-sm text-muted-foreground">{soldLabel}</p>
                 <p className="font-medium text-blue-600">{selectedSupplierData.soldCars}</p>
               </div>
             </div>
@@ -351,8 +424,8 @@ export function SuppliersReport() {
                     <TableHead className="text-right">{t.rpt_supp_col_name}</TableHead>
                     <TableHead className="text-right">{t.rpt_supp_col_phone}</TableHead>
                     <TableHead className="text-right">{t.rpt_supp_items_count}</TableHead>
-                    <TableHead className="text-right">{t.rpt_supp_col_available}</TableHead>
-                    <TableHead className="text-right">{t.rpt_supp_col_sold}</TableHead>
+                    <TableHead className="text-right">{availableLabel}</TableHead>
+                    <TableHead className="text-right">{soldLabel}</TableHead>
                     <TableHead className="text-right">{t.rpt_supp_purchases_total}</TableHead>
                     <TableHead className="text-right">{t.rpt_supp_last_supply}</TableHead>
                   </TableRow>
@@ -376,14 +449,14 @@ export function SuppliersReport() {
         </Card>
       )}
 
-      {/* Supplier Cars - when specific supplier selected */}
+      {/* Supplier Items - when specific supplier selected */}
       {selectedSupplier !== 'all' && (
         <Card>
           <CardHeader>
             <CardTitle>{t.rpt_supp_items}</CardTitle>
           </CardHeader>
           <CardContent>
-            {filteredCars.length === 0 ? (
+            {filteredItems.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 {t.rpt_supp_no_items}
               </div>
@@ -391,28 +464,27 @@ export function SuppliersReport() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">{t.rpt_purch_col_number}</TableHead>
-                    <TableHead className="text-right">{labels.itemName}</TableHead>
-                    <TableHead className="text-right">{t.rpt_purch_col_model}</TableHead>
+                    <TableHead className="text-right">{isCarDealership ? t.rpt_purch_col_number : (language === 'ar' ? 'المرجع' : 'Ref')}</TableHead>
+                    <TableHead className="text-right">{col2Label}</TableHead>
+                    <TableHead className="text-right">{col3Label}</TableHead>
                     <TableHead className="text-right">{t.rpt_purch_col_price}</TableHead>
                     <TableHead className="text-right">{t.rpt_purch_col_status}</TableHead>
                     <TableHead className="text-right">{t.rpt_purch_col_date}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCars.map((car) => (
-                    <TableRow key={car.id}>
-                      <TableCell className="font-medium">{car.inventory_number}</TableCell>
-                      <TableCell>{car.name}</TableCell>
-                      <TableCell>{car.model || '-'}</TableCell>
-                      <TableCell>{formatCurrency(Number(car.purchase_price))}</TableCell>
+                  {filteredItems.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.reference}</TableCell>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell>{item.model}</TableCell>
+                      <TableCell>{formatCurrency(item.amount)}</TableCell>
                       <TableCell>
-                        <Badge variant={car.status === 'available' ? 'default' : car.status === 'transferred' ? 'default' : 'secondary'}
-                          className={car.status === 'transferred' ? 'bg-orange-500' : ''}>
-                          {getStatusText(car.status)}
+                        <Badge variant={isCarDealership ? (item.status === 'available' ? 'default' : 'secondary') : 'default'}>
+                          {getStatusText(item.status)}
                         </Badge>
                       </TableCell>
-                      <TableCell>{formatDate(car.purchase_date)}</TableCell>
+                      <TableCell>{formatDate(item.date)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
