@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { usePrepaidExpenses } from '@/hooks/usePrepaidExpenses';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 
 function generateMonthlySchedule(exp: any) {
   if (!exp.start_date || !exp.number_of_months || !exp.monthly_amount) return [];
