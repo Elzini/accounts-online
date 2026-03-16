@@ -1006,12 +1006,12 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               </div>
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">مركز التكلفة</Label>
-                <Select value={invoiceData.cost_center_id || ''} onValueChange={(v) => setInvoiceData({ ...invoiceData, cost_center_id: v || null })}>
+                <Select value={invoiceData.cost_center_id || 'none'} onValueChange={(v) => setInvoiceData({ ...invoiceData, cost_center_id: v === 'none' ? null : v })}>
                   <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-indigo-500 shadow-none transition-colors">
                     <SelectValue placeholder="اختر مركز التكلفة" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">بدون</SelectItem>
+                    <SelectItem value="none">بدون</SelectItem>
                     {costCenters.filter(cc => cc.is_active).map((cc) => (
                       <SelectItem key={cc.id} value={cc.id}>{cc.code} - {cc.name}</SelectItem>
                     ))}
