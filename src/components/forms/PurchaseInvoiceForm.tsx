@@ -271,6 +271,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     price_includes_tax: true,
     project_id: null as string | null,
     cost_center_id: null as string | null,
+    payment_status: 'unpaid' as string,
   });
 
   useEffect(() => {
