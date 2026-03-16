@@ -130,6 +130,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   useCartSync();
+  useNumberFormat(); // Initialize global number formatting
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>

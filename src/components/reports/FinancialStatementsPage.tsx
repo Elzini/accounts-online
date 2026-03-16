@@ -1293,7 +1293,7 @@ export function FinancialStatementsPage() {
   // ===== Format Number =====
   const formatNumber = (num: number | undefined | null) => {
     if (num === undefined || num === null || isNaN(num)) return '0';
-    return num.toLocaleString('en-US');
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: numDecimals, maximumFractionDigits: numDecimals }).format(numDecimals === 0 ? Math.round(num) : num);
   };
 
   return (
