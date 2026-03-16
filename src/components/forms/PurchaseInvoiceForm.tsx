@@ -697,6 +697,13 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       } else {
         setDiscount(0);
       }
+
+      // Store header totals from the database record
+      setStoredHeaderTotals({
+        subtotal: record.subtotal || 0,
+        vat_amount: record.vat_amount || 0,
+        total: record.total || 0,
+      });
     }
   };
 
