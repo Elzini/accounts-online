@@ -325,9 +325,6 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
       }
 
       toast.success(`تم تحديث الفاتورة ${result.matchedInvoice.invoice_number} بالبيانات المستوردة بنجاح`);
-        ? `تم تحديث البيانات الوصفية للفاتورة ${result.matchedInvoice.invoice_number} (البيانات المالية محمية)`
-        : `تم تحديث الفاتورة ${result.matchedInvoice.invoice_number} بنجاح`;
-      toast.success(msg);
     } catch (error: any) {
       console.error('Update error:', error);
       toast.error(`فشل تحديث الفاتورة: ${error.message}`);
