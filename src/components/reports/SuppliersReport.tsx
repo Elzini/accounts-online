@@ -53,6 +53,8 @@ export function SuppliersReport() {
         supplier_id: car.supplier_id,
         date: car.purchase_date,
         amount: Number(car.purchase_price),
+        taxable_amount: Number(car.purchase_price),
+        vat_amount: 0,
         status: car.status,
         name: car.name,
         model: car.model || '-',
@@ -65,6 +67,8 @@ export function SuppliersReport() {
       supplier_id: inv.supplier_id,
       date: inv.invoice_date,
       amount: Number(inv.total || 0),
+      taxable_amount: Number(inv.taxable_amount || 0),
+      vat_amount: Number(inv.vat_amount || 0),
       status: inv.status || 'draft',
       name: inv.customer_name || '-',
       model: inv.invoice_number || '-',
@@ -182,7 +186,11 @@ export function SuppliersReport() {
         { header: isCarDealership ? t.rpt_purch_col_number : (language === 'ar' ? 'المرجع' : 'Ref'), key: 'reference' },
         { header: col2Label, key: 'name' },
         { header: col3Label, key: 'model' },
-        { header: t.rpt_purch_col_price, key: 'amount' },
+        ...(!isCarDealership ? [
+          { header: language === 'ar' ? 'المبلغ قبل الضريبة' : 'Subtotal', key: 'taxable_amount' },
+          { header: language === 'ar' ? 'الضريبة' : 'VAT', key: 'vat_amount' },
+        ] : []),
+        { header: isCarDealership ? t.rpt_purch_col_price : (language === 'ar' ? 'الإجمالي مع الضريبة' : 'Total incl. VAT'), key: 'amount' },
         { header: t.rpt_purch_col_status, key: 'status' },
         { header: t.rpt_purch_col_date, key: 'date' },
       ],
@@ -199,6 +207,8 @@ export function SuppliersReport() {
             reference: item.reference,
             name: item.name,
             model: item.model,
+            taxable_amount: `${formatCurrencySimple(item.taxable_amount || 0)} ${t.rpt_currency}`,
+            vat_amount: `${formatCurrencySimple(item.vat_amount || 0)} ${t.rpt_currency}`,
             amount: `${formatCurrencySimple(item.amount)} ${t.rpt_currency}`,
             status: getStatusText(item.status),
             date: formatDate(item.date),
@@ -229,7 +239,11 @@ export function SuppliersReport() {
         { header: col2Label, key: 'name' },
         { header: col3Label, key: 'model' },
         ...(isCarDealership ? [{ header: t.rpt_purch_col_chassis, key: 'chassis' }] : []),
-        { header: t.rpt_purch_col_price, key: 'amount' },
+        ...(!isCarDealership ? [
+          { header: language === 'ar' ? 'المبلغ قبل الضريبة' : 'Subtotal', key: 'taxable_amount' },
+          { header: language === 'ar' ? 'الضريبة' : 'VAT', key: 'vat_amount' },
+        ] : []),
+        { header: isCarDealership ? t.rpt_purch_col_price : (language === 'ar' ? 'الإجمالي مع الضريبة' : 'Total incl. VAT'), key: 'amount' },
         { header: t.rpt_purch_col_status, key: 'status' },
         { header: t.rpt_purch_col_date, key: 'date' },
       ],
@@ -250,6 +264,8 @@ export function SuppliersReport() {
             name: item.name,
             model: item.model,
             chassis: item.chassis,
+            taxable_amount: item.taxable_amount || 0,
+            vat_amount: item.vat_amount || 0,
             amount: item.amount,
             status: getStatusText(item.status),
             date: formatDate(item.date),
@@ -463,30 +479,42 @@ export function SuppliersReport() {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right">{isCarDealership ? t.rpt_purch_col_number : (language === 'ar' ? 'المرجع' : 'Ref')}</TableHead>
-                    <TableHead className="text-right">{col2Label}</TableHead>
-                    <TableHead className="text-right">{col3Label}</TableHead>
-                    <TableHead className="text-right">{t.rpt_purch_col_price}</TableHead>
-                    <TableHead className="text-right">{t.rpt_purch_col_status}</TableHead>
-                    <TableHead className="text-right">{t.rpt_purch_col_date}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredItems.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.reference}</TableCell>
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell>{item.model}</TableCell>
-                      <TableCell>{formatCurrency(item.amount)}</TableCell>
-                      <TableCell>
-                        <Badge variant={isCarDealership ? (item.status === 'available' ? 'default' : 'secondary') : 'default'}>
-                          {getStatusText(item.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatDate(item.date)}</TableCell>
-                    </TableRow>
-                  ))}
+                   <TableRow>
+                     <TableHead className="text-right">{isCarDealership ? t.rpt_purch_col_number : (language === 'ar' ? 'المرجع' : 'Ref')}</TableHead>
+                     <TableHead className="text-right">{col2Label}</TableHead>
+                     <TableHead className="text-right">{col3Label}</TableHead>
+                     {!isCarDealership && (
+                       <>
+                         <TableHead className="text-right">{language === 'ar' ? 'المبلغ قبل الضريبة' : 'Subtotal'}</TableHead>
+                         <TableHead className="text-right">{language === 'ar' ? 'الضريبة' : 'VAT'}</TableHead>
+                       </>
+                     )}
+                     <TableHead className="text-right">{isCarDealership ? t.rpt_purch_col_price : (language === 'ar' ? 'الإجمالي مع الضريبة' : 'Total incl. VAT')}</TableHead>
+                     <TableHead className="text-right">{t.rpt_purch_col_status}</TableHead>
+                     <TableHead className="text-right">{t.rpt_purch_col_date}</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {filteredItems.map((item) => (
+                     <TableRow key={item.id}>
+                       <TableCell className="font-medium">{item.reference}</TableCell>
+                       <TableCell>{item.name}</TableCell>
+                       <TableCell>{item.model}</TableCell>
+                       {!isCarDealership && (
+                         <>
+                           <TableCell>{formatCurrency(item.taxable_amount || 0)}</TableCell>
+                           <TableCell>{formatCurrency(item.vat_amount || 0)}</TableCell>
+                         </>
+                       )}
+                       <TableCell>{formatCurrency(item.amount)}</TableCell>
+                       <TableCell>
+                         <Badge variant={isCarDealership ? (item.status === 'available' ? 'default' : 'secondary') : 'default'}>
+                           {getStatusText(item.status)}
+                         </Badge>
+                       </TableCell>
+                       <TableCell>{formatDate(item.date)}</TableCell>
+                     </TableRow>
+                   ))}
                 </TableBody>
               </Table>
             )}
