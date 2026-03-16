@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Car, ShoppingCart, DollarSign, TrendingUp, Calculator, Minus, Plus, Equal, Printer, FileSpreadsheet } from 'lucide-react';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { usePdfExport } from '@/hooks/usePdfExport';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 
 interface BreakdownItem {
   label: string;
