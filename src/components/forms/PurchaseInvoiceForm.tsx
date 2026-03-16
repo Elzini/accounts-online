@@ -215,7 +215,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('invoices')
-        .select('*, invoice_items(*), supplier:suppliers!invoices_supplier_id_fkey(name, tax_number)')
+        .select('*, invoice_items(*), supplier:suppliers!invoices_supplier_id_fkey(name, id_number)')
         .eq('company_id', companyId!)
         .eq('invoice_type', 'purchase')
         .order('invoice_date', { ascending: true });
