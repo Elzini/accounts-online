@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { GitBranch, Coins } from 'lucide-react';
+import { getGlobalDecimals } from './utils/numberFormatting';
 
 // === الفروع ===
 export interface Branch {
