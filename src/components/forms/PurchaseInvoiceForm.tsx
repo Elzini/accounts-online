@@ -510,7 +510,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         
         // Invalidate all related queries so data appears in tables and reports
         queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
-        queryClient.invalidateQueries({ queryKey: ['purchase-invoice-sequence', companyId] });
+        queryClient.invalidateQueries({ queryKey: ['purchase-invoices-nav', companyId] });
         queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
         queryClient.invalidateQueries({ queryKey: ['invoices'] });
         queryClient.invalidateQueries({ queryKey: ['purchases-report'] });
