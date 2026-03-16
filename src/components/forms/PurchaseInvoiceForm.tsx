@@ -301,6 +301,10 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const [isEditing, setIsEditing] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const [aiImportOpen, setAiImportOpen] = useState(false);
+  // Store header totals from DB for existing invoices (to use when items don't match)
+  const [storedHeaderTotals, setStoredHeaderTotals] = useState<{
+    subtotal: number; vat_amount: number; total: number;
+  } | null>(null);
 
   // Navigate to a specific invoice if viewPurchaseInvoiceId is set in sessionStorage
   const initialNavDone = useRef(false);
