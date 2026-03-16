@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { escapeHtml } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
