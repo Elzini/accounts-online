@@ -1408,6 +1408,12 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* AI Import Dialog */}
+      <PurchaseInvoiceAIImport
+        open={aiImportOpen}
+        onOpenChange={setAiImportOpen}
+        onImport={handleAIImport}
+      />
     </>
   );
 }
