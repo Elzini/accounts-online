@@ -91,7 +91,7 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
     // Purchase invoice journal entry:
     // Debit: Expense/Inventory account (subtotal)
     // Debit: VAT Input account (vat_amount)
-    // Credit: Suppliers account (total)
+    // Credit: Based on payment choice (supplier/bank/partner account)
 
     const expenseAccount = findAccount(
       settings?.purchase_inventory_account_id || null,
@@ -104,9 +104,20 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
       '21042', // ضريبة مشتريات مستردة
     );
 
-    const supplierAccount = await findSupplierAccount();
+    // Determine credit account based on payment_account_id selection
+    let creditAccount: { id: string; code: string; name: string } | null = null;
+    
+    if (invoice.payment_account_id) {
+      // User selected a specific payment account (bank, partner, supplier, etc.)
+      creditAccount = findAccount(invoice.payment_account_id);
+    }
+    
+    // Fallback to supplier account if no payment account selected (آجل - on credit)
+    if (!creditAccount) {
+      creditAccount = await findSupplierAccount();
+    }
 
-    if (!expenseAccount || !supplierAccount) {
+    if (!expenseAccount || !creditAccount) {
       console.error('Missing accounts for purchase journal entry');
       await supabase.from('invoices').update({ status: 'issued' }).eq('id', invoiceId);
       return;
@@ -132,10 +143,10 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
       });
     }
 
-    // Credit: supplier account (total)
+    // Credit: chosen payment account (supplier/bank/partner)
     journalLines.push({
-      account_id: supplierAccount.id,
-      description: `مستحقات مورد - ${invoice.customer_name || invoice.invoice_number}`,
+      account_id: creditAccount.id,
+      description: `${creditAccount.name} - ${invoice.customer_name || invoice.invoice_number}`,
       debit: 0,
       credit: vatAmount > 0 && vatInputAccount ? subtotal + vatAmount : subtotal,
     });

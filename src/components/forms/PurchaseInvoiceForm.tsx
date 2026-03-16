@@ -489,6 +489,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             notes: invoiceData.notes || null,
             project_id: invoiceData.project_id || null,
             supplier_invoice_number: invoiceData.supplier_invoice_number || null,
+            payment_account_id: invoiceData.payment_account_id || null,
           })
           .select()
           .single();
@@ -642,7 +643,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         supplier_id: record.supplier_id || '',
         purchase_date: record.invoice_date || '',
         due_date: record.due_date || record.invoice_date || '',
-        payment_account_id: '',
+        payment_account_id: record.payment_account_id || '',
         warehouse: 'main',
         notes: record.notes || '',
         price_includes_tax: false,
@@ -1298,14 +1299,27 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                 className="h-9 border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none text-xs"
               />
               <div className="space-y-1">
-                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_payment_method}</Label>
-                <Select defaultValue="cash">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  {language === 'ar' ? 'الحساب الدائن (طريقة السداد)' : 'Credit Account (Payment)'}
+                </Label>
+                <Select 
+                  value={invoiceData.payment_account_id || 'supplier'} 
+                  onValueChange={(v) => setInvoiceData({ ...invoiceData, payment_account_id: v === 'supplier' ? '' : v })}
+                >
                   <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none transition-colors">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">{t.inv_deferred}</SelectItem>
-                    <SelectItem value="bank">{t.inv_bank_transfer}</SelectItem>
+                    <SelectItem value="supplier">{language === 'ar' ? '📋 آجل (على المورد)' : 'On Credit (Supplier)'}</SelectItem>
+                    {accounts.filter(a => 
+                      a.code?.startsWith('110') || // نقد وبنوك
+                      a.code?.startsWith('1102') || // بنك
+                      a.code?.startsWith('1103') || // نقاط بيع
+                      a.code?.startsWith('2108') || // جاري الشريك
+                      a.code?.startsWith('2107')    // دائنون آخرون
+                    ).map(acc => (
+                      <SelectItem key={acc.id} value={acc.id}>{acc.code} - {acc.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
