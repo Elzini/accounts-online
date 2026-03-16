@@ -80,6 +80,7 @@ export function JournalEntriesPage() {
     setVatType('purchases');
     setTaxNumber('');
     setSupplierCustomer('');
+    setProjectId(null);
     setLines([
       { account_id: '', description: '', debit: 0, credit: 0, reference: '', line_date: format(new Date(), 'yyyy-MM-dd'), cost_center: '' },
       { account_id: '', description: '', debit: 0, credit: 0, reference: '', line_date: format(new Date(), 'yyyy-MM-dd'), cost_center: '' },
