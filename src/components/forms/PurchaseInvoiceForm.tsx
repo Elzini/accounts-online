@@ -1056,21 +1056,24 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           supplierId = newSupplier.id;
         }
 
-        // Calculate amounts
+        // Calculate amounts - AI now always returns pre-tax prices
         const vatRate = taxSettings?.tax_rate || 15;
         let subtotal = data.subtotal || 0;
         let vatAmount = data.vat_amount || 0;
         let total = data.total_amount || 0;
         const discountAmount = data.discount || 0;
+        const priceIncludesTax = data.price_includes_tax ?? false;
 
         if (!subtotal && total) {
-          if (data.price_includes_tax) {
+          if (priceIncludesTax) {
             subtotal = total / (1 + vatRate / 100);
             vatAmount = total - subtotal;
           } else {
-            subtotal = total;
-            vatAmount = subtotal * (vatRate / 100);
-            total = subtotal + vatAmount;
+            subtotal = total - vatAmount;
+            if (vatAmount === 0) {
+              vatAmount = subtotal * (vatRate / 100);
+              total = subtotal + vatAmount;
+            }
           }
         }
 
