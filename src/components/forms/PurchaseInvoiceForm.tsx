@@ -1078,6 +1078,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       setIsViewingExisting(false);
       setCurrentBatchId(null);
       setIsEditing(false);
+      setStoredHeaderTotals(null);
 
       toast.success('تم تعبئة بيانات الفاتورة بنجاح');
     } catch (error) {
