@@ -335,7 +335,7 @@ export function AccountStatementReport() {
                       processedData.entries.map((entry: any, index: number) => (
                         <TableRow key={index}>
                           <TableCell className="text-center">{entry.entry_number}</TableCell>
-                          <TableCell className="text-center">{formatDate(entry.entry_date)}</TableCell>
+                          <TableCell className="text-center">{formatDate(entry.date)}</TableCell>
                           <TableCell>{entry.description}</TableCell>
                           <TableCell className="text-center text-xs">{getDocumentTypeLabel(entry.reference_type)}</TableCell>
                           <TableCell className="text-right font-mono text-green-600 dark:text-green-400">
