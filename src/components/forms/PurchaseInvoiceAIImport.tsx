@@ -263,6 +263,69 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
     handleClose();
   };
 
+  const handleUpdateExisting = async (result: ReconciliationResult) => {
+    if (!result.matchedInvoice || !companyId) return;
+    const data = result.parsed.data;
+    try {
+      // Update invoice header
+      const { error: headerError } = await (supabase as any)
+        .from('invoices')
+        .update({
+          supplier_invoice_number: data.invoice_number || result.matchedInvoice.supplier_invoice_number,
+          invoice_date: data.invoice_date || result.matchedInvoice.invoice_date,
+          subtotal: data.subtotal_amount,
+          vat_amount: data.vat_amount,
+          total: data.total_amount,
+          customer_name: data.supplier_name || result.matchedInvoice.customer_name,
+        })
+        .eq('id', result.matchedInvoice.id);
+
+      if (headerError) throw headerError;
+
+      // Update items if available
+      if (data.items && data.items.length > 0) {
+        // Delete existing items
+        await (supabase as any)
+          .from('invoice_items')
+          .delete()
+          .eq('invoice_id', result.matchedInvoice.id);
+
+        // Insert new items from parsed data
+        const newItems = data.items.map((item: any) => ({
+          invoice_id: result.matchedInvoice!.id,
+          company_id: companyId,
+          description: item.description || 'بند',
+          quantity: item.quantity || 1,
+          unit_price: item.unit_price || 0,
+          taxable_amount: item.taxable_amount || (item.quantity || 1) * (item.unit_price || 0),
+          vat_rate: item.vat_rate ?? 15,
+          vat_amount: item.vat_amount || 0,
+          total: item.total || 0,
+        }));
+
+        const { error: itemsError } = await (supabase as any)
+          .from('invoice_items')
+          .insert(newItems);
+
+        if (itemsError) throw itemsError;
+      }
+
+      // Update local state to reflect the change
+      if (reconciliationResults) {
+        setReconciliationResults(prev => prev?.map(r => 
+          r.parsed.index === result.parsed.index 
+            ? { ...r, matchType: 'exact' as const, matchScore: 100, differences: [] }
+            : r
+        ) || null);
+      }
+
+      toast.success(`تم تحديث الفاتورة ${result.matchedInvoice.invoice_number} بنجاح`);
+    } catch (error: any) {
+      console.error('Update error:', error);
+      toast.error(`فشل تحديث الفاتورة: ${error.message}`);
+    }
+  };
+
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
 
