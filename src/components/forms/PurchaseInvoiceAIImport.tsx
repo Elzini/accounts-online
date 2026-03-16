@@ -45,7 +45,7 @@ interface PurchaseInvoiceAIImportProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImport: (data: ParsedInvoiceData) => void;
-  onBatchImport?: (results: BatchParsedResult[]) => void;
+  onBatchImport?: (results: BatchParsedResult[], costCenterId?: string | null) => void;
 }
 
 export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchImport }: PurchaseInvoiceAIImportProps) {
