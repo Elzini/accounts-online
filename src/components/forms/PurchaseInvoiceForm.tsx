@@ -302,6 +302,22 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const searchBarRef = useRef<HTMLDivElement>(null);
   const [aiImportOpen, setAiImportOpen] = useState(false);
 
+  // Navigate to a specific invoice if viewPurchaseInvoiceId is set in sessionStorage
+  const initialNavDone = useRef(false);
+  useEffect(() => {
+    if (initialNavDone.current) return;
+    const targetId = sessionStorage.getItem('viewPurchaseInvoiceId');
+    if (targetId && navigationRecords.length > 0) {
+      sessionStorage.removeItem('viewPurchaseInvoiceId');
+      initialNavDone.current = true;
+      const idx = navigationRecords.findIndex((r: any) => r.id === targetId);
+      if (idx >= 0) {
+        setCurrentInvoiceIndex(idx);
+        loadRecordData(navigationRecords[idx]);
+      }
+    }
+  }, [navigationRecords]);
+
   const selectedSupplier = suppliers.find(s => s.id === invoiceData.supplier_id);
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_purchases ? (taxSettings?.tax_rate || 15) : 0;
 
