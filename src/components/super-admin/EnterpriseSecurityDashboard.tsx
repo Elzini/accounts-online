@@ -178,10 +178,6 @@ function SystemChangeLog() {
       return data || [];
     },
   });
-      if (error) throw error;
-      return data || [];
-    },
-  });
 
   const filtered = logs.filter((log: any) =>
     !search ||
