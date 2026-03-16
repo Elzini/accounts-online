@@ -233,16 +233,26 @@ export function JournalEntriesPage() {
     }));
     const totalDebitAll = filteredEntries.reduce((sum: number, e: any) => sum + e.total_debit, 0);
     const totalCreditAll = filteredEntries.reduce((sum: number, e: any) => sum + e.total_credit, 0);
-    const summaryCards = [
+    const headerInfo = [
       { label: language === 'ar' ? 'عدد القيود' : 'Entries Count', value: filteredEntries.length.toString() },
       { label: language === 'ar' ? 'إجمالي المدين' : 'Total Debit', value: fmt(totalDebitAll) + ' ر.س' },
       { label: language === 'ar' ? 'إجمالي الدائن' : 'Total Credit', value: fmt(totalCreditAll) + ' ر.س' },
     ];
+    const summaryRow: Record<string, any> = {
+      entry_number: '',
+      date: '',
+      type: '',
+      description: language === 'ar' ? 'الإجمالي' : 'Total',
+      debit: fmt(totalDebitAll),
+      credit: fmt(totalCreditAll),
+      status: '',
+    };
     printReport({
       title: language === 'ar' ? 'كشف القيود اليومية' : 'Journal Entries Sheet',
       columns,
       data,
-      summaryCards,
+      headerInfo,
+      summaryRow,
     });
   };
 
