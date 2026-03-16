@@ -122,6 +122,7 @@ export function InvoiceReconciliation({
   formatCurrency,
   onImportSelected,
   onViewDetails,
+  onUpdateExisting,
   onClose,
 }: InvoiceReconciliationProps) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(() => {
