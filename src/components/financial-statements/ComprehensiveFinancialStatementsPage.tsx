@@ -119,8 +119,15 @@ export function ComprehensiveFinancialStatementsPage() {
   const { printReport } = usePrintReport();
   const { exportToExcel } = useExcelExport();
   
-  // حساب صافي الربح من تقرير الأرباح
+  const isCarDealership = company?.company_type === 'car_dealership';
+  
+  // حساب صافي الربح من تقرير الأرباح (للسيارات فقط)
   const profitReportData = useMemo(() => {
+    if (!isCarDealership) {
+      // للشركات غير السيارات: الربح يُحسب فقط من القيود المحاسبية
+      return { totalGrossProfit: 0, carExpenses: 0, generalExpenses: 0, netProfit: 0, isApplicable: false };
+    }
+    
     const filteredSales = filterByFiscalYear(sales, 'sale_date');
     const filteredExpenses = filterByFiscalYear(expenses, 'expense_date');
     
@@ -137,8 +144,8 @@ export function ComprehensiveFinancialStatementsPage() {
     
     const netProfit = totalGrossProfit - carExpenses - generalExpenses;
     
-    return { totalGrossProfit, carExpenses, generalExpenses, netProfit };
-  }, [sales, expenses, filterByFiscalYear]);
+    return { totalGrossProfit, carExpenses, generalExpenses, netProfit, isApplicable: true };
+  }, [sales, expenses, filterByFiscalYear, isCarDealership]);
   
   const handleFixMissingCogs = async () => {
     if (!companyId) return;
