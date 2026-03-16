@@ -82,6 +82,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
         .eq('id', invoiceId);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
       toast.success(language === 'ar' ? 'تم اعتماد الفاتورة بنجاح' : 'Invoice approved successfully');
