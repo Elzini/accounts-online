@@ -49,6 +49,7 @@ import { TrialBalanceImportManager } from './TrialBalanceImportManager';
 import { AuditTrailPanel } from './AuditTrailPanel';
 import { BranchCurrencyBar, Branch, SUPPORTED_CURRENCIES, convertAmount } from './BranchCurrencySelector';
 import { createAuditLog, AuditLogEntry } from '@/services/importAuditLog';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 
 export function ComprehensiveFinancialStatementsPage() {
   const { company, companyId } = useCompany();
