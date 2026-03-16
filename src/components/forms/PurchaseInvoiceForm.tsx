@@ -61,6 +61,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { PurchaseInvoiceAIImport, ParsedInvoiceData, BatchParsedResult } from './PurchaseInvoiceAIImport';
 import { useCostCenters } from '@/hooks/useCostCenters';
+import { getNextInvoiceNumber } from '@/utils/invoiceNumberGenerator';
 
 interface PurchaseInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
