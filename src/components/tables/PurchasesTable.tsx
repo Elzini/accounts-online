@@ -99,6 +99,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       const { error } = await supabase.from('invoices').delete().eq('id', invoiceId);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success(language === 'ar' ? 'تم حذف الفاتورة بنجاح' : 'Invoice deleted successfully');
     } catch (err) {
