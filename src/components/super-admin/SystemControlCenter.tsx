@@ -123,10 +123,14 @@ export function SystemControlCenter() {
   // Save mutations
   const saveMut = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
-      await saveSetting(key, JSON.stringify(value));
+      const strValue = typeof value === 'string' ? value : JSON.stringify(value);
+      await saveSetting(key, strValue);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['system-setting', variables.key] });
+      if (variables.key === 'number_display_mode') {
+        queryClient.invalidateQueries({ queryKey: ['number-display-mode'] });
+      }
       toast.success('تم حفظ الإعدادات بنجاح');
     },
     onError: () => toast.error('حدث خطأ أثناء الحفظ'),
