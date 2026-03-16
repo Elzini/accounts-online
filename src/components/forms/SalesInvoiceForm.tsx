@@ -887,15 +887,8 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       // Check if this is an invoice (non-car) or a sale (car)
       const isInvoiceRecord = existingInvoices.some(inv => inv.id === currentSaleId);
       if (isInvoiceRecord) {
-        // Approve invoice in invoices table
-        const { data: { user } } = await supabase.auth.getUser();
-        const { error } = await supabase
-          .from('invoices')
-          .update({ 
-            status: 'issued',
-          })
-          .eq('id', currentSaleId);
-        if (error) throw error;
+        // Approve invoice and auto-create journal entry
+        await approveInvoiceWithJournal(currentSaleId);
         // Refresh invoices list
         const { data: updatedInvoices } = await supabase
           .from('invoices')
