@@ -17,6 +17,7 @@ export interface ExistingInvoice {
   supplier_id: string | null;
   customer_name: string | null;
   invoice_date: string;
+  subtotal: number;
   total: number;
   vat_amount: number;
   status: string;
