@@ -226,13 +226,23 @@ export function InvoiceReconciliation({
           <div className="text-lg font-bold text-green-600">{stats.exact}</div>
           <div className="text-[10px] text-muted-foreground">مطابقة</div>
         </button>
-        <button
-          onClick={() => setFilter('partial')}
-          className={`p-3 rounded-lg border text-center transition-all ${filter === 'partial' ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20 ring-1 ring-yellow-500' : 'hover:bg-muted/50'}`}
-        >
-          <div className="text-lg font-bold text-yellow-600">{stats.partial}</div>
-          <div className="text-[10px] text-muted-foreground">جزئية</div>
-        </button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setFilter('partial')}
+                className={`p-3 rounded-lg border text-center transition-all ${filter === 'partial' ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20 ring-1 ring-yellow-500' : 'hover:bg-muted/50'}`}
+              >
+                <div className="text-lg font-bold text-yellow-600">{stats.partial}</div>
+                <div className="text-[10px] text-muted-foreground flex items-center justify-center gap-1">جزئية <HelpCircle className="w-3 h-3" /></div>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs text-xs">
+              <p className="font-bold mb-1">مطابقة جزئية تعني:</p>
+              <p>الفاتورة موجودة في النظام لكن بعض البيانات مختلفة (مثل المبلغ أو التاريخ أو رقم الفاتورة). يمكنك تحديث الفاتورة الحالية لتطابق البيانات المستوردة.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <button
           onClick={() => setFilter('unmatched')}
           className={`p-3 rounded-lg border text-center transition-all ${filter === 'unmatched' ? 'border-red-500 bg-red-50 dark:bg-red-950/20 ring-1 ring-red-500' : 'hover:bg-muted/50'}`}
