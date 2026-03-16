@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 import {
   useCardFormulas,
   FORMULA_VARIABLES,
@@ -89,8 +90,9 @@ export function CardFormulasTab() {
     }
   };
 
+  const { decimals: _dec } = useNumberFormat();
   const formatNumber = (n: number) =>
-    new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+    new Intl.NumberFormat('en-US', { minimumFractionDigits: _dec, maximumFractionDigits: _dec }).format(_dec === 0 ? Math.round(n) : n);
 
   return (
     <div className="space-y-6">

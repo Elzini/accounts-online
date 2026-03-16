@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { NetworkStatusIndicator } from "@/components/pwa/NetworkStatusIndicator";
 import { useCartSync } from "@/hooks/useCartSync";
+import { useNumberFormat } from "@/hooks/useNumberFormat";
 import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
 
@@ -129,6 +130,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   useCartSync();
+  useNumberFormat(); // Initialize global number formatting
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>

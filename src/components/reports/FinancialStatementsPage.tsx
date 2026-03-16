@@ -26,6 +26,7 @@ import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { usePdfExport } from '@/hooks/usePdfExport';
 import { toast } from 'sonner';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 
 // ===== Types =====
 interface BalanceSheetData {
@@ -188,6 +189,7 @@ const emptyFinancialData: FinancialData = {
 
 export function FinancialStatementsPage() {
   const { companyId, company } = useCompany();
+  const { decimals: numDecimals } = useNumberFormat();
   const [data, setData] = useState<FinancialData>(emptyFinancialData);
   const [isLoading, setIsLoading] = useState(false);
   const [dataSource, setDataSource] = useState<'none' | 'excel' | 'system'>('none');
@@ -1293,7 +1295,7 @@ export function FinancialStatementsPage() {
   // ===== Format Number =====
   const formatNumber = (num: number | undefined | null) => {
     if (num === undefined || num === null || isNaN(num)) return '0';
-    return num.toLocaleString('en-US');
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: numDecimals, maximumFractionDigits: numDecimals }).format(numDecimals === 0 ? Math.round(num) : num);
   };
 
   return (

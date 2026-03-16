@@ -13,6 +13,7 @@ import { Loader2, FileText, Printer, TrendingUp, TrendingDown, Building2, Receip
 import { format, startOfMonth, endOfMonth, subMonths, startOfQuarter, endOfQuarter, subQuarters } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { generateZatcaVATReturnXML, downloadZatcaXML } from '@/lib/zatcaXmlExport';
 import { useTaxSettings as useTaxSettingsHook } from '@/hooks/useAccounting';
 
@@ -43,8 +44,9 @@ export function VATReturnReportPage() {
 
   const { data: report, isLoading } = useVATReturnReport(startDate, endDate);
 
-  const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR', minimumFractionDigits: 0 }).format(amount);
-  const formatNumber = (amount: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+  const { decimals } = useNumberFormat();
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR', minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(amount) : amount);
+  const formatNumber = (amount: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(amount) : amount);
 
   const handlePrint = () => { window.print(); };
 

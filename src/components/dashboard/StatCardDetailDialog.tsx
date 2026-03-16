@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Car, ShoppingCart, DollarSign, TrendingUp, Calculator, Minus, Plus, Equal, Printer, FileSpreadsheet } from 'lucide-react';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { usePdfExport } from '@/hooks/usePdfExport';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 
 interface BreakdownItem {
   label: string;
@@ -52,14 +53,16 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
 
   if (!data) return null;
 
+  const { decimals } = useNumberFormat();
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
-      maximumFractionDigits: 0,
-    }).format(Math.round(value)) + ' ر.س.';
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(decimals === 0 ? Math.round(value) : value) + ' ر.س.';
   };
 
   const formatNumber = (value: number) => {
-    return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.round(value));
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(value) : value);
   };
 
   const formatDate = (date: string) => {
