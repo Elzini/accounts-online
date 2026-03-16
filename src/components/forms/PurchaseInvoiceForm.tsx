@@ -989,7 +989,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       taxSettings: taxSettings,
       companyLogoUrl: (company as any)?.invoice_logo_url || company?.logo_url,
     };
-  }, [savedBatchData, invoiceData, selectedSupplier, calculations, taxSettings, company, taxRate, nextInvoiceNumber]);
+  }, [savedBatchData, invoiceData, selectedSupplier, calculations, displayTotals, taxSettings, company, taxRate, nextInvoiceNumber]);
 
   const handleAIImport = async (data: ParsedInvoiceData) => {
     try {
