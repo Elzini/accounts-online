@@ -206,6 +206,46 @@ export function JournalEntriesPage() {
   // Get next entry number
   const nextEntryNumber = filteredEntries.length > 0 ? Math.max(...filteredEntries.map(e => e.entry_number)) + 1 : 1;
 
+  const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
+
+  const printJournalSheet = () => {
+    if (!filteredEntries.length) {
+      toast.error(language === 'ar' ? 'لا توجد قيود للطباعة' : 'No entries to print');
+      return;
+    }
+    const columns = [
+      { header: t.je_col_number, key: 'entry_number' },
+      { header: t.je_col_date, key: 'date' },
+      { header: t.je_col_type, key: 'type' },
+      { header: t.je_col_desc, key: 'description' },
+      { header: t.je_col_debit, key: 'debit' },
+      { header: t.je_col_credit, key: 'credit' },
+      { header: t.je_col_status, key: 'status' },
+    ];
+    const data = filteredEntries.map((entry: any) => ({
+      entry_number: entry.entry_number,
+      date: format(new Date(entry.entry_date), 'yyyy/MM/dd'),
+      type: getReferenceTypeLabel(entry.reference_type),
+      description: entry.description,
+      debit: fmt(entry.total_debit),
+      credit: fmt(entry.total_credit),
+      status: entry.is_posted ? (language === 'ar' ? 'مرحّل' : 'Posted') : (language === 'ar' ? 'مسودة' : 'Draft'),
+    }));
+    const totalDebitAll = filteredEntries.reduce((sum: number, e: any) => sum + e.total_debit, 0);
+    const totalCreditAll = filteredEntries.reduce((sum: number, e: any) => sum + e.total_credit, 0);
+    const summaryCards = [
+      { label: language === 'ar' ? 'عدد القيود' : 'Entries Count', value: filteredEntries.length.toString() },
+      { label: language === 'ar' ? 'إجمالي المدين' : 'Total Debit', value: fmt(totalDebitAll) + ' ر.س' },
+      { label: language === 'ar' ? 'إجمالي الدائن' : 'Total Credit', value: fmt(totalCreditAll) + ' ر.س' },
+    ];
+    printReport({
+      title: language === 'ar' ? 'كشف القيود اليومية' : 'Journal Entries Sheet',
+      columns,
+      data,
+      summaryCards,
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
