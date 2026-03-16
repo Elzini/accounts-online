@@ -819,6 +819,15 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
               {/* Title */}
               <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/20 gap-1.5 text-xs"
+                  onClick={() => setAiImportOpen(true)}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  استيراد ذكي (PDF)
+                </Button>
                 <div className="flex items-center gap-2">
                   <FileText className="w-5 h-5 opacity-80" />
                   <h1 className="text-lg font-bold tracking-wide">{t.inv_purchase_invoice}</h1>
