@@ -903,19 +903,19 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             <div className="flex items-center justify-between">
               {/* Navigation Controls */}
               <div className="flex items-center gap-1 bg-white/15 backdrop-blur-sm rounded-lg p-1">
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleLastPurchase} disabled={fiscalYearFilteredBatches.length === 0}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleLastPurchase} disabled={navigationRecords.length === 0}>
                   <ChevronRight className="w-4 h-4" /><ChevronRight className="w-4 h-4 -mr-2.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleNextPurchase} disabled={currentInvoiceIndex >= fiscalYearFilteredBatches.length - 1}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleNextPurchase} disabled={currentInvoiceIndex >= navigationRecords.length - 1}>
                   <ChevronRight className="w-4 h-4" />
                 </Button>
                 <span className="px-3 py-1 text-xs bg-white/20 rounded-md min-w-[70px] text-center font-mono font-bold">
-                  {fiscalYearFilteredBatches.length > 0 ? currentInvoiceIndex + 1 : 0} / {fiscalYearFilteredBatches.length}
+                  {navigationRecords.length > 0 ? currentInvoiceIndex + 1 : 0} / {navigationRecords.length}
                 </span>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handlePreviousPurchase} disabled={currentInvoiceIndex <= 0}>
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleFirstPurchase} disabled={fiscalYearFilteredBatches.length === 0}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleFirstPurchase} disabled={navigationRecords.length === 0}>
                   <ChevronLeft className="w-4 h-4" /><ChevronLeft className="w-4 h-4 -ml-2.5" />
                 </Button>
               </div>
