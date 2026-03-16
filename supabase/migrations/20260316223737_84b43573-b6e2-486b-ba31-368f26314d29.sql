@@ -1,0 +1,1 @@
+ALTER FUNCTION is_period_locked(uuid, date) SET search_path = public;

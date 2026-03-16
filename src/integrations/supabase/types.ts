@@ -116,6 +116,42 @@ export type Database = {
           },
         ]
       }
+      accounting_engine_versions: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          changelog: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_current: boolean
+          version_number: string
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          changelog?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_current?: boolean
+          version_number: string
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          changelog?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_current?: boolean
+          version_number?: string
+        }
+        Relationships: []
+      }
       advanced_projects: {
         Row: {
           budget: number | null
@@ -2045,6 +2081,42 @@ export type Database = {
           parent_code?: string | null
           sort_order?: number | null
           type?: string
+        }
+        Relationships: []
+      }
+      code_integrity_hashes: {
+        Row: {
+          created_at: string
+          file_hash: string
+          file_path: string
+          hash_algorithm: string
+          id: string
+          status: string
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_hash: string
+          file_path: string
+          hash_algorithm?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_hash?: string
+          file_path?: string
+          hash_algorithm?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: []
       }
@@ -4809,6 +4881,91 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "field_service_orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_period_locks: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          is_locked: boolean
+          lock_reason: string | null
+          locked_by: string
+          period_end: string
+          period_start: string
+          unlocked_at: string | null
+          unlocked_by: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          lock_reason?: string | null
+          locked_by: string
+          period_end: string
+          period_start: string
+          unlocked_at?: string | null
+          unlocked_by?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          lock_reason?: string | null
+          locked_by?: string
+          period_end?: string
+          period_start?: string
+          unlocked_at?: string | null
+          unlocked_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_period_locks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_snapshots: {
+        Row: {
+          company_id: string
+          created_at: string
+          data: Json
+          id: string
+          metadata: Json | null
+          snapshot_date: string
+          snapshot_type: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          data?: Json
+          id?: string
+          metadata?: Json | null
+          snapshot_date: string
+          snapshot_type?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          metadata?: Json | null
+          snapshot_date?: string
+          snapshot_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_snapshots_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -11855,6 +12012,54 @@ export type Database = {
           },
         ]
       }
+      security_incidents: {
+        Row: {
+          auto_freeze_triggered: boolean | null
+          created_at: string
+          description: string
+          details: Json | null
+          detected_by: string
+          id: string
+          incident_type: string
+          ip_address: string | null
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          user_id: string | null
+        }
+        Insert: {
+          auto_freeze_triggered?: boolean | null
+          created_at?: string
+          description: string
+          details?: Json | null
+          detected_by?: string
+          id?: string
+          incident_type: string
+          ip_address?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          user_id?: string | null
+        }
+        Update: {
+          auto_freeze_triggered?: boolean | null
+          created_at?: string
+          description?: string
+          details?: Json | null
+          detected_by?: string
+          id?: string
+          incident_type?: string
+          ip_address?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       sensitive_operations_log: {
         Row: {
           company_id: string
@@ -13923,6 +14128,75 @@ export type Database = {
           },
         ]
       }
+      two_person_approvals: {
+        Row: {
+          applied_at: string | null
+          authorization_method: string | null
+          backup_id: string | null
+          change_description: string
+          change_payload: Json | null
+          change_type: string
+          created_at: string
+          first_approved_at: string | null
+          first_approver_id: string | null
+          first_approver_role: string | null
+          id: string
+          impact_analysis: Json | null
+          rejection_reason: string | null
+          requested_by: string
+          second_approved_at: string | null
+          second_approver_id: string | null
+          second_approver_role: string | null
+          simulation_result: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          applied_at?: string | null
+          authorization_method?: string | null
+          backup_id?: string | null
+          change_description: string
+          change_payload?: Json | null
+          change_type: string
+          created_at?: string
+          first_approved_at?: string | null
+          first_approver_id?: string | null
+          first_approver_role?: string | null
+          id?: string
+          impact_analysis?: Json | null
+          rejection_reason?: string | null
+          requested_by: string
+          second_approved_at?: string | null
+          second_approver_id?: string | null
+          second_approver_role?: string | null
+          simulation_result?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          applied_at?: string | null
+          authorization_method?: string | null
+          backup_id?: string | null
+          change_description?: string
+          change_payload?: Json | null
+          change_type?: string
+          created_at?: string
+          first_approved_at?: string | null
+          first_approver_id?: string | null
+          first_approver_role?: string | null
+          id?: string
+          impact_analysis?: Json | null
+          rejection_reason?: string | null
+          requested_by?: string
+          second_approved_at?: string | null
+          second_approver_id?: string | null
+          second_approver_role?: string | null
+          simulation_result?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       units_of_measure: {
         Row: {
           abbreviation: string | null
@@ -15661,6 +15935,10 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_period_locked: {
+        Args: { p_company_id: string; p_date: string }
+        Returns: boolean
+      }
       is_super_admin:
         | { Args: never; Returns: boolean }
         | { Args: { _user_id: string }; Returns: boolean }
