@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Building2, MapPin, Calendar, TrendingUp, Edit, Trash2, Eye, Search } from 'lucide-react';
-import { useREProjects, useSaveREProject, useDeleteREProject, useREDashboardStats } from '@/hooks/useRealEstate';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Building2, MapPin, Calendar, TrendingUp, Edit, Trash2, Eye, Search, FileText, BookOpen } from 'lucide-react';
+import { useREProjects, useSaveREProject, useDeleteREProject, useREDashboardStats, useREProjectInvoices, useREProjectJournalEntries } from '@/hooks/useRealEstate';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   planning: { label: 'تخطيط', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
