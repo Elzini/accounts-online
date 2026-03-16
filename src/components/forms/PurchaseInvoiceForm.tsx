@@ -532,6 +532,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       warehouse: 'main',
       notes: batch.notes || '',
       price_includes_tax: false,
+      project_id: null,
     });
 
     const batchCars = batch.cars || [];
