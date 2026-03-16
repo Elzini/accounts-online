@@ -1074,12 +1074,14 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         }
 
         // Create invoice
-        const invoiceNumber = data.invoice_number || `PUR-${Date.now()}-${result.index}`;
+        const supplierInvNumber = data.invoice_number || '';
+        const invoiceNumber = `PUR-${Date.now()}-${result.index}`;
         const { data: invoice, error: invoiceError } = await supabase
           .from('invoices')
           .insert({
             company_id: companyId,
             invoice_number: invoiceNumber,
+            supplier_invoice_number: supplierInvNumber || null,
             invoice_type: 'purchase',
             supplier_id: supplierId,
             customer_name: data.supplier_name,
