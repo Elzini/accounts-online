@@ -243,6 +243,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
+  const [aiImportOpen, setAiImportOpen] = useState(false);
 
   const selectedSupplier = suppliers.find(s => s.id === invoiceData.supplier_id);
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_purchases ? (taxSettings?.tax_rate || 15) : 0;
