@@ -45,6 +45,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSuppliers, useAddPurchaseBatch, useCars, useUpdateCar, useDeleteCar, usePurchaseBatches } from '@/hooks/useDatabase';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { PurchaseInvoiceDialog } from '@/components/invoices/PurchaseInvoiceDialog';
