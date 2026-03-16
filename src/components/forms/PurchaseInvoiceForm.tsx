@@ -1321,7 +1321,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               </div>
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_supplier_invoice}</Label>
-                <Input className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-indigo-500 shadow-none" placeholder={t.inv_reference} />
+                <Input value={invoiceData.supplier_invoice_number} onChange={(e) => setInvoiceData({ ...invoiceData, supplier_invoice_number: e.target.value })} className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-indigo-500 shadow-none" placeholder={t.inv_reference} />
               </div>
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">مركز التكلفة</Label>
