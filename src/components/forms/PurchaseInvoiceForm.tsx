@@ -636,6 +636,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         price_includes_tax: true,
         project_id: record.project_id || null,
         cost_center_id: null,
+        payment_status: record.payment_status || 'unpaid',
       });
 
       const items = record.invoice_items || [];
