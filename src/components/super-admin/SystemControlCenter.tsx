@@ -96,11 +96,20 @@ export function SystemControlCenter() {
     },
   });
 
+  const { data: numberDisplayMode = 'integer' } = useQuery({
+    queryKey: ['system-setting', 'number_display_mode'],
+    queryFn: async () => {
+      const val = await fetchSetting('number_display_mode');
+      return val || 'integer';
+    },
+  });
+
   // State for editing
   const [editCurrencies, setEditCurrencies] = useState<string[]>([]);
   const [editCountries, setEditCountries] = useState<typeof DEFAULT_COUNTRIES>([]);
   const [editTrial, setEditTrial] = useState({ days: 14, autoActivate: true });
   const [editSecurity, setEditSecurity] = useState({ twoFactorRequired: false, apiRateLimit: 1000, ipRestrictions: [] as string[] });
+  const [editNumberMode, setEditNumberMode] = useState('integer');
   const [newCurrency, setNewCurrency] = useState('');
   const [newCountry, setNewCountry] = useState({ code: '', name: '', vat: 0 });
   const [newIp, setNewIp] = useState('');
@@ -109,6 +118,7 @@ export function SystemControlCenter() {
   useEffect(() => { setEditCountries(countries); }, [countries]);
   useEffect(() => { setEditTrial(trialSettings); }, [trialSettings]);
   useEffect(() => { setEditSecurity(securitySettings); }, [securitySettings]);
+  useEffect(() => { setEditNumberMode(numberDisplayMode); }, [numberDisplayMode]);
 
   // Save mutations
   const saveMut = useMutation({
