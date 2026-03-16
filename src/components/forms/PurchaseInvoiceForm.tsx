@@ -554,9 +554,9 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   };
 
   const handleFirstPurchase = () => {
-    if (fiscalYearFilteredBatches.length > 0) {
+    if (navigationRecords.length > 0) {
       setCurrentInvoiceIndex(0);
-      loadBatchData(fiscalYearFilteredBatches[0]);
+      loadRecordData(navigationRecords[0]);
     }
   };
 
@@ -564,60 +564,100 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     if (currentInvoiceIndex > 0) {
       const newIndex = currentInvoiceIndex - 1;
       setCurrentInvoiceIndex(newIndex);
-      loadBatchData(fiscalYearFilteredBatches[newIndex]);
+      loadRecordData(navigationRecords[newIndex]);
     }
   };
 
   const handleNextPurchase = () => {
-    if (currentInvoiceIndex < fiscalYearFilteredBatches.length - 1) {
+    if (currentInvoiceIndex < navigationRecords.length - 1) {
       const newIndex = currentInvoiceIndex + 1;
       setCurrentInvoiceIndex(newIndex);
-      loadBatchData(fiscalYearFilteredBatches[newIndex]);
+      loadRecordData(navigationRecords[newIndex]);
     }
   };
 
   const handleLastPurchase = () => {
-    if (fiscalYearFilteredBatches.length > 0) {
-      const lastIndex = fiscalYearFilteredBatches.length - 1;
+    if (navigationRecords.length > 0) {
+      const lastIndex = navigationRecords.length - 1;
       setCurrentInvoiceIndex(lastIndex);
-      loadBatchData(fiscalYearFilteredBatches[lastIndex]);
+      loadRecordData(navigationRecords[lastIndex]);
     }
   };
 
-  const loadBatchData = (batch: any) => {
+  const loadRecordData = (record: any) => {
     setIsViewingExisting(true);
-    setCurrentBatchId(batch.id);
+    setCurrentBatchId(record.id);
     setIsEditing(false);
-    
-    setInvoiceData({
-      invoice_number: String(currentInvoiceIndex + 1),
-      supplier_id: batch.supplier_id || '',
-      purchase_date: batch.purchase_date,
-      due_date: batch.purchase_date,
-      payment_account_id: batch.payment_account_id || '',
-      warehouse: 'main',
-      notes: batch.notes || '',
-      price_includes_tax: false,
-      project_id: null,
-      cost_center_id: null,
-    });
 
-    const batchCars = batch.cars || [];
-    if (batchCars.length > 0) {
-      setCars(batchCars.map((car: any) => ({
-        id: crypto.randomUUID(),
-        chassis_number: car.chassis_number,
-        plate_number: car.plate_number || '',
-        name: car.name,
-        model: car.model || '',
-        color: car.color || '',
-        purchase_price: String(car.purchase_price),
-        quantity: 1,
-        unit: t.inv_car_unit,
-        car_condition: ((car.car_condition || 'new') as 'new' | 'used'),
-      })));
+    if (isCarDealership) {
+      // Load batch data for car dealerships
+      setInvoiceData({
+        invoice_number: String(currentInvoiceIndex + 1),
+        supplier_id: record.supplier_id || '',
+        purchase_date: record.purchase_date,
+        due_date: record.purchase_date,
+        payment_account_id: record.payment_account_id || '',
+        warehouse: 'main',
+        notes: record.notes || '',
+        price_includes_tax: false,
+        project_id: null,
+        cost_center_id: null,
+      });
+
+      const batchCars = record.cars || [];
+      if (batchCars.length > 0) {
+        setCars(batchCars.map((car: any) => ({
+          id: crypto.randomUUID(),
+          chassis_number: car.chassis_number,
+          plate_number: car.plate_number || '',
+          name: car.name,
+          model: car.model || '',
+          color: car.color || '',
+          purchase_price: String(car.purchase_price),
+          quantity: 1,
+          unit: t.inv_car_unit,
+          car_condition: ((car.car_condition || 'new') as 'new' | 'used'),
+        })));
+      } else {
+        setCars([createEmptyCar()]);
+      }
     } else {
-      setCars([createEmptyCar()]);
+      // Load invoice data for non-car companies
+      setInvoiceData({
+        invoice_number: String(record.invoice_number || ''),
+        supplier_id: record.supplier_id || '',
+        purchase_date: record.invoice_date || '',
+        due_date: record.due_date || record.invoice_date || '',
+        payment_account_id: '',
+        warehouse: 'main',
+        notes: record.notes || '',
+        price_includes_tax: true,
+        project_id: record.project_id || null,
+        cost_center_id: null,
+      });
+
+      const items = record.invoice_items || [];
+      if (items.length > 0) {
+        setPurchaseInventoryItems(items.map((item: any) => ({
+          id: crypto.randomUUID(),
+          item_id: item.inventory_item_id || null,
+          item_name: item.item_description || '',
+          barcode: item.item_code || '',
+          unit_name: item.unit || t.inv_unit,
+          unit_id: null,
+          purchase_price: String(item.unit_price || ''),
+          quantity: item.quantity || 1,
+        })));
+      } else {
+        setPurchaseInventoryItems([createEmptyInventoryItem()]);
+      }
+
+      if (record.discount_amount && record.discount_amount > 0) {
+        setDiscount(record.discount_amount);
+        setDiscountType('amount');
+      } else {
+        setDiscount(0);
+      }
     }
   };
 
