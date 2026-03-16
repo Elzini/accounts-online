@@ -464,7 +464,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
       try {
         if (!companyId) throw new Error(t.inv_toast_company_not_found);
-        const invoiceNumber = `PUR-${Date.now()}`;
+        const invoiceNumber = await getNextInvoiceNumber(companyId, 'purchase');
 
         const { data: invoice, error: invoiceError } = await supabase
           .from('invoices')
