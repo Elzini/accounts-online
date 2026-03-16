@@ -434,28 +434,37 @@ export function InvoiceReconciliation({
                             عرض التفاصيل
                           </Button>
                           {r.matchType !== 'none' && r.matchType !== 'exact' && r.matchedInvoice && onUpdateExisting && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="text-xs h-7 gap-1"
-                              disabled={updatingId === r.parsed.index}
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                setUpdatingId(r.parsed.index);
-                                try {
-                                  await onUpdateExisting(r);
-                                } finally {
-                                  setUpdatingId(null);
-                                }
-                              }}
-                            >
-                              {updatingId === r.parsed.index ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
+                            <>
+                              {['issued', 'approved', 'posted'].includes(r.matchedInvoice.status) ? (
+                                <div className="text-[11px] text-destructive flex items-center gap-1">
+                                  <AlertTriangle className="w-3 h-3" />
+                                  الفاتورة معتمدة — استخدم إشعار دائن للتصحيح
+                                </div>
                               ) : (
-                                <RefreshCw className="w-3 h-3" />
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="text-xs h-7 gap-1"
+                                  disabled={updatingId === r.parsed.index}
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    setUpdatingId(r.parsed.index);
+                                    try {
+                                      await onUpdateExisting(r);
+                                    } finally {
+                                      setUpdatingId(null);
+                                    }
+                                  }}
+                                >
+                                  {updatingId === r.parsed.index ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <RefreshCw className="w-3 h-3" />
+                                  )}
+                                  تحديث الفاتورة الحالية
+                                </Button>
                               )}
-                              تحديث الفاتورة الحالية
-                            </Button>
+                            </>
                           )}
                         </div>
                       </div>
