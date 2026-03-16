@@ -20,6 +20,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { supabase } from '@/integrations/supabase/client';
+import { approveInvoiceWithJournal } from '@/services/invoiceJournal';
 import { toast } from 'sonner';
 
 interface PurchasesTableProps {
@@ -76,11 +77,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
 
   const handleApproveInvoice = useCallback(async (invoiceId: string) => {
     try {
-      const { error } = await supabase
-        .from('invoices')
-        .update({ status: 'issued' })
-        .eq('id', invoiceId);
-      if (error) throw error;
+      await approveInvoiceWithJournal(invoiceId);
       queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
@@ -89,7 +86,9 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       queryClient.invalidateQueries({ queryKey: ['advanced-analytics'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-chart-data'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-recent-invoices'] });
-      toast.success(language === 'ar' ? 'تم اعتماد الفاتورة بنجاح' : 'Invoice approved successfully');
+      queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
+      queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance'] });
+      toast.success(language === 'ar' ? 'تم اعتماد الفاتورة وإنشاء القيد المحاسبي بنجاح' : 'Invoice approved and journal entry created');
     } catch (err) {
       console.error('Approve error:', err);
       toast.error(language === 'ar' ? 'حدث خطأ أثناء اعتماد الفاتورة' : 'Error approving invoice');
