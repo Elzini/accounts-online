@@ -4,9 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { Upload, FileText, Loader2, CheckCircle, Sparkles, AlertCircle, X, Files } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useCostCenters } from '@/hooks/useCostCenters';
 
 export interface ParsedInvoiceData {
   supplier_name: string;
@@ -42,7 +45,7 @@ interface PurchaseInvoiceAIImportProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImport: (data: ParsedInvoiceData) => void;
-  onBatchImport?: (results: BatchParsedResult[]) => void;
+  onBatchImport?: (results: BatchParsedResult[], costCenterId?: string | null) => void;
 }
 
 export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchImport }: PurchaseInvoiceAIImportProps) {
@@ -55,6 +58,8 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
   const [progress, setProgress] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
   const [selectedBatchIndex, setSelectedBatchIndex] = useState<number | null>(null);
+  const [selectedCostCenterId, setSelectedCostCenterId] = useState<string | null>(null);
+  const { data: costCenters = [] } = useCostCenters();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const batchFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -198,7 +203,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
     if (batchResults.length === 0) return;
     const successResults = batchResults.filter(r => r.success);
     if (onBatchImport) {
-      onBatchImport(successResults);
+      onBatchImport(successResults, selectedCostCenterId);
     }
     handleClose();
   };
@@ -218,6 +223,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
     setProgress(0);
     setTotalFiles(0);
     setSelectedBatchIndex(null);
+    setSelectedCostCenterId(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (batchFileInputRef.current) batchFileInputRef.current.value = '';
     onOpenChange(false);
@@ -392,6 +398,24 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Cost Center Selector */}
+              {costCenters.filter(cc => cc.is_active).length > 0 && (
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+                  <Label className="text-sm font-medium whitespace-nowrap">مركز التكلفة:</Label>
+                  <Select value={selectedCostCenterId || 'none'} onValueChange={(v) => setSelectedCostCenterId(v === 'none' ? null : v)}>
+                    <SelectTrigger className="h-9 text-xs max-w-[250px]">
+                      <SelectValue placeholder="اختر مركز التكلفة" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">بدون مركز تكلفة</SelectItem>
+                      {costCenters.filter(cc => cc.is_active).map((cc) => (
+                        <SelectItem key={cc.id} value={cc.id}>{cc.code} - {cc.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="flex gap-2 justify-end pt-2">
                 <Button variant="outline" onClick={handleClose}>إغلاق</Button>

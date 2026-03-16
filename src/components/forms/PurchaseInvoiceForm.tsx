@@ -58,7 +58,7 @@ import { useItems, useUnits } from '@/hooks/useInventory';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PurchaseInvoiceAIImport, ParsedInvoiceData } from './PurchaseInvoiceAIImport';
+import { PurchaseInvoiceAIImport, ParsedInvoiceData, BatchParsedResult } from './PurchaseInvoiceAIImport';
 import { useCostCenters } from '@/hooks/useCostCenters';
 
 interface PurchaseInvoiceFormProps {
@@ -1008,6 +1008,145 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     }
   };
 
+  const handleBatchImport = async (results: BatchParsedResult[], costCenterId?: string | null) => {
+    if (!companyId) {
+      toast.error('لم يتم تحديد الشركة');
+      return;
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const result of results) {
+      try {
+        const data = result.data;
+        
+        // Find or create supplier
+        let supplierId = '';
+        const existingSupplier = suppliers.find(s => 
+          s.name === data.supplier_name || 
+          (data.supplier_tax_number && (s as any).id_number === data.supplier_tax_number)
+        );
+
+        if (existingSupplier) {
+          supplierId = existingSupplier.id;
+        } else {
+          const { data: newSupplier, error } = await supabase
+            .from('suppliers')
+            .insert({
+              name: data.supplier_name,
+              id_number: data.supplier_tax_number || null,
+              phone: data.supplier_phone || null,
+              address: data.supplier_address || null,
+              company_id: companyId,
+            })
+            .select()
+            .single();
+
+          if (error) {
+            console.error('Error creating supplier:', error);
+            failCount++;
+            continue;
+          }
+          supplierId = newSupplier.id;
+        }
+
+        // Calculate amounts
+        const vatRate = taxSettings?.tax_rate || 15;
+        let subtotal = data.subtotal || 0;
+        let vatAmount = data.vat_amount || 0;
+        let total = data.total_amount || 0;
+        const discountAmount = data.discount || 0;
+
+        if (!subtotal && total) {
+          if (data.price_includes_tax) {
+            subtotal = total / (1 + vatRate / 100);
+            vatAmount = total - subtotal;
+          } else {
+            subtotal = total;
+            vatAmount = subtotal * (vatRate / 100);
+            total = subtotal + vatAmount;
+          }
+        }
+
+        // Create invoice
+        const invoiceNumber = data.invoice_number || `PUR-${Date.now()}-${result.index}`;
+        const { data: invoice, error: invoiceError } = await supabase
+          .from('invoices')
+          .insert({
+            company_id: companyId,
+            invoice_number: invoiceNumber,
+            invoice_type: 'purchase',
+            supplier_id: supplierId,
+            customer_name: data.supplier_name,
+            invoice_date: data.invoice_date,
+            due_date: data.due_date || data.invoice_date,
+            subtotal: subtotal - discountAmount,
+            taxable_amount: subtotal - discountAmount,
+            vat_rate: vatRate,
+            vat_amount: vatAmount,
+            total: total,
+            discount_amount: discountAmount,
+            amount_paid: 0,
+            payment_status: 'unpaid',
+            status: 'draft',
+            fiscal_year_id: selectedFiscalYear?.id || null,
+            notes: data.notes || null,
+            project_id: invoiceData.project_id || null,
+          })
+          .select()
+          .single();
+
+        if (invoiceError) {
+          console.error('Error creating invoice:', invoiceError);
+          failCount++;
+          continue;
+        }
+
+        // Create invoice items
+        if (data.items && data.items.length > 0) {
+          const invoiceItems = data.items.map(item => ({
+            invoice_id: invoice.id,
+            item_description: item.description,
+            item_code: '',
+            quantity: item.quantity,
+            unit: 'قطعة',
+            unit_price: item.unit_price,
+            taxable_amount: item.total,
+            vat_rate: vatRate,
+            vat_amount: item.total * (vatRate / 100),
+            total: item.total * (1 + vatRate / 100),
+          }));
+
+          const { error: itemsError } = await supabase.from('invoice_items').insert(invoiceItems);
+          if (itemsError) {
+            console.error('Error creating invoice items:', itemsError);
+          }
+        }
+
+        successCount++;
+      } catch (error) {
+        console.error(`Error importing invoice ${result.index}:`, error);
+        failCount++;
+      }
+    }
+
+    // Invalidate queries
+    queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+    queryClient.invalidateQueries({ queryKey: ['purchase-invoices-nav', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+    queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+    queryClient.invalidateQueries({ queryKey: ['stats'] });
+
+    if (successCount > 0) {
+      toast.success(`تم استيراد ${successCount} فاتورة بنجاح${failCount > 0 ? ` | فشل ${failCount}` : ''}`);
+    }
+    if (failCount > 0 && successCount === 0) {
+      toast.error(`فشل استيراد جميع الفواتير (${failCount})`);
+    }
+  };
+
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
   return (
@@ -1660,6 +1799,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         open={aiImportOpen}
         onOpenChange={setAiImportOpen}
         onImport={handleAIImport}
+        onBatchImport={handleBatchImport}
       />
     </>
   );
