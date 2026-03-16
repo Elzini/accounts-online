@@ -106,7 +106,6 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
     }
     setDeleteInvoiceId(null);
   }, [queryClient, language]);
-  const { t, language } = useLanguage();
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
