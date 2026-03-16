@@ -400,6 +400,32 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     };
   }, [cars, purchaseInventoryItems, invoiceData.price_includes_tax, taxRate, discount, discountType]);
 
+  // Use stored header totals for display when viewing existing invoices with mismatched items
+  const displayTotals = useMemo(() => {
+    if (isViewingExisting && !isEditing && storedHeaderTotals && storedHeaderTotals.total > 0) {
+      // Check if items total differs significantly from stored header total
+      const itemsTotal = calculations.finalTotal;
+      const headerTotal = storedHeaderTotals.total;
+      if (Math.abs(itemsTotal - headerTotal) > 0.5) {
+        // Use stored header values
+        return {
+          subtotal: storedHeaderTotals.subtotal,
+          totalVAT: storedHeaderTotals.vat_amount,
+          finalTotal: storedHeaderTotals.total,
+          discountAmount: calculations.discountAmount,
+          subtotalAfterDiscount: storedHeaderTotals.subtotal - calculations.discountAmount,
+        };
+      }
+    }
+    return {
+      subtotal: calculations.subtotal,
+      totalVAT: calculations.totalVAT,
+      finalTotal: calculations.finalTotal,
+      discountAmount: calculations.discountAmount,
+      subtotalAfterDiscount: calculations.subtotalAfterDiscount,
+    };
+  }, [calculations, storedHeaderTotals, isViewingExisting, isEditing]);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat(locale, {
       minimumFractionDigits: decimals,
