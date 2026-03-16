@@ -243,29 +243,17 @@ export function JournalEntriesPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">{t.je_date}</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-right font-normal",
-                          !entryDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="ml-2 h-4 w-4" />
-                        {entryDate ? format(entryDate, "yyyy-MM-dd") : t.je_date}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={entryDate}
-                        onSelect={(date) => date && setEntryDate(date)}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <Input
+                    type="date"
+                    value={entryDate ? format(entryDate, "yyyy-MM-dd") : ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val) {
+                        const parsed = new Date(val + 'T00:00:00');
+                        if (!isNaN(parsed.getTime())) setEntryDate(parsed);
+                      }
+                    }}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">{t.je_entry_number}</Label>
