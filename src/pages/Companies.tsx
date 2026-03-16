@@ -78,6 +78,7 @@ import { SaaSExecutiveDashboard } from '@/components/super-admin/SaaSExecutiveDa
 import { PlansManagement } from '@/components/super-admin/PlansManagement';
 import { RevenueControl } from '@/components/super-admin/RevenueControl';
 import { SystemControlCenter } from '@/components/super-admin/SystemControlCenter';
+import { EnterpriseSecurityDashboard } from '@/components/super-admin/EnterpriseSecurityDashboard';
 import { SystemMonitoring } from '@/components/super-admin/SystemMonitoring';
 import { SupportCenter } from '@/components/super-admin/SupportCenter';
 import { RBACManagement } from '@/components/super-admin/RBACManagement';
@@ -426,6 +427,10 @@ export default function Companies() {
               <Settings className="w-4 h-4" />
               <span>التحكم</span>
             </TabsTrigger>
+            <TabsTrigger value="enterprise-security" className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              <span>الأمان المؤسسي</span>
+            </TabsTrigger>
             <TabsTrigger value="monitoring" className="flex items-center gap-2">
               <Monitor className="w-4 h-4" />
               <span>المراقبة</span>
@@ -506,6 +511,10 @@ export default function Companies() {
 
           <TabsContent value="revenue">
             <RevenueControl />
+          </TabsContent>
+
+          <TabsContent value="enterprise-security">
+            <EnterpriseSecurityDashboard />
           </TabsContent>
 
           <TabsContent value="system-control">
