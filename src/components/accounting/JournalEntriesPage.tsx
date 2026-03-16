@@ -27,6 +27,8 @@ import { JournalEntryPrintDialog } from './JournalEntryPrintDialog';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUnifiedPrintReport } from '@/hooks/useUnifiedPrintReport';
+import { RealEstateJournalTemplates, JournalTemplate } from './RealEstateJournalTemplates';
+import { useCompany } from '@/contexts/CompanyContext';
 
 interface JournalLine {
   account_id: string;
