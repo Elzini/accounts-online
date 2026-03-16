@@ -269,11 +269,9 @@ function ImpactAnalysisPanel() {
   const { data: stats } = useQuery({
     queryKey: ['financial-protection-stats'],
     queryFn: async () => {
-      const [invoices, entries, items] = await Promise.all([
-        supabase.from('invoices').select('id', { count: 'exact', head: true }).in('status', ['issued', 'approved', 'posted']),
-        supabase.from('journal_entries').select('id', { count: 'exact', head: true }).in('status', ['posted', 'approved']),
-        supabase.from('invoice_items').select('id', { count: 'exact', head: true }),
-      ]);
+      const invoices = await supabase.from('invoices').select('id', { count: 'exact', head: true }).in('status', ['issued', 'approved', 'posted']);
+      const entries = await supabase.from('journal_entries').select('id', { count: 'exact', head: true }).in('status', ['posted', 'approved']);
+      const items = await supabase.from('invoice_items').select('id', { count: 'exact', head: true });
       return {
         protectedInvoices: invoices.count || 0,
         protectedEntries: entries.count || 0,
