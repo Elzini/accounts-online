@@ -181,9 +181,12 @@ export function REProjectsPage() {
                   </div>
                 )}
                 <div className="flex gap-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="outline" size="sm" onClick={() => openEdit(p)} className="flex-1 gap-1">
+                  <Button variant="outline" size="sm" onClick={() => setDetailProjectId(p.id)} className="flex-1 gap-1">
+                    <Eye className="w-3.5 h-3.5" />
+                    عرض
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => openEdit(p)} className="gap-1">
                     <Edit className="w-3.5 h-3.5" />
-                    تعديل
                   </Button>
                   <Button variant="destructive" size="sm" onClick={() => { if (confirm('حذف المشروع؟')) deleteProject.mutate(p.id); }}>
                     <Trash2 className="w-3.5 h-3.5" />
