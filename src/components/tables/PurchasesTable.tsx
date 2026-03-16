@@ -107,7 +107,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       toast.error(language === 'ar' ? 'حدث خطأ أثناء حذف الفاتورة' : 'Error deleting invoice');
     }
     setDeleteInvoiceId(null);
-  }, [queryClient, language]);
+  }, [queryClient, language, companyId]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
