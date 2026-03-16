@@ -465,30 +465,42 @@ export function SuppliersReport() {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right">{isCarDealership ? t.rpt_purch_col_number : (language === 'ar' ? 'المرجع' : 'Ref')}</TableHead>
-                    <TableHead className="text-right">{col2Label}</TableHead>
-                    <TableHead className="text-right">{col3Label}</TableHead>
-                    <TableHead className="text-right">{t.rpt_purch_col_price}</TableHead>
-                    <TableHead className="text-right">{t.rpt_purch_col_status}</TableHead>
-                    <TableHead className="text-right">{t.rpt_purch_col_date}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredItems.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.reference}</TableCell>
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell>{item.model}</TableCell>
-                      <TableCell>{formatCurrency(item.amount)}</TableCell>
-                      <TableCell>
-                        <Badge variant={isCarDealership ? (item.status === 'available' ? 'default' : 'secondary') : 'default'}>
-                          {getStatusText(item.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatDate(item.date)}</TableCell>
-                    </TableRow>
-                  ))}
+                   <TableRow>
+                     <TableHead className="text-right">{isCarDealership ? t.rpt_purch_col_number : (language === 'ar' ? 'المرجع' : 'Ref')}</TableHead>
+                     <TableHead className="text-right">{col2Label}</TableHead>
+                     <TableHead className="text-right">{col3Label}</TableHead>
+                     {!isCarDealership && (
+                       <>
+                         <TableHead className="text-right">{language === 'ar' ? 'المبلغ قبل الضريبة' : 'Subtotal'}</TableHead>
+                         <TableHead className="text-right">{language === 'ar' ? 'الضريبة' : 'VAT'}</TableHead>
+                       </>
+                     )}
+                     <TableHead className="text-right">{isCarDealership ? t.rpt_purch_col_price : (language === 'ar' ? 'الإجمالي مع الضريبة' : 'Total incl. VAT')}</TableHead>
+                     <TableHead className="text-right">{t.rpt_purch_col_status}</TableHead>
+                     <TableHead className="text-right">{t.rpt_purch_col_date}</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {filteredItems.map((item) => (
+                     <TableRow key={item.id}>
+                       <TableCell className="font-medium">{item.reference}</TableCell>
+                       <TableCell>{item.name}</TableCell>
+                       <TableCell>{item.model}</TableCell>
+                       {!isCarDealership && (
+                         <>
+                           <TableCell>{formatCurrency(item.taxable_amount || 0)}</TableCell>
+                           <TableCell>{formatCurrency(item.vat_amount || 0)}</TableCell>
+                         </>
+                       )}
+                       <TableCell>{formatCurrency(item.amount)}</TableCell>
+                       <TableCell>
+                         <Badge variant={isCarDealership ? (item.status === 'available' ? 'default' : 'secondary') : 'default'}>
+                           {getStatusText(item.status)}
+                         </Badge>
+                       </TableCell>
+                       <TableCell>{formatDate(item.date)}</TableCell>
+                     </TableRow>
+                   ))}
                 </TableBody>
               </Table>
             )}
