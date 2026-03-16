@@ -716,39 +716,142 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const handleUpdatePurchase = async () => {
     if (!currentBatchId) return;
 
-    const batch = purchaseBatches.find(b => b.id === currentBatchId);
-    if (!batch) return;
-    
-    const batchCars = batch.cars || [];
+    if (isCarDealership) {
+      const batch = purchaseBatches.find(b => b.id === currentBatchId);
+      if (!batch) return;
 
-    if (cars.length === 0 || !cars[0].chassis_number || !cars[0].name) {
-      toast.error(t.inv_toast_fill_fields);
+      const batchCars = batch.cars || [];
+
+      if (cars.length === 0 || !cars[0].chassis_number || !cars[0].name) {
+        toast.error(t.inv_toast_fill_fields);
+        return;
+      }
+
+      try {
+        for (let i = 0; i < cars.length && i < batchCars.length; i++) {
+          const carData = cars[i];
+          const existingCar = batchCars[i];
+
+          await updateCar.mutateAsync({
+            id: existingCar.id,
+            car: {
+              name: carData.name,
+              model: carData.model || null,
+              chassis_number: carData.chassis_number,
+              plate_number: carData.plate_number || null,
+              color: carData.color || null,
+              purchase_price: parseFloat(carData.purchase_price),
+              purchase_date: invoiceData.purchase_date,
+              payment_account_id: invoiceData.payment_account_id || null,
+              supplier_id: invoiceData.supplier_id || null,
+              car_condition: carData.car_condition || 'new',
+            }
+          });
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['purchase-batches', companyId] });
+        queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
+        setIsEditing(false);
+        toast.success(t.inv_toast_purchase_update_success);
+      } catch (error) {
+        console.error('Purchase batch update error:', error);
+        toast.error(t.inv_toast_purchase_update_error);
+      }
+
+      return;
+    }
+
+    // Non-car companies: update invoice + replace invoice items
+    if (!companyId) {
+      toast.error(t.inv_toast_company_not_found);
+      return;
+    }
+
+    if (!invoiceData.supplier_id) {
+      toast.error(t.inv_toast_select_supplier);
+      return;
+    }
+
+    if (purchaseInventoryItems.length === 0) {
+      toast.error(t.inv_toast_add_item);
+      return;
+    }
+
+    const emptyNameItem = purchaseInventoryItems.find(i => !i.item_name?.trim());
+    if (emptyNameItem) {
+      toast.error('الرجاء إدخال اسم الصنف لجميع العناصر');
+      return;
+    }
+
+    const invalidItem = purchaseInventoryItems.find(i => !i.purchase_price || parseFloat(i.purchase_price) <= 0);
+    if (invalidItem) {
+      toast.error(t.inv_toast_enter_item_price);
       return;
     }
 
     try {
-      for (let i = 0; i < cars.length && i < batchCars.length; i++) {
-        const carData = cars[i];
-        const existingCar = batchCars[i];
-        
-        await updateCar.mutateAsync({
-          id: existingCar.id,
-          car: {
-            name: carData.name,
-            model: carData.model || null,
-            chassis_number: carData.chassis_number,
-            plate_number: carData.plate_number || null,
-            color: carData.color || null,
-            purchase_price: parseFloat(carData.purchase_price),
-            purchase_date: invoiceData.purchase_date,
-            payment_account_id: invoiceData.payment_account_id || null,
-            supplier_id: invoiceData.supplier_id || null,
-            car_condition: carData.car_condition || 'new',
-          }
-        });
-      }
+      const { error: invoiceUpdateError } = await supabase
+        .from('invoices')
+        .update({
+          invoice_number: invoiceData.invoice_number || null,
+          supplier_id: invoiceData.supplier_id,
+          customer_name: selectedSupplier?.name || '',
+          invoice_date: invoiceData.purchase_date,
+          due_date: invoiceData.due_date,
+          subtotal: calculations.subtotal,
+          taxable_amount: calculations.subtotalAfterDiscount,
+          vat_rate: taxRate,
+          vat_amount: calculations.totalVAT,
+          total: calculations.finalTotal,
+          discount_amount: calculations.discountAmount,
+          notes: invoiceData.notes || null,
+          project_id: invoiceData.project_id || null,
+        })
+        .eq('id', currentBatchId)
+        .eq('company_id', companyId);
+
+      if (invoiceUpdateError) throw invoiceUpdateError;
+
+      const { error: deleteItemsError } = await supabase
+        .from('invoice_items')
+        .delete()
+        .eq('invoice_id', currentBatchId);
+
+      if (deleteItemsError) throw deleteItemsError;
+
+      const invoiceItems = purchaseInventoryItems.map((item, index) => ({
+        invoice_id: currentBatchId,
+        item_description: item.item_name,
+        item_code: item.barcode || '',
+        quantity: item.quantity,
+        unit: item.unit_name,
+        unit_price: calculations.inventoryItems[index].baseAmount / item.quantity,
+        taxable_amount: calculations.inventoryItems[index].baseAmount,
+        vat_rate: taxRate,
+        vat_amount: calculations.inventoryItems[index].vatAmount,
+        total: calculations.inventoryItems[index].total,
+        inventory_item_id: item.item_id,
+      }));
+
+      const { error: insertItemsError } = await supabase
+        .from('invoice_items')
+        .insert(invoiceItems);
+
+      if (insertItemsError) throw insertItemsError;
+
+      queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['purchase-invoices-nav', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['invoices', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases-report'] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+
+      setSavedBatchData({ batch: { id: currentBatchId }, supplier: selectedSupplier, inventoryItems: purchaseInventoryItems });
+      setIsEditing(false);
       toast.success(t.inv_toast_purchase_update_success);
     } catch (error) {
+      console.error('Purchase invoice update error:', error);
       toast.error(t.inv_toast_purchase_update_error);
     }
   };
