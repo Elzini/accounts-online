@@ -70,7 +70,42 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const { t, language } = useLanguage();
+
+  const handleApproveInvoice = useCallback(async (invoiceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .update({ status: 'issued' })
+        .eq('id', invoiceId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+      toast.success(language === 'ar' ? 'تم اعتماد الفاتورة بنجاح' : 'Invoice approved successfully');
+    } catch (err) {
+      console.error('Approve error:', err);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء اعتماد الفاتورة' : 'Error approving invoice');
+    }
+  }, [queryClient, language]);
+
+  const handleDeleteInvoice = useCallback(async (invoiceId: string) => {
+    try {
+      // Delete invoice items first
+      await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId);
+      const { error } = await supabase.from('invoices').delete().eq('id', invoiceId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast.success(language === 'ar' ? 'تم حذف الفاتورة بنجاح' : 'Invoice deleted successfully');
+    } catch (err) {
+      console.error('Delete error:', err);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء حذف الفاتورة' : 'Error deleting invoice');
+    }
+    setDeleteInvoiceId(null);
+  }, [queryClient, language]);
   const { t, language } = useLanguage();
 
   const handleRefresh = async () => {
