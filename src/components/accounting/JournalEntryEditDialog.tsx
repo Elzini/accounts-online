@@ -166,7 +166,7 @@ export function JournalEntryEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto [&_.relative]:static [&_.absolute.top-full]:fixed">
         <DialogHeader className="border-b pb-4">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl flex items-center gap-2">
