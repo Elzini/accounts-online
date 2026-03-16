@@ -161,7 +161,7 @@ export function AccountSearchSelect({ accounts, value, onChange, placeholder = "
         onFocus={handleFocus}
         onBlur={handleBlur}
         placeholder={placeholder}
-        className="w-full text-sm"
+        className="w-full text-sm min-w-[220px]"
         autoComplete="off"
       />
       {open && filteredAccounts.length > 0 && (
