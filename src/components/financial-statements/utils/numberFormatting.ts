@@ -1,20 +1,24 @@
 // أدوات تنسيق الأرقام
 
-export const formatNumber = (num: number | undefined | null): string => {
+// Default decimals - can be overridden by passing decimals parameter
+export const formatNumber = (num: number | undefined | null, decimals = 0): string => {
   if (num === undefined || num === null || isNaN(num)) return '-';
   if (num === 0) return '-';
-  return Math.abs(num).toLocaleString('en-US');
+  const value = decimals === 0 ? Math.round(Math.abs(num)) : Math.abs(num);
+  return value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 };
 
-export const formatNumberWithSign = (num: number | undefined | null): string => {
+export const formatNumberWithSign = (num: number | undefined | null, decimals = 0): string => {
   if (num === undefined || num === null || isNaN(num)) return '-';
   if (num === 0) return '-';
-  if (num < 0) return `(${Math.abs(num).toLocaleString('en-US')})`;
-  return num.toLocaleString('en-US');
+  const value = decimals === 0 ? Math.round(Math.abs(num)) : Math.abs(num);
+  const formatted = value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  if (num < 0) return `(${formatted})`;
+  return formatted;
 };
 
-export const formatCurrency = (num: number | undefined | null, showCurrency = false): string => {
-  const formatted = formatNumber(num);
+export const formatCurrency = (num: number | undefined | null, showCurrency = false, decimals = 0): string => {
+  const formatted = formatNumber(num, decimals);
   if (formatted === '-') return '-';
   return showCurrency ? `${formatted} ر.س` : formatted;
 };
