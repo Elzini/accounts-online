@@ -538,6 +538,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       price_includes_tax: true,
       project_id: null,
       cost_center_id: null,
+      payment_status: 'unpaid',
     });
     setCars([createEmptyCar()]);
     setDiscount(0);
