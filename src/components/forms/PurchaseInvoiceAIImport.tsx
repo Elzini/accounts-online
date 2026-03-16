@@ -6,10 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Upload, FileText, Loader2, CheckCircle, Sparkles, AlertCircle, X, Files } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle, Sparkles, AlertCircle, X, Files, ArrowLeftRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCostCenters } from '@/hooks/useCostCenters';
+import { useCompanyId } from '@/hooks/useCompanyId';
+import { InvoiceReconciliation, matchInvoices, ReconciliationResult, ExistingInvoice } from './InvoiceReconciliation';
 
 export interface ParsedInvoiceData {
   supplier_name: string;
@@ -59,7 +61,10 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
   const [totalFiles, setTotalFiles] = useState(0);
   const [selectedBatchIndex, setSelectedBatchIndex] = useState<number | null>(null);
   const [selectedCostCenterId, setSelectedCostCenterId] = useState<string | null>(null);
+  const [reconciliationResults, setReconciliationResults] = useState<ReconciliationResult[] | null>(null);
+  const [isReconciling, setIsReconciling] = useState(false);
   const { data: costCenters = [] } = useCostCenters();
+  const companyId = useCompanyId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const batchFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -224,9 +229,48 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
     setTotalFiles(0);
     setSelectedBatchIndex(null);
     setSelectedCostCenterId(null);
+    setReconciliationResults(null);
+    setIsReconciling(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (batchFileInputRef.current) batchFileInputRef.current.value = '';
     onOpenChange(false);
+  };
+
+  const handleReconcile = async () => {
+    if (!companyId || batchResults.length === 0) return;
+    setIsReconciling(true);
+    try {
+      // Fetch all existing purchase invoices for this company
+      const { data: existingInvoices, error } = await (supabase as any)
+        .from('invoices')
+        .select('id, invoice_number, supplier_invoice_number, supplier_id, customer_name, invoice_date, total, vat_amount, status, payment_status')
+        .eq('company_id', companyId)
+        .eq('invoice_type', 'purchase')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const results = matchInvoices(batchResults, existingInvoices || []);
+      setReconciliationResults(results);
+
+      const matched = results.filter(r => r.matchType === 'exact').length;
+      const partial = results.filter(r => r.matchType === 'partial' || r.matchType === 'amount_only').length;
+      const unmatched = results.filter(r => r.matchType === 'none').length;
+      
+      toast.success(`تمت المطابقة: ${matched} مطابقة تامة، ${partial} جزئية، ${unmatched} غير موجودة`);
+    } catch (error: any) {
+      console.error('Reconciliation error:', error);
+      toast.error('حدث خطأ أثناء المطابقة');
+    } finally {
+      setIsReconciling(false);
+    }
+  };
+
+  const handleImportFromReconciliation = (selected: BatchParsedResult[]) => {
+    if (onBatchImport) {
+      onBatchImport(selected, selectedCostCenterId);
+    }
+    handleClose();
   };
 
   const formatCurrency = (val: number) =>
@@ -319,8 +363,43 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
             />
           )}
 
+          {/* Reconciliation View */}
+          {reconciliationResults && !selectedBatchResult && (
+            <div className="space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setReconciliationResults(null)} className="gap-1">
+                ← العودة لنتائج التحليل
+              </Button>
+              
+              {/* Cost Center Selector */}
+              {costCenters.filter(cc => cc.is_active).length > 0 && (
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+                  <Label className="text-sm font-medium whitespace-nowrap">مركز التكلفة:</Label>
+                  <Select value={selectedCostCenterId || 'none'} onValueChange={(v) => setSelectedCostCenterId(v === 'none' ? null : v)}>
+                    <SelectTrigger className="h-9 text-xs max-w-[250px]">
+                      <SelectValue placeholder="اختر مركز التكلفة" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">بدون مركز تكلفة</SelectItem>
+                      {costCenters.filter(cc => cc.is_active).map((cc) => (
+                        <SelectItem key={cc.id} value={cc.id}>{cc.code} - {cc.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <InvoiceReconciliation
+                results={reconciliationResults}
+                formatCurrency={formatCurrency}
+                onImportSelected={handleImportFromReconciliation}
+                onViewDetails={(result) => setSelectedBatchIndex(result.index)}
+                onClose={handleClose}
+              />
+            </div>
+          )}
+
           {/* Batch results */}
-          {!isLoading && isBatchMode && batchResults.length > 0 && !selectedBatchResult && (
+          {!isLoading && isBatchMode && batchResults.length > 0 && !selectedBatchResult && !reconciliationResults && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-800">
                 <CheckCircle className="w-5 h-5" />
@@ -419,6 +498,15 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
 
               <div className="flex gap-2 justify-end pt-2">
                 <Button variant="outline" onClick={handleClose}>إغلاق</Button>
+                <Button 
+                  variant="secondary" 
+                  onClick={handleReconcile} 
+                  disabled={isReconciling}
+                  className="gap-2"
+                >
+                  {isReconciling ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowLeftRight className="w-4 h-4" />}
+                  مطابقة مع فواتير النظام
+                </Button>
                 {onBatchImport && (
                   <Button onClick={handleConfirmBatchImport} className="gap-2">
                     <CheckCircle className="w-4 h-4" />
