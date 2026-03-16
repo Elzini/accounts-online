@@ -105,6 +105,10 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+      queryClient.invalidateQueries({ queryKey: ['advanced-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-chart-data'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-recent-invoices'] });
       toast.success(language === 'ar' ? 'تم حذف الفاتورة بنجاح' : 'Invoice deleted successfully');
     } catch (err) {
       console.error('Delete error:', err);
