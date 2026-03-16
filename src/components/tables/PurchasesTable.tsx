@@ -90,7 +90,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       console.error('Approve error:', err);
       toast.error(language === 'ar' ? 'حدث خطأ أثناء اعتماد الفاتورة' : 'Error approving invoice');
     }
-  }, [queryClient, language]);
+  }, [queryClient, language, companyId]);
 
   const handleDeleteInvoice = useCallback(async (invoiceId: string) => {
     try {
