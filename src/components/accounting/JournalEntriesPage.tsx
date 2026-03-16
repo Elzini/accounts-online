@@ -15,7 +15,7 @@ import { useJournalEntries, useAccounts, useCreateJournalEntry, useDeleteJournal
 import { useCostCenters } from '@/hooks/useCostCenters';
 import { ProjectSelector } from '@/components/forms/ProjectSelector';
 import { toast } from 'sonner';
-import { Loader2, Plus, Eye, Trash2, BookOpen, CalendarIcon, X, Printer, FileDown, Paperclip } from 'lucide-react';
+import { Loader2, Plus, Eye, Trash2, BookOpen, CalendarIcon, X, Printer, FileDown, Paperclip, FileText } from 'lucide-react';
 import { JournalEntryEditDialog } from './JournalEntryEditDialog';
 import { JournalAttachments } from './JournalAttachments';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -26,6 +26,7 @@ import { AccountSearchSelect } from './AccountSearchSelect';
 import { JournalEntryPrintDialog } from './JournalEntryPrintDialog';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useUnifiedPrintReport } from '@/hooks/useUnifiedPrintReport';
 
 interface JournalLine {
   account_id: string;
