@@ -59,6 +59,7 @@ import { InvoiceSearchBar } from './InvoiceSearchBar';
 import { useItems, useUnits } from '@/hooks/useInventory';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SalesInvoiceFormProps {
