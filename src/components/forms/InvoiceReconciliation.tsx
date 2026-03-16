@@ -60,18 +60,31 @@ export function matchInvoices(
       const existingInvNum = normalizeInvoiceNumber(existing.supplier_invoice_number || '');
       
       if (parsedInvNum && existingInvNum && parsedInvNum === existingInvNum) {
-        score += 50;
+        score += 40;
       } else if (parsedInvNum && existingInvNum) {
         tempDiffs.push(`رقم الفاتورة: ${data.invoice_number} ≠ ${existing.supplier_invoice_number}`);
       }
 
-      // Match by amount (within 1% tolerance)
+      // Match by exact amount (use exact comparison with small halalah tolerance: 0.05 SAR)
       const totalDiff = Math.abs(data.total_amount - existing.total);
-      const tolerance = Math.max(existing.total * 0.01, 1);
-      if (totalDiff <= tolerance) {
-        score += 30;
+      if (totalDiff <= 0.05) {
+        score += 25;
+      } else if (totalDiff <= 1) {
+        // Within 1 SAR - partial amount match
+        score += 15;
+        tempDiffs.push(`فرق في المبلغ: ${data.total_amount} ≠ ${existing.total} (فرق: ${totalDiff.toFixed(2)})`);
       } else {
-        tempDiffs.push(`المبلغ: ${data.total_amount.toFixed(2)} ≠ ${existing.total.toFixed(2)}`);
+        tempDiffs.push(`المبلغ: ${data.total_amount} ≠ ${existing.total}`);
+      }
+
+      // Match by VAT amount (exact comparison)
+      if (data.vat_amount !== undefined && existing.vat_amount !== undefined) {
+        const vatDiff = Math.abs(data.vat_amount - existing.vat_amount);
+        if (vatDiff <= 0.05) {
+          score += 10;
+        } else {
+          tempDiffs.push(`الضريبة: ${data.vat_amount} ≠ ${existing.vat_amount}`);
+        }
       }
 
       // Match by supplier name
@@ -86,7 +99,7 @@ export function matchInvoices(
       const parsedDate = data.invoice_date?.split('T')[0];
       const existingDate = existing.invoice_date?.split('T')[0];
       if (parsedDate && existingDate && parsedDate === existingDate) {
-        score += 5;
+        score += 10;
       } else if (parsedDate && existingDate) {
         tempDiffs.push(`التاريخ: ${parsedDate} ≠ ${existingDate}`);
       }
@@ -99,10 +112,13 @@ export function matchInvoices(
       }
     }
 
-    // Determine match type
-    if (bestScore >= 80) matchType = 'exact';
-    else if (bestScore >= 50) matchType = 'partial';
-    else if (bestScore >= 30) matchType = 'amount_only';
+    // Determine match type - stricter thresholds
+    // exact: must match invoice number + amount + VAT (score >= 75)
+    // partial: invoice number matches but amounts differ (score >= 40)
+    // amount_only: amounts match but no invoice number (score >= 25)
+    if (bestScore >= 75) matchType = 'exact';
+    else if (bestScore >= 40) matchType = 'partial';
+    else if (bestScore >= 25) matchType = 'amount_only';
     else { bestMatch = null; matchType = 'none'; }
 
     return { parsed, matchedInvoice: bestMatch, matchType, matchScore: bestScore, differences };
