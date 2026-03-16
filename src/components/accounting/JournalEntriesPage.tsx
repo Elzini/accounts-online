@@ -65,6 +65,7 @@ export function JournalEntriesPage() {
   const [vatType, setVatType] = useState<'sales' | 'purchases'>('purchases');
   const [taxNumber, setTaxNumber] = useState('');
   const [supplierCustomer, setSupplierCustomer] = useState('');
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [lines, setLines] = useState<JournalLine[]>([
     { account_id: '', description: '', debit: 0, credit: 0, reference: '', line_date: format(new Date(), 'yyyy-MM-dd'), cost_center: '' },
     { account_id: '', description: '', debit: 0, credit: 0, reference: '', line_date: format(new Date(), 'yyyy-MM-dd'), cost_center: '' },
