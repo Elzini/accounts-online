@@ -310,6 +310,37 @@ export function SystemControlCenter() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Number Display Mode */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2"><Hash className="w-4 h-4" /> طبيعة عرض الأرقام</CardTitle>
+                <Button size="sm" onClick={() => saveMut.mutate({ key: 'number_display_mode', value: editNumberMode })} className="gap-1">
+                  <Save className="w-3 h-3" /> حفظ
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">اختر طريقة عرض الأرقام في جميع التقارير والفواتير</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    className={`p-4 rounded-lg border-2 text-center transition-all ${editNumberMode === 'integer' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}
+                    onClick={() => setEditNumberMode('integer')}
+                  >
+                    <div className="text-2xl font-bold mb-1">1,234</div>
+                    <div className="text-xs text-muted-foreground">بدون فاصلة عشرية</div>
+                  </button>
+                  <button
+                    type="button"
+                    className={`p-4 rounded-lg border-2 text-center transition-all ${editNumberMode === 'decimal' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}
+                    onClick={() => setEditNumberMode('decimal')}
+                  >
+                    <div className="text-2xl font-bold mb-1">1,234.56</div>
+                    <div className="text-xs text-muted-foreground">فاصلة عشرية (خانتين)</div>
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
