@@ -1,23 +1,35 @@
-// أدوات تنسيق الأرقام
+// أدوات تنسيق الأرقام - مع دعم الإعداد العام
 
-// Default decimals - can be overridden by passing decimals parameter
-export const formatNumber = (num: number | undefined | null, decimals = 0): string => {
+// Module-level decimals setting - updated by useNumberFormat hook
+let _globalDecimals = 0;
+
+export function setGlobalDecimals(d: number) {
+  _globalDecimals = d;
+}
+
+export function getGlobalDecimals(): number {
+  return _globalDecimals;
+}
+
+export const formatNumber = (num: number | undefined | null, decimals?: number): string => {
+  const d = decimals ?? _globalDecimals;
   if (num === undefined || num === null || isNaN(num)) return '-';
   if (num === 0) return '-';
-  const value = decimals === 0 ? Math.round(Math.abs(num)) : Math.abs(num);
-  return value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  const value = d === 0 ? Math.round(Math.abs(num)) : Math.abs(num);
+  return value.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
 };
 
-export const formatNumberWithSign = (num: number | undefined | null, decimals = 0): string => {
+export const formatNumberWithSign = (num: number | undefined | null, decimals?: number): string => {
+  const d = decimals ?? _globalDecimals;
   if (num === undefined || num === null || isNaN(num)) return '-';
   if (num === 0) return '-';
-  const value = decimals === 0 ? Math.round(Math.abs(num)) : Math.abs(num);
-  const formatted = value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  const value = d === 0 ? Math.round(Math.abs(num)) : Math.abs(num);
+  const formatted = value.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
   if (num < 0) return `(${formatted})`;
   return formatted;
 };
 
-export const formatCurrency = (num: number | undefined | null, showCurrency = false, decimals = 0): string => {
+export const formatCurrency = (num: number | undefined | null, showCurrency = false, decimals?: number): string => {
   const formatted = formatNumber(num, decimals);
   if (formatted === '-') return '-';
   return showCurrency ? `${formatted} ر.س` : formatted;
@@ -27,19 +39,14 @@ export const parseArabicNumber = (value: string | number | undefined | null): nu
   if (value === undefined || value === null) return 0;
   if (typeof value === 'number') return isNaN(value) ? 0 : value;
   
-  // إزالة الفواصل والمسافات
   let str = String(value).trim();
   
-  // تحويل الأرقام العربية إلى إنجليزية
   const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
   arabicNumerals.forEach((ar, en) => {
     str = str.replace(new RegExp(ar, 'g'), String(en));
   });
   
-  // التعامل مع الأقواس كأرقام سالبة
   const isNegative = str.includes('(') || str.includes('-');
-  
-  // استخراج الرقم
   const numStr = str.replace(/[^\d.]/g, '');
   const num = parseFloat(numStr);
   
@@ -48,7 +55,6 @@ export const parseArabicNumber = (value: string | number | undefined | null): nu
 };
 
 export const extractAmountFromRow = (row: any[]): number => {
-  // البحث عن آخر قيمة رقمية في الصف
   for (let i = row.length - 1; i >= 0; i--) {
     const val = parseArabicNumber(row[i]);
     if (val !== 0) return val;
@@ -57,7 +63,6 @@ export const extractAmountFromRow = (row: any[]): number => {
 };
 
 export const extractAccountNameFromRow = (row: any[]): string => {
-  // البحث عن أول خلية نصية غير فارغة
   for (let i = 0; i < row.length; i++) {
     const cell = row[i];
     if (cell && typeof cell === 'string') {
