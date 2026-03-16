@@ -61,7 +61,10 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
   const [totalFiles, setTotalFiles] = useState(0);
   const [selectedBatchIndex, setSelectedBatchIndex] = useState<number | null>(null);
   const [selectedCostCenterId, setSelectedCostCenterId] = useState<string | null>(null);
+  const [reconciliationResults, setReconciliationResults] = useState<ReconciliationResult[] | null>(null);
+  const [isReconciling, setIsReconciling] = useState(false);
   const { data: costCenters = [] } = useCostCenters();
+  const companyId = useCompanyId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const batchFileInputRef = useRef<HTMLInputElement>(null);
 
