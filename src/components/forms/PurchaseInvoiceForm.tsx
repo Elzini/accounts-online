@@ -372,14 +372,14 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       subtotalAfterDiscount,
       totalVAT,
       finalTotal,
-      roundedTotal: Math.round(finalTotal),
+      roundedTotal: finalTotal,
     };
   }, [cars, purchaseInventoryItems, invoiceData.price_includes_tax, taxRate, discount, discountType]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat(locale, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(value);
   };
 
