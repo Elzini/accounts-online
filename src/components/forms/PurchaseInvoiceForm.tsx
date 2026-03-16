@@ -545,6 +545,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       project_id: null,
       cost_center_id: null,
       payment_status: 'unpaid',
+      supplier_invoice_number: '',
     });
     setCars([createEmptyCar()]);
     setDiscount(0);
