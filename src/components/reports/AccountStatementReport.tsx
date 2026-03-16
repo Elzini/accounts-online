@@ -17,6 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 
 export function AccountStatementReport() {
   const { t, direction } = useLanguage();
@@ -72,8 +73,9 @@ export function AccountStatementReport() {
     return types[type] || type;
   };
 
+  const { decimals } = useNumberFormat();
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(value) : value);
   };
 
   const formatDate = (dateStr: string) => {

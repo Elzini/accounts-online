@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useExpenses, useExpenseCategories } from '@/hooks/useExpenses';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 
 export function ExpensesReport() {
   const { language } = useLanguage();
@@ -53,7 +54,8 @@ export function ExpensesReport() {
     return Object.values(map).sort((a, b) => b.total - a.total);
   }, [filteredExpenses, categories, isAr]);
 
-  const formatNumber = (n: number) => n.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const { decimals } = useNumberFormat();
+  const formatNumber = (n: number) => n.toLocaleString('ar-SA', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 
   const handlePrint = () => {
     const printContent = document.getElementById('expenses-report-print');

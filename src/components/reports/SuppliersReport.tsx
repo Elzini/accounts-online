@@ -11,6 +11,7 @@ import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -144,12 +145,14 @@ export function SuppliersReport() {
   const totalPurchasesAmount = supplierStats.reduce((sum, s) => sum + s.totalPurchases, 0);
   const totalCarsCount = supplierStats.reduce((sum, s) => sum + s.carsCount, 0);
 
+  const { decimals: numDecimals } = useNumberFormat();
   const formatCurrency = (amount: number) => new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'SAR',
-    minimumFractionDigits: 0,
-  }).format(amount);
-  const formatCurrencySimple = (value: number) => new Intl.NumberFormat(locale).format(value);
+    minimumFractionDigits: numDecimals,
+    maximumFractionDigits: numDecimals,
+  }).format(numDecimals === 0 ? Math.round(amount) : amount);
+  const formatCurrencySimple = (value: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: numDecimals, maximumFractionDigits: numDecimals }).format(numDecimals === 0 ? Math.round(value) : value);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(locale);
   
   const getStatusText = (status: string) => {

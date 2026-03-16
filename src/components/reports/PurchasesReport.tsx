@@ -12,6 +12,7 @@ import { PurchaseActions } from '@/components/actions/PurchaseActions';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,9 +66,10 @@ export function PurchasesReport() {
   const { printReport } = usePrintReport();
   const queryClient = useQueryClient();
   const { t, language } = useLanguage();
+  const { decimals } = useNumberFormat();
 
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
-  const formatCurrency = (value: number) => new Intl.NumberFormat(locale).format(value);
+  const formatCurrency = (value: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(value) : value);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(locale);
 
   const suppliersMap = useMemo(() => {

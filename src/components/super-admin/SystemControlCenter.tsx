@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Hash } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Settings, Shield, Database, Globe, Lock, Key, Activity, Save, Plus, X, Pencil } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -95,11 +96,20 @@ export function SystemControlCenter() {
     },
   });
 
+  const { data: numberDisplayMode = 'integer' } = useQuery({
+    queryKey: ['system-setting', 'number_display_mode'],
+    queryFn: async () => {
+      const val = await fetchSetting('number_display_mode');
+      return val || 'integer';
+    },
+  });
+
   // State for editing
   const [editCurrencies, setEditCurrencies] = useState<string[]>([]);
   const [editCountries, setEditCountries] = useState<typeof DEFAULT_COUNTRIES>([]);
   const [editTrial, setEditTrial] = useState({ days: 14, autoActivate: true });
   const [editSecurity, setEditSecurity] = useState({ twoFactorRequired: false, apiRateLimit: 1000, ipRestrictions: [] as string[] });
+  const [editNumberMode, setEditNumberMode] = useState('integer');
   const [newCurrency, setNewCurrency] = useState('');
   const [newCountry, setNewCountry] = useState({ code: '', name: '', vat: 0 });
   const [newIp, setNewIp] = useState('');
@@ -108,14 +118,19 @@ export function SystemControlCenter() {
   useEffect(() => { setEditCountries(countries); }, [countries]);
   useEffect(() => { setEditTrial(trialSettings); }, [trialSettings]);
   useEffect(() => { setEditSecurity(securitySettings); }, [securitySettings]);
+  useEffect(() => { setEditNumberMode(numberDisplayMode); }, [numberDisplayMode]);
 
   // Save mutations
   const saveMut = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
-      await saveSetting(key, JSON.stringify(value));
+      const strValue = typeof value === 'string' ? value : JSON.stringify(value);
+      await saveSetting(key, strValue);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['system-setting', variables.key] });
+      if (variables.key === 'number_display_mode') {
+        queryClient.invalidateQueries({ queryKey: ['number-display-mode'] });
+      }
       toast.success('تم حفظ الإعدادات بنجاح');
     },
     onError: () => toast.error('حدث خطأ أثناء الحفظ'),
@@ -296,6 +311,37 @@ export function SystemControlCenter() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between"><span>عدد المفاتيح النشطة</span><span className="font-bold">{apiKeysCount}</span></div>
                   <div className="flex justify-between"><span>تشفير</span><Badge>AES-256-GCM</Badge></div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Number Display Mode */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2"><Hash className="w-4 h-4" /> طبيعة عرض الأرقام</CardTitle>
+                <Button size="sm" onClick={() => saveMut.mutate({ key: 'number_display_mode', value: editNumberMode })} className="gap-1">
+                  <Save className="w-3 h-3" /> حفظ
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">اختر طريقة عرض الأرقام في جميع التقارير والفواتير</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    className={`p-4 rounded-lg border-2 text-center transition-all ${editNumberMode === 'integer' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}
+                    onClick={() => setEditNumberMode('integer')}
+                  >
+                    <div className="text-2xl font-bold mb-1">1,234</div>
+                    <div className="text-xs text-muted-foreground">بدون فاصلة عشرية</div>
+                  </button>
+                  <button
+                    type="button"
+                    className={`p-4 rounded-lg border-2 text-center transition-all ${editNumberMode === 'decimal' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}
+                    onClick={() => setEditNumberMode('decimal')}
+                  >
+                    <div className="text-2xl font-bold mb-1">1,234.56</div>
+                    <div className="text-xs text-muted-foreground">فاصلة عشرية (خانتين)</div>
+                  </button>
                 </div>
               </CardContent>
             </Card>

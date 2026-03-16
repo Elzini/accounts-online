@@ -59,6 +59,7 @@ import { InvoiceSearchBar } from './InvoiceSearchBar';
 import { useItems, useUnits } from '@/hooks/useInventory';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SalesInvoiceFormProps {
@@ -113,6 +114,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const approveSale = useApproveSale();
   const companyId = useCompanyId();
   const { t, language } = useLanguage();
+  const { decimals } = useNumberFormat();
   const { permissions } = useAuth();
   // Draft/approved status tracking (moved after isViewingExisting state below)
   // Inventory hooks
@@ -408,9 +410,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat(locale, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(decimals === 0 ? Math.round(value) : value);
   };
 
   const handleSubmit = async () => {

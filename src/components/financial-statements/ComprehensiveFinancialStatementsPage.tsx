@@ -49,11 +49,13 @@ import { TrialBalanceImportManager } from './TrialBalanceImportManager';
 import { AuditTrailPanel } from './AuditTrailPanel';
 import { BranchCurrencyBar, Branch, SUPPORTED_CURRENCIES, convertAmount } from './BranchCurrencySelector';
 import { createAuditLog, AuditLogEntry } from '@/services/importAuditLog';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 
 export function ComprehensiveFinancialStatementsPage() {
   const { company, companyId } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
   const { filterByFiscalYear } = useFiscalYearFilter();
+  const { decimals: numDecimals } = useNumberFormat();
   
   const { data: sales = [] } = useSales();
   const { data: expenses = [] } = useExpenses();
@@ -164,9 +166,9 @@ export function ComprehensiveFinancialStatementsPage() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'decimal',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(cv(amount));
+      minimumFractionDigits: numDecimals,
+      maximumFractionDigits: numDecimals,
+    }).format(numDecimals === 0 ? Math.round(cv(amount)) : cv(amount));
   };
 
   // حساب من بيانات النظام

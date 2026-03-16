@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -126,15 +127,17 @@ export function CustomersReport() {
   const totalSalesAmount = customerStats.reduce((sum: number, c: any) => sum + c.totalPurchases, 0);
   const totalSalesCount = customerStats.reduce((sum: number, c: any) => sum + c.salesCount, 0);
 
+  const { decimals } = useNumberFormat();
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ar-SA', {
       style: 'currency',
       currency: 'SAR',
-      minimumFractionDigits: 0,
-    }).format(amount);
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(decimals === 0 ? Math.round(amount) : amount);
   };
 
-  const formatCurrencySimple = (value: number) => new Intl.NumberFormat('ar-SA').format(value);
+  const formatCurrencySimple = (value: number) => new Intl.NumberFormat('ar-SA', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(value) : value);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ar-SA');

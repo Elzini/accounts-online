@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { escapeHtml } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -52,9 +53,8 @@ export function TrialBalancePreviewDialog({
   const printRef = useRef<HTMLDivElement>(null);
   const currentDate = new Date().toLocaleDateString('ar-SA');
 
-  const formatCurrency = (amount: number) => {
-    return Math.round(amount).toLocaleString('en-US');
-  };
+  const { formatNumber: fmtNum } = useNumberFormat();
+  const formatCurrency = (amount: number) => fmtNum(amount) || '0';
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');

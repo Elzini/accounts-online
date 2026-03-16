@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { usePrepaidExpenses } from '@/hooks/usePrepaidExpenses';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 
 function generateMonthlySchedule(exp: any) {
   if (!exp.start_date || !exp.number_of_months || !exp.monthly_amount) return [];
@@ -69,7 +70,8 @@ export function PrepaidExpensesReport() {
   const totalRemaining = filteredExpenses.reduce((sum: number, exp: any) => sum + (exp.remaining_amount || 0), 0);
   const activeCount = filteredExpenses.filter((e: any) => e.status === 'active').length;
 
-  const formatNumber = (n: number) => Math.round(n).toLocaleString('en-US');
+  const { formatNumber: globalFormatNumber } = useNumberFormat();
+  const formatNumber = (n: number) => globalFormatNumber(n) || '0';
 
   const getStatusBadge = (status: string) => {
     switch (status) {

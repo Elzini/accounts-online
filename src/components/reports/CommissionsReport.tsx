@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 
 export function CommissionsReport() {
   const { data: sales, isLoading } = useSales();
@@ -20,8 +21,9 @@ export function CommissionsReport() {
   const { t, language } = useLanguage();
 
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
-  const formatCurrency = (amount: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'SAR', minimumFractionDigits: 0 }).format(amount);
-  const formatCurrencySimple = (value: number) => new Intl.NumberFormat(locale).format(value);
+  const { decimals } = useNumberFormat();
+  const formatCurrency = (amount: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'SAR', minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(amount) : amount);
+  const formatCurrencySimple = (value: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(value) : value);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(locale);
 
   const sellers = useMemo(() => {

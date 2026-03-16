@@ -10,6 +10,7 @@ import { useExcelExport } from '@/hooks/useExcelExport';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 
 export function ProfitReport() {
   const { data: sales = [], isLoading: salesLoading } = useSales();
@@ -22,7 +23,8 @@ export function ProfitReport() {
   const { t, language } = useLanguage();
 
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
-  const formatCurrency = (value: number) => new Intl.NumberFormat(locale).format(value);
+  const { decimals } = useNumberFormat();
+  const formatCurrency = (value: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(value) : value);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(locale);
 
   const filteredSales = useMemo(() => {

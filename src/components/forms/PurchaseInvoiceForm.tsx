@@ -58,6 +58,7 @@ import { useItems, useUnits } from '@/hooks/useInventory';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { PurchaseInvoiceAIImport, ParsedInvoiceData, BatchParsedResult } from './PurchaseInvoiceAIImport';
 import { useCostCenters } from '@/hooks/useCostCenters';
 
@@ -103,6 +104,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const deleteCar = useDeleteCar();
   const companyId = useCompanyId();
   const { t, language } = useLanguage();
+  const { decimals } = useNumberFormat();
   const queryClient = useQueryClient();
 
   // Inventory hooks
@@ -378,9 +380,9 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat(locale, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(decimals === 0 ? Math.round(value) : value);
   };
 
   const handleSubmit = async () => {

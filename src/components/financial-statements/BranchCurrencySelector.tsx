@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { GitBranch, Coins } from 'lucide-react';
+import { getGlobalDecimals } from './utils/numberFormatting';
 
 // === الفروع ===
 export interface Branch {
@@ -46,10 +47,11 @@ export function convertAmount(amountSAR: number, targetCurrency: CurrencyConfig)
 
 // تنسيق مبلغ بالعملة المحددة
 export function formatCurrencyAmount(amount: number, currency: CurrencyConfig): string {
+  const d = getGlobalDecimals();
   return `${new Intl.NumberFormat('ar-SA', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount)} ${currency.symbol}`;
+    minimumFractionDigits: d,
+    maximumFractionDigits: d,
+  }).format(d === 0 ? Math.round(amount) : amount)} ${currency.symbol}`;
 }
 
 // === المكونات ===
