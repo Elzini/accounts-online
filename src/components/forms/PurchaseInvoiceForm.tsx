@@ -809,6 +809,8 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           discount_amount: calculations.discountAmount,
           notes: invoiceData.notes || null,
           project_id: invoiceData.project_id || null,
+          payment_status: invoiceData.payment_status || 'unpaid',
+          amount_paid: invoiceData.payment_status === 'paid' ? calculations.finalTotal : 0,
         })
         .eq('id', currentBatchId)
         .eq('company_id', companyId);
