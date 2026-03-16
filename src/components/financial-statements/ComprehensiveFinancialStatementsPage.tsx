@@ -166,9 +166,9 @@ export function ComprehensiveFinancialStatementsPage() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'decimal',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(cv(amount));
+      minimumFractionDigits: numDecimals,
+      maximumFractionDigits: numDecimals,
+    }).format(numDecimals === 0 ? Math.round(cv(amount)) : cv(amount));
   };
 
   // حساب من بيانات النظام
