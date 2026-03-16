@@ -694,6 +694,100 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     };
   }, [savedBatchData, invoiceData, selectedSupplier, calculations, taxSettings, company, taxRate, nextInvoiceNumber]);
 
+  const handleAIImport = async (data: ParsedInvoiceData) => {
+    try {
+      // Check if supplier exists, if not create one
+      let supplierId = '';
+      const existingSupplier = suppliers.find(s => 
+        s.name === data.supplier_name || 
+        (data.supplier_tax_number && (s as any).id_number === data.supplier_tax_number)
+      );
+
+      if (existingSupplier) {
+        supplierId = existingSupplier.id;
+      } else if (companyId) {
+        // Create new supplier
+        const { data: newSupplier, error } = await supabase
+          .from('suppliers')
+          .insert({
+            name: data.supplier_name,
+            id_number: data.supplier_tax_number || null,
+            phone: data.supplier_phone || null,
+            address: data.supplier_address || null,
+            company_id: companyId,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating supplier:', error);
+          toast.error('فشل إنشاء المورد');
+        } else if (newSupplier) {
+          supplierId = newSupplier.id;
+          toast.success(`تم إنشاء المورد: ${data.supplier_name}`);
+        }
+      }
+
+      // Fill invoice data
+      setInvoiceData(prev => ({
+        ...prev,
+        supplier_id: supplierId,
+        invoice_number: data.invoice_number || prev.invoice_number,
+        purchase_date: data.invoice_date || prev.purchase_date,
+        due_date: data.due_date || prev.due_date,
+        notes: data.notes || prev.notes,
+        price_includes_tax: data.price_includes_tax ?? prev.price_includes_tax,
+      }));
+
+      // Fill items
+      if (data.items && data.items.length > 0) {
+        if (isCarDealership) {
+          const carItems: CarItem[] = data.items.map(item => ({
+            id: crypto.randomUUID(),
+            chassis_number: '',
+            plate_number: '',
+            name: item.description,
+            model: '',
+            color: '',
+            purchase_price: String(item.unit_price),
+            quantity: item.quantity,
+            unit: t.inv_car_unit,
+            car_condition: 'new' as const,
+          }));
+          setCars(carItems);
+        } else {
+          const invItems: PurchaseInventoryItem[] = data.items.map(item => ({
+            id: crypto.randomUUID(),
+            item_id: null,
+            item_name: item.description,
+            barcode: '',
+            unit_name: t.inv_unit,
+            unit_id: null,
+            purchase_price: String(item.unit_price),
+            quantity: item.quantity,
+          }));
+          setPurchaseInventoryItems(invItems);
+        }
+      }
+
+      // Set discount if any
+      if (data.discount && data.discount > 0) {
+        setDiscount(data.discount);
+        setDiscountType('amount');
+      }
+
+      // Reset navigation state
+      setIsViewingExisting(false);
+      setCurrentBatchId(null);
+      setIsEditing(false);
+
+      toast.success('تم تعبئة بيانات الفاتورة بنجاح');
+    } catch (error) {
+      console.error('Error processing AI import:', error);
+      toast.error('حدث خطأ أثناء معالجة البيانات');
+    }
+  };
+
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
   return (
