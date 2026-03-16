@@ -114,6 +114,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const approveSale = useApproveSale();
   const companyId = useCompanyId();
   const { t, language } = useLanguage();
+  const { decimals } = useNumberFormat();
   const { permissions } = useAuth();
   // Draft/approved status tracking (moved after isViewingExisting state below)
   // Inventory hooks
