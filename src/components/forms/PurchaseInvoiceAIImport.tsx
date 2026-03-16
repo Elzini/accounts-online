@@ -58,6 +58,8 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
   const [progress, setProgress] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
   const [selectedBatchIndex, setSelectedBatchIndex] = useState<number | null>(null);
+  const [selectedCostCenterId, setSelectedCostCenterId] = useState<string | null>(null);
+  const { data: costCenters = [] } = useCostCenters();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const batchFileInputRef = useRef<HTMLInputElement>(null);
 
