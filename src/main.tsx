@@ -8,7 +8,7 @@ const isPreviewHost =
   /(?:^|\.)lovableproject\.com$/i.test(hostname) ||
   (/(?:^|\.)lovable\.app$/i.test(hostname) && hostname.includes('--'));
 
-if (isPreviewHost && "serviceWorker" in navigator) {
+if ("serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     registrations.forEach((registration) => {
       registration.unregister();
