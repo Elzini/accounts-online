@@ -58,7 +58,7 @@ import { useItems, useUnits } from '@/hooks/useInventory';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PurchaseInvoiceAIImport, ParsedInvoiceData } from './PurchaseInvoiceAIImport';
+import { PurchaseInvoiceAIImport, ParsedInvoiceData, BatchParsedResult } from './PurchaseInvoiceAIImport';
 import { useCostCenters } from '@/hooks/useCostCenters';
 
 interface PurchaseInvoiceFormProps {
