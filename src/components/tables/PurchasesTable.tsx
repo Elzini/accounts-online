@@ -252,6 +252,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                 <TableHead className="text-right font-bold">{t.th_payment_method}</TableHead>
                 <TableHead className="text-right font-bold">{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_status}</TableHead>
+                <TableHead className="text-center font-bold">{language === 'ar' ? 'إجراءات' : 'Actions'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -283,6 +284,35 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(inv.status)}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {inv.status === 'draft' && (
+                            <>
+                              <DropdownMenuItem onClick={() => handleApproveInvoice(inv.id)}>
+                                <CheckCircle className="w-4 h-4 ml-2 text-green-600" />
+                                {language === 'ar' ? 'اعتماد الفاتورة' : 'Approve Invoice'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setDeleteInvoiceId(inv.id)} className="text-destructive">
+                                <Trash2 className="w-4 h-4 ml-2" />
+                                {language === 'ar' ? 'حذف' : 'Delete'}
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {inv.status !== 'draft' && (
+                            <DropdownMenuItem disabled>
+                              <Eye className="w-4 h-4 ml-2" />
+                              {language === 'ar' ? 'عرض' : 'View'}
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 );
               })}
