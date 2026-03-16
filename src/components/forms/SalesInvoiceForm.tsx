@@ -410,9 +410,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat(locale, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(decimals === 0 ? Math.round(value) : value);
   };
 
   const handleSubmit = async () => {
