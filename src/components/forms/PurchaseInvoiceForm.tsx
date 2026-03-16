@@ -509,13 +509,17 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
 
         setSavedBatchData({ batch: { id: invoice.id }, supplier: selectedSupplier, inventoryItems: purchaseInventoryItems });
         
-        // Invalidate all related queries so data appears in tables and reports
+        // Invalidate all related queries so data appears in tables, dashboard, and reports
         queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
         queryClient.invalidateQueries({ queryKey: ['purchase-invoices-nav', companyId] });
         queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
         queryClient.invalidateQueries({ queryKey: ['invoices'] });
         queryClient.invalidateQueries({ queryKey: ['purchases-report'] });
         queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+        queryClient.invalidateQueries({ queryKey: ['stats'] });
+        queryClient.invalidateQueries({ queryKey: ['advanced-analytics'] });
+        queryClient.invalidateQueries({ queryKey: ['monthly-chart-data'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard-recent-invoices'] });
 
         toast.success(t.inv_toast_purchase_inv_success);
         setInvoiceOpen(true);
@@ -852,6 +856,10 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['purchases-report'] });
       queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+      queryClient.invalidateQueries({ queryKey: ['advanced-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-chart-data'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-recent-invoices'] });
 
       setSavedBatchData({ batch: { id: currentBatchId }, supplier: selectedSupplier, inventoryItems: purchaseInventoryItems });
       setIsEditing(false);
