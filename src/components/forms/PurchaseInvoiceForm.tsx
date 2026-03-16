@@ -808,57 +808,71 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       return;
     }
 
+    const isProtected = ['issued', 'approved', 'posted'].includes(currentInvoiceStatus);
+
     try {
+      // Build update payload - skip financial fields for protected invoices
+      const updatePayload: Record<string, any> = {
+        invoice_number: invoiceData.invoice_number || null,
+        supplier_id: invoiceData.supplier_id,
+        customer_name: selectedSupplier?.name || '',
+        invoice_date: invoiceData.purchase_date,
+        due_date: invoiceData.due_date,
+        notes: invoiceData.notes || null,
+        project_id: invoiceData.project_id || null,
+        payment_status: invoiceData.payment_status || 'unpaid',
+        amount_paid: invoiceData.payment_status === 'paid' ? calculations.finalTotal : 0,
+        supplier_invoice_number: invoiceData.supplier_invoice_number || null,
+        payment_account_id: invoiceData.payment_account_id || null,
+        cost_center_id: invoiceData.cost_center_id || null,
+      };
+
+      if (!isProtected) {
+        updatePayload.subtotal = calculations.subtotal;
+        updatePayload.taxable_amount = calculations.subtotalAfterDiscount;
+        updatePayload.vat_rate = taxRate;
+        updatePayload.vat_amount = calculations.totalVAT;
+        updatePayload.total = calculations.finalTotal;
+        updatePayload.discount_amount = calculations.discountAmount;
+      }
+
       const { error: invoiceUpdateError } = await supabase
         .from('invoices')
-        .update({
-          invoice_number: invoiceData.invoice_number || null,
-          supplier_id: invoiceData.supplier_id,
-          customer_name: selectedSupplier?.name || '',
-          invoice_date: invoiceData.purchase_date,
-          due_date: invoiceData.due_date,
-          subtotal: calculations.subtotal,
-          taxable_amount: calculations.subtotalAfterDiscount,
-          vat_rate: taxRate,
-          vat_amount: calculations.totalVAT,
-          total: calculations.finalTotal,
-          discount_amount: calculations.discountAmount,
-          notes: invoiceData.notes || null,
-          project_id: invoiceData.project_id || null,
-          payment_status: invoiceData.payment_status || 'unpaid',
-          amount_paid: invoiceData.payment_status === 'paid' ? calculations.finalTotal : 0,
-        })
+        .update(updatePayload)
         .eq('id', currentBatchId)
         .eq('company_id', companyId);
 
       if (invoiceUpdateError) throw invoiceUpdateError;
 
-      const { error: deleteItemsError } = await supabase
-        .from('invoice_items')
-        .delete()
-        .eq('invoice_id', currentBatchId);
+      // Only update items for non-protected invoices
+      if (!isProtected) {
+        const { error: deleteItemsError } = await supabase
+          .from('invoice_items')
+          .delete()
+          .eq('invoice_id', currentBatchId);
 
-      if (deleteItemsError) throw deleteItemsError;
+        if (deleteItemsError) throw deleteItemsError;
 
-      const invoiceItems = purchaseInventoryItems.map((item, index) => ({
-        invoice_id: currentBatchId,
-        item_description: item.item_name,
-        item_code: item.barcode || '',
-        quantity: item.quantity,
-        unit: item.unit_name,
-        unit_price: calculations.inventoryItems[index].baseAmount / item.quantity,
-        taxable_amount: calculations.inventoryItems[index].baseAmount,
-        vat_rate: taxRate,
-        vat_amount: calculations.inventoryItems[index].vatAmount,
-        total: calculations.inventoryItems[index].total,
-        inventory_item_id: item.item_id,
-      }));
+        const invoiceItems = purchaseInventoryItems.map((item, index) => ({
+          invoice_id: currentBatchId,
+          item_description: item.item_name,
+          item_code: item.barcode || '',
+          quantity: item.quantity,
+          unit: item.unit_name,
+          unit_price: calculations.inventoryItems[index].baseAmount / item.quantity,
+          taxable_amount: calculations.inventoryItems[index].baseAmount,
+          vat_rate: taxRate,
+          vat_amount: calculations.inventoryItems[index].vatAmount,
+          total: calculations.inventoryItems[index].total,
+          inventory_item_id: item.item_id,
+        }));
 
-      const { error: insertItemsError } = await supabase
-        .from('invoice_items')
-        .insert(invoiceItems);
+        const { error: insertItemsError } = await supabase
+          .from('invoice_items')
+          .insert(invoiceItems);
 
-      if (insertItemsError) throw insertItemsError;
+        if (insertItemsError) throw insertItemsError;
+      }
 
       queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['purchase-invoices-nav', companyId] });
