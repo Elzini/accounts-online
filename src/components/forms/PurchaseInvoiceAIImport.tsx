@@ -223,6 +223,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
     setProgress(0);
     setTotalFiles(0);
     setSelectedBatchIndex(null);
+    setSelectedCostCenterId(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (batchFileInputRef.current) batchFileInputRef.current.value = '';
     onOpenChange(false);
