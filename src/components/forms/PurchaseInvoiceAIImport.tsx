@@ -203,7 +203,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
     if (batchResults.length === 0) return;
     const successResults = batchResults.filter(r => r.success);
     if (onBatchImport) {
-      onBatchImport(successResults);
+      onBatchImport(successResults, selectedCostCenterId);
     }
     handleClose();
   };
