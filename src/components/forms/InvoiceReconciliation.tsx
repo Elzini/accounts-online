@@ -135,6 +135,7 @@ export function InvoiceReconciliation({
   });
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [filter, setFilter] = useState<'all' | 'matched' | 'unmatched' | 'partial'>('all');
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const stats = useMemo(() => ({
     total: results.length,
