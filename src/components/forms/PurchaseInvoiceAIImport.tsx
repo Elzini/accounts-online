@@ -81,11 +81,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error('حجم الملف كبير جداً (الحد الأقصى 10MB)');
-      return;
-    }
+    // No file size limit
 
     setFileName(file.name);
     setIsLoading(true);
