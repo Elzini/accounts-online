@@ -983,9 +983,9 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         taxAmount: car.vatAmount,
         total: car.total,
       })),
-      subtotal: calculations.subtotal,
-      taxAmount: calculations.totalVAT,
-      total: calculations.finalTotal,
+      subtotal: displayTotals.subtotal,
+      taxAmount: displayTotals.totalVAT,
+      total: displayTotals.finalTotal,
       taxSettings: taxSettings,
       companyLogoUrl: (company as any)?.invoice_logo_url || company?.logo_url,
     };
