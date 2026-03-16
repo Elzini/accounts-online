@@ -16,8 +16,11 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useExpenses } from '@/hooks/useExpenses';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface PurchasesTableProps {
   setActivePage: (page: ActivePage) => void;
