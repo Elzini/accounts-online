@@ -97,6 +97,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const { data: purchaseBatches = [] } = usePurchaseBatches();
   const { company } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
+  const { data: costCenters = [] } = useCostCenters();
   const addPurchaseBatch = useAddPurchaseBatch();
   const updateCar = useUpdateCar();
   const deleteCar = useDeleteCar();
