@@ -645,6 +645,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         project_id: record.project_id || null,
         cost_center_id: null,
         payment_status: record.payment_status || 'unpaid',
+        supplier_invoice_number: record.supplier_invoice_number || '',
       });
 
       const items = record.invoice_items || [];
