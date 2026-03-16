@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 
 export function InventoryReport() {
   const { data: cars = [], isLoading } = useCars();

@@ -10,6 +10,7 @@ import { useExcelExport } from '@/hooks/useExcelExport';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNumberFormat } from '@/hooks/useNumberFormat';
 
 export function ProfitReport() {
   const { data: sales = [], isLoading: salesLoading } = useSales();
