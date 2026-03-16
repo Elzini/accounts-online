@@ -601,6 +601,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const loadRecordData = (record: any) => {
     setIsViewingExisting(true);
     setCurrentBatchId(record.id);
+    setCurrentInvoiceStatus(record.status || 'draft');
     setIsEditing(false);
 
     if (isCarDealership) {
