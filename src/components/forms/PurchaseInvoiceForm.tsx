@@ -814,6 +814,11 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   className="h-9 border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none text-xs"
                 />
               </div>
+              <ProjectSelector
+                value={invoiceData.project_id}
+                onChange={(v) => setInvoiceData({ ...invoiceData, project_id: v })}
+                className="h-9 border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none text-xs"
+              />
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_payment_method}</Label>
                 <Select defaultValue="cash">
