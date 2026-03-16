@@ -13020,6 +13020,84 @@ export type Database = {
           },
         ]
       }
+      system_change_log: {
+        Row: {
+          applied_at: string | null
+          authorization_code: string | null
+          authorization_method: string | null
+          backup_id: string | null
+          change_type: string
+          company_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          impact_analysis: Json | null
+          ip_address: string | null
+          module: string
+          new_value: Json | null
+          previous_value: Json | null
+          simulation_result: Json | null
+          status: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          authorization_code?: string | null
+          authorization_method?: string | null
+          backup_id?: string | null
+          change_type: string
+          company_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          impact_analysis?: Json | null
+          ip_address?: string | null
+          module: string
+          new_value?: Json | null
+          previous_value?: Json | null
+          simulation_result?: Json | null
+          status?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          authorization_code?: string | null
+          authorization_method?: string | null
+          backup_id?: string | null
+          change_type?: string
+          company_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          impact_analysis?: Json | null
+          ip_address?: string | null
+          module?: string
+          new_value?: Json | null
+          previous_value?: Json | null
+          simulation_result?: Json | null
+          status?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_change_log_backup_id_fkey"
+            columns: ["backup_id"]
+            isOneToOne: false
+            referencedRelation: "backups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_change_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assigned_to: string | null
@@ -15586,6 +15664,7 @@ export type Database = {
       is_super_admin:
         | { Args: never; Returns: boolean }
         | { Args: { _user_id: string }; Returns: boolean }
+      is_system_frozen: { Args: never; Returns: boolean }
       log_audit_event: {
         Args: {
           p_action: string
