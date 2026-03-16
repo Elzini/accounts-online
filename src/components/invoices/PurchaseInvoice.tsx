@@ -5,6 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { TaxSettings } from '@/services/accounting';
 import { generateZatcaQRData, formatDateTimeForZatca } from '@/lib/zatcaQR';
 import logoImage from '@/assets/logo.png';
+import { getGlobalDecimals } from '@/components/financial-statements/utils/numberFormatting';
 
 interface InvoiceItem {
   description: string;
