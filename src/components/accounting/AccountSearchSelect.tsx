@@ -161,13 +161,13 @@ export function AccountSearchSelect({ accounts, value, onChange, placeholder = "
         onFocus={handleFocus}
         onBlur={handleBlur}
         placeholder={placeholder}
-        className="w-full text-sm"
+        className="w-full text-sm min-w-[220px]"
         autoComplete="off"
       />
       {open && filteredAccounts.length > 0 && (
         <div 
           ref={listRef}
-          className="absolute top-full left-0 right-0 z-[99999] mt-1 max-h-[200px] overflow-y-auto rounded-md border bg-popover shadow-lg"
+          className="absolute top-full left-0 right-0 z-[99999] mt-1 max-h-[300px] overflow-y-auto rounded-md border bg-popover shadow-lg"
           onMouseDown={(e) => e.preventDefault()}
         >
           {filteredAccounts.map((account, index) => (
