@@ -65,6 +65,8 @@ export function SuppliersReport() {
       supplier_id: inv.supplier_id,
       date: inv.invoice_date,
       amount: Number(inv.total || 0),
+      taxable_amount: Number(inv.taxable_amount || 0),
+      vat_amount: Number(inv.vat_amount || 0),
       status: inv.status || 'draft',
       name: inv.customer_name || '-',
       model: inv.invoice_number || '-',
