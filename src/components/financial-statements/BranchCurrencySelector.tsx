@@ -46,10 +46,12 @@ export function convertAmount(amountSAR: number, targetCurrency: CurrencyConfig)
 
 // تنسيق مبلغ بالعملة المحددة
 export function formatCurrencyAmount(amount: number, currency: CurrencyConfig): string {
+  const { getGlobalDecimals } = require('./utils/numberFormatting');
+  const d = getGlobalDecimals();
   return `${new Intl.NumberFormat('ar-SA', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount)} ${currency.symbol}`;
+    minimumFractionDigits: d,
+    maximumFractionDigits: d,
+  }).format(d === 0 ? Math.round(amount) : amount)} ${currency.symbol}`;
 }
 
 // === المكونات ===
