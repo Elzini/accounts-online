@@ -59,6 +59,7 @@ import { useCompanyId } from '@/hooks/useCompanyId';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PurchaseInvoiceAIImport, ParsedInvoiceData } from './PurchaseInvoiceAIImport';
+import { useCostCenters } from '@/hooks/useCostCenters';
 
 interface PurchaseInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -96,6 +97,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const { data: purchaseBatches = [] } = usePurchaseBatches();
   const { company } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
+  const { data: costCenters = [] } = useCostCenters();
   const addPurchaseBatch = useAddPurchaseBatch();
   const updateCar = useUpdateCar();
   const deleteCar = useDeleteCar();
@@ -246,6 +248,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     notes: '',
     price_includes_tax: true,
     project_id: null as string | null,
+    cost_center_id: null as string | null,
   });
 
   useEffect(() => {
@@ -511,6 +514,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       notes: '',
       price_includes_tax: true,
       project_id: null,
+      cost_center_id: null,
     });
     setCars([createEmptyCar()]);
     setDiscount(0);
@@ -573,6 +577,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       notes: batch.notes || '',
       price_includes_tax: false,
       project_id: null,
+      cost_center_id: null,
     });
 
     const batchCars = batch.cars || [];
@@ -998,6 +1003,20 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_supplier_invoice}</Label>
                 <Input className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-indigo-500 shadow-none" placeholder={t.inv_reference} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">مركز التكلفة</Label>
+                <Select value={invoiceData.cost_center_id || ''} onValueChange={(v) => setInvoiceData({ ...invoiceData, cost_center_id: v || null })}>
+                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-indigo-500 shadow-none transition-colors">
+                    <SelectValue placeholder="اختر مركز التكلفة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">بدون</SelectItem>
+                    {costCenters.filter(cc => cc.is_active).map((cc) => (
+                      <SelectItem key={cc.id} value={cc.id}>{cc.code} - {cc.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex items-center gap-2 self-end pb-1">
                 <Checkbox id="purchase_price_includes_tax" checked={invoiceData.price_includes_tax} onCheckedChange={(checked) => setInvoiceData({ ...invoiceData, price_includes_tax: !!checked })} className="h-4 w-4" />
