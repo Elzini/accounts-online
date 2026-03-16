@@ -1,0 +1,1 @@
+UPDATE account_categories SET name = 'مشروع الجوهرة الندوة', updated_at = now() WHERE id = '08dda096-ed53-4c8d-8302-1b740fbbcdbc'
