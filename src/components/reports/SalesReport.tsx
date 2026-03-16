@@ -79,8 +79,9 @@ export function SalesReport() {
   const totalProfit = salesData.reduce((sum: number, sale: any) => sum + Number(sale.profit), 0);
   const totalCommissions = salesData.reduce((sum: number, sale: any) => sum + Number(sale.commission || 0), 0);
 
-  const formatCurrency = (amount: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'SAR', minimumFractionDigits: 0 }).format(amount);
-  const formatCurrencySimple = (value: number) => new Intl.NumberFormat(locale).format(value);
+  const { decimals } = useNumberFormat();
+  const formatCurrency = (amount: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'SAR', minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(amount) : amount);
+  const formatCurrencySimple = (value: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(value) : value);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(locale);
 
   const salesByMonth: Record<string, { count: number; total: number; profit: number }> = {};

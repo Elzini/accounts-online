@@ -54,7 +54,8 @@ export function ExpensesReport() {
     return Object.values(map).sort((a, b) => b.total - a.total);
   }, [filteredExpenses, categories, isAr]);
 
-  const formatNumber = (n: number) => n.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const { decimals } = useNumberFormat();
+  const formatNumber = (n: number) => n.toLocaleString('ar-SA', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 
   const handlePrint = () => {
     const printContent = document.getElementById('expenses-report-print');
