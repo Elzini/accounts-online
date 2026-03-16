@@ -51,6 +51,13 @@ export function matchInvoices(
     let bestScore = 0;
     let matchType: ReconciliationResult['matchType'] = 'none';
     const differences: string[] = [];
+    let bestChecks = {
+      invoiceNumber: false,
+      date: false,
+      subtotal: false,
+      vat: false,
+      total: false,
+    };
 
     for (const existing of existingInvoices) {
       let score = 0;
@@ -59,46 +66,54 @@ export function matchInvoices(
       // Match by supplier invoice number (strongest signal)
       const parsedInvNum = normalizeInvoiceNumber(data.invoice_number);
       const existingInvNum = normalizeInvoiceNumber(existing.supplier_invoice_number || '');
-      
-      if (parsedInvNum && existingInvNum && parsedInvNum === existingInvNum) {
+      const invoiceNumberMatch = !!parsedInvNum && !!existingInvNum && parsedInvNum === existingInvNum;
+
+      if (invoiceNumberMatch) {
         score += 40;
       } else if (parsedInvNum && existingInvNum) {
         tempDiffs.push(`رقم فاتورة المورد: ${data.invoice_number} ≠ ${existing.supplier_invoice_number}`);
       }
 
-      // Match by exact total amount (zero tolerance - detect even 1 halalah)
-      const totalDiff = Math.abs(data.total_amount - existing.total);
-      if (totalDiff === 0) {
+      // Match by total amount (zero tolerance at halalah level)
+      const totalHalalahDiff = Math.abs(toHalalah(data.total_amount) - toHalalah(existing.total));
+      const totalMatch = totalHalalahDiff === 0;
+      if (totalMatch) {
         score += 25;
-      } else if (totalDiff <= 1) {
+      } else if (totalHalalahDiff <= 100) {
         score += 15;
-        tempDiffs.push(`الإجمالي شامل الضريبة: ${data.total_amount.toFixed(2)} ≠ ${existing.total.toFixed(2)} (فرق: ${totalDiff.toFixed(2)} ر.س)`);
+        tempDiffs.push(`الإجمالي شامل الضريبة: ${formatAmount(data.total_amount)} ≠ ${formatAmount(existing.total)} (فرق: ${(totalHalalahDiff / 100).toFixed(2)} ر.س)`);
       } else {
-        tempDiffs.push(`الإجمالي شامل الضريبة: ${data.total_amount.toFixed(2)} ≠ ${existing.total.toFixed(2)}`);
+        tempDiffs.push(`الإجمالي شامل الضريبة: ${formatAmount(data.total_amount)} ≠ ${formatAmount(existing.total)}`);
       }
 
       // Match by subtotal (before VAT)
-      if (data.subtotal !== undefined && existing.subtotal !== undefined) {
-        const subtotalDiff = Math.abs(data.subtotal - existing.subtotal);
-        if (subtotalDiff > 0) {
-          tempDiffs.push(`الإجمالي قبل الضريبة: ${data.subtotal.toFixed(2)} ≠ ${existing.subtotal.toFixed(2)} (فرق: ${subtotalDiff.toFixed(2)} ر.س)`);
+      const parsedSubtotal = data.subtotal ?? (data.total_amount - (data.vat_amount ?? 0));
+      let subtotalMatch = false;
+      if (existing.subtotal !== undefined) {
+        const subtotalHalalahDiff = Math.abs(toHalalah(parsedSubtotal) - toHalalah(existing.subtotal));
+        subtotalMatch = subtotalHalalahDiff === 0;
+        if (!subtotalMatch) {
+          tempDiffs.push(`الإجمالي قبل الضريبة: ${formatAmount(parsedSubtotal)} ≠ ${formatAmount(existing.subtotal)} (فرق: ${(subtotalHalalahDiff / 100).toFixed(2)} ر.س)`);
         }
       }
 
       // Match by VAT amount (zero tolerance)
-      if (data.vat_amount !== undefined && existing.vat_amount !== undefined) {
-        const vatDiff = Math.abs(data.vat_amount - existing.vat_amount);
-        if (vatDiff === 0) {
+      const parsedVatAmount = data.vat_amount ?? (data.total_amount - parsedSubtotal);
+      let vatMatch = false;
+      if (existing.vat_amount !== undefined) {
+        const vatHalalahDiff = Math.abs(toHalalah(parsedVatAmount) - toHalalah(existing.vat_amount));
+        vatMatch = vatHalalahDiff === 0;
+        if (vatMatch) {
           score += 10;
         } else {
-          tempDiffs.push(`الضريبة: ${data.vat_amount.toFixed(2)} ≠ ${existing.vat_amount.toFixed(2)} (فرق: ${vatDiff.toFixed(2)} ر.س)`);
+          tempDiffs.push(`الضريبة: ${formatAmount(parsedVatAmount)} ≠ ${formatAmount(existing.vat_amount)} (فرق: ${(vatHalalahDiff / 100).toFixed(2)} ر.س)`);
         }
       }
 
       // Match by supplier name
       const parsedSupplier = normalizeText(data.supplier_name);
       const existingSupplier = normalizeText(existing.customer_name || '');
-      if (parsedSupplier && existingSupplier && 
+      if (parsedSupplier && existingSupplier &&
           (parsedSupplier.includes(existingSupplier) || existingSupplier.includes(parsedSupplier))) {
         score += 15;
       }
@@ -106,15 +121,11 @@ export function matchInvoices(
       // Match by date
       const parsedDate = data.invoice_date?.split('T')[0];
       const existingDate = existing.invoice_date?.split('T')[0];
-      if (parsedDate && existingDate && parsedDate === existingDate) {
+      const dateMatch = !!parsedDate && !!existingDate && parsedDate === existingDate;
+      if (dateMatch) {
         score += 10;
       } else if (parsedDate && existingDate) {
         tempDiffs.push(`التاريخ: ${parsedDate} ≠ ${existingDate}`);
-      }
-
-      // Check items count difference
-      if (data.items && data.items.length > 0) {
-        tempDiffs.push(`عدد الأصناف المستوردة: ${data.items.length}`);
       }
 
       if (score > bestScore) {
@@ -122,20 +133,39 @@ export function matchInvoices(
         bestMatch = existing;
         differences.length = 0;
         differences.push(...tempDiffs);
+        bestChecks = {
+          invoiceNumber: invoiceNumberMatch,
+          date: dateMatch,
+          subtotal: subtotalMatch,
+          vat: vatMatch,
+          total: totalMatch,
+        };
       }
     }
 
-    // Determine match type - stricter thresholds
-    // exact: must match invoice number + amount + VAT (score >= 75)
-    // partial: invoice number matches but amounts differ (score >= 40)
-    // amount_only: amounts match but no invoice number (score >= 25)
-    if (bestScore >= 75) matchType = 'exact';
-    else if (bestScore >= 40) matchType = 'partial';
-    else if (bestScore >= 25) matchType = 'amount_only';
-    else { bestMatch = null; matchType = 'none'; }
+    if (bestMatch && bestChecks.invoiceNumber && bestChecks.date && bestChecks.subtotal && bestChecks.vat && bestChecks.total) {
+      matchType = 'exact';
+    } else if (bestScore >= 40) {
+      matchType = 'partial';
+    } else if (bestScore >= 25) {
+      matchType = 'amount_only';
+    } else {
+      bestMatch = null;
+      matchType = 'none';
+    }
 
     return { parsed, matchedInvoice: bestMatch, matchType, matchScore: bestScore, differences };
   });
+}
+
+function toHalalah(value: number | null | undefined): number {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return 0;
+  return Math.round(Number(value) * 100);
+}
+
+function formatAmount(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
+  return Number(value).toFixed(2);
 }
 
 function normalizeInvoiceNumber(num: string): string {
@@ -406,28 +436,37 @@ export function InvoiceReconciliation({
                             عرض التفاصيل
                           </Button>
                           {r.matchType !== 'none' && r.matchType !== 'exact' && r.matchedInvoice && onUpdateExisting && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="text-xs h-7 gap-1"
-                              disabled={updatingId === r.parsed.index}
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                setUpdatingId(r.parsed.index);
-                                try {
-                                  await onUpdateExisting(r);
-                                } finally {
-                                  setUpdatingId(null);
-                                }
-                              }}
-                            >
-                              {updatingId === r.parsed.index ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
+                            <>
+                              {['issued', 'approved', 'posted'].includes(r.matchedInvoice.status) ? (
+                                <div className="text-[11px] text-destructive flex items-center gap-1">
+                                  <AlertTriangle className="w-3 h-3" />
+                                  الفاتورة معتمدة — استخدم إشعار دائن للتصحيح
+                                </div>
                               ) : (
-                                <RefreshCw className="w-3 h-3" />
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="text-xs h-7 gap-1"
+                                  disabled={updatingId === r.parsed.index}
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    setUpdatingId(r.parsed.index);
+                                    try {
+                                      await onUpdateExisting(r);
+                                    } finally {
+                                      setUpdatingId(null);
+                                    }
+                                  }}
+                                >
+                                  {updatingId === r.parsed.index ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <RefreshCw className="w-3 h-3" />
+                                  )}
+                                  تحديث الفاتورة الحالية
+                                </Button>
                               )}
-                              تحديث الفاتورة الحالية
-                            </Button>
+                            </>
                           )}
                         </div>
                       </div>
