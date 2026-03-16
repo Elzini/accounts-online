@@ -27,6 +27,8 @@ import { JournalEntryPrintDialog } from './JournalEntryPrintDialog';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUnifiedPrintReport } from '@/hooks/useUnifiedPrintReport';
+import { RealEstateJournalTemplates, JournalTemplate } from './RealEstateJournalTemplates';
+import { useCompany } from '@/contexts/CompanyContext';
 
 interface JournalLine {
   account_id: string;
@@ -43,11 +45,13 @@ interface JournalLine {
 
 export function JournalEntriesPage() {
   const { t, direction, language } = useLanguage();
+  const { company } = useCompany();
   const { data: entries = [], isLoading } = useJournalEntries();
   const { data: accounts = [] } = useAccounts();
   const { data: costCenters = [] } = useCostCenters();
   const { filterByFiscalYear } = useFiscalYearFilter();
   const { printReport } = useUnifiedPrintReport();
+  const isRealEstate = company?.company_type === 'real_estate';
   const createJournalEntry = useCreateJournalEntry();
   const deleteJournalEntry = useDeleteJournalEntry();
   
@@ -87,6 +91,28 @@ export function JournalEntriesPage() {
       { account_id: '', description: '', debit: 0, credit: 0, reference: '', line_date: format(new Date(), 'yyyy-MM-dd'), cost_center: '' },
       { account_id: '', description: '', debit: 0, credit: 0, reference: '', line_date: format(new Date(), 'yyyy-MM-dd'), cost_center: '' },
     ]);
+  };
+
+  const handleTemplateSelect = (template: JournalTemplate) => {
+    resetForm();
+    setDescription(template.defaultDescription);
+    const templateLines = template.lines.map(tl => {
+      const account = accounts.find(a => a.code === tl.accountCode);
+      return {
+        account_id: account?.id || '',
+        account_code: account?.code || tl.accountCode,
+        account_name: account?.name || tl.accountName,
+        description: tl.description,
+        debit: tl.side === 'debit' ? 0 : 0,
+        credit: tl.side === 'credit' ? 0 : 0,
+        reference: '',
+        line_date: format(new Date(), 'yyyy-MM-dd'),
+        cost_center: '',
+      };
+    });
+    setLines(templateLines);
+    setIsDialogOpen(true);
+    toast.success(`تم تحميل قالب: ${template.name} — أدخل المبالغ`);
   };
 
   const addLine = () => {
@@ -276,6 +302,9 @@ export function JournalEntriesPage() {
             <FileText className="w-4 h-4" />
             {language === 'ar' ? 'طباعة كشف القيود' : 'Print Journal Sheet'}
           </Button>
+          {isRealEstate && (
+            <RealEstateJournalTemplates onSelectTemplate={handleTemplateSelect} />
+          )}
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
           setIsDialogOpen(open);
           if (!open) resetForm();
