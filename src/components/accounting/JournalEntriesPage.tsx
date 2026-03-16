@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { useJournalEntries, useAccounts, useCreateJournalEntry, useDeleteJournalEntry, useJournalEntry } from '@/hooks/useAccounting';
 import { useCostCenters } from '@/hooks/useCostCenters';
+import { ProjectSelector } from '@/components/forms/ProjectSelector';
 import { toast } from 'sonner';
 import { Loader2, Plus, Eye, Trash2, BookOpen, CalendarIcon, X, Printer, FileDown, Paperclip } from 'lucide-react';
 import { JournalEntryEditDialog } from './JournalEntryEditDialog';
