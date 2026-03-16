@@ -1799,6 +1799,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         open={aiImportOpen}
         onOpenChange={setAiImportOpen}
         onImport={handleAIImport}
+        onBatchImport={handleBatchImport}
       />
     </>
   );
