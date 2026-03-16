@@ -512,6 +512,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       notes: '',
       price_includes_tax: true,
       project_id: null,
+      cost_center_id: null,
     });
     setCars([createEmptyCar()]);
     setDiscount(0);
