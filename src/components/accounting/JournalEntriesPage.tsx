@@ -153,6 +153,7 @@ export function JournalEntriesPage() {
           reference_type: 'manual',
           reference_id: null,
           created_by: null,
+          project_id: projectId || null,
         },
         lines: validLines.map(line => ({
           account_id: line.account_id,
