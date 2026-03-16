@@ -47,6 +47,7 @@ export function JournalEntriesPage() {
   const { data: accounts = [] } = useAccounts();
   const { data: costCenters = [] } = useCostCenters();
   const { filterByFiscalYear } = useFiscalYearFilter();
+  const { printReport } = useUnifiedPrintReport();
   const createJournalEntry = useCreateJournalEntry();
   const deleteJournalEntry = useDeleteJournalEntry();
   
