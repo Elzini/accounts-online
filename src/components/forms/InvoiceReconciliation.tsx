@@ -3,9 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   CheckCircle, XCircle, AlertTriangle, ArrowLeftRight, 
-  FileText, Plus, Eye, ChevronDown, ChevronUp 
+  FileText, Plus, Eye, ChevronDown, ChevronUp, RefreshCw, Loader2, HelpCircle
 } from 'lucide-react';
 import { ParsedInvoiceData, BatchParsedResult } from './PurchaseInvoiceAIImport';
 
