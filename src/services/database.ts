@@ -806,6 +806,108 @@ export async function fetchStats(fiscalYearId?: string | null) {
   }
 
   const companyId = await requireCompanyId();
+  const { data: companyRecord } = await supabase
+    .from('companies')
+    .select('company_type')
+    .eq('id', companyId)
+    .maybeSingle();
+
+  const companyType = companyRecord?.company_type;
+
+  // Real estate dashboard uses projects + invoices (not cars + sales)
+  if (companyType === 'real_estate') {
+    let projectsQuery = supabase
+      .from('re_projects')
+      .select('id, status')
+      .eq('company_id', companyId);
+
+    let purchaseInvoicesQuery = supabase
+      .from('invoices')
+      .select('subtotal, invoice_date')
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'purchase');
+
+    let salesInvoicesQuery = supabase
+      .from('invoices')
+      .select('subtotal, invoice_date')
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'sales');
+
+    if (fiscalYearStart && fiscalYearEnd) {
+      purchaseInvoicesQuery = purchaseInvoicesQuery
+        .gte('invoice_date', fiscalYearStart)
+        .lte('invoice_date', fiscalYearEnd);
+
+      salesInvoicesQuery = salesInvoicesQuery
+        .gte('invoice_date', fiscalYearStart)
+        .lte('invoice_date', fiscalYearEnd);
+    }
+
+    const [projectsResult, purchaseInvoicesResult, salesInvoicesResult] = await Promise.all([
+      projectsQuery,
+      purchaseInvoicesQuery,
+      salesInvoicesQuery,
+    ]);
+
+    const projects = projectsResult.data || [];
+    const purchaseInvoices = purchaseInvoicesResult.data || [];
+    const salesInvoices = salesInvoicesResult.data || [];
+
+    const activeProjects = projects.filter((project: any) => {
+      const status = String(project.status || '').toLowerCase();
+      return status !== 'completed' && status !== 'cancelled' && status !== 'canceled';
+    }).length;
+
+    const totalPurchases = Math.round(
+      purchaseInvoices.reduce((sum: number, invoice: any) => sum + (Number(invoice.subtotal) || 0), 0)
+    );
+
+    const totalSalesAmount = salesInvoices.reduce(
+      (sum: number, invoice: any) => sum + (Number(invoice.subtotal) || 0),
+      0
+    );
+
+    const monthSalesData = salesInvoices.filter((invoice: any) => {
+      const invoiceDate = invoice.invoice_date;
+      return invoiceDate >= startOfMonth && invoiceDate <= endOfMonth;
+    });
+
+    const monthPurchasesData = purchaseInvoices.filter((invoice: any) => {
+      const invoiceDate = invoice.invoice_date;
+      return invoiceDate >= startOfMonth && invoiceDate <= endOfMonth;
+    });
+
+    const monthSalesAmount = monthSalesData.reduce(
+      (sum: number, invoice: any) => sum + (Number(invoice.subtotal) || 0),
+      0
+    );
+
+    const monthPurchasesAmount = monthPurchasesData.reduce(
+      (sum: number, invoice: any) => sum + (Number(invoice.subtotal) || 0),
+      0
+    );
+
+    return {
+      availableNewCars: 0,
+      availableUsedCars: 0,
+      availableCars: activeProjects,
+      todaySales: salesInvoices.filter((invoice: any) => invoice.invoice_date === today).length,
+      totalProfit: totalSalesAmount,
+      monthSales: monthSalesData.length,
+      totalPurchases,
+      monthSalesAmount,
+      totalGrossProfit: totalSalesAmount,
+      totalCarExpenses: 0,
+      totalGeneralExpenses: 0,
+      payrollExpenses: 0,
+      prepaidExpensesDue: 0,
+      otherGeneralExpenses: 0,
+      purchasesCount: purchaseInvoices.length,
+      monthSalesProfit: monthSalesAmount - monthPurchasesAmount,
+      totalSalesCount: salesInvoices.length,
+      totalSalesAmount,
+    };
+  }
 
   // Build all queries - always filter by company_id
   let availableCarsQuery = supabase
