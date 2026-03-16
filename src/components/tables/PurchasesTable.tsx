@@ -160,8 +160,21 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
     }
   };
 
+  const normalizeInvoiceStatus = (status?: string) => String(status || '').trim().toLowerCase();
+
+  const isDraftInvoiceStatus = (status?: string) => {
+    const normalized = normalizeInvoiceStatus(status);
+    return normalized === 'draft' || normalized === 'مسودة';
+  };
+
+  const isApprovedInvoiceStatus = (status?: string) => {
+    const normalized = normalizeInvoiceStatus(status);
+    return normalized === 'approved' || normalized === 'issued' || normalized === 'معتمدة' || normalized === 'معتمد';
+  };
+
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    const normalized = normalizeInvoiceStatus(status);
+    switch (normalized) {
       case 'available':
         return <Badge className="bg-success hover:bg-success/90 text-xs">{t.status_available}</Badge>;
       case 'transferred':
@@ -169,8 +182,12 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       case 'sold':
         return <Badge variant="secondary" className="text-xs">{t.status_sold}</Badge>;
       case 'approved':
+      case 'issued':
+      case 'معتمدة':
+      case 'معتمد':
         return <Badge className="bg-success hover:bg-success/90 text-xs">{language === 'ar' ? 'معتمدة' : 'Approved'}</Badge>;
       case 'draft':
+      case 'مسودة':
         return <Badge variant="secondary" className="text-xs">{language === 'ar' ? 'مسودة' : 'Draft'}</Badge>;
       default:
         return <Badge variant="secondary" className="text-xs">{status}</Badge>;
@@ -190,7 +207,13 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       );
     }
     if (statusFilter !== 'all') {
-      result = result.filter((inv: any) => inv.status === statusFilter);
+      if (statusFilter === 'draft') {
+        result = result.filter((inv: any) => isDraftInvoiceStatus(inv.status));
+      } else if (statusFilter === 'approved') {
+        result = result.filter((inv: any) => isApprovedInvoiceStatus(inv.status));
+      } else {
+        result = result.filter((inv: any) => normalizeInvoiceStatus(inv.status) === statusFilter);
+      }
     }
     return result;
   }, [isCarDealership, purchaseInvoices, searchQuery, statusFilter]);
@@ -302,7 +325,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          {inv.status === 'draft' && (
+                          {isDraftInvoiceStatus(inv.status) && (
                             <>
                               <DropdownMenuItem onClick={() => handleApproveInvoice(inv.id)}>
                                 <CheckCircle className="w-4 h-4 ml-2 text-green-600" />
@@ -314,7 +337,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                               </DropdownMenuItem>
                             </>
                           )}
-                          {inv.status !== 'draft' && (
+                          {!isDraftInvoiceStatus(inv.status) && (
                             <DropdownMenuItem disabled>
                               <Eye className="w-4 h-4 ml-2" />
                               {language === 'ar' ? 'عرض' : 'View'}
