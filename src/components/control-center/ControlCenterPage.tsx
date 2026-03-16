@@ -14,7 +14,8 @@ import {
   ShieldAlert,
   Bell,
   Users,
-  ClipboardList
+  ClipboardList,
+  Wrench
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AccountMappingsTab } from './tabs/AccountMappingsTab';
@@ -33,6 +34,7 @@ import { CompanySensitiveOpsLog } from './tabs/CompanySensitiveOpsLog';
 import { CompanySmartAlerts } from './tabs/CompanySmartAlerts';
 import { EmployeePermissionsManager } from './tabs/EmployeePermissionsManager';
 import { UserActivityLog } from './tabs/UserActivityLog';
+import { GeneralSettingsTab } from './tabs/GeneralSettingsTab';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function ControlCenterPage() {
@@ -97,6 +99,9 @@ export function ControlCenterPage() {
           <TabsTrigger value="theme-config" className="flex items-center gap-2">
             <Palette className="w-4 h-4" /><span className="hidden sm:inline">{t.cc_theme_config}</span>
           </TabsTrigger>
+          <TabsTrigger value="general-settings" className="flex items-center gap-2">
+            <Wrench className="w-4 h-4" /><span className="hidden sm:inline">المظهر</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="security" className="mt-6"><TwoFactorSetup /></TabsContent>
@@ -117,6 +122,7 @@ export function ControlCenterPage() {
         <TabsContent value="financial-statements" className="mt-6"><FinancialStatementsConfigTab /></TabsContent>
         <TabsContent value="menu-config" className="mt-6"><MenuConfigurationTab /></TabsContent>
         <TabsContent value="theme-config" className="mt-6"><ThemeConfigurationTab /></TabsContent>
+        <TabsContent value="general-settings" className="mt-6"><GeneralSettingsTab /></TabsContent>
       </Tabs>
     </div>
   );
