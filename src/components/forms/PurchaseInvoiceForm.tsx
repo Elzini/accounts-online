@@ -101,6 +101,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const deleteCar = useDeleteCar();
   const companyId = useCompanyId();
   const { t, language } = useLanguage();
+  const queryClient = useQueryClient();
 
   // Inventory hooks
   const { data: inventoryItems = [] } = useItems();
