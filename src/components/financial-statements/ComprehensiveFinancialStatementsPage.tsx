@@ -834,7 +834,7 @@ export function ComprehensiveFinancialStatementsPage() {
                         </div>
                         <div className="flex justify-between text-destructive">
                           <span>(-) المصاريف التشغيلية</span>
-                          <span>({formatCurrency(Math.abs(data.incomeStatement.operatingExpenses))})</span>
+                          <span>({formatCurrency(Math.abs(data.incomeStatement.generalAndAdminExpenses))})</span>
                         </div>
                       </div>
                       <div className="flex justify-between font-bold text-lg border-t pt-2">
