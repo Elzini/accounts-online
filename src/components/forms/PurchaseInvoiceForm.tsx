@@ -948,22 +948,22 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               onSelectResult={(result) => {
                 if (result.type === 'invoice' || result.type === 'car') {
                   const car = result.data;
-                  const batchIndex = fiscalYearFilteredBatches.findIndex(b => 
+                  const batchIndex = navigationRecords.findIndex((b: any) => 
                     b.cars?.some((c: any) => c.id === car.id)
                   );
                   if (batchIndex >= 0) {
                     setCurrentInvoiceIndex(batchIndex);
-                    loadBatchData(fiscalYearFilteredBatches[batchIndex]);
+                    loadRecordData(navigationRecords[batchIndex]);
                   }
                 } else if (result.type === 'supplier') {
-                  const supplierBatches = fiscalYearFilteredBatches.filter(b => 
+                  const supplierRecords = navigationRecords.filter((b: any) => 
                     b.supplier_id === result.id
                   );
-                  if (supplierBatches.length > 0) {
-                    const batchIndex = fiscalYearFilteredBatches.findIndex(b => b.id === supplierBatches[0].id);
-                    if (batchIndex >= 0) {
-                      setCurrentInvoiceIndex(batchIndex);
-                      loadBatchData(fiscalYearFilteredBatches[batchIndex]);
+                  if (supplierRecords.length > 0) {
+                    const idx = navigationRecords.findIndex((b: any) => b.id === supplierRecords[0].id);
+                    if (idx >= 0) {
+                      setCurrentInvoiceIndex(idx);
+                      loadRecordData(navigationRecords[idx]);
                     }
                   } else {
                     setInvoiceData(prev => ({ ...prev, supplier_id: result.id }));
