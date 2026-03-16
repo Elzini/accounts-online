@@ -1188,6 +1188,19 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">حالة الدفع</Label>
+                <Select value={invoiceData.payment_status} onValueChange={(v) => setInvoiceData({ ...invoiceData, payment_status: v })}>
+                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-indigo-500 shadow-none transition-colors">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unpaid">غير مدفوع</SelectItem>
+                    <SelectItem value="paid">مدفوع</SelectItem>
+                    <SelectItem value="partial">مدفوع جزئياً</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-center gap-2 self-end pb-1">
                 <Checkbox id="purchase_price_includes_tax" checked={invoiceData.price_includes_tax} onCheckedChange={(checked) => setInvoiceData({ ...invoiceData, price_includes_tax: !!checked })} className="h-4 w-4" />
                 <Label htmlFor="purchase_price_includes_tax" className="text-xs cursor-pointer text-muted-foreground">{t.inv_price_includes_tax}</Label>
