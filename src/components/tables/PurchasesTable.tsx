@@ -201,6 +201,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       const query = searchQuery.toLowerCase();
       result = result.filter((inv: any) =>
         inv.invoice_number?.toLowerCase().includes(query) ||
+        inv.supplier_invoice_number?.toLowerCase().includes(query) ||
         inv.supplier?.name?.toLowerCase().includes(query) ||
         inv.notes?.toLowerCase().includes(query)
       );
