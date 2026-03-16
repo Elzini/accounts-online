@@ -233,7 +233,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
       // Fetch all existing purchase invoices for this company
       const { data: existingInvoices, error } = await (supabase as any)
         .from('invoices')
-        .select('id, invoice_number, supplier_invoice_number, supplier_id, customer_name, invoice_date, total, vat_amount, status, payment_status')
+        .select('id, invoice_number, supplier_invoice_number, supplier_id, customer_name, invoice_date, subtotal, total, vat_amount, status, payment_status')
         .eq('company_id', companyId)
         .eq('invoice_type', 'purchase')
         .order('created_at', { ascending: false });

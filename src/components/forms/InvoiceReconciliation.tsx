@@ -17,6 +17,7 @@ export interface ExistingInvoice {
   supplier_id: string | null;
   customer_name: string | null;
   invoice_date: string;
+  subtotal: number;
   total: number;
   vat_amount: number;
   status: string;
@@ -62,28 +63,35 @@ export function matchInvoices(
       if (parsedInvNum && existingInvNum && parsedInvNum === existingInvNum) {
         score += 40;
       } else if (parsedInvNum && existingInvNum) {
-        tempDiffs.push(`رقم الفاتورة: ${data.invoice_number} ≠ ${existing.supplier_invoice_number}`);
+        tempDiffs.push(`رقم فاتورة المورد: ${data.invoice_number} ≠ ${existing.supplier_invoice_number}`);
       }
 
-      // Match by exact amount (use exact comparison with small halalah tolerance: 0.05 SAR)
+      // Match by exact total amount (zero tolerance - detect even 1 halalah)
       const totalDiff = Math.abs(data.total_amount - existing.total);
-      if (totalDiff <= 0.05) {
+      if (totalDiff === 0) {
         score += 25;
       } else if (totalDiff <= 1) {
-        // Within 1 SAR - partial amount match
         score += 15;
-        tempDiffs.push(`فرق في المبلغ: ${data.total_amount} ≠ ${existing.total} (فرق: ${totalDiff.toFixed(2)})`);
+        tempDiffs.push(`الإجمالي شامل الضريبة: ${data.total_amount.toFixed(2)} ≠ ${existing.total.toFixed(2)} (فرق: ${totalDiff.toFixed(2)} ر.س)`);
       } else {
-        tempDiffs.push(`المبلغ: ${data.total_amount} ≠ ${existing.total}`);
+        tempDiffs.push(`الإجمالي شامل الضريبة: ${data.total_amount.toFixed(2)} ≠ ${existing.total.toFixed(2)}`);
       }
 
-      // Match by VAT amount (exact comparison)
+      // Match by subtotal (before VAT)
+      if (data.subtotal !== undefined && existing.subtotal !== undefined) {
+        const subtotalDiff = Math.abs(data.subtotal - existing.subtotal);
+        if (subtotalDiff > 0) {
+          tempDiffs.push(`الإجمالي قبل الضريبة: ${data.subtotal.toFixed(2)} ≠ ${existing.subtotal.toFixed(2)} (فرق: ${subtotalDiff.toFixed(2)} ر.س)`);
+        }
+      }
+
+      // Match by VAT amount (zero tolerance)
       if (data.vat_amount !== undefined && existing.vat_amount !== undefined) {
         const vatDiff = Math.abs(data.vat_amount - existing.vat_amount);
-        if (vatDiff <= 0.05) {
+        if (vatDiff === 0) {
           score += 10;
         } else {
-          tempDiffs.push(`الضريبة: ${data.vat_amount} ≠ ${existing.vat_amount}`);
+          tempDiffs.push(`الضريبة: ${data.vat_amount.toFixed(2)} ≠ ${existing.vat_amount.toFixed(2)} (فرق: ${vatDiff.toFixed(2)} ر.س)`);
         }
       }
 
@@ -102,6 +110,11 @@ export function matchInvoices(
         score += 10;
       } else if (parsedDate && existingDate) {
         tempDiffs.push(`التاريخ: ${parsedDate} ≠ ${existingDate}`);
+      }
+
+      // Check items count difference
+      if (data.items && data.items.length > 0) {
+        tempDiffs.push(`عدد الأصناف المستوردة: ${data.items.length}`);
       }
 
       if (score > bestScore) {
@@ -321,38 +334,60 @@ export function InvoiceReconciliation({
                     <TableCell colSpan={8} className="p-0">
                       <div className="p-3 bg-muted/20 border-t space-y-2">
                         {r.matchedInvoice ? (
-                          <div className="space-y-2">
-                            <div className="text-xs font-semibold text-muted-foreground">الفاتورة المطابقة في النظام:</div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                              <div>
-                                <span className="text-muted-foreground">الرقم الداخلي: </span>
-                                <span className="font-mono font-bold">{r.matchedInvoice.invoice_number}</span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">رقم فاتورة المورد: </span>
-                                <span className="font-mono">{r.matchedInvoice.supplier_invoice_number || '-'}</span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">المبلغ: </span>
-                                <span className="font-mono">{formatCurrency(r.matchedInvoice.total)}</span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">الحالة: </span>
-                                <Badge variant="outline" className="text-[10px]">
-                                  {r.matchedInvoice.status === 'draft' ? 'مسودة' : r.matchedInvoice.status === 'issued' ? 'معتمدة' : r.matchedInvoice.status}
-                                </Badge>
-                              </div>
+                          <div className="space-y-3">
+                            <div className="text-xs font-semibold text-muted-foreground">مقارنة تفصيلية - الفاتورة المستوردة مع النظام ({r.matchedInvoice.invoice_number}):</div>
+                            <div className="border rounded overflow-hidden">
+                              <table className="w-full text-[11px]">
+                                <thead>
+                                  <tr className="bg-muted/40">
+                                    <th className="text-right p-1.5 font-semibold">البيان</th>
+                                    <th className="text-right p-1.5 font-semibold text-blue-600">المستورد (PDF)</th>
+                                    <th className="text-right p-1.5 font-semibold text-purple-600">النظام الحالي</th>
+                                    <th className="text-center p-1.5 font-semibold">الحالة</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(() => {
+                                    const d = r.parsed.data;
+                                    const e = r.matchedInvoice!;
+                                    const rows = [
+                                      { label: 'رقم فاتورة المورد', imported: d.invoice_number, system: e.supplier_invoice_number || '-' },
+                                      { label: 'التاريخ', imported: d.invoice_date?.split('T')[0] || '-', system: e.invoice_date?.split('T')[0] || '-' },
+                                      { label: 'الإجمالي قبل الضريبة', imported: d.subtotal?.toFixed(2) || '-', system: e.subtotal?.toFixed(2) || '-' },
+                                      { label: 'الضريبة', imported: d.vat_amount?.toFixed(2) || '-', system: e.vat_amount?.toFixed(2) || '-' },
+                                      { label: 'الإجمالي شامل الضريبة', imported: d.total_amount?.toFixed(2), system: e.total?.toFixed(2) },
+                                      { label: 'عدد الأصناف', imported: String(d.items?.length || 0), system: '-' },
+                                    ];
+                                    return rows.map((row, i) => {
+                                      const match = row.imported === row.system;
+                                      const hasDiff = !match && row.imported !== '-' && row.system !== '-';
+                                      return (
+                                        <tr key={i} className={hasDiff ? 'bg-yellow-50 dark:bg-yellow-950/20' : ''}>
+                                          <td className="p-1.5 font-medium border-t">{row.label}</td>
+                                          <td className="p-1.5 font-mono border-t text-blue-700 dark:text-blue-400">{row.imported}</td>
+                                          <td className="p-1.5 font-mono border-t text-purple-700 dark:text-purple-400">{row.system}</td>
+                                          <td className="p-1.5 border-t text-center">
+                                            {match ? (
+                                              <CheckCircle className="w-3.5 h-3.5 text-green-500 inline" />
+                                            ) : hasDiff ? (
+                                              <AlertTriangle className="w-3.5 h-3.5 text-yellow-500 inline" />
+                                            ) : (
+                                              <span className="text-muted-foreground">-</span>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      );
+                                    });
+                                  })()}
+                                </tbody>
+                              </table>
                             </div>
-                            {r.differences.length > 0 && (
-                              <div className="space-y-1">
-                                <div className="text-[10px] font-semibold text-yellow-600">الفروقات:</div>
-                                {r.differences.map((d, i) => (
-                                  <div key={i} className="text-[10px] text-yellow-600 flex items-center gap-1">
-                                    <AlertTriangle className="w-3 h-3" /> {d}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2 text-[10px]">
+                              <Badge variant="outline" className="text-[10px]">
+                                {r.matchedInvoice.status === 'draft' ? 'مسودة' : r.matchedInvoice.status === 'issued' ? 'معتمدة' : r.matchedInvoice.status}
+                              </Badge>
+                              <span className="text-muted-foreground">نقاط التطابق: {r.matchScore}/100</span>
+                            </div>
                           </div>
                         ) : (
                           <div className="flex items-center gap-2 text-xs text-red-600">
