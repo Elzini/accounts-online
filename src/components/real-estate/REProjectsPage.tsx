@@ -48,7 +48,17 @@ export function REProjectsPage() {
   const openEdit = (p: any) => { setForm(p); setDialogOpen(true); };
   const handleSave = () => {
     if (!form.name) return;
-    saveProject.mutate(form, { onSuccess: () => setDialogOpen(false) });
+    const numericFields = ['land_area', 'total_built_area', 'total_units', 'total_budget', 'land_cost', 'construction_cost', 'progress_percentage', 'total_spent'];
+    const cleaned = { ...form };
+    numericFields.forEach(f => {
+      if (cleaned[f] === '' || cleaned[f] === undefined) cleaned[f] = null;
+      else if (cleaned[f] !== null) cleaned[f] = Number(cleaned[f]) || null;
+    });
+    // Clean empty date strings
+    ['start_date', 'expected_completion'].forEach(f => {
+      if (!cleaned[f]) cleaned[f] = null;
+    });
+    saveProject.mutate(cleaned, { onSuccess: () => setDialogOpen(false) });
   };
 
   const filtered = projects.filter((p: any) =>
