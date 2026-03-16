@@ -50,6 +50,7 @@ import { PurchaseInvoiceDialog } from '@/components/invoices/PurchaseInvoiceDial
 import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { PaymentAccountSelector } from './PaymentAccountSelector';
+import { ProjectSelector } from './ProjectSelector';
 import { InvoiceSearchBar } from './InvoiceSearchBar';
 import { useItems, useUnits } from '@/hooks/useInventory';
 import { useCompanyId } from '@/hooks/useCompanyId';
