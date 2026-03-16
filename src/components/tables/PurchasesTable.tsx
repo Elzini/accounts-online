@@ -338,7 +338,10 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                             </>
                           )}
                           {!isDraftInvoiceStatus(inv.status) && (
-                            <DropdownMenuItem disabled>
+                            <DropdownMenuItem onClick={() => {
+                              sessionStorage.setItem('viewPurchaseInvoiceId', inv.id);
+                              setActivePage('add-purchase-invoice');
+                            }}>
                               <Eye className="w-4 h-4 ml-2" />
                               {language === 'ar' ? 'عرض' : 'View'}
                             </DropdownMenuItem>
