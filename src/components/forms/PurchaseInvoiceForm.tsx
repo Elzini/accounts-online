@@ -604,6 +604,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     setIsViewingExisting(false);
     setCurrentBatchId(null);
     setIsEditing(false);
+    setStoredHeaderTotals(null);
   };
 
   const handleCloseInvoice = (open: boolean) => {
