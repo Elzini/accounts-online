@@ -36,6 +36,7 @@ interface InvoiceReconciliationProps {
   formatCurrency: (val: number) => string;
   onImportSelected: (selected: BatchParsedResult[]) => void;
   onViewDetails: (result: BatchParsedResult) => void;
+  onUpdateExisting?: (result: ReconciliationResult) => Promise<void>;
   onClose: () => void;
 }
 
