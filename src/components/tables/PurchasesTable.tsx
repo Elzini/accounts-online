@@ -325,7 +325,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          {inv.status === 'draft' && (
+                          {isDraftInvoiceStatus(inv.status) && (
                             <>
                               <DropdownMenuItem onClick={() => handleApproveInvoice(inv.id)}>
                                 <CheckCircle className="w-4 h-4 ml-2 text-green-600" />
@@ -337,7 +337,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                               </DropdownMenuItem>
                             </>
                           )}
-                          {inv.status !== 'draft' && (
+                          {!isDraftInvoiceStatus(inv.status) && (
                             <DropdownMenuItem disabled>
                               <Eye className="w-4 h-4 ml-2" />
                               {language === 'ar' ? 'عرض' : 'View'}
