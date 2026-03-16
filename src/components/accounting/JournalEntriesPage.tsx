@@ -45,11 +45,13 @@ interface JournalLine {
 
 export function JournalEntriesPage() {
   const { t, direction, language } = useLanguage();
+  const { company } = useCompany();
   const { data: entries = [], isLoading } = useJournalEntries();
   const { data: accounts = [] } = useAccounts();
   const { data: costCenters = [] } = useCostCenters();
   const { filterByFiscalYear } = useFiscalYearFilter();
   const { printReport } = useUnifiedPrintReport();
+  const isRealEstate = company?.company_type === 'real_estate';
   const createJournalEntry = useCreateJournalEntry();
   const deleteJournalEntry = useDeleteJournalEntry();
   
