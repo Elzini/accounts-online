@@ -961,7 +961,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         purchase_date: data.invoice_date || prev.purchase_date,
         due_date: data.due_date || prev.due_date,
         notes: data.notes || prev.notes,
-        price_includes_tax: data.price_includes_tax ?? prev.price_includes_tax,
+        price_includes_tax: data.price_includes_tax ?? false,
       }));
 
       // Fill items
