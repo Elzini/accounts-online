@@ -208,9 +208,33 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     });
   }, [existingCars, selectedFiscalYear]);
 
+  const { data: purchaseInvoices = [] } = useQuery({
+    queryKey: ['purchase-invoice-sequence', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('invoice_number')
+        .eq('company_id', companyId!)
+        .eq('invoice_type', 'purchase');
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId && !isCarDealership,
+  });
+
   const nextInvoiceNumber = useMemo(() => {
-    return purchaseBatches.length + 1;
-  }, [purchaseBatches]);
+    if (isCarDealership) {
+      return purchaseBatches.length + 1;
+    }
+
+    const maxInvoiceNumber = purchaseInvoices.reduce((max: number, inv: any) => {
+      const parsed = parseInt(String(inv.invoice_number || ''), 10);
+      return Number.isNaN(parsed) ? max : Math.max(max, parsed);
+    }, 0);
+
+    return maxInvoiceNumber + 1;
+  }, [isCarDealership, purchaseBatches, purchaseInvoices]);
 
   const [invoiceData, setInvoiceData] = useState({
     invoice_number: '',
