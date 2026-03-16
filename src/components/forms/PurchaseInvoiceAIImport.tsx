@@ -266,24 +266,32 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
   const handleUpdateExisting = async (result: ReconciliationResult) => {
     if (!result.matchedInvoice || !companyId) return;
     const data = result.parsed.data;
+    const isProtected = ['issued', 'approved', 'posted'].includes(result.matchedInvoice.status || '');
+    
     try {
-      // Update invoice header
+      // Build update payload based on protection status
+      const headerUpdate: Record<string, any> = {
+        supplier_invoice_number: data.invoice_number || result.matchedInvoice.supplier_invoice_number,
+        invoice_date: data.invoice_date || result.matchedInvoice.invoice_date,
+        customer_name: data.supplier_name || result.matchedInvoice.customer_name,
+      };
+
+      // Only update financial fields if the invoice is NOT in a protected status
+      if (!isProtected) {
+        headerUpdate.subtotal = data.subtotal || (data.total_amount - data.vat_amount);
+        headerUpdate.vat_amount = data.vat_amount;
+        headerUpdate.total = data.total_amount;
+      }
+
       const { error: headerError } = await (supabase as any)
         .from('invoices')
-        .update({
-          supplier_invoice_number: data.invoice_number || result.matchedInvoice.supplier_invoice_number,
-          invoice_date: data.invoice_date || result.matchedInvoice.invoice_date,
-          subtotal: data.subtotal || (data.total_amount - data.vat_amount),
-          vat_amount: data.vat_amount,
-          total: data.total_amount,
-          customer_name: data.supplier_name || result.matchedInvoice.customer_name,
-        })
+        .update(headerUpdate)
         .eq('id', result.matchedInvoice.id);
 
       if (headerError) throw headerError;
 
-      // Update items if available
-      if (data.items && data.items.length > 0) {
+      // Update items if available (only for non-protected invoices)
+      if (data.items && data.items.length > 0 && !isProtected) {
         // Delete existing items
         await (supabase as any)
           .from('invoice_items')
@@ -319,7 +327,10 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
         ) || null);
       }
 
-      toast.success(`تم تحديث الفاتورة ${result.matchedInvoice.invoice_number} بنجاح`);
+      const msg = isProtected 
+        ? `تم تحديث البيانات الوصفية للفاتورة ${result.matchedInvoice.invoice_number} (البيانات المالية محمية)`
+        : `تم تحديث الفاتورة ${result.matchedInvoice.invoice_number} بنجاح`;
+      toast.success(msg);
     } catch (error: any) {
       console.error('Update error:', error);
       toast.error(`فشل تحديث الفاتورة: ${error.message}`);
