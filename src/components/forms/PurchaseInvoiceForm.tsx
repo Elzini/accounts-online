@@ -458,6 +458,13 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         if (itemsError) throw itemsError;
 
         setSavedBatchData({ batch: { id: invoice.id }, supplier: selectedSupplier, inventoryItems: purchaseInventoryItems });
+        
+        // Invalidate all related queries so data appears in tables and reports
+        queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+        queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        queryClient.invalidateQueries({ queryKey: ['purchases-report'] });
+        queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+        
         toast.success(t.inv_toast_purchase_inv_success);
         setInvoiceOpen(true);
       } catch (error: any) {
