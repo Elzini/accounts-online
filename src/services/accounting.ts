@@ -546,7 +546,7 @@ export async function getGeneralLedger(
       id: line.id,
       date: line.journal_entry.entry_date,
       entry_number: line.journal_entry.entry_number,
-      description: line.description || line.journal_entry.description,
+      description: line.journal_entry.description || line.description,
       debit,
       credit,
       balance: runningBalance,
