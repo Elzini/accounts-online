@@ -51,104 +51,121 @@ export async function getVATReturnReport(
 
   const taxRate = taxSettings?.tax_rate || 15;
 
-  // Fetch sales data - must match exactly what's shown in sales table
-  // Sales table shows: sale_price (base amount before VAT)
-  let salesQuery = supabase
+  // ========== 1. Fetch from invoices table (primary source) ==========
+  
+  // Sales invoices (issued/approved only)
+  let salesInvQuery = supabase
+    .from('invoices')
+    .select('id, subtotal, vat_amount, total, invoice_date')
+    .eq('company_id', companyId)
+    .eq('invoice_type', 'sales')
+    .neq('status', 'draft');
+
+  if (startDate) salesInvQuery = salesInvQuery.gte('invoice_date', startDate);
+  if (endDate) salesInvQuery = salesInvQuery.lte('invoice_date', endDate);
+
+  // Purchase invoices (issued/approved only)
+  let purchaseInvQuery = supabase
+    .from('invoices')
+    .select('id, subtotal, vat_amount, total, invoice_date')
+    .eq('company_id', companyId)
+    .eq('invoice_type', 'purchase')
+    .neq('status', 'draft');
+
+  if (startDate) purchaseInvQuery = purchaseInvQuery.gte('invoice_date', startDate);
+  if (endDate) purchaseInvQuery = purchaseInvQuery.lte('invoice_date', endDate);
+
+  // ========== 2. Fetch from car sales table (legacy) ==========
+  let carSalesQuery = supabase
     .from('sales')
-    .select('id, sale_price, sale_date, car_id')
+    .select('id, sale_price, sale_date')
     .eq('company_id', companyId);
 
-  if (startDate) {
-    salesQuery = salesQuery.gte('sale_date', startDate);
-  }
-  if (endDate) {
-    salesQuery = salesQuery.lte('sale_date', endDate);
-  }
+  if (startDate) carSalesQuery = carSalesQuery.gte('sale_date', startDate);
+  if (endDate) carSalesQuery = carSalesQuery.lte('sale_date', endDate);
 
-  const { data: salesData, error: salesError } = await salesQuery;
-  if (salesError) throw salesError;
-
-  // Fetch car purchases - must match exactly what's shown in purchases table
-  // Purchases table shows cars with: purchase_price (base amount before VAT)
-  let purchasesQuery = supabase
+  // Car purchases
+  let carPurchasesQuery = supabase
     .from('cars')
     .select('id, purchase_price, purchase_date')
     .eq('company_id', companyId);
 
-  if (startDate) {
-    purchasesQuery = purchasesQuery.gte('purchase_date', startDate);
-  }
-  if (endDate) {
-    purchasesQuery = purchasesQuery.lte('purchase_date', endDate);
-  }
+  if (startDate) carPurchasesQuery = carPurchasesQuery.gte('purchase_date', startDate);
+  if (endDate) carPurchasesQuery = carPurchasesQuery.lte('purchase_date', endDate);
 
-  const { data: purchasesData, error: purchasesError } = await purchasesQuery;
-  if (purchasesError) throw purchasesError;
-
-  // Fetch expenses with VAT invoices (للمصاريف التي لها فواتير ضريبية فقط)
+  // ========== 3. Fetch expenses with VAT invoices ==========
   let expensesQuery = supabase
     .from('expenses')
     .select('id, amount, expense_date, has_vat_invoice')
     .eq('company_id', companyId)
-    .eq('has_vat_invoice', true); // فقط المصاريف التي لها فواتير ضريبية
+    .eq('has_vat_invoice', true);
 
-  if (startDate) {
-    expensesQuery = expensesQuery.gte('expense_date', startDate);
-  }
-  if (endDate) {
-    expensesQuery = expensesQuery.lte('expense_date', endDate);
-  }
+  if (startDate) expensesQuery = expensesQuery.gte('expense_date', startDate);
+  if (endDate) expensesQuery = expensesQuery.lte('expense_date', endDate);
 
-  const { data: expensesData, error: expensesError } = await expensesQuery;
-  if (expensesError) throw expensesError;
+  // Execute all queries in parallel
+  const [salesInvResult, purchaseInvResult, carSalesResult, carPurchasesResult, expensesResult] = await Promise.all([
+    salesInvQuery,
+    purchaseInvQuery,
+    carSalesQuery,
+    carPurchasesQuery,
+    expensesQuery,
+  ]);
 
-  // Calculate sales totals
-  // All car sales are standard rated (15% VAT)
-  // ملاحظة: الأسعار المخزنة هي المبلغ الأساسي (قبل الضريبة)
-  // الضريبة تُحسب كـ: المبلغ الأساسي × نسبة الضريبة
-  const totalSalesAmount = (salesData || []).reduce((sum, sale) => {
-    const salePrice = Number(sale.sale_price) || 0;
-    return sum + salePrice;
+  if (salesInvResult.error) throw salesInvResult.error;
+  if (purchaseInvResult.error) throw purchaseInvResult.error;
+  if (carSalesResult.error) throw carSalesResult.error;
+  if (carPurchasesResult.error) throw carPurchasesResult.error;
+  if (expensesResult.error) throw expensesResult.error;
+
+  const salesInvoices = salesInvResult.data || [];
+  const purchaseInvoices = purchaseInvResult.data || [];
+  const carSales = carSalesResult.data || [];
+  const carPurchases = carPurchasesResult.data || [];
+  const expenses = expensesResult.data || [];
+
+  // ========== Calculate Sales ==========
+  // From invoices table (subtotal = amount before VAT, vat_amount = VAT)
+  const invoiceSalesAmount = salesInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0);
+  const invoiceSalesVAT = salesInvoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0);
+
+  // From car sales table (sale_price = base amount, VAT calculated)
+  const carSalesAmount = carSales.reduce((sum, s) => sum + (Number(s.sale_price) || 0), 0);
+  const carSalesVAT = carSales.reduce((sum, s) => {
+    const price = Number(s.sale_price) || 0;
+    return sum + price * (taxRate / 100);
   }, 0);
 
-  const totalSalesVAT = (salesData || []).reduce((sum, sale) => {
-    const salePrice = Number(sale.sale_price) || 0;
-    const vat = salePrice * (taxRate / 100);
-    return sum + vat;
+  const totalSalesAmount = invoiceSalesAmount + carSalesAmount;
+  const totalSalesVAT = invoiceSalesVAT + carSalesVAT;
+
+  // ========== Calculate Purchases ==========
+  // From invoices table
+  const invoicePurchasesAmount = purchaseInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0);
+  const invoicePurchasesVAT = purchaseInvoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0);
+
+  // From car purchases
+  const carPurchasesAmount = carPurchases.reduce((sum, c) => sum + (Number(c.purchase_price) || 0), 0);
+  const carPurchasesVAT = carPurchases.reduce((sum, c) => {
+    const price = Number(c.purchase_price) || 0;
+    return sum + price * (taxRate / 100);
   }, 0);
 
-  // Calculate purchases totals (car inventory purchases)
-  const totalCarPurchasesAmount = (purchasesData || []).reduce((sum, car) => {
-    const purchasePrice = Number(car.purchase_price) || 0;
-    return sum + purchasePrice;
+  // Expenses with VAT invoices
+  const expensesAmount = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const expensesVAT = expenses.reduce((sum, e) => {
+    const amount = Number(e.amount) || 0;
+    return sum + amount * (taxRate / 100);
   }, 0);
 
-  const totalCarPurchasesVAT = (purchasesData || []).reduce((sum, car) => {
-    const purchasePrice = Number(car.purchase_price) || 0;
-    const vat = purchasePrice * (taxRate / 100);
-    return sum + vat;
-  }, 0);
+  const totalPurchasesAmount = invoicePurchasesAmount + carPurchasesAmount + expensesAmount;
+  const totalPurchasesVAT = invoicePurchasesVAT + carPurchasesVAT + expensesVAT;
 
-  // Calculate expenses with VAT invoices (مصاريف لها فواتير ضريبية)
-  const totalVatExpensesAmount = (expensesData || []).reduce((sum, exp) => {
-    return sum + (Number(exp.amount) || 0);
-  }, 0);
-
-  const totalVatExpensesVAT = (expensesData || []).reduce((sum, exp) => {
-    const amount = Number(exp.amount) || 0;
-    const vat = amount * (taxRate / 100);
-    return sum + vat;
-  }, 0);
-
-  // Total purchases = car purchases + expenses with VAT invoices
-  const totalPurchasesAmount = totalCarPurchasesAmount + totalVatExpensesAmount;
-  const totalPurchasesVAT = totalCarPurchasesVAT + totalVatExpensesVAT;
-
-  // Build the report structure
+  // Build report
   const sales: VATReturnSales = {
     standardRatedAmount: totalSalesAmount,
     standardRatedVAT: totalSalesVAT,
-    citizenServicesAmount: 0, // Not applicable for car sales
+    citizenServicesAmount: 0,
     citizenServicesVAT: 0,
     zeroRatedAmount: 0,
     exportsAmount: 0,
@@ -160,7 +177,7 @@ export async function getVATReturnReport(
   const purchases: VATReturnPurchases = {
     standardRatedAmount: totalPurchasesAmount,
     standardRatedVAT: totalPurchasesVAT,
-    importsAmount: 0, // Can be extended for imported cars
+    importsAmount: 0,
     importsVAT: 0,
     reverseChargeAmount: 0,
     reverseChargeVAT: 0,
@@ -170,15 +187,11 @@ export async function getVATReturnReport(
     totalVAT: totalPurchasesVAT,
   };
 
-  // Net VAT = Output VAT (sales) - Input VAT (purchases)
   const netVAT = sales.totalVAT - purchases.totalVAT;
 
   let status: 'payable' | 'receivable' | 'settled' = 'settled';
-  if (netVAT > 0.01) {
-    status = 'payable';
-  } else if (netVAT < -0.01) {
-    status = 'receivable';
-  }
+  if (netVAT > 0.01) status = 'payable';
+  else if (netVAT < -0.01) status = 'receivable';
 
   return {
     sales,
