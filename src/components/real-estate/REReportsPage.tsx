@@ -15,14 +15,18 @@ export function REReportsPage() {
 
   const fmt = (n: number) => new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR', maximumFractionDigits: 0 }).format(n);
 
-  // Project profitability
+  // Project profitability — uses stored unit cost (proportional allocation from completeUnitSale)
   const projectProfitability = (projects || []).map((p: any) => {
-    const pUnits = (units || []).filter((u: any) => u.project_id === p.id && u.status === 'sold');
+    const allProjectUnits = (units || []).filter((u: any) => u.project_id === p.id);
+    const pUnits = allProjectUnits.filter((u: any) => u.status === 'sold');
     const totalRevenue = pUnits.reduce((s: number, u: any) => s + Number(u.sale_price || 0), 0);
-    const totalCost = pUnits.reduce((s: number, u: any) => s + Number(u.cost || 0), 0) + Number(p.total_spent || 0);
-    const profit = totalRevenue - totalCost;
+    // Use unit-level cost (COGS transferred) — not total_spent to avoid double counting
+    const totalCOGS = pUnits.reduce((s: number, u: any) => s + Number(u.cost || 0), 0);
+    const profit = totalRevenue - totalCOGS;
     const margin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
-    return { ...p, totalRevenue, totalCost, profit, margin, soldCount: pUnits.length };
+    const totalProjectCost = Number(p.total_spent || 0);
+    const unsoldCostRemaining = totalProjectCost - totalCOGS;
+    return { ...p, totalRevenue, totalCOGS, profit, margin, soldCount: pUnits.length, totalUnits: allProjectUnits.length, totalProjectCost, unsoldCostRemaining };
   });
 
   // Cash flow summary
