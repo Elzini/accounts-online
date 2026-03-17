@@ -212,6 +212,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [currentSaleStatus, setCurrentSaleStatus] = useState<'draft' | 'approved'>('draft');
   const [isEditing, setIsEditing] = useState(false);
+  // Store header totals from DB for existing invoices (frozen financial snapshot)
+  const [storedHeaderTotals, setStoredHeaderTotals] = useState<{
+    subtotal: number; vat_amount: number; total: number; vat_rate: number; discount_amount: number;
+  } | null>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const isApproved = isViewingExisting && currentSaleStatus === 'approved';
   const isReadOnly = isViewingExisting && !isEditing && !isApproved;
