@@ -638,11 +638,10 @@ function LiveAlertRow({ alert, onView }: { alert: SystemChangeAlert; onView: () 
 function ApprovalRow({ alert, index, onApprove, onReject, onView }: { 
   alert: SystemChangeAlert; index: number; onApprove: () => void; onReject: () => void; onView: () => void 
 }) {
-  const num = String(alerts?.length ? alerts.length - index : index + 1).padStart(3, '0');
   return (
     <div className="p-3 hover:bg-muted/30 transition-colors">
       <div className="flex items-center gap-2 mb-1.5">
-        <SeverityDot severity={alert.severity} />
+        <SeverityDot severity={getSeverity(alert)} />
         <span className="text-[10px] text-muted-foreground font-mono">#{String(index + 1).padStart(3, '0')}</span>
         <span className="text-[10px] text-muted-foreground mr-auto">
           {new Date(alert.created_at).toLocaleString('ar-SA', { timeStyle: 'short' })}
