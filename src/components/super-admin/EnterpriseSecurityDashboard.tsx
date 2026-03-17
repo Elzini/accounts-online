@@ -653,7 +653,7 @@ function ApprovalRow({ alert, index, onApprove, onReject, onView }: {
         <div className="space-y-0.5 mb-2 pr-6">
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-            Affects {alert.impact_analysis.vat_report_affected ? 'VAT report' : alert.affected_module}
+            Affects {alert.impact_analysis.vat_reports_impact !== 'none' ? 'VAT report' : alert.affected_module}
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
