@@ -38,6 +38,7 @@ interface ReturnItem {
   total: number;
   vat: number;
   grandTotal: number;
+  selected: boolean;
 }
 
 interface FoundCarData {
