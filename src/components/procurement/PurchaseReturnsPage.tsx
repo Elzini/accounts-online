@@ -940,6 +940,51 @@ export function PurchaseReturnsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingReturn} onOpenChange={(open) => !open && setEditingReturn(null)}>
+        <DialogContent dir="rtl" className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-4 h-4 text-violet-600" />
+              {language === 'ar' ? `تعديل المرتجع ${editingReturn?.note_number || ''}` : `Edit Return ${editingReturn?.note_number || ''}`}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">{language === 'ar' ? 'تاريخ المرتجع' : 'Return Date'}</Label>
+              <Input type="date" className="h-9 text-sm" value={editForm.note_date} onChange={e => setEditForm(p => ({ ...p, note_date: e.target.value }))} dir="ltr" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">{language === 'ar' ? 'المبلغ الإجمالي' : 'Total Amount'}</Label>
+                <Input type="number" className="h-9 text-sm font-mono" value={editForm.total_amount || ''} onChange={e => {
+                  const total = Number(e.target.value) || 0;
+                  const netAmount = total / 1.15;
+                  setEditForm(p => ({ ...p, total_amount: total, tax_amount: Math.round((total - netAmount) * 100) / 100 }));
+                }} min={0} step="0.01" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">{language === 'ar' ? 'مبلغ الضريبة' : 'Tax Amount'}</Label>
+                <Input type="number" className="h-9 text-sm font-mono" value={editForm.tax_amount || ''} onChange={e => setEditForm(p => ({ ...p, tax_amount: Number(e.target.value) || 0 }))} min={0} step="0.01" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">{language === 'ar' ? 'السبب / الملاحظات' : 'Reason / Notes'}</Label>
+              <Input className="h-9 text-sm" value={editForm.reason} onChange={e => setEditForm(p => ({ ...p, reason: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter className="flex-row-reverse gap-2">
+            <Button variant="outline" size="sm" onClick={() => setEditingReturn(null)}>
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </Button>
+            <Button size="sm" className="bg-violet-600 hover:bg-violet-700 text-white gap-1.5" onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              {language === 'ar' ? 'حفظ التعديلات' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
