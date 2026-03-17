@@ -294,7 +294,7 @@ export const ar: TranslationKeys = {
   this_week: 'الأسبوع',
   this_month: 'الشهر',
   show_all: 'الكل',
-  dashboard_default_subtitle: 'لوحة التحكم الرئيسية • نظرة شاملة على الأداء',
+  dashboard_default_subtitle: 'مرحبا بك في نظام الزيني المحاسبي',
   data_updated: 'تم تحديث البيانات',
   data_update_failed: 'فشل تحديث البيانات',
   layout_saved: 'تم حفظ ترتيب لوحة التحكم',

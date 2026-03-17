@@ -294,7 +294,7 @@ export const en: TranslationKeys = {
   this_week: 'This Week',
   this_month: 'This Month',
   show_all: 'All',
-  dashboard_default_subtitle: 'Main Dashboard • Performance Overview',
+  dashboard_default_subtitle: 'Welcome to Elzini Accounting System',
   data_updated: 'Data updated successfully',
   data_update_failed: 'Failed to update data',
   layout_saved: 'Dashboard layout saved',
