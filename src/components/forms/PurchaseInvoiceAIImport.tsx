@@ -41,6 +41,8 @@ export interface BatchParsedResult {
   fileName: string;
   data: ParsedInvoiceData;
   success: boolean;
+  fileObject?: File;
+  thumbnailUrl?: string;
 }
 
 interface PurchaseInvoiceAIImportProps {
