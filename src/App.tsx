@@ -14,6 +14,7 @@ import { useCartSync } from "@/hooks/useCartSync";
 import { useNumberFormat } from "@/hooks/useNumberFormat";
 import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
+import { SystemChangeAlertProvider } from "@/components/system-alerts/SystemChangeAlertProvider";
 
 // Lazy load heavy pages
 const Index = lazy(() => import("./pages/Index"));
