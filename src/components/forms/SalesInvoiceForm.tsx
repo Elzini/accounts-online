@@ -1591,7 +1591,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {/* الإجمالي الصافي */}
               <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-4 text-center text-white shadow-lg">
-                <div className="text-3xl font-black">{formatCurrency(calculations.finalTotal)}</div>
+                <div className="text-3xl font-black">{formatCurrency(displayTotals.finalTotal)}</div>
                 <div className="text-[11px] font-medium mt-1 opacity-90">{t.inv_net}</div>
               </div>
               {/* المجموع */}
