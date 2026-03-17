@@ -1314,7 +1314,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20 mt-2">
                 <div className="flex items-center gap-1">
                   <Label className="text-[10px] whitespace-nowrap text-muted-foreground">{t.inv_car_price}</Label>
-                  <span className="text-xs font-medium">{formatCurrency(calculations.finalTotal)}</span>
+                  <span className="text-xs font-medium">{formatCurrency(displayTotals.finalTotal)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Label className="text-[10px] whitespace-nowrap text-muted-foreground">{t.inv_down_payment}</Label>
