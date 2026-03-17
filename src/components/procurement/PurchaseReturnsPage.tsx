@@ -347,7 +347,6 @@ export function PurchaseReturnsPage() {
           item_name: item.item_name || item.description,
           quantity: item.returnedQty,
           unit_price: item.cost,
-          total_price: item.grandTotal,
           notes: item.description,
         }));
         // Get the just-inserted note
