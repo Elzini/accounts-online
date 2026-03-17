@@ -1,4 +1,5 @@
 // أدوات تنسيق الأرقام - مع دعم الإعداد العام
+// بدون فواصل الآلاف - أرقام صافية فقط
 
 // Module-level decimals setting - updated by useNumberFormat hook
 let _globalDecimals = 0;
@@ -9,6 +10,15 @@ export function setGlobalDecimals(d: number) {
 
 export function getGlobalDecimals(): number {
   return _globalDecimals;
+}
+
+/**
+ * Central plain number formatter - NO thousand separators.
+ * Use this everywhere instead of toLocaleString or Intl.NumberFormat.
+ */
+export function plainFormat(num: number, decimals?: number): string {
+  const d = decimals ?? _globalDecimals;
+  return d === 0 ? String(Math.round(num)) : num.toFixed(d);
 }
 
 export const formatNumber = (num: number | undefined | null, decimals?: number): string => {
