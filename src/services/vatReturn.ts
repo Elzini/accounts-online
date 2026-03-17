@@ -245,8 +245,8 @@ export async function getVATReturnReport(
   };
 
   const purchases: VATReturnPurchases = {
-    standardRatedAmount: totalPurchasesAmount,
-    standardRatedVAT: totalPurchasesVAT,
+    standardRatedAmount: grossPurchasesAmount,
+    standardRatedVAT: grossPurchasesVAT,
     importsAmount: 0,
     importsVAT: 0,
     reverseChargeAmount: 0,
