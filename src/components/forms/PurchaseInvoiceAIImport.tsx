@@ -69,6 +69,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
   const companyId = useCompanyId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const batchFileInputRef = useRef<HTMLInputElement>(null);
+  const batchFilesRef = useRef<File[]>([]);
 
   const fileToBase64 = async (file: File): Promise<string> => {
     const buffer = await file.arrayBuffer();
