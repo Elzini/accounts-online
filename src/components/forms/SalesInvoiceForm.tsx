@@ -1596,7 +1596,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               </div>
               {/* المجموع */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4 text-center">
-                <div className="text-2xl font-black text-blue-700 dark:text-blue-400">{formatCurrency(calculations.subtotal)}</div>
+                <div className="text-2xl font-black text-blue-700 dark:text-blue-400">{formatCurrency(displayTotals.subtotal)}</div>
                 <div className="text-[10px] text-blue-600 dark:text-blue-500 font-semibold mt-1">{t.inv_total}</div>
               </div>
               {/* الخصم */}
