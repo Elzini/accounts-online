@@ -22,11 +22,7 @@ export function RecentActivityCard({ recentSales }: RecentActivityCardProps) {
   const locale = language === 'ar' ? 'ar-SA' : 'en-SA';
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 0,
-    }).format(value);
+    return `${Math.round(value)} ر.س`;
   };
 
   const formatDate = (dateString: string) => {

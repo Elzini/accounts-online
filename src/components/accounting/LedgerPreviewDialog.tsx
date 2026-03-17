@@ -42,9 +42,7 @@ interface LedgerPreviewDialogProps {
 }
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: 0,
-  }).format(Math.round(value));
+  return String(Math.round(value));
 };
 
 const getAccountTypeLabel = (type: string) => {
