@@ -112,10 +112,7 @@ export function AccountMovementReport() {
 
   const { decimals } = useNumberFormat();
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(decimals === 0 ? Math.round(value) : value);
+    return decimals === 0 ? String(Math.round(value)) : value.toFixed(decimals);
   };
 
   const formatDate = (dateStr: string) => {
