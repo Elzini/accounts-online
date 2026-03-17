@@ -915,6 +915,13 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
                     </EditableWidgetWrapper>
                   );
                 
+                case 'securityAlerts':
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <SecurityAlertsWidget />
+                    </EditableWidgetWrapper>
+                  );
+                
                 default:
                   return null;
               }
