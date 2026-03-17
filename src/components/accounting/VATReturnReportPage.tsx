@@ -9,7 +9,7 @@ import { useVATReturnReport } from '@/hooks/useVATReturnReport';
 import { useTaxSettings } from '@/hooks/useAccounting';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { toast } from 'sonner';
-import { Loader2, FileText, Printer, TrendingUp, TrendingDown, Building2, Receipt, ShoppingCart, AlertCircle, CheckCircle2, FileSpreadsheet, FileCode, ChevronDown, ChevronUp, List } from 'lucide-react';
+import { Loader2, FileText, Printer, TrendingUp, TrendingDown, Building2, Receipt, ShoppingCart, AlertCircle, CheckCircle2, FileSpreadsheet, FileCode, ChevronDown, ChevronUp, List, FileDown } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths, startOfQuarter, endOfQuarter, subQuarters } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -17,6 +17,7 @@ import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { generateZatcaVATReturnXML, downloadZatcaXML } from '@/lib/zatcaXmlExport';
 import { useTaxSettings as useTaxSettingsHook } from '@/hooks/useAccounting';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { exportVATReportToExcel, exportVATReportToPDF } from '@/utils/vatExcelExport';
 
 export function VATReturnReportPage() {
   const { t, direction } = useLanguage();
