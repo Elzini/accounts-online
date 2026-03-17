@@ -1345,7 +1345,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 </div>
                 <div className="flex items-center gap-1">
                   <Label className="text-[10px] whitespace-nowrap text-muted-foreground">{t.inv_installment_value}</Label>
-                  <span className="text-xs font-medium text-primary">{formatCurrency((calculations.finalTotal - (parseFloat(invoiceData.down_payment) || 0)) / (parseInt(invoiceData.number_of_installments) || 12))}</span>
+                  <span className="text-xs font-medium text-primary">{formatCurrency((displayTotals.finalTotal - (parseFloat(invoiceData.down_payment) || 0)) / (parseInt(invoiceData.number_of_installments) || 12))}</span>
                 </div>
               </div>
             )}
