@@ -103,13 +103,38 @@ export async function getVATReturnReport(
   if (startDate) expensesQuery = expensesQuery.gte('expense_date', startDate);
   if (endDate) expensesQuery = expensesQuery.lte('expense_date', endDate);
 
+  // ========== 4. Fetch credit/debit notes (returns) ==========
+  // Debit notes = purchase returns (reduce purchases)
+  let debitNotesQuery = supabase
+    .from('credit_debit_notes')
+    .select('id, total_amount, tax_amount, note_date')
+    .eq('company_id', companyId)
+    .eq('note_type', 'debit')
+    .neq('status', 'draft');
+
+  if (startDate) debitNotesQuery = debitNotesQuery.gte('note_date', startDate);
+  if (endDate) debitNotesQuery = debitNotesQuery.lte('note_date', endDate);
+
+  // Credit notes = sales returns (reduce sales)
+  let creditNotesQuery = supabase
+    .from('credit_debit_notes')
+    .select('id, total_amount, tax_amount, note_date')
+    .eq('company_id', companyId)
+    .eq('note_type', 'credit')
+    .neq('status', 'draft');
+
+  if (startDate) creditNotesQuery = creditNotesQuery.gte('note_date', startDate);
+  if (endDate) creditNotesQuery = creditNotesQuery.lte('note_date', endDate);
+
   // Execute all queries in parallel
-  const [salesInvResult, purchaseInvResult, carSalesResult, carPurchasesResult, expensesResult] = await Promise.all([
+  const [salesInvResult, purchaseInvResult, carSalesResult, carPurchasesResult, expensesResult, debitNotesResult, creditNotesResult] = await Promise.all([
     salesInvQuery,
     purchaseInvQuery,
     carSalesQuery,
     carPurchasesQuery,
     expensesQuery,
+    debitNotesQuery,
+    creditNotesQuery,
   ]);
 
   if (salesInvResult.error) throw salesInvResult.error;
@@ -117,12 +142,16 @@ export async function getVATReturnReport(
   if (carSalesResult.error) throw carSalesResult.error;
   if (carPurchasesResult.error) throw carPurchasesResult.error;
   if (expensesResult.error) throw expensesResult.error;
+  if (debitNotesResult.error) throw debitNotesResult.error;
+  if (creditNotesResult.error) throw creditNotesResult.error;
 
   const salesInvoices = salesInvResult.data || [];
   const purchaseInvoices = purchaseInvResult.data || [];
   const carSales = carSalesResult.data || [];
   const carPurchases = carPurchasesResult.data || [];
   const expenses = expensesResult.data || [];
+  const debitNotes = debitNotesResult.data || [];
+  const creditNotes = creditNotesResult.data || [];
 
   // ========== Calculate Sales ==========
   // From invoices table (subtotal = amount before VAT, vat_amount = VAT)
