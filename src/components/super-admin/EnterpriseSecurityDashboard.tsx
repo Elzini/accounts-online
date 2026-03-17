@@ -66,6 +66,9 @@ export function EnterpriseSecurityDashboard() {
           <TabsTrigger value="tamper-detector" className="flex items-center gap-1">
             <Fingerprint className="w-4 h-4" /><span className="hidden sm:inline">كاشف التلاعب</span>
           </TabsTrigger>
+          <TabsTrigger value="change-alerts" className="flex items-center gap-1">
+            <Bell className="w-4 h-4" /><span className="hidden sm:inline">تنبيهات التغييرات</span>
+          </TabsTrigger>
           <TabsTrigger value="2fa" className="flex items-center gap-1">
             <Lock className="w-4 h-4" /><span className="hidden sm:inline">المصادقة الثنائية</span>
           </TabsTrigger>
