@@ -201,24 +201,24 @@ export function ZakatReportsPage() {
     
     const data = [
       { item: '=== الإيرادات ===', amount: '' },
-      ...detailedIncome.revenue.items.map(i => ({ item: `${i.code} - ${i.name}`, amount: i.amount.toLocaleString() })),
-      { item: 'إجمالي الإيرادات', amount: detailedIncome.revenue.total.toLocaleString() },
+      ...detailedIncome.revenue.items.map(i => ({ item: `${i.code} - ${i.name}`, amount: String(i.amount) })),
+      { item: 'إجمالي الإيرادات', amount: String(detailedIncome.revenue.total) },
       { item: '', amount: '' },
       { item: '=== تكلفة المبيعات ===', amount: '' },
-      ...detailedIncome.costOfSales.items.map(i => ({ item: `${i.code} - ${i.name}`, amount: `(${i.amount.toLocaleString()})` })),
-      { item: 'إجمالي تكلفة المبيعات', amount: `(${detailedIncome.costOfSales.total.toLocaleString()})` },
+      ...detailedIncome.costOfSales.items.map(i => ({ item: `${i.code} - ${i.name}`, amount: `(${i.amount})` })),
+      { item: 'إجمالي تكلفة المبيعات', amount: `(${detailedIncome.costOfSales.total})` },
       { item: '', amount: '' },
-      { item: 'مجمل الربح', amount: detailedIncome.grossProfit.toLocaleString() },
+      { item: 'مجمل الربح', amount: String(detailedIncome.grossProfit) },
       { item: `هامش الربح الإجمالي`, amount: `${detailedIncome.stats.grossProfitMargin}%` },
       { item: '', amount: '' },
       { item: '=== المصروفات التشغيلية ===', amount: '' },
-      ...detailedIncome.operatingExpenses.items.map(e => ({ item: `${e.code} - ${e.name}`, amount: `(${e.amount.toLocaleString()})` })),
-      { item: 'إجمالي المصروفات التشغيلية', amount: `(${detailedIncome.operatingExpenses.total.toLocaleString()})` },
+      ...detailedIncome.operatingExpenses.items.map(e => ({ item: `${e.code} - ${e.name}`, amount: `(${e.amount})` })),
+      { item: 'إجمالي المصروفات التشغيلية', amount: `(${detailedIncome.operatingExpenses.total})` },
       { item: '', amount: '' },
-      { item: 'الربح التشغيلي', amount: detailedIncome.operatingIncome.toLocaleString() },
+      { item: 'الربح التشغيلي', amount: String(detailedIncome.operatingIncome) },
       { item: '', amount: '' },
       { item: '=== صافي الربح ===', amount: '' },
-      { item: 'صافي الربح', amount: detailedIncome.netIncomeBeforeZakat.toLocaleString() },
+      { item: 'صافي الربح', amount: String(detailedIncome.netIncomeBeforeZakat) },
       { item: 'هامش صافي الربح', amount: `${detailedIncome.stats.netProfitMargin}%` },
       { item: '', amount: '' },
       { item: detailedIncome.zakatNote, amount: '' },
@@ -230,9 +230,9 @@ export function ZakatReportsPage() {
 
     if (type === 'excel') {
       const summaryData = [
-        { label: 'إجمالي الإيرادات', value: detailedIncome.revenue.total.toLocaleString() + ' ر.س' },
-        { label: 'مجمل الربح', value: detailedIncome.grossProfit.toLocaleString() + ' ر.س' },
-        { label: 'صافي الربح', value: detailedIncome.netIncomeBeforeZakat.toLocaleString() + ' ر.س' },
+        { label: 'إجمالي الإيرادات', value: detailedIncome.revenue.total + ' ر.س' },
+        { label: 'مجمل الربح', value: detailedIncome.grossProfit + ' ر.س' },
+        { label: 'صافي الربح', value: detailedIncome.netIncomeBeforeZakat + ' ر.س' },
         { label: 'عدد المبيعات', value: detailedIncome.stats.totalSalesCount.toString() },
       ];
       exportToExcel({ title: 'قائمة الدخل المفصلة', columns, data, fileName: 'detailed-income', summaryData });
