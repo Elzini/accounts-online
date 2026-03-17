@@ -351,7 +351,7 @@ export async function getProjectProfitability(companyId: string, projectId: stri
     .from('project_costs')
     .select('total_cost')
     .eq('company_id', companyId)
-    .eq('project_id', projectId);
+    .eq('project_id', projectId) as any;
 
   const totalCosts = (costs || []).reduce((s: number, c: any) => s + Number(c.total_cost || 0), 0);
 
@@ -360,7 +360,7 @@ export async function getProjectProfitability(companyId: string, projectId: stri
     .from('re_units')
     .select('id, status, sale_price, cost')
     .eq('company_id', companyId)
-    .eq('project_id', projectId);
+    .eq('project_id', projectId) as any;
 
   const allUnits = units || [];
   const soldUnits = allUnits.filter((u: any) => u.status === 'sold');
@@ -370,12 +370,11 @@ export async function getProjectProfitability(companyId: string, projectId: stri
   const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
   // Get advance payments balance from journal entries
-  const { data: advanceEntries } = await (supabase
+  const { data: advanceEntries } = await supabase
     .from('journal_entries')
     .select('total_credit')
     .eq('company_id', companyId)
-    .eq('reference_type' as any, 'advance_payment')
-    .eq('status', 'posted') as any);
+    .eq('status', 'posted') as any;
 
   const totalAdvances = (advanceEntries || []).reduce((s: number, e: any) => s + Number(e.total_credit || 0), 0);
 
