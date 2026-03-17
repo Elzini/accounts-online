@@ -25,6 +25,18 @@ export interface VATReturnPurchases {
   totalVAT: number;
 }
 
+export interface VATInvoiceDetail {
+  id: string;
+  invoice_number: string;
+  invoice_date: string;
+  customer_name: string | null;
+  subtotal: number;
+  vat_amount: number;
+  total: number;
+  type: 'sales' | 'purchase';
+  supplier_invoice_number?: string | null;
+}
+
 export interface VATReturnReport {
   sales: VATReturnSales;
   purchases: VATReturnPurchases;
@@ -37,6 +49,7 @@ export interface VATReturnReport {
   };
   salesReturns: { amount: number; vat: number; count: number };
   purchaseReturns: { amount: number; vat: number; count: number };
+  detailedInvoices: VATInvoiceDetail[];
 }
 
 export async function getVATReturnReport(
