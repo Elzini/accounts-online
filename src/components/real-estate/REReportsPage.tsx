@@ -121,32 +121,136 @@ export function REReportsPage() {
           </Card>
         </TabsContent>
 
+        {/* Per-Unit Cost Allocation & Profitability Tab */}
+        <TabsContent value="unit-cost">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2"><Calculator className="w-5 h-5" />توزيع التكاليف وربحية الوحدات</CardTitle>
+                <Select value={selectedCostProject} onValueChange={setSelectedCostProject}>
+                  <SelectTrigger className="w-52"><SelectValue placeholder="كل المشاريع" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">كل المشاريع</SelectItem>
+                    {(projects || []).map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Summary Cards */}
+              {selectedCostProject !== 'all' && filteredAllocations.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                  <div className="text-center p-3 bg-muted rounded-lg">
+                    <div className="text-lg font-bold">{fmt(filteredAllocations[0]?.totalProjectCost || 0)}</div>
+                    <div className="text-xs text-muted-foreground">إجمالي تكلفة المشروع</div>
+                  </div>
+                  <div className="text-center p-3 bg-muted rounded-lg">
+                    <div className="text-lg font-bold">{fmtNum(filteredAllocations[0]?.totalProjectArea || 0)} م²</div>
+                    <div className="text-xs text-muted-foreground">إجمالي المساحة</div>
+                  </div>
+                  <div className="text-center p-3 bg-primary/10 rounded-lg">
+                    <div className="text-lg font-bold">{fmt(filteredAllocations[0]?.costPerSqm || 0)}</div>
+                    <div className="text-xs text-muted-foreground">تكلفة المتر المربع</div>
+                  </div>
+                  <div className="text-center p-3 bg-muted rounded-lg">
+                    <div className="text-lg font-bold">{filteredAllocations.length}</div>
+                    <div className="text-xs text-muted-foreground">عدد الوحدات</div>
+                  </div>
+                </div>
+              )}
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>رقم الوحدة</TableHead>
+                  <TableHead>المشروع</TableHead>
+                  <TableHead>المساحة (م²)</TableHead>
+                  <TableHead>نسبة المساحة</TableHead>
+                  <TableHead>تكلفة/م²</TableHead>
+                  <TableHead>التكلفة المخصصة</TableHead>
+                  <TableHead>سعر البيع</TableHead>
+                  <TableHead>الربح/الخسارة</TableHead>
+                  <TableHead>هامش الربح</TableHead>
+                  <TableHead>الحالة</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {filteredAllocations.map((a) => (
+                    <TableRow key={a.unitId}>
+                      <TableCell className="font-medium">{a.unitNumber}</TableCell>
+                      <TableCell>{a.projectName}</TableCell>
+                      <TableCell>{fmtNum(a.unitArea)}</TableCell>
+                      <TableCell>{fmtNum(a.areaPercentage)}%</TableCell>
+                      <TableCell>{fmt(a.costPerSqm)}</TableCell>
+                      <TableCell className="font-semibold">{fmt(a.allocatedCost)}</TableCell>
+                      <TableCell>{a.salePrice > 0 ? fmt(a.salePrice) : <span className="text-muted-foreground">-</span>}</TableCell>
+                      <TableCell className={a.profit >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                        {a.salePrice > 0 ? fmt(a.profit) : <span className="text-muted-foreground">-</span>}
+                      </TableCell>
+                      <TableCell>
+                        {a.salePrice > 0 ? (
+                          <Badge variant={a.profitMargin >= 20 ? 'default' : a.profitMargin >= 0 ? 'secondary' : 'destructive'}>
+                            {fmtNum(a.profitMargin)}%
+                          </Badge>
+                        ) : <span className="text-muted-foreground">-</span>}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={a.status === 'sold' ? 'bg-blue-100 text-blue-800' : a.status === 'reserved' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}>
+                          {a.status === 'sold' ? 'مباعة' : a.status === 'reserved' ? 'محجوزة' : 'متاحة'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredAllocations.length === 0 && (
+                    <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">لا توجد وحدات لعرض التوزيع</TableCell></TableRow>
+                  )}
+                  {/* Totals Row */}
+                  {filteredAllocations.length > 0 && (
+                    <TableRow className="bg-muted/50 font-bold">
+                      <TableCell colSpan={3}>الإجمالي</TableCell>
+                      <TableCell>100%</TableCell>
+                      <TableCell>-</TableCell>
+                      <TableCell>{fmt(filteredAllocations.reduce((s, a) => s + a.allocatedCost, 0))}</TableCell>
+                      <TableCell>{fmt(filteredAllocations.filter(a => a.salePrice > 0).reduce((s, a) => s + a.salePrice, 0))}</TableCell>
+                      <TableCell className={filteredAllocations.reduce((s, a) => s + (a.salePrice > 0 ? a.profit : 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                        {fmt(filteredAllocations.filter(a => a.salePrice > 0).reduce((s, a) => s + a.profit, 0))}
+                      </TableCell>
+                      <TableCell colSpan={2}>-</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="units">
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2"><Building2 className="w-5 h-5" />تقرير حالة الوحدات</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-4 gap-4 mb-6">
                 <div className="text-center p-4 bg-muted rounded-lg"><div className="text-2xl font-bold">{stats?.totalUnits || 0}</div><div className="text-xs text-muted-foreground">إجمالي الوحدات</div></div>
-                <div className="text-center p-4 bg-green-50 rounded-lg"><div className="text-2xl font-bold text-green-600">{stats?.availableUnits || 0}</div><div className="text-xs text-muted-foreground">متاحة</div></div>
-                <div className="text-center p-4 bg-yellow-50 rounded-lg"><div className="text-2xl font-bold text-yellow-600">{stats?.reservedUnits || 0}</div><div className="text-xs text-muted-foreground">محجوزة</div></div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg"><div className="text-2xl font-bold text-blue-600">{stats?.soldUnits || 0}</div><div className="text-xs text-muted-foreground">مباعة</div></div>
+                <div className="text-center p-4 bg-green-50 dark:bg-green-950/30 rounded-lg"><div className="text-2xl font-bold text-green-600">{stats?.availableUnits || 0}</div><div className="text-xs text-muted-foreground">متاحة</div></div>
+                <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg"><div className="text-2xl font-bold text-yellow-600">{stats?.reservedUnits || 0}</div><div className="text-xs text-muted-foreground">محجوزة</div></div>
+                <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg"><div className="text-2xl font-bold text-blue-600">{stats?.soldUnits || 0}</div><div className="text-xs text-muted-foreground">مباعة</div></div>
               </div>
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>رقم الوحدة</TableHead><TableHead>المشروع</TableHead><TableHead>النوع</TableHead>
-                  <TableHead>المساحة</TableHead><TableHead>السعر</TableHead><TableHead>الحالة</TableHead>
+                  <TableHead>المساحة</TableHead><TableHead>السعر</TableHead><TableHead>التكلفة المخصصة</TableHead><TableHead>الحالة</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {(units || []).slice(0, 20).map((u: any) => (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">{u.unit_number}</TableCell>
-                      <TableCell>{u.re_projects?.name || '-'}</TableCell>
-                      <TableCell>{u.unit_type === 'apartment' ? 'شقة' : u.unit_type === 'villa' ? 'فيلا' : u.unit_type === 'land' ? 'أرض' : u.unit_type}</TableCell>
-                      <TableCell>{u.area} م²</TableCell>
-                      <TableCell>{fmt(u.price || 0)}</TableCell>
-                      <TableCell><Badge className={u.status === 'available' ? 'bg-green-100 text-green-800' : u.status === 'sold' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}>{u.status === 'available' ? 'متاحة' : u.status === 'sold' ? 'مباعة' : 'محجوزة'}</Badge></TableCell>
-                    </TableRow>
-                  ))}
+                  {(units || []).slice(0, 50).map((u: any) => {
+                    const alloc = costAllocations.find(a => a.unitId === u.id);
+                    return (
+                      <TableRow key={u.id}>
+                        <TableCell className="font-medium">{u.unit_number}</TableCell>
+                        <TableCell>{u.re_projects?.name || '-'}</TableCell>
+                        <TableCell>{u.unit_type === 'apartment' ? 'شقة' : u.unit_type === 'villa' ? 'فيلا' : u.unit_type === 'land' ? 'أرض' : u.unit_type}</TableCell>
+                        <TableCell>{u.area} م²</TableCell>
+                        <TableCell>{fmt(u.price || 0)}</TableCell>
+                        <TableCell className="font-semibold">{alloc ? fmt(alloc.allocatedCost) : '-'}</TableCell>
+                        <TableCell><Badge className={u.status === 'available' ? 'bg-green-100 text-green-800' : u.status === 'sold' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}>{u.status === 'available' ? 'متاحة' : u.status === 'sold' ? 'مباعة' : 'محجوزة'}</Badge></TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
