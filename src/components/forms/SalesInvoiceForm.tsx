@@ -413,6 +413,24 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     };
   }, [selectedCars, selectedInventoryItems, invoiceData.price_includes_tax, invoiceData.commission, invoiceData.other_expenses, taxRate, discount, discountType, isCarDealership]);
 
+  // Use stored header totals for display when viewing existing invoices (frozen financial snapshot)
+  const displayTotals = useMemo(() => {
+    if (isViewingExisting && !isEditing && storedHeaderTotals && storedHeaderTotals.total > 0) {
+      return {
+        subtotal: storedHeaderTotals.subtotal,
+        totalVAT: storedHeaderTotals.vat_amount,
+        finalTotal: storedHeaderTotals.total,
+        discountAmount: storedHeaderTotals.discount_amount,
+        subtotalAfterDiscount: storedHeaderTotals.subtotal - storedHeaderTotals.discount_amount,
+        roundedTotal: storedHeaderTotals.total,
+        totalPurchasePrice: calculations.totalPurchasePrice,
+        profit: calculations.profit,
+        quantity: calculations.quantity,
+      };
+    }
+    return calculations;
+  }, [calculations, storedHeaderTotals, isViewingExisting, isEditing]);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat(locale, {
       minimumFractionDigits: decimals,
