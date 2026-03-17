@@ -39,6 +39,7 @@ export function SuppliersReport() {
         .select('*, invoice_items(*)')
         .eq('company_id', companyId!)
         .eq('invoice_type', 'purchase')
+        .gte('total', 0)
         .order('invoice_date', { ascending: false });
       if (error) throw error;
       return data || [];
