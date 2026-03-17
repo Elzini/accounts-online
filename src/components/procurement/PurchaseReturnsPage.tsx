@@ -248,6 +248,7 @@ export function PurchaseReturnsPage() {
           total: itemTotal,
           vat: itemVat,
           grandTotal: itemTotal + itemVat,
+          selected: true,
         };
       }));
     } else {
