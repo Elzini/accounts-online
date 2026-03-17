@@ -24,7 +24,7 @@ export const formatNumberWithSign = (num: number | undefined | null, decimals?: 
   if (num === undefined || num === null || isNaN(num)) return '-';
   if (num === 0) return '-';
   const value = d === 0 ? Math.round(Math.abs(num)) : Math.abs(num);
-  const formatted = value.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const formatted = d === 0 ? String(value) : value.toFixed(d);
   if (num < 0) return `(${formatted})`;
   return formatted;
 };
