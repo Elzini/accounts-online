@@ -153,9 +153,38 @@ serve(async (req) => {
       'employees': 'employees',
     };
 
+    // Writable fields allowlist per resource — only these columns can be set via POST/PATCH
+    const WRITABLE_FIELDS: Record<string, string[]> = {
+      'customers': ['name', 'phone', 'email', 'address', 'credit_limit', 'tax_number', 'notes', 'contact_person', 'id_number', 'registration_number', 'customer_type'],
+      'suppliers': ['name', 'phone', 'email', 'address', 'tax_number', 'notes', 'contact_person', 'payment_terms'],
+      'cars': ['name', 'chassis_number', 'plate_number', 'model', 'color', 'car_condition', 'purchase_price', 'purchase_date', 'supplier_id', 'payment_account_id', 'status'],
+      'sales': ['car_id', 'customer_id', 'sale_price', 'sale_date', 'payment_method', 'notes', 'seller_name'],
+      'journal_entries': ['entry_date', 'description', 'reference', 'notes', 'fiscal_year_id'],
+      'account_categories': ['code', 'name', 'type', 'description', 'parent_id'],
+      'expenses': ['description', 'amount', 'expense_date', 'category', 'payment_method', 'notes', 'vendor_name', 'receipt_number', 'account_id', 'fiscal_year_id'],
+      'vouchers': ['voucher_type', 'amount', 'description', 'voucher_date', 'reference_number', 'account_id', 'contact_name', 'notes', 'fiscal_year_id'],
+      'fiscal_years': ['name', 'start_date', 'end_date'],
+      'employees': ['name', 'job_title', 'department', 'phone', 'email', 'hire_date', 'base_salary', 'id_number', 'iban', 'bank_name', 'notes'],
+    };
+
+    // Read-only resources that cannot be modified via POST/PATCH/DELETE
+    const READ_ONLY_RESOURCES = ['fiscal-years', 'account-categories'];
+
     const tableName = TABLE_MAP[resource];
     if (!tableName) {
       return errorResponse(`Resource '${resource}' not found`, 404);
+    }
+
+    // Helper: pick only allowed fields from body
+    function pickAllowedFields(input: Record<string, any>, table: string): Record<string, any> {
+      const allowed = WRITABLE_FIELDS[table] || [];
+      const result: Record<string, any> = {};
+      for (const key of allowed) {
+        if (key in input) {
+          result[key] = input[key];
+        }
+      }
+      return result;
     }
 
     // Parse query params
