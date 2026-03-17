@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Snowflake, UserCheck, FileCode, Activity as ActivityIcon, Cpu, Lock, Clock, ShieldAlert, Eye, Database } from 'lucide-react';
+import { Shield, Snowflake, UserCheck, FileCode, Activity as ActivityIcon, Cpu, Lock, Clock, ShieldAlert, Eye, Database, Fingerprint } from 'lucide-react';
 import { FreezeModePanel } from './security/FreezeModePanel';
 import { TwoPersonApprovalPanel } from './security/TwoPersonApprovalPanel';
 import { CodeIntegrityMonitor } from './security/CodeIntegrityMonitor';
@@ -10,6 +10,7 @@ import { FinancialTimeMachine } from './security/FinancialTimeMachine';
 import { ProtectionStatusPanel } from './security/ProtectionStatusPanel';
 import { ImpactAnalysisPanel } from './security/ImpactAnalysisPanel';
 import { SystemChangeLogPanel } from './security/SystemChangeLogPanel';
+import { TamperDetectorPanel } from './security/TamperDetectorPanel';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { BackupManagementPanel } from './BackupManagementPanel';
 
@@ -61,6 +62,9 @@ export function EnterpriseSecurityDashboard() {
           <TabsTrigger value="backups" className="flex items-center gap-1">
             <Database className="w-4 h-4" /><span className="hidden sm:inline">النسخ الاحتياطي</span>
           </TabsTrigger>
+          <TabsTrigger value="tamper-detector" className="flex items-center gap-1">
+            <Fingerprint className="w-4 h-4" /><span className="hidden sm:inline">كاشف التلاعب</span>
+          </TabsTrigger>
           <TabsTrigger value="2fa" className="flex items-center gap-1">
             <Lock className="w-4 h-4" /><span className="hidden sm:inline">المصادقة الثنائية</span>
           </TabsTrigger>
@@ -77,6 +81,7 @@ export function EnterpriseSecurityDashboard() {
         <TabsContent value="audit-log" className="mt-4"><SystemChangeLogPanel /></TabsContent>
         <TabsContent value="impact" className="mt-4"><ImpactAnalysisPanel /></TabsContent>
         <TabsContent value="backups" className="mt-4"><BackupManagementPanel /></TabsContent>
+        <TabsContent value="tamper-detector" className="mt-4"><TamperDetectorPanel /></TabsContent>
         <TabsContent value="2fa" className="mt-4"><TwoFactorSetup /></TabsContent>
       </Tabs>
     </div>

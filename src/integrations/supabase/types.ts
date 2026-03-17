@@ -6615,6 +6615,42 @@ export type Database = {
           },
         ]
       }
+      integrity_hashes: {
+        Row: {
+          company_id: string
+          computed_at: string
+          fields_snapshot: Json
+          hash_value: string
+          id: string
+          is_valid: boolean | null
+          record_id: string
+          table_name: string
+          verified_at: string | null
+        }
+        Insert: {
+          company_id: string
+          computed_at?: string
+          fields_snapshot?: Json
+          hash_value: string
+          id?: string
+          is_valid?: boolean | null
+          record_id: string
+          table_name: string
+          verified_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          computed_at?: string
+          fields_snapshot?: Json
+          hash_value?: string
+          id?: string
+          is_valid?: boolean | null
+          record_id?: string
+          table_name?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       inventory_items: {
         Row: {
           average_cost: number | null
@@ -13305,6 +13341,99 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tamper_detection_events: {
+        Row: {
+          company_id: string | null
+          current_hash: string | null
+          detected_at: string
+          fields_after: Json | null
+          fields_before: Json | null
+          id: string
+          impact_analysis: Json | null
+          previous_hash: string | null
+          record_id: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+          table_name: string
+        }
+        Insert: {
+          company_id?: string | null
+          current_hash?: string | null
+          detected_at?: string
+          fields_after?: Json | null
+          fields_before?: Json | null
+          id?: string
+          impact_analysis?: Json | null
+          previous_hash?: string | null
+          record_id: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          table_name: string
+        }
+        Update: {
+          company_id?: string | null
+          current_hash?: string | null
+          detected_at?: string
+          fields_after?: Json | null
+          fields_before?: Json | null
+          id?: string
+          impact_analysis?: Json | null
+          previous_hash?: string | null
+          record_id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
+      tamper_scan_runs: {
+        Row: {
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          mismatches_found: number | null
+          new_records_hashed: number | null
+          scan_type: string
+          started_at: string
+          status: string
+          total_records_checked: number | null
+          triggered_by: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          mismatches_found?: number | null
+          new_records_hashed?: number | null
+          scan_type?: string
+          started_at?: string
+          status?: string
+          total_records_checked?: number | null
+          triggered_by?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          mismatches_found?: number | null
+          new_records_hashed?: number | null
+          scan_type?: string
+          started_at?: string
+          status?: string
+          total_records_checked?: number | null
+          triggered_by?: string | null
+        }
+        Relationships: []
       }
       tasks: {
         Row: {
