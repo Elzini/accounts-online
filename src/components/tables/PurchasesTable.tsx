@@ -205,7 +205,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const currency = language === 'ar' ? 'ريال' : 'SAR';
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat(locale).format(value);
+    return String(Math.round(value));
   };
 
   const formatDate = (date: string) => {

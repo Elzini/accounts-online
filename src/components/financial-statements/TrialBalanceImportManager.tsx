@@ -135,7 +135,7 @@ export function TrialBalanceImportManager({ companyName, reportDate, onDataGener
   };
 
   const { decimals: _dec } = useNumberFormat();
-  const formatNumber = (n: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: _dec, maximumFractionDigits: _dec }).format(_dec === 0 ? Math.round(n) : n);
+  const formatNumber = (n: number) => _dec === 0 ? String(Math.round(n)) : n.toFixed(_dec);
 
   const mappingStats = {
     total: rows.length,

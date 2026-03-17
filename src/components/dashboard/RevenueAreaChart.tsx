@@ -14,7 +14,7 @@ export function RevenueAreaChart({ data }: RevenueAreaChartProps) {
     return value.toString();
   };
 
-  const formatTooltip = (value: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'SAR', minimumFractionDigits: 0 }).format(value);
+  const formatTooltip = (value: number) => `${Math.round(value)} ر.س`;
 
   const nameMap: Record<string, string> = { revenue: t.chart_revenue, profit: t.chart_profit, cost: t.chart_cost };
 

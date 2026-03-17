@@ -77,11 +77,7 @@ export function RecentInvoicesCard({ setActivePage }: RecentInvoicesCardProps) {
   }, [isCarDealership, sales, invoices]);
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 0,
-    }).format(value);
+    return `${Math.round(value)} ر.س`;
   };
 
   const formatDate = (dateString: string) => {

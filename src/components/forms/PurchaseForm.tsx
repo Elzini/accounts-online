@@ -72,7 +72,7 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
   }, [formData.purchase_price, taxSettings]);
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA').format(Math.round(value * 100) / 100);
+    return String(Math.round(value * 100) / 100);
   };
 
   const selectedSupplier = suppliers.find(s => s.id === formData.supplier_id);

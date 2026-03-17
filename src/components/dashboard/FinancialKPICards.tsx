@@ -56,12 +56,7 @@ export function FinancialKPICards({
   const avgDealSize = salesCount > 0 ? totalRevenue / salesCount : 0;
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-SA', {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    return `${Math.round(value)} ر.س`;
   };
 
   const kpis: KPIItem[] = [

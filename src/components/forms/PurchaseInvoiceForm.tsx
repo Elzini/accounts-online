@@ -422,10 +422,8 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   }, [calculations, storedHeaderTotals, isViewingExisting, isEditing]);
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat(locale, {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(decimals === 0 ? Math.round(value) : value);
+    const v = decimals === 0 ? Math.round(value) : value;
+    return decimals === 0 ? String(v) : v.toFixed(decimals);
   };
 
   const handleSubmit = async () => {

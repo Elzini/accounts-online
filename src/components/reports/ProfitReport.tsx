@@ -24,7 +24,7 @@ export function ProfitReport() {
 
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
   const { decimals } = useNumberFormat();
-  const formatCurrency = (value: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(value) : value);
+  const formatCurrency = (value: number) => decimals === 0 ? String(Math.round(value)) : value.toFixed(decimals);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(locale);
 
   const filteredSales = useMemo(() => {

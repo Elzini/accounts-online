@@ -367,7 +367,7 @@ export function CarTransfersTable({ setActivePage }: CarTransfersTableProps) {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(value);
+    return String(Math.round(value));
   };
 
   const formatDate = (date: string) => {

@@ -190,7 +190,7 @@ export function SaleForm({ setActivePage }: SaleFormProps) {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA').format(value);
+    return String(Math.round(value));
   };
 
   // Prepare invoice data

@@ -171,11 +171,8 @@ export function ComprehensiveFinancialStatementsPage() {
   };
   
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'decimal',
-      minimumFractionDigits: numDecimals,
-      maximumFractionDigits: numDecimals,
-    }).format(numDecimals === 0 ? Math.round(cv(amount)) : cv(amount));
+    const v = numDecimals === 0 ? Math.round(cv(amount)) : cv(amount);
+    return numDecimals === 0 ? String(v) : v.toFixed(numDecimals);
   };
 
   // حساب من بيانات النظام

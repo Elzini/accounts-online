@@ -125,12 +125,7 @@ export function MonthlyExpensesCard() {
   });
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-SA', {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    return `${Math.round(value)} ر.س`;
   };
 
   const currentMonthName = new Date().toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', { month: 'long', year: 'numeric' });

@@ -1070,28 +1070,28 @@ export function FinancialStatementsPage() {
     const tableData = [
       { item: '=== الموجودات ===', current: '' },
       { item: 'الموجودات المتداولة', current: '' },
-      ...data.balanceSheet.currentAssets.map(a => ({ item: a.name, current: a.amount.toLocaleString() })),
-      { item: 'إجمالي الموجودات المتداولة', current: data.balanceSheet.currentAssets.reduce((s, a) => s + a.amount, 0).toLocaleString() },
+      ...data.balanceSheet.currentAssets.map(a => ({ item: a.name, current: String(a.amount) })),
+      { item: 'إجمالي الموجودات المتداولة', current: String(data.balanceSheet.currentAssets.reduce((s, a) => s + a.amount, 0)) },
       { item: 'الموجودات الغير متداولة', current: '' },
-      ...data.balanceSheet.fixedAssets.map(a => ({ item: a.name, current: a.amount.toLocaleString() })),
-      { item: 'إجمالي الموجودات الغير متداولة', current: data.balanceSheet.fixedAssets.reduce((s, a) => s + a.amount, 0).toLocaleString() },
-      { item: 'مجموع الموجودات', current: data.balanceSheet.totalAssets.toLocaleString() },
+      ...data.balanceSheet.fixedAssets.map(a => ({ item: a.name, current: String(a.amount) })),
+      { item: 'إجمالي الموجودات الغير متداولة', current: String(data.balanceSheet.fixedAssets.reduce((s, a) => s + a.amount, 0)) },
+      { item: 'مجموع الموجودات', current: String(data.balanceSheet.totalAssets) },
       { item: '', current: '' },
       { item: '=== المطلوبات وحقوق الملكية ===', current: '' },
       { item: 'المطلوبات المتداولة', current: '' },
-      ...data.balanceSheet.currentLiabilities.map(a => ({ item: a.name, current: a.amount.toLocaleString() })),
-      { item: 'إجمالي المطلوبات المتداولة', current: data.balanceSheet.currentLiabilities.reduce((s, a) => s + a.amount, 0).toLocaleString() },
-      { item: 'مجموع المطلوبات', current: data.balanceSheet.totalLiabilities.toLocaleString() },
+      ...data.balanceSheet.currentLiabilities.map(a => ({ item: a.name, current: String(a.amount) })),
+      { item: 'إجمالي المطلوبات المتداولة', current: String(data.balanceSheet.currentLiabilities.reduce((s, a) => s + a.amount, 0)) },
+      { item: 'مجموع المطلوبات', current: String(data.balanceSheet.totalLiabilities) },
       { item: 'حقوق الملكية', current: '' },
-      ...data.balanceSheet.equity.map(a => ({ item: a.name, current: a.amount.toLocaleString() })),
-      { item: 'مجموع حقوق الملكية', current: data.balanceSheet.totalEquity.toLocaleString() },
-      { item: 'مجموع المطلوبات وحقوق الملكية', current: (data.balanceSheet.totalLiabilities + data.balanceSheet.totalEquity).toLocaleString() },
+      ...data.balanceSheet.equity.map(a => ({ item: a.name, current: String(a.amount) })),
+      { item: 'مجموع حقوق الملكية', current: String(data.balanceSheet.totalEquity) },
+      { item: 'مجموع المطلوبات وحقوق الملكية', current: String(data.balanceSheet.totalLiabilities + data.balanceSheet.totalEquity) },
     ];
 
     const summaryCards = [
-      { label: 'إجمالي الموجودات', value: data.balanceSheet.totalAssets.toLocaleString() + ' ر.س' },
-      { label: 'إجمالي المطلوبات', value: data.balanceSheet.totalLiabilities.toLocaleString() + ' ر.س' },
-      { label: 'حقوق الملكية', value: data.balanceSheet.totalEquity.toLocaleString() + ' ر.س' },
+      { label: 'إجمالي الموجودات', value: data.balanceSheet.totalAssets + ' ر.س' },
+      { label: 'إجمالي المطلوبات', value: data.balanceSheet.totalLiabilities + ' ر.س' },
+      { label: 'حقوق الملكية', value: data.balanceSheet.totalEquity + ' ر.س' },
     ];
 
     const period = data.period.to ? `كما في ${data.period.to}` : undefined;
@@ -1112,22 +1112,22 @@ export function FinancialStatementsPage() {
     ];
     
     const tableData = [
-      { item: 'الإيرادات', amount: data.incomeStatement.revenue.toLocaleString() },
-      { item: 'تكلفة الإيرادات', amount: `(${data.incomeStatement.costOfRevenue.toLocaleString()})` },
-      { item: 'إجمالي الربح', amount: data.incomeStatement.grossProfit.toLocaleString() },
+      { item: 'الإيرادات', amount: String(data.incomeStatement.revenue) },
+      { item: 'تكلفة الإيرادات', amount: `(${data.incomeStatement.costOfRevenue})` },
+      { item: 'إجمالي الربح', amount: String(data.incomeStatement.grossProfit) },
       { item: '', amount: '' },
-      { item: 'مصاريف عمومية وإدارية', amount: `(${data.incomeStatement.totalOperatingExpenses.toLocaleString()})` },
-      ...data.incomeStatement.operatingExpenses.map(e => ({ item: `   - ${e.name}`, amount: `(${e.amount.toLocaleString()})` })),
-      { item: 'ربح العمليات', amount: data.incomeStatement.operatingProfit.toLocaleString() },
-      { item: 'الربح قبل الزكاة', amount: data.incomeStatement.profitBeforeZakat.toLocaleString() },
-      { item: 'الزكاة', amount: `(${data.incomeStatement.zakat.toLocaleString()})` },
-      { item: 'صافي الربح', amount: data.incomeStatement.netProfit.toLocaleString() },
+      { item: 'مصاريف عمومية وإدارية', amount: `(${data.incomeStatement.totalOperatingExpenses})` },
+      ...data.incomeStatement.operatingExpenses.map(e => ({ item: `   - ${e.name}`, amount: `(${e.amount})` })),
+      { item: 'ربح العمليات', amount: String(data.incomeStatement.operatingProfit) },
+      { item: 'الربح قبل الزكاة', amount: String(data.incomeStatement.profitBeforeZakat) },
+      { item: 'الزكاة', amount: `(${data.incomeStatement.zakat})` },
+      { item: 'صافي الربح', amount: String(data.incomeStatement.netProfit) },
     ];
 
     const summaryCards = [
-      { label: 'الإيرادات', value: data.incomeStatement.revenue.toLocaleString() + ' ر.س' },
-      { label: 'إجمالي الربح', value: data.incomeStatement.grossProfit.toLocaleString() + ' ر.س' },
-      { label: 'صافي الربح', value: data.incomeStatement.netProfit.toLocaleString() + ' ر.س' },
+      { label: 'الإيرادات', value: data.incomeStatement.revenue + ' ر.س' },
+      { label: 'إجمالي الربح', value: data.incomeStatement.grossProfit + ' ر.س' },
+      { label: 'صافي الربح', value: data.incomeStatement.netProfit + ' ر.س' },
     ];
 
     const period = data.period.from && data.period.to 

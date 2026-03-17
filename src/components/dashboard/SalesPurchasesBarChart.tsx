@@ -18,7 +18,7 @@ export function SalesPurchasesBarChart({ data }: SalesPurchasesBarChartProps) {
     return value.toString();
   };
 
-  const formatTooltip = (value: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'SAR', minimumFractionDigits: 0 }).format(value);
+  const formatTooltip = (value: number) => `${Math.round(value)} ر.س`;
   const nameMap: Record<string, string> = { revenue: t.chart_sales, cost: t.chart_purchases, profit: t.chart_profit };
 
   if (data.length === 0) {
