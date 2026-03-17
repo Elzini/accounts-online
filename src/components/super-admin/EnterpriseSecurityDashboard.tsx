@@ -81,6 +81,7 @@ export function EnterpriseSecurityDashboard() {
         <TabsContent value="audit-log" className="mt-4"><SystemChangeLogPanel /></TabsContent>
         <TabsContent value="impact" className="mt-4"><ImpactAnalysisPanel /></TabsContent>
         <TabsContent value="backups" className="mt-4"><BackupManagementPanel /></TabsContent>
+        <TabsContent value="tamper-detector" className="mt-4"><TamperDetectorPanel /></TabsContent>
         <TabsContent value="2fa" className="mt-4"><TwoFactorSetup /></TabsContent>
       </Tabs>
     </div>
