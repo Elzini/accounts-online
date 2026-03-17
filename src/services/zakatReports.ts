@@ -147,64 +147,57 @@ export interface DetailedIncomeStatement {
   };
 }
 
-// Helper function to calculate actual net income from sales/purchases/expenses
+// Helper function to calculate net income from JOURNAL ENTRIES
 async function calculateActualNetIncome(
   companyId: string,
   startDate: string,
   endDate: string
 ): Promise<{ salesRevenue: number; purchaseCost: number; carExpenses: number; generalExpenses: number; netIncome: number }> {
-  // Fetch actual sales data with car purchase prices
-  const { data: salesData } = await supabase
-    .from('sales')
+  const accounts = await fetchAccounts(companyId);
+
+  // Fetch journal entry lines for the period
+  const { data: lines, error } = await supabase
+    .from('journal_entry_lines')
     .select(`
-      id,
-      sale_price,
-      car:cars(purchase_price),
-      sale_items:sale_items(
-        sale_price,
-        car:cars(purchase_price)
-      )
+      account_id,
+      debit,
+      credit,
+      journal_entry:journal_entries!inner(company_id, entry_date, is_posted)
     `)
-    .eq('company_id', companyId)
-    .gte('sale_date', startDate)
-    .lte('sale_date', endDate);
+    .eq('journal_entry.company_id', companyId)
+    .eq('journal_entry.is_posted', true)
+    .gte('journal_entry.entry_date', startDate)
+    .lte('journal_entry.entry_date', endDate);
 
-  let salesRevenue = 0;
-  let purchaseCost = 0;
+  if (error) throw error;
 
-  (salesData || []).forEach((sale: any) => {
-    if (sale.sale_items && sale.sale_items.length > 0) {
-      sale.sale_items.forEach((item: any) => {
-        salesRevenue += Number(item.sale_price) || 0;
-        purchaseCost += Number(item.car?.purchase_price) || 0;
-      });
+  // Calculate balances per account from journal entries
+  const balances = new Map<string, number>();
+  (lines || []).forEach((line: any) => {
+    const current = balances.get(line.account_id) || 0;
+    const account = accounts.find(a => a.id === line.account_id);
+    if (account && ['liabilities', 'equity', 'revenue'].includes(account.type)) {
+      balances.set(line.account_id, current + (Number(line.credit) - Number(line.debit)));
     } else {
-      salesRevenue += Number(sale.sale_price) || 0;
-      purchaseCost += Number(sale.car?.purchase_price) || 0;
+      balances.set(line.account_id, current + (Number(line.debit) - Number(line.credit)));
     }
   });
 
-  // Fetch expenses
-  const { data: expensesData } = await supabase
-    .from('expenses')
-    .select('amount, car_id')
-    .eq('company_id', companyId)
-    .gte('expense_date', startDate)
-    .lte('expense_date', endDate);
+  // Revenue accounts (type = revenue)
+  const revenueAccounts = accounts.filter(a => a.type === 'revenue');
+  const salesRevenue = revenueAccounts.reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);
 
-  const carExpenses = (expensesData || [])
-    .filter((e: any) => e.car_id)
-    .reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
-  
-  const generalExpenses = (expensesData || [])
-    .filter((e: any) => !e.car_id)
-    .reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
+  // COGS accounts (code starts with 51)
+  const cogsAccounts = accounts.filter(a => a.type === 'expenses' && a.code.startsWith('51'));
+  const purchaseCost = cogsAccounts.reduce((sum, a) => sum + Math.abs(balances.get(a.id) || 0), 0);
 
-  const totalCost = purchaseCost + carExpenses;
-  const grossProfit = salesRevenue - totalCost;
-  const netIncome = grossProfit - generalExpenses;
+  // Other expense accounts
+  const otherExpenseAccounts = accounts.filter(a => a.type === 'expenses' && !a.code.startsWith('51'));
+  const generalExpenses = otherExpenseAccounts.reduce((sum, a) => sum + Math.abs(balances.get(a.id) || 0), 0);
 
-  return { salesRevenue, purchaseCost, carExpenses, generalExpenses, netIncome };
+  const netIncome = salesRevenue - purchaseCost - generalExpenses;
+
+  return { salesRevenue, purchaseCost, carExpenses: 0, generalExpenses, netIncome };
 }
 
 // Fetch Cash Flow Statement
