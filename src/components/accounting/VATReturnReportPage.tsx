@@ -124,9 +124,10 @@ export function VATReturnReportPage() {
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><FileText className="w-6 h-6" />{t.vat_title}</h1>
           <p className="text-muted-foreground">{t.vat_subtitle}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handlePrint}><Printer className="w-4 h-4 ml-2" />{t.print}</Button>
-          <Button variant="outline" onClick={handleExportExcel}><FileSpreadsheet className="w-4 h-4 ml-2" />{t.fr_export_excel}</Button>
+          <Button variant="outline" onClick={handleExportPDF}><FileDown className="w-4 h-4 ml-2" />تصدير PDF</Button>
+          <Button variant="outline" onClick={handleExportExcel}><FileSpreadsheet className="w-4 h-4 ml-2" />تصدير Excel</Button>
           <Button variant="outline" onClick={() => {
             if (!report) return;
             const xml = generateZatcaVATReturnXML({
