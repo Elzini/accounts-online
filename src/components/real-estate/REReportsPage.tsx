@@ -1,10 +1,13 @@
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useREDashboardStats, useREProjects, useREUnits, useREProgressBillings } from '@/hooks/useRealEstate';
 import { useRECRMStats } from '@/hooks/useRealEstateCRM';
-import { BarChart3, TrendingUp, DollarSign, Building2, Users, Percent, PieChart, Target } from 'lucide-react';
+import { useProjectCostAllocations } from '@/hooks/useRealEstateAccounting';
+import { BarChart3, TrendingUp, DollarSign, Building2, Users, Percent, PieChart, Target, Calculator } from 'lucide-react';
 
 export function REReportsPage() {
   const { data: stats } = useREDashboardStats();
@@ -12,8 +15,16 @@ export function REReportsPage() {
   const { data: projects } = useREProjects();
   const { data: units } = useREUnits();
   const { data: billings } = useREProgressBillings();
+  const [selectedCostProject, setSelectedCostProject] = useState<string>('all');
 
-  const fmt = (n: number) => new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR', maximumFractionDigits: 0 }).format(n);
+  const fmt = (n: number) => new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR', maximumFractionDigits: 2 }).format(n);
+  const fmtNum = (n: number) => new Intl.NumberFormat('ar-SA', { maximumFractionDigits: 2 }).format(n);
+
+  // Per-unit cost allocation calculation
+  const costAllocations = useProjectCostAllocations(projects, units);
+  const filteredAllocations = selectedCostProject === 'all'
+    ? costAllocations
+    : costAllocations.filter(a => a.projectId === selectedCostProject);
 
   // Project profitability — uses stored unit cost (proportional allocation from completeUnitSale)
   const projectProfitability = (projects || []).map((p: any) => {
