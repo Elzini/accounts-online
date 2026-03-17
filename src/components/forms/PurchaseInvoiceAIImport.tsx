@@ -701,3 +701,101 @@ function SingleInvoicePreview({
     </div>
   );
 }
+
+function BatchInvoiceCard({
+  result,
+  formatCurrency,
+  onPreview,
+  onImportSingle,
+}: {
+  result: BatchParsedResult;
+  formatCurrency: (val: number) => string;
+  onPreview: () => void;
+  onImportSingle: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const data = result.data;
+
+  return (
+    <div className="border rounded-lg overflow-hidden bg-card">
+      {/* Header row */}
+      <div
+        className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/30 transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
+        {/* Thumbnail */}
+        <div className="w-12 h-16 rounded border bg-muted/50 flex items-center justify-center shrink-0 overflow-hidden">
+          {result.thumbnailUrl ? (
+            <img src={result.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <FileText className="w-6 h-6 text-muted-foreground" />
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-mono">#{result.index + 1}</span>
+            <span className="text-sm font-bold truncate">{data.supplier_name}</span>
+          </div>
+          <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+            <span className="font-mono">{data.invoice_number}</span>
+            <span>{data.invoice_date}</span>
+            <span>{data.items?.length || 0} أصناف</span>
+          </div>
+        </div>
+
+        {/* Amounts */}
+        <div className="text-left shrink-0 space-y-0.5">
+          <div className="text-[10px] text-muted-foreground">
+            صافي: <span className="font-mono">{formatCurrency(data.subtotal || (data.total_amount - (data.vat_amount || 0)))}</span>
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            ضريبة: <span className="font-mono">{formatCurrency(data.vat_amount || 0)}</span>
+          </div>
+          <div className="text-sm font-bold font-mono text-primary">
+            {formatCurrency(data.total_amount)}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+          <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={onPreview}>
+            <Eye className="w-3 h-3" />
+          </Button>
+          <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={onImportSingle}>
+            استيراد
+          </Button>
+        </div>
+      </div>
+
+      {/* Expanded items */}
+      {expanded && data.items && data.items.length > 0 && (
+        <div className="border-t bg-muted/10 p-2">
+          <table className="w-full text-[11px]">
+            <thead>
+              <tr className="text-muted-foreground">
+                <th className="text-right p-1 font-medium">#</th>
+                <th className="text-right p-1 font-medium">الوصف</th>
+                <th className="text-center p-1 font-medium">الكمية</th>
+                <th className="text-left p-1 font-medium">السعر</th>
+                <th className="text-left p-1 font-medium">الإجمالي</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map((item, i) => (
+                <tr key={i} className="border-t border-border/30">
+                  <td className="p-1 text-right text-muted-foreground">{i + 1}</td>
+                  <td className="p-1 text-right">{item.description}</td>
+                  <td className="p-1 text-center">{item.quantity}</td>
+                  <td className="p-1 text-left font-mono">{formatCurrency(item.unit_price)}</td>
+                  <td className="p-1 text-left font-mono font-medium">{formatCurrency(item.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
