@@ -696,6 +696,26 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       first_installment_date: new Date().toISOString().split('T')[0],
     });
 
+    // Store header totals from the database record (frozen financial snapshot)
+    if (isInvoiceRecord) {
+      setStoredHeaderTotals({
+        subtotal: sale.subtotal || 0,
+        vat_amount: sale.vat_amount || 0,
+        total: sale.total || 0,
+        vat_rate: sale.vat_rate || 0,
+        discount_amount: sale.discount_amount || 0,
+      });
+    } else {
+      // Car sales: use sale-level values if available
+      setStoredHeaderTotals(sale.sale_price ? {
+        subtotal: Number(sale.sale_price) || 0,
+        vat_amount: Number(sale.vat_amount) || 0,
+        total: Number(sale.total_with_vat || sale.sale_price) || 0,
+        vat_rate: Number(sale.vat_rate) || 0,
+        discount_amount: Number(sale.discount_amount) || 0,
+      } : null);
+    }
+
     // Load invoice items for non-car companies
     if (isInvoiceRecord && sale.invoice_items && sale.invoice_items.length > 0) {
       const loadedItems: SelectedInventoryItem[] = sale.invoice_items.map((item: any) => ({
