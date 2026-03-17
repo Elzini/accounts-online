@@ -4,7 +4,7 @@ import { ComprehensiveFinancialData } from '../types';
 // تنسيق الأرقام بالعربي
 function formatNumber(num: number | undefined): string {
   if (num === undefined || num === null || isNaN(num)) return '0';
-  return Math.abs(num).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  return String(Math.round(Math.abs(num)));
 }
 
 // إنشاء HTML للتصدير كـ PDF
