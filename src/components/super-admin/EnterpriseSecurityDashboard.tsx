@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Snowflake, UserCheck, FileCode, Activity as ActivityIcon, Cpu, Lock, Clock, ShieldAlert, Eye, Database, Fingerprint } from 'lucide-react';
+import { Shield, Snowflake, UserCheck, FileCode, Activity as ActivityIcon, Cpu, Lock, Clock, ShieldAlert, Eye, Database, Fingerprint, Bell } from 'lucide-react';
 import { FreezeModePanel } from './security/FreezeModePanel';
 import { TwoPersonApprovalPanel } from './security/TwoPersonApprovalPanel';
 import { CodeIntegrityMonitor } from './security/CodeIntegrityMonitor';
@@ -13,6 +13,7 @@ import { SystemChangeLogPanel } from './security/SystemChangeLogPanel';
 import { TamperDetectorPanel } from './security/TamperDetectorPanel';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { BackupManagementPanel } from './BackupManagementPanel';
+import { SystemChangeAuditLog } from '@/components/system-alerts/SystemChangeAuditLog';
 
 export function EnterpriseSecurityDashboard() {
   return (
