@@ -100,6 +100,8 @@ export function PurchaseReturnsPage() {
     partialAmount: 0,
   });
   const [items, setItems] = useState<ReturnItem[]>([]);
+  const [editingReturn, setEditingReturn] = useState<any>(null);
+  const [editForm, setEditForm] = useState({ note_date: '', total_amount: 0, tax_amount: 0, reason: '' });
 
   const formatCurrency = (v: number) => new Intl.NumberFormat('ar-SA').format(v);
 
