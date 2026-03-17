@@ -57,6 +57,7 @@ import { TransfersWidget } from './dashboard/widgets/TransfersWidget';
 import { QuickActionsWidget } from './dashboard/widgets/QuickActionsWidget';
 import { ReportsWidget } from './dashboard/widgets/ReportsWidget';
 import { SmartAlertsWidget } from './dashboard/SmartAlertsWidget';
+import { SecurityAlertsWidget } from './dashboard/SecurityAlertsWidget';
 import { DisplaySettingsDialog } from './dashboard/DisplaySettingsDialog';
 import { useDashboardDisplay } from '@/hooks/useUserPreferences';
 import { ExportImportSettings } from './dashboard/ExportImportSettings';
@@ -911,6 +912,13 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
                   return (
                     <EditableWidgetWrapper key={widget.id} {...props}>
                       <SmartAlertsWidget setActivePage={setActivePage} />
+                    </EditableWidgetWrapper>
+                  );
+                
+                case 'securityAlerts':
+                  return (
+                    <EditableWidgetWrapper key={widget.id} {...props}>
+                      <SecurityAlertsWidget />
                     </EditableWidgetWrapper>
                   );
                 
