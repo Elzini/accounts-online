@@ -146,7 +146,6 @@ export async function fetchJournalEntries(companyId: string): Promise<JournalEnt
     .from('journal_entries')
     .select('*')
     .eq('company_id', companyId)
-    .order('entry_date', { ascending: false })
     .order('entry_number', { ascending: false });
   
   if (error) throw error;
