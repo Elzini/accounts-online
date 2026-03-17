@@ -481,7 +481,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
             </div>
           )}
 
-          {/* Batch results */}
+          {/* Batch results - detailed card view */}
           {!isLoading && isBatchMode && batchResults.length > 0 && !selectedBatchResult && !reconciliationResults && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-800">
@@ -492,73 +492,25 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                 </span>
               </div>
 
-              <div className="border rounded-lg overflow-hidden max-h-[400px] overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/30">
-                      <TableHead className="text-right w-10">#</TableHead>
-                      <TableHead className="text-right">الملف</TableHead>
-                      <TableHead className="text-right">المورد</TableHead>
-                      <TableHead className="text-right">رقم الفاتورة</TableHead>
-                      <TableHead className="text-right">التاريخ</TableHead>
-                      <TableHead className="text-left">الإجمالي</TableHead>
-                      <TableHead className="text-center">الحالة</TableHead>
-                      <TableHead className="w-20"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {batchResults.filter(r => r.success).map((result) => (
-                      <TableRow key={result.index} className="hover:bg-muted/20">
-                        <TableCell className="text-right text-muted-foreground">{result.index + 1}</TableCell>
-                        <TableCell className="text-right text-xs truncate max-w-[120px]">{result.fileName}</TableCell>
-                        <TableCell className="text-right text-sm font-medium">{result.data.supplier_name}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">{result.data.invoice_number}</TableCell>
-                        <TableCell className="text-right text-sm">{result.data.invoice_date}</TableCell>
-                        <TableCell className="text-left font-mono text-sm">{formatCurrency(result.data.total_amount)}</TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                            <CheckCircle className="w-3 h-3 ml-1" />
-                            نجح
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setSelectedBatchIndex(result.index)}
-                              className="text-xs h-7 px-2"
-                            >
-                              معاينة
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleImportSingleFromBatch(result)}
-                              className="text-xs h-7 px-2"
-                            >
-                              استيراد
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {batchErrors.map((err) => (
-                      <TableRow key={`err-${err.index}`} className="bg-destructive/5">
-                        <TableCell className="text-right text-muted-foreground">{err.index + 1}</TableCell>
-                        <TableCell className="text-right text-xs truncate max-w-[120px]">{err.fileName}</TableCell>
-                        <TableCell colSpan={4} className="text-right text-sm text-destructive">{err.error}</TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="destructive" className="text-xs">
-                            <X className="w-3 h-3 ml-1" />
-                            فشل
-                          </Badge>
-                        </TableCell>
-                        <TableCell></TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div className="max-h-[500px] overflow-y-auto space-y-3 pr-1">
+                {batchResults.filter(r => r.success).map((result) => (
+                  <BatchInvoiceCard
+                    key={result.index}
+                    result={result}
+                    formatCurrency={formatCurrency}
+                    onPreview={() => setSelectedBatchIndex(result.index)}
+                    onImportSingle={() => handleImportSingleFromBatch(result)}
+                  />
+                ))}
+                {batchErrors.map((err) => (
+                  <div key={`err-${err.index}`} className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg flex items-center gap-3">
+                    <Badge variant="destructive" className="text-xs shrink-0">
+                      <X className="w-3 h-3 ml-1" />فشل
+                    </Badge>
+                    <span className="text-xs truncate">{err.fileName}</span>
+                    <span className="text-xs text-destructive">{err.error}</span>
+                  </div>
+                ))}
               </div>
 
               {/* Cost Center Selector */}
