@@ -723,7 +723,7 @@ export function PurchaseReturnsPage() {
                     ))}
                     {items.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={11} className="text-center text-muted-foreground py-12">
+                        <TableCell colSpan={12} className="text-center text-muted-foreground py-12">
                           <div className="flex flex-col items-center gap-2">
                             {isCarDealership ? <Package className="w-8 h-8 text-muted-foreground/30" /> : <FileText className="w-8 h-8 text-muted-foreground/30" />}
                             <span className="text-sm">
