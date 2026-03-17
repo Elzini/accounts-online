@@ -249,8 +249,8 @@ export async function getVATReturnReport(
 
   // Build report
   const sales: VATReturnSales = {
-    standardRatedAmount: totalSalesAmount,
-    standardRatedVAT: totalSalesVAT,
+    standardRatedAmount: grossSalesAmount,
+    standardRatedVAT: grossSalesVAT,
     citizenServicesAmount: 0,
     citizenServicesVAT: 0,
     zeroRatedAmount: 0,
