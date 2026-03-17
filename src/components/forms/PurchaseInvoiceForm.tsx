@@ -1093,8 +1093,41 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
       return;
     }
 
+    const expectedCount = results.length;
     let successCount = 0;
     let failCount = 0;
+    const importedInvoiceIds: string[] = [];
+
+    // Auto-detect project "الجوهرة" and payment account "جاري الشريك ماطر"
+    let autoProjectId: string | null = null;
+    let autoPaymentAccountId: string | null = null;
+
+    try {
+      const { data: projectRows } = await supabase
+        .from('re_projects')
+        .select('id')
+        .eq('company_id', companyId)
+        .ilike('name', '%جوهر%')
+        .limit(1);
+      if (projectRows && projectRows.length > 0) {
+        autoProjectId = projectRows[0].id;
+      }
+    } catch {}
+
+    try {
+      const { data: accountRows } = await supabase
+        .from('account_categories')
+        .select('id')
+        .eq('company_id', companyId)
+        .or('name.ilike.%جاري الشريك ماطر%,name.ilike.%جاري الشريك%')
+        .order('code', { ascending: true })
+        .limit(1);
+      if (accountRows && accountRows.length > 0) {
+        autoPaymentAccountId = accountRows[0].id;
+      }
+    } catch {}
+
+    toast.info(`بدء استيراد ${expectedCount} فاتورة...`);
 
     for (const result of results) {
       try {
@@ -1151,7 +1184,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           }
         }
 
-        // Create invoice
+        // Create invoice with auto-defaults
         const supplierInvNumber = data.invoice_number || '';
         const invoiceNumber = await getNextInvoiceNumber(companyId, 'purchase');
         const { data: invoice, error: invoiceError } = await supabase
@@ -1171,12 +1204,13 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             vat_amount: vatAmount,
             total: total,
             discount_amount: discountAmount,
-            amount_paid: 0,
-            payment_status: 'unpaid',
+            amount_paid: total,
+            payment_status: 'paid',
+            payment_account_id: autoPaymentAccountId || null,
             status: 'draft',
             fiscal_year_id: selectedFiscalYear?.id || null,
             notes: data.notes || null,
-            project_id: invoiceData.project_id || null,
+            project_id: autoProjectId || invoiceData.project_id || null,
           })
           .select()
           .single();
@@ -1186,6 +1220,8 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           failCount++;
           continue;
         }
+
+        importedInvoiceIds.push(invoice.id);
 
         // Upload PDF file to storage if available
         if (result.fileObject) {
@@ -1245,9 +1281,88 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
     queryClient.invalidateQueries({ queryKey: ['stats'] });
 
+    // ===== POST-IMPORT VERIFICATION =====
     if (successCount > 0) {
-      toast.success(`تم استيراد ${successCount} فاتورة بنجاح${failCount > 0 ? ` | فشل ${failCount}` : ''}`);
+      toast.success(`تم استيراد ${successCount} من ${expectedCount} فاتورة`);
+
+      // Verify count
+      if (successCount !== expectedCount) {
+        toast.warning(`تحذير: تم استيراد ${successCount} فقط من أصل ${expectedCount} فاتورة مطلوبة`);
+      }
+
+      // Auto-reconcile: verify imported data matches AI-parsed data
+      try {
+        const { data: verifyInvoices } = await supabase
+          .from('invoices')
+          .select('id, invoice_number, supplier_invoice_number, customer_name, invoice_date, subtotal, vat_amount, total, payment_status, project_id, payment_account_id')
+          .in('id', importedInvoiceIds);
+
+        if (verifyInvoices) {
+          const mismatches: string[] = [];
+          const toHalalah = (v: number) => Math.round(v * 100);
+
+          for (const result of results) {
+            if (!result.success) continue;
+            const parsed = result.data;
+            const matched = verifyInvoices.find(inv => inv.supplier_invoice_number === parsed.invoice_number);
+
+            if (!matched) {
+              mismatches.push(`❌ فاتورة ${parsed.invoice_number} - لم يتم العثور عليها في النظام`);
+              continue;
+            }
+
+            // Verify totals
+            const expectedTotal = toHalalah(parsed.total_amount);
+            const actualTotal = toHalalah(matched.total || 0);
+            if (expectedTotal !== actualTotal) {
+              mismatches.push(`⚠️ فاتورة ${parsed.invoice_number}: الإجمالي المتوقع ${parsed.total_amount} ≠ المسجل ${matched.total}`);
+            }
+
+            // Verify VAT
+            if (parsed.vat_amount != null) {
+              const expectedVat = toHalalah(parsed.vat_amount);
+              const actualVat = toHalalah(matched.vat_amount || 0);
+              if (expectedVat !== actualVat) {
+                mismatches.push(`⚠️ فاتورة ${parsed.invoice_number}: الضريبة المتوقعة ${parsed.vat_amount} ≠ المسجلة ${matched.vat_amount}`);
+              }
+            }
+
+            // Verify payment status
+            if (matched.payment_status !== 'paid') {
+              mismatches.push(`⚠️ فاتورة ${parsed.invoice_number}: الحالة ليست مدفوعة`);
+            }
+
+            // Verify project
+            if (autoProjectId && matched.project_id !== autoProjectId) {
+              mismatches.push(`⚠️ فاتورة ${parsed.invoice_number}: لم يتم ربطها بالمشروع`);
+            }
+
+            // Verify items count
+            const { count: itemsCount } = await supabase
+              .from('invoice_items')
+              .select('id', { count: 'exact', head: true })
+              .eq('invoice_id', matched.id);
+
+            if ((itemsCount || 0) !== (parsed.items?.length || 0)) {
+              mismatches.push(`⚠️ فاتورة ${parsed.invoice_number}: عدد الأصناف المتوقع ${parsed.items?.length || 0} ≠ المسجل ${itemsCount || 0}`);
+            }
+          }
+
+          if (mismatches.length === 0) {
+            toast.success(`✅ التحقق تم بنجاح: جميع ${successCount} فاتورة مطابقة تماماً (الأصناف، المبالغ، الضريبة، المشروع، الحالة)`, { duration: 8000 });
+          } else {
+            toast.warning(
+              `تم اكتشاف ${mismatches.length} تباين:\n${mismatches.slice(0, 5).join('\n')}`,
+              { duration: 12000 }
+            );
+            console.warn('Import verification mismatches:', mismatches);
+          }
+        }
+      } catch (verifyErr) {
+        console.error('Post-import verification error:', verifyErr);
+      }
     }
+
     if (failCount > 0 && successCount === 0) {
       toast.error(`فشل استيراد جميع الفواتير (${failCount})`);
     }
