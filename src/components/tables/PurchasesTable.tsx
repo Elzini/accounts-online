@@ -101,14 +101,38 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId);
       const { error } = await supabase.from('invoices').delete().eq('id', invoiceId);
       if (error) throw error;
+
+      // Auto-renumber remaining purchase invoices
+      if (companyId) {
+        const { data: remaining } = await (supabase as any)
+          .from('invoices')
+          .select('id, invoice_number')
+          .eq('company_id', companyId)
+          .eq('invoice_type', 'purchase')
+          .order('created_at', { ascending: true });
+
+        if (remaining && remaining.length > 0) {
+          for (let i = 0; i < remaining.length; i++) {
+            const expectedNumber = `PUR-${i + 1}`;
+            if (remaining[i].invoice_number !== expectedNumber) {
+              await supabase
+                .from('invoices')
+                .update({ invoice_number: expectedNumber })
+                .eq('id', remaining[i].id);
+            }
+          }
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['purchase-invoices-nav', companyId] });
       queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
       queryClient.invalidateQueries({ queryKey: ['advanced-analytics'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-chart-data'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-recent-invoices'] });
-      toast.success(language === 'ar' ? 'تم حذف الفاتورة بنجاح' : 'Invoice deleted successfully');
+      toast.success(language === 'ar' ? 'تم حذف الفاتورة وإعادة الترقيم بنجاح' : 'Invoice deleted and renumbered successfully');
     } catch (err) {
       console.error('Delete error:', err);
       toast.error(language === 'ar' ? 'حدث خطأ أثناء حذف الفاتورة' : 'Error deleting invoice');
