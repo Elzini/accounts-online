@@ -355,8 +355,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
     }
   };
 
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
+  const formatCurrency = (val: number) => val.toFixed(2);
 
   const selectedBatchResult = selectedBatchIndex !== null ? batchResults.find(r => r.index === selectedBatchIndex) : null;
 
