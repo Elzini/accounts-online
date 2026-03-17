@@ -89,6 +89,7 @@ export function PurchaseReturnsPage() {
     notes: '',
     costCenter: '',
     reference: '',
+    partialAmount: 0,
   });
   const [items, setItems] = useState<ReturnItem[]>([]);
 
