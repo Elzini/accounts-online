@@ -38,6 +38,7 @@ interface ReturnItem {
   total: number;
   vat: number;
   grandTotal: number;
+  selected: boolean;
 }
 
 interface FoundCarData {
@@ -159,6 +160,7 @@ export function PurchaseReturnsPage() {
         total: cost,
         vat,
         grandTotal: cost + vat,
+        selected: true,
       }]);
       toast.success(language === 'ar' ? 'تم العثور على السيارة' : 'Car found');
     } catch (e) {
@@ -246,6 +248,7 @@ export function PurchaseReturnsPage() {
           total: itemTotal,
           vat: itemVat,
           grandTotal: itemTotal + itemVat,
+          selected: true,
         };
       }));
     } else {
@@ -263,6 +266,7 @@ export function PurchaseReturnsPage() {
         total: subtotal,
         vat,
         grandTotal: subtotal + vat,
+        selected: true,
       }]);
     }
     toast.success(language === 'ar' ? 'تم العثور على الفاتورة' : 'Invoice found');
@@ -288,7 +292,7 @@ export function PurchaseReturnsPage() {
     });
   };
 
-  const totals = items.reduce((acc, item) => ({
+  const totals = items.filter(i => i.selected).reduce((acc, item) => ({
     quantity: acc.quantity + item.returnedQty,
     total: acc.total + item.total,
     vat: acc.vat + item.vat,
@@ -299,7 +303,7 @@ export function PurchaseReturnsPage() {
     mutationFn: async () => {
       if (!foundCar && !foundInvoice) throw new Error('No item found');
 
-      const returnedItems = items.filter(i => i.returnedQty > 0);
+      const returnedItems = items.filter(i => i.selected && i.returnedQty > 0);
 
       if (isCarDealership && foundCar) {
         // Car return logic
@@ -408,7 +412,7 @@ export function PurchaseReturnsPage() {
   };
 
   const filtered = returns.filter((r: any) => r.note_number?.includes(searchList) || r.reason?.includes(searchList));
-  const hasValidReturn = (foundCar || foundInvoice) && items.filter(i => i.returnedQty > 0).length > 0;
+  const hasValidReturn = (foundCar || foundInvoice) && items.filter(i => i.selected && i.returnedQty > 0).length > 0;
   const supplierName = foundCar?.supplier?.name || foundInvoice?.supplier_name || '';
 
   return (
@@ -640,6 +644,16 @@ export function PurchaseReturnsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gradient-to-l from-violet-50 to-fuchsia-50 dark:from-violet-950/30 dark:to-fuchsia-950/30 border-b-2 border-violet-200 dark:border-violet-800">
+                      <TableHead className="text-center text-[11px] font-bold w-10 text-violet-700 dark:text-violet-400">
+                        <Checkbox 
+                          checked={items.length > 0 && items.every(i => i.selected)} 
+                          onCheckedChange={(v) => setItems(prev => prev.map(i => {
+                            const selected = !!v;
+                            return { ...i, selected, returnedQty: selected ? i.quantity : 0 };
+                          }))}
+                          className="h-4 w-4"
+                        />
+                      </TableHead>
                       <TableHead className="text-right text-[11px] font-bold w-8 text-violet-700 dark:text-violet-400">#</TableHead>
                       <TableHead className="text-right text-[11px] font-bold min-w-[120px] text-violet-700 dark:text-violet-400">{language === 'ar' ? 'الصنف' : 'Item'}</TableHead>
                       <TableHead className="text-right text-[11px] font-bold min-w-[160px] text-violet-700 dark:text-violet-400">{language === 'ar' ? 'البيان' : 'Description'}</TableHead>
@@ -655,7 +669,27 @@ export function PurchaseReturnsPage() {
                   </TableHeader>
                   <TableBody>
                     {items.map((item, idx) => (
-                      <TableRow key={idx} className="hover:bg-violet-50/50 dark:hover:bg-violet-950/20 border-b transition-colors">
+                      <TableRow key={idx} className={`hover:bg-violet-50/50 dark:hover:bg-violet-950/20 border-b transition-colors ${!item.selected ? 'opacity-40' : ''}`}>
+                        <TableCell className="text-center py-2">
+                          <Checkbox 
+                            checked={item.selected} 
+                            onCheckedChange={(v) => {
+                              setItems(prev => {
+                                const updated = [...prev];
+                                const selected = !!v;
+                                updated[idx] = { ...updated[idx], selected, returnedQty: selected ? updated[idx].quantity : 0 };
+                                if (selected) {
+                                  const i = updated[idx];
+                                  i.total = i.returnedQty * i.cost;
+                                  i.vat = i.total * 0.15;
+                                  i.grandTotal = i.total + i.vat;
+                                }
+                                return updated;
+                              });
+                            }}
+                            className="h-4 w-4"
+                          />
+                        </TableCell>
                         <TableCell className="text-center text-xs py-2 font-mono text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell className="text-xs py-2 font-medium">{item.item_name}</TableCell>
                         <TableCell className="text-xs py-2 text-muted-foreground">{item.description}</TableCell>
@@ -689,7 +723,7 @@ export function PurchaseReturnsPage() {
                     ))}
                     {items.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={11} className="text-center text-muted-foreground py-12">
+                        <TableCell colSpan={12} className="text-center text-muted-foreground py-12">
                           <div className="flex flex-col items-center gap-2">
                             {isCarDealership ? <Package className="w-8 h-8 text-muted-foreground/30" /> : <FileText className="w-8 h-8 text-muted-foreground/30" />}
                             <span className="text-sm">
