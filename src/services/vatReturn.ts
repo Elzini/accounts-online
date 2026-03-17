@@ -25,6 +25,18 @@ export interface VATReturnPurchases {
   totalVAT: number;
 }
 
+export interface VATInvoiceDetail {
+  id: string;
+  invoice_number: string;
+  invoice_date: string;
+  customer_name: string | null;
+  subtotal: number;
+  vat_amount: number;
+  total: number;
+  type: 'sales' | 'purchase';
+  supplier_invoice_number?: string | null;
+}
+
 export interface VATReturnReport {
   sales: VATReturnSales;
   purchases: VATReturnPurchases;
@@ -37,6 +49,7 @@ export interface VATReturnReport {
   };
   salesReturns: { amount: number; vat: number; count: number };
   purchaseReturns: { amount: number; vat: number; count: number };
+  detailedInvoices: VATInvoiceDetail[];
 }
 
 export async function getVATReturnReport(
@@ -58,7 +71,7 @@ export async function getVATReturnReport(
   // Sales invoices (issued/approved only)
   let salesInvQuery = supabase
     .from('invoices')
-    .select('id, subtotal, vat_amount, total, invoice_date')
+    .select('id, invoice_number, subtotal, vat_amount, total, invoice_date, customer_name, supplier_invoice_number')
     .eq('company_id', companyId)
     .eq('invoice_type', 'sales')
     .neq('status', 'draft');
@@ -69,7 +82,7 @@ export async function getVATReturnReport(
   // Purchase invoices (issued/approved only)
   let purchaseInvQuery = supabase
     .from('invoices')
-    .select('id, subtotal, vat_amount, total, invoice_date')
+    .select('id, invoice_number, subtotal, vat_amount, total, invoice_date, customer_name, supplier_invoice_number')
     .eq('company_id', companyId)
     .eq('invoice_type', 'purchase')
     .neq('status', 'draft');
@@ -234,6 +247,32 @@ export async function getVATReturnReport(
   if (netVAT > 0.01) status = 'payable';
   else if (netVAT < -0.01) status = 'receivable';
 
+  // Build detailed invoices list
+  const detailedInvoices: VATInvoiceDetail[] = [
+    ...salesInvoices.map(inv => ({
+      id: inv.id,
+      invoice_number: inv.invoice_number || '',
+      invoice_date: inv.invoice_date || '',
+      customer_name: inv.customer_name || null,
+      subtotal: Number(inv.subtotal) || 0,
+      vat_amount: Number(inv.vat_amount) || 0,
+      total: Number(inv.total) || 0,
+      type: 'sales' as const,
+      supplier_invoice_number: (inv as any).supplier_invoice_number || null,
+    })),
+    ...purchaseInvoices.map(inv => ({
+      id: inv.id,
+      invoice_number: inv.invoice_number || '',
+      invoice_date: inv.invoice_date || '',
+      customer_name: inv.customer_name || null,
+      subtotal: Number(inv.subtotal) || 0,
+      vat_amount: Number(inv.vat_amount) || 0,
+      total: Number(inv.total) || 0,
+      type: 'purchase' as const,
+      supplier_invoice_number: (inv as any).supplier_invoice_number || null,
+    })),
+  ].sort((a, b) => a.invoice_date.localeCompare(b.invoice_date));
+
   return {
     sales,
     purchases,
@@ -254,5 +293,6 @@ export async function getVATReturnReport(
       vat: debitNotesTax,
       count: debitNotes.length,
     },
+    detailedInvoices,
   };
 }
