@@ -452,13 +452,13 @@ export function EnterpriseSecurityDashboard() {
                       icon={<TrendingUp className="w-4 h-4" />} 
                     />
                   </div>
-                  {approvalModal.alert.impact_analysis.vat_report_affected && (
+                  {approvalModal.alert.impact_analysis.vat_reports_impact && approvalModal.alert.impact_analysis.vat_reports_impact !== 'none' && (
                     <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
                       <AlertTriangle className="w-4 h-4 text-amber-500" />
                       <span className="text-xs font-medium text-amber-700 dark:text-amber-400">تقرير الضريبة سيتأثر</span>
                     </div>
                   )}
-                  {approvalModal.alert.impact_analysis.trial_balance_affected && (
+                  {approvalModal.alert.impact_analysis.trial_balance_impact && approvalModal.alert.impact_analysis.trial_balance_impact !== 'none' && (
                     <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
                       <AlertTriangle className="w-4 h-4 text-amber-500" />
                       <span className="text-xs font-medium text-amber-700 dark:text-amber-400">ميزان المراجعة سيتأثر</span>
