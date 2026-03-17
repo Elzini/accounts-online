@@ -36,6 +36,8 @@ export function VATReturnReportPage() {
   const defaultDates = getDefaultDates();
   const [startDate, setStartDate] = useState(defaultDates.start);
   const [endDate, setEndDate] = useState(defaultDates.end);
+  const [showDetails, setShowDetails] = useState(false);
+  const [detailFilter, setDetailFilter] = useState<'all' | 'sales' | 'purchase'>('all');
 
   useEffect(() => {
     const newDates = getDefaultDates();
