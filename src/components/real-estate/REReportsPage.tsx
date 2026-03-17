@@ -84,6 +84,7 @@ export function REReportsPage() {
       <Tabs defaultValue="profitability">
         <TabsList>
           <TabsTrigger value="profitability">ربحية المشاريع</TabsTrigger>
+          <TabsTrigger value="unit-cost">تكلفة الوحدات</TabsTrigger>
           <TabsTrigger value="units">تقرير الوحدات</TabsTrigger>
           <TabsTrigger value="cashflow">التدفقات النقدية</TabsTrigger>
           <TabsTrigger value="crm">تقرير المبيعات</TabsTrigger>
