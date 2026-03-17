@@ -292,7 +292,7 @@ export function PurchaseReturnsPage() {
     });
   };
 
-  const totals = items.reduce((acc, item) => ({
+  const totals = items.filter(i => i.selected).reduce((acc, item) => ({
     quantity: acc.quantity + item.returnedQty,
     total: acc.total + item.total,
     vat: acc.vat + item.vat,
