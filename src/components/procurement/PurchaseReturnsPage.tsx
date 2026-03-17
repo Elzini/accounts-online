@@ -576,13 +576,57 @@ export function PurchaseReturnsPage() {
                 </div>
 
                 {/* Options Row */}
-                <div className="flex items-center gap-6 pt-3 border-t border-border/40">
+                <div className="flex items-center gap-6 pt-3 border-t border-border/40 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <Checkbox id="fullInvoicePR" checked={form.fullInvoice} onCheckedChange={(v) => setForm(p => ({ ...p, fullInvoice: !!v }))} className="h-4 w-4" />
+                    <Checkbox id="fullInvoicePR" checked={form.fullInvoice} onCheckedChange={(v) => {
+                      const isFullInvoice = !!v;
+                      setForm(p => ({ ...p, fullInvoice: isFullInvoice, partialAmount: 0 }));
+                      if (isFullInvoice) {
+                        // Reset items to original quantities
+                        setItems(prev => prev.map(item => {
+                          const total = item.quantity * item.cost;
+                          const vat = total * 0.15;
+                          return { ...item, returnedQty: item.quantity, total, vat, grandTotal: total + vat };
+                        }));
+                      }
+                    }} className="h-4 w-4" />
                     <Label htmlFor="fullInvoicePR" className="text-xs cursor-pointer text-muted-foreground font-semibold">
                       {language === 'ar' ? 'كامل الفاتورة' : 'Full Invoice'}
                     </Label>
                   </div>
+                  {!form.fullInvoice && (foundInvoice || foundCar) && (
+                    <div className="flex items-center gap-2">
+                      <Label className="text-[10px] font-semibold text-muted-foreground">{language === 'ar' ? 'مبلغ الإرجاع (قبل الضريبة)' : 'Return Amount (excl. VAT)'}</Label>
+                      <Input 
+                        type="number" 
+                        className="h-7 text-xs border-0 border-b-2 border-fuchsia-400 rounded-none bg-transparent w-40 font-mono text-center"
+                        value={form.partialAmount || ''}
+                        placeholder={language === 'ar' ? 'أدخل المبلغ' : 'Enter amount'}
+                        onChange={e => {
+                          const val = Number(e.target.value);
+                          const maxAmount = foundInvoice ? foundInvoice.subtotal : (foundCar ? foundCar.purchase_price : 0);
+                          const amount = Math.min(Math.max(0, val), maxAmount);
+                          setForm(p => ({ ...p, partialAmount: amount }));
+                          // Update items to reflect partial amount
+                          if (items.length === 1) {
+                            setItems(prev => [{
+                              ...prev[0],
+                              returnedQty: 1,
+                              cost: amount,
+                              total: amount,
+                              vat: amount * 0.15,
+                              grandTotal: amount + (amount * 0.15),
+                            }]);
+                          }
+                        }}
+                        max={foundInvoice ? foundInvoice.subtotal : (foundCar ? foundCar.purchase_price : 0)}
+                        min={0}
+                      />
+                      <span className="text-[10px] text-muted-foreground">
+                        {language === 'ar' ? `من أصل ${formatCurrency(foundInvoice?.subtotal || foundCar?.purchase_price || 0)} ريال` : `of ${formatCurrency(foundInvoice?.subtotal || foundCar?.purchase_price || 0)}`}
+                      </span>
+                    </div>
+                  )}
                   <div className="space-y-0 flex items-center gap-2 mr-auto">
                     <Label className="text-[10px] text-muted-foreground">{language === 'ar' ? 'ملاحظات' : 'Notes'}:</Label>
                     <Input className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent w-64" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder={language === 'ar' ? 'أضف ملاحظات...' : 'Add notes...'} />
