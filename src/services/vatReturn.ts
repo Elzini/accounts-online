@@ -35,6 +35,8 @@ export interface VATReturnReport {
     startDate: string;
     endDate: string;
   };
+  salesReturns: { amount: number; vat: number; count: number };
+  purchaseReturns: { amount: number; vat: number; count: number };
 }
 
 export async function getVATReturnReport(
