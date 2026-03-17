@@ -189,9 +189,16 @@ export async function getVATReturnReport(
   const totalSalesVAT = invoiceSalesVAT + carSalesVAT - creditNotesTax;
 
   // ========== Calculate Purchases ==========
-  // From invoices table
-  const invoicePurchasesAmount = purchaseInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0);
-  const invoicePurchasesVAT = purchaseInvoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0);
+  // From invoices table - separate positive (purchases) from negative (returns)
+  const positiveInvoices = purchaseInvoices.filter(inv => (Number(inv.total) || 0) >= 0);
+  const negativeInvoices = purchaseInvoices.filter(inv => (Number(inv.total) || 0) < 0);
+
+  const invoicePurchasesAmount = positiveInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0);
+  const invoicePurchasesVAT = positiveInvoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0);
+
+  // Invoice-based purchase returns (negative invoices)
+  const invoiceReturnsAmount = Math.abs(negativeInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0));
+  const invoiceReturnsVAT = Math.abs(negativeInvoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0));
 
   // From car purchases
   const carPurchasesAmount = carPurchases.reduce((sum, c) => sum + (Number(c.purchase_price) || 0), 0);
@@ -207,13 +214,22 @@ export async function getVATReturnReport(
     return sum + amount * (taxRate / 100);
   }, 0);
 
-  // Purchase returns (debit notes) - reduce purchases
+  // Purchase returns (debit notes from credit_debit_notes table) - reduce purchases
   const debitNotesTotal = debitNotes.reduce((sum, n) => sum + (Number(n.total_amount) || 0), 0);
   const debitNotesTax = debitNotes.reduce((sum, n) => sum + (Number(n.tax_amount) || 0), 0);
   const debitNotesAmount = debitNotesTotal - debitNotesTax; // net amount before tax
 
-  const totalPurchasesAmount = invoicePurchasesAmount + carPurchasesAmount + expensesAmount - debitNotesAmount;
-  const totalPurchasesVAT = invoicePurchasesVAT + carPurchasesVAT + expensesVAT - debitNotesTax;
+  // Total purchase returns = from negative invoices + from debit notes
+  const totalPurchaseReturnsAmount = invoiceReturnsAmount + debitNotesAmount;
+  const totalPurchaseReturnsVAT = invoiceReturnsVAT + debitNotesTax;
+
+  // Gross purchases (positive only)
+  const grossPurchasesAmount = invoicePurchasesAmount + carPurchasesAmount + expensesAmount;
+  const grossPurchasesVAT = invoicePurchasesVAT + carPurchasesVAT + expensesVAT;
+
+  // Net purchases = gross - returns
+  const totalPurchasesAmount = grossPurchasesAmount - totalPurchaseReturnsAmount;
+  const totalPurchasesVAT = grossPurchasesVAT - totalPurchaseReturnsVAT;
 
   // Build report
   const sales: VATReturnSales = {
