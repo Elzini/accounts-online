@@ -403,11 +403,41 @@ export function PurchaseReturnsPage() {
     },
   });
 
-  const resetForm = () => {
-    setFoundCar(null);
-    setFoundInvoice(null);
-    setItems([]);
-    setSearchQuery('');
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      if (!editingReturn) return;
+      const { error } = await supabase.from('credit_debit_notes')
+        .update({
+          note_date: editForm.note_date,
+          total_amount: editForm.total_amount,
+          tax_amount: editForm.tax_amount,
+          reason: editForm.reason,
+        })
+        .eq('id', editingReturn.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-returns'] });
+      queryClient.invalidateQueries({ queryKey: ['vat-return-report'] });
+      queryClient.invalidateQueries({ queryKey: ['credit-debit-notes'] });
+      setEditingReturn(null);
+      toast.success(language === 'ar' ? 'تم تحديث المرتجع بنجاح' : 'Return updated');
+    },
+    onError: (e) => {
+      console.error(e);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء التحديث' : 'Error updating return');
+    },
+  });
+
+  const openEdit = (r: any) => {
+    setEditingReturn(r);
+    setEditForm({
+      note_date: r.note_date || '',
+      total_amount: Number(r.total_amount) || 0,
+      tax_amount: Number(r.tax_amount) || 0,
+      reason: r.reason || '',
+    });
+  };
     setForm({
       invoiceType: 'normal',
       paymentMethod: 'cash',
