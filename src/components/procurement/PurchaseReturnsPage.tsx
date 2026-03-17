@@ -644,6 +644,16 @@ export function PurchaseReturnsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gradient-to-l from-violet-50 to-fuchsia-50 dark:from-violet-950/30 dark:to-fuchsia-950/30 border-b-2 border-violet-200 dark:border-violet-800">
+                      <TableHead className="text-center text-[11px] font-bold w-10 text-violet-700 dark:text-violet-400">
+                        <Checkbox 
+                          checked={items.length > 0 && items.every(i => i.selected)} 
+                          onCheckedChange={(v) => setItems(prev => prev.map(i => {
+                            const selected = !!v;
+                            return { ...i, selected, returnedQty: selected ? i.quantity : 0 };
+                          }))}
+                          className="h-4 w-4"
+                        />
+                      </TableHead>
                       <TableHead className="text-right text-[11px] font-bold w-8 text-violet-700 dark:text-violet-400">#</TableHead>
                       <TableHead className="text-right text-[11px] font-bold min-w-[120px] text-violet-700 dark:text-violet-400">{language === 'ar' ? 'الصنف' : 'Item'}</TableHead>
                       <TableHead className="text-right text-[11px] font-bold min-w-[160px] text-violet-700 dark:text-violet-400">{language === 'ar' ? 'البيان' : 'Description'}</TableHead>
@@ -659,7 +669,27 @@ export function PurchaseReturnsPage() {
                   </TableHeader>
                   <TableBody>
                     {items.map((item, idx) => (
-                      <TableRow key={idx} className="hover:bg-violet-50/50 dark:hover:bg-violet-950/20 border-b transition-colors">
+                      <TableRow key={idx} className={`hover:bg-violet-50/50 dark:hover:bg-violet-950/20 border-b transition-colors ${!item.selected ? 'opacity-40' : ''}`}>
+                        <TableCell className="text-center py-2">
+                          <Checkbox 
+                            checked={item.selected} 
+                            onCheckedChange={(v) => {
+                              setItems(prev => {
+                                const updated = [...prev];
+                                const selected = !!v;
+                                updated[idx] = { ...updated[idx], selected, returnedQty: selected ? updated[idx].quantity : 0 };
+                                if (selected) {
+                                  const i = updated[idx];
+                                  i.total = i.returnedQty * i.cost;
+                                  i.vat = i.total * 0.15;
+                                  i.grandTotal = i.total + i.vat;
+                                }
+                                return updated;
+                              });
+                            }}
+                            className="h-4 w-4"
+                          />
+                        </TableCell>
                         <TableCell className="text-center text-xs py-2 font-mono text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell className="text-xs py-2 font-medium">{item.item_name}</TableCell>
                         <TableCell className="text-xs py-2 text-muted-foreground">{item.description}</TableCell>
