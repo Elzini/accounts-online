@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 export interface SystemChangeAlert {
   id: string;
@@ -28,6 +27,8 @@ export interface SystemChangeAlert {
   updated_at: string;
 }
 
+export type SecurityStatus = 'normal' | 'warning' | 'frozen';
+
 export function useSystemChangeAlerts() {
   const queryClient = useQueryClient();
   const [newAlert, setNewAlert] = useState<SystemChangeAlert | null>(null);
@@ -39,14 +40,33 @@ export function useSystemChangeAlerts() {
         .from('system_change_alerts')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100);
       if (error) throw error;
       return (data || []) as SystemChangeAlert[];
     },
     staleTime: 1000 * 30,
   });
 
+  // Freeze mode
+  const { data: isFrozen = false } = useQuery({
+    queryKey: ['system-freeze-mode'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'system_freeze_mode')
+        .is('company_id', null)
+        .maybeSingle();
+      return data?.value === 'true';
+    },
+    staleTime: 1000 * 10,
+  });
+
   const pendingAlerts = alerts.filter(a => a.status === 'pending');
+  const approvedAlerts = alerts.filter(a => a.status === 'approved');
+  const rejectedAlerts = alerts.filter(a => a.status === 'rejected');
+
+  const securityStatus: SecurityStatus = isFrozen ? 'frozen' : pendingAlerts.length > 0 ? 'warning' : 'normal';
 
   // Real-time listener
   useEffect(() => {
@@ -103,10 +123,14 @@ export function useSystemChangeAlerts() {
   return {
     alerts,
     pendingAlerts,
+    approvedAlerts,
+    rejectedAlerts,
     newAlert,
     dismissNewAlert,
     approveAlert,
     rejectAlert,
     isLoading,
+    isFrozen,
+    securityStatus,
   };
 }
