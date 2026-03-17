@@ -126,10 +126,10 @@ export function ZakatReportsPage() {
     
     const data = equityChanges.details.map(d => ({
       description: d.description,
-      capital: d.capital.toLocaleString(),
-      reserves: d.reserves.toLocaleString(),
-      retainedEarnings: d.retainedEarnings.toLocaleString(),
-      total: d.total.toLocaleString(),
+      capital: String(d.capital),
+      reserves: String(d.reserves),
+      retainedEarnings: String(d.retainedEarnings),
+      total: String(d.total),
     }));
 
     const dateSubtitle = dateRange.from && dateRange.to 
@@ -138,8 +138,8 @@ export function ZakatReportsPage() {
 
     if (type === 'excel') {
       const summaryData = [
-        { label: 'الرصيد الافتتاحي', value: equityChanges.openingBalance.total.toLocaleString() + ' ر.س' },
-        { label: 'الرصيد الختامي', value: equityChanges.closingBalance.total.toLocaleString() + ' ر.س' },
+        { label: 'الرصيد الافتتاحي', value: equityChanges.openingBalance.total + ' ر.س' },
+        { label: 'الرصيد الختامي', value: equityChanges.closingBalance.total + ' ر.س' },
       ];
       exportToExcel({ title: 'قائمة التغيرات في حقوق الملكية', columns, data, fileName: 'equity-changes', summaryData });
     } else {
