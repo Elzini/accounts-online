@@ -82,7 +82,7 @@ export async function getVATReturnReport(
   // Purchase invoices (issued/approved only)
   let purchaseInvQuery = supabase
     .from('invoices')
-    .select('id, subtotal, vat_amount, total, invoice_date')
+    .select('id, invoice_number, subtotal, vat_amount, total, invoice_date, customer_name, supplier_invoice_number')
     .eq('company_id', companyId)
     .eq('invoice_type', 'purchase')
     .neq('status', 'draft');
