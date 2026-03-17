@@ -4,6 +4,20 @@ import { supabase } from '@/integrations/supabase/client';
  * Approve a purchase/sales invoice and auto-create journal entry with proper VAT posting
  */
 export async function approveInvoiceWithJournal(invoiceId: string): Promise<void> {
+  // 0. Check if journal entry already exists for this invoice — prevent duplicates
+  const { data: existingEntries } = await supabase
+    .from('journal_entries')
+    .select('id')
+    .eq('reference_id', invoiceId)
+    .in('reference_type', ['invoice_purchase', 'invoice_sale'])
+    .limit(1);
+
+  if (existingEntries && existingEntries.length > 0) {
+    // Journal entry already exists — just update status and return
+    await supabase.from('invoices').update({ status: 'issued', journal_entry_id: existingEntries[0].id }).eq('id', invoiceId);
+    return;
+  }
+
   // 1. Fetch full invoice data
   const { data: invoice, error: invError } = await supabase
     .from('invoices')
