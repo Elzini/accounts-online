@@ -315,11 +315,25 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{t.nav_purchases}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">{language === 'ar' ? 'إدارة فواتير المشتريات' : 'Manage purchase invoices'}</p>
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex gap-2 w-full sm:w-auto flex-wrap">
             <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing} className="h-10 sm:h-11">
               <RefreshCw className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'} ${isRefreshing ? 'animate-spin' : ''}`} />
               {t.btn_refresh}
             </Button>
+            {draftInvoices.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={handleApproveAll}
+                disabled={isApprovingAll}
+                className="h-10 sm:h-11 border-success text-success hover:bg-success hover:text-success-foreground"
+              >
+                <CheckCircle className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'} ${isApprovingAll ? 'animate-spin' : ''}`} />
+                {isApprovingAll
+                  ? (language === 'ar' ? `جاري الاعتماد...` : 'Approving...')
+                  : (language === 'ar' ? `اعتماد الكل (${draftInvoices.length})` : `Approve All (${draftInvoices.length})`)
+                }
+              </Button>
+            )}
             <Button onClick={() => setActivePage('add-purchase')} className="gradient-primary hover:opacity-90 flex-1 sm:flex-initial h-10 sm:h-11">
               <ShoppingCart className={`w-5 h-5 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
               {language === 'ar' ? 'فاتورة مشتريات جديدة' : 'New Purchase Invoice'}
