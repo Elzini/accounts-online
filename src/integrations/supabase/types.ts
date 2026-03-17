@@ -6895,6 +6895,7 @@ export type Database = {
           customer_vat_number: string | null
           discount_amount: number | null
           due_date: string | null
+          file_url: string | null
           fiscal_year_id: string | null
           id: string
           internal_notes: string | null
@@ -6933,6 +6934,7 @@ export type Database = {
           customer_vat_number?: string | null
           discount_amount?: number | null
           due_date?: string | null
+          file_url?: string | null
           fiscal_year_id?: string | null
           id?: string
           internal_notes?: string | null
@@ -6971,6 +6973,7 @@ export type Database = {
           customer_vat_number?: string | null
           discount_amount?: number | null
           due_date?: string | null
+          file_url?: string | null
           fiscal_year_id?: string | null
           id?: string
           internal_notes?: string | null
