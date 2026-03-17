@@ -169,9 +169,16 @@ export async function getVATReturnReport(
   const creditNotes = creditNotesResult.data || [];
 
   // ========== Calculate Sales ==========
-  // From invoices table (subtotal = amount before VAT, vat_amount = VAT)
-  const invoiceSalesAmount = salesInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0);
-  const invoiceSalesVAT = salesInvoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0);
+  // From invoices table - separate positive (sales) from negative (returns)
+  const positiveSalesInvoices = salesInvoices.filter(inv => (Number(inv.total) || 0) >= 0);
+  const negativeSalesInvoices = salesInvoices.filter(inv => (Number(inv.total) || 0) < 0);
+
+  const invoiceSalesAmount = positiveSalesInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0);
+  const invoiceSalesVAT = positiveSalesInvoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0);
+
+  // Invoice-based sales returns (negative invoices)
+  const invoiceSalesReturnsAmount = Math.abs(negativeSalesInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0));
+  const invoiceSalesReturnsVAT = Math.abs(negativeSalesInvoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0));
 
   // From car sales table (sale_price = base amount, VAT calculated)
   const carSalesAmount = carSales.reduce((sum, s) => sum + (Number(s.sale_price) || 0), 0);
@@ -180,13 +187,22 @@ export async function getVATReturnReport(
     return sum + price * (taxRate / 100);
   }, 0);
 
-  // Sales returns (credit notes) - reduce sales
+  // Sales returns (credit notes from credit_debit_notes table) - reduce sales
   const creditNotesTotal = creditNotes.reduce((sum, n) => sum + (Number(n.total_amount) || 0), 0);
   const creditNotesTax = creditNotes.reduce((sum, n) => sum + (Number(n.tax_amount) || 0), 0);
   const creditNotesAmount = creditNotesTotal - creditNotesTax; // net amount before tax
 
-  const totalSalesAmount = invoiceSalesAmount + carSalesAmount - creditNotesAmount;
-  const totalSalesVAT = invoiceSalesVAT + carSalesVAT - creditNotesTax;
+  // Total sales returns = from negative invoices + from credit notes
+  const totalSalesReturnsAmount = invoiceSalesReturnsAmount + creditNotesAmount;
+  const totalSalesReturnsVAT = invoiceSalesReturnsVAT + creditNotesTax;
+
+  // Gross sales (positive only)
+  const grossSalesAmount = invoiceSalesAmount + carSalesAmount;
+  const grossSalesVAT = invoiceSalesVAT + carSalesVAT;
+
+  // Net sales = gross - returns
+  const totalSalesAmount = grossSalesAmount - totalSalesReturnsAmount;
+  const totalSalesVAT = grossSalesVAT - totalSalesReturnsVAT;
 
   // ========== Calculate Purchases ==========
   // From invoices table - separate positive (purchases) from negative (returns)
