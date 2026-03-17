@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -30,7 +29,6 @@ import { SystemChangeDetailView } from '@/components/system-alerts/SystemChangeD
 import { useSystemChangeAlerts, SystemChangeAlert } from '@/hooks/useSystemChangeAlerts';
 import { cn } from '@/lib/utils';
 
-// ─── Detailed drill-down tabs ───
 const detailTabs = [
   { value: 'freeze', label: 'التجميد', icon: Snowflake },
   { value: 'two-person', label: 'الموافقة الثنائية', icon: UserCheck },
@@ -45,6 +43,18 @@ const detailTabs = [
   { value: 'tamper', label: 'كاشف التلاعب', icon: Fingerprint },
   { value: '2fa', label: 'المصادقة الثنائية', icon: Lock },
 ];
+
+// Dark theme wrapper classes
+const dk = {
+  bg: 'bg-[#1a1d23]',
+  card: 'bg-[#22262e] border-[#2d3240]',
+  cardHover: 'hover:bg-[#2a2e38]',
+  text: 'text-[#e4e6ea]',
+  textMuted: 'text-[#8b919e]',
+  textDim: 'text-[#5f6672]',
+  border: 'border-[#2d3240]',
+  divider: 'divide-[#2d3240]',
+};
 
 export function EnterpriseSecurityDashboard() {
   const { 
@@ -61,7 +71,6 @@ export function EnterpriseSecurityDashboard() {
     ? new Date(alerts[0].created_at).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' })
     : 'لا يوجد';
 
-  // ─── If drill-down is active, show the detailed panel ───
   if (drillView) {
     return (
       <div dir="rtl" className="space-y-4">
@@ -100,306 +109,239 @@ export function EnterpriseSecurityDashboard() {
   };
 
   return (
-    <div dir="rtl" className="space-y-4">
-      {/* ════════════════ HEADER ════════════════ */}
-      <div className="relative overflow-hidden rounded-2xl bg-card border border-border p-5">
-        <div className="absolute inset-0 bg-gradient-to-l from-primary/5 via-transparent to-transparent" />
-        <div className="relative flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div className={cn(
-              'w-14 h-14 rounded-2xl border-2 flex items-center justify-center',
-              securityStatus === 'frozen' ? 'bg-sky-500/10 border-sky-500/40' :
-              securityStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/40' :
-              'bg-emerald-500/10 border-emerald-500/40'
-            )}>
-              {securityStatus === 'frozen' ? <Snowflake className="h-7 w-7 text-sky-500 animate-pulse" /> :
-               securityStatus === 'warning' ? <ShieldAlert className="h-7 w-7 text-amber-500" /> :
-               <ShieldCheck className="h-7 w-7 text-emerald-500" />}
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">Security Control Center</h2>
-              <div className="flex items-center gap-2 mt-1">
-                <div className={cn(
-                  'w-2.5 h-2.5 rounded-full animate-pulse',
-                  securityStatus === 'frozen' ? 'bg-sky-500' :
-                  securityStatus === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'
-                )} />
-                <span className={cn(
-                  'text-sm font-semibold',
-                  securityStatus === 'frozen' ? 'text-sky-600 dark:text-sky-400' :
-                  securityStatus === 'warning' ? 'text-amber-600 dark:text-amber-400' :
-                  'text-emerald-600 dark:text-emerald-400'
-                )}>
-                  {securityStatus === 'frozen' ? '🔒 مُجمّد — قراءة فقط' :
-                   securityStatus === 'warning' ? '⚠️ تحذيرات أمنية' :
-                   '✅ النظام آمن'}
-                </span>
-              </div>
-            </div>
+    <div dir="rtl" className={cn('rounded-2xl p-4 space-y-4 min-h-[700px]', dk.bg)}>
+      {/* ════════════ HEADER ════════════ */}
+      <div className={cn('rounded-xl p-4 border flex items-center justify-between flex-wrap gap-3', dk.card)}>
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            'w-11 h-11 rounded-full flex items-center justify-center',
+            securityStatus === 'frozen' ? 'bg-sky-500/20' :
+            securityStatus === 'warning' ? 'bg-amber-500/20' : 'bg-emerald-500/20'
+          )}>
+            {securityStatus === 'frozen' 
+              ? <Snowflake className="h-6 w-6 text-sky-400 animate-pulse" />
+              : securityStatus === 'warning' 
+              ? <ShieldAlert className="h-6 w-6 text-amber-400" />
+              : <ShieldCheck className="h-6 w-6 text-emerald-400" />}
           </div>
-          
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2">
-            <Button 
-              variant={isFrozen ? 'outline' : 'default'}
-              size="sm" 
-              className={cn(
-                'gap-2 font-semibold',
-                !isFrozen && 'bg-destructive/90 hover:bg-destructive text-destructive-foreground'
-              )}
-              onClick={() => setDrillView('freeze')}
-            >
-              <Snowflake className="w-4 h-4" />
-              تجميد النظام
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-2"
-              onClick={() => setDrillView('freeze')}
-            >
-              <LockOpen className="w-4 h-4" />
-              إلغاء التجميد
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-2"
-              onClick={() => setDrillView('two-person')}
-            >
-              <Settings className="w-4 h-4" />
-              إعدادات الأمان
-            </Button>
-          </div>
+          <h2 className={cn('text-xl font-bold', dk.text)}>Security Control Center</h2>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setDrillView('freeze')}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors"
+          >
+            <span className="w-2 h-2 rounded-full bg-green-400" />
+            Freeze System
+          </button>
+          <button
+            onClick={() => setDrillView('freeze')}
+            className={cn('flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-colors', dk.border, dk.text, dk.cardHover)}
+          >
+            <RefreshCw className="w-4 h-4" />
+            Unfreeze System
+          </button>
+          <button
+            onClick={() => setDrillView('two-person')}
+            className={cn('flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-colors', dk.border, dk.text, dk.cardHover)}
+          >
+            <Settings className="w-4 h-4" />
+            Security Settings
+          </button>
         </div>
       </div>
 
-      {/* ════════════════ 3-Column Control Grid ════════════════ */}
+      {/* ════════════ 3-Column Grid ════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
         {/* ──── LEFT: System Health ──── */}
-        <div className="lg:col-span-3 space-y-4">
-          <Card className="border-2 border-border">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Shield className="w-5 h-5 text-primary" />
-                System Health
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1 p-3">
-              {/* Database Integrity */}
-              <HealthStatusRow
-                icon={<Database className="w-5 h-5" />}
-                label="Database Integrity"
-                status="ok"
-                statusLabel="OK"
-                onClick={() => setDrillView('tamper')}
-              />
-              {/* Code Status */}
-              <HealthStatusRow
-                icon={<Lock className="w-5 h-5" />}
-                label="Code Status"
-                status={isFrozen ? 'locked' : 'ok'}
-                statusLabel={isFrozen ? 'Locked' : 'Active'}
-                badge={isFrozen ? 'LOCK' : undefined}
-                onClick={() => setDrillView('code-integrity')}
-              />
-              {/* Pending Changes */}
-              <div 
-                className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors"
-                onClick={() => setDrillView('change-log')}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                    <AlertTriangle className="w-5 h-5 text-amber-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Pending Changes</p>
-                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{pendingAlerts.length}</p>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="text-xs">{pendingAlerts.length}</Badge>
-              </div>
-              {/* Last Audit */}
-              <div 
-                className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors"
-                onClick={() => setDrillView('change-log')}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Last Audit</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{lastAuditTime}</p>
-                  </div>
-                </div>
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              </div>
-            </CardContent>
-          </Card>
+        <div className="lg:col-span-3">
+          <div className={cn('rounded-xl border p-4 h-full', dk.card)}>
+            <h3 className={cn('text-base font-bold mb-4', dk.text)}>System Health</h3>
 
-          {/* Quick Tools */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs text-muted-foreground">أدوات متقدمة</CardTitle>
-            </CardHeader>
-            <CardContent className="p-2">
-              <div className="space-y-0.5">
-                {detailTabs.map(t => (
-                  <Button 
-                    key={t.value} 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-full justify-start gap-2 text-xs h-8"
-                    onClick={() => setDrillView(t.value)}
-                  >
-                    <t.icon className="w-3.5 h-3.5 text-muted-foreground" />
-                    {t.label}
-                  </Button>
-                ))}
+            {/* Database Integrity */}
+            <div className={cn('flex items-center justify-between p-3 rounded-lg mb-2 cursor-pointer transition-colors', dk.cardHover)} onClick={() => setDrillView('tamper')}>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <p className={cn('text-sm font-semibold', dk.text)}>Database<br/>Integrity</p>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-center gap-1.5">
+                <span className={dk.textDim}>●</span>
+                <span className="text-sm font-bold text-emerald-400">OK</span>
+              </div>
+            </div>
+
+            {/* Code Status */}
+            <div className={cn('flex items-center justify-between p-3 rounded-lg mb-2 cursor-pointer transition-colors', dk.cardHover)} onClick={() => setDrillView('code-integrity')}>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <Lock className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <p className={cn('text-sm font-semibold', dk.text)}>Code Status</p>
+                  <p className="text-xs text-amber-400 font-medium">Locked</p>
+                </div>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">LOCK</span>
+            </div>
+
+            {/* Pending Changes */}
+            <div className={cn('flex items-center justify-between p-3 rounded-lg mb-2 cursor-pointer transition-colors', dk.cardHover)} onClick={() => setDrillView('change-log')}>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <p className={cn('text-sm font-semibold', dk.text)}>Pending Changes</p>
+                  <p className="text-2xl font-bold text-amber-400">{pendingAlerts.length}</p>
+                </div>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">{pendingAlerts.length}</span>
+            </div>
+
+            {/* Last Audit */}
+            <div className={cn('flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors', dk.cardHover)} onClick={() => setDrillView('change-log')}>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <p className={cn('text-sm font-semibold', dk.text)}>Last Audit</p>
+                  <p className={cn('text-xs mt-0.5', dk.textMuted)}>{lastAuditTime}</p>
+                </div>
+              </div>
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            </div>
+          </div>
         </div>
 
         {/* ──── CENTER: Live Alerts ──── */}
         <div className="lg:col-span-5">
-          <Card className="h-full border-2 border-border">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
-                  Live Alerts
-                  {pendingAlerts.length > 0 && (
-                    <Badge className="bg-destructive text-destructive-foreground text-[10px] px-1.5 h-5 animate-pulse">
-                      {pendingAlerts.length} جديد
-                    </Badge>
-                  )}
-                </CardTitle>
-                <span className="text-[11px] text-muted-foreground">
+          <div className={cn('rounded-xl border h-full', dk.card)}>
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center">
+                  <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                </div>
+                <h3 className={cn('text-base font-bold', dk.text)}>Live Alerts</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={cn('text-[11px]', dk.textMuted)}>
                   {alerts.length > 0 && new Date(alerts[0].created_at).toLocaleString('ar-SA', { timeStyle: 'short' })}
                 </span>
+                <ChevronDown className={cn('w-4 h-4', dk.textDim)} />
               </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[540px]">
-                <div className="divide-y divide-border">
-                  {liveAlerts.length === 0 ? (
-                    <div className="text-center py-20 text-muted-foreground">
-                      <ShieldCheck className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                      <p className="text-sm">لا توجد تنبيهات — النظام آمن</p>
-                    </div>
-                  ) : liveAlerts.map((alert) => (
-                    <LiveAlertRow 
-                      key={alert.id} 
-                      alert={alert} 
-                      onView={() => setSelectedAlert(alert)} 
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+            </div>
+            <ScrollArea className="h-[500px]">
+              <div className={cn('divide-y', dk.divider)}>
+                {liveAlerts.length === 0 ? (
+                  <div className="text-center py-20">
+                    <ShieldCheck className={cn('w-12 h-12 mx-auto mb-3 opacity-20', dk.textDim)} />
+                    <p className={cn('text-sm', dk.textMuted)}>لا توجد تنبيهات — النظام آمن</p>
+                  </div>
+                ) : liveAlerts.map((alert) => (
+                  <DarkAlertRow 
+                    key={alert.id} 
+                    alert={alert} 
+                    onView={() => setSelectedAlert(alert)} 
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
         </div>
 
         {/* ──── RIGHT: Pending Approvals ──── */}
         <div className="lg:col-span-4">
-          <Card className="h-full border-2 border-border">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <UserCheck className="w-5 h-5 text-primary" />
-                  Pending Approvals
-                </CardTitle>
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[540px]">
-                {pendingAlerts.length === 0 ? (
-                  <div className="text-center py-20 text-muted-foreground">
-                    <CheckCircle2 className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                    <p className="text-sm">لا توجد موافقات معلقة</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {pendingAlerts.map((alert, idx) => (
-                      <ApprovalRow 
-                        key={alert.id} 
-                        alert={alert} 
-                        index={idx}
-                        onApprove={() => handleApprovalAction(alert, 'approve')}
-                        onReject={() => handleApprovalAction(alert, 'reject')}
-                        onView={() => setSelectedAlert(alert)}
-                      />
-                    ))}
-                  </div>
-                )}
+          <div className={cn('rounded-xl border h-full', dk.card)}>
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <h3 className={cn('text-base font-bold', dk.text)}>Pending Approvals</h3>
+              <ChevronDown className={cn('w-4 h-4', dk.textDim)} />
+            </div>
+            <ScrollArea className="h-[500px]">
+              {pendingAlerts.length === 0 ? (
+                <div className="text-center py-20">
+                  <CheckCircle2 className={cn('w-12 h-12 mx-auto mb-3 opacity-20', dk.textDim)} />
+                  <p className={cn('text-sm', dk.textMuted)}>لا توجد موافقات معلقة</p>
+                </div>
+              ) : (
+                <div className={cn('divide-y', dk.divider)}>
+                  {pendingAlerts.map((alert, idx) => (
+                    <DarkApprovalRow
+                      key={alert.id}
+                      alert={alert}
+                      index={idx}
+                      onApprove={() => handleApprovalAction(alert, 'approve')}
+                      onReject={() => handleApprovalAction(alert, 'reject')}
+                      onView={() => setSelectedAlert(alert)}
+                    />
+                  ))}
+                </div>
+              )}
 
-                {/* Resolved items */}
-                {(approvedAlerts.length > 0 || rejectedAlerts.length > 0) && (
-                  <>
-                    <Separator />
-                    <div className="p-3">
-                      <p className="text-[10px] text-muted-foreground font-semibold mb-2">تمت المعالجة</p>
-                      {[...approvedAlerts, ...rejectedAlerts].slice(0, 5).map((alert, idx) => (
-                        <div key={alert.id} className="flex items-center gap-2 py-1.5 text-xs text-muted-foreground">
-                          {alert.status === 'approved' 
-                            ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> 
-                            : <XCircle className="w-3.5 h-3.5 text-destructive shrink-0" />}
-                          <span className="truncate">{alert.description}</span>
-                          <span className="mr-auto text-[10px]">
-                            {alert.status === 'approved' ? 'موافق' : 'مرفوض'}
-                          </span>
-                        </div>
-                      ))}
+              {/* Resolved */}
+              {(approvedAlerts.length > 0 || rejectedAlerts.length > 0) && (
+                <div className={cn('border-t px-4 py-3', dk.border)}>
+                  {[...approvedAlerts, ...rejectedAlerts].slice(0, 5).map((a) => (
+                    <div key={a.id} className="flex items-center gap-2 py-1.5">
+                      {a.status === 'approved'
+                        ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        : <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />}
+                      <span className={cn('text-xs truncate', dk.textMuted)}>{a.description}</span>
+                      <span className={cn('text-[10px] mr-auto', dk.textDim)}>
+                        {a.status === 'approved' ? 'Approved by Admin' : 'Rejected'}
+                      </span>
                     </div>
-                  </>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
         </div>
       </div>
 
-      {/* ════════════════ Bottom: Audit Timeline ════════════════ */}
-      <Card className="border-2 border-border">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
-              Audit Timeline
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-7 w-7">
-                <RefreshCw className="w-3.5 h-3.5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7">
-                <Filter className="w-3.5 h-3.5" />
-              </Button>
-              <Button variant="ghost" size="sm" className="text-xs gap-1 h-7" onClick={() => setDrillView('change-log')}>
-                عرض الكل <ArrowLeftRight className="w-3 h-3" />
-              </Button>
-            </div>
+      {/* ════════════ BOTTOM: Audit Timeline ════════════ */}
+      <div className={cn('rounded-xl border p-4', dk.card)}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <FileText className={cn('w-5 h-5', dk.textMuted)} />
+            <h3 className={cn('text-base font-bold', dk.text)}>Audit Timeline</h3>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="relative">
-            <div className="absolute top-0 bottom-0 right-4 w-px bg-border" />
-            <div className="space-y-0">
-              {alerts.slice(0, 8).map((alert) => (
-                <TimelineRow key={alert.id} alert={alert} onClick={() => setSelectedAlert(alert)} />
-              ))}
-              {alerts.length === 0 && (
-                <div className="text-center py-10 text-muted-foreground text-sm">لا توجد أحداث مسجلة</div>
-              )}
-            </div>
+          <div className="flex items-center gap-2">
+            <button className={cn('p-1.5 rounded-lg transition-colors', dk.cardHover)}>
+              <RefreshCw className={cn('w-4 h-4', dk.textDim)} />
+            </button>
+            <button className={cn('p-1.5 rounded-lg transition-colors', dk.cardHover)}>
+              <Filter className={cn('w-4 h-4', dk.textDim)} />
+            </button>
+            <button 
+              className={cn('px-3 py-1.5 rounded-lg text-xs font-medium transition-colors', dk.cardHover, dk.textMuted)}
+              onClick={() => setDrillView('change-log')}
+            >
+              عرض الكل
+            </button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* ════════════════ Change Request Approval Modal ════════════════ */}
+        <div className="relative">
+          <div className={cn('absolute top-0 bottom-0 right-[15px] w-px', 'bg-[#2d3240]')} />
+          <div className="space-y-0">
+            {alerts.slice(0, 8).map((alert) => (
+              <DarkTimelineRow key={alert.id} alert={alert} onClick={() => setSelectedAlert(alert)} />
+            ))}
+            {alerts.length === 0 && (
+              <div className={cn('text-center py-10 text-sm', dk.textMuted)}>لا توجد أحداث مسجلة</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ════════════ Approval Confirmation Modal ════════════ */}
       <Dialog open={!!approvalModal} onOpenChange={() => setApprovalModal(null)}>
         <DialogContent className="sm:max-w-lg" dir="rtl">
           <DialogHeader>
@@ -409,14 +351,11 @@ export function EnterpriseSecurityDashboard() {
                 : <XCircle className="w-5 h-5 text-destructive" />}
               {approvalModal?.action === 'approve' ? 'تأكيد الموافقة على التغيير' : 'تأكيد رفض التغيير'}
             </DialogTitle>
-            <DialogDescription>
-              يرجى مراجعة تفاصيل التغيير وتأثيره قبل اتخاذ القرار
-            </DialogDescription>
+            <DialogDescription>يرجى مراجعة تفاصيل التغيير وتأثيره قبل اتخاذ القرار</DialogDescription>
           </DialogHeader>
 
           {approvalModal && (
             <div className="space-y-4 py-2">
-              {/* Change Description */}
               <div className="rounded-xl border p-3 space-y-2">
                 <p className="text-xs font-semibold text-muted-foreground">وصف التغيير</p>
                 <p className="text-sm font-medium">{approvalModal.alert.description}</p>
@@ -426,31 +365,14 @@ export function EnterpriseSecurityDashboard() {
                 </div>
               </div>
 
-              {/* Impact Analysis */}
               {approvalModal.alert.impact_analysis && (
                 <div className="rounded-xl border p-3 space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground">تحليل الأثر المتوقع</p>
                   <div className="grid grid-cols-2 gap-2">
-                    <ImpactCard 
-                      label="فواتير المبيعات" 
-                      value={approvalModal.alert.impact_analysis.sales_invoices} 
-                      icon={<FileText className="w-4 h-4" />} 
-                    />
-                    <ImpactCard 
-                      label="فواتير المشتريات" 
-                      value={approvalModal.alert.impact_analysis.purchase_invoices} 
-                      icon={<FileText className="w-4 h-4" />} 
-                    />
-                    <ImpactCard 
-                      label="القيود المحاسبية" 
-                      value={approvalModal.alert.impact_analysis.journal_entries} 
-                      icon={<BarChart3 className="w-4 h-4" />} 
-                    />
-                    <ImpactCard 
-                      label="الأرصدة المتأثرة" 
-                      value={approvalModal.alert.impact_analysis.account_balances_affected} 
-                      icon={<TrendingUp className="w-4 h-4" />} 
-                    />
+                    <ImpactCard label="فواتير المبيعات" value={approvalModal.alert.impact_analysis.sales_invoices} icon={<FileText className="w-4 h-4" />} />
+                    <ImpactCard label="فواتير المشتريات" value={approvalModal.alert.impact_analysis.purchase_invoices} icon={<FileText className="w-4 h-4" />} />
+                    <ImpactCard label="القيود المحاسبية" value={approvalModal.alert.impact_analysis.journal_entries} icon={<BarChart3 className="w-4 h-4" />} />
+                    <ImpactCard label="الأرصدة المتأثرة" value={approvalModal.alert.impact_analysis.account_balances_affected} icon={<TrendingUp className="w-4 h-4" />} />
                   </div>
                   {approvalModal.alert.impact_analysis.vat_reports_impact && approvalModal.alert.impact_analysis.vat_reports_impact !== 'none' && (
                     <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
@@ -467,7 +389,6 @@ export function EnterpriseSecurityDashboard() {
                 </div>
               )}
 
-              {/* Risk Level */}
               <div className="rounded-xl border p-3">
                 <p className="text-xs font-semibold text-muted-foreground mb-1">مستوى المخاطر</p>
                 <RiskBadge severity={getSeverity(approvalModal.alert)} />
@@ -476,40 +397,26 @@ export function EnterpriseSecurityDashboard() {
           )}
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setApprovalModal(null)}>
-              إلغاء
-            </Button>
+            <Button variant="outline" onClick={() => setApprovalModal(null)}>إلغاء</Button>
             {approvalModal?.action === 'approve' ? (
-              <Button 
-                className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
-                onClick={confirmApproval}
-                disabled={approveAlert.isPending}
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                تأكيد الموافقة
+              <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={confirmApproval} disabled={approveAlert.isPending}>
+                <CheckCircle2 className="w-4 h-4" /> تأكيد الموافقة
               </Button>
             ) : (
-              <Button 
-                variant="destructive" 
-                className="gap-2"
-                onClick={confirmApproval}
-                disabled={rejectAlert.isPending}
-              >
-                <XCircle className="w-4 h-4" />
-                تأكيد الرفض
+              <Button variant="destructive" className="gap-2" onClick={confirmApproval} disabled={rejectAlert.isPending}>
+                <XCircle className="w-4 h-4" /> تأكيد الرفض
               </Button>
             )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ════════════════ Detail Sheet ════════════════ */}
+      {/* ════════════ Detail Sheet ════════════ */}
       <Sheet open={!!selectedAlert} onOpenChange={() => setSelectedAlert(null)}>
         <SheetContent side="left" className="w-[600px] sm:max-w-[600px] overflow-y-auto" dir="rtl">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
-              <Eye className="w-5 h-5 text-primary" />
-              تفاصيل التغيير
+              <Eye className="w-5 h-5 text-primary" /> تفاصيل التغيير
             </SheetTitle>
           </SheetHeader>
           {selectedAlert && (
@@ -523,56 +430,9 @@ export function EnterpriseSecurityDashboard() {
   );
 }
 
-// ═══════════════════════════════════════════════════════
-// Sub-components
-// ═══════════════════════════════════════════════════════
-
-function HealthStatusRow({ icon, label, status, statusLabel, badge, onClick }: {
-  icon: React.ReactNode; label: string; status: 'ok' | 'locked' | 'warning'; statusLabel: string; badge?: string; onClick?: () => void;
-}) {
-  return (
-    <div 
-      className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors"
-      onClick={onClick}
-    >
-      <div className="flex items-center gap-3">
-        <div className={cn(
-          'w-10 h-10 rounded-xl flex items-center justify-center',
-          status === 'ok' ? 'bg-emerald-500/10' :
-          status === 'locked' ? 'bg-amber-500/10' : 'bg-destructive/10'
-        )}>
-          <span className={cn(
-            status === 'ok' ? 'text-emerald-500' :
-            status === 'locked' ? 'text-amber-500' : 'text-destructive'
-          )}>{icon}</span>
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-foreground">{label}</p>
-          <p className={cn(
-            'text-xs font-medium',
-            status === 'ok' ? 'text-emerald-600 dark:text-emerald-400' :
-            status === 'locked' ? 'text-amber-600 dark:text-amber-400' : 'text-destructive'
-          )}>{statusLabel}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-1.5">
-        {badge && (
-          <Badge className="text-[9px] h-4 bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/30">
-            {badge}
-          </Badge>
-        )}
-        <Badge className={cn(
-          'text-[10px] h-5',
-          status === 'ok' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400' :
-          status === 'locked' ? 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400' :
-          'bg-destructive/10 text-destructive border-destructive/20'
-        )}>
-          {status === 'ok' ? '●' : status === 'locked' ? '🔒' : '⚠'}
-        </Badge>
-      </div>
-    </div>
-  );
-}
+// ═══════════════════════════════════════
+// Helper
+// ═══════════════════════════════════════
 
 function getSeverity(alert: SystemChangeAlert): string {
   if (!alert.impact_analysis) return 'low';
@@ -582,174 +442,150 @@ function getSeverity(alert: SystemChangeAlert): string {
   return 'low';
 }
 
-function LiveAlertRow({ alert, onView }: { alert: SystemChangeAlert; onView: () => void }) {
+// ═══════════════════════════════════════
+// Dark sub-components
+// ═══════════════════════════════════════
+
+function DarkAlertRow({ alert, onView }: { alert: SystemChangeAlert; onView: () => void }) {
   const sev = getSeverity(alert);
-  const severityColor = sev === 'high'
-    ? 'border-r-destructive bg-destructive/[0.03]'
-    : sev === 'medium'
-    ? 'border-r-amber-500 bg-amber-500/[0.02]'
-    : 'border-r-emerald-500';
+  const sevIcon = sev === 'high' ? '!' : sev === 'medium' ? 'C' : '✓';
+  const sevColor = sev === 'high' ? 'bg-red-500/20 text-red-400' : sev === 'medium' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400';
 
   return (
-    <div 
-      className={cn(
-        'px-4 py-3.5 hover:bg-muted/40 cursor-pointer transition-colors border-r-4',
-        severityColor
-      )}
-      onClick={onView}
-    >
+    <div className="px-4 py-3.5 hover:bg-[#2a2e38] cursor-pointer transition-colors" onClick={onView}>
       <div className="flex items-start gap-3">
-        <SeverityDot severity={sev} />
+        <div className={cn('w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold shrink-0 mt-0.5', sevColor)}>
+          {sevIcon}
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold truncate">{alert.description}</p>
-            <span className="text-[10px] text-muted-foreground shrink-0">
+            <p className="text-sm font-bold text-[#e4e6ea] truncate">{alert.description}</p>
+            <span className="text-[10px] text-[#5f6672] shrink-0">
               {new Date(alert.created_at).toLocaleString('ar-SA', { timeStyle: 'short' })}
             </span>
           </div>
           {alert.impact_analysis && (
-            <p className="text-xs text-muted-foreground mt-1">
-              {alert.description.includes('Tax') || alert.description.includes('ضري') 
-                ? 'Tax calculation logic modified.'
-                : alert.description}
+            <p className="text-xs text-[#8b919e] mt-1">
+              {alert.change_type === 'tax_calculation' ? 'Tax calculation logic modified.' : alert.description}
             </p>
           )}
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            {alert.impact_analysis && (
-              <>
-                <ImpactChip icon="├" label={`Affects ${alert.impact_analysis.sales_invoices + alert.impact_analysis.purchase_invoices} invoices`} />
-                <ImpactChip icon="├" label={`Affects ${alert.impact_analysis.journal_entries} journal entries`} />
-                {alert.impact_analysis.vat_reports_impact && alert.impact_analysis.vat_reports_impact !== 'none' && (
-                  <ImpactChip icon="└" label="Affects VAT report" />
-                )}
-              </>
-            )}
-          </div>
-          <div className="flex items-center gap-2 mt-1.5">
-            <Badge variant="outline" className="text-[10px] h-4 px-1.5">{alert.affected_module}</Badge>
-            <Badge variant="outline" className="text-[10px] h-4 px-1.5">{changeTypeLabel(alert.change_type)}</Badge>
-          </div>
+          {alert.impact_analysis && (
+            <div className="mt-2 space-y-0.5">
+              <p className="text-[11px] text-[#8b919e]">
+                <span className="text-[#5f6672] font-mono mr-1">├</span>
+                Affects {alert.impact_analysis.sales_invoices + alert.impact_analysis.purchase_invoices} sales invoices
+              </p>
+              <p className="text-[11px] text-[#8b919e]">
+                <span className="text-[#5f6672] font-mono mr-1">├</span>
+                Affects {alert.impact_analysis.journal_entries} journal entries
+              </p>
+              {alert.impact_analysis.vat_reports_impact && alert.impact_analysis.vat_reports_impact !== 'none' && (
+                <p className="text-[11px] text-[#8b919e]">
+                  <span className="text-[#5f6672] font-mono mr-1">└</span>
+                  Affects VAT report
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function ApprovalRow({ alert, index, onApprove, onReject, onView }: { 
-  alert: SystemChangeAlert; index: number; onApprove: () => void; onReject: () => void; onView: () => void 
+function DarkApprovalRow({ alert, index, onApprove, onReject, onView }: {
+  alert: SystemChangeAlert; index: number; onApprove: () => void; onReject: () => void; onView: () => void;
 }) {
+  const sev = getSeverity(alert);
+  const sevColor = sev === 'high' ? 'text-amber-400' : sev === 'medium' ? 'text-amber-400' : 'text-blue-400';
+  const sevIcon = sev === 'high' ? '⚠' : sev === 'medium' ? '#' : '○';
+
   return (
-    <div className="p-3 hover:bg-muted/30 transition-colors">
-      <div className="flex items-center gap-2 mb-1.5">
-        <SeverityDot severity={getSeverity(alert)} />
-        <span className="text-[10px] text-muted-foreground font-mono">#{String(index + 1).padStart(3, '0')}</span>
-        <span className="text-[10px] text-muted-foreground mr-auto">
+    <div className="px-4 py-3 hover:bg-[#2a2e38] transition-colors">
+      <div className="flex items-center gap-2 mb-1">
+        <span className={cn('text-sm', sevColor)}>{sevIcon}</span>
+        <span className="text-[11px] text-[#5f6672] font-mono">#{String(index + 1).padStart(3, '0')}</span>
+        <span className="text-[10px] text-[#5f6672] mr-auto">
           {new Date(alert.created_at).toLocaleString('ar-SA', { timeStyle: 'short' })}
         </span>
       </div>
-      <p className="text-xs font-bold text-foreground mb-1.5 pr-6">{alert.description}</p>
+      
+      <p className="text-xs font-bold text-[#e4e6ea] mb-1.5 pr-5">{alert.description}</p>
       
       {alert.impact_analysis && (
-        <div className="space-y-0.5 mb-2 pr-6">
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+        <div className="space-y-0.5 mb-2.5 pr-5">
+          <p className="text-[11px] text-[#8b919e] flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
             Affects {alert.impact_analysis.vat_reports_impact !== 'none' ? 'VAT report' : alert.affected_module}
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+          </p>
+          <p className="text-[11px] text-[#8b919e] flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
             Affects {alert.impact_analysis.sales_invoices + alert.impact_analysis.purchase_invoices} invoices
-          </div>
+          </p>
         </div>
       )}
 
-      <div className="flex gap-2 pr-6">
-        <Button 
-          size="sm" 
-          className="h-7 text-xs gap-1 flex-1 bg-emerald-600 hover:bg-emerald-700 text-white" 
-          onClick={onApprove}
+      <div className="flex gap-2 pr-5">
+        <button
+          onClick={(e) => { e.stopPropagation(); onApprove(); }}
+          className="flex-1 h-8 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
         >
-          <CheckCircle2 className="w-3 h-3" />
           Approve
-        </Button>
-        <Button 
-          size="sm" 
-          variant="destructive" 
-          className="h-7 text-xs gap-1 flex-1"
-          onClick={onReject}
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onReject(); }}
+          className="flex-1 h-8 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-1 transition-colors"
         >
-          <XCircle className="w-3 h-3" />
+          <span className="w-1 h-1 rounded-full bg-white" />
           Reject
-        </Button>
-        <Button 
-          size="sm" 
-          variant="ghost" 
-          className="h-7 w-7 p-0"
-          onClick={onView}
-        >
-          <Eye className="w-3 h-3" />
-        </Button>
+        </button>
       </div>
     </div>
   );
 }
 
-function TimelineRow({ alert, onClick }: { alert: SystemChangeAlert; onClick: () => void }) {
+function DarkTimelineRow({ alert, onClick }: { alert: SystemChangeAlert; onClick: () => void }) {
+  const statusColor = alert.status === 'approved' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' :
+    alert.status === 'rejected' ? 'bg-red-500/20 border-red-500/40 text-red-400' :
+    'bg-amber-500/20 border-amber-500/40 text-amber-400';
+
+  const statusIcon = alert.status === 'approved' ? <CheckCircle2 className="w-3.5 h-3.5" /> :
+    alert.status === 'rejected' ? <XCircle className="w-3.5 h-3.5" /> :
+    <AlertTriangle className="w-3.5 h-3.5" />;
+
   return (
     <div className="flex gap-4 group relative">
-      <div className={cn(
-        'w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 border-2',
-        alert.status === 'approved' ? 'bg-emerald-500/10 border-emerald-500/40' :
-        alert.status === 'rejected' ? 'bg-destructive/10 border-destructive/40' :
-        'bg-amber-500/10 border-amber-500/40'
-      )}>
-        {alert.status === 'approved' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> :
-         alert.status === 'rejected' ? <XCircle className="w-3.5 h-3.5 text-destructive" /> :
-         <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />}
+      <div className={cn('w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 border-2', statusColor)}>
+        {statusIcon}
       </div>
-
-      <div className="flex-1 pb-4 cursor-pointer group-hover:bg-muted/30 rounded-lg p-2 -mt-1 transition-colors" onClick={onClick}>
-        <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-xs font-semibold">{alert.description}</span>
+      <div 
+        className="flex-1 pb-4 cursor-pointer hover:bg-[#2a2e38] rounded-lg p-2 -mt-1 transition-colors" 
+        onClick={onClick}
+      >
+        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+          <span className="text-xs font-bold text-[#e4e6ea]">{alert.description}</span>
           {alert.status === 'pending' && (
-            <Badge className="text-[9px] h-4 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">
-              Pending Approval
-            </Badge>
+            <span className="text-[9px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 font-medium">Pending Approval</span>
           )}
           {alert.status === 'rejected' && (
-            <Badge className="text-[9px] h-4 bg-destructive/10 text-destructive border-destructive/20">
-              Rejected
-            </Badge>
+            <span className="text-[9px] px-2 py-0.5 rounded bg-red-500/15 text-red-400 font-medium">Rejected</span>
           )}
         </div>
-        <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-wrap">
+        <div className="flex items-center gap-3 text-[10px] text-[#5f6672] flex-wrap">
           <span className="flex items-center gap-1">
             <Clock className="w-2.5 h-2.5" />
             {new Date(alert.created_at).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' })}
           </span>
-          <Badge variant="outline" className="text-[9px] h-3.5 px-1">{alert.affected_module}</Badge>
-          <Badge variant="outline" className="text-[9px] h-3.5 px-1">{changeTypeLabel(alert.change_type)}</Badge>
+          <span className="px-1.5 py-0.5 rounded bg-[#2d3240] text-[#8b919e] text-[9px]">{alert.affected_module}</span>
+          <span className="px-1.5 py-0.5 rounded bg-[#2d3240] text-[#8b919e] text-[9px]">{changeTypeLabel(alert.change_type)}</span>
           {alert.impact_analysis && (
-            <span>
+            <span className="text-[#8b919e]">
               Affects {alert.impact_analysis.sales_invoices + alert.impact_analysis.purchase_invoices} invoices · {alert.impact_analysis.journal_entries} entries
             </span>
           )}
-          <span className="w-2 h-2 rounded-full bg-primary/40 mr-auto" />
+          <span className="w-2 h-2 rounded-full bg-[#3b82f6] mr-auto" />
         </div>
       </div>
-    </div>
-  );
-}
-
-function SeverityDot({ severity }: { severity: string }) {
-  return (
-    <div className={cn(
-      'w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[10px] font-bold',
-      severity === 'critical' ? 'bg-destructive/15 text-destructive' :
-      severity === 'high' ? 'bg-destructive/10 text-destructive' :
-      severity === 'medium' ? 'bg-amber-500/15 text-amber-600' :
-      'bg-emerald-500/15 text-emerald-600'
-    )}>
-      {severity === 'critical' ? '!' : severity === 'high' ? '!' : severity === 'medium' ? '●' : '●'}
     </div>
   );
 }
@@ -758,27 +594,16 @@ function RiskBadge({ severity }: { severity: string }) {
   return (
     <div className={cn(
       'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold',
-      severity === 'critical' ? 'bg-destructive/10 text-destructive border border-destructive/20' :
       severity === 'high' ? 'bg-destructive/10 text-destructive border border-destructive/20' :
       severity === 'medium' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20' :
       'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
     )}>
       <div className={cn(
         'w-2 h-2 rounded-full',
-        severity === 'critical' || severity === 'high' ? 'bg-destructive animate-pulse' :
-        severity === 'medium' ? 'bg-amber-500' : 'bg-emerald-500'
+        severity === 'high' ? 'bg-destructive animate-pulse' : severity === 'medium' ? 'bg-amber-500' : 'bg-emerald-500'
       )} />
-      {severity === 'critical' ? 'حرج' : severity === 'high' ? 'عالي' : severity === 'medium' ? 'متوسط' : 'منخفض'}
+      {severity === 'high' ? 'عالي' : severity === 'medium' ? 'متوسط' : 'منخفض'}
     </div>
-  );
-}
-
-function ImpactChip({ icon, label }: { icon?: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-      {icon && <span className="opacity-40 font-mono">{icon}</span>}
-      {label}
-    </span>
   );
 }
 
