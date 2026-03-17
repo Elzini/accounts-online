@@ -41,7 +41,7 @@ export function ProfitReport() {
         .from('invoices')
         .select('*, customer:customers(name)')
         .eq('company_id', companyId!)
-        .eq('invoice_type', 'sale')
+        .eq('invoice_type', 'sales')
         .order('invoice_date', { ascending: false });
       return data || [];
     },
