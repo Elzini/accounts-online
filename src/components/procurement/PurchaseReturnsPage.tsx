@@ -875,7 +875,10 @@ export function PurchaseReturnsPage() {
                             {r.status === 'approved' ? (language === 'ar' ? 'معتمد' : 'Approved') : (language === 'ar' ? 'مسودة' : 'Draft')}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="flex gap-1">
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-violet-600 hover:bg-violet-100 dark:hover:bg-violet-900/30 rounded-full" onClick={() => openEdit(r)}>
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
                           <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-full" onClick={() => deleteMutation.mutate(r.id)}>
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
