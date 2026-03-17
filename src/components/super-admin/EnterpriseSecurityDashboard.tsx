@@ -470,7 +470,7 @@ export function EnterpriseSecurityDashboard() {
               {/* Risk Level */}
               <div className="rounded-xl border p-3">
                 <p className="text-xs font-semibold text-muted-foreground mb-1">مستوى المخاطر</p>
-                <RiskBadge severity={approvalModal.alert.severity} />
+                <RiskBadge severity={getSeverity(approvalModal.alert)} />
               </div>
             </div>
           )}
