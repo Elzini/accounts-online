@@ -574,10 +574,19 @@ function HealthStatusRow({ icon, label, status, statusLabel, badge, onClick }: {
   );
 }
 
+function getSeverity(alert: SystemChangeAlert): string {
+  if (!alert.impact_analysis) return 'low';
+  const total = alert.impact_analysis.sales_invoices + alert.impact_analysis.purchase_invoices + alert.impact_analysis.journal_entries;
+  if (total > 100 || alert.impact_analysis.vat_reports_impact !== 'none') return 'high';
+  if (total > 20) return 'medium';
+  return 'low';
+}
+
 function LiveAlertRow({ alert, onView }: { alert: SystemChangeAlert; onView: () => void }) {
-  const severityColor = alert.severity === 'critical' || alert.severity === 'high'
+  const sev = getSeverity(alert);
+  const severityColor = sev === 'high'
     ? 'border-r-destructive bg-destructive/[0.03]'
-    : alert.severity === 'medium'
+    : sev === 'medium'
     ? 'border-r-amber-500 bg-amber-500/[0.02]'
     : 'border-r-emerald-500';
 
