@@ -7,7 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, Trash2, RotateCw, Printer, Save, Loader2, AlertTriangle, CheckCircle, Package, X, FileText } from 'lucide-react';
+import { Plus, Search, Trash2, RotateCw, Printer, Save, Loader2, AlertTriangle, CheckCircle, Package, X, FileText, Pencil } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -93,6 +100,8 @@ export function PurchaseReturnsPage() {
     partialAmount: 0,
   });
   const [items, setItems] = useState<ReturnItem[]>([]);
+  const [editingReturn, setEditingReturn] = useState<any>(null);
+  const [editForm, setEditForm] = useState({ note_date: '', total_amount: 0, tax_amount: 0, reason: '' });
 
   const formatCurrency = (v: number) => new Intl.NumberFormat('ar-SA').format(v);
 
@@ -393,6 +402,42 @@ export function PurchaseReturnsPage() {
       toast.success(language === 'ar' ? 'تم الحذف' : 'Deleted');
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      if (!editingReturn) return;
+      const { error } = await supabase.from('credit_debit_notes')
+        .update({
+          note_date: editForm.note_date,
+          total_amount: editForm.total_amount,
+          tax_amount: editForm.tax_amount,
+          reason: editForm.reason,
+        })
+        .eq('id', editingReturn.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-returns'] });
+      queryClient.invalidateQueries({ queryKey: ['vat-return-report'] });
+      queryClient.invalidateQueries({ queryKey: ['credit-debit-notes'] });
+      setEditingReturn(null);
+      toast.success(language === 'ar' ? 'تم تحديث المرتجع بنجاح' : 'Return updated');
+    },
+    onError: (e) => {
+      console.error(e);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء التحديث' : 'Error updating return');
+    },
+  });
+
+  const openEdit = (r: any) => {
+    setEditingReturn(r);
+    setEditForm({
+      note_date: r.note_date || '',
+      total_amount: Number(r.total_amount) || 0,
+      tax_amount: Number(r.tax_amount) || 0,
+      reason: r.reason || '',
+    });
+  };
 
   const resetForm = () => {
     setFoundCar(null);
@@ -830,7 +875,10 @@ export function PurchaseReturnsPage() {
                             {r.status === 'approved' ? (language === 'ar' ? 'معتمد' : 'Approved') : (language === 'ar' ? 'مسودة' : 'Draft')}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="flex gap-1">
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-violet-600 hover:bg-violet-100 dark:hover:bg-violet-900/30 rounded-full" onClick={() => openEdit(r)}>
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
                           <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-full" onClick={() => deleteMutation.mutate(r.id)}>
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
@@ -892,6 +940,51 @@ export function PurchaseReturnsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingReturn} onOpenChange={(open) => !open && setEditingReturn(null)}>
+        <DialogContent dir="rtl" className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-4 h-4 text-violet-600" />
+              {language === 'ar' ? `تعديل المرتجع ${editingReturn?.note_number || ''}` : `Edit Return ${editingReturn?.note_number || ''}`}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">{language === 'ar' ? 'تاريخ المرتجع' : 'Return Date'}</Label>
+              <Input type="date" className="h-9 text-sm" value={editForm.note_date} onChange={e => setEditForm(p => ({ ...p, note_date: e.target.value }))} dir="ltr" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">{language === 'ar' ? 'المبلغ الإجمالي' : 'Total Amount'}</Label>
+                <Input type="number" className="h-9 text-sm font-mono" value={editForm.total_amount || ''} onChange={e => {
+                  const total = Number(e.target.value) || 0;
+                  const netAmount = total / 1.15;
+                  setEditForm(p => ({ ...p, total_amount: total, tax_amount: Math.round((total - netAmount) * 100) / 100 }));
+                }} min={0} step="0.01" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">{language === 'ar' ? 'مبلغ الضريبة' : 'Tax Amount'}</Label>
+                <Input type="number" className="h-9 text-sm font-mono" value={editForm.tax_amount || ''} onChange={e => setEditForm(p => ({ ...p, tax_amount: Number(e.target.value) || 0 }))} min={0} step="0.01" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">{language === 'ar' ? 'السبب / الملاحظات' : 'Reason / Notes'}</Label>
+              <Input className="h-9 text-sm" value={editForm.reason} onChange={e => setEditForm(p => ({ ...p, reason: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter className="flex-row-reverse gap-2">
+            <Button variant="outline" size="sm" onClick={() => setEditingReturn(null)}>
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </Button>
+            <Button size="sm" className="bg-violet-600 hover:bg-violet-700 text-white gap-1.5" onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              {language === 'ar' ? 'حفظ التعديلات' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
