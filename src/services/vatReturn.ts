@@ -165,8 +165,13 @@ export async function getVATReturnReport(
     return sum + price * (taxRate / 100);
   }, 0);
 
-  const totalSalesAmount = invoiceSalesAmount + carSalesAmount;
-  const totalSalesVAT = invoiceSalesVAT + carSalesVAT;
+  // Sales returns (credit notes) - reduce sales
+  const creditNotesTotal = creditNotes.reduce((sum, n) => sum + (Number(n.total_amount) || 0), 0);
+  const creditNotesTax = creditNotes.reduce((sum, n) => sum + (Number(n.tax_amount) || 0), 0);
+  const creditNotesAmount = creditNotesTotal - creditNotesTax; // net amount before tax
+
+  const totalSalesAmount = invoiceSalesAmount + carSalesAmount - creditNotesAmount;
+  const totalSalesVAT = invoiceSalesVAT + carSalesVAT - creditNotesTax;
 
   // ========== Calculate Purchases ==========
   // From invoices table
@@ -187,8 +192,13 @@ export async function getVATReturnReport(
     return sum + amount * (taxRate / 100);
   }, 0);
 
-  const totalPurchasesAmount = invoicePurchasesAmount + carPurchasesAmount + expensesAmount;
-  const totalPurchasesVAT = invoicePurchasesVAT + carPurchasesVAT + expensesVAT;
+  // Purchase returns (debit notes) - reduce purchases
+  const debitNotesTotal = debitNotes.reduce((sum, n) => sum + (Number(n.total_amount) || 0), 0);
+  const debitNotesTax = debitNotes.reduce((sum, n) => sum + (Number(n.tax_amount) || 0), 0);
+  const debitNotesAmount = debitNotesTotal - debitNotesTax; // net amount before tax
+
+  const totalPurchasesAmount = invoicePurchasesAmount + carPurchasesAmount + expensesAmount - debitNotesAmount;
+  const totalPurchasesVAT = invoicePurchasesVAT + carPurchasesVAT + expensesVAT - debitNotesTax;
 
   // Build report
   const sales: VATReturnSales = {
