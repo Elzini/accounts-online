@@ -70,29 +70,29 @@ export function ZakatReportsPage() {
     ];
     
     const data = [
-      { item: 'صافي الربح', amount: cashFlow.operatingActivities.netIncome.toLocaleString() },
+      { item: 'صافي الربح', amount: String(cashFlow.operatingActivities.netIncome) },
       { item: '--- الأنشطة التشغيلية ---', amount: '' },
       ...cashFlow.operatingActivities.changesInWorkingCapital.map(c => ({
         item: c.description,
-        amount: c.amount.toLocaleString(),
+        amount: String(c.amount),
       })),
-      { item: 'إجمالي التدفقات التشغيلية', amount: cashFlow.operatingActivities.total.toLocaleString() },
+      { item: 'إجمالي التدفقات التشغيلية', amount: String(cashFlow.operatingActivities.total) },
       { item: '--- الأنشطة الاستثمارية ---', amount: '' },
       ...cashFlow.investingActivities.items.map(c => ({
         item: c.description,
-        amount: c.amount.toLocaleString(),
+        amount: String(c.amount),
       })),
-      { item: 'إجمالي التدفقات الاستثمارية', amount: cashFlow.investingActivities.total.toLocaleString() },
+      { item: 'إجمالي التدفقات الاستثمارية', amount: String(cashFlow.investingActivities.total) },
       { item: '--- الأنشطة التمويلية ---', amount: '' },
       ...cashFlow.financingActivities.items.map(c => ({
         item: c.description,
-        amount: c.amount.toLocaleString(),
+        amount: String(c.amount),
       })),
-      { item: 'إجمالي التدفقات التمويلية', amount: cashFlow.financingActivities.total.toLocaleString() },
+      { item: 'إجمالي التدفقات التمويلية', amount: String(cashFlow.financingActivities.total) },
       { item: '---', amount: '' },
-      { item: 'صافي التغير في النقدية', amount: cashFlow.netChangeInCash.toLocaleString() },
-      { item: 'النقدية في بداية الفترة', amount: cashFlow.cashAtBeginning.toLocaleString() },
-      { item: 'النقدية في نهاية الفترة', amount: cashFlow.cashAtEnd.toLocaleString() },
+      { item: 'صافي التغير في النقدية', amount: String(cashFlow.netChangeInCash) },
+      { item: 'النقدية في بداية الفترة', amount: String(cashFlow.cashAtBeginning) },
+      { item: 'النقدية في نهاية الفترة', amount: String(cashFlow.cashAtEnd) },
     ];
 
     const dateSubtitle = dateRange.from && dateRange.to 
