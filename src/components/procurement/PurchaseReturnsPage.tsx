@@ -412,7 +412,7 @@ export function PurchaseReturnsPage() {
   };
 
   const filtered = returns.filter((r: any) => r.note_number?.includes(searchList) || r.reason?.includes(searchList));
-  const hasValidReturn = (foundCar || foundInvoice) && items.filter(i => i.returnedQty > 0).length > 0;
+  const hasValidReturn = (foundCar || foundInvoice) && items.filter(i => i.selected && i.returnedQty > 0).length > 0;
   const supplierName = foundCar?.supplier?.name || foundInvoice?.supplier_name || '';
 
   return (
