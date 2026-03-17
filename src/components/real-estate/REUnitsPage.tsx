@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Home, Search, Grid3X3, List, Filter } from 'lucide-react';
+import { Plus, Home, Search, Grid3X3, List, Filter, ShoppingCart, Banknote, AlertTriangle } from 'lucide-react';
 import { useREUnits, useSaveREUnit, useREProjects, useREDashboardStats } from '@/hooks/useRealEstate';
+import { useCompleteUnitSale, useRecordAdvancePayment } from '@/hooks/useRealEstateAccounting';
+import { toast } from 'sonner';
 
 const UNIT_STATUS: Record<string, { label: string; color: string; bgClass: string }> = {
   available: { label: 'متاحة', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', bgClass: 'bg-green-500' },
@@ -36,11 +38,23 @@ export function REUnitsPage() {
   const { data: units = [], isLoading } = useREUnits(selectedProject === 'all' ? null : selectedProject);
   const { data: stats } = useREDashboardStats();
   const saveUnit = useSaveREUnit();
+  const completeUnitSale = useCompleteUnitSale();
+  const recordAdvance = useRecordAdvancePayment();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<any>(emptyUnit);
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  // Sale dialog state
+  const [saleDialogOpen, setSaleDialogOpen] = useState(false);
+  const [saleUnit, setSaleUnit] = useState<any>(null);
+  const [saleForm, setSaleForm] = useState({ customerName: '', customerId: '', salePrice: '', advancePayments: '0' });
+
+  // Advance payment dialog state
+  const [advanceDialogOpen, setAdvanceDialogOpen] = useState(false);
+  const [advanceUnit, setAdvanceUnit] = useState<any>(null);
+  const [advanceForm, setAdvanceForm] = useState({ customerName: '', customerId: '', amount: '' });
 
   const openNew = () => {
     setForm({ ...emptyUnit, project_id: selectedProject !== 'all' ? selectedProject : '' });
@@ -53,6 +67,60 @@ export function REUnitsPage() {
     delete payload.re_projects;
     delete payload.customers;
     saveUnit.mutate(payload, { onSuccess: () => setDialogOpen(false) });
+  };
+
+  const openSaleDialog = (u: any) => {
+    setSaleUnit(u);
+    setSaleForm({
+      customerName: u.customers?.name || '',
+      customerId: u.customer_id || '',
+      salePrice: String(u.sale_price || u.price || ''),
+      advancePayments: '0',
+    });
+    setSaleDialogOpen(true);
+  };
+
+  const handleCompleteSale = () => {
+    if (!saleUnit || !saleForm.salePrice || !saleForm.customerName) {
+      toast.error('يرجى ملء جميع الحقول المطلوبة');
+      return;
+    }
+    const projectName = saleUnit.re_projects?.name || '';
+    completeUnitSale.mutate({
+      unitId: saleUnit.id,
+      unitNumber: saleUnit.unit_number,
+      projectId: saleUnit.project_id,
+      projectName,
+      customerId: saleForm.customerId || saleUnit.id,
+      customerName: saleForm.customerName,
+      salePrice: Number(saleForm.salePrice),
+      advancePayments: Number(saleForm.advancePayments) || 0,
+    }, {
+      onSuccess: () => setSaleDialogOpen(false),
+    });
+  };
+
+  const openAdvanceDialog = (u: any) => {
+    setAdvanceUnit(u);
+    setAdvanceForm({ customerName: u.customers?.name || '', customerId: u.customer_id || '', amount: '' });
+    setAdvanceDialogOpen(true);
+  };
+
+  const handleRecordAdvance = () => {
+    if (!advanceUnit || !advanceForm.amount || !advanceForm.customerName) {
+      toast.error('يرجى ملء جميع الحقول المطلوبة');
+      return;
+    }
+    recordAdvance.mutate({
+      unitId: advanceUnit.id,
+      unitNumber: advanceUnit.unit_number,
+      projectName: advanceUnit.re_projects?.name || '',
+      customerId: advanceForm.customerId || advanceUnit.id,
+      customerName: advanceForm.customerName,
+      amount: Number(advanceForm.amount),
+    }, {
+      onSuccess: () => setAdvanceDialogOpen(false),
+    });
   };
 
   const filtered = units.filter((u: any) => {
@@ -125,7 +193,7 @@ export function REUnitsPage() {
           {filtered.map((u: any) => {
             const st = UNIT_STATUS[u.status] || UNIT_STATUS.available;
             return (
-              <Card key={u.id} className="hover:shadow-md cursor-pointer transition-all" onClick={() => openEdit(u)}>
+              <Card key={u.id} className="hover:shadow-md cursor-pointer transition-all group" onClick={() => openEdit(u)}>
                 <CardContent className="p-3 text-center space-y-2">
                   <div className={`w-10 h-10 mx-auto rounded-lg flex items-center justify-center text-white font-bold ${st.bgClass}`}>
                     {u.unit_number}
@@ -137,6 +205,17 @@ export function REUnitsPage() {
                     {u.price > 0 && <p className="font-semibold text-foreground">{fmt(Number(u.price))} ر.س</p>}
                   </div>
                   {u.customers?.name && <p className="text-xs text-primary truncate">{u.customers.name}</p>}
+                  {/* Action buttons for available/reserved units */}
+                  {(u.status === 'available' || u.status === 'reserved') && (
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="sm" variant="default" className="text-xs h-6 flex-1" onClick={(e) => { e.stopPropagation(); openSaleDialog(u); }}>
+                        <ShoppingCart className="w-3 h-3 ml-1" />بيع
+                      </Button>
+                      <Button size="sm" variant="outline" className="text-xs h-6 flex-1" onClick={(e) => { e.stopPropagation(); openAdvanceDialog(u); }}>
+                        <Banknote className="w-3 h-3 ml-1" />دفعة
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
@@ -154,6 +233,7 @@ export function REUnitsPage() {
                 <TableHead>السعر</TableHead>
                 <TableHead>الحالة</TableHead>
                 <TableHead>العميل</TableHead>
+                <TableHead>إجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -166,6 +246,14 @@ export function REUnitsPage() {
                   <TableCell>{u.price > 0 ? fmt(Number(u.price)) : '-'}</TableCell>
                   <TableCell><Badge className={UNIT_STATUS[u.status]?.color}>{UNIT_STATUS[u.status]?.label}</Badge></TableCell>
                   <TableCell>{u.customers?.name || '-'}</TableCell>
+                  <TableCell>
+                    {(u.status === 'available' || u.status === 'reserved') && (
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="default" className="text-xs h-7" onClick={(e) => { e.stopPropagation(); openSaleDialog(u); }}>بيع</Button>
+                        <Button size="sm" variant="outline" className="text-xs h-7" onClick={(e) => { e.stopPropagation(); openAdvanceDialog(u); }}>دفعة</Button>
+                      </div>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -173,7 +261,7 @@ export function REUnitsPage() {
         </Card>
       )}
 
-      {/* Dialog */}
+      {/* Edit Unit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{form.id ? 'تعديل الوحدة' : 'وحدة جديدة'}</DialogTitle></DialogHeader>
@@ -252,6 +340,112 @@ export function REUnitsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
             <Button onClick={handleSave} disabled={saveUnit.isPending}>{saveUnit.isPending ? 'جاري الحفظ...' : 'حفظ'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unit Sale Dialog — Automated Accounting */}
+      <Dialog open={saleDialogOpen} onOpenChange={setSaleDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5 text-primary" />
+              تأكيد بيع الوحدة {saleUnit?.unit_number}
+            </DialogTitle>
+            <DialogDescription>
+              سيتم تلقائياً: تسجيل الإيراد، تحويل التكلفة إلى تكلفة المبيعات، وترحيل الدفعات المقدمة
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">المشروع:</span><span className="font-medium">{saleUnit?.re_projects?.name}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">الوحدة:</span><span className="font-medium">{saleUnit?.unit_number}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">المساحة:</span><span>{saleUnit?.area ? `${saleUnit.area} م²` : '-'}</span></div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>اسم العميل *</Label>
+              <Input value={saleForm.customerName} onChange={e => setSaleForm({ ...saleForm, customerName: e.target.value })} placeholder="اسم المشتري" />
+            </div>
+            <div className="space-y-2">
+              <Label>سعر البيع (ر.س) *</Label>
+              <Input type="number" value={saleForm.salePrice} onChange={e => setSaleForm({ ...saleForm, salePrice: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>الدفعات المقدمة المستلمة (ر.س)</Label>
+              <Input type="number" value={saleForm.advancePayments} onChange={e => setSaleForm({ ...saleForm, advancePayments: e.target.value })} />
+            </div>
+
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1 text-sm">
+              <p className="font-semibold text-primary mb-2">القيود التي سيتم إنشاؤها تلقائياً:</p>
+              <div className="space-y-2">
+                <div className="flex items-start gap-2">
+                  <Badge variant="outline" className="text-xs shrink-0">قيد 1</Badge>
+                  <span>اعتراف بالإيراد (IFRS 15) — ذمم مدينة ← إيرادات + ضريبة</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Badge variant="outline" className="text-xs shrink-0">قيد 2</Badge>
+                  <span>تحويل التكلفة — تكلفة مبيعات ← مشاريع تحت التطوير</span>
+                </div>
+                {Number(saleForm.advancePayments) > 0 && (
+                  <div className="flex items-start gap-2">
+                    <Badge variant="outline" className="text-xs shrink-0">ترحيل</Badge>
+                    <span>ترحيل الدفعات المقدمة من الالتزامات إلى الذمم المدينة</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>تكلفة الوحدة ستُحسب تلقائياً بالتناسب مع المساحة من إجمالي تكاليف المشروع</span>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaleDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleCompleteSale} disabled={completeUnitSale.isPending}>
+              {completeUnitSale.isPending ? 'جاري التسجيل...' : 'تأكيد البيع وإنشاء القيود'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Advance Payment Dialog */}
+      <Dialog open={advanceDialogOpen} onOpenChange={setAdvanceDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Banknote className="w-5 h-5 text-primary" />
+              تسجيل دفعة مقدمة — وحدة {advanceUnit?.unit_number}
+            </DialogTitle>
+            <DialogDescription>
+              الدفعة ستُسجل كالتزام (خصوم) وليس كإيراد — وفق المعايير المحاسبية
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>اسم العميل *</Label>
+              <Input value={advanceForm.customerName} onChange={e => setAdvanceForm({ ...advanceForm, customerName: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>مبلغ الدفعة (ر.س) *</Label>
+              <Input type="number" value={advanceForm.amount} onChange={e => setAdvanceForm({ ...advanceForm, amount: e.target.value })} />
+            </div>
+
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-sm">
+              <p className="font-semibold text-primary mb-1">القيد المحاسبي:</p>
+              <p>مدين: البنك (1101) ← دائن: دفعات مقدمة من العملاء (2102)</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAdvanceDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleRecordAdvance} disabled={recordAdvance.isPending}>
+              {recordAdvance.isPending ? 'جاري التسجيل...' : 'تسجيل الدفعة'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
