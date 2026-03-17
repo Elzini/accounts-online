@@ -1621,7 +1621,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               </div>
               {/* الضريبة */}
               <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 text-center">
-                <div className="text-2xl font-black text-amber-700 dark:text-amber-400">{formatCurrency(calculations.totalVAT)}</div>
+                <div className="text-2xl font-black text-amber-700 dark:text-amber-400">{formatCurrency(displayTotals.totalVAT)}</div>
                 <div className="text-[10px] text-amber-600 dark:text-amber-500 font-semibold mt-1">{t.inv_tax_label} {taxRate}%</div>
               </div>
               {/* الربح */}
