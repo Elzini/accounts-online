@@ -1187,6 +1187,28 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           continue;
         }
 
+        // Upload PDF file to storage if available
+        if (result.fileObject) {
+          try {
+            const filePath = `${companyId}/${invoice.id}/${result.fileObject.name}`;
+            const { error: uploadError } = await supabase.storage
+              .from('invoice-files')
+              .upload(filePath, result.fileObject, { upsert: true });
+            
+            if (!uploadError) {
+              const { data: urlData } = supabase.storage
+                .from('invoice-files')
+                .getPublicUrl(filePath);
+              
+              await supabase.from('invoices')
+                .update({ file_url: urlData.publicUrl })
+                .eq('id', invoice.id);
+            }
+          } catch (fileErr) {
+            console.error('File upload error:', fileErr);
+          }
+        }
+
         // Create invoice items
         if (data.items && data.items.length > 0) {
           const invoiceItems = data.items.map(item => ({

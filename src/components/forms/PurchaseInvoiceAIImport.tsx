@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Upload, FileText, Loader2, CheckCircle, Sparkles, AlertCircle, X, Files, ArrowLeftRight } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle, Sparkles, AlertCircle, X, Files, ArrowLeftRight, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCostCenters } from '@/hooks/useCostCenters';
@@ -41,6 +41,8 @@ export interface BatchParsedResult {
   fileName: string;
   data: ParsedInvoiceData;
   success: boolean;
+  fileObject?: File;
+  thumbnailUrl?: string;
 }
 
 interface PurchaseInvoiceAIImportProps {
@@ -67,6 +69,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
   const companyId = useCompanyId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const batchFileInputRef = useRef<HTMLInputElement>(null);
+  const batchFilesRef = useRef<File[]>([]);
 
   const fileToBase64 = async (file: File): Promise<string> => {
     const buffer = await file.arrayBuffer();
@@ -123,7 +126,6 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
     if (!files || files.length === 0) return;
 
     const fileArray = Array.from(files);
-    // Validate files
     const validFiles = fileArray.filter(f => {
       if (!f.type.startsWith('image/') && !f.name.toLowerCase().endsWith('.pdf')) {
         toast.error(`الملف ${f.name} غير مدعوم`);
@@ -134,6 +136,9 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
 
     if (validFiles.length === 0) return;
 
+    // Store files for later upload
+    batchFilesRef.current = validFiles;
+
     setIsBatchMode(true);
     setIsLoading(true);
     setBatchResults([]);
@@ -142,7 +147,6 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
     setProgress(0);
 
     try {
-      // Process in chunks of 5 to avoid rate limits
       const chunkSize = 5;
       const allResults: BatchParsedResult[] = [];
       const allErrors: Array<{ index: number; fileName: string; error: string }> = [];
@@ -164,7 +168,23 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
         if (error) throw error;
 
         if (data?.results) {
-          allResults.push(...data.results);
+          // Attach file objects and generate thumbnails for images
+          const resultsWithFiles = await Promise.all(data.results.map(async (r: BatchParsedResult) => {
+            const globalIdx = i + (r.index - (data.results.indexOf(r) > 0 ? 0 : 0));
+            const fileIdx = r.index;
+            const file = validFiles[fileIdx];
+            let thumbnailUrl: string | undefined;
+            
+            if (file && file.type.startsWith('image/')) {
+              thumbnailUrl = URL.createObjectURL(file);
+            } else if (file && file.name.toLowerCase().endsWith('.pdf')) {
+              // For PDFs, create a data URL for the file icon placeholder
+              thumbnailUrl = undefined; // Will show PDF icon
+            }
+
+            return { ...r, fileObject: file, thumbnailUrl };
+          }));
+          allResults.push(...resultsWithFiles);
         }
         if (data?.errors) {
           allErrors.push(...data.errors);
@@ -461,7 +481,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
             </div>
           )}
 
-          {/* Batch results */}
+          {/* Batch results - detailed card view */}
           {!isLoading && isBatchMode && batchResults.length > 0 && !selectedBatchResult && !reconciliationResults && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-800">
@@ -472,73 +492,25 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                 </span>
               </div>
 
-              <div className="border rounded-lg overflow-hidden max-h-[400px] overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/30">
-                      <TableHead className="text-right w-10">#</TableHead>
-                      <TableHead className="text-right">الملف</TableHead>
-                      <TableHead className="text-right">المورد</TableHead>
-                      <TableHead className="text-right">رقم الفاتورة</TableHead>
-                      <TableHead className="text-right">التاريخ</TableHead>
-                      <TableHead className="text-left">الإجمالي</TableHead>
-                      <TableHead className="text-center">الحالة</TableHead>
-                      <TableHead className="w-20"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {batchResults.filter(r => r.success).map((result) => (
-                      <TableRow key={result.index} className="hover:bg-muted/20">
-                        <TableCell className="text-right text-muted-foreground">{result.index + 1}</TableCell>
-                        <TableCell className="text-right text-xs truncate max-w-[120px]">{result.fileName}</TableCell>
-                        <TableCell className="text-right text-sm font-medium">{result.data.supplier_name}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">{result.data.invoice_number}</TableCell>
-                        <TableCell className="text-right text-sm">{result.data.invoice_date}</TableCell>
-                        <TableCell className="text-left font-mono text-sm">{formatCurrency(result.data.total_amount)}</TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                            <CheckCircle className="w-3 h-3 ml-1" />
-                            نجح
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setSelectedBatchIndex(result.index)}
-                              className="text-xs h-7 px-2"
-                            >
-                              معاينة
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleImportSingleFromBatch(result)}
-                              className="text-xs h-7 px-2"
-                            >
-                              استيراد
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {batchErrors.map((err) => (
-                      <TableRow key={`err-${err.index}`} className="bg-destructive/5">
-                        <TableCell className="text-right text-muted-foreground">{err.index + 1}</TableCell>
-                        <TableCell className="text-right text-xs truncate max-w-[120px]">{err.fileName}</TableCell>
-                        <TableCell colSpan={4} className="text-right text-sm text-destructive">{err.error}</TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="destructive" className="text-xs">
-                            <X className="w-3 h-3 ml-1" />
-                            فشل
-                          </Badge>
-                        </TableCell>
-                        <TableCell></TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div className="max-h-[500px] overflow-y-auto space-y-3 pr-1">
+                {batchResults.filter(r => r.success).map((result) => (
+                  <BatchInvoiceCard
+                    key={result.index}
+                    result={result}
+                    formatCurrency={formatCurrency}
+                    onPreview={() => setSelectedBatchIndex(result.index)}
+                    onImportSingle={() => handleImportSingleFromBatch(result)}
+                  />
+                ))}
+                {batchErrors.map((err) => (
+                  <div key={`err-${err.index}`} className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg flex items-center gap-3">
+                    <Badge variant="destructive" className="text-xs shrink-0">
+                      <X className="w-3 h-3 ml-1" />فشل
+                    </Badge>
+                    <span className="text-xs truncate">{err.fileName}</span>
+                    <span className="text-xs text-destructive">{err.error}</span>
+                  </div>
+                ))}
               </div>
 
               {/* Cost Center Selector */}
@@ -726,6 +698,104 @@ function SingleInvoicePreview({
           {confirmLabel}
         </Button>
       </div>
+    </div>
+  );
+}
+
+function BatchInvoiceCard({
+  result,
+  formatCurrency,
+  onPreview,
+  onImportSingle,
+}: {
+  result: BatchParsedResult;
+  formatCurrency: (val: number) => string;
+  onPreview: () => void;
+  onImportSingle: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const data = result.data;
+
+  return (
+    <div className="border rounded-lg overflow-hidden bg-card">
+      {/* Header row */}
+      <div
+        className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/30 transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
+        {/* Thumbnail */}
+        <div className="w-12 h-16 rounded border bg-muted/50 flex items-center justify-center shrink-0 overflow-hidden">
+          {result.thumbnailUrl ? (
+            <img src={result.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <FileText className="w-6 h-6 text-muted-foreground" />
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-mono">#{result.index + 1}</span>
+            <span className="text-sm font-bold truncate">{data.supplier_name}</span>
+          </div>
+          <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+            <span className="font-mono">{data.invoice_number}</span>
+            <span>{data.invoice_date}</span>
+            <span>{data.items?.length || 0} أصناف</span>
+          </div>
+        </div>
+
+        {/* Amounts */}
+        <div className="text-left shrink-0 space-y-0.5">
+          <div className="text-[10px] text-muted-foreground">
+            صافي: <span className="font-mono">{formatCurrency(data.subtotal || (data.total_amount - (data.vat_amount || 0)))}</span>
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            ضريبة: <span className="font-mono">{formatCurrency(data.vat_amount || 0)}</span>
+          </div>
+          <div className="text-sm font-bold font-mono text-primary">
+            {formatCurrency(data.total_amount)}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+          <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={onPreview}>
+            <Eye className="w-3 h-3" />
+          </Button>
+          <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={onImportSingle}>
+            استيراد
+          </Button>
+        </div>
+      </div>
+
+      {/* Expanded items */}
+      {expanded && data.items && data.items.length > 0 && (
+        <div className="border-t bg-muted/10 p-2">
+          <table className="w-full text-[11px]">
+            <thead>
+              <tr className="text-muted-foreground">
+                <th className="text-right p-1 font-medium">#</th>
+                <th className="text-right p-1 font-medium">الوصف</th>
+                <th className="text-center p-1 font-medium">الكمية</th>
+                <th className="text-left p-1 font-medium">السعر</th>
+                <th className="text-left p-1 font-medium">الإجمالي</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map((item, i) => (
+                <tr key={i} className="border-t border-border/30">
+                  <td className="p-1 text-right text-muted-foreground">{i + 1}</td>
+                  <td className="p-1 text-right">{item.description}</td>
+                  <td className="p-1 text-center">{item.quantity}</td>
+                  <td className="p-1 text-left font-mono">{formatCurrency(item.unit_price)}</td>
+                  <td className="p-1 text-left font-mono font-medium">{formatCurrency(item.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
