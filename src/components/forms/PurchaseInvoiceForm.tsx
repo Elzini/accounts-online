@@ -403,19 +403,14 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   // Use stored header totals for display when viewing existing invoices with mismatched items
   const displayTotals = useMemo(() => {
     if (isViewingExisting && !isEditing && storedHeaderTotals && storedHeaderTotals.total > 0) {
-      // Check if items total differs significantly from stored header total
-      const itemsTotal = calculations.finalTotal;
-      const headerTotal = storedHeaderTotals.total;
-      if (Math.abs(itemsTotal - headerTotal) > 0.5) {
-        // Use stored header values
-        return {
-          subtotal: storedHeaderTotals.subtotal,
-          totalVAT: storedHeaderTotals.vat_amount,
-          finalTotal: storedHeaderTotals.total,
-          discountAmount: calculations.discountAmount,
-          subtotalAfterDiscount: storedHeaderTotals.subtotal - calculations.discountAmount,
-        };
-      }
+      // Always use stored header values for existing invoices (frozen financial snapshot)
+      return {
+        subtotal: storedHeaderTotals.subtotal,
+        totalVAT: storedHeaderTotals.vat_amount,
+        finalTotal: storedHeaderTotals.total,
+        discountAmount: calculations.discountAmount,
+        subtotalAfterDiscount: storedHeaderTotals.subtotal - calculations.discountAmount,
+      };
     }
     return {
       subtotal: calculations.subtotal,

@@ -212,6 +212,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [currentSaleStatus, setCurrentSaleStatus] = useState<'draft' | 'approved'>('draft');
   const [isEditing, setIsEditing] = useState(false);
+  // Store header totals from DB for existing invoices (frozen financial snapshot)
+  const [storedHeaderTotals, setStoredHeaderTotals] = useState<{
+    subtotal: number; vat_amount: number; total: number; vat_rate: number; discount_amount: number;
+  } | null>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const isApproved = isViewingExisting && currentSaleStatus === 'approved';
   const isReadOnly = isViewingExisting && !isEditing && !isApproved;
@@ -409,6 +413,24 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     };
   }, [selectedCars, selectedInventoryItems, invoiceData.price_includes_tax, invoiceData.commission, invoiceData.other_expenses, taxRate, discount, discountType, isCarDealership]);
 
+  // Use stored header totals for display when viewing existing invoices (frozen financial snapshot)
+  const displayTotals = useMemo(() => {
+    if (isViewingExisting && !isEditing && storedHeaderTotals && storedHeaderTotals.total > 0) {
+      return {
+        subtotal: storedHeaderTotals.subtotal,
+        totalVAT: storedHeaderTotals.vat_amount,
+        finalTotal: storedHeaderTotals.total,
+        discountAmount: storedHeaderTotals.discount_amount,
+        subtotalAfterDiscount: storedHeaderTotals.subtotal - storedHeaderTotals.discount_amount,
+        roundedTotal: storedHeaderTotals.total,
+        totalPurchasePrice: calculations.totalPurchasePrice,
+        profit: calculations.profit,
+        quantity: calculations.quantity,
+      };
+    }
+    return calculations;
+  }, [calculations, storedHeaderTotals, isViewingExisting, isEditing]);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat(locale, {
       minimumFractionDigits: decimals,
@@ -605,6 +627,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     setCurrentSaleId(null);
     setCurrentSaleStatus('draft');
     setIsEditing(false);
+    setStoredHeaderTotals(null);
   };
 
   const handleCloseInvoice = (open: boolean) => {
@@ -673,6 +696,26 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       last_payment_date: '',
       first_installment_date: new Date().toISOString().split('T')[0],
     });
+
+    // Store header totals from the database record (frozen financial snapshot)
+    if (isInvoiceRecord) {
+      setStoredHeaderTotals({
+        subtotal: sale.subtotal || 0,
+        vat_amount: sale.vat_amount || 0,
+        total: sale.total || 0,
+        vat_rate: sale.vat_rate || 0,
+        discount_amount: sale.discount_amount || 0,
+      });
+    } else {
+      // Car sales: use sale-level values if available
+      setStoredHeaderTotals(sale.sale_price ? {
+        subtotal: Number(sale.sale_price) || 0,
+        vat_amount: Number(sale.vat_amount) || 0,
+        total: Number(sale.total_with_vat || sale.sale_price) || 0,
+        vat_rate: Number(sale.vat_rate) || 0,
+        discount_amount: Number(sale.discount_amount) || 0,
+      } : null);
+    }
 
     // Load invoice items for non-car companies
     if (isInvoiceRecord && sale.invoice_items && sale.invoice_items.length > 0) {
@@ -966,9 +1009,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               taxAmount: Number(item.vat_amount) || 0,
               total: Number(item.total) || 0,
             }))),
-      subtotal: calculations.subtotal || Number(savedSaleData?.subtotal) || 0,
-      taxAmount: calculations.totalVAT || Number(savedSaleData?.vat_amount) || 0,
-      total: calculations.finalTotal || Number(savedSaleData?.total) || 0,
+      subtotal: displayTotals.subtotal || Number(savedSaleData?.subtotal) || 0,
+      taxAmount: displayTotals.totalVAT || Number(savedSaleData?.vat_amount) || 0,
+      total: displayTotals.finalTotal || Number(savedSaleData?.total) || 0,
       taxSettings: taxSettings,
       companyLogoUrl: (company as any)?.invoice_logo_url || company?.logo_url,
       salesmanName: invoiceData.seller_name || savedSaleData?.seller_name || '',
@@ -1271,7 +1314,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20 mt-2">
                 <div className="flex items-center gap-1">
                   <Label className="text-[10px] whitespace-nowrap text-muted-foreground">{t.inv_car_price}</Label>
-                  <span className="text-xs font-medium">{formatCurrency(calculations.finalTotal)}</span>
+                  <span className="text-xs font-medium">{formatCurrency(displayTotals.finalTotal)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Label className="text-[10px] whitespace-nowrap text-muted-foreground">{t.inv_down_payment}</Label>
@@ -1298,11 +1341,11 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 </div>
                 <div className="flex items-center gap-1">
                   <Label className="text-[10px] whitespace-nowrap text-muted-foreground">{t.inv_remaining}</Label>
-                  <span className="text-xs font-medium text-destructive">{formatCurrency(calculations.finalTotal - (parseFloat(invoiceData.down_payment) || 0))}</span>
+                  <span className="text-xs font-medium text-destructive">{formatCurrency(displayTotals.finalTotal - (parseFloat(invoiceData.down_payment) || 0))}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Label className="text-[10px] whitespace-nowrap text-muted-foreground">{t.inv_installment_value}</Label>
-                  <span className="text-xs font-medium text-primary">{formatCurrency((calculations.finalTotal - (parseFloat(invoiceData.down_payment) || 0)) / (parseInt(invoiceData.number_of_installments) || 12))}</span>
+                  <span className="text-xs font-medium text-primary">{formatCurrency((displayTotals.finalTotal - (parseFloat(invoiceData.down_payment) || 0)) / (parseInt(invoiceData.number_of_installments) || 12))}</span>
                 </div>
               </div>
             )}
@@ -1548,12 +1591,12 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {/* الإجمالي الصافي */}
               <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-4 text-center text-white shadow-lg">
-                <div className="text-3xl font-black">{formatCurrency(calculations.finalTotal)}</div>
+                <div className="text-3xl font-black">{formatCurrency(displayTotals.finalTotal)}</div>
                 <div className="text-[11px] font-medium mt-1 opacity-90">{t.inv_net}</div>
               </div>
               {/* المجموع */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4 text-center">
-                <div className="text-2xl font-black text-blue-700 dark:text-blue-400">{formatCurrency(calculations.subtotal)}</div>
+                <div className="text-2xl font-black text-blue-700 dark:text-blue-400">{formatCurrency(displayTotals.subtotal)}</div>
                 <div className="text-[10px] text-blue-600 dark:text-blue-500 font-semibold mt-1">{t.inv_total}</div>
               </div>
               {/* الخصم */}
@@ -1578,13 +1621,13 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
               </div>
               {/* الضريبة */}
               <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 text-center">
-                <div className="text-2xl font-black text-amber-700 dark:text-amber-400">{formatCurrency(calculations.totalVAT)}</div>
+                <div className="text-2xl font-black text-amber-700 dark:text-amber-400">{formatCurrency(displayTotals.totalVAT)}</div>
                 <div className="text-[10px] text-amber-600 dark:text-amber-500 font-semibold mt-1">{t.inv_tax_label} {taxRate}%</div>
               </div>
               {/* الربح */}
-              <div className={`border-2 rounded-xl p-4 text-center ${calculations.profit >= 0 ? 'bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-800'}`}>
-                <div className={`text-2xl font-black ${calculations.profit >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>{formatCurrency(calculations.profit)}</div>
-                <div className={`text-[10px] font-semibold mt-1 ${calculations.profit >= 0 ? 'text-emerald-600 dark:text-emerald-500' : 'text-red-600 dark:text-red-500'}`}>{t.inv_profit}</div>
+              <div className={`border-2 rounded-xl p-4 text-center ${displayTotals.profit >= 0 ? 'bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-800'}`}>
+                <div className={`text-2xl font-black ${displayTotals.profit >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>{formatCurrency(displayTotals.profit)}</div>
+                <div className={`text-[10px] font-semibold mt-1 ${displayTotals.profit >= 0 ? 'text-emerald-600 dark:text-emerald-500' : 'text-red-600 dark:text-red-500'}`}>{t.inv_profit}</div>
               </div>
             </div>
 
