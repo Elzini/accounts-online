@@ -438,6 +438,12 @@ export function PurchaseReturnsPage() {
       reason: r.reason || '',
     });
   };
+
+  const resetForm = () => {
+    setFoundCar(null);
+    setFoundInvoice(null);
+    setItems([]);
+    setSearchQuery('');
     setForm({
       invoiceType: 'normal',
       paymentMethod: 'cash',
