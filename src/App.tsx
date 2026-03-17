@@ -206,6 +206,7 @@ function App() {
                     <NetworkStatusIndicator />
                     <UpdatePrompt />
                     <InstallBanner />
+                    <SystemChangeAlertProvider />
                     <AppRoutes />
                   </BrowserRouter>
                 </TooltipProvider>
