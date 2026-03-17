@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.parse-bank-statement]
 verify_jwt = false
+
+[functions.tamper-detector]
+verify_jwt = false
