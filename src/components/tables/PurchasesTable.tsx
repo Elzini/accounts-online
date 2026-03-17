@@ -46,6 +46,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
         .select('*, supplier:suppliers!invoices_supplier_id_fkey(id, name)')
         .eq('company_id', companyId!)
         .eq('invoice_type', 'purchase')
+        .gte('total', 0)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
