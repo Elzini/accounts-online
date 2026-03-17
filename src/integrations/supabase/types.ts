@@ -13264,6 +13264,60 @@ export type Database = {
           },
         ]
       }
+      system_change_alerts: {
+        Row: {
+          affected_module: string
+          affected_tables: string[] | null
+          change_type: string
+          created_at: string
+          description: string
+          id: string
+          impact_analysis: Json | null
+          new_value: Json | null
+          previous_value: Json | null
+          request_source: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          affected_module: string
+          affected_tables?: string[] | null
+          change_type: string
+          created_at?: string
+          description: string
+          id?: string
+          impact_analysis?: Json | null
+          new_value?: Json | null
+          previous_value?: Json | null
+          request_source?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          affected_module?: string
+          affected_tables?: string[] | null
+          change_type?: string
+          created_at?: string
+          description?: string
+          id?: string
+          impact_analysis?: Json | null
+          new_value?: Json | null
+          previous_value?: Json | null
+          request_source?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       system_change_log: {
         Row: {
           applied_at: string | null
