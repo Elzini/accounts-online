@@ -125,7 +125,6 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
     if (!files || files.length === 0) return;
 
     const fileArray = Array.from(files);
-    // Validate files
     const validFiles = fileArray.filter(f => {
       if (!f.type.startsWith('image/') && !f.name.toLowerCase().endsWith('.pdf')) {
         toast.error(`الملف ${f.name} غير مدعوم`);
@@ -136,6 +135,9 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
 
     if (validFiles.length === 0) return;
 
+    // Store files for later upload
+    batchFilesRef.current = validFiles;
+
     setIsBatchMode(true);
     setIsLoading(true);
     setBatchResults([]);
@@ -144,7 +146,6 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
     setProgress(0);
 
     try {
-      // Process in chunks of 5 to avoid rate limits
       const chunkSize = 5;
       const allResults: BatchParsedResult[] = [];
       const allErrors: Array<{ index: number; fileName: string; error: string }> = [];
@@ -166,7 +167,23 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
         if (error) throw error;
 
         if (data?.results) {
-          allResults.push(...data.results);
+          // Attach file objects and generate thumbnails for images
+          const resultsWithFiles = await Promise.all(data.results.map(async (r: BatchParsedResult) => {
+            const globalIdx = i + (r.index - (data.results.indexOf(r) > 0 ? 0 : 0));
+            const fileIdx = r.index;
+            const file = validFiles[fileIdx];
+            let thumbnailUrl: string | undefined;
+            
+            if (file && file.type.startsWith('image/')) {
+              thumbnailUrl = URL.createObjectURL(file);
+            } else if (file && file.name.toLowerCase().endsWith('.pdf')) {
+              // For PDFs, create a data URL for the file icon placeholder
+              thumbnailUrl = undefined; // Will show PDF icon
+            }
+
+            return { ...r, fileObject: file, thumbnailUrl };
+          }));
+          allResults.push(...resultsWithFiles);
         }
         if (data?.errors) {
           allErrors.push(...data.errors);
