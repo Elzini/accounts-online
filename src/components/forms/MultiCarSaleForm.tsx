@@ -186,7 +186,7 @@ export function MultiCarSaleForm({ setActivePage }: MultiCarSaleFormProps) {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA').format(value);
+    return String(Math.round(value));
   };
 
   return (

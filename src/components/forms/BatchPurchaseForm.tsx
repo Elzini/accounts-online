@@ -90,7 +90,7 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ar-SA').format(Math.round(value * 100) / 100);
+    return String(Math.round(value * 100) / 100);
   };
 
   // Calculate tax details for total

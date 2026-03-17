@@ -27,7 +27,7 @@ import { AccountMovementReport } from '@/components/reports/AccountMovementRepor
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
+const fmt = (n: number) => String(Math.round(n));
 
 export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defaultTab?: string } = {}) {
   const { t, direction } = useLanguage();
