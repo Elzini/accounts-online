@@ -149,6 +149,45 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
     setIsRefreshing(false);
   };
 
+  const draftInvoices = useMemo(() => {
+    return purchaseInvoices.filter((inv: any) => isDraftInvoiceStatus(inv.status));
+  }, [purchaseInvoices]);
+
+  const handleApproveAll = useCallback(async () => {
+    if (draftInvoices.length === 0) {
+      toast.info(language === 'ar' ? 'لا توجد فواتير مسودة للاعتماد' : 'No draft invoices to approve');
+      return;
+    }
+    setIsApprovingAll(true);
+    let successCount = 0;
+    let failCount = 0;
+    for (const inv of draftInvoices) {
+      try {
+        await approveInvoiceWithJournal(inv.id);
+        successCount++;
+      } catch (err) {
+        console.error(`Error approving ${inv.invoice_number}:`, err);
+        failCount++;
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+    queryClient.invalidateQueries({ queryKey: ['purchase-invoices-nav', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+    queryClient.invalidateQueries({ queryKey: ['stats'] });
+    queryClient.invalidateQueries({ queryKey: ['advanced-analytics'] });
+    queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
+    queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance'] });
+    setIsApprovingAll(false);
+    if (successCount > 0) {
+      toast.success(language === 'ar' ? `تم اعتماد ${successCount} فاتورة بنجاح` : `${successCount} invoices approved`);
+    }
+    if (failCount > 0) {
+      toast.error(language === 'ar' ? `فشل اعتماد ${failCount} فاتورة` : `${failCount} invoices failed`);
+    }
+  }, [draftInvoices, queryClient, language, companyId]);
+
   const taxRate = taxSettings?.is_active && taxSettings?.apply_to_purchases ? (taxSettings.tax_rate || 15) : 0;
   const locale = language === 'ar' ? 'ar-SA' : 'en-SA';
   const currency = language === 'ar' ? 'ريال' : 'SAR';
