@@ -249,10 +249,18 @@ serve(async (req) => {
 
       case 'POST': {
         if (!body) return errorResponse('Request body required', 400);
-        
+        if (READ_ONLY_RESOURCES.includes(resource)) {
+          return errorResponse(`Resource '${resource}' is read-only via API`, 403);
+        }
+
+        const safeInsert = pickAllowedFields(body, tableName);
+        if (Object.keys(safeInsert).length === 0) {
+          return errorResponse('No valid fields provided', 400);
+        }
+
         const { data, error } = await supabase
           .from(tableName)
-          .insert({ ...body, company_id: companyId })
+          .insert({ ...safeInsert, company_id: companyId })
           .select()
           .single();
 
@@ -266,15 +274,18 @@ serve(async (req) => {
       case 'PATCH': {
         if (!resourceId) return errorResponse('Resource ID required', 400);
         if (!body) return errorResponse('Request body required', 400);
+        if (READ_ONLY_RESOURCES.includes(resource)) {
+          return errorResponse(`Resource '${resource}' is read-only via API`, 403);
+        }
 
-        // Remove fields that shouldn't be updated
-        delete body.id;
-        delete body.company_id;
-        delete body.created_at;
+        const safeUpdate = pickAllowedFields(body, tableName);
+        if (Object.keys(safeUpdate).length === 0) {
+          return errorResponse('No valid fields provided', 400);
+        }
 
         const { data, error } = await supabase
           .from(tableName)
-          .update(body)
+          .update(safeUpdate)
           .eq('id', resourceId)
           .eq('company_id', companyId)
           .select()
