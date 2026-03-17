@@ -45,10 +45,8 @@ export function useNumberFormat() {
   const formatNumber = (value: number | null | undefined): string => {
     if (value === null || value === undefined || isNaN(value)) return '-';
     if (value === 0) return '0';
-    return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(decimals === 0 ? Math.round(value) : value);
+    const v = decimals === 0 ? Math.round(value) : value;
+    return decimals === 0 ? String(v) : v.toFixed(decimals);
   };
 
   const formatCurrency = (value: number | null | undefined, currency = 'ر.س'): string => {
