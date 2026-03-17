@@ -619,7 +619,7 @@ function LiveAlertRow({ alert, onView }: { alert: SystemChangeAlert; onView: () 
               <>
                 <ImpactChip icon="├" label={`Affects ${alert.impact_analysis.sales_invoices + alert.impact_analysis.purchase_invoices} invoices`} />
                 <ImpactChip icon="├" label={`Affects ${alert.impact_analysis.journal_entries} journal entries`} />
-                {alert.impact_analysis.vat_report_affected && (
+                {alert.impact_analysis.vat_reports_impact && alert.impact_analysis.vat_reports_impact !== 'none' && (
                   <ImpactChip icon="└" label="Affects VAT report" />
                 )}
               </>
