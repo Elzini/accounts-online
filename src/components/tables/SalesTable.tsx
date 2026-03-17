@@ -210,15 +210,17 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
             <RefreshCw className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'} ${isRefreshing ? 'animate-spin' : ''}`} />
             {t.btn_refresh}
           </Button>
-          <Button
-            variant="outline"
-            onClick={handleRecalculateProfits}
-            disabled={recalcProfits.isPending}
-            className="h-10 sm:h-11"
-          >
-            <RefreshCw className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'} ${recalcProfits.isPending ? 'animate-spin' : ''}`} />
-            {t.btn_recalculate_profits}
-          </Button>
+          {isCarDealership && (
+            <Button
+              variant="outline"
+              onClick={handleRecalculateProfits}
+              disabled={recalcProfits.isPending}
+              className="h-10 sm:h-11"
+            >
+              <RefreshCw className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'} ${recalcProfits.isPending ? 'animate-spin' : ''}`} />
+              {t.btn_recalculate_profits}
+            </Button>
+          )}
           <Button 
             onClick={() => setActivePage('add-sale')}
             className="gradient-success hover:opacity-90 flex-1 sm:flex-initial h-10 sm:h-11"
