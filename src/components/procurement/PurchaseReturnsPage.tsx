@@ -323,9 +323,10 @@ export function PurchaseReturnsPage() {
       }
 
       const num = `PR-${String(returns.length + 1).padStart(4, '0')}`;
+      const isPartial = !form.fullInvoice;
       const reason = isCarDealership && foundCar
-        ? `مرتجع شراء سيارة رقم مخزون ${foundCar.inventory_number}${form.notes ? ' - ' + form.notes : ''}`
-        : `مرتجع فاتورة مشتريات رقم ${foundInvoice?.invoice_number || ''}${form.notes ? ' - ' + form.notes : ''}`;
+        ? `مرتجع شراء سيارة رقم مخزون ${foundCar.inventory_number}${isPartial ? ` (إرجاع جزئي: ${formatCurrency(totals.total)} ريال)` : ''}${form.notes ? ' - ' + form.notes : ''}`
+        : `مرتجع فاتورة مشتريات رقم ${foundInvoice?.invoice_number || ''}${isPartial ? ` (إرجاع جزئي: ${formatCurrency(totals.total)} ريال)` : ''}${form.notes ? ' - ' + form.notes : ''}`;
 
       const { error } = await supabase.from('credit_debit_notes').insert({
         company_id: companyId!,
