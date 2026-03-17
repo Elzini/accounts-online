@@ -71,7 +71,7 @@ export async function getVATReturnReport(
   // Sales invoices (issued/approved only)
   let salesInvQuery = supabase
     .from('invoices')
-    .select('id, subtotal, vat_amount, total, invoice_date')
+    .select('id, invoice_number, subtotal, vat_amount, total, invoice_date, customer_name, supplier_invoice_number')
     .eq('company_id', companyId)
     .eq('invoice_type', 'sales')
     .neq('status', 'draft');
