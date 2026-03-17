@@ -266,6 +266,7 @@ export function PurchaseReturnsPage() {
         total: subtotal,
         vat,
         grandTotal: subtotal + vat,
+        selected: true,
       }]);
     }
     toast.success(language === 'ar' ? 'تم العثور على الفاتورة' : 'Invoice found');
