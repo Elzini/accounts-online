@@ -35,6 +35,8 @@ export interface VATReturnReport {
     startDate: string;
     endDate: string;
   };
+  salesReturns: { amount: number; vat: number; count: number };
+  purchaseReturns: { amount: number; vat: number; count: number };
 }
 
 export async function getVATReturnReport(
@@ -241,6 +243,16 @@ export async function getVATReturnReport(
     period: {
       startDate: startDate || '',
       endDate: endDate || '',
+    },
+    salesReturns: {
+      amount: creditNotesAmount,
+      vat: creditNotesTax,
+      count: creditNotes.length,
+    },
+    purchaseReturns: {
+      amount: debitNotesAmount,
+      vat: debitNotesTax,
+      count: debitNotes.length,
     },
   };
 }
