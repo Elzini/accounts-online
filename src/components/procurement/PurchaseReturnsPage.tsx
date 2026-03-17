@@ -160,6 +160,7 @@ export function PurchaseReturnsPage() {
         total: cost,
         vat,
         grandTotal: cost + vat,
+        selected: true,
       }]);
       toast.success(language === 'ar' ? 'تم العثور على السيارة' : 'Car found');
     } catch (e) {
