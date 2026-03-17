@@ -316,9 +316,9 @@ export async function getVATReturnReport(
       endDate: endDate || '',
     },
     salesReturns: {
-      amount: creditNotesAmount,
-      vat: creditNotesTax,
-      count: creditNotes.length,
+      amount: totalSalesReturnsAmount,
+      vat: totalSalesReturnsVAT,
+      count: negativeSalesInvoices.length + creditNotes.length,
     },
     purchaseReturns: {
       amount: totalPurchaseReturnsAmount,
