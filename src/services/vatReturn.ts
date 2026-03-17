@@ -247,6 +247,32 @@ export async function getVATReturnReport(
   if (netVAT > 0.01) status = 'payable';
   else if (netVAT < -0.01) status = 'receivable';
 
+  // Build detailed invoices list
+  const detailedInvoices: VATInvoiceDetail[] = [
+    ...salesInvoices.map(inv => ({
+      id: inv.id,
+      invoice_number: inv.invoice_number || '',
+      invoice_date: inv.invoice_date || '',
+      customer_name: inv.customer_name || null,
+      subtotal: Number(inv.subtotal) || 0,
+      vat_amount: Number(inv.vat_amount) || 0,
+      total: Number(inv.total) || 0,
+      type: 'sales' as const,
+      supplier_invoice_number: (inv as any).supplier_invoice_number || null,
+    })),
+    ...purchaseInvoices.map(inv => ({
+      id: inv.id,
+      invoice_number: inv.invoice_number || '',
+      invoice_date: inv.invoice_date || '',
+      customer_name: inv.customer_name || null,
+      subtotal: Number(inv.subtotal) || 0,
+      vat_amount: Number(inv.vat_amount) || 0,
+      total: Number(inv.total) || 0,
+      type: 'purchase' as const,
+      supplier_invoice_number: (inv as any).supplier_invoice_number || null,
+    })),
+  ].sort((a, b) => a.invoice_date.localeCompare(b.invoice_date));
+
   return {
     sales,
     purchases,
@@ -267,5 +293,6 @@ export async function getVATReturnReport(
       vat: debitNotesTax,
       count: debitNotes.length,
     },
+    detailedInvoices,
   };
 }
