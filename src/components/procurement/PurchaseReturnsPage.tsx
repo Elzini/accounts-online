@@ -303,7 +303,7 @@ export function PurchaseReturnsPage() {
     mutationFn: async () => {
       if (!foundCar && !foundInvoice) throw new Error('No item found');
 
-      const returnedItems = items.filter(i => i.returnedQty > 0);
+      const returnedItems = items.filter(i => i.selected && i.returnedQty > 0);
 
       if (isCarDealership && foundCar) {
         // Car return logic
