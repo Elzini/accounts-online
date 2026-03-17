@@ -667,7 +667,20 @@ export function PurchaseReturnsPage() {
                           />
                         </TableCell>
                         <TableCell className="text-center text-xs py-2">{item.unit}</TableCell>
-                        <TableCell className="text-center text-xs py-2 font-mono">{formatCurrency(item.cost)}</TableCell>
+                        <TableCell className="py-1">
+                          {!form.fullInvoice ? (
+                            <Input type="number" className="h-7 text-xs w-20 text-center border-0 border-b border-border rounded-none bg-transparent font-mono" 
+                              value={item.cost || ''}
+                              onChange={e => {
+                                const maxCost = foundInvoice?.items?.[idx] ? (Number(foundInvoice.items[idx].unit_price) || 0) : (foundCar?.purchase_price || Infinity);
+                                updateItem(idx, 'cost', Math.min(Number(e.target.value), maxCost));
+                              }}
+                              min={0}
+                            />
+                          ) : (
+                            <span className="font-mono">{formatCurrency(item.cost)}</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-center text-xs py-2 font-mono">{formatCurrency(item.total)}</TableCell>
                         <TableCell className="text-center text-xs py-2 font-mono text-warning">{formatCurrency(item.vat)}</TableCell>
                         <TableCell className="text-center text-xs py-2 font-mono font-bold">{formatCurrency(item.grandTotal)}</TableCell>
