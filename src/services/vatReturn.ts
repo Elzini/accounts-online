@@ -305,9 +305,9 @@ export async function getVATReturnReport(
       count: creditNotes.length,
     },
     purchaseReturns: {
-      amount: debitNotesAmount,
-      vat: debitNotesTax,
-      count: debitNotes.length,
+      amount: totalPurchaseReturnsAmount,
+      vat: totalPurchaseReturnsVAT,
+      count: negativeInvoices.length + debitNotes.length,
     },
     detailedInvoices,
   };
