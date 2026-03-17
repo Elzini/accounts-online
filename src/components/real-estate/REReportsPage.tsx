@@ -31,7 +31,7 @@ export function REReportsPage() {
 
   // Cash flow summary
   const totalIncome = projectProfitability.reduce((s, p) => s + p.totalRevenue, 0);
-  const totalExpenses = projectProfitability.reduce((s, p) => s + p.totalCost, 0);
+  const totalExpenses = projectProfitability.reduce((s, p) => s + p.totalCOGS, 0);
   const pendingBillingAmount = (billings || []).filter((b: any) => b.status === 'submitted').reduce((s: number, b: any) => s + Number(b.net_amount || 0), 0);
 
   return (
