@@ -19,7 +19,7 @@ export function PerformanceMetrics({ averageSalePrice, averageProfitMargin, inve
   const { t, language } = useLanguage();
   const locale = language === 'ar' ? 'ar-SA' : 'en-SA';
 
-  const formatCurrency = (value: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'SAR', minimumFractionDigits: 0 }).format(value);
+  const formatCurrency = (value: number) => `${Math.round(value)} ر.س`;
 
   const metrics = [
     { title: t.chart_avg_sale_price, value: formatCurrency(averageSalePrice), icon: DollarSign },

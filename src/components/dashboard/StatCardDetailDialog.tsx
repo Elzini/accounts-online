@@ -55,14 +55,13 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
 
   const { decimals } = useNumberFormat();
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(decimals === 0 ? Math.round(value) : value) + ' ر.س.';
+    const v = decimals === 0 ? Math.round(value) : value;
+    return (decimals === 0 ? String(v) : v.toFixed(decimals)) + ' ر.س.';
   };
 
   const formatNumber = (value: number) => {
-    return new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(value) : value);
+    const v = decimals === 0 ? Math.round(value) : value;
+    return decimals === 0 ? String(v) : v.toFixed(decimals);
   };
 
   const formatDate = (date: string) => {
@@ -70,7 +69,7 @@ export function StatCardDetailDialog({ open, onOpenChange, data }: StatCardDetai
   };
 
   const formatCurrencyForExport = (value: number) => {
-    return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.round(value))} ريال`;
+    return `${Math.round(value)} ريال`;
   };
 
   const handleExportExcel = () => {

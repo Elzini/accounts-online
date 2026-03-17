@@ -11,7 +11,7 @@ interface TopPerformersCardProps { topCustomers: TopCustomer[]; topSuppliers: To
 export function TopPerformersCard({ topCustomers, topSuppliers, topCars }: TopPerformersCardProps) {
   const { t, language } = useLanguage();
   const locale = language === 'ar' ? 'ar-SA' : 'en-SA';
-  const formatCurrency = (value: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'SAR', minimumFractionDigits: 0 }).format(value);
+  const formatCurrency = (value: number) => `${Math.round(value)} ر.س`;
   const gap = language === 'ar' ? 'ml-1' : 'mr-1';
 
   return (
