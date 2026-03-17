@@ -244,5 +244,15 @@ export async function getVATReturnReport(
       startDate: startDate || '',
       endDate: endDate || '',
     },
+    salesReturns: {
+      amount: creditNotesAmount,
+      vat: creditNotesTax,
+      count: creditNotes.length,
+    },
+    purchaseReturns: {
+      amount: debitNotesAmount,
+      vat: debitNotesTax,
+      count: debitNotes.length,
+    },
   };
 }
