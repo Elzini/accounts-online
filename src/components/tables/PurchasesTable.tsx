@@ -148,6 +148,17 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
     await refetch();
     setIsRefreshing(false);
   };
+  const normalizeInvoiceStatus = (status?: string) => String(status || '').trim().toLowerCase();
+
+  const isDraftInvoiceStatus = (status?: string) => {
+    const normalized = normalizeInvoiceStatus(status);
+    return normalized === 'draft' || normalized === 'مسودة';
+  };
+
+  const isApprovedInvoiceStatus = (status?: string) => {
+    const normalized = normalizeInvoiceStatus(status);
+    return normalized === 'approved' || normalized === 'issued' || normalized === 'معتمدة' || normalized === 'معتمد';
+  };
 
   const draftInvoices = useMemo(() => {
     return purchaseInvoices.filter((inv: any) => isDraftInvoiceStatus(inv.status));
