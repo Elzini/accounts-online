@@ -158,31 +158,31 @@ export function ZakatReportsPage() {
     
     const data = [
       { item: '=== مصادر الأموال الخاضعة للزكاة ===', amount: '' },
-      { item: 'رأس المال المدفوع', amount: zakatBase.zakatableSources.paidUpCapital.toLocaleString() },
-      { item: 'الاحتياطيات', amount: zakatBase.zakatableSources.reserves.toLocaleString() },
-      { item: 'الأرباح المحتجزة', amount: zakatBase.zakatableSources.retainedEarnings.toLocaleString() },
-      { item: 'صافي ربح السنة', amount: zakatBase.zakatableSources.netIncomeForYear.toLocaleString() },
-      { item: 'المخصصات', amount: zakatBase.zakatableSources.provisions.toLocaleString() },
-      { item: 'القروض طويلة الأجل', amount: zakatBase.zakatableSources.longTermLoans.toLocaleString() },
-      { item: 'إجمالي مصادر الأموال', amount: zakatBase.zakatableSources.total.toLocaleString() },
+      { item: 'رأس المال المدفوع', amount: String(zakatBase.zakatableSources.paidUpCapital) },
+      { item: 'الاحتياطيات', amount: String(zakatBase.zakatableSources.reserves) },
+      { item: 'الأرباح المحتجزة', amount: String(zakatBase.zakatableSources.retainedEarnings) },
+      { item: 'صافي ربح السنة', amount: String(zakatBase.zakatableSources.netIncomeForYear) },
+      { item: 'المخصصات', amount: String(zakatBase.zakatableSources.provisions) },
+      { item: 'القروض طويلة الأجل', amount: String(zakatBase.zakatableSources.longTermLoans) },
+      { item: 'إجمالي مصادر الأموال', amount: String(zakatBase.zakatableSources.total) },
       { item: '', amount: '' },
       { item: '=== الحسميات ===', amount: '' },
-      { item: 'صافي الأصول الثابتة', amount: zakatBase.deductions.netFixedAssets.toLocaleString() },
-      { item: 'الاستثمارات طويلة الأجل', amount: zakatBase.deductions.investments.toLocaleString() },
-      { item: 'مصاريف ما قبل التشغيل', amount: zakatBase.deductions.preOperatingExpenses.toLocaleString() },
-      { item: 'الخسائر المتراكمة', amount: zakatBase.deductions.accumulatedLosses.toLocaleString() },
-      { item: 'إجمالي الحسميات', amount: zakatBase.deductions.total.toLocaleString() },
+      { item: 'صافي الأصول الثابتة', amount: String(zakatBase.deductions.netFixedAssets) },
+      { item: 'الاستثمارات طويلة الأجل', amount: String(zakatBase.deductions.investments) },
+      { item: 'مصاريف ما قبل التشغيل', amount: String(zakatBase.deductions.preOperatingExpenses) },
+      { item: 'الخسائر المتراكمة', amount: String(zakatBase.deductions.accumulatedLosses) },
+      { item: 'إجمالي الحسميات', amount: String(zakatBase.deductions.total) },
       { item: '', amount: '' },
       { item: '=== الوعاء الزكوي ===', amount: '' },
-      { item: 'الوعاء الزكوي المعدل', amount: zakatBase.adjustedZakatBase.toLocaleString() },
+      { item: 'الوعاء الزكوي المعدل', amount: String(zakatBase.adjustedZakatBase) },
       { item: 'نسبة الزكاة', amount: '2.5%' },
-      { item: 'الزكاة المستحقة', amount: zakatBase.zakatDue.toLocaleString() },
+      { item: 'الزكاة المستحقة', amount: String(zakatBase.zakatDue) },
     ];
 
     if (type === 'excel') {
       const summaryData = [
-        { label: 'الوعاء الزكوي', value: zakatBase.adjustedZakatBase.toLocaleString() + ' ر.س' },
-        { label: 'الزكاة المستحقة', value: zakatBase.zakatDue.toLocaleString() + ' ر.س' },
+        { label: 'الوعاء الزكوي', value: zakatBase.adjustedZakatBase + ' ر.س' },
+        { label: 'الزكاة المستحقة', value: zakatBase.zakatDue + ' ر.س' },
       ];
       exportToExcel({ title: 'قائمة الوعاء الزكوي', columns, data, fileName: 'zakat-base', summaryData });
     } else {
