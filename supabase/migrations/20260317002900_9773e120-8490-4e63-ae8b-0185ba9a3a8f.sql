@@ -1,0 +1,1 @@
+UPDATE invoices SET customer_name = 'مؤسسة غصون المرجان للتجارة' WHERE id = 'b1d56680-6a81-4fc5-a21c-bf41fe134f2a'
