@@ -93,7 +93,7 @@ export function REReportsPage() {
                       <TableCell className="font-medium">{p.name}</TableCell>
                       <TableCell>{p.soldCount}</TableCell>
                       <TableCell className="text-green-600">{fmt(p.totalRevenue)}</TableCell>
-                      <TableCell className="text-red-600">{fmt(p.totalCost)}</TableCell>
+                      <TableCell className="text-red-600">{fmt(p.totalCOGS)}</TableCell>
                       <TableCell className={p.profit >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>{fmt(p.profit)}</TableCell>
                       <TableCell><Badge variant={p.margin >= 20 ? 'default' : 'secondary'}>{p.margin.toFixed(1)}%</Badge></TableCell>
                       <TableCell>
