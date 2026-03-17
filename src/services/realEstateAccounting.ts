@@ -370,12 +370,12 @@ export async function getProjectProfitability(companyId: string, projectId: stri
   const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
   // Get advance payments balance from journal entries
-  const { data: advanceEntries } = await supabase
+  const { data: advanceEntries } = await (supabase
     .from('journal_entries')
     .select('total_credit')
     .eq('company_id', companyId)
-    .eq('reference_type', 'advance_payment')
-    .eq('status', 'posted');
+    .eq('reference_type' as any, 'advance_payment')
+    .eq('status', 'posted') as any);
 
   const totalAdvances = (advanceEntries || []).reduce((s: number, e: any) => s + Number(e.total_credit || 0), 0);
 
