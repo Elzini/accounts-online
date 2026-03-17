@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.tamper-detector]
 verify_jwt = false
+
+[functions.system-change-detector]
+verify_jwt = false
