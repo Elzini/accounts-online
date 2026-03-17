@@ -497,56 +497,20 @@ export async function getZakatBaseStatement(
       .reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);
   };
 
-  // ===== Calculate ACTUAL net income from sales data =====
-  // Fetch actual sales data with car purchase prices
-  const { data: salesData } = await supabase
-    .from('sales')
-    .select(`
-      id,
-      sale_price,
-      car:cars(purchase_price),
-      sale_items:sale_items(
-        sale_price,
-        car:cars(purchase_price)
-      )
-    `)
-    .eq('company_id', companyId)
-    .gte('sale_date', yearStart)
-    .lte('sale_date', yearEnd);
+  // ===== Calculate net income from JOURNAL ENTRIES =====
+  // Revenue from revenue accounts
+  const revenueAccounts = accounts.filter(a => a.type === 'revenue');
+  const actualSalesRevenue = revenueAccounts.reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);
 
-  let actualSalesRevenue = 0;
-  let actualPurchaseCost = 0;
+  // COGS from expense accounts starting with 51
+  const cogsAccounts = accounts.filter(a => a.type === 'expenses' && a.code.startsWith('51'));
+  const actualPurchaseCost = cogsAccounts.reduce((sum, a) => sum + Math.abs(balances.get(a.id) || 0), 0);
 
-  (salesData || []).forEach((sale: any) => {
-    if (sale.sale_items && sale.sale_items.length > 0) {
-      sale.sale_items.forEach((item: any) => {
-        actualSalesRevenue += Number(item.sale_price) || 0;
-        actualPurchaseCost += Number(item.car?.purchase_price) || 0;
-      });
-    } else {
-      actualSalesRevenue += Number(sale.sale_price) || 0;
-      actualPurchaseCost += Number(sale.car?.purchase_price) || 0;
-    }
-  });
+  // Other expenses
+  const otherExpAccounts = accounts.filter(a => a.type === 'expenses' && !a.code.startsWith('51'));
+  const generalExpenses = otherExpAccounts.reduce((sum, a) => sum + Math.abs(balances.get(a.id) || 0), 0);
 
-  // Fetch expenses
-  const { data: expensesData } = await supabase
-    .from('expenses')
-    .select('amount, car_id')
-    .eq('company_id', companyId)
-    .gte('expense_date', yearStart)
-    .lte('expense_date', yearEnd);
-
-  const carExpenses = (expensesData || [])
-    .filter((e: any) => e.car_id)
-    .reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
-  
-  const generalExpenses = (expensesData || [])
-    .filter((e: any) => !e.car_id)
-    .reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
-
-  // Calculate actual net income
-  const totalPurchaseCost = actualPurchaseCost + carExpenses;
+  const totalPurchaseCost = actualPurchaseCost;
   const grossProfit = actualSalesRevenue - totalPurchaseCost;
   const netIncomeForYear = grossProfit - generalExpenses;
 
