@@ -9,7 +9,7 @@ import { useVATReturnReport } from '@/hooks/useVATReturnReport';
 import { useTaxSettings } from '@/hooks/useAccounting';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { toast } from 'sonner';
-import { Loader2, FileText, Printer, TrendingUp, TrendingDown, Building2, Receipt, ShoppingCart, AlertCircle, CheckCircle2, FileSpreadsheet, FileCode, ChevronDown, ChevronUp, List } from 'lucide-react';
+import { Loader2, FileText, Printer, TrendingUp, TrendingDown, Building2, Receipt, ShoppingCart, AlertCircle, CheckCircle2, FileSpreadsheet, FileCode, ChevronDown, ChevronUp, List, FileDown } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths, startOfQuarter, endOfQuarter, subQuarters } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -17,6 +17,7 @@ import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { generateZatcaVATReturnXML, downloadZatcaXML } from '@/lib/zatcaXmlExport';
 import { useTaxSettings as useTaxSettingsHook } from '@/hooks/useAccounting';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { exportVATReportToExcel, exportVATReportToPDF } from '@/utils/vatExcelExport';
 
 export function VATReturnReportPage() {
   const { t, direction } = useLanguage();
@@ -55,42 +56,27 @@ export function VATReturnReportPage() {
 
   const handleExportExcel = () => {
     if (!report) return;
-    const taxRate = taxSettings?.tax_rate || 15;
-    const csvRows = [
-      [t.vat_title],
-      [`${t.vat_period}: ${startDate} - ${endDate}`],
-      [`${t.vat_tax_number}: ${taxSettings?.tax_number || '-'}`],
-      [''],
-      [t.vat_sales_title, t.vat_col_amount, t.vat_col_vat],
-      [t.vat_standard_sales, formatNumber(report.sales.standardRatedAmount), formatNumber(report.sales.standardRatedVAT)],
-      [t.vat_citizen_services, formatNumber(report.sales.citizenServicesAmount), formatNumber(report.sales.citizenServicesVAT)],
-      [t.vat_zero_rated_sales, formatNumber(report.sales.zeroRatedAmount), '0.00'],
-      [t.vat_exports, formatNumber(report.sales.exportsAmount), '0.00'],
-      [t.vat_exempt_sales, formatNumber(report.sales.exemptAmount), '0.00'],
-      [t.vat_total_sales, formatNumber(report.sales.totalAmount), formatNumber(report.sales.totalVAT)],
-      [''],
-      [t.vat_purchases_title, t.vat_col_amount, t.vat_col_vat],
-      [t.vat_standard_purchases, formatNumber(report.purchases.standardRatedAmount), formatNumber(report.purchases.standardRatedVAT)],
-      [t.vat_imports_customs, formatNumber(report.purchases.importsAmount), formatNumber(report.purchases.importsVAT)],
-      [t.vat_zero_rated_purchases, formatNumber(report.purchases.zeroRatedAmount), '0.00'],
-      [t.vat_exempt_purchases, formatNumber(report.purchases.exemptAmount), '0.00'],
-      [t.vat_total_purchases, formatNumber(report.purchases.totalAmount), formatNumber(report.purchases.totalVAT)],
-      [''],
-      [t.vat_net_title],
-      [t.vat_total_sales_vat, formatNumber(report.sales.totalVAT)],
-      [t.vat_total_purchases_vat, formatNumber(report.purchases.totalVAT)],
-      [t.vat_net_vat, formatNumber(report.netVAT)],
-    ];
-    const csvContent = csvRows.map(row => row.join(',')).join('\n');
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `vat-return-${startDate}-${endDate}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    toast.success(t.vat_exported);
+    exportVATReportToExcel({
+      report,
+      companyName: taxSettings?.company_name_ar || '',
+      taxNumber: taxSettings?.tax_number || '',
+      taxRate: taxSettings?.tax_rate || 15,
+      startDate,
+      endDate,
+    });
+    toast.success('تم تصدير ملف Excel بنجاح - يحتوي على 5 أوراق عمل');
+  };
+
+  const handleExportPDF = () => {
+    if (!report) return;
+    exportVATReportToPDF({
+      report,
+      companyName: taxSettings?.company_name_ar || '',
+      taxNumber: taxSettings?.tax_number || '',
+      taxRate: taxSettings?.tax_rate || 15,
+      startDate,
+      endDate,
+    });
   };
 
   const setQuickDateRange = (type: 'month' | 'quarter' | 'year') => {
@@ -138,9 +124,10 @@ export function VATReturnReportPage() {
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><FileText className="w-6 h-6" />{t.vat_title}</h1>
           <p className="text-muted-foreground">{t.vat_subtitle}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handlePrint}><Printer className="w-4 h-4 ml-2" />{t.print}</Button>
-          <Button variant="outline" onClick={handleExportExcel}><FileSpreadsheet className="w-4 h-4 ml-2" />{t.fr_export_excel}</Button>
+          <Button variant="outline" onClick={handleExportPDF}><FileDown className="w-4 h-4 ml-2" />تصدير PDF</Button>
+          <Button variant="outline" onClick={handleExportExcel}><FileSpreadsheet className="w-4 h-4 ml-2" />تصدير Excel</Button>
           <Button variant="outline" onClick={() => {
             if (!report) return;
             const xml = generateZatcaVATReturnXML({
