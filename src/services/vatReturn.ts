@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAccounts } from './accounting';
 
 export interface VATReturnSales {
   standardRatedAmount: number;
@@ -66,60 +67,29 @@ export async function getVATReturnReport(
 
   const taxRate = taxSettings?.tax_rate || 15;
 
-  // ========== 1. Fetch from invoices table (primary source) ==========
+  // ========== 1. Fetch VAT account balances from JOURNAL ENTRIES ==========
+  const accounts = await fetchAccounts(companyId);
   
-  // Sales invoices (issued/approved only)
-  let salesInvQuery = supabase
-    .from('invoices')
-    .select('id, invoice_number, subtotal, vat_amount, total, invoice_date, customer_name, supplier_invoice_number')
-    .eq('company_id', companyId)
-    .eq('invoice_type', 'sales')
-    .neq('status', 'draft');
+  // Find VAT accounts by code
+  const salesVATAccount = accounts.find(a => a.code === '21041');
+  const purchaseVATAccount = accounts.find(a => a.code === '21042');
 
-  if (startDate) salesInvQuery = salesInvQuery.gte('invoice_date', startDate);
-  if (endDate) salesInvQuery = salesInvQuery.lte('invoice_date', endDate);
+  // Build query for journal entry lines
+  let journalQuery = supabase
+    .from('journal_entry_lines')
+    .select(`
+      account_id,
+      debit,
+      credit,
+      journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
+    `)
+    .eq('journal_entry.company_id', companyId)
+    .eq('journal_entry.is_posted', true);
 
-  // Purchase invoices (issued/approved only)
-  let purchaseInvQuery = supabase
-    .from('invoices')
-    .select('id, invoice_number, subtotal, vat_amount, total, invoice_date, customer_name, supplier_invoice_number')
-    .eq('company_id', companyId)
-    .eq('invoice_type', 'purchase')
-    .neq('status', 'draft');
+  if (startDate) journalQuery = journalQuery.gte('journal_entry.entry_date', startDate);
+  if (endDate) journalQuery = journalQuery.lte('journal_entry.entry_date', endDate);
 
-  if (startDate) purchaseInvQuery = purchaseInvQuery.gte('invoice_date', startDate);
-  if (endDate) purchaseInvQuery = purchaseInvQuery.lte('invoice_date', endDate);
-
-  // ========== 2. Fetch from car sales table (legacy) ==========
-  let carSalesQuery = supabase
-    .from('sales')
-    .select('id, sale_price, sale_date')
-    .eq('company_id', companyId);
-
-  if (startDate) carSalesQuery = carSalesQuery.gte('sale_date', startDate);
-  if (endDate) carSalesQuery = carSalesQuery.lte('sale_date', endDate);
-
-  // Car purchases
-  let carPurchasesQuery = supabase
-    .from('cars')
-    .select('id, purchase_price, purchase_date')
-    .eq('company_id', companyId);
-
-  if (startDate) carPurchasesQuery = carPurchasesQuery.gte('purchase_date', startDate);
-  if (endDate) carPurchasesQuery = carPurchasesQuery.lte('purchase_date', endDate);
-
-  // ========== 3. Fetch expenses with VAT invoices ==========
-  let expensesQuery = supabase
-    .from('expenses')
-    .select('id, amount, expense_date, has_vat_invoice')
-    .eq('company_id', companyId)
-    .eq('has_vat_invoice', true);
-
-  if (startDate) expensesQuery = expensesQuery.gte('expense_date', startDate);
-  if (endDate) expensesQuery = expensesQuery.lte('expense_date', endDate);
-
-  // ========== 4. Fetch credit/debit notes (returns) ==========
-  // Debit notes = purchase returns (reduce purchases)
+  // ========== 2. Fetch credit/debit notes for returns breakdown ==========
   let debitNotesQuery = supabase
     .from('credit_debit_notes')
     .select('id, total_amount, tax_amount, note_date')
@@ -130,7 +100,6 @@ export async function getVATReturnReport(
   if (startDate) debitNotesQuery = debitNotesQuery.gte('note_date', startDate);
   if (endDate) debitNotesQuery = debitNotesQuery.lte('note_date', endDate);
 
-  // Credit notes = sales returns (reduce sales)
   let creditNotesQuery = supabase
     .from('credit_debit_notes')
     .select('id, total_amount, tax_amount, note_date')
@@ -141,113 +110,110 @@ export async function getVATReturnReport(
   if (startDate) creditNotesQuery = creditNotesQuery.gte('note_date', startDate);
   if (endDate) creditNotesQuery = creditNotesQuery.lte('note_date', endDate);
 
+  // ========== 3. Fetch invoices for detailed report only ==========
+  let salesInvQuery = supabase
+    .from('invoices')
+    .select('id, invoice_number, subtotal, vat_amount, total, invoice_date, customer_name, supplier_invoice_number')
+    .eq('company_id', companyId)
+    .eq('invoice_type', 'sales')
+    .neq('status', 'draft');
+
+  if (startDate) salesInvQuery = salesInvQuery.gte('invoice_date', startDate);
+  if (endDate) salesInvQuery = salesInvQuery.lte('invoice_date', endDate);
+
+  let purchaseInvQuery = supabase
+    .from('invoices')
+    .select('id, invoice_number, subtotal, vat_amount, total, invoice_date, customer_name, supplier_invoice_number')
+    .eq('company_id', companyId)
+    .eq('invoice_type', 'purchase')
+    .neq('status', 'draft');
+
+  if (startDate) purchaseInvQuery = purchaseInvQuery.gte('invoice_date', startDate);
+  if (endDate) purchaseInvQuery = purchaseInvQuery.lte('invoice_date', endDate);
+
   // Execute all queries in parallel
-  const [salesInvResult, purchaseInvResult, carSalesResult, carPurchasesResult, expensesResult, debitNotesResult, creditNotesResult] = await Promise.all([
-    salesInvQuery,
-    purchaseInvQuery,
-    carSalesQuery,
-    carPurchasesQuery,
-    expensesQuery,
+  const [journalResult, debitNotesResult, creditNotesResult, salesInvResult, purchaseInvResult] = await Promise.all([
+    journalQuery,
     debitNotesQuery,
     creditNotesQuery,
+    salesInvQuery,
+    purchaseInvQuery,
   ]);
 
-  if (salesInvResult.error) throw salesInvResult.error;
-  if (purchaseInvResult.error) throw purchaseInvResult.error;
-  if (carSalesResult.error) throw carSalesResult.error;
-  if (carPurchasesResult.error) throw carPurchasesResult.error;
-  if (expensesResult.error) throw expensesResult.error;
+  if (journalResult.error) throw journalResult.error;
   if (debitNotesResult.error) throw debitNotesResult.error;
   if (creditNotesResult.error) throw creditNotesResult.error;
+  if (salesInvResult.error) throw salesInvResult.error;
+  if (purchaseInvResult.error) throw purchaseInvResult.error;
 
-  const salesInvoices = salesInvResult.data || [];
-  const purchaseInvoices = purchaseInvResult.data || [];
-  const carSales = carSalesResult.data || [];
-  const carPurchases = carPurchasesResult.data || [];
-  const expenses = expensesResult.data || [];
+  const journalLines = journalResult.data || [];
   const debitNotes = debitNotesResult.data || [];
   const creditNotes = creditNotesResult.data || [];
+  const salesInvoices = salesInvResult.data || [];
+  const purchaseInvoices = purchaseInvResult.data || [];
 
-  // ========== Calculate Sales ==========
-  // From invoices table - separate positive (sales) from negative (returns)
-  const positiveSalesInvoices = salesInvoices.filter(inv => (Number(inv.total) || 0) >= 0);
-  const negativeSalesInvoices = salesInvoices.filter(inv => (Number(inv.total) || 0) < 0);
+  // ========== Calculate VAT from journal entries ==========
+  // Sales VAT (21041) - liability: credit increases, debit decreases
+  let salesVATTotal = 0;
+  let salesVATGrossCredit = 0; // gross sales VAT (credits only)
+  let salesVATGrossDebit = 0;  // returns/adjustments (debits only)
+  
+  // Purchase VAT (21042) - asset: debit increases, credit decreases
+  let purchaseVATTotal = 0;
+  let purchaseVATGrossDebit = 0; // gross purchase VAT (debits only)
+  let purchaseVATGrossCredit = 0; // returns/adjustments (credits only)
 
-  const invoiceSalesAmount = positiveSalesInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0);
-  const invoiceSalesVAT = positiveSalesInvoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0);
+  journalLines.forEach((line: any) => {
+    const debit = Number(line.debit) || 0;
+    const credit = Number(line.credit) || 0;
 
-  // Invoice-based sales returns (negative invoices)
-  const invoiceSalesReturnsAmount = Math.abs(negativeSalesInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0));
-  const invoiceSalesReturnsVAT = Math.abs(negativeSalesInvoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0));
+    if (salesVATAccount && line.account_id === salesVATAccount.id) {
+      salesVATGrossCredit += credit;
+      salesVATGrossDebit += debit;
+    }
+    if (purchaseVATAccount && line.account_id === purchaseVATAccount.id) {
+      purchaseVATGrossDebit += debit;
+      purchaseVATGrossCredit += credit;
+    }
+  });
 
-  // From car sales table (sale_price = base amount, VAT calculated)
-  const carSalesAmount = carSales.reduce((sum, s) => sum + (Number(s.sale_price) || 0), 0);
-  const carSalesVAT = carSales.reduce((sum, s) => {
-    const price = Number(s.sale_price) || 0;
-    return sum + price * (taxRate / 100);
-  }, 0);
+  // Net VAT = total posted in journal entries
+  salesVATTotal = salesVATGrossCredit - salesVATGrossDebit; // net sales VAT (liability)
+  purchaseVATTotal = purchaseVATGrossDebit - purchaseVATGrossCredit; // net purchase VAT (asset)
 
-  // Sales returns (credit notes from credit_debit_notes table) - reduce sales
-  const creditNotesTotal = creditNotes.reduce((sum, n) => sum + (Number(n.total_amount) || 0), 0);
+  // Derive amounts from VAT using tax rate
+  const grossSalesVAT = salesVATGrossCredit;
+  const grossSalesAmount = taxRate > 0 ? (grossSalesVAT / taxRate) * 100 : 0;
+  
+  const grossPurchaseVAT = purchaseVATGrossDebit;
+  const grossPurchaseAmount = taxRate > 0 ? (grossPurchaseVAT / taxRate) * 100 : 0;
+
+  // Returns from credit/debit notes (for display breakdown)
   const creditNotesTax = creditNotes.reduce((sum, n) => sum + (Number(n.tax_amount) || 0), 0);
-  const creditNotesAmount = creditNotesTotal - creditNotesTax; // net amount before tax
+  const creditNotesTotal = creditNotes.reduce((sum, n) => sum + (Number(n.total_amount) || 0), 0);
+  const creditNotesAmount = creditNotesTotal - creditNotesTax;
 
-  // Total sales returns = from negative invoices + from credit notes
-  const totalSalesReturnsAmount = invoiceSalesReturnsAmount + creditNotesAmount;
-  const totalSalesReturnsVAT = invoiceSalesReturnsVAT + creditNotesTax;
+  const debitNotesTax = debitNotes.reduce((sum, n) => sum + (Number(n.tax_amount) || 0), 0);
+  const debitNotesTotal = debitNotes.reduce((sum, n) => sum + (Number(n.total_amount) || 0), 0);
+  const debitNotesAmount = debitNotesTotal - debitNotesTax;
 
-  // Gross sales (positive only)
-  const grossSalesAmount = invoiceSalesAmount + carSalesAmount;
-  const grossSalesVAT = invoiceSalesVAT + carSalesVAT;
-
-  // Net sales = gross - returns
-  const totalSalesAmount = grossSalesAmount - totalSalesReturnsAmount;
-  const totalSalesVAT = grossSalesVAT - totalSalesReturnsVAT;
-
-  // ========== Calculate Purchases ==========
-  // From invoices table - separate positive (purchases) from negative (returns)
-  const positiveInvoices = purchaseInvoices.filter(inv => (Number(inv.total) || 0) >= 0);
+  // Also count negative invoices as returns
+  const negativeSalesInvoices = salesInvoices.filter(inv => (Number(inv.total) || 0) < 0);
   const negativeInvoices = purchaseInvoices.filter(inv => (Number(inv.total) || 0) < 0);
 
-  const invoicePurchasesAmount = positiveInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0);
-  const invoicePurchasesVAT = positiveInvoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0);
+  const invoiceSalesReturnsVAT = Math.abs(negativeSalesInvoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0));
+  const invoiceSalesReturnsAmount = Math.abs(negativeSalesInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0));
 
-  // Invoice-based purchase returns (negative invoices)
-  const invoiceReturnsAmount = Math.abs(negativeInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0));
-  const invoiceReturnsVAT = Math.abs(negativeInvoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0));
+  const invoicePurchaseReturnsVAT = Math.abs(negativeInvoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0));
+  const invoicePurchaseReturnsAmount = Math.abs(negativeInvoices.reduce((sum, inv) => sum + (Number(inv.subtotal) || 0), 0));
 
-  // From car purchases
-  const carPurchasesAmount = carPurchases.reduce((sum, c) => sum + (Number(c.purchase_price) || 0), 0);
-  const carPurchasesVAT = carPurchases.reduce((sum, c) => {
-    const price = Number(c.purchase_price) || 0;
-    return sum + price * (taxRate / 100);
-  }, 0);
+  const totalSalesReturnsVAT = invoiceSalesReturnsVAT + creditNotesTax;
+  const totalSalesReturnsAmount = invoiceSalesReturnsAmount + creditNotesAmount;
 
-  // Expenses with VAT invoices
-  const expensesAmount = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-  const expensesVAT = expenses.reduce((sum, e) => {
-    const amount = Number(e.amount) || 0;
-    return sum + amount * (taxRate / 100);
-  }, 0);
+  const totalPurchaseReturnsVAT = invoicePurchaseReturnsVAT + debitNotesTax;
+  const totalPurchaseReturnsAmount = invoicePurchaseReturnsAmount + debitNotesAmount;
 
-  // Purchase returns (debit notes from credit_debit_notes table) - reduce purchases
-  const debitNotesTotal = debitNotes.reduce((sum, n) => sum + (Number(n.total_amount) || 0), 0);
-  const debitNotesTax = debitNotes.reduce((sum, n) => sum + (Number(n.tax_amount) || 0), 0);
-  const debitNotesAmount = debitNotesTotal - debitNotesTax; // net amount before tax
-
-  // Total purchase returns = from negative invoices + from debit notes
-  const totalPurchaseReturnsAmount = invoiceReturnsAmount + debitNotesAmount;
-  const totalPurchaseReturnsVAT = invoiceReturnsVAT + debitNotesTax;
-
-  // Gross purchases (positive only)
-  const grossPurchasesAmount = invoicePurchasesAmount + carPurchasesAmount + expensesAmount;
-  const grossPurchasesVAT = invoicePurchasesVAT + carPurchasesVAT + expensesVAT;
-
-  // Net purchases = gross - returns
-  const totalPurchasesAmount = grossPurchasesAmount - totalPurchaseReturnsAmount;
-  const totalPurchasesVAT = grossPurchasesVAT - totalPurchaseReturnsVAT;
-
-  // Build report
+  // ========== Build report using journal-entry-based totals ==========
   const sales: VATReturnSales = {
     standardRatedAmount: grossSalesAmount,
     standardRatedVAT: grossSalesVAT,
@@ -256,21 +222,21 @@ export async function getVATReturnReport(
     zeroRatedAmount: 0,
     exportsAmount: 0,
     exemptAmount: 0,
-    totalAmount: totalSalesAmount,
-    totalVAT: totalSalesVAT,
+    totalAmount: taxRate > 0 ? (salesVATTotal / taxRate) * 100 : 0,
+    totalVAT: salesVATTotal,
   };
 
   const purchases: VATReturnPurchases = {
-    standardRatedAmount: grossPurchasesAmount,
-    standardRatedVAT: grossPurchasesVAT,
+    standardRatedAmount: grossPurchaseAmount,
+    standardRatedVAT: grossPurchaseVAT,
     importsAmount: 0,
     importsVAT: 0,
     reverseChargeAmount: 0,
     reverseChargeVAT: 0,
     zeroRatedAmount: 0,
     exemptAmount: 0,
-    totalAmount: totalPurchasesAmount,
-    totalVAT: totalPurchasesVAT,
+    totalAmount: taxRate > 0 ? (purchaseVATTotal / taxRate) * 100 : 0,
+    totalVAT: purchaseVATTotal,
   };
 
   const netVAT = sales.totalVAT - purchases.totalVAT;
@@ -279,7 +245,7 @@ export async function getVATReturnReport(
   if (netVAT > 0.01) status = 'payable';
   else if (netVAT < -0.01) status = 'receivable';
 
-  // Build detailed invoices list
+  // Build detailed invoices list (from invoices table for reference)
   const detailedInvoices: VATInvoiceDetail[] = [
     ...salesInvoices.map(inv => ({
       id: inv.id,
