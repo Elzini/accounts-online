@@ -2,15 +2,16 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { 
   Shield, Snowflake, UserCheck, FileCode, Activity as ActivityIcon, 
   Cpu, Lock, Clock, ShieldAlert, Eye, Database, Fingerprint, Bell,
   CheckCircle2, XCircle, AlertTriangle, TrendingUp, ShieldCheck,
-  ShieldOff, Zap, FileText, BarChart3, ArrowLeftRight
+  ShieldOff, Zap, FileText, BarChart3, ArrowLeftRight, Settings,
+  LockOpen, ChevronDown, RefreshCw, Filter
 } from 'lucide-react';
 import { FreezeModePanel } from './security/FreezeModePanel';
 import { TwoPersonApprovalPanel } from './security/TwoPersonApprovalPanel';
@@ -53,9 +54,12 @@ export function EnterpriseSecurityDashboard() {
 
   const [selectedAlert, setSelectedAlert] = useState<SystemChangeAlert | null>(null);
   const [drillView, setDrillView] = useState<string | null>(null);
+  const [approvalModal, setApprovalModal] = useState<{ alert: SystemChangeAlert; action: 'approve' | 'reject' } | null>(null);
 
-  // Recent live alerts (last 20)
   const liveAlerts = useMemo(() => alerts.slice(0, 20), [alerts]);
+  const lastAuditTime = alerts.length > 0 
+    ? new Date(alerts[0].created_at).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' })
+    : 'لا يوجد';
 
   // ─── If drill-down is active, show the detailed panel ───
   if (drillView) {
@@ -81,46 +85,91 @@ export function EnterpriseSecurityDashboard() {
     );
   }
 
+  const handleApprovalAction = (alert: SystemChangeAlert, action: 'approve' | 'reject') => {
+    setApprovalModal({ alert, action });
+  };
+
+  const confirmApproval = () => {
+    if (!approvalModal) return;
+    if (approvalModal.action === 'approve') {
+      approveAlert.mutate({ id: approvalModal.alert.id });
+    } else {
+      rejectAlert.mutate({ id: approvalModal.alert.id });
+    }
+    setApprovalModal(null);
+  };
+
   return (
-    <div dir="rtl" className="space-y-5">
-      {/* ════════════════ Hero Header ════════════════ */}
-      <div className="relative overflow-hidden rounded-2xl border border-primary/15 p-5">
-        <div className="absolute inset-0 bg-gradient-to-l from-primary/8 via-primary/3 to-transparent" />
-        <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary))_1px,transparent_1px)] bg-[length:20px_20px]" />
-        
-        <div className="relative flex items-center justify-between">
+    <div dir="rtl" className="space-y-4">
+      {/* ════════════════ HEADER ════════════════ */}
+      <div className="relative overflow-hidden rounded-2xl bg-card border border-border p-5">
+        <div className="absolute inset-0 bg-gradient-to-l from-primary/5 via-transparent to-transparent" />
+        <div className="relative flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4">
             <div className={cn(
-              'w-14 h-14 rounded-2xl border flex items-center justify-center transition-colors',
-              securityStatus === 'frozen' ? 'bg-sky-500/10 border-sky-500/30' :
-              securityStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30' :
-              'bg-emerald-500/10 border-emerald-500/30'
+              'w-14 h-14 rounded-2xl border-2 flex items-center justify-center',
+              securityStatus === 'frozen' ? 'bg-sky-500/10 border-sky-500/40' :
+              securityStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/40' :
+              'bg-emerald-500/10 border-emerald-500/40'
             )}>
               {securityStatus === 'frozen' ? <Snowflake className="h-7 w-7 text-sky-500 animate-pulse" /> :
                securityStatus === 'warning' ? <ShieldAlert className="h-7 w-7 text-amber-500" /> :
                <ShieldCheck className="h-7 w-7 text-emerald-500" />}
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-foreground">مركز التحكم الأمني</h2>
-              <p className="text-sm text-muted-foreground mt-0.5">رؤية شاملة — لا يتم أي تغيير بدون موافقتك</p>
+              <h2 className="text-2xl font-bold text-foreground">Security Control Center</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <div className={cn(
+                  'w-2.5 h-2.5 rounded-full animate-pulse',
+                  securityStatus === 'frozen' ? 'bg-sky-500' :
+                  securityStatus === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'
+                )} />
+                <span className={cn(
+                  'text-sm font-semibold',
+                  securityStatus === 'frozen' ? 'text-sky-600 dark:text-sky-400' :
+                  securityStatus === 'warning' ? 'text-amber-600 dark:text-amber-400' :
+                  'text-emerald-600 dark:text-emerald-400'
+                )}>
+                  {securityStatus === 'frozen' ? '🔒 مُجمّد — قراءة فقط' :
+                   securityStatus === 'warning' ? '⚠️ تحذيرات أمنية' :
+                   '✅ النظام آمن'}
+                </span>
+              </div>
             </div>
           </div>
           
-          {/* System Status Pill */}
-          <div className={cn(
-            'flex items-center gap-2 px-5 py-2.5 rounded-xl border font-bold text-sm',
-            securityStatus === 'frozen' ? 'bg-sky-500/10 border-sky-300 text-sky-700 dark:text-sky-400' :
-            securityStatus === 'warning' ? 'bg-amber-500/10 border-amber-300 text-amber-700 dark:text-amber-400' :
-            'bg-emerald-500/10 border-emerald-300 text-emerald-700 dark:text-emerald-400'
-          )}>
-            <div className={cn(
-              'w-2.5 h-2.5 rounded-full animate-pulse',
-              securityStatus === 'frozen' ? 'bg-sky-500' :
-              securityStatus === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'
-            )} />
-            {securityStatus === 'frozen' ? '🔒 النظام مُجمّد' :
-             securityStatus === 'warning' ? '⚠️ تحذيرات أمنية' :
-             '✅ النظام آمن'}
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            <Button 
+              variant={isFrozen ? 'outline' : 'default'}
+              size="sm" 
+              className={cn(
+                'gap-2 font-semibold',
+                !isFrozen && 'bg-destructive/90 hover:bg-destructive text-destructive-foreground'
+              )}
+              onClick={() => setDrillView('freeze')}
+            >
+              <Snowflake className="w-4 h-4" />
+              تجميد النظام
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => setDrillView('freeze')}
+            >
+              <LockOpen className="w-4 h-4" />
+              إلغاء التجميد
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => setDrillView('two-person')}
+            >
+              <Settings className="w-4 h-4" />
+              إعدادات الأمان
+            </Button>
           </div>
         </div>
       </div>
@@ -128,80 +177,75 @@ export function EnterpriseSecurityDashboard() {
       {/* ════════════════ 3-Column Control Grid ════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-        {/* ──── LEFT: System Status Panel ──── */}
+        {/* ──── LEFT: System Health ──── */}
         <div className="lg:col-span-3 space-y-4">
-          {/* Status Overview */}
-          <Card className="border-2 border-primary/10">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Shield className="w-4 h-4 text-primary" />
-                حالة النظام
+          <Card className="border-2 border-border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Shield className="w-5 h-5 text-primary" />
+                System Health
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <StatusRow 
-                icon={<Snowflake className="w-4 h-4" />}
-                label="وضع التجميد" 
-                active={isFrozen} 
-                activeLabel="مُفعّل" 
-                inactiveLabel="غير مفعّل"
-                onClick={() => setDrillView('freeze')}
-              />
-              <StatusRow 
-                icon={<FileCode className="w-4 h-4" />}
-                label="حراسة الكود" 
-                active={true} 
-                activeLabel="نشط"
-                onClick={() => setDrillView('code-integrity')}
-              />
-              <StatusRow 
-                icon={<UserCheck className="w-4 h-4" />}
-                label="الموافقة الثنائية" 
-                active={true} 
-                activeLabel="نشط"
-                onClick={() => setDrillView('two-person')}
-              />
-              <StatusRow 
-                icon={<Lock className="w-4 h-4" />}
-                label="قفل الفترات" 
-                active={true} 
-                activeLabel="نشط"
-                onClick={() => setDrillView('period-lock')}
-              />
-              <StatusRow 
-                icon={<Fingerprint className="w-4 h-4" />}
-                label="كاشف التلاعب" 
-                active={true} 
-                activeLabel="نشط"
+            <CardContent className="space-y-1 p-3">
+              {/* Database Integrity */}
+              <HealthStatusRow
+                icon={<Database className="w-5 h-5" />}
+                label="Database Integrity"
+                status="ok"
+                statusLabel="OK"
                 onClick={() => setDrillView('tamper')}
               />
-              <StatusRow 
-                icon={<Database className="w-4 h-4" />}
-                label="النسخ الاحتياطي" 
-                active={true} 
-                activeLabel="نشط"
-                onClick={() => setDrillView('backups')}
+              {/* Code Status */}
+              <HealthStatusRow
+                icon={<Lock className="w-5 h-5" />}
+                label="Code Status"
+                status={isFrozen ? 'locked' : 'ok'}
+                statusLabel={isFrozen ? 'Locked' : 'Active'}
+                badge={isFrozen ? 'LOCK' : undefined}
+                onClick={() => setDrillView('code-integrity')}
               />
+              {/* Pending Changes */}
+              <div 
+                className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors"
+                onClick={() => setDrillView('change-log')}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Pending Changes</p>
+                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{pendingAlerts.length}</p>
+                  </div>
+                </div>
+                <Badge variant="secondary" className="text-xs">{pendingAlerts.length}</Badge>
+              </div>
+              {/* Last Audit */}
+              <div 
+                className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors"
+                onClick={() => setDrillView('change-log')}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Last Audit</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{lastAuditTime}</p>
+                  </div>
+                </div>
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              </div>
             </CardContent>
           </Card>
 
-          {/* Quick Stats */}
-          <Card>
-            <CardContent className="p-4 space-y-3">
-              <QuickMetric icon={<BarChart3 className="w-4 h-4" />} label="إجمالي التنبيهات" value={alerts.length} color="text-primary" />
-              <QuickMetric icon={<AlertTriangle className="w-4 h-4" />} label="معلقة" value={pendingAlerts.length} color="text-amber-600" />
-              <QuickMetric icon={<CheckCircle2 className="w-4 h-4" />} label="تمت الموافقة" value={approvedAlerts.length} color="text-emerald-600" />
-              <QuickMetric icon={<XCircle className="w-4 h-4" />} label="مرفوضة" value={rejectedAlerts.length} color="text-destructive" />
-            </CardContent>
-          </Card>
-
-          {/* Deep Dive Links */}
+          {/* Quick Tools */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-xs text-muted-foreground">أدوات متقدمة</CardTitle>
             </CardHeader>
             <CardContent className="p-2">
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {detailTabs.map(t => (
                   <Button 
                     key={t.value} 
@@ -219,30 +263,35 @@ export function EnterpriseSecurityDashboard() {
           </Card>
         </div>
 
-        {/* ──── CENTER: Live Alerts Feed ──── */}
+        {/* ──── CENTER: Live Alerts ──── */}
         <div className="lg:col-span-5">
-          <Card className="h-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Zap className="w-4 h-4 text-amber-500" />
-                التنبيهات المباشرة
-                {pendingAlerts.length > 0 && (
-                  <Badge className="bg-destructive text-destructive-foreground text-[10px] px-1.5 h-5 animate-pulse">
-                    {pendingAlerts.length} جديد
-                  </Badge>
-                )}
-              </CardTitle>
+          <Card className="h-full border-2 border-border">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                  Live Alerts
+                  {pendingAlerts.length > 0 && (
+                    <Badge className="bg-destructive text-destructive-foreground text-[10px] px-1.5 h-5 animate-pulse">
+                      {pendingAlerts.length} جديد
+                    </Badge>
+                  )}
+                </CardTitle>
+                <span className="text-[11px] text-muted-foreground">
+                  {alerts.length > 0 && new Date(alerts[0].created_at).toLocaleString('ar-SA', { timeStyle: 'short' })}
+                </span>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
-              <ScrollArea className="h-[520px]">
-                <div className="divide-y">
+              <ScrollArea className="h-[540px]">
+                <div className="divide-y divide-border">
                   {liveAlerts.length === 0 ? (
-                    <div className="text-center py-16 text-muted-foreground">
-                      <ShieldCheck className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <div className="text-center py-20 text-muted-foreground">
+                      <ShieldCheck className="w-12 h-12 mx-auto mb-3 opacity-20" />
                       <p className="text-sm">لا توجد تنبيهات — النظام آمن</p>
                     </div>
                   ) : liveAlerts.map((alert) => (
-                    <AlertRow 
+                    <LiveAlertRow 
                       key={alert.id} 
                       alert={alert} 
                       onView={() => setSelectedAlert(alert)} 
@@ -256,76 +305,57 @@ export function EnterpriseSecurityDashboard() {
 
         {/* ──── RIGHT: Pending Approvals ──── */}
         <div className="lg:col-span-4">
-          <Card className="h-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-violet-600" />
-                الموافقات المعلقة
-                <Badge variant="secondary" className="text-[10px]">{pendingAlerts.length}</Badge>
-              </CardTitle>
+          <Card className="h-full border-2 border-border">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-primary" />
+                  Pending Approvals
+                </CardTitle>
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              </div>
             </CardHeader>
             <CardContent className="p-0">
-              <ScrollArea className="h-[520px]">
+              <ScrollArea className="h-[540px]">
                 {pendingAlerts.length === 0 ? (
-                  <div className="text-center py-16 text-muted-foreground">
-                    <CheckCircle2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <div className="text-center py-20 text-muted-foreground">
+                    <CheckCircle2 className="w-12 h-12 mx-auto mb-3 opacity-20" />
                     <p className="text-sm">لا توجد موافقات معلقة</p>
                   </div>
                 ) : (
-                  <div className="divide-y">
-                    {pendingAlerts.map(alert => (
-                      <div key={alert.id} className="p-3 hover:bg-muted/30 transition-colors">
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium truncate">{alert.description}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="outline" className="text-[10px] h-4">{alert.affected_module}</Badge>
-                              <span className="text-[10px] text-muted-foreground">
-                                {new Date(alert.created_at).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' })}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        {/* Impact summary */}
-                        {alert.impact_analysis && (
-                          <div className="flex gap-2 flex-wrap mb-2">
-                            <ImpactChip label="فواتير" value={alert.impact_analysis.sales_invoices + alert.impact_analysis.purchase_invoices} />
-                            <ImpactChip label="قيود" value={alert.impact_analysis.journal_entries} />
-                            <ImpactChip label="حسابات" value={alert.impact_analysis.account_balances_affected} />
-                          </div>
-                        )}
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            className="h-7 text-xs gap-1 flex-1" 
-                            onClick={() => approveAlert.mutate({ id: alert.id })}
-                            disabled={approveAlert.isPending}
-                          >
-                            <CheckCircle2 className="w-3 h-3" />
-                            موافقة
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive" 
-                            className="h-7 text-xs gap-1 flex-1"
-                            onClick={() => rejectAlert.mutate({ id: alert.id })}
-                            disabled={rejectAlert.isPending}
-                          >
-                            <XCircle className="w-3 h-3" />
-                            رفض
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="h-7 text-xs gap-1"
-                            onClick={() => setSelectedAlert(alert)}
-                          >
-                            <Eye className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
+                  <div className="divide-y divide-border">
+                    {pendingAlerts.map((alert, idx) => (
+                      <ApprovalRow 
+                        key={alert.id} 
+                        alert={alert} 
+                        index={idx}
+                        onApprove={() => handleApprovalAction(alert, 'approve')}
+                        onReject={() => handleApprovalAction(alert, 'reject')}
+                        onView={() => setSelectedAlert(alert)}
+                      />
                     ))}
                   </div>
+                )}
+
+                {/* Resolved items */}
+                {(approvedAlerts.length > 0 || rejectedAlerts.length > 0) && (
+                  <>
+                    <Separator />
+                    <div className="p-3">
+                      <p className="text-[10px] text-muted-foreground font-semibold mb-2">تمت المعالجة</p>
+                      {[...approvedAlerts, ...rejectedAlerts].slice(0, 5).map((alert, idx) => (
+                        <div key={alert.id} className="flex items-center gap-2 py-1.5 text-xs text-muted-foreground">
+                          {alert.status === 'approved' 
+                            ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> 
+                            : <XCircle className="w-3.5 h-3.5 text-destructive shrink-0" />}
+                          <span className="truncate">{alert.description}</span>
+                          <span className="mr-auto text-[10px]">
+                            {alert.status === 'approved' ? 'موافق' : 'مرفوض'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </ScrollArea>
             </CardContent>
@@ -334,68 +364,144 @@ export function EnterpriseSecurityDashboard() {
       </div>
 
       {/* ════════════════ Bottom: Audit Timeline ════════════════ */}
-      <Card>
-        <CardHeader className="pb-3">
+      <Card className="border-2 border-border">
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Clock className="w-4 h-4 text-teal-600" />
-              الجدول الزمني للتدقيق
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
+              Audit Timeline
             </CardTitle>
-            <Button variant="ghost" size="sm" className="text-xs gap-1" onClick={() => setDrillView('change-log')}>
-              عرض الكل <ArrowLeftRight className="w-3 h-3" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <RefreshCw className="w-3.5 h-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <Filter className="w-3.5 h-3.5" />
+              </Button>
+              <Button variant="ghost" size="sm" className="text-xs gap-1 h-7" onClick={() => setDrillView('change-log')}>
+                عرض الكل <ArrowLeftRight className="w-3 h-3" />
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="relative">
-            {/* Timeline line */}
             <div className="absolute top-0 bottom-0 right-4 w-px bg-border" />
-            
             <div className="space-y-0">
-              {alerts.slice(0, 8).map((alert, i) => (
-                <div key={alert.id} className="flex gap-4 group relative">
-                  {/* Dot */}
-                  <div className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 border-2',
-                    alert.status === 'approved' ? 'bg-emerald-500/10 border-emerald-500/40' :
-                    alert.status === 'rejected' ? 'bg-destructive/10 border-destructive/40' :
-                    'bg-amber-500/10 border-amber-500/40'
-                  )}>
-                    {alert.status === 'approved' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> :
-                     alert.status === 'rejected' ? <XCircle className="w-3.5 h-3.5 text-destructive" /> :
-                     <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />}
-                  </div>
-
-                  {/* Content */}
-                  <div className={cn(
-                    'flex-1 pb-4 cursor-pointer group-hover:bg-muted/30 rounded-lg p-2 -mt-1 transition-colors',
-                  )} onClick={() => setSelectedAlert(alert)}>
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-xs font-medium">{alert.description}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-2.5 h-2.5" />
-                        {new Date(alert.created_at).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' })}
-                      </span>
-                      <Badge variant="outline" className="text-[9px] h-3.5 px-1">{alert.affected_module}</Badge>
-                      <Badge variant="outline" className="text-[9px] h-3.5 px-1">{changeTypeLabel(alert.change_type)}</Badge>
-                      {alert.impact_analysis && (
-                        <span className="text-[10px]">
-                          أثر: {alert.impact_analysis.sales_invoices + alert.impact_analysis.purchase_invoices} فاتورة · {alert.impact_analysis.journal_entries} قيد
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+              {alerts.slice(0, 8).map((alert) => (
+                <TimelineRow key={alert.id} alert={alert} onClick={() => setSelectedAlert(alert)} />
               ))}
               {alerts.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground text-sm">لا توجد أحداث مسجلة</div>
+                <div className="text-center py-10 text-muted-foreground text-sm">لا توجد أحداث مسجلة</div>
               )}
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* ════════════════ Change Request Approval Modal ════════════════ */}
+      <Dialog open={!!approvalModal} onOpenChange={() => setApprovalModal(null)}>
+        <DialogContent className="sm:max-w-lg" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {approvalModal?.action === 'approve' 
+                ? <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                : <XCircle className="w-5 h-5 text-destructive" />}
+              {approvalModal?.action === 'approve' ? 'تأكيد الموافقة على التغيير' : 'تأكيد رفض التغيير'}
+            </DialogTitle>
+            <DialogDescription>
+              يرجى مراجعة تفاصيل التغيير وتأثيره قبل اتخاذ القرار
+            </DialogDescription>
+          </DialogHeader>
+
+          {approvalModal && (
+            <div className="space-y-4 py-2">
+              {/* Change Description */}
+              <div className="rounded-xl border p-3 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground">وصف التغيير</p>
+                <p className="text-sm font-medium">{approvalModal.alert.description}</p>
+                <div className="flex gap-2 flex-wrap">
+                  <Badge variant="outline" className="text-[10px]">{approvalModal.alert.affected_module}</Badge>
+                  <Badge variant="outline" className="text-[10px]">{changeTypeLabel(approvalModal.alert.change_type)}</Badge>
+                </div>
+              </div>
+
+              {/* Impact Analysis */}
+              {approvalModal.alert.impact_analysis && (
+                <div className="rounded-xl border p-3 space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground">تحليل الأثر المتوقع</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <ImpactCard 
+                      label="فواتير المبيعات" 
+                      value={approvalModal.alert.impact_analysis.sales_invoices} 
+                      icon={<FileText className="w-4 h-4" />} 
+                    />
+                    <ImpactCard 
+                      label="فواتير المشتريات" 
+                      value={approvalModal.alert.impact_analysis.purchase_invoices} 
+                      icon={<FileText className="w-4 h-4" />} 
+                    />
+                    <ImpactCard 
+                      label="القيود المحاسبية" 
+                      value={approvalModal.alert.impact_analysis.journal_entries} 
+                      icon={<BarChart3 className="w-4 h-4" />} 
+                    />
+                    <ImpactCard 
+                      label="الأرصدة المتأثرة" 
+                      value={approvalModal.alert.impact_analysis.account_balances_affected} 
+                      icon={<TrendingUp className="w-4 h-4" />} 
+                    />
+                  </div>
+                  {approvalModal.alert.impact_analysis.vat_reports_impact && approvalModal.alert.impact_analysis.vat_reports_impact !== 'none' && (
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                      <span className="text-xs font-medium text-amber-700 dark:text-amber-400">تقرير الضريبة سيتأثر</span>
+                    </div>
+                  )}
+                  {approvalModal.alert.impact_analysis.trial_balance_impact && approvalModal.alert.impact_analysis.trial_balance_impact !== 'none' && (
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                      <span className="text-xs font-medium text-amber-700 dark:text-amber-400">ميزان المراجعة سيتأثر</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Risk Level */}
+              <div className="rounded-xl border p-3">
+                <p className="text-xs font-semibold text-muted-foreground mb-1">مستوى المخاطر</p>
+                <RiskBadge severity={getSeverity(approvalModal.alert)} />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setApprovalModal(null)}>
+              إلغاء
+            </Button>
+            {approvalModal?.action === 'approve' ? (
+              <Button 
+                className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={confirmApproval}
+                disabled={approveAlert.isPending}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                تأكيد الموافقة
+              </Button>
+            ) : (
+              <Button 
+                variant="destructive" 
+                className="gap-2"
+                onClick={confirmApproval}
+                disabled={rejectAlert.isPending}
+              >
+                <XCircle className="w-4 h-4" />
+                تأكيد الرفض
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ════════════════ Detail Sheet ════════════════ */}
       <Sheet open={!!selectedAlert} onOpenChange={() => setSelectedAlert(null)}>
@@ -417,98 +523,285 @@ export function EnterpriseSecurityDashboard() {
   );
 }
 
-// ─── Sub-components ───
+// ═══════════════════════════════════════════════════════
+// Sub-components
+// ═══════════════════════════════════════════════════════
 
-function StatusRow({ icon, label, active, activeLabel, inactiveLabel, onClick }: {
-  icon: React.ReactNode; label: string; active: boolean; activeLabel: string; inactiveLabel?: string; onClick?: () => void;
+function HealthStatusRow({ icon, label, status, statusLabel, badge, onClick }: {
+  icon: React.ReactNode; label: string; status: 'ok' | 'locked' | 'warning'; statusLabel: string; badge?: string; onClick?: () => void;
 }) {
   return (
     <div 
-      className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+      className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors"
       onClick={onClick}
     >
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground">{icon}</span>
-        <span className="text-xs font-medium">{label}</span>
+      <div className="flex items-center gap-3">
+        <div className={cn(
+          'w-10 h-10 rounded-xl flex items-center justify-center',
+          status === 'ok' ? 'bg-emerald-500/10' :
+          status === 'locked' ? 'bg-amber-500/10' : 'bg-destructive/10'
+        )}>
+          <span className={cn(
+            status === 'ok' ? 'text-emerald-500' :
+            status === 'locked' ? 'text-amber-500' : 'text-destructive'
+          )}>{icon}</span>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground">{label}</p>
+          <p className={cn(
+            'text-xs font-medium',
+            status === 'ok' ? 'text-emerald-600 dark:text-emerald-400' :
+            status === 'locked' ? 'text-amber-600 dark:text-amber-400' : 'text-destructive'
+          )}>{statusLabel}</p>
+        </div>
       </div>
-      <Badge className={cn(
-        'text-[10px] h-5',
-        active 
-          ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400' 
-          : 'bg-muted text-muted-foreground'
-      )}>
-        {active ? activeLabel : (inactiveLabel || 'غير مفعّل')}
-      </Badge>
+      <div className="flex items-center gap-1.5">
+        {badge && (
+          <Badge className="text-[9px] h-4 bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/30">
+            {badge}
+          </Badge>
+        )}
+        <Badge className={cn(
+          'text-[10px] h-5',
+          status === 'ok' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400' :
+          status === 'locked' ? 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400' :
+          'bg-destructive/10 text-destructive border-destructive/20'
+        )}>
+          {status === 'ok' ? '●' : status === 'locked' ? '🔒' : '⚠'}
+        </Badge>
+      </div>
     </div>
   );
 }
 
-function QuickMetric({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <span className={color}>{icon}</span>
-        <span className="text-xs text-muted-foreground">{label}</span>
-      </div>
-      <span className={cn('text-lg font-bold', color)}>{value}</span>
-    </div>
-  );
+function getSeverity(alert: SystemChangeAlert): string {
+  if (!alert.impact_analysis) return 'low';
+  const total = alert.impact_analysis.sales_invoices + alert.impact_analysis.purchase_invoices + alert.impact_analysis.journal_entries;
+  if (total > 100 || alert.impact_analysis.vat_reports_impact !== 'none') return 'high';
+  if (total > 20) return 'medium';
+  return 'low';
 }
 
-function AlertRow({ alert, onView }: { alert: SystemChangeAlert; onView: () => void }) {
+function LiveAlertRow({ alert, onView }: { alert: SystemChangeAlert; onView: () => void }) {
+  const sev = getSeverity(alert);
+  const severityColor = sev === 'high'
+    ? 'border-r-destructive bg-destructive/[0.03]'
+    : sev === 'medium'
+    ? 'border-r-amber-500 bg-amber-500/[0.02]'
+    : 'border-r-emerald-500';
+
   return (
     <div 
       className={cn(
-        'px-4 py-3 hover:bg-muted/30 cursor-pointer transition-colors',
-        alert.status === 'pending' && 'bg-amber-500/[0.03]'
+        'px-4 py-3.5 hover:bg-muted/40 cursor-pointer transition-colors border-r-4',
+        severityColor
       )}
       onClick={onView}
     >
-      <div className="flex items-start gap-2">
-        <div className={cn(
-          'w-2 h-2 rounded-full mt-1.5 shrink-0',
-          alert.status === 'approved' ? 'bg-emerald-500' :
-          alert.status === 'rejected' ? 'bg-destructive' :
-          'bg-amber-500 animate-pulse'
-        )} />
+      <div className="flex items-start gap-3">
+        <SeverityDot severity={sev} />
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium truncate">{alert.description}</p>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant="outline" className="text-[10px] h-4 px-1">{alert.affected_module}</Badge>
-            <span className="text-[10px] text-muted-foreground">{changeTypeLabel(alert.change_type)}</span>
-            <span className="text-[10px] text-muted-foreground mr-auto">
-              {new Date(alert.created_at).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' })}
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold truncate">{alert.description}</p>
+            <span className="text-[10px] text-muted-foreground shrink-0">
+              {new Date(alert.created_at).toLocaleString('ar-SA', { timeStyle: 'short' })}
             </span>
           </div>
           {alert.impact_analysis && (
-            <div className="flex gap-1.5 mt-1.5">
-              <ImpactChip label="فواتير" value={alert.impact_analysis.sales_invoices + alert.impact_analysis.purchase_invoices} />
-              <ImpactChip label="قيود" value={alert.impact_analysis.journal_entries} />
-            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {alert.description.includes('Tax') || alert.description.includes('ضري') 
+                ? 'Tax calculation logic modified.'
+                : alert.description}
+            </p>
           )}
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {alert.impact_analysis && (
+              <>
+                <ImpactChip icon="├" label={`Affects ${alert.impact_analysis.sales_invoices + alert.impact_analysis.purchase_invoices} invoices`} />
+                <ImpactChip icon="├" label={`Affects ${alert.impact_analysis.journal_entries} journal entries`} />
+                {alert.impact_analysis.vat_reports_impact && alert.impact_analysis.vat_reports_impact !== 'none' && (
+                  <ImpactChip icon="└" label="Affects VAT report" />
+                )}
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-1.5">
+            <Badge variant="outline" className="text-[10px] h-4 px-1.5">{alert.affected_module}</Badge>
+            <Badge variant="outline" className="text-[10px] h-4 px-1.5">{changeTypeLabel(alert.change_type)}</Badge>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function ImpactChip({ label, value }: { label: string; value: number }) {
-  if (!value) return null;
+function ApprovalRow({ alert, index, onApprove, onReject, onView }: { 
+  alert: SystemChangeAlert; index: number; onApprove: () => void; onReject: () => void; onView: () => void 
+}) {
   return (
-    <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-      {value} {label}
+    <div className="p-3 hover:bg-muted/30 transition-colors">
+      <div className="flex items-center gap-2 mb-1.5">
+        <SeverityDot severity={getSeverity(alert)} />
+        <span className="text-[10px] text-muted-foreground font-mono">#{String(index + 1).padStart(3, '0')}</span>
+        <span className="text-[10px] text-muted-foreground mr-auto">
+          {new Date(alert.created_at).toLocaleString('ar-SA', { timeStyle: 'short' })}
+        </span>
+      </div>
+      <p className="text-xs font-bold text-foreground mb-1.5 pr-6">{alert.description}</p>
+      
+      {alert.impact_analysis && (
+        <div className="space-y-0.5 mb-2 pr-6">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            Affects {alert.impact_analysis.vat_reports_impact !== 'none' ? 'VAT report' : alert.affected_module}
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            Affects {alert.impact_analysis.sales_invoices + alert.impact_analysis.purchase_invoices} invoices
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-2 pr-6">
+        <Button 
+          size="sm" 
+          className="h-7 text-xs gap-1 flex-1 bg-emerald-600 hover:bg-emerald-700 text-white" 
+          onClick={onApprove}
+        >
+          <CheckCircle2 className="w-3 h-3" />
+          Approve
+        </Button>
+        <Button 
+          size="sm" 
+          variant="destructive" 
+          className="h-7 text-xs gap-1 flex-1"
+          onClick={onReject}
+        >
+          <XCircle className="w-3 h-3" />
+          Reject
+        </Button>
+        <Button 
+          size="sm" 
+          variant="ghost" 
+          className="h-7 w-7 p-0"
+          onClick={onView}
+        >
+          <Eye className="w-3 h-3" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function TimelineRow({ alert, onClick }: { alert: SystemChangeAlert; onClick: () => void }) {
+  return (
+    <div className="flex gap-4 group relative">
+      <div className={cn(
+        'w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 border-2',
+        alert.status === 'approved' ? 'bg-emerald-500/10 border-emerald-500/40' :
+        alert.status === 'rejected' ? 'bg-destructive/10 border-destructive/40' :
+        'bg-amber-500/10 border-amber-500/40'
+      )}>
+        {alert.status === 'approved' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> :
+         alert.status === 'rejected' ? <XCircle className="w-3.5 h-3.5 text-destructive" /> :
+         <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />}
+      </div>
+
+      <div className="flex-1 pb-4 cursor-pointer group-hover:bg-muted/30 rounded-lg p-2 -mt-1 transition-colors" onClick={onClick}>
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="text-xs font-semibold">{alert.description}</span>
+          {alert.status === 'pending' && (
+            <Badge className="text-[9px] h-4 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">
+              Pending Approval
+            </Badge>
+          )}
+          {alert.status === 'rejected' && (
+            <Badge className="text-[9px] h-4 bg-destructive/10 text-destructive border-destructive/20">
+              Rejected
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-wrap">
+          <span className="flex items-center gap-1">
+            <Clock className="w-2.5 h-2.5" />
+            {new Date(alert.created_at).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' })}
+          </span>
+          <Badge variant="outline" className="text-[9px] h-3.5 px-1">{alert.affected_module}</Badge>
+          <Badge variant="outline" className="text-[9px] h-3.5 px-1">{changeTypeLabel(alert.change_type)}</Badge>
+          {alert.impact_analysis && (
+            <span>
+              Affects {alert.impact_analysis.sales_invoices + alert.impact_analysis.purchase_invoices} invoices · {alert.impact_analysis.journal_entries} entries
+            </span>
+          )}
+          <span className="w-2 h-2 rounded-full bg-primary/40 mr-auto" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SeverityDot({ severity }: { severity: string }) {
+  return (
+    <div className={cn(
+      'w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[10px] font-bold',
+      severity === 'critical' ? 'bg-destructive/15 text-destructive' :
+      severity === 'high' ? 'bg-destructive/10 text-destructive' :
+      severity === 'medium' ? 'bg-amber-500/15 text-amber-600' :
+      'bg-emerald-500/15 text-emerald-600'
+    )}>
+      {severity === 'critical' ? '!' : severity === 'high' ? '!' : severity === 'medium' ? '●' : '●'}
+    </div>
+  );
+}
+
+function RiskBadge({ severity }: { severity: string }) {
+  return (
+    <div className={cn(
+      'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold',
+      severity === 'critical' ? 'bg-destructive/10 text-destructive border border-destructive/20' :
+      severity === 'high' ? 'bg-destructive/10 text-destructive border border-destructive/20' :
+      severity === 'medium' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20' :
+      'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+    )}>
+      <div className={cn(
+        'w-2 h-2 rounded-full',
+        severity === 'critical' || severity === 'high' ? 'bg-destructive animate-pulse' :
+        severity === 'medium' ? 'bg-amber-500' : 'bg-emerald-500'
+      )} />
+      {severity === 'critical' ? 'حرج' : severity === 'high' ? 'عالي' : severity === 'medium' ? 'متوسط' : 'منخفض'}
+    </div>
+  );
+}
+
+function ImpactChip({ icon, label }: { icon?: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+      {icon && <span className="opacity-40 font-mono">{icon}</span>}
+      {label}
     </span>
+  );
+}
+
+function ImpactCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border">
+      <span className="text-muted-foreground">{icon}</span>
+      <div>
+        <p className="text-lg font-bold text-foreground">{value}</p>
+        <p className="text-[10px] text-muted-foreground">{label}</p>
+      </div>
+    </div>
   );
 }
 
 function changeTypeLabel(type: string) {
   const labels: Record<string, string> = {
-    code_change: '💻 كود',
-    accounting_logic: '📊 محاسبة',
-    tax_calculation: '🏛️ ضريبة',
-    system_config: '⚙️ إعدادات',
-    database_structure: '🗃️ قاعدة بيانات',
-    config_change: '⚙️ تهيئة',
+    code_change: '💻 Code',
+    accounting_logic: '📊 Accounting',
+    tax_calculation: '🏛️ Tax',
+    system_config: '⚙️ Settings',
+    database_structure: '🗃️ Database',
+    config_change: '⚙️ Config',
   };
   return labels[type] || type;
 }
