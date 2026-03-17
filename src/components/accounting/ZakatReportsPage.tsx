@@ -101,10 +101,10 @@ export function ZakatReportsPage() {
 
     if (type === 'excel') {
       const summaryData = [
-        { label: 'التدفقات التشغيلية', value: cashFlow.operatingActivities.total.toLocaleString() + ' ر.س' },
-        { label: 'التدفقات الاستثمارية', value: cashFlow.investingActivities.total.toLocaleString() + ' ر.س' },
-        { label: 'التدفقات التمويلية', value: cashFlow.financingActivities.total.toLocaleString() + ' ر.س' },
-        { label: 'صافي التغير', value: cashFlow.netChangeInCash.toLocaleString() + ' ر.س' },
+        { label: 'التدفقات التشغيلية', value: cashFlow.operatingActivities.total + ' ر.س' },
+        { label: 'التدفقات الاستثمارية', value: cashFlow.investingActivities.total + ' ر.س' },
+        { label: 'التدفقات التمويلية', value: cashFlow.financingActivities.total + ' ر.س' },
+        { label: 'صافي التغير', value: cashFlow.netChangeInCash + ' ر.س' },
       ];
       exportToExcel({ title: 'قائمة التدفقات النقدية', columns, data, fileName: 'cash-flow-statement', summaryData });
     } else {
