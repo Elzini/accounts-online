@@ -627,6 +627,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     setCurrentSaleId(null);
     setCurrentSaleStatus('draft');
     setIsEditing(false);
+    setStoredHeaderTotals(null);
   };
 
   const handleCloseInvoice = (open: boolean) => {
