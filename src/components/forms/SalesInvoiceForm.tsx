@@ -1625,9 +1625,9 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
                 <div className="text-[10px] text-amber-600 dark:text-amber-500 font-semibold mt-1">{t.inv_tax_label} {taxRate}%</div>
               </div>
               {/* الربح */}
-              <div className={`border-2 rounded-xl p-4 text-center ${calculations.profit >= 0 ? 'bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-800'}`}>
-                <div className={`text-2xl font-black ${calculations.profit >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>{formatCurrency(calculations.profit)}</div>
-                <div className={`text-[10px] font-semibold mt-1 ${calculations.profit >= 0 ? 'text-emerald-600 dark:text-emerald-500' : 'text-red-600 dark:text-red-500'}`}>{t.inv_profit}</div>
+              <div className={`border-2 rounded-xl p-4 text-center ${displayTotals.profit >= 0 ? 'bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-800'}`}>
+                <div className={`text-2xl font-black ${displayTotals.profit >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>{formatCurrency(displayTotals.profit)}</div>
+                <div className={`text-[10px] font-semibold mt-1 ${displayTotals.profit >= 0 ? 'text-emerald-600 dark:text-emerald-500' : 'text-red-600 dark:text-red-500'}`}>{t.inv_profit}</div>
               </div>
             </div>
 
