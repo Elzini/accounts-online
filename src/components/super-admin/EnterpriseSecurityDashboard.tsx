@@ -599,7 +599,7 @@ function LiveAlertRow({ alert, onView }: { alert: SystemChangeAlert; onView: () 
       onClick={onView}
     >
       <div className="flex items-start gap-3">
-        <SeverityDot severity={alert.severity} />
+        <SeverityDot severity={sev} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-semibold truncate">{alert.description}</p>
