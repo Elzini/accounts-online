@@ -314,7 +314,91 @@ export function VATReturnReportPage() {
         </CardContent>
       </Card>
 
-      {/* Notes */}
+      {/* Detailed Invoices */}
+      <Card className="print:shadow-none print:border">
+        <Collapsible open={showDetails} onOpenChange={setShowDetails}>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="pb-3 cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <List className="w-5 h-5 text-primary" />
+                  تقرير تفصيلي بالفواتير المضافة للإقرار
+                  <Badge variant="secondary" className="mr-2">{report?.detailedInvoices?.length || 0} فاتورة</Badge>
+                </CardTitle>
+                {showDetails ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+              </div>
+              <CardDescription>عرض جميع فواتير المبيعات والمشتريات المدرجة في هذا الإقرار</CardDescription>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <div className="flex gap-2 mb-4">
+                <Button variant={detailFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setDetailFilter('all')}>الكل ({report?.detailedInvoices?.length || 0})</Button>
+                <Button variant={detailFilter === 'sales' ? 'default' : 'outline'} size="sm" onClick={() => setDetailFilter('sales')}>
+                  المبيعات ({report?.detailedInvoices?.filter(i => i.type === 'sales').length || 0})
+                </Button>
+                <Button variant={detailFilter === 'purchase' ? 'default' : 'outline'} size="sm" onClick={() => setDetailFilter('purchase')}>
+                  المشتريات ({report?.detailedInvoices?.filter(i => i.type === 'purchase').length || 0})
+                </Button>
+              </div>
+              <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background z-10">
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="text-right font-bold">#</TableHead>
+                      <TableHead className="text-right font-bold">النوع</TableHead>
+                      <TableHead className="text-right font-bold">رقم الفاتورة</TableHead>
+                      <TableHead className="text-right font-bold">رقم فاتورة المورد</TableHead>
+                      <TableHead className="text-right font-bold">التاريخ</TableHead>
+                      <TableHead className="text-right font-bold">العميل / المورد</TableHead>
+                      <TableHead className="text-left font-bold">المبلغ قبل الضريبة</TableHead>
+                      <TableHead className="text-left font-bold">ضريبة القيمة المضافة</TableHead>
+                      <TableHead className="text-left font-bold">الإجمالي</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(report?.detailedInvoices || [])
+                      .filter(inv => detailFilter === 'all' || inv.type === detailFilter)
+                      .map((inv, idx) => (
+                        <TableRow key={inv.id} className={idx % 2 === 0 ? '' : 'bg-muted/30'}>
+                          <TableCell className="font-mono text-sm">{idx + 1}</TableCell>
+                          <TableCell>
+                            <Badge variant={inv.type === 'sales' ? 'default' : 'secondary'} className="text-xs">
+                              {inv.type === 'sales' ? 'مبيعات' : 'مشتريات'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">{inv.invoice_number}</TableCell>
+                          <TableCell className="font-mono text-sm text-muted-foreground">{inv.supplier_invoice_number || '-'}</TableCell>
+                          <TableCell className="text-sm">{inv.invoice_date}</TableCell>
+                          <TableCell className="text-sm">{inv.customer_name || '-'}</TableCell>
+                          <TableCell className="text-left font-mono text-sm">{formatNumber(inv.subtotal)}</TableCell>
+                          <TableCell className="text-left font-mono text-sm text-primary">{formatNumber(inv.vat_amount)}</TableCell>
+                          <TableCell className="text-left font-mono text-sm font-medium">{formatNumber(inv.total)}</TableCell>
+                        </TableRow>
+                      ))}
+                    {/* Totals row */}
+                    {(() => {
+                      const filtered = (report?.detailedInvoices || []).filter(inv => detailFilter === 'all' || inv.type === detailFilter);
+                      const totSubtotal = filtered.reduce((s, i) => s + i.subtotal, 0);
+                      const totVat = filtered.reduce((s, i) => s + i.vat_amount, 0);
+                      const totTotal = filtered.reduce((s, i) => s + i.total, 0);
+                      return (
+                        <TableRow className="font-bold bg-muted border-t-2">
+                          <TableCell colSpan={6} className="text-right">الإجمالي</TableCell>
+                          <TableCell className="text-left font-mono">{formatNumber(totSubtotal)}</TableCell>
+                          <TableCell className="text-left font-mono text-primary">{formatNumber(totVat)}</TableCell>
+                          <TableCell className="text-left font-mono">{formatNumber(totTotal)}</TableCell>
+                        </TableRow>
+                      );
+                    })()}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+
       <Card className="print:shadow-none print:border">
         <CardHeader className="pb-3"><CardTitle className="text-lg flex items-center gap-2"><AlertCircle className="w-5 h-5 text-amber-500" />{t.vat_notes_title}</CardTitle></CardHeader>
         <CardContent>
