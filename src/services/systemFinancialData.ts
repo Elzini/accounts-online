@@ -460,6 +460,7 @@ export async function getSystemFinancialStatements(
     revenue: totalRevenue,
     costOfRevenue,
     grossProfit,
+    sellingAndMarketingExpenses,
     generalAndAdminExpenses,
     operatingProfit,
     financingCost: 0,
