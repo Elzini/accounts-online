@@ -153,26 +153,32 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   const getCardValue = useCallback((cardId: string, defaultValue: number): number => {
     const cfg = cardConfigs.find(c => c.id === cardId);
 
-    // Support both explicit source and legacy saved configs without dataSource
-    const accountIdToUse = cfg?.dataSource === 'account'
-      ? cfg.accountId
-      : (!cfg?.dataSource ? cfg?.accountId : undefined);
+    // Industry-adaptive cards should NOT use custom account bindings - they have their own logic
+    const industryAdaptiveCards = ['availableCars', 'totalPurchases'];
+    const isIndustryAdaptive = industryAdaptiveCards.includes(cardId);
 
-    if (accountIdToUse && accountBalances[accountIdToUse] !== undefined) {
-      return accountBalances[accountIdToUse];
-    }
+    if (!isIndustryAdaptive) {
+      // Support both explicit source and legacy saved configs without dataSource
+      const accountIdToUse = cfg?.dataSource === 'account'
+        ? cfg.accountId
+        : (!cfg?.dataSource ? cfg?.accountId : undefined);
 
-    const formulaItems = cfg?.dataSource === 'formula'
-      ? cfg.formulaAccounts
-      : (!cfg?.dataSource && cfg?.formulaAccounts?.length ? cfg.formulaAccounts : undefined);
+      if (accountIdToUse && accountBalances[accountIdToUse] !== undefined) {
+        return accountBalances[accountIdToUse];
+      }
 
-    if (formulaItems && formulaItems.length > 0) {
-      let total = 0;
-      formulaItems.forEach(item => {
-        const bal = accountBalances[item.accountId] || 0;
-        total += item.operator === '+' ? bal : -bal;
-      });
-      return total;
+      const formulaItems = cfg?.dataSource === 'formula'
+        ? cfg.formulaAccounts
+        : (!cfg?.dataSource && cfg?.formulaAccounts?.length ? cfg.formulaAccounts : undefined);
+
+      if (formulaItems && formulaItems.length > 0) {
+        let total = 0;
+        formulaItems.forEach(item => {
+          const bal = accountBalances[item.accountId] || 0;
+          total += item.operator === '+' ? bal : -bal;
+        });
+        return total;
+      }
     }
 
     // For non-car companies, use project cost account for totalPurchases
