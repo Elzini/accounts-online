@@ -32,9 +32,9 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Building2 className="w-5 h-5" />,
     defaultDescription: 'شراء أرض مشروع - ضريبة تصرفات عقارية',
     lines: [
-      { accountCode: '1301', accountName: 'مشاريع تحت التطوير - أراضي', description: 'قيمة الأرض', side: 'debit' },
+      { accountCode: '1221', accountName: 'مشاريع تحت التطوير - تكلفة الأرض', description: 'قيمة الأرض', side: 'debit' },
       { accountCode: '1184', accountName: 'ضريبة التصرفات العقارية المدفوعة RETT', description: 'ضريبة تصرفات عقارية 5%', side: 'debit' },
-      { accountCode: '1101', accountName: 'البنك / الصندوق', description: 'المبلغ المدفوع', side: 'credit' },
+      { accountCode: '1121', accountName: 'البنك / الصندوق', description: 'المبلغ المدفوع', side: 'credit' },
     ],
   },
   {
@@ -45,10 +45,10 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Building2 className="w-5 h-5" />,
     defaultDescription: 'شراء أرض بالتقسيط - دفعة أولى',
     lines: [
-      { accountCode: '1301', accountName: 'مشاريع تحت التطوير - أراضي', description: 'قيمة الأرض الكاملة', side: 'debit' },
+      { accountCode: '1221', accountName: 'مشاريع تحت التطوير - تكلفة الأرض', description: 'قيمة الأرض الكاملة', side: 'debit' },
       { accountCode: '1184', accountName: 'ضريبة التصرفات العقارية RETT', description: 'ضريبة تصرفات عقارية 5%', side: 'debit' },
-      { accountCode: '1101', accountName: 'البنك', description: 'الدفعة الأولى المدفوعة', side: 'credit' },
-      { accountCode: '2101', accountName: 'دائنون / ذمم دائنة', description: 'باقي الأقساط المستحقة', side: 'credit' },
+      { accountCode: '1121', accountName: 'البنك', description: 'الدفعة الأولى المدفوعة', side: 'credit' },
+      { accountCode: '2110', accountName: 'دائنون / ذمم دائنة', description: 'باقي الأقساط المستحقة', side: 'credit' },
     ],
   },
 
@@ -61,10 +61,10 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Hammer className="w-5 h-5" />,
     defaultDescription: 'مستخلص مقاول - إنشاءات المشروع',
     lines: [
-      { accountCode: '1302', accountName: 'مشاريع تحت التطوير - إنشاءات', description: 'قيمة المستخلص بدون ضريبة', side: 'debit' },
-      { accountCode: '21042', accountName: 'ضريبة القيمة المضافة - مشتريات', description: 'ضريبة مشتريات 15%', side: 'debit' },
+      { accountCode: '1224', accountName: 'مشاريع تحت التطوير - الهيكل الإنشائي', description: 'قيمة المستخلص بدون ضريبة', side: 'debit' },
+      { accountCode: '1181', accountName: 'ضريبة مدخلات مشاريع', description: 'ضريبة مشتريات 15%', side: 'debit' },
       { accountCode: '2115', accountName: 'محتجزات ضمان المقاولين', description: 'محتجز ضمان 10%', side: 'credit' },
-      { accountCode: '2101', accountName: 'دائنون - مقاولين', description: 'صافي المستحق للمقاول', side: 'credit' },
+      { accountCode: '2110', accountName: 'دائنون - مقاولين', description: 'صافي المستحق للمقاول', side: 'credit' },
     ],
   },
   {
@@ -75,8 +75,8 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Banknote className="w-5 h-5" />,
     defaultDescription: 'سداد مستحقات مقاول',
     lines: [
-      { accountCode: '2101', accountName: 'دائنون - مقاولين', description: 'إقفال ذمة المقاول', side: 'debit' },
-      { accountCode: '1101', accountName: 'البنك', description: 'المبلغ المحول للمقاول', side: 'credit' },
+      { accountCode: '2110', accountName: 'دائنون - مقاولين', description: 'إقفال ذمة المقاول', side: 'debit' },
+      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المحول للمقاول', side: 'credit' },
     ],
   },
   {
@@ -88,7 +88,7 @@ const realEstateTemplates: JournalTemplate[] = [
     defaultDescription: 'تحرير محتجز ضمان مقاول',
     lines: [
       { accountCode: '2115', accountName: 'محتجزات ضمان المقاولين', description: 'تحرير المحتجز', side: 'debit' },
-      { accountCode: '1101', accountName: 'البنك', description: 'المبلغ المحول للمقاول', side: 'credit' },
+      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المحول للمقاول', side: 'credit' },
     ],
   },
 
@@ -101,9 +101,9 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <FileText className="w-5 h-5" />,
     defaultDescription: 'رسوم تصميم واستشارات هندسية',
     lines: [
-      { accountCode: '1303', accountName: 'مشاريع تحت التطوير - تصميم واستشارات', description: 'رسوم التصميم والاستشارات', side: 'debit' },
-      { accountCode: '21042', accountName: 'ضريبة القيمة المضافة - مشتريات', description: 'ضريبة مشتريات 15%', side: 'debit' },
-      { accountCode: '1101', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
+      { accountCode: '1251', accountName: 'مشاريع تحت التطوير - استشارات هندسية', description: 'رسوم التصميم والاستشارات', side: 'debit' },
+      { accountCode: '1181', accountName: 'ضريبة مدخلات مشاريع', description: 'ضريبة مشتريات 15%', side: 'debit' },
+      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
     ],
   },
   {
@@ -114,8 +114,8 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Receipt className="w-5 h-5" />,
     defaultDescription: 'رسوم تراخيص وتصاريح بناء',
     lines: [
-      { accountCode: '1304', accountName: 'مشاريع تحت التطوير - تراخيص ورسوم', description: 'رسوم تراخيص حكومية', side: 'debit' },
-      { accountCode: '1101', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
+      { accountCode: '1260', accountName: 'مشاريع تحت التطوير - تراخيص البلدية', description: 'رسوم تراخيص حكومية', side: 'debit' },
+      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
     ],
   },
 
@@ -128,7 +128,7 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Users className="w-5 h-5" />,
     defaultDescription: 'دفعة مقدمة من عميل - حجز وحدة',
     lines: [
-      { accountCode: '1101', accountName: 'البنك / الصندوق', description: 'المبلغ المستلم من العميل', side: 'debit' },
+      { accountCode: '1121', accountName: 'البنك / الصندوق', description: 'المبلغ المستلم من العميل', side: 'debit' },
       { accountCode: '2120', accountName: 'دفعات مقدمة من العملاء (التزام تعاقدي)', description: 'دفعة مقدمة - حجز وحدة', side: 'credit' },
     ],
   },
@@ -140,8 +140,8 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Banknote className="w-5 h-5" />,
     defaultDescription: 'تحصيل قسط من عميل',
     lines: [
-      { accountCode: '1101', accountName: 'البنك', description: 'المبلغ المحصل', side: 'debit' },
-      { accountCode: '1201', accountName: 'ذمم مدينة - عملاء', description: 'تخفيض رصيد العميل', side: 'credit' },
+      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المحصل', side: 'debit' },
+      { accountCode: '1130', accountName: 'ذمم مدينة - عملاء', description: 'تخفيض رصيد العميل', side: 'credit' },
     ],
   },
 
@@ -154,10 +154,10 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Home className="w-5 h-5" />,
     defaultDescription: 'اعتراف بإيراد بيع وحدة عقارية عند التسليم',
     lines: [
-      { accountCode: '1201', accountName: 'ذمم مدينة - عملاء', description: 'إجمالي قيمة البيع (بدون ضريبة)', side: 'debit' },
+      { accountCode: '1130', accountName: 'ذمم مدينة - عملاء', description: 'إجمالي قيمة البيع (بدون ضريبة)', side: 'debit' },
       { accountCode: '2120', accountName: 'دفعات مقدمة من العملاء', description: 'ترحيل الدفعات المقدمة المستلمة', side: 'debit' },
-      { accountCode: '4101', accountName: 'إيرادات بيع وحدات عقارية', description: 'إيراد البيع', side: 'credit' },
-      { accountCode: '21041', accountName: 'ضريبة القيمة المضافة - مبيعات', description: 'ضريبة مبيعات 15%', side: 'credit' },
+      { accountCode: '4110', accountName: 'إيرادات بيع وحدات عقارية', description: 'إيراد البيع', side: 'credit' },
+      { accountCode: '2150', accountName: 'ضريبة القيمة المضافة المستحقة', description: 'ضريبة مبيعات 15%', side: 'credit' },
     ],
   },
 
@@ -170,8 +170,8 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <ArrowDownUp className="w-5 h-5" />,
     defaultDescription: 'تحويل تكلفة وحدة مباعة إلى تكلفة المبيعات',
     lines: [
-      { accountCode: '5101', accountName: 'تكلفة الوحدات المباعة', description: 'تكلفة الوحدة المباعة', side: 'debit' },
-      { accountCode: '1301', accountName: 'مشاريع تحت التطوير', description: 'نصيب الوحدة من تكلفة المشروع', side: 'credit' },
+      { accountCode: '5110', accountName: 'تكلفة البناء / الوحدات المباعة', description: 'تكلفة الوحدة المباعة', side: 'debit' },
+      { accountCode: '1220', accountName: 'مشاريع تحت التطوير', description: 'نصيب الوحدة من تكلفة المشروع', side: 'credit' },
     ],
   },
 
@@ -184,7 +184,7 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Calculator className="w-5 h-5" />,
     defaultDescription: 'ضريبة تصرفات عقارية مستحقة على بيع وحدة',
     lines: [
-      { accountCode: '1184', accountName: 'ضريبة التصرفات العقارية', description: 'ضريبة RETT 5% على قيمة البيع', side: 'debit' },
+      { accountCode: '5190', accountName: 'تكلفة ضريبة التصرفات العقارية', description: 'ضريبة RETT 5% على قيمة البيع', side: 'debit' },
       { accountCode: '2156', accountName: 'ضريبة تصرفات عقارية مستحقة', description: 'مستحق للهيئة', side: 'credit' },
     ],
   },
@@ -197,7 +197,7 @@ const realEstateTemplates: JournalTemplate[] = [
     defaultDescription: 'سداد ضريبة تصرفات عقارية للهيئة',
     lines: [
       { accountCode: '2156', accountName: 'ضريبة تصرفات عقارية مستحقة', description: 'إقفال المستحق', side: 'debit' },
-      { accountCode: '1101', accountName: 'البنك', description: 'المبلغ المحول للهيئة', side: 'credit' },
+      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المحول للهيئة', side: 'credit' },
     ],
   },
   {
@@ -208,7 +208,7 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Home className="w-5 h-5" />,
     defaultDescription: 'إعفاء مسكن أول - تحمل الدولة',
     lines: [
-      { accountCode: '1185', accountName: 'ذمم مدينة - إعفاء المسكن الأول', description: 'مبلغ الإعفاء المستحق من الدولة', side: 'debit' },
+      { accountCode: '1145', accountName: 'ذمم مدينة - إعفاء المسكن الأول', description: 'مبلغ الإعفاء المستحق من الدولة', side: 'debit' },
       { accountCode: '2156', accountName: 'ضريبة تصرفات عقارية مستحقة', description: 'تخفيض المستحق بمبلغ الإعفاء', side: 'credit' },
     ],
   },
@@ -222,9 +222,9 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Calculator className="w-5 h-5" />,
     defaultDescription: 'تسوية ضريبة القيمة المضافة',
     lines: [
-      { accountCode: '21041', accountName: 'ضريبة القيمة المضافة - مبيعات', description: 'إقفال ضريبة المبيعات', side: 'debit' },
-      { accountCode: '21042', accountName: 'ضريبة القيمة المضافة - مشتريات', description: 'إقفال ضريبة المشتريات', side: 'credit' },
-      { accountCode: '21043', accountName: 'تسوية ضريبة القيمة المضافة', description: 'الفرق المستحق/لصالح الشركة', side: 'credit' },
+      { accountCode: '2150', accountName: 'ضريبة القيمة المضافة المستحقة', description: 'إقفال ضريبة المبيعات', side: 'debit' },
+      { accountCode: '1180', accountName: 'ضريبة مدخلات قابلة للاسترداد', description: 'إقفال ضريبة المشتريات', side: 'credit' },
+      { accountCode: '2155', accountName: 'تسوية ضريبة القيمة المضافة', description: 'الفرق المستحق/لصالح الشركة', side: 'credit' },
     ],
   },
 
@@ -237,8 +237,8 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Banknote className="w-5 h-5" />,
     defaultDescription: 'استلام قرض صندوق التنمية العقارية',
     lines: [
-      { accountCode: '1101', accountName: 'البنك', description: 'مبلغ القرض المستلم', side: 'debit' },
-      { accountCode: '2230', accountName: 'قروض الصندوق العقاري REDF', description: 'التزام القرض', side: 'credit' },
+      { accountCode: '1121', accountName: 'البنك', description: 'مبلغ القرض المستلم', side: 'debit' },
+      { accountCode: '2235', accountName: 'تمويل صندوق التنمية العقاري REDF', description: 'التزام القرض', side: 'credit' },
     ],
   },
   {
@@ -249,7 +249,7 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Banknote className="w-5 h-5" />,
     defaultDescription: 'تمويل بنكي / مرابحة للمشروع',
     lines: [
-      { accountCode: '1101', accountName: 'البنك', description: 'مبلغ التمويل المستلم', side: 'debit' },
+      { accountCode: '1121', accountName: 'البنك', description: 'مبلغ التمويل المستلم', side: 'debit' },
       { accountCode: '2210', accountName: 'قروض بنكية / مرابحة', description: 'أصل التمويل', side: 'credit' },
     ],
   },
@@ -262,8 +262,8 @@ const realEstateTemplates: JournalTemplate[] = [
     defaultDescription: 'سداد قسط تمويل بنكي',
     lines: [
       { accountCode: '2210', accountName: 'قروض بنكية / مرابحة', description: 'الجزء الأصلي من القسط', side: 'debit' },
-      { accountCode: '4301', accountName: 'تكاليف التمويل / أرباح مرابحة', description: 'تكلفة التمويل', side: 'debit' },
-      { accountCode: '1101', accountName: 'البنك', description: 'إجمالي القسط المدفوع', side: 'credit' },
+      { accountCode: '6410', accountName: 'فوائد القروض / تكاليف التمويل', description: 'تكلفة التمويل', side: 'debit' },
+      { accountCode: '1121', accountName: 'البنك', description: 'إجمالي القسط المدفوع', side: 'credit' },
     ],
   },
 
@@ -276,9 +276,9 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Receipt className="w-5 h-5" />,
     defaultDescription: 'مصاريف عمومية وإدارية',
     lines: [
-      { accountCode: '4201', accountName: 'مصاريف عمومية وإدارية', description: 'المصروف', side: 'debit' },
-      { accountCode: '21042', accountName: 'ضريبة القيمة المضافة - مشتريات', description: 'ضريبة 15% (إن وجدت)', side: 'debit' },
-      { accountCode: '1101', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
+      { accountCode: '6100', accountName: 'مصروفات إدارية', description: 'المصروف', side: 'debit' },
+      { accountCode: '1181', accountName: 'ضريبة مدخلات مشاريع', description: 'ضريبة 15% (إن وجدت)', side: 'debit' },
+      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
     ],
   },
   {
@@ -289,9 +289,9 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Receipt className="w-5 h-5" />,
     defaultDescription: 'مصاريف تسويق وإعلان للمشروع',
     lines: [
-      { accountCode: '4202', accountName: 'مصاريف تسويق وإعلان', description: 'تكاليف التسويق', side: 'debit' },
-      { accountCode: '21042', accountName: 'ضريبة القيمة المضافة - مشتريات', description: 'ضريبة 15%', side: 'debit' },
-      { accountCode: '1101', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
+      { accountCode: '6200', accountName: 'مصروفات تسويق', description: 'تكاليف التسويق', side: 'debit' },
+      { accountCode: '1181', accountName: 'ضريبة مدخلات مشاريع', description: 'ضريبة 15%', side: 'debit' },
+      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
     ],
   },
 ];

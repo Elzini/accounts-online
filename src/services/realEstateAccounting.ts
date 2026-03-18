@@ -12,8 +12,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { createJournalEntry } from './accounting';
 
 // ============================================================
-// Account code resolution helper
+// Account code resolution helper (supports new + legacy codes)
 // ============================================================
+
+/** Try multiple codes in priority order, return the first found */
+async function resolveAccountFlex(companyId: string, ...codes: string[]): Promise<string | null> {
+  const { data } = await supabase
+    .from('account_categories')
+    .select('id, code')
+    .eq('company_id', companyId)
+    .in('code', codes);
+  if (!data?.length) return null;
+  for (const code of codes) {
+    const found = data.find((a: any) => a.code === code);
+    if (found) return found.id;
+  }
+  return data[0].id;
+}
+
 async function resolveAccountId(companyId: string, code: string): Promise<string | null> {
   const { data } = await supabase
     .from('account_categories')
@@ -22,18 +38,6 @@ async function resolveAccountId(companyId: string, code: string): Promise<string
     .eq('code', code)
     .single();
   return data?.id || null;
-}
-
-async function resolveAccounts(companyId: string, codes: string[]): Promise<Record<string, string>> {
-  const { data } = await supabase
-    .from('account_categories')
-    .select('id, code')
-    .eq('company_id', companyId)
-    .in('code', codes);
-  
-  const map: Record<string, string> = {};
-  (data || []).forEach((a: any) => { map[a.code] = a.id; });
-  return map;
 }
 
 // ============================================================
@@ -46,21 +50,23 @@ export async function recordProjectCost(params: {
   description: string;
   amount: number;
   costType: string;
-  paymentAccountCode?: string; // default '1101' (Bank)
+  paymentAccountCode?: string;
   fiscalYearId?: string;
 }): Promise<{ journalEntryId: string; projectCostId: string }> {
-  const { companyId, projectId, projectName, description, amount, costType, paymentAccountCode = '1101', fiscalYearId } = params;
+  const { companyId, projectId, projectName, description, amount, costType, paymentAccountCode, fiscalYearId } = params;
 
   if (amount <= 0) throw new Error('المبلغ يجب أن يكون أكبر من صفر');
 
-  const accounts = await resolveAccounts(companyId, ['1301', paymentAccountCode]);
-  const projectCostAccountId = accounts['1301']; // مشاريع تحت التطوير
-  const paymentAccountId = accounts[paymentAccountCode];
+  // مشاريع تحت التطوير: new 1220, legacy 1301
+  const projectCostAccountId = await resolveAccountFlex(companyId, '1220', '1301');
+  // البنك: new 1121, legacy 1101, or custom
+  const paymentAccountId = paymentAccountCode
+    ? await resolveAccountId(companyId, paymentAccountCode)
+    : await resolveAccountFlex(companyId, '1121', '1110', '1101');
 
-  if (!projectCostAccountId) throw new Error('حساب المشاريع تحت التطوير (1301) غير موجود');
-  if (!paymentAccountId) throw new Error(`حساب الدفع (${paymentAccountCode}) غير موجود`);
+  if (!projectCostAccountId) throw new Error('حساب المشاريع تحت التطوير (1220/1301) غير موجود');
+  if (!paymentAccountId) throw new Error('حساب الدفع غير موجود');
 
-  // Create journal entry: Debit Project Cost, Credit Bank/Cash
   const entry = await createJournalEntry(
     {
       company_id: companyId,
@@ -77,7 +83,6 @@ export async function recordProjectCost(params: {
     ]
   );
 
-  // Record in project_costs table
   const { data: costRecord, error: costError } = await supabase
     .from('project_costs')
     .insert({
@@ -115,14 +120,14 @@ export async function recordAdvancePayment(params: {
 
   if (amount <= 0) throw new Error('المبلغ يجب أن يكون أكبر من صفر');
 
-  const accounts = await resolveAccounts(companyId, ['1101', '2102']);
-  const bankAccountId = accounts['1101']; // البنك
-  const advancePaymentAccountId = accounts['2102']; // دفعات مقدمة من العملاء (التزام)
+  // البنك: new 1121, legacy 1101
+  const bankAccountId = await resolveAccountFlex(companyId, '1121', '1110', '1101');
+  // دفعات مقدمة من العملاء: new 2120, legacy 2102
+  const advancePaymentAccountId = await resolveAccountFlex(companyId, '2120', '2102');
 
-  if (!bankAccountId) throw new Error('حساب البنك (1101) غير موجود');
-  if (!advancePaymentAccountId) throw new Error('حساب الدفعات المقدمة (2102) غير موجود');
+  if (!bankAccountId) throw new Error('حساب البنك غير موجود');
+  if (!advancePaymentAccountId) throw new Error('حساب الدفعات المقدمة غير موجود');
 
-  // Debit Bank, Credit Advance Payments (Liability)
   const entry = await createJournalEntry(
     {
       company_id: companyId,
@@ -152,7 +157,6 @@ export async function calculateUnitCost(params: {
 }): Promise<{ totalProjectCost: number; totalUnits: number; unitArea: number; totalArea: number; unitCost: number }> {
   const { companyId, projectId, unitId } = params;
 
-  // Get total project costs
   const { data: costs } = await supabase
     .from('project_costs')
     .select('total_cost')
@@ -161,14 +165,12 @@ export async function calculateUnitCost(params: {
 
   const totalProjectCost = (costs || []).reduce((s: number, c: any) => s + Number(c.total_cost || 0), 0);
 
-  // Get all units for this project
   const { data: allUnits } = await supabase
     .from('re_units')
     .select('id, area')
     .eq('company_id', companyId)
     .eq('project_id', projectId);
 
-  // Get the specific unit
   const { data: unit } = await supabase
     .from('re_units')
     .select('area')
@@ -179,7 +181,6 @@ export async function calculateUnitCost(params: {
   const unitArea = Number(unit?.area || 0);
   const totalArea = (allUnits || []).reduce((s: number, u: any) => s + Number(u.area || 0), 0);
 
-  // Proportional cost allocation by area (if areas available), otherwise equal split
   let unitCost: number;
   if (totalArea > 0 && unitArea > 0) {
     unitCost = (unitArea / totalArea) * totalProjectCost;
@@ -204,8 +205,8 @@ export async function completeUnitSale(params: {
   customerId: string;
   customerName: string;
   salePrice: number;
-  advancePayments?: number; // total advance payments already received
-  vatRate?: number; // default 15%
+  advancePayments?: number;
+  vatRate?: number;
   fiscalYearId?: string;
 }): Promise<{ revenueEntryId: string; cogsEntryId: string; unitCost: number }> {
   const {
@@ -216,26 +217,16 @@ export async function completeUnitSale(params: {
 
   if (salePrice <= 0) throw new Error('سعر البيع يجب أن يكون أكبر من صفر');
 
-  // --- Calculate unit cost ---
   const costCalc = await calculateUnitCost({ companyId, projectId, unitId });
   const unitCost = costCalc.unitCost;
 
-  // --- Resolve accounts ---
-  const accounts = await resolveAccounts(companyId, [
-    '1201', // ذمم مدينة
-    '2102', // دفعات مقدمة من العملاء
-    '4101', // إيرادات بيع وحدات
-    '21041', // ضريبة مبيعات
-    '5102', // تكلفة إنشاء وحدات مباعة (COGS)
-    '1301', // مشاريع تحت التطوير
-  ]);
-
-  const receivableId = accounts['1201'];
-  const advanceId = accounts['2102'];
-  const revenueId = accounts['4101'];
-  const vatId = accounts['21041'];
-  const cogsId = accounts['5102'];
-  const projectCostId = accounts['1301'];
+  // Resolve accounts with fallback support
+  const receivableId = await resolveAccountFlex(companyId, '1130', '1131', '1103', '1201');
+  const advanceId = await resolveAccountFlex(companyId, '2120', '2102');
+  const revenueId = await resolveAccountFlex(companyId, '4110', '4101');
+  const vatId = await resolveAccountFlex(companyId, '2150', '2151', '21041');
+  const cogsId = await resolveAccountFlex(companyId, '5110', '5102', '5100');
+  const projectCostId = await resolveAccountFlex(companyId, '1220', '1301');
 
   if (!receivableId || !revenueId) throw new Error('حسابات الإيرادات غير مكتملة');
   if (!cogsId || !projectCostId) throw new Error('حسابات التكلفة غير مكتملة');
@@ -246,7 +237,6 @@ export async function completeUnitSale(params: {
   // --- Entry 1: Revenue Recognition (IFRS 15) ---
   const revenueLines: Array<{ account_id: string; description: string; debit: number; credit: number }> = [];
 
-  // Debit: Receivable (net of advance payments)
   if (netReceivable > 0) {
     revenueLines.push({
       account_id: receivableId,
@@ -256,7 +246,6 @@ export async function completeUnitSale(params: {
     });
   }
 
-  // Debit: Transfer advance payments from liability
   if (advancePayments > 0 && advanceId) {
     revenueLines.push({
       account_id: advanceId,
@@ -266,7 +255,6 @@ export async function completeUnitSale(params: {
     });
   }
 
-  // Credit: Revenue
   revenueLines.push({
     account_id: revenueId,
     description: `إيراد بيع وحدة ${unitNumber} - ${projectName}`,
@@ -274,7 +262,6 @@ export async function completeUnitSale(params: {
     credit: salePrice,
   });
 
-  // Credit: VAT
   if (vatAmount > 0 && vatId) {
     revenueLines.push({
       account_id: vatId,
@@ -297,7 +284,7 @@ export async function completeUnitSale(params: {
     revenueLines
   );
 
-  // --- Entry 2: COGS Transfer (Project Cost → Cost of Sales) ---
+  // --- Entry 2: COGS Transfer ---
   let cogsEntryId = '';
   if (unitCost > 0) {
     const cogsEntry = await createJournalEntry(
@@ -318,7 +305,6 @@ export async function completeUnitSale(params: {
     cogsEntryId = cogsEntry.id;
   }
 
-  // --- Update unit with cost and sale info ---
   await supabase
     .from('re_units')
     .update({
@@ -346,7 +332,6 @@ export async function getProjectProfitability(companyId: string, projectId: stri
   costPerUnit: number;
   advancePaymentsBalance: number;
 }> {
-  // Get project costs from project_costs table
   const { data: costs } = await supabase
     .from('project_costs')
     .select('total_cost')
@@ -355,7 +340,6 @@ export async function getProjectProfitability(companyId: string, projectId: stri
 
   const totalCosts = (costs || []).reduce((s: number, c: any) => s + Number(c.total_cost || 0), 0);
 
-  // Get units
   const { data: units } = await supabase
     .from('re_units')
     .select('id, status, sale_price, cost')
@@ -369,7 +353,6 @@ export async function getProjectProfitability(companyId: string, projectId: stri
   const grossProfit = totalRevenue - totalCOGS;
   const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
-  // Get advance payments balance from journal entries
   const advanceQuery = supabase
     .from('journal_entries')
     .select('total_credit')
@@ -377,8 +360,6 @@ export async function getProjectProfitability(companyId: string, projectId: stri
   const { data: advanceEntries } = await advanceQuery.eq('status', 'posted');
 
   const totalAdvances = (advanceEntries || []).reduce((s: number, e: any) => s + Number(e.total_credit || 0), 0);
-
-  // Subtract transferred advances (from revenue recognition entries)
   const advancePaymentsBalance = Math.max(0, totalAdvances - totalRevenue);
 
   return {
