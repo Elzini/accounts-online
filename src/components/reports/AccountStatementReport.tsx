@@ -93,6 +93,8 @@ export function AccountStatementReport() {
       entries, openingBalance: ledgerData.openingBalance || 0,
       totalDebit: entries.reduce((sum: number, e: any) => sum + (e.debit || 0), 0),
       totalCredit: entries.reduce((sum: number, e: any) => sum + (e.credit || 0), 0),
+      debitCount: entries.filter((e: any) => e.debit > 0).length,
+      creditCount: entries.filter((e: any) => e.credit > 0).length,
       closingBalance: runningBalance,
     };
   }, [ledgerData, documentType]);
@@ -293,7 +295,13 @@ export function AccountStatementReport() {
                    {t.as_previous_balance}: <span className="font-bold text-foreground">{formatCurrency(processedData.openingBalance)}</span>
                  </span>
                  <span className="text-muted-foreground">
+                   عدد الإيداعات: <span className="font-bold text-foreground">{processedData.debitCount}</span>
+                 </span>
+                 <span className="text-muted-foreground">
                    إجمالي الإيداعات: <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(processedData.totalDebit)}</span>
+                 </span>
+                 <span className="text-muted-foreground">
+                   عدد السحوبات: <span className="font-bold text-foreground">{processedData.creditCount}</span>
                  </span>
                  <span className="text-muted-foreground">
                    إجمالي السحوبات: <span className="font-bold text-rose-600 dark:text-rose-400">{formatCurrency(processedData.totalCredit)}</span>
