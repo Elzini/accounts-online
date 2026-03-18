@@ -287,10 +287,10 @@ export function JournalEntryPrintDialog({ entry, accounts, open, onClose }: Jour
                     <td style={{ padding: '7px 6px', textAlign: 'center', border: '1px solid #999', fontSize: '12px' }}>{account?.code || ''}</td>
                     <td style={{ padding: '7px 6px', textAlign: 'right', paddingRight: '10px', border: '1px solid #999', fontSize: '12px' }}>{account?.name || ''}</td>
                     <td style={{ padding: '7px 6px', textAlign: 'center', border: '1px solid #999', fontSize: '13px', fontFamily: "'Courier New', monospace", direction: 'ltr' }}>
-                      {line.debit > 0 ? String(Math.round(line.debit)) : '0'}
+                      {line.debit > 0 ? plainFormat(line.debit) : '0'}
                     </td>
                     <td style={{ padding: '7px 6px', textAlign: 'center', border: '1px solid #999', fontSize: '13px', fontFamily: "'Courier New', monospace", direction: 'ltr' }}>
-                      {line.credit > 0 ? String(Math.round(line.credit)) : '0'}
+                      {line.credit > 0 ? plainFormat(line.credit) : '0'}
                     </td>
                     <td style={{ padding: '7px 6px', textAlign: 'center', border: '1px solid #999', fontSize: '12px' }}></td>
                     <td style={{ padding: '7px 6px', textAlign: 'right', paddingRight: '10px', border: '1px solid #999', fontSize: '12px' }}>{line.description || ''}</td>
