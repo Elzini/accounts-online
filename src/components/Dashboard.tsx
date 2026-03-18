@@ -920,7 +920,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
                     <EditableWidgetWrapper key={widget.id} {...props}>
                       <StatCard
                         title={getCardLabel('allTimePurchases', t.all_time_company_purchases)}
-                        value={formatCurrencyWithMode(allTimeStats.allTimePurchases)}
+                        value={formatCurrencyWithMode(getCardValue('allTimePurchases', allTimeStats.allTimePurchases))}
                         icon={Building2}
                         gradient="danger"
                         subtitle={getCurrencySubtitle()}
@@ -941,7 +941,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
                     <EditableWidgetWrapper key={widget.id} {...props}>
                       <StatCard
                         title={getCardLabel('allTimeSales', t.all_time_company_sales)}
-                        value={formatCurrencyWithMode(allTimeStats.allTimeSales)}
+                        value={formatCurrencyWithMode(getCardValue('allTimeSales', allTimeStats.allTimeSales))}
                         icon={TrendingUp}
                         gradient="success"
                         subtitle={getCurrencySubtitle()}
