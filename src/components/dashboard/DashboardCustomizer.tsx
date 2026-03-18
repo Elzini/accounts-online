@@ -190,11 +190,22 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
   // Load accounts for selector
   const { data: accounts = [] } = useAccounts();
   
+  // Normalize Arabic text for search (remove diacritics, normalize alif/hamza variants)
+  const normalizeArabic = (text: string) => {
+    return text
+      .replace(/[\u0610-\u065f\u0670\u06D6-\u06ED]/g, '') // remove tashkeel
+      .replace(/[إأآا]/g, 'ا')
+      .replace(/[ة]/g, 'ه')
+      .replace(/[ئؤ]/g, 'ء')
+      .replace(/ى/g, 'ي')
+      .toLowerCase();
+  };
+
   const filteredAccounts = useMemo(() => {
-    if (!accountSearch.trim()) return accounts.slice(0, 50); // Show first 50 when no search
-    const q = accountSearch.toLowerCase();
+    if (!accountSearch.trim()) return accounts.slice(0, 50);
+    const q = normalizeArabic(accountSearch);
     return accounts.filter(a => 
-      a.name.toLowerCase().includes(q) || a.code.toLowerCase().includes(q)
+      normalizeArabic(a.name).includes(q) || a.code.toLowerCase().includes(q)
     );
   }, [accounts, accountSearch]);
   
