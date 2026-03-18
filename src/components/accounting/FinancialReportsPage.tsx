@@ -102,21 +102,30 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
     if (!comprehensiveTrial) return;
     const columns = [
       { header: t.coa_col_code, key: 'code' }, { header: t.coa_col_name, key: 'name' },
+      { header: `${t.acc_debit}`, key: 'openingDebit' }, { header: `${t.acc_credit}`, key: 'openingCredit' },
       { header: `${t.acc_debit}`, key: 'periodDebit' }, { header: `${t.acc_credit}`, key: 'periodCredit' },
       { header: `${t.acc_debit}`, key: 'closingDebit' }, { header: `${t.acc_credit}`, key: 'closingCredit' },
     ];
     const data = comprehensiveTrial.accounts.map(item => ({
       code: item.account.code, name: item.account.name,
+      openingDebit: item.openingDebit > 0 ? fmt(item.openingDebit) : '-',
+      openingCredit: item.openingCredit > 0 ? fmt(item.openingCredit) : '-',
       periodDebit: item.periodDebit > 0 ? fmt(item.periodDebit) : '-',
       periodCredit: item.periodCredit > 0 ? fmt(item.periodCredit) : '-',
       closingDebit: item.closingDebit > 0 ? fmt(item.closingDebit) : '-',
       closingCredit: item.closingCredit > 0 ? fmt(item.closingCredit) : '-',
     }));
     const summaryCards = [
-      { label: t.acc_debit, value: fmt(comprehensiveTrial.totals.periodDebit) + ' ر.س' },
-      { label: t.acc_credit, value: fmt(comprehensiveTrial.totals.periodCredit) + ' ر.س' },
+      { label: `رصيد أول المدة - ${t.acc_debit}`, value: fmt(comprehensiveTrial.totals.openingDebit) + ' ر.س' },
+      { label: `رصيد أول المدة - ${t.acc_credit}`, value: fmt(comprehensiveTrial.totals.openingCredit) + ' ر.س' },
+      { label: `الحركة - ${t.acc_debit}`, value: fmt(comprehensiveTrial.totals.periodDebit) + ' ر.س' },
+      { label: `الحركة - ${t.acc_credit}`, value: fmt(comprehensiveTrial.totals.periodCredit) + ' ر.س' },
     ];
-    if (type === 'print') printReport({ title: t.fr_comprehensive_trial, columns, data, summaryCards });
+    if (type === 'print') printReport({ title: t.fr_comprehensive_trial, columns, data, summaryCards, columnGroups: [
+      { label: 'رصيد أول المدة', colSpan: 2 },
+      { label: t.fr_tab_account_movement || 'الحركة', colSpan: 2 },
+      { label: t.gl_closing_balance || 'رصيد آخر المدة', colSpan: 2 },
+    ] });
     else if (type === 'excel') exportToExcel({ title: t.fr_comprehensive_trial, columns, data, fileName: 'comprehensive-trial-balance', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
     else exportToPdf({ title: t.fr_comprehensive_trial, columns, data, fileName: 'comprehensive-trial-balance', summaryCards });
   };
