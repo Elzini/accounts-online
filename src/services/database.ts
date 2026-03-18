@@ -818,7 +818,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
   if (companyType === 'real_estate') {
     let projectsQuery = supabase
       .from('re_projects')
-      .select('id, status')
+      .select('id, name, status')
       .eq('company_id', companyId);
 
     let purchaseInvoicesQuery = supabase
@@ -917,10 +917,12 @@ export async function fetchStats(fiscalYearId?: string | null) {
       );
     }
 
-    const activeProjects = projects.filter((project: any) => {
+    const activeProjectsList = projects.filter((project: any) => {
       const status = String(project.status || '').toLowerCase();
       return status !== 'completed' && status !== 'cancelled' && status !== 'canceled';
-    }).length;
+    });
+    const activeProjects = activeProjectsList.length;
+    const activeProjectNames = activeProjectsList.map((p: any) => p.name).filter(Boolean);
 
     const totalSalesAmount = salesInvoices.reduce(
       (sum: number, invoice: any) => sum + (Number(invoice.subtotal) || 0),
@@ -951,6 +953,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
       availableNewCars: 0,
       availableUsedCars: 0,
       availableCars: activeProjects,
+      activeProjectNames,
       todaySales: salesInvoices.filter((invoice: any) => invoice.invoice_date === today).length,
       totalProfit: totalSalesAmount,
       monthSales: monthSalesData.length,
