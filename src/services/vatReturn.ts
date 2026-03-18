@@ -70,9 +70,9 @@ export async function getVATReturnReport(
   // ========== 1. Fetch VAT account balances from JOURNAL ENTRIES ==========
   const accounts = await fetchAccounts(companyId);
   
-  // Find VAT accounts by code
-  const salesVATAccount = accounts.find(a => a.code === '21041');
-  const purchaseVATAccount = accounts.find(a => a.code === '21042');
+  // Find VAT accounts by code (support both old and new code formats)
+  const salesVATAccount = accounts.find(a => a.code === '210401') || accounts.find(a => a.code === '21041');
+  const purchaseVATAccount = accounts.find(a => a.code === '1108') || accounts.find(a => a.code === '210402') || accounts.find(a => a.code === '21042');
 
   // Build query for journal entry lines
   let journalQuery = supabase

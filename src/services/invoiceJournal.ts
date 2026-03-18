@@ -186,7 +186,8 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
 
     const vatOutputAccount = findAccount(
       settings?.vat_payable_account_id || null,
-      '21041', // ضريبة مبيعات مستحقة
+      '210401', // ضريبة مبيعات مستحقة
+      '21041',
     );
 
     if (!cashAccount || !revenueAccount) {

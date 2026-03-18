@@ -72,7 +72,7 @@ export async function createPurchaseReturnJournal(noteId: string): Promise<void>
   // VAT Input account
   const vatInputAccount = findAccount(
     settings?.vat_recoverable_account_id || null,
-    '21042'
+    '1108', '210402', '21042'
   );
 
   // Determine debit account: use the same payment account from the original invoice
