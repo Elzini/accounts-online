@@ -261,9 +261,9 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Banknote className="w-5 h-5" />,
     defaultDescription: 'سداد قسط تمويل بنكي',
     lines: [
-      { accountCode: '2210', accountName: 'قروض بنكية / مرابحة', description: 'الجزء الأصلي من القسط', side: 'debit' },
-      { accountCode: '6410', accountName: 'فوائد القروض / تكاليف التمويل', description: 'تكلفة التمويل', side: 'debit' },
-      { accountCode: '1121', accountName: 'البنك', description: 'إجمالي القسط المدفوع', side: 'credit' },
+      { accountCode: '2201', accountName: 'قروض بنكية / مرابحة', description: 'الجزء الأصلي من القسط', side: 'debit' },
+      { accountCode: '6212', accountName: 'فوائد القروض / تكاليف التمويل', description: 'تكلفة التمويل', side: 'debit' },
+      { accountCode: '1102', accountName: 'البنك', description: 'إجمالي القسط المدفوع', side: 'credit' },
     ],
   },
 
