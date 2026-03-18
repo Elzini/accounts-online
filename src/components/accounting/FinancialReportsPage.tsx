@@ -232,7 +232,7 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
     else exportToPdf({ title: t.fr_vat_settlement, subtitle: dateSubtitle, columns, data, fileName: 'vat-settlement', summaryCards });
   };
 
-  const ExportActions = ({ onExport }: { onExport: (type: 'print' | 'excel' | 'pdf') => void }) => (
+  const renderExportActions = (onExport: (type: 'print' | 'excel' | 'pdf') => void) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2"><Download className="w-4 h-4" />{t.fr_export_btn}</Button>
@@ -282,7 +282,7 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
                   <CardDescription>{t.vat_net_desc}</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <ExportActions onExport={exportVATSettlement} />
+                  {renderExportActions(exportVATSettlement)}
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button variant="outline" size="sm" className={cn("justify-start text-right font-normal gap-2", !dateRange.from && "text-muted-foreground")}>
@@ -342,7 +342,7 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
                   <CardDescription>{t.je_entries_desc}</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <ExportActions onExport={exportJournalEntries} />
+                  {renderExportActions(exportJournalEntries)}
                   <Select value={referenceType} onValueChange={setReferenceType}>
                     <SelectTrigger className="w-32"><SelectValue placeholder={t.fr_type_label} /></SelectTrigger>
                     <SelectContent>
@@ -418,7 +418,7 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div><CardTitle className="flex items-center gap-2"><Scale className="w-5 h-5" />{t.fr_trial_balance}</CardTitle></div>
-                <ExportActions onExport={exportTrialBalance} />
+                {renderExportActions(exportTrialBalance)}
               </div>
             </CardHeader>
             <CardContent>
@@ -485,7 +485,7 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div><CardTitle className="flex items-center gap-2"><Scale className="w-5 h-5" />{t.fr_comprehensive_trial}</CardTitle></div>
-                <ExportActions onExport={exportComprehensiveTrial} />
+                {renderExportActions(exportComprehensiveTrial)}
               </div>
             </CardHeader>
             <CardContent>
@@ -579,7 +579,7 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div><CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5" />{t.fr_income_statement}</CardTitle></div>
                 <div className="flex gap-2">
-                  <ExportActions onExport={exportIncomeStatement} />
+                  {renderExportActions(exportIncomeStatement)}
                   <Popover>
                     <PopoverTrigger asChild><Button variant="outline" size="sm" className={cn("justify-start text-right font-normal gap-2", !dateRange.from && "text-muted-foreground")}><CalendarIcon className="h-4 w-4" />{dateRange.from ? (dateRange.to ? <>{format(dateRange.from, "yyyy/MM/dd")} - {format(dateRange.to, "yyyy/MM/dd")}</> : format(dateRange.from, "yyyy/MM/dd")) : t.vat_period}</Button></PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="end"><Calendar initialFocus mode="range" defaultMonth={dateRange.from} selected={dateRange} onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })} numberOfMonths={2} /></PopoverContent>
@@ -619,7 +619,7 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div><CardTitle className="flex items-center gap-2"><Building2 className="w-5 h-5" />{t.fr_balance_sheet}</CardTitle></div>
-                <ExportActions onExport={exportBalanceSheet} />
+                {renderExportActions(exportBalanceSheet)}
               </div>
             </CardHeader>
             <CardContent>
@@ -692,7 +692,7 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div><CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" />{t.fr_account_balances}</CardTitle></div>
-                <ExportActions onExport={exportAccountBalances} />
+                {renderExportActions(exportAccountBalances)}
               </div>
             </CardHeader>
             <CardContent>
