@@ -42,6 +42,7 @@ import { useDashboardConfig, useSaveDashboardConfig } from '@/hooks/useSystemCon
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAccounts } from '@/hooks/useAccounting';
+import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 // Card configuration interface
