@@ -101,7 +101,22 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
 
   const handleDeleteInvoice = useCallback(async (invoiceId: string) => {
     try {
-      // Delete invoice items first
+      // Delete linked journal entry lines and entries first
+      const { data: linkedEntries } = await supabase
+        .from('journal_entries')
+        .select('id')
+        .eq('reference_id', invoiceId)
+        .in('reference_type', ['invoice_purchase', 'invoice_sale']);
+
+      if (linkedEntries && linkedEntries.length > 0) {
+        const entryIds = linkedEntries.map(e => e.id);
+        await supabase.from('journal_entry_lines').delete().in('journal_entry_id', entryIds);
+        for (const eid of entryIds) {
+          await (supabase.rpc as any)('delete_orphan_journal_entry', { entry_id: eid });
+        }
+      }
+
+      // Delete invoice items then invoice
       await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId);
       const { error } = await supabase.from('invoices').delete().eq('id', invoiceId);
       if (error) throw error;
