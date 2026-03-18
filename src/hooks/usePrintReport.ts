@@ -33,6 +33,7 @@ export function usePrintReport() {
     columns,
     data,
     summaryCards,
+    columnGroups,
   }: PrintReportOptions) => {
     const currentDate = new Date().toLocaleDateString('ar-SA');
 
