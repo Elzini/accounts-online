@@ -9,6 +9,7 @@ interface PrintReportOptions {
   columns: TableColumn[];
   data: Record<string, any>[];
   summaryCards?: { label: string; value: string }[];
+  columnGroups?: { label: string; colSpan: number }[];
 }
 
 // HTML escaping function to prevent XSS attacks
