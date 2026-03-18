@@ -83,14 +83,17 @@ export function AccountStatementReport() {
     return new Date(dateStr).toLocaleDateString('en-CA');
   };
 
+  const isParentAccount = ledgerData?.isParentAccount || false;
+
   const processedData = useMemo(() => {
-    if (!ledgerData?.entries) return { entries: [], openingBalance: 0, totalDebit: 0, totalCredit: 0, closingBalance: 0 };
-    let runningBalance = ledgerData.openingBalance || 0;
+    if (!ledgerData?.entries) return { entries: [], openingBalance: 0, totalDebit: 0, totalCredit: 0, closingBalance: 0, debitCount: 0, creditCount: 0 };
+    const openBal = ledgerData.openingBalance || 0;
+    let runningBalance = openBal;
     const entries = ledgerData.entries
       .filter((entry: any) => { if (documentType === 'all') return true; return entry.reference_type === documentType; })
       .map((entry: any) => { runningBalance += entry.debit - entry.credit; return { ...entry, balance: runningBalance }; });
     return {
-      entries, openingBalance: ledgerData.openingBalance || 0,
+      entries, openingBalance: openBal,
       totalDebit: entries.reduce((sum: number, e: any) => sum + (e.debit || 0), 0),
       totalCredit: entries.reduce((sum: number, e: any) => sum + (e.credit || 0), 0),
       debitCount: entries.filter((e: any) => e.debit > 0).length,
