@@ -1,4 +1,4 @@
-// مكون عرض قائمة الدخل الشامل - مطابق لتصدير مداد
+// مكون عرض قائمة الدخل الشامل - متوافق مع IAS 1 (عرض حسب الوظيفة)
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { IncomeStatementData } from '../types';
@@ -16,6 +16,8 @@ export function IncomeStatementView({ data, reportDate, previousReportDate, edit
   const currentYear = reportDate ? reportDate.match(/\d{4}/)?.[0] + 'م' : '2025م';
   const previousYear = previousReportDate ? previousReportDate.match(/\d{4}/)?.[0] + 'م' : '2024م';
   const hasPreviousData = data.previousRevenue !== undefined && data.previousRevenue > 0;
+
+  const hasSellingExpenses = (data.sellingAndMarketingExpenses || 0) > 0;
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -65,6 +67,16 @@ export function IncomeStatementView({ data, reportDate, previousReportDate, edit
               </TableCell>
             )}
           </TableRow>
+
+          {/* مصاريف البيع والتسويق (IAS 1.103 - عرض حسب الوظيفة) */}
+          {hasSellingExpenses && (
+            <TableRow>
+              <TableCell>مصاريف البيع والتسويق</TableCell>
+              <TableCell className="text-center text-muted-foreground">{data.sellingAndMarketingExpensesNote || '-'}</TableCell>
+              <TableCell className="text-center font-mono text-destructive">({formatNumber(data.sellingAndMarketingExpenses)})</TableCell>
+              {hasPreviousData && <TableCell className="text-center font-mono text-destructive">({formatNumber(data.previousSellingAndMarketingExpenses)})</TableCell>}
+            </TableRow>
+          )}
 
           {/* المصاريف العمومية والإدارية */}
           <TableRow>
@@ -144,18 +156,18 @@ export function IncomeStatementView({ data, reportDate, previousReportDate, edit
             )}
           </TableRow>
 
-          {/* الدخل الشامل الآخر */}
+          {/* الدخل الشامل الآخر (IAS 1.81A) */}
           <TableRow className="bg-muted/10">
             <TableCell colSpan={hasPreviousData ? 4 : 3} className="font-semibold">الدخل الشامل الآخر</TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="pr-8">دخل شامل آخر سيعاد تصنيفه إلى الدخل في الفترات اللاحقة:</TableCell>
+            <TableCell className="pr-8">بنود سيُعاد تصنيفها إلى الربح أو الخسارة لاحقاً:</TableCell>
             <TableCell></TableCell>
             <TableCell className="text-center font-mono">-</TableCell>
             {hasPreviousData && <TableCell className="text-center font-mono">-</TableCell>}
           </TableRow>
           <TableRow>
-            <TableCell className="pr-8">خسارة شاملة أخرى لن يعاد تصنيفها إلى الدخل في الفترات اللاحقة:</TableCell>
+            <TableCell className="pr-8">بنود لن يُعاد تصنيفها إلى الربح أو الخسارة لاحقاً:</TableCell>
             <TableCell></TableCell>
             <TableCell className="text-center font-mono">-</TableCell>
             {hasPreviousData && <TableCell className="text-center font-mono">-</TableCell>}
@@ -177,7 +189,7 @@ export function IncomeStatementView({ data, reportDate, previousReportDate, edit
         </TableBody>
       </Table>
 
-      {/* التذييل */}
+      {/* التذييل - IAS 1.10 */}
       <p className="text-sm text-muted-foreground text-center">
         الإيضاحات المرفقة على القوائم المالية جزء لا يتجزأ منها وتقرأ معها.
       </p>

@@ -50,6 +50,10 @@ export interface IncomeStatementData {
   grossProfit: number;
   previousGrossProfit?: number;
   
+  sellingAndMarketingExpenses: number;
+  previousSellingAndMarketingExpenses?: number;
+  sellingAndMarketingExpensesNote?: string;
+  
   generalAndAdminExpenses: number;
   previousGeneralAndAdminExpenses?: number;
   generalAndAdminExpensesNote?: string;
@@ -372,6 +376,7 @@ export const emptyFinancialData: ComprehensiveFinancialData = {
     revenue: 0,
     costOfRevenue: 0,
     grossProfit: 0,
+    sellingAndMarketingExpenses: 0,
     generalAndAdminExpenses: 0,
     operatingProfit: 0,
     financingCost: 0,

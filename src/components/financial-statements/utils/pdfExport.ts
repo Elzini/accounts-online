@@ -394,9 +394,15 @@ export function generateFinancialStatementsPDF(data: ComprehensiveFinancialData)
         <td></td>
         <td class="amount">${formatNumber(data.incomeStatement.grossProfit)}</td>
       </tr>
+      ${(data.incomeStatement.sellingAndMarketingExpenses || 0) > 0 ? `
+      <tr>
+        <td>مصاريف البيع والتسويق</td>
+        <td class="note-col">-</td>
+        <td class="amount">(${formatNumber(data.incomeStatement.sellingAndMarketingExpenses)})</td>
+      </tr>` : ''}
       <tr>
         <td>مصاريف عمومية وإدارية</td>
-        <td class="note-col">15</td>
+        <td class="note-col">16</td>
         <td class="amount">(${formatNumber(data.incomeStatement.generalAndAdminExpenses)})</td>
       </tr>
       <tr class="sub-total">
