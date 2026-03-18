@@ -343,6 +343,9 @@ export function AccountStatementReport() {
                       <TableHead className="text-center w-[60px]">{t.acc_entry_number}</TableHead>
                       <TableHead className="text-center w-[90px]">{t.je_col_date}</TableHead>
                       <TableHead className="text-right">{t.je_col_statement}</TableHead>
+                      {isParentAccount && (
+                        <TableHead className="text-right w-[150px]">{t.coa_col_name || 'الحساب الفرعي'}</TableHead>
+                      )}
                       <TableHead className="text-center w-[80px]">{t.je_col_type}</TableHead>
                       <TableHead className="text-right w-[100px]">{t.acc_debit}</TableHead>
                       <TableHead className="text-right w-[100px]">{t.acc_credit}</TableHead>
@@ -355,6 +358,7 @@ export function AccountStatementReport() {
                         <TableCell className="text-center">-</TableCell>
                         <TableCell className="text-center">-</TableCell>
                         <TableCell>{t.as_previous_balance}</TableCell>
+                        {isParentAccount && <TableCell>-</TableCell>}
                         <TableCell className="text-center">-</TableCell>
                         <TableCell className="text-right">-</TableCell>
                         <TableCell className="text-right">
@@ -366,7 +370,7 @@ export function AccountStatementReport() {
 
                     {processedData.entries.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t.as_no_transactions}</TableCell>
+                        <TableCell colSpan={isParentAccount ? 8 : 7} className="text-center py-8 text-muted-foreground">{t.as_no_transactions}</TableCell>
                       </TableRow>
                     ) : (
                       processedData.entries.map((entry: any, index: number) => (
@@ -374,14 +378,17 @@ export function AccountStatementReport() {
                           <TableCell className="text-center">{entry.entry_number}</TableCell>
                           <TableCell className="text-center">{formatDate(entry.date)}</TableCell>
                           <TableCell>{entry.description}</TableCell>
+                          {isParentAccount && (
+                            <TableCell className="text-right text-xs text-muted-foreground">{entry.sub_account_name || '-'}</TableCell>
+                          )}
                           <TableCell className="text-center text-xs">{getDocumentTypeLabel(entry.reference_type)}</TableCell>
-                          <TableCell className="text-right font-mono text-green-600 dark:text-green-400">
+                          <TableCell className="text-right font-mono text-emerald-600 dark:text-emerald-400">
                             {entry.debit > 0 ? formatCurrency(entry.debit) : '-'}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-red-600 dark:text-red-400">
+                          <TableCell className="text-right font-mono text-rose-600 dark:text-rose-400">
                             {entry.credit > 0 ? formatCurrency(entry.credit) : '-'}
                           </TableCell>
-                          <TableCell className={cn("text-right font-mono font-medium", entry.balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
+                          <TableCell className={cn("text-right font-mono font-medium", entry.balance >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
                             {formatCurrency(entry.balance)}
                           </TableCell>
                         </TableRow>
@@ -390,10 +397,10 @@ export function AccountStatementReport() {
 
                     {processedData.entries.length > 0 && (
                       <TableRow className="bg-primary/10 font-bold border-t-2">
-                        <TableCell colSpan={4} className="text-right">{t.total}</TableCell>
+                        <TableCell colSpan={isParentAccount ? 5 : 4} className="text-right">{t.total}</TableCell>
                         <TableCell className="text-right font-mono">{formatCurrency(processedData.totalDebit)}</TableCell>
                         <TableCell className="text-right font-mono">{formatCurrency(processedData.totalCredit)}</TableCell>
-                        <TableCell className={cn("text-right font-mono", processedData.closingBalance >= 0 ? "text-green-600" : "text-red-600")}>
+                        <TableCell className={cn("text-right font-mono", processedData.closingBalance >= 0 ? "text-emerald-600" : "text-rose-600")}>
                           {formatCurrency(processedData.closingBalance)}
                         </TableCell>
                       </TableRow>
