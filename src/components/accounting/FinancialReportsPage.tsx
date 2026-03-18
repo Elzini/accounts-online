@@ -282,7 +282,7 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
                   <CardDescription>{t.vat_net_desc}</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <ExportActions onExport={exportVATSettlement} />
+                  {renderExportActions(exportVATSettlement)}
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button variant="outline" size="sm" className={cn("justify-start text-right font-normal gap-2", !dateRange.from && "text-muted-foreground")}>
