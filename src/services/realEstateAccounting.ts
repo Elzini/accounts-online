@@ -221,12 +221,12 @@ export async function completeUnitSale(params: {
   const unitCost = costCalc.unitCost;
 
   // Resolve accounts with fallback support
-  const receivableId = await resolveAccountFlex(companyId, '1130', '1131', '1103', '1201');
-  const advanceId = await resolveAccountFlex(companyId, '2120', '2102');
-  const revenueId = await resolveAccountFlex(companyId, '4110', '4101');
-  const vatId = await resolveAccountFlex(companyId, '2150', '2151', '21041');
-  const cogsId = await resolveAccountFlex(companyId, '5110', '5102', '5100');
-  const projectCostId = await resolveAccountFlex(companyId, '1220', '1301');
+  const receivableId = await resolveAccountFlex(companyId, '1103', '1130', '1201');
+  const advanceId = await resolveAccountFlex(companyId, '2102', '2120');
+  const revenueId = await resolveAccountFlex(companyId, '4101', '4110');
+  const vatId = await resolveAccountFlex(companyId, '2104', '210401', '2150', '2151');
+  const cogsId = await resolveAccountFlex(companyId, '5102', '5110', '5101');
+  const projectCostId = await resolveAccountFlex(companyId, '1301', '1220');
 
   if (!receivableId || !revenueId) throw new Error('حسابات الإيرادات غير مكتملة');
   if (!cogsId || !projectCostId) throw new Error('حسابات التكلفة غير مكتملة');
