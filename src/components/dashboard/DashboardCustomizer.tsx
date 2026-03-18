@@ -55,6 +55,17 @@ export interface CardConfig {
   enable3D?: boolean; // تفعيل التأثير ثلاثي الأبعاد
   showTrend?: boolean; // إظهار/إخفاء مؤشر الترند
   trendColor?: string; // لون نص الترند
+  // Account-based value source
+  dataSource?: 'default' | 'account' | 'formula';
+  accountId?: string; // single account balance
+  formulaAccounts?: FormulaAccountItem[]; // formula with multiple accounts
+}
+
+export interface FormulaAccountItem {
+  accountId: string;
+  accountName: string;
+  accountCode: string;
+  operator: '+' | '-';
 }
 
 // Default stat cards
