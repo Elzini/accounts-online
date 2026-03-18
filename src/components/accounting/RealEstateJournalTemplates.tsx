@@ -154,10 +154,10 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Home className="w-5 h-5" />,
     defaultDescription: 'اعتراف بإيراد بيع وحدة عقارية عند التسليم',
     lines: [
-      { accountCode: '1130', accountName: 'ذمم مدينة - عملاء', description: 'إجمالي قيمة البيع (بدون ضريبة)', side: 'debit' },
-      { accountCode: '2120', accountName: 'دفعات مقدمة من العملاء', description: 'ترحيل الدفعات المقدمة المستلمة', side: 'debit' },
-      { accountCode: '4110', accountName: 'إيرادات بيع وحدات عقارية', description: 'إيراد البيع', side: 'credit' },
-      { accountCode: '2150', accountName: 'ضريبة القيمة المضافة المستحقة', description: 'ضريبة مبيعات 15%', side: 'credit' },
+      { accountCode: '1103', accountName: 'ذمم مدينة - عملاء', description: 'إجمالي قيمة البيع (بدون ضريبة)', side: 'debit' },
+      { accountCode: '2102', accountName: 'دفعات مقدمة من العملاء', description: 'ترحيل الدفعات المقدمة المستلمة', side: 'debit' },
+      { accountCode: '4101', accountName: 'إيرادات بيع وحدات عقارية', description: 'إيراد البيع', side: 'credit' },
+      { accountCode: '2104', accountName: 'ضريبة القيمة المضافة المستحقة', description: 'ضريبة مبيعات 15%', side: 'credit' },
     ],
   },
 
