@@ -254,7 +254,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
         bgColor: '',
       })));
     }
-  }, [savedConfig]);
+  }, [savedConfig, industryLabels]);
 
   const moveCard = useCallback((id: string, direction: 'up' | 'down') => {
     setCards(prev => {
