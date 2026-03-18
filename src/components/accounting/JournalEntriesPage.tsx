@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { plainFormat } from '@/components/financial-statements/utils/numberFormatting';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -247,7 +248,7 @@ export function JournalEntriesPage() {
   // Get next entry number
   const nextEntryNumber = filteredEntries.length > 0 ? Math.max(...filteredEntries.map(e => e.entry_number)) + 1 : 1;
 
-  const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
+  const fmt = (n: number) => plainFormat(n);
 
   const printJournalSheet = () => {
     if (!filteredEntries.length) {

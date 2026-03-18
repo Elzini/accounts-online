@@ -26,8 +26,9 @@ import { cn } from '@/lib/utils';
 import { AccountMovementReport } from '@/components/reports/AccountMovementReport';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { plainFormat } from '@/components/financial-statements/utils/numberFormatting';
 
-const fmt = (n: number) => String(Math.round(n));
+const fmt = (n: number) => plainFormat(n);
 
 export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defaultTab?: string } = {}) {
   const { t, direction } = useLanguage();

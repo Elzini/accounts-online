@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { plainFormat } from '@/components/financial-statements/utils/numberFormatting';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Printer, X } from 'lucide-react';
@@ -287,10 +288,10 @@ export function JournalEntryPrintDialog({ entry, accounts, open, onClose }: Jour
                     <td style={{ padding: '7px 6px', textAlign: 'center', border: '1px solid #999', fontSize: '12px' }}>{account?.code || ''}</td>
                     <td style={{ padding: '7px 6px', textAlign: 'right', paddingRight: '10px', border: '1px solid #999', fontSize: '12px' }}>{account?.name || ''}</td>
                     <td style={{ padding: '7px 6px', textAlign: 'center', border: '1px solid #999', fontSize: '13px', fontFamily: "'Courier New', monospace", direction: 'ltr' }}>
-                      {line.debit > 0 ? String(Math.round(line.debit)) : '0'}
+                      {line.debit > 0 ? plainFormat(line.debit) : '0'}
                     </td>
                     <td style={{ padding: '7px 6px', textAlign: 'center', border: '1px solid #999', fontSize: '13px', fontFamily: "'Courier New', monospace", direction: 'ltr' }}>
-                      {line.credit > 0 ? String(Math.round(line.credit)) : '0'}
+                      {line.credit > 0 ? plainFormat(line.credit) : '0'}
                     </td>
                     <td style={{ padding: '7px 6px', textAlign: 'center', border: '1px solid #999', fontSize: '12px' }}></td>
                     <td style={{ padding: '7px 6px', textAlign: 'right', paddingRight: '10px', border: '1px solid #999', fontSize: '12px' }}>{line.description || ''}</td>
@@ -303,10 +304,10 @@ export function JournalEntryPrintDialog({ entry, accounts, open, onClose }: Jour
                   الإجـــــــــمـــالي
                 </td>
                 <td style={{ padding: '8px 6px', textAlign: 'center', border: '1px solid #000', borderTop: '2px solid #000', fontSize: '13px', fontFamily: "'Courier New', monospace", direction: 'ltr', fontWeight: 'bold' }}>
-                  {String(Math.round(entry.total_debit))}
+                  {plainFormat(entry.total_debit)}
                 </td>
                 <td style={{ padding: '8px 6px', textAlign: 'center', border: '1px solid #000', borderTop: '2px solid #000', fontSize: '13px', fontFamily: "'Courier New', monospace", direction: 'ltr', fontWeight: 'bold' }}>
-                  {String(Math.round(entry.total_credit))}
+                  {plainFormat(entry.total_credit)}
                 </td>
                 <td colSpan={2} style={{ padding: '8px 6px', border: '1px solid #000', borderTop: '2px solid #000' }}></td>
               </tr>
