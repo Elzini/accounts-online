@@ -50,6 +50,10 @@ export interface IncomeStatementData {
   grossProfit: number;
   previousGrossProfit?: number;
   
+  sellingAndMarketingExpenses: number;
+  previousSellingAndMarketingExpenses?: number;
+  sellingAndMarketingExpensesNote?: string;
+  
   generalAndAdminExpenses: number;
   previousGeneralAndAdminExpenses?: number;
   generalAndAdminExpensesNote?: string;
