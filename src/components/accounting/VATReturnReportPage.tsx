@@ -288,7 +288,7 @@ export function VATReturnReportPage() {
             <TableBody>
               <TableRow><TableCell className="font-medium">13</TableCell><TableCell>{t.vat_total_sales_vat}</TableCell><TableCell className="text-left font-mono text-emerald-600">{formatNumber(report?.sales.totalVAT || 0)}</TableCell></TableRow>
               <TableRow className="bg-muted/30"><TableCell className="font-medium">14</TableCell><TableCell>{t.vat_total_purchases_vat}</TableCell><TableCell className="text-left font-mono text-rose-600">{formatNumber(report?.purchases.totalVAT || 0)}</TableCell></TableRow>
-              <TableRow><TableCell className="font-medium">15</TableCell><TableCell>{t.vat_corrections}</TableCell><TableCell className="text-left font-mono">0.00</TableCell></TableRow>
+              <TableRow><TableCell className="font-medium">15</TableCell><TableCell>{t.vat_corrections}</TableCell><TableCell className="text-left font-mono">{formatNumber(report?.corrections || 0)}</TableCell></TableRow>
               <TableRow className="font-bold bg-blue-100 dark:bg-blue-950/50">
                 <TableCell>16</TableCell><TableCell>{t.vat_net_vat}</TableCell>
                 <TableCell className={`text-left font-mono text-lg ${(report?.netVAT || 0) >= 0 ? 'text-blue-700 dark:text-blue-300' : 'text-amber-700 dark:text-amber-300'}`}>
