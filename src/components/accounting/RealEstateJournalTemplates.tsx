@@ -88,7 +88,7 @@ const realEstateTemplates: JournalTemplate[] = [
     defaultDescription: 'تحرير محتجز ضمان مقاول',
     lines: [
       { accountCode: '2115', accountName: 'محتجزات ضمان المقاولين', description: 'تحرير المحتجز', side: 'debit' },
-      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المحول للمقاول', side: 'credit' },
+      { accountCode: '1102', accountName: 'البنك', description: 'المبلغ المحول للمقاول', side: 'credit' },
     ],
   },
 
