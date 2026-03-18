@@ -21,7 +21,8 @@ import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useFiscalYears } from '@/hooks/useFiscalYears';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { useDashboardConfig, useSaveDashboardConfig } from '@/hooks/useSystemControl';
-import { CardConfig, DEFAULT_STAT_CARDS } from './dashboard/DashboardCustomizer';
+import { CardConfig, DEFAULT_STAT_CARDS, FormulaAccountItem } from './dashboard/DashboardCustomizer';
+import { useCardAccountBalances } from '@/hooks/useAccountBalances';
 
 // Dashboard Components
 import { TrendCard } from './dashboard/TrendCard';
