@@ -403,39 +403,39 @@ export function AccountMovementReport() {
           {/* Summary Cards - Bank Statement Style */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 rounded-xl overflow-hidden border shadow-sm">
             {/* Opening Balance */}
-            <div className="bg-white p-4 border-l">
-              <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
+            <div className="bg-card p-3 sm:p-4 border-l">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm mb-1 sm:mb-2">
                 <span className="h-2 w-2 rounded-full bg-blue-500"></span>
                 الرصيد الافتتاحي
               </div>
-              <p className="text-2xl font-bold text-foreground">{formatCurrency(processedData.openingBalance)}</p>
+              <p className="text-base sm:text-2xl font-bold text-foreground">{formatCurrency(processedData.openingBalance)}</p>
             </div>
             
             {/* Total Debit (like deposits) */}
-            <div className="bg-emerald-50 p-4 border-l">
-              <div className="flex items-center gap-2 text-emerald-600 text-sm mb-2">
-                <TrendingDown className="h-4 w-4" />
+            <div className="bg-emerald-50 dark:bg-emerald-950/30 p-3 sm:p-4 border-l">
+              <div className="flex items-center gap-2 text-emerald-600 text-xs sm:text-sm mb-1 sm:mb-2">
+                <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4" />
                 إجمالي المدين
               </div>
-              <p className="text-2xl font-bold text-emerald-600">{formatCurrency(processedData.totalDebit)}</p>
+              <p className="text-base sm:text-2xl font-bold text-emerald-600">{formatCurrency(processedData.totalDebit)}</p>
             </div>
             
             {/* Total Credit (like withdrawals) */}
-            <div className="bg-rose-50 p-4 border-l">
-              <div className="flex items-center gap-2 text-rose-600 text-sm mb-2">
-                <TrendingUp className="h-4 w-4" />
+            <div className="bg-rose-50 dark:bg-rose-950/30 p-3 sm:p-4 border-l">
+              <div className="flex items-center gap-2 text-rose-600 text-xs sm:text-sm mb-1 sm:mb-2">
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
                 إجمالي الدائن
               </div>
-              <p className="text-2xl font-bold text-rose-600">{formatCurrency(processedData.totalCredit)}</p>
+              <p className="text-base sm:text-2xl font-bold text-rose-600">{formatCurrency(processedData.totalCredit)}</p>
             </div>
             
             {/* Closing Balance */}
             <div className={cn(
-              "p-4",
+              "p-3 sm:p-4",
               processedData.closingBalance >= 0 ? "bg-emerald-600" : "bg-amber-500"
             )}>
-              <div className="text-white/80 text-sm mb-2">الرصيد الختامي</div>
-              <p className="text-2xl font-bold text-white">{formatCurrency(processedData.closingBalance)}</p>
+              <div className="text-white/80 text-xs sm:text-sm mb-1 sm:mb-2">الرصيد الختامي</div>
+              <p className="text-base sm:text-2xl font-bold text-white">{formatCurrency(processedData.closingBalance)}</p>
             </div>
           </div>
 
