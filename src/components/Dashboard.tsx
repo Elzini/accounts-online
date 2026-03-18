@@ -944,7 +944,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
 
           {isLoading || isDashboardConfigLoading ? (
             <div className={cn(
-              "grid grid-cols-2 gap-3 sm:gap-5",
+              "grid grid-cols-1 xs:grid-cols-2 gap-2.5 sm:gap-3 md:gap-5",
               displaySettings.kpiColumns === 2 && 'md:grid-cols-2',
               displaySettings.kpiColumns === 3 && 'md:grid-cols-3',
               displaySettings.kpiColumns === 4 && 'md:grid-cols-4',
@@ -970,8 +970,8 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
           ) : (
           <div 
             className={cn(
-              "grid grid-cols-2",
-              displaySettings.density === 'compact' ? 'gap-2' : displaySettings.density === 'spacious' ? 'gap-6' : 'gap-3 sm:gap-5',
+              "grid grid-cols-1 xs:grid-cols-2",
+              displaySettings.density === 'compact' ? 'gap-2' : displaySettings.density === 'spacious' ? 'gap-4 sm:gap-6' : 'gap-2.5 sm:gap-3 md:gap-5',
               // Apply user kpiColumns only on md+ screens
               displaySettings.kpiColumns === 2 && 'md:grid-cols-2',
               displaySettings.kpiColumns === 3 && 'md:grid-cols-3',
@@ -1289,7 +1289,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
           ) : analytics ? (
             <>
               {/* Trend Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
                 <TrendCard
                   title={t.sales_this_month}
                   value={formatCurrency(analytics.salesTrend.thisMonth)}
