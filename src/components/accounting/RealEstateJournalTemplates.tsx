@@ -101,9 +101,9 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <FileText className="w-5 h-5" />,
     defaultDescription: 'رسوم تصميم واستشارات هندسية',
     lines: [
-      { accountCode: '1251', accountName: 'مشاريع تحت التطوير - استشارات هندسية', description: 'رسوم التصميم والاستشارات', side: 'debit' },
-      { accountCode: '1181', accountName: 'ضريبة مدخلات مشاريع', description: 'ضريبة مشتريات 15%', side: 'debit' },
-      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
+      { accountCode: '130105', accountName: 'مشاريع تحت التطوير - استشارات هندسية', description: 'رسوم التصميم والاستشارات', side: 'debit' },
+      { accountCode: '1108', accountName: 'ضريبة مدخلات مشاريع', description: 'ضريبة مشتريات 15%', side: 'debit' },
+      { accountCode: '1102', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
     ],
   },
   {
