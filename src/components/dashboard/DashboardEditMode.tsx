@@ -196,9 +196,12 @@ export function EditableWidgetWrapper({
     ? 'col-span-1' 
     : 'col-span-2 md:col-span-2';
 
+  const dimensionStyle: React.CSSProperties = {};
+  if (cardConfig?.height) dimensionStyle.height = cardConfig.height;
+
   if (!isEditMode) {
     return (
-      <div data-widget-id={id} className={cn(colSpanClass, 'h-fit', className)}>
+      <div data-widget-id={id} className={cn(colSpanClass, 'h-fit', className)} style={dimensionStyle}>
         {children}
       </div>
     );
