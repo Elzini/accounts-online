@@ -289,9 +289,9 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Receipt className="w-5 h-5" />,
     defaultDescription: 'مصاريف تسويق وإعلان للمشروع',
     lines: [
-      { accountCode: '6200', accountName: 'مصروفات تسويق', description: 'تكاليف التسويق', side: 'debit' },
-      { accountCode: '1181', accountName: 'ضريبة مدخلات مشاريع', description: 'ضريبة 15%', side: 'debit' },
-      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
+      { accountCode: '6203', accountName: 'مصروفات تسويق', description: 'تكاليف التسويق', side: 'debit' },
+      { accountCode: '1108', accountName: 'ضريبة مدخلات مشاريع', description: 'ضريبة 15%', side: 'debit' },
+      { accountCode: '1102', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
     ],
   },
 ];
