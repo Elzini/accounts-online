@@ -24,6 +24,7 @@ import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { AccountSearchSelect } from './AccountSearchSelect';
 import { JournalEntryPrintDialog } from './JournalEntryPrintDialog';
+import { useDetailedJournalPrint } from './DetailedJournalPrint';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUnifiedPrintReport } from '@/hooks/useUnifiedPrintReport';
