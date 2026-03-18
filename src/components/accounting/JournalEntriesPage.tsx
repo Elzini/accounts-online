@@ -227,10 +227,22 @@ export function JournalEntriesPage() {
     }
   };
 
-  // Filter entries by fiscal year
+  // Filter entries by fiscal year and search
   const filteredEntries = useMemo(() => {
-    return filterByFiscalYear(entries, 'entry_date');
-  }, [entries, filterByFiscalYear]);
+    let result = filterByFiscalYear(entries, 'entry_date');
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((entry: any) => {
+        const entryNum = String(entry.entry_number || '');
+        const entryDate = entry.entry_date ? format(new Date(entry.entry_date), 'yyyy/MM/dd') : '';
+        const desc = (entry.description || '').toLowerCase();
+        const debit = String(entry.total_debit || 0);
+        const credit = String(entry.total_credit || 0);
+        return entryNum.includes(q) || entryDate.includes(q) || desc.includes(q) || debit.includes(q) || credit.includes(q);
+      });
+    }
+    return result;
+  }, [entries, filterByFiscalYear, searchQuery]);
 
   // Get next entry number
   const nextEntryNumber = filteredEntries.length > 0 ? Math.max(...filteredEntries.map(e => e.entry_number)) + 1 : 1;
