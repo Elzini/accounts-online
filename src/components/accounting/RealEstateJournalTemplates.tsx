@@ -170,8 +170,8 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <ArrowDownUp className="w-5 h-5" />,
     defaultDescription: 'تحويل تكلفة وحدة مباعة إلى تكلفة المبيعات',
     lines: [
-      { accountCode: '5110', accountName: 'تكلفة البناء / الوحدات المباعة', description: 'تكلفة الوحدة المباعة', side: 'debit' },
-      { accountCode: '1220', accountName: 'مشاريع تحت التطوير', description: 'نصيب الوحدة من تكلفة المشروع', side: 'credit' },
+      { accountCode: '5102', accountName: 'تكلفة البناء / الوحدات المباعة', description: 'تكلفة الوحدة المباعة', side: 'debit' },
+      { accountCode: '1301', accountName: 'مشاريع تحت التطوير', description: 'نصيب الوحدة من تكلفة المشروع', side: 'credit' },
     ],
   },
 
