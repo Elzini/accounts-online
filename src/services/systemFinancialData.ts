@@ -264,18 +264,28 @@ export async function getSystemFinancialStatements(
   // الإيرادات من حسابات الإيرادات
   const totalRevenue = revenueAccounts.reduce((sum, a) => sum + getBalance(a), 0);
   
-  // تصنيف المصروفات من القيود
+  // تصنيف المصروفات من القيود وفقاً لـ IAS 1 (عرض حسب الوظيفة)
   // تكلفة البضاعة المباعة (COGS) - تشمل حساب 5101 وما يبدأ بـ 51
   const cogsAccounts = expenseAccounts.filter(a => 
     a.code.startsWith('51') || a.name.includes('تكلفة') || a.name.includes('مشتريات') || a.name.includes('بضاعة')
   );
+  // مصاريف البيع والتسويق (IAS 1.103) - ما يبدأ بـ 62 أو يحتوي على كلمات البيع/التسويق
+  const sellingAccounts = expenseAccounts.filter(a => 
+    !a.code.startsWith('51') && (
+      a.code.startsWith('62') || 
+      a.name.includes('بيع') || a.name.includes('تسويق') || a.name.includes('دعاية') || 
+      a.name.includes('إعلان') || a.name.includes('عمولة بيع') || a.name.includes('توزيع')
+    )
+  );
   // المصروفات الإدارية والعمومية - باقي المصروفات
   const adminAccounts = expenseAccounts.filter(a => 
-    !a.code.startsWith('51') && !a.name.includes('تكلفة') && !a.name.includes('مشتريات') && !a.name.includes('بضاعة')
+    !a.code.startsWith('51') && 
+    !sellingAccounts.includes(a)
   );
 
   // تكلفة المبيعات من القيود (حساب 5101)
   const costOfRevenue = cogsAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
+  const sellingAndMarketingExpenses = sellingAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
   const generalAndAdminExpenses = adminAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
 
   // حساب الأرباح من القيود المحاسبية:
