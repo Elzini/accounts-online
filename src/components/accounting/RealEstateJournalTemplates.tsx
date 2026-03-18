@@ -208,7 +208,7 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Home className="w-5 h-5" />,
     defaultDescription: 'إعفاء مسكن أول - تحمل الدولة',
     lines: [
-      { accountCode: '1145', accountName: 'ذمم مدينة - إعفاء المسكن الأول', description: 'مبلغ الإعفاء المستحق من الدولة', side: 'debit' },
+      { accountCode: '1105', accountName: 'ذمم مدينة - إعفاء المسكن الأول', description: 'مبلغ الإعفاء المستحق من الدولة', side: 'debit' },
       { accountCode: '2156', accountName: 'ضريبة تصرفات عقارية مستحقة', description: 'تخفيض المستحق بمبلغ الإعفاء', side: 'credit' },
     ],
   },
