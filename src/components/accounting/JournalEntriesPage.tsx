@@ -304,6 +304,10 @@ export function JournalEntriesPage() {
             <FileText className="w-4 h-4" />
             {language === 'ar' ? 'طباعة كشف القيود' : 'Print Journal Sheet'}
           </Button>
+          <Button variant="outline" onClick={() => printDetailedJournal(filteredEntries.map((e: any) => e.id))} className="gap-2">
+            <Printer className="w-4 h-4" />
+            {language === 'ar' ? 'طباعة تفصيلية' : 'Detailed Print'}
+          </Button>
           {isRealEstate && (
             <RealEstateJournalTemplates onSelectTemplate={handleTemplateSelect} />
           )}
