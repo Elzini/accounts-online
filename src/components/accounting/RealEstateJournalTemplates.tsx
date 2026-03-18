@@ -114,8 +114,8 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Receipt className="w-5 h-5" />,
     defaultDescription: 'رسوم تراخيص وتصاريح بناء',
     lines: [
-      { accountCode: '1260', accountName: 'مشاريع تحت التطوير - تراخيص البلدية', description: 'رسوم تراخيص حكومية', side: 'debit' },
-      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
+      { accountCode: '130106', accountName: 'مشاريع تحت التطوير - تراخيص البلدية', description: 'رسوم تراخيص حكومية', side: 'debit' },
+      { accountCode: '1102', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
     ],
   },
 
