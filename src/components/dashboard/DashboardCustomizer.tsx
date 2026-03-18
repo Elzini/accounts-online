@@ -539,7 +539,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
             </Label>
 
             {selected ? (
-              <div className="border rounded-lg p-4 space-y-5">
+              <div key={selected.id} className="border rounded-lg p-4 space-y-5">
                 {/* Editable Card Name */}
                 <div className="space-y-2">
                   <Label className="text-sm flex items-center gap-2">
