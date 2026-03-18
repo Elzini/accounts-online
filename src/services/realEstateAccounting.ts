@@ -120,10 +120,10 @@ export async function recordAdvancePayment(params: {
 
   if (amount <= 0) throw new Error('المبلغ يجب أن يكون أكبر من صفر');
 
-  // البنك: new 1121, legacy 1101
-  const bankAccountId = await resolveAccountFlex(companyId, '1121', '1110', '1101');
-  // دفعات مقدمة من العملاء: new 2120, legacy 2102
-  const advancePaymentAccountId = await resolveAccountFlex(companyId, '2120', '2102');
+  // البنك: 110201 (sub), 1102, legacy 1121/1101
+  const bankAccountId = await resolveAccountFlex(companyId, '110201', '1102', '1121', '1101');
+  // دفعات مقدمة من العملاء: 2102 (template), legacy 2120
+  const advancePaymentAccountId = await resolveAccountFlex(companyId, '2102', '2120');
 
   if (!bankAccountId) throw new Error('حساب البنك غير موجود');
   if (!advancePaymentAccountId) throw new Error('حساب الدفعات المقدمة غير موجود');
