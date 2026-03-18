@@ -579,7 +579,7 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div><CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5" />{t.fr_income_statement}</CardTitle></div>
                 <div className="flex gap-2">
-                  <ExportActions onExport={exportIncomeStatement} />
+                  {renderExportActions(exportIncomeStatement)}
                   <Popover>
                     <PopoverTrigger asChild><Button variant="outline" size="sm" className={cn("justify-start text-right font-normal gap-2", !dateRange.from && "text-muted-foreground")}><CalendarIcon className="h-4 w-4" />{dateRange.from ? (dateRange.to ? <>{format(dateRange.from, "yyyy/MM/dd")} - {format(dateRange.to, "yyyy/MM/dd")}</> : format(dateRange.from, "yyyy/MM/dd")) : t.vat_period}</Button></PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="end"><Calendar initialFocus mode="range" defaultMonth={dateRange.from} selected={dateRange} onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })} numberOfMonths={2} /></PopoverContent>
