@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { ShoppingCart, Car, Calendar, Wallet, Building2, CreditCard, Banknote, Hash, RefreshCw, Receipt, FileText, Edit, CheckCircle, Trash2, MoreHorizontal, Eye } from 'lucide-react';
+import { ShoppingCart, Car, Calendar, Wallet, Building2, CreditCard, Banknote, Hash, RefreshCw, Receipt, FileText, Edit, CheckCircle, Trash2, MoreHorizontal, Eye, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { supabase } from '@/integrations/supabase/client';
 import { approveInvoiceWithJournal } from '@/services/invoiceJournal';
+import { InvoiceJournalEntry } from './InvoiceJournalEntry';
 import { toast } from 'sonner';
 
 interface PurchasesTableProps {
@@ -74,6 +75,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
   const [isApprovingAll, setIsApprovingAll] = useState(false);
+  const [expandedInvoiceId, setExpandedInvoiceId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const { t, language } = useLanguage();
 
@@ -366,6 +368,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
                 <TableHead className="text-right font-bold">{t.th_payment_method}</TableHead>
                 <TableHead className="text-right font-bold">{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
                 <TableHead className="text-right font-bold">{t.th_status}</TableHead>
+                <TableHead className="text-center font-bold">{language === 'ar' ? 'القيد' : 'Entry'}</TableHead>
                 <TableHead className="text-center font-bold">{language === 'ar' ? 'إجراءات' : 'Actions'}</TableHead>
               </TableRow>
             </TableHeader>
@@ -373,64 +376,85 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
               {filteredInvoices.map((inv: any) => {
                 const paymentInfo = getPaymentMethodInfo(inv.payment_method);
                 const PaymentIcon = paymentInfo.icon;
+                const isExpanded = expandedInvoiceId === inv.id;
                 return (
-                  <TableRow key={inv.id} className="hover:bg-muted/30 transition-colors">
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-primary" />
-                        {inv.invoice_number}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-semibold">{inv.supplier?.name || inv.customer_name || '-'}</TableCell>
-                    <TableCell className="font-medium">{formatCurrency(inv.subtotal || 0)} {currency}</TableCell>
-                    <TableCell className="text-orange-600 font-medium">{formatCurrency(inv.vat_amount || 0)} {currency}</TableCell>
-                    <TableCell className="font-semibold text-primary">{formatCurrency(inv.total || 0)} {currency}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <PaymentIcon className={`w-4 h-4 ${paymentInfo.color}`} />
-                        <span className={paymentInfo.color}>{paymentInfo.label}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span>{formatDate(inv.invoice_date || inv.created_at)}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(inv.status)}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {isDraftInvoiceStatus(inv.status) && (
-                            <>
-                              <DropdownMenuItem onClick={() => handleApproveInvoice(inv.id)}>
-                                <CheckCircle className="w-4 h-4 ml-2 text-green-600" />
-                                {language === 'ar' ? 'اعتماد الفاتورة' : 'Approve Invoice'}
+                  <>
+                    <TableRow key={inv.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-primary" />
+                          {inv.invoice_number}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-semibold">{inv.supplier?.name || inv.customer_name || '-'}</TableCell>
+                      <TableCell className="font-medium">{formatCurrency(inv.subtotal || 0)} {currency}</TableCell>
+                      <TableCell className="text-orange-600 font-medium">{formatCurrency(inv.vat_amount || 0)} {currency}</TableCell>
+                      <TableCell className="font-semibold text-primary">{formatCurrency(inv.total || 0)} {currency}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <PaymentIcon className={`w-4 h-4 ${paymentInfo.color}`} />
+                          <span className={paymentInfo.color}>{paymentInfo.label}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <span>{formatDate(inv.invoice_date || inv.created_at)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(inv.status)}</TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          variant={isExpanded ? 'default' : 'outline'}
+                          size="sm"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => setExpandedInvoiceId(isExpanded ? null : inv.id)}
+                        >
+                          <BookOpen className="w-3.5 h-3.5" />
+                          {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {isDraftInvoiceStatus(inv.status) && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleApproveInvoice(inv.id)}>
+                                  <CheckCircle className="w-4 h-4 ml-2 text-green-600" />
+                                  {language === 'ar' ? 'اعتماد الفاتورة' : 'Approve Invoice'}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setDeleteInvoiceId(inv.id)} className="text-destructive">
+                                  <Trash2 className="w-4 h-4 ml-2" />
+                                  {language === 'ar' ? 'حذف' : 'Delete'}
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {!isDraftInvoiceStatus(inv.status) && (
+                              <DropdownMenuItem onClick={() => {
+                                sessionStorage.setItem('viewPurchaseInvoiceId', inv.id);
+                                setActivePage('add-purchase-invoice');
+                              }}>
+                                <Eye className="w-4 h-4 ml-2" />
+                                {language === 'ar' ? 'عرض' : 'View'}
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => setDeleteInvoiceId(inv.id)} className="text-destructive">
-                                <Trash2 className="w-4 h-4 ml-2" />
-                                {language === 'ar' ? 'حذف' : 'Delete'}
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                          {!isDraftInvoiceStatus(inv.status) && (
-                            <DropdownMenuItem onClick={() => {
-                              sessionStorage.setItem('viewPurchaseInvoiceId', inv.id);
-                              setActivePage('add-purchase-invoice');
-                            }}>
-                              <Eye className="w-4 h-4 ml-2" />
-                              {language === 'ar' ? 'عرض' : 'View'}
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                    {isExpanded && (
+                      <TableRow key={`${inv.id}-journal`}>
+                        <TableCell colSpan={10} className="p-2 bg-muted/20">
+                          <InvoiceJournalEntry invoiceId={inv.id} invoiceNumber={inv.invoice_number} />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
                 );
               })}
             </TableBody>
