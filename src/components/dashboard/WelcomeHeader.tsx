@@ -82,7 +82,7 @@ export function WelcomeHeader({
         {/* Left side - Controls */}
         <div className="flex items-center gap-1.5 sm:gap-3 w-full sm:w-auto justify-end flex-wrap">
           {/* Period buttons */}
-          <div className="flex items-center gap-0.5 sm:gap-1 bg-white/10 backdrop-blur-sm rounded-lg p-0.5 sm:p-1">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-white/10 backdrop-blur-sm rounded-lg p-0.5 sm:p-1 overflow-x-auto scrollbar-hide max-w-full">
             <Button
               variant="ghost"
               size="sm"
