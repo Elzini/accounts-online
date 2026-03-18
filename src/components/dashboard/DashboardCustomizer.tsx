@@ -223,8 +223,15 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragNode = useRef<HTMLDivElement | null>(null);
 
-  // Load saved config
+  // Load saved config - only when savedConfig changes, not on every render
+  const industryLabelsRef = useRef(industryLabels);
+  industryLabelsRef.current = industryLabels;
+  
+  const [configLoaded, setConfigLoaded] = useState(false);
+  
   useEffect(() => {
+    if (configLoaded) return; // Only load once
+    const labels = industryLabelsRef.current;
     if (savedConfig?.stat_cards && savedConfig.stat_cards.length > 0) {
       // Merge saved config with defaults to ensure new cards are included
       const savedIds = new Set(savedConfig.stat_cards.map((c: any) => c.id));
@@ -241,20 +248,22 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
         })),
       ].sort((a, b) => a.order - b.order);
       setCards(mergedCards);
-    } else {
+      setConfigLoaded(true);
+    } else if (savedConfig !== undefined) {
       setCards(DEFAULT_STAT_CARDS.map((c, i) => ({
         ...c,
         label: c.id === 'availableCars'
-          ? industryLabels.availableItems
+          ? labels.availableItems
           : c.id === 'totalPurchases'
-            ? industryLabels.totalPurchasesLabel
+            ? labels.totalPurchasesLabel
             : c.label,
         order: i,
         fontSize: 100,
         bgColor: '',
       })));
+      setConfigLoaded(true);
     }
-  }, [savedConfig, industryLabels]);
+  }, [savedConfig, configLoaded]);
 
   const moveCard = useCallback((id: string, direction: 'up' | 'down') => {
     setCards(prev => {
