@@ -52,6 +52,7 @@ export function JournalEntriesPage() {
   const { data: costCenters = [] } = useCostCenters();
   const { filterByFiscalYear } = useFiscalYearFilter();
   const { printReport } = useUnifiedPrintReport();
+  const { printDetailedJournal } = useDetailedJournalPrint();
   const isRealEstate = company?.company_type === 'real_estate';
   const createJournalEntry = useCreateJournalEntry();
   const deleteJournalEntry = useDeleteJournalEntry();
