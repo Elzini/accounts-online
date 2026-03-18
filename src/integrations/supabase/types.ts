@@ -16006,6 +16006,10 @@ export type Database = {
         Args: { _ciphertext: string; _company_id: string }
         Returns: string
       }
+      delete_orphan_journal_entry: {
+        Args: { entry_id: string }
+        Returns: undefined
+      }
       detect_security_anomalies: {
         Args: { p_company_id: string }
         Returns: Json
