@@ -61,6 +61,7 @@ export function JournalEntriesPage() {
   const [viewingEntryId, setViewingEntryId] = useState<string | null>(null);
   const [attachmentEntryId, setAttachmentEntryId] = useState<string | null>(null);
   const [printingEntryId, setPrintingEntryId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const { data: viewingEntry } = useJournalEntry(viewingEntryId);
   const { data: printingEntry } = useJournalEntry(printingEntryId);
   
