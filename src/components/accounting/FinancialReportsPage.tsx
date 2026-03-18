@@ -342,7 +342,7 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
                   <CardDescription>{t.je_entries_desc}</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <ExportActions onExport={exportJournalEntries} />
+                  {renderExportActions(exportJournalEntries)}
                   <Select value={referenceType} onValueChange={setReferenceType}>
                     <SelectTrigger className="w-32"><SelectValue placeholder={t.fr_type_label} /></SelectTrigger>
                     <SelectContent>
