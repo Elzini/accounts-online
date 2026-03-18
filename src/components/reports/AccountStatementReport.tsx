@@ -284,19 +284,25 @@ export function AccountStatementReport() {
       {showReport && selectedAccountId && (
         <Card>
           <CardHeader className="pb-2">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-base">
-                {t.as_title}: {selectedAccount?.name} ({selectedAccount?.code})
-              </CardTitle>
-              <div className="flex items-center gap-4 text-sm">
-                <span className="text-muted-foreground">
-                  {t.as_previous_balance}: <span className="font-bold text-foreground">{formatCurrency(processedData.openingBalance)}</span>
-                </span>
-                <span className="text-muted-foreground">
-                  {t.as_closing_balance}: <span className="font-bold text-primary">{formatCurrency(processedData.closingBalance)}</span>
-                </span>
-              </div>
-            </div>
+             <div className="flex justify-between items-center flex-wrap gap-2">
+               <CardTitle className="text-base">
+                 {t.as_title}: {selectedAccount?.name} ({selectedAccount?.code})
+               </CardTitle>
+               <div className="flex items-center gap-4 text-sm flex-wrap">
+                 <span className="text-muted-foreground">
+                   {t.as_previous_balance}: <span className="font-bold text-foreground">{formatCurrency(processedData.openingBalance)}</span>
+                 </span>
+                 <span className="text-muted-foreground">
+                   إجمالي الإيداعات: <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(processedData.totalDebit)}</span>
+                 </span>
+                 <span className="text-muted-foreground">
+                   إجمالي السحوبات: <span className="font-bold text-rose-600 dark:text-rose-400">{formatCurrency(processedData.totalCredit)}</span>
+                 </span>
+                 <span className="text-muted-foreground">
+                   {t.as_closing_balance}: <span className="font-bold text-primary">{formatCurrency(processedData.closingBalance)}</span>
+                 </span>
+               </div>
+             </div>
           </CardHeader>
           <CardContent className="p-0">
             {ledgerLoading ? (
