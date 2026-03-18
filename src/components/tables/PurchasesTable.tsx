@@ -75,6 +75,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
   const [isApprovingAll, setIsApprovingAll] = useState(false);
+  const [expandedInvoiceId, setExpandedInvoiceId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const { t, language } = useLanguage();
 
