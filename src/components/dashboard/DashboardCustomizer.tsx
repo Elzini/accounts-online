@@ -182,7 +182,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
   const { data: accounts = [] } = useAccounts();
   
   const filteredAccounts = useMemo(() => {
-    if (!accountSearch.trim()) return accounts;
+    if (!accountSearch.trim()) return accounts.slice(0, 50); // Show first 50 when no search
     const q = accountSearch.toLowerCase();
     return accounts.filter(a => 
       a.name.toLowerCase().includes(q) || a.code.toLowerCase().includes(q)
