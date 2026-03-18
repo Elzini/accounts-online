@@ -697,9 +697,12 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
               showCarsTable: false,
             };
           } catch {
+            const fallbackVal = projectCostAccountId && accountBalances[projectCostAccountId] !== undefined
+              ? accountBalances[projectCostAccountId]
+              : stats.totalPurchases;
             data = {
               title: getCardLabel(cardId, industryLabels.totalPurchasesLabel),
-              value: formatCurrency(stats.totalPurchases),
+              value: formatCurrency(fallbackVal),
               breakdown: [],
               showCarsTable: false,
             };
