@@ -396,7 +396,9 @@ export function PurchaseReturnsPage() {
       queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['cars'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
-      toast.success(language === 'ar' ? 'تم اعتماد مرتجع المشتريات' : 'Purchase return approved');
+      queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+      toast.success(language === 'ar' ? 'تم اعتماد مرتجع المشتريات وتسجيل القيد المحاسبي' : 'Purchase return approved with journal entry');
       resetForm();
     },
     onError: (e) => {
