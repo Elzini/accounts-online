@@ -119,6 +119,16 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   const saveDashboardConfig = useSaveDashboardConfig();
   const [cardConfigs, setCardConfigs] = useState<CardConfig[]>(DEFAULT_STAT_CARDS);
 
+  // For non-car companies, find project cost account (1301/130/13) to use for totalPurchases
+  const projectCostAccountId = useMemo(() => {
+    if (isCarDealership) return null;
+    // Find the most specific project account
+    const projectAccount = accountsList.find(a => a.code === '1301')
+      || accountsList.find(a => a.code === '130')
+      || accountsList.find(a => a.code === '13');
+    return projectAccount?.id || null;
+  }, [isCarDealership, accountsList]);
+
   // Collect all account IDs needed from card configs for batch fetching
   const accountIdsForCards = useMemo(() => {
     const ids = new Set<string>();
@@ -127,9 +137,16 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
       if (c.dataSource === 'formula' && c.formulaAccounts) {
         c.formulaAccounts.forEach(fa => ids.add(fa.accountId));
       }
+      // Legacy support
+      if (!c.dataSource && c.accountId) ids.add(c.accountId);
+      if (!c.dataSource && c.formulaAccounts) {
+        c.formulaAccounts.forEach(fa => ids.add(fa.accountId));
+      }
     });
+    // Include project cost account for non-car companies
+    if (projectCostAccountId) ids.add(projectCostAccountId);
     return Array.from(ids);
-  }, [cardConfigs]);
+  }, [cardConfigs, projectCostAccountId]);
 
   const { data: accountBalances = {} } = useCardAccountBalances(accountIdsForCards);
 
