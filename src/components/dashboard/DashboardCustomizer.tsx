@@ -386,6 +386,17 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
   const selected = cards.find(c => c.id === selectedCard);
   const sortedCards = [...cards].sort((a, b) => a.order - b.order);
 
+  const getCardPrimaryLabel = useCallback((card: CardConfig) => {
+    if (card.id === 'availableCars') return industryLabels.availableItems;
+    if (card.id === 'totalPurchases') return industryLabels.totalPurchasesLabel;
+    return card.label;
+  }, [industryLabels]);
+
+  const getCardSecondaryLabel = useCallback((card: CardConfig) => {
+    const primary = getCardPrimaryLabel(card);
+    return card.label && card.label !== primary ? card.label : null;
+  }, [getCardPrimaryLabel]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
