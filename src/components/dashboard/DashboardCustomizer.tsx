@@ -242,7 +242,17 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
       ].sort((a, b) => a.order - b.order);
       setCards(mergedCards);
     } else {
-      setCards(DEFAULT_STAT_CARDS.map((c, i) => ({ ...c, order: i, fontSize: 100, bgColor: '' })));
+      setCards(DEFAULT_STAT_CARDS.map((c, i) => ({
+        ...c,
+        label: c.id === 'availableCars'
+          ? industryLabels.availableItems
+          : c.id === 'totalPurchases'
+            ? industryLabels.totalPurchasesLabel
+            : c.label,
+        order: i,
+        fontSize: 100,
+        bgColor: '',
+      })));
     }
   }, [savedConfig]);
 
