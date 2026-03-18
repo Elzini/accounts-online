@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { plainFormat } from '@/components/financial-statements/utils/numberFormatting';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Printer, X } from 'lucide-react';

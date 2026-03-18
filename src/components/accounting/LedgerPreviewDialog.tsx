@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { plainFormat } from '@/components/financial-statements/utils/numberFormatting';
 import { FileDown, Printer } from 'lucide-react';
 
 interface LedgerEntry {

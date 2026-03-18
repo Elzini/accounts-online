@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { plainFormat } from '@/components/financial-statements/utils/numberFormatting';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
