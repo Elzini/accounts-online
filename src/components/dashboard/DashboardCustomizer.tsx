@@ -510,7 +510,173 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                   <p className="text-[10px] text-muted-foreground">{t.card_name_hint}</p>
                 </div>
 
-                {/* Size */}
+                {/* Data Source */}
+                <div className="space-y-3 border rounded-lg p-3 bg-muted/30">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Database className="w-4 h-4" />
+                    مصدر البيانات
+                  </Label>
+                  <Tabs
+                    value={selected.dataSource || 'default'}
+                    onValueChange={(v) => updateCard(selected.id, { 
+                      dataSource: v as CardConfig['dataSource'],
+                      ...(v === 'default' ? { accountId: undefined, formulaAccounts: undefined } : {}),
+                    })}
+                    dir="rtl"
+                  >
+                    <TabsList className="w-full grid grid-cols-3">
+                      <TabsTrigger value="default" className="text-xs">افتراضي</TabsTrigger>
+                      <TabsTrigger value="account" className="text-xs gap-1">
+                        <Database className="w-3 h-3" />
+                        حساب
+                      </TabsTrigger>
+                      <TabsTrigger value="formula" className="text-xs gap-1">
+                        <Calculator className="w-3 h-3" />
+                        معادلة
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="account" className="mt-3 space-y-2">
+                      <div className="relative">
+                        <Search className="absolute right-2 top-2.5 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="ابحث عن حساب..."
+                          value={accountSearch}
+                          onChange={(e) => setAccountSearch(e.target.value)}
+                          className="pr-8 text-sm"
+                          dir="rtl"
+                        />
+                      </div>
+                      {selected.accountId && (
+                        <div className="flex items-center gap-2 p-2 rounded-md bg-primary/10 border border-primary/20">
+                          <span className="text-xs font-medium flex-1 truncate">
+                            {accounts.find(a => a.id === selected.accountId)?.code} - {accounts.find(a => a.id === selected.accountId)?.name}
+                          </span>
+                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => updateCard(selected.id, { accountId: undefined })}>
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      )}
+                      <ScrollArea className="max-h-[150px] border rounded-md">
+                        <div className="p-1 space-y-0.5">
+                          {filteredAccounts.map(acc => (
+                            <button
+                              key={acc.id}
+                              onClick={() => {
+                                updateCard(selected.id, { accountId: acc.id });
+                                setAccountSearch('');
+                              }}
+                              className={cn(
+                                'w-full text-right px-2 py-1.5 rounded text-xs hover:bg-accent transition-colors flex items-center gap-2',
+                                selected.accountId === acc.id && 'bg-primary/10 font-medium'
+                              )}
+                            >
+                              <Badge variant="outline" className="text-[10px] font-mono shrink-0">{acc.code}</Badge>
+                              <span className="truncate">{acc.name}</span>
+                            </button>
+                          ))}
+                          {filteredAccounts.length === 0 && (
+                            <p className="text-xs text-muted-foreground text-center py-3">لا توجد نتائج</p>
+                          )}
+                        </div>
+                      </ScrollArea>
+                      <p className="text-[10px] text-muted-foreground">سيتم عرض رصيد الحساب المحدد في البطاقة</p>
+                    </TabsContent>
+
+                    <TabsContent value="formula" className="mt-3 space-y-3">
+                      <p className="text-[10px] text-muted-foreground">اختر حسابات وحدد العملية (+ أو -) لبناء معادلة حسابية</p>
+                      
+                      {/* Current formula items */}
+                      {(selected.formulaAccounts || []).length > 0 && (
+                        <div className="space-y-1.5">
+                          {(selected.formulaAccounts || []).map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-1.5 p-1.5 rounded-md bg-accent/50 border text-xs">
+                              <Badge variant={item.operator === '+' ? 'default' : 'destructive'} className="text-[10px] px-1.5 shrink-0">
+                                {item.operator}
+                              </Badge>
+                              <Badge variant="outline" className="text-[10px] font-mono shrink-0">{item.accountCode}</Badge>
+                              <span className="truncate flex-1">{item.accountName}</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5 shrink-0"
+                                onClick={() => {
+                                  const updated = [...(selected.formulaAccounts || [])];
+                                  updated.splice(idx, 1);
+                                  updateCard(selected.id, { formulaAccounts: updated });
+                                }}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ))}
+                          <div className="text-[10px] text-muted-foreground font-mono bg-muted/50 p-2 rounded">
+                            المعادلة: {(selected.formulaAccounts || []).map((item, i) => `${i === 0 && item.operator === '+' ? '' : item.operator} ${item.accountName}`).join(' ')}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Add account to formula */}
+                      <div className="relative">
+                        <Search className="absolute right-2 top-2.5 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="ابحث عن حساب لإضافته..."
+                          value={accountSearch}
+                          onChange={(e) => setAccountSearch(e.target.value)}
+                          className="pr-8 text-sm"
+                          dir="rtl"
+                        />
+                      </div>
+                      <ScrollArea className="max-h-[120px] border rounded-md">
+                        <div className="p-1 space-y-0.5">
+                          {filteredAccounts.map(acc => (
+                            <div key={acc.id} className="flex items-center gap-1 px-1 py-1 rounded text-xs hover:bg-accent transition-colors">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-5 w-5 shrink-0 text-success border-success/30 hover:bg-success/10"
+                                onClick={() => {
+                                  const current = selected.formulaAccounts || [];
+                                  updateCard(selected.id, {
+                                    formulaAccounts: [...current, { accountId: acc.id, accountName: acc.name, accountCode: acc.code, operator: '+' }],
+                                  });
+                                  setAccountSearch('');
+                                }}
+                              >
+                                <Plus className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-5 w-5 shrink-0 text-destructive border-destructive/30 hover:bg-destructive/10"
+                                onClick={() => {
+                                  const current = selected.formulaAccounts || [];
+                                  updateCard(selected.id, {
+                                    formulaAccounts: [...current, { accountId: acc.id, accountName: acc.name, accountCode: acc.code, operator: '-' }],
+                                  });
+                                  setAccountSearch('');
+                                }}
+                              >
+                                <span className="text-sm font-bold">−</span>
+                              </Button>
+                              <Badge variant="outline" className="text-[10px] font-mono shrink-0">{acc.code}</Badge>
+                              <span className="truncate">{acc.name}</span>
+                            </div>
+                          ))}
+                          {filteredAccounts.length === 0 && (
+                            <p className="text-xs text-muted-foreground text-center py-3">لا توجد نتائج</p>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </TabsContent>
+
+                    <TabsContent value="default" className="mt-2">
+                      <p className="text-[10px] text-muted-foreground">سيتم استخدام القيمة الافتراضية للبطاقة</p>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+
+
                 <div className="space-y-2">
                   <Label className="text-sm">{t.size_label}</Label>
                   <div className="flex gap-2">
