@@ -445,7 +445,7 @@ export function AccountMovementReport() {
               <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
             </div>
           ) : (
-            <div className="border rounded-xl overflow-hidden shadow-sm">
+            <div className="border rounded-xl overflow-x-auto shadow-sm">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-700 hover:bg-slate-700">
