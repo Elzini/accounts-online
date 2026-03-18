@@ -75,8 +75,8 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Banknote className="w-5 h-5" />,
     defaultDescription: 'سداد مستحقات مقاول',
     lines: [
-      { accountCode: '2110', accountName: 'دائنون - مقاولين', description: 'إقفال ذمة المقاول', side: 'debit' },
-      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المحول للمقاول', side: 'credit' },
+      { accountCode: '2101', accountName: 'دائنون - مقاولين', description: 'إقفال ذمة المقاول', side: 'debit' },
+      { accountCode: '1102', accountName: 'البنك', description: 'المبلغ المحول للمقاول', side: 'credit' },
     ],
   },
   {
