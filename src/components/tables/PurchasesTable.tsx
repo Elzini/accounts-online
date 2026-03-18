@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { ShoppingCart, Car, Calendar, Wallet, Building2, CreditCard, Banknote, Hash, RefreshCw, Receipt, FileText, Edit, CheckCircle, Trash2, MoreHorizontal, Eye } from 'lucide-react';
+import { ShoppingCart, Car, Calendar, Wallet, Building2, CreditCard, Banknote, Hash, RefreshCw, Receipt, FileText, Edit, CheckCircle, Trash2, MoreHorizontal, Eye, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
