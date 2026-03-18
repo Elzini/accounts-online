@@ -75,20 +75,29 @@ export interface FormulaAccountItem {
   operator: '+' | '-';
 }
 
-// Default stat cards
+// Default stat cards - must match all widgets in DashboardEditMode
 const DEFAULT_STAT_CARDS: CardConfig[] = [
-  { id: 'availableCars', type: 'stat', label: 'السيارات المتاحة', visible: true, order: 0, size: 'medium' },
-  { id: 'totalPurchases', type: 'stat', label: 'إجمالي المشتريات', visible: true, order: 1, size: 'medium' },
-  { id: 'monthSales', type: 'stat', label: 'مبيعات الشهر', visible: true, order: 2, size: 'medium' },
-  { id: 'totalProfit', type: 'stat', label: 'إجمالي الأرباح', visible: true, order: 3, size: 'medium' },
-  { id: 'todaySales', type: 'stat', label: 'مبيعات اليوم', visible: true, order: 4, size: 'medium' },
-  { id: 'monthSalesCount', type: 'stat', label: 'عدد مبيعات الشهر', visible: true, order: 5, size: 'medium' },
-  { id: 'allTimePurchases', type: 'stat', label: 'إجمالي مشتريات الشركة', visible: true, order: 6, size: 'medium' },
-  { id: 'allTimeSales', type: 'stat', label: 'إجمالي مبيعات الشركة', visible: true, order: 7, size: 'medium' },
-  { id: 'activeInstallments', type: 'stat', label: 'عقود التقسيط النشطة', visible: true, order: 8, size: 'medium' },
-  { id: 'overdueInstallments', type: 'stat', label: 'الأقساط المتأخرة', visible: true, order: 9, size: 'medium' },
-  { id: 'upcomingInstallments', type: 'stat', label: 'أقساط الشهر الحالي', visible: true, order: 10, size: 'medium' },
-  { id: 'totalDue', type: 'stat', label: 'إجمالي المستحق', visible: true, order: 11, size: 'medium' },
+  { id: 'quickAccess', type: 'widget', label: 'الوصول السريع', visible: true, order: 0, size: 'medium' },
+  { id: 'availableCars', type: 'stat', label: 'السيارات المتاحة', visible: true, order: 1, size: 'medium' },
+  { id: 'totalPurchases', type: 'stat', label: 'إجمالي المشتريات', visible: true, order: 2, size: 'medium' },
+  { id: 'monthSales', type: 'stat', label: 'مبيعات الشهر', visible: true, order: 3, size: 'medium' },
+  { id: 'totalProfit', type: 'stat', label: 'إجمالي الأرباح', visible: true, order: 4, size: 'medium' },
+  { id: 'todaySales', type: 'stat', label: 'مبيعات اليوم', visible: true, order: 5, size: 'medium' },
+  { id: 'monthSalesCount', type: 'stat', label: 'عدد مبيعات الشهر', visible: true, order: 6, size: 'medium' },
+  { id: 'allTimePurchases', type: 'stat', label: 'إجمالي مشتريات الشركة', visible: true, order: 7, size: 'medium' },
+  { id: 'allTimeSales', type: 'stat', label: 'إجمالي مبيعات الشركة', visible: true, order: 8, size: 'medium' },
+  { id: 'activeInstallments', type: 'stat', label: 'عقود التقسيط النشطة', visible: true, order: 9, size: 'medium' },
+  { id: 'overdueInstallments', type: 'stat', label: 'الأقساط المتأخرة', visible: true, order: 10, size: 'medium' },
+  { id: 'upcomingInstallments', type: 'stat', label: 'أقساط الشهر الحالي', visible: true, order: 11, size: 'medium' },
+  { id: 'totalDue', type: 'stat', label: 'إجمالي المستحق', visible: true, order: 12, size: 'medium' },
+  { id: 'nextPayment', type: 'stat', label: 'القسط القادم', visible: true, order: 13, size: 'medium' },
+  { id: 'monthlyExpenses', type: 'widget', label: 'المصروفات الشهرية', visible: true, order: 14, size: 'medium' },
+  { id: 'transfers', type: 'widget', label: 'السيارات الوارد والصادر', visible: true, order: 15, size: 'medium' },
+  { id: 'quickActions', type: 'widget', label: 'الإجراءات السريعة', visible: true, order: 16, size: 'medium' },
+  { id: 'reports', type: 'widget', label: 'التقارير', visible: true, order: 17, size: 'medium' },
+  { id: 'recentInvoices', type: 'widget', label: 'أحدث الفواتير', visible: true, order: 18, size: 'medium' },
+  { id: 'smartAlerts', type: 'widget', label: 'التنبيهات الذكية', visible: true, order: 19, size: 'medium' },
+  { id: 'securityAlerts', type: 'widget', label: 'مراقبة الأمان', visible: true, order: 20, size: 'medium' },
 ];
 
 // Predefined colors
