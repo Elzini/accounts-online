@@ -125,26 +125,26 @@ export function AccountStatementReport() {
       { header: t.acc_entry_number, key: 'entryNumber', align: 'center', width: '60px' },
       { header: t.je_col_date, key: 'date', align: 'center', width: '90px' },
       { header: t.je_col_statement, key: 'description', align: 'right' },
+      ...(isParentAccount ? [{ header: 'الحساب الفرعي', key: 'subAccount', align: 'right' as const, width: '140px' }] : []),
       { header: t.je_col_type, key: 'type', align: 'center', width: '80px' },
-      { header: t.acc_debit, key: 'debit', align: 'right', type: 'currency', width: '100px' },
-      { header: t.acc_credit, key: 'credit', align: 'right', type: 'currency', width: '100px' },
-      { header: t.acc_balance, key: 'balance', align: 'right', type: 'currency', width: '110px' },
+      { header: t.acc_debit, key: 'debit', align: 'right', type: 'currency' as const, width: '100px' },
+      { header: t.acc_credit, key: 'credit', align: 'right', type: 'currency' as const, width: '100px' },
+      { header: t.acc_balance, key: 'balance', align: 'right', type: 'currency' as const, width: '110px' },
     ];
     const data: any[] = [];
     if (showOpeningBalance) {
-      data.push({ entryNumber: '', date: '', description: t.as_previous_balance, type: '', debit: '', credit: processedData.openingBalance < 0 ? Math.abs(processedData.openingBalance) : '', balance: processedData.openingBalance });
+      data.push({ entryNumber: '', date: '', description: t.as_previous_balance, subAccount: '', type: '', debit: '', credit: processedData.openingBalance < 0 ? Math.abs(processedData.openingBalance) : '', balance: processedData.openingBalance });
     }
     processedData.entries.forEach((entry: any) => {
-      data.push({ entryNumber: entry.entry_number, date: formatDate(entry.date), description: entry.description, type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : '', credit: entry.credit > 0 ? entry.credit : '', balance: entry.balance });
+      data.push({ entryNumber: entry.entry_number, date: formatDate(entry.date), description: entry.description, subAccount: entry.sub_account_name || '', type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : '', credit: entry.credit > 0 ? entry.credit : '', balance: entry.balance });
     });
-    // Add summary rows
-    data.push({ entryNumber: '', date: '', description: '', type: '', debit: '', credit: '', balance: '' });
-    data.push({ entryNumber: '', date: '', description: `عدد عمليات الإيداع: ${processedData.debitCount}`, type: '', debit: '', credit: '', balance: '' });
-    data.push({ entryNumber: '', date: '', description: `عدد عمليات السحب: ${processedData.creditCount}`, type: '', debit: '', credit: '', balance: '' });
-    data.push({ entryNumber: '', date: '', description: `الرصيد الافتتاحي: ${formatCurrency(processedData.openingBalance)}`, type: '', debit: '', credit: '', balance: '' });
-    data.push({ entryNumber: '', date: '', description: `إجمالي الإيداعات: ${formatCurrency(processedData.totalDebit)}`, type: '', debit: '', credit: '', balance: '' });
-    data.push({ entryNumber: '', date: '', description: `إجمالي السحوبات: ${formatCurrency(processedData.totalCredit)}`, type: '', debit: '', credit: '', balance: '' });
-    data.push({ entryNumber: '', date: '', description: `رصيد الإغلاق: ${formatCurrency(processedData.closingBalance)}`, type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: '', subAccount: '', type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `عدد عمليات الإيداع: ${processedData.debitCount}`, subAccount: '', type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `عدد عمليات السحب: ${processedData.creditCount}`, subAccount: '', type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `الرصيد الافتتاحي: ${formatCurrency(processedData.openingBalance)}`, subAccount: '', type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `إجمالي الإيداعات: ${formatCurrency(processedData.totalDebit)}`, subAccount: '', type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `إجمالي السحوبات: ${formatCurrency(processedData.totalCredit)}`, subAccount: '', type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `رصيد الإغلاق: ${formatCurrency(processedData.closingBalance)}`, subAccount: '', type: '', debit: '', credit: '', balance: '' });
 
     printReport({
       title: t.as_title,
@@ -170,6 +170,7 @@ export function AccountStatementReport() {
       { header: t.acc_entry_number, key: 'entryNumber' },
       { header: t.je_col_date, key: 'date' },
       { header: t.je_col_statement, key: 'description' },
+      ...(isParentAccount ? [{ header: 'الحساب الفرعي', key: 'subAccount' }] : []),
       { header: t.je_col_type, key: 'type' },
       { header: t.acc_debit, key: 'debit' },
       { header: t.acc_credit, key: 'credit' },
@@ -177,10 +178,10 @@ export function AccountStatementReport() {
     ];
     const data: any[] = [];
     if (showOpeningBalance) {
-      data.push({ entryNumber: '', date: '', description: t.as_previous_balance, type: '', debit: 0, credit: processedData.openingBalance < 0 ? Math.abs(processedData.openingBalance) : 0, balance: processedData.openingBalance });
+      data.push({ entryNumber: '', date: '', description: t.as_previous_balance, subAccount: '', type: '', debit: 0, credit: processedData.openingBalance < 0 ? Math.abs(processedData.openingBalance) : 0, balance: processedData.openingBalance });
     }
     processedData.entries.forEach((entry: any) => {
-      data.push({ entryNumber: entry.entry_number, date: formatDate(entry.date), description: entry.description, type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : 0, credit: entry.credit > 0 ? entry.credit : 0, balance: entry.balance });
+      data.push({ entryNumber: entry.entry_number, date: formatDate(entry.date), description: entry.description, subAccount: entry.sub_account_name || '', type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : 0, credit: entry.credit > 0 ? entry.credit : 0, balance: entry.balance });
     });
     exportToExcel({
       title: `${t.as_title} - ${selectedAccount.name}`,
