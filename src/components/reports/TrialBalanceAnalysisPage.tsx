@@ -253,8 +253,8 @@ export function TrialBalanceAnalysisPage() {
         }
       });
 
-      // بناء بيانات ميزان المراجعة الشامل
-      const rawAccounts: AccountData[] = systemData.accounts.map(acc => ({
+      // بناء بيانات ميزان المراجعة الشامل مع الحسابات الرئيسية الهرمية
+      const leafAccounts: AccountData[] = systemData.accounts.map(acc => ({
         code: acc.code,
         name: acc.name,
         openingDebit: acc.openingDebit,
@@ -266,12 +266,82 @@ export function TrialBalanceAnalysisPage() {
         category: categorizeAccountByCode(acc.code, acc.name),
       }));
 
+      // بناء الحسابات الرئيسية (الأب) تلقائياً من أكواد الحسابات الفرعية
+      const parentMap = new Map<string, AccountData>();
+      
+      leafAccounts.forEach(acc => {
+        if (!acc.code || acc.code.length <= 1) return;
+        // إنشاء حسابات أب لكل مستوى أعلى
+        for (let len = 1; len < acc.code.length; len++) {
+          const parentCode = acc.code.substring(0, len);
+          const existing = parentMap.get(parentCode);
+          if (existing) {
+            existing.openingDebit += acc.openingDebit;
+            existing.openingCredit += acc.openingCredit;
+            existing.movementDebit += acc.movementDebit;
+            existing.movementCredit += acc.movementCredit;
+            existing.closingDebit += acc.closingDebit;
+            existing.closingCredit += acc.closingCredit;
+          } else {
+            // تحديد اسم الحساب الرئيسي
+            const parentNames: Record<string, string> = {
+              '1': 'الأصول',
+              '11': 'الأصول المتداولة',
+              '110': 'النقد والبنوك',
+              '1101': 'الصندوق',
+              '1102': 'البنوك',
+              '12': 'المدينون',
+              '13': 'المشاريع',
+              '130': 'مشاريع تحت التنفيذ',
+              '14': 'أصول أخرى',
+              '15': 'الأصول الثابتة',
+              '2': 'الخصوم',
+              '21': 'الخصوم المتداولة',
+              '22': 'خصوم طويلة الأجل',
+              '23': 'أطراف ذات علاقة',
+              '3': 'حقوق الملكية',
+              '31': 'رأس المال والاحتياطيات',
+              '4': 'الإيرادات',
+              '41': 'إيرادات النشاط',
+              '5': 'المصروفات',
+              '51': 'تكلفة المبيعات',
+              '52': 'مصاريف إدارية',
+              '53': 'مصاريف تشغيلية',
+            };
+            parentMap.set(parentCode, {
+              code: parentCode,
+              name: parentNames[parentCode] || `حساب ${parentCode}`,
+              openingDebit: acc.openingDebit,
+              openingCredit: acc.openingCredit,
+              movementDebit: acc.movementDebit,
+              movementCredit: acc.movementCredit,
+              closingDebit: acc.closingDebit,
+              closingCredit: acc.closingCredit,
+              category: 'حساب رئيسي',
+            });
+          }
+        }
+      });
+
+      // دمج الحسابات الرئيسية والفرعية وترتيبها
+      const allAccounts = [...leafAccounts];
+      parentMap.forEach((parentAcc) => {
+        // إعادة حساب صافي الرصيد للحساب الرئيسي
+        const netBalance = (parentAcc.openingDebit + parentAcc.movementDebit) - (parentAcc.openingCredit + parentAcc.movementCredit);
+        parentAcc.closingDebit = netBalance > 0 ? netBalance : 0;
+        parentAcc.closingCredit = netBalance < 0 ? Math.abs(netBalance) : 0;
+        allAccounts.push(parentAcc);
+      });
+      
+      // ترتيب حسب الكود
+      allAccounts.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
+
       setData(result);
       setReconciliationData({
         originalTotalDebit: systemData.totals.closingDebit,
         originalTotalCredit: systemData.totals.closingCredit,
         excludedAccounts: [],
-        rawAccounts,
+        rawAccounts: allAccounts,
       });
       setFileName('بيانات النظام');
       
