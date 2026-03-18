@@ -301,8 +301,28 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   }, [widgetConfigs]);
 
   // Helper to get card config by id
-  const getCardConfig = useCallback((id: string) => {
-    return cardConfigs.find(c => c.id === id) || { visible: true, size: 'medium' as const, bgColor: '', textColor: '', gradientFrom: '', gradientTo: '', fontSize: 100, height: undefined, width: undefined, enable3D: false, showTrend: true, trendColor: '', label: '' };
+  const getCardConfig = useCallback((id: string): CardConfig => {
+    return cardConfigs.find(c => c.id === id) || {
+      id,
+      type: 'stat',
+      label: '',
+      visible: true,
+      order: 999,
+      size: 'medium',
+      bgColor: '',
+      textColor: '',
+      gradientFrom: '',
+      gradientTo: '',
+      fontSize: 100,
+      height: undefined,
+      width: undefined,
+      enable3D: false,
+      showTrend: true,
+      trendColor: '',
+      dataSource: 'default',
+      accountId: undefined,
+      formulaAccounts: undefined,
+    };
   }, [cardConfigs]);
 
   // Spread helper for StatCard style props
