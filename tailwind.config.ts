@@ -13,6 +13,9 @@ export default {
   		}
   	},
   	extend: {
+  		screens: {
+  			'xs': '420px',
+  		},
   		fontFamily: {
   			cairo: [
   				'Cairo',
