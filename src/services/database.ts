@@ -922,7 +922,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
       return status !== 'completed' && status !== 'cancelled' && status !== 'canceled';
     }).length;
 
-
+    const totalSalesAmount = salesInvoices.reduce(
       (sum: number, invoice: any) => sum + (Number(invoice.subtotal) || 0),
       0
     );
