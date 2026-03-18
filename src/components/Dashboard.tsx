@@ -531,7 +531,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
     }
 
     if (resolvedSource === 'formula' && cardCfg.formulaAccounts?.length) {
-      const formulaBreakdown = cardCfg.formulaAccounts.map((item) => {
+      const formulaBreakdown: { label: string; value: number; type?: 'add' | 'subtract' | 'total'; description?: string }[] = cardCfg.formulaAccounts.map((item) => {
         const account = accountsList.find(a => a.id === item.accountId);
         const balance = accountBalances[item.accountId] || 0;
         const label = [account?.code || item.accountCode, account?.name || item.accountName].filter(Boolean).join(' - ');
