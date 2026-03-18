@@ -15605,20 +15605,20 @@ export type Database = {
           contract_type: string | null
           created_at: string | null
           department: string | null
-          email: string | null
+          email_masked: string | null
           employee_number: string | null
           full_name: string | null
           full_name_en: string | null
           hire_date: string | null
           housing_allowance: number | null
-          iban: string | null
+          iban_masked: string | null
           id: string | null
           is_active: boolean | null
           job_title: string | null
-          national_id: string | null
+          national_id_masked: string | null
           notes: string | null
           other_allowances: number | null
-          phone: string | null
+          phone_masked: string | null
           transport_allowance: number | null
           updated_at: string | null
         }
@@ -15629,20 +15629,20 @@ export type Database = {
           contract_type?: string | null
           created_at?: string | null
           department?: string | null
-          email?: never
+          email_masked?: never
           employee_number?: string | null
           full_name?: string | null
           full_name_en?: string | null
           hire_date?: string | null
           housing_allowance?: never
-          iban?: never
+          iban_masked?: never
           id?: string | null
           is_active?: boolean | null
           job_title?: string | null
-          national_id?: never
+          national_id_masked?: never
           notes?: string | null
           other_allowances?: never
-          phone?: never
+          phone_masked?: never
           transport_allowance?: never
           updated_at?: string | null
         }
@@ -15653,20 +15653,20 @@ export type Database = {
           contract_type?: string | null
           created_at?: string | null
           department?: string | null
-          email?: never
+          email_masked?: never
           employee_number?: string | null
           full_name?: string | null
           full_name_en?: string | null
           hire_date?: string | null
           housing_allowance?: never
-          iban?: never
+          iban_masked?: never
           id?: string | null
           is_active?: boolean | null
           job_title?: string | null
-          national_id?: never
+          national_id_masked?: never
           notes?: string | null
           other_allowances?: never
-          phone?: never
+          phone_masked?: never
           transport_allowance?: never
           updated_at?: string | null
         }
