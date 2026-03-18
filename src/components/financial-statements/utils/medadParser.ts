@@ -953,7 +953,10 @@ function parseIncomeStatement(rows: any[][], result: ComprehensiveFinancialData)
     } else if (rowText.includes('إجمالي الربح') || rowText.includes('إجمالي الخسارة')) {
       result.incomeStatement.grossProfit = amount;
       result.incomeStatement.previousGrossProfit = prevAmount;
-    } else if (rowText.includes('مصاريف عمومية وإدارية')) {
+    } else if (rowText.includes('مصاريف بيع') || rowText.includes('مصاريف تسويق') || rowText.includes('بيع وتسويق')) {
+      result.incomeStatement.sellingAndMarketingExpenses = Math.abs(amount);
+      result.incomeStatement.previousSellingAndMarketingExpenses = prevAmount ? Math.abs(prevAmount) : undefined;
+    } else if (rowText.includes('مصاريف عمومية وإدارية') || rowText.includes('مصاريف إدارية')) {
       result.incomeStatement.generalAndAdminExpenses = Math.abs(amount);
       result.incomeStatement.previousGeneralAndAdminExpenses = prevAmount ? Math.abs(prevAmount) : undefined;
     } else if (rowText.includes('ربح العمليات') || rowText.includes('خسارة العمليات')) {
