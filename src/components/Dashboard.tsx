@@ -806,6 +806,41 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
           >
             {sortedWidgets.map(widget => {
               const props = getWidgetProps(widget.id);
+              const cardCfg = getCardConfig(widget.id);
+              const hasAccountOverride = Boolean(
+                (cardCfg.dataSource === 'account' && cardCfg.accountId) ||
+                (cardCfg.dataSource === 'formula' && cardCfg.formulaAccounts?.length) ||
+                (!cardCfg.dataSource && (cardCfg.accountId || cardCfg.formulaAccounts?.length))
+              );
+              const nativeStatCardIds = [
+                'availableCars',
+                'totalPurchases',
+                'monthSales',
+                'totalProfit',
+                'todaySales',
+                'monthSalesCount',
+                'allTimePurchases',
+                'allTimeSales',
+              ];
+
+              // If user selected account/formula on any non-native stat widget,
+              // render it as a balance-driven stat card.
+              if (hasAccountOverride && !nativeStatCardIds.includes(widget.id)) {
+                return (
+                  <EditableWidgetWrapper key={widget.id} {...props}>
+                    <StatCard
+                      title={getCardLabel(widget.id, cardCfg.label || widget.label)}
+                      value={formatCurrencyWithMode(getCardValue(widget.id, 0))}
+                      icon={DollarSign}
+                      gradient="primary"
+                      subtitle={getCurrencySubtitle()}
+                      showAsWords={showAmountAsWords}
+                      {...getCardStyleProps(widget.id)}
+                      animationIndex={getNextAnimIndex()}
+                    />
+                  </EditableWidgetWrapper>
+                );
+              }
               
               switch (widget.id) {
                 case 'quickAccess':

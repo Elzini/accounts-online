@@ -102,7 +102,7 @@ export function useCardAccountBalances(accountIds: string[]) {
   const { selectedFiscalYear } = useFiscalYear();
 
   return useQuery({
-    queryKey: ['card-account-balances', companyId, selectedFiscalYear?.id, accountIds.sort().join(',')],
+    queryKey: ['card-account-balances', companyId, selectedFiscalYear?.id, [...accountIds].sort().join(',')],
     queryFn: () => fetchAccountBalances(accountIds, companyId!, selectedFiscalYear?.id),
     enabled: !!companyId && accountIds.length > 0,
     staleTime: 1000 * 60 * 2,
