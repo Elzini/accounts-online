@@ -542,7 +542,12 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                       onClick={() => {
                         const defaultCard = DEFAULT_STAT_CARDS.find(c => c.id === selected.id);
                         if (defaultCard) {
-                          updateCard(selected.id, { label: defaultCard.label });
+                          const defaultLabel = defaultCard.id === 'availableCars'
+                            ? industryLabels.availableItems
+                            : defaultCard.id === 'totalPurchases'
+                              ? industryLabels.totalPurchasesLabel
+                              : defaultCard.label;
+                          updateCard(selected.id, { label: defaultLabel });
                         }
                       }}
                       title={t.restore_default_name}
