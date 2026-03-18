@@ -232,7 +232,7 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
     else exportToPdf({ title: t.fr_vat_settlement, subtitle: dateSubtitle, columns, data, fileName: 'vat-settlement', summaryCards });
   };
 
-  const ExportActions = ({ onExport }: { onExport: (type: 'print' | 'excel' | 'pdf') => void }) => (
+  const renderExportActions = (onExport: (type: 'print' | 'excel' | 'pdf') => void) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2"><Download className="w-4 h-4" />{t.fr_export_btn}</Button>
