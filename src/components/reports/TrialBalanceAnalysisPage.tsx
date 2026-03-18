@@ -253,7 +253,26 @@ export function TrialBalanceAnalysisPage() {
         }
       });
 
-      // بناء بيانات ميزان المراجعة الشامل مع الحسابات الرئيسية الهرمية
+      // بناء بيانات ميزان المراجعة الشامل مع الحسابات الرئيسية من قاعدة البيانات
+      // جلب جميع الحسابات (بما فيها الرئيسية التي ليس لها حركة مباشرة)
+      const { data: allDbAccounts } = await supabase
+        .from('account_categories')
+        .select('id, code, name, type, parent_id')
+        .eq('company_id', companyId)
+        .order('code', { ascending: true });
+
+      const dbAccounts = allDbAccounts || [];
+      
+      // تحديد الحسابات الفرعية (التي لها حركة فعلية)
+      const leafAccountCodes = new Set(systemData.accounts.map(a => a.code));
+      
+      // تحديد الحسابات الرئيسية (التي لديها أطفال)
+      const parentIds = new Set(dbAccounts.filter(a => a.parent_id).map(a => a.parent_id));
+      
+      // بناء خريطة الحسابات بالـ ID
+      const accountByIdMap = new Map(dbAccounts.map(a => [a.id, a]));
+      
+      // بناء الحسابات الفرعية مع بياناتها
       const leafAccounts: AccountData[] = systemData.accounts.map(acc => ({
         code: acc.code,
         name: acc.name,
@@ -266,67 +285,49 @@ export function TrialBalanceAnalysisPage() {
         category: categorizeAccountByCode(acc.code, acc.name),
       }));
 
-      // بناء الحسابات الرئيسية (الأب) تلقائياً من أكواد الحسابات الفرعية
+      // بناء الحسابات الرئيسية من قاعدة البيانات (بتجميع أرصدة الأبناء)
       const parentMap = new Map<string, AccountData>();
       
-      leafAccounts.forEach(acc => {
-        if (!acc.code || acc.code.length <= 1) return;
-        // إنشاء حسابات أب لكل مستوى أعلى
-        for (let len = 1; len < acc.code.length; len++) {
-          const parentCode = acc.code.substring(0, len);
-          const existing = parentMap.get(parentCode);
+      // لكل حساب فرعي له حركة، صعّد الأرصدة لجميع الآباء
+      systemData.accounts.forEach(acc => {
+        // ابحث عن الحساب في قاعدة البيانات
+        const dbAcc = dbAccounts.find(a => a.code === acc.code);
+        if (!dbAcc) return;
+        
+        // صعّد لكل أب في السلسلة
+        let currentParentId = dbAcc.parent_id;
+        while (currentParentId) {
+          const parentAcc = accountByIdMap.get(currentParentId);
+          if (!parentAcc) break;
+          
+          const existing = parentMap.get(parentAcc.code);
           if (existing) {
             existing.openingDebit += acc.openingDebit;
             existing.openingCredit += acc.openingCredit;
             existing.movementDebit += acc.movementDebit;
             existing.movementCredit += acc.movementCredit;
-            existing.closingDebit += acc.closingDebit;
-            existing.closingCredit += acc.closingCredit;
           } else {
-            // تحديد اسم الحساب الرئيسي
-            const parentNames: Record<string, string> = {
-              '1': 'الأصول',
-              '11': 'الأصول المتداولة',
-              '110': 'النقد والبنوك',
-              '1101': 'الصندوق',
-              '1102': 'البنوك',
-              '12': 'المدينون',
-              '13': 'المشاريع',
-              '130': 'مشاريع تحت التنفيذ',
-              '14': 'أصول أخرى',
-              '15': 'الأصول الثابتة',
-              '2': 'الخصوم',
-              '21': 'الخصوم المتداولة',
-              '22': 'خصوم طويلة الأجل',
-              '23': 'أطراف ذات علاقة',
-              '3': 'حقوق الملكية',
-              '31': 'رأس المال والاحتياطيات',
-              '4': 'الإيرادات',
-              '41': 'إيرادات النشاط',
-              '5': 'المصروفات',
-              '51': 'تكلفة المبيعات',
-              '52': 'مصاريف إدارية',
-              '53': 'مصاريف تشغيلية',
-            };
-            parentMap.set(parentCode, {
-              code: parentCode,
-              name: parentNames[parentCode] || `حساب ${parentCode}`,
+            parentMap.set(parentAcc.code, {
+              code: parentAcc.code,
+              name: parentAcc.name,
               openingDebit: acc.openingDebit,
               openingCredit: acc.openingCredit,
               movementDebit: acc.movementDebit,
               movementCredit: acc.movementCredit,
-              closingDebit: acc.closingDebit,
-              closingCredit: acc.closingCredit,
+              closingDebit: 0,
+              closingCredit: 0,
               category: 'حساب رئيسي',
             });
           }
+          
+          currentParentId = parentAcc.parent_id;
         }
       });
 
       // دمج الحسابات الرئيسية والفرعية وترتيبها
       const allAccounts = [...leafAccounts];
       parentMap.forEach((parentAcc) => {
-        // إعادة حساب صافي الرصيد للحساب الرئيسي
+        // حساب صافي الرصيد للحساب الرئيسي
         const netBalance = (parentAcc.openingDebit + parentAcc.movementDebit) - (parentAcc.openingCredit + parentAcc.movementCredit);
         parentAcc.closingDebit = netBalance > 0 ? netBalance : 0;
         parentAcc.closingCredit = netBalance < 0 ? Math.abs(netBalance) : 0;
