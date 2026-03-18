@@ -246,6 +246,11 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
 
   const handleCardsConfigChange = useCallback((cards: CardConfig[]) => {
     setCardConfigs(cards);
+    // Keep widget visibility in sync with card customizer visibility
+    setWidgetConfigs(prev => prev.map(w => {
+      const matched = cards.find(c => c.id === w.id);
+      return matched ? { ...w, visible: matched.visible, label: matched.label || w.label } : w;
+    }));
   }, []);
 
   // Load widget configs from saved dashboard config - merge with defaults
@@ -268,7 +273,17 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
           order: validSavedWidgets.length + i,
         })),
       ].sort((a, b) => a.order - b.order);
-      setWidgetConfigs(merged);
+
+      // Reconcile legacy mismatch: stat_cards visibility is the source for card toggles
+      const statCardVisibility = new Map(
+        (dashboardConfig.stat_cards || []).map((c: any) => [c.id, c.visible ?? true])
+      );
+      const reconciled = merged.map(w => {
+        if (!statCardVisibility.has(w.id)) return w;
+        return { ...w, visible: Boolean(statCardVisibility.get(w.id)) };
+      });
+
+      setWidgetConfigs(reconciled);
     }
   }, [dashboardConfig, isEditMode]);
 
@@ -306,7 +321,16 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
           order: validSavedWidgets.length + i,
         })),
       ].sort((a, b) => a.order - b.order);
-      setWidgetConfigs(merged);
+
+      const statCardVisibility = new Map(
+        (dashboardConfig.stat_cards || []).map((c: any) => [c.id, c.visible ?? true])
+      );
+      const reconciled = merged.map(w => {
+        if (!statCardVisibility.has(w.id)) return w;
+        return { ...w, visible: Boolean(statCardVisibility.get(w.id)) };
+      });
+
+      setWidgetConfigs(reconciled);
     } else {
       setWidgetConfigs(DEFAULT_WIDGETS);
     }
@@ -319,16 +343,8 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   }, [widgetConfigs]);
 
   const sortedWidgets = useMemo(() => {
-    return [...widgetConfigs]
-      .sort((a, b) => a.order - b.order)
-      .filter(w => {
-        if (!w.visible) return false;
-        // Also check cardConfigs visibility (from customizer)
-        const cardCfg = cardConfigs.find(c => c.id === w.id);
-        if (cardCfg && !cardCfg.visible) return false;
-        return true;
-      });
-  }, [widgetConfigs, cardConfigs]);
+    return [...widgetConfigs].sort((a, b) => a.order - b.order).filter(w => w.visible);
+  }, [widgetConfigs]);
 
   // Helper to get card config by id
   const getCardConfig = useCallback((id: string): CardConfig => {
