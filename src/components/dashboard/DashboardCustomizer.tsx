@@ -203,10 +203,17 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
 
   const filteredAccounts = useMemo(() => {
     if (!accountSearch.trim()) return accounts.slice(0, 50);
-    const q = normalizeArabic(accountSearch);
-    return accounts.filter(a => 
-      normalizeArabic(a.name).includes(q) || a.code.toLowerCase().includes(q)
-    );
+    const q = normalizeArabic(accountSearch.trim());
+    const qRaw = accountSearch.trim();
+    return accounts.filter(a => {
+      // Search by normalized Arabic name
+      if (normalizeArabic(a.name).includes(q)) return true;
+      // Search by account code (exact start or contains)
+      if (a.code.startsWith(qRaw) || a.code.includes(qRaw)) return true;
+      // Search by code as number (e.g. "4" matches code "4", "41", "4101")
+      if (/^\d+$/.test(qRaw) && a.code.startsWith(qRaw)) return true;
+      return false;
+    });
   }, [accounts, accountSearch]);
   
   // Drag and drop state
