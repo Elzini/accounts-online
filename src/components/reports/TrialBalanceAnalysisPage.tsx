@@ -1727,6 +1727,228 @@ export function TrialBalanceAnalysisPage() {
     }
   };
 
+  // تصدير ميزان المراجعة فقط إلى Excel
+  const exportTrialBalanceToExcel = async () => {
+    if (!reconciliationData.rawAccounts.length) {
+      toast.error('لا توجد بيانات لتصديرها');
+      return;
+    }
+
+    try {
+      const wb = utils.book_new();
+
+      const headerRows = [
+        [data.companyName || company?.name || 'الشركة'],
+        ['ميزان المراجعة الشامل (رصيد سابق + حركة + صافي)'],
+        [data.period.from && data.period.to ? `الفترة من ${data.period.from} إلى ${data.period.to}` : ''],
+        [''],
+        ['الرمز', 'اسم الحساب', 'رصيد سابق - مدين', 'رصيد سابق - دائن', 'الحركة - مدين', 'الحركة - دائن', 'الصافي - مدين', 'الصافي - دائن'],
+      ];
+
+      const dataRows = reconciliationData.rawAccounts.map(acc => [
+        acc.code || '',
+        acc.name,
+        acc.openingDebit > 0 ? acc.openingDebit : '',
+        acc.openingCredit > 0 ? acc.openingCredit : '',
+        acc.movementDebit > 0 ? acc.movementDebit : '',
+        acc.movementCredit > 0 ? acc.movementCredit : '',
+        acc.closingDebit > 0 ? acc.closingDebit : '',
+        acc.closingCredit > 0 ? acc.closingCredit : '',
+      ]);
+
+      // صف الإجمالي
+      const totalsRow = [
+        '', 'الإجمالي',
+        calculatedTotals.openingDebit || '',
+        calculatedTotals.openingCredit || '',
+        calculatedTotals.movementDebit || '',
+        calculatedTotals.movementCredit || '',
+        calculatedTotals.closingDebit || '',
+        calculatedTotals.closingCredit || '',
+      ];
+
+      const allRows = [...headerRows, ...dataRows, totalsRow];
+      const ws = utils.aoa_to_sheet(allRows);
+
+      ws['!cols'] = [
+        { wch: 12 }, { wch: 35 },
+        { wch: 18 }, { wch: 18 },
+        { wch: 18 }, { wch: 18 },
+        { wch: 18 }, { wch: 18 },
+      ];
+
+      utils.book_append_sheet(wb, ws, 'ميزان المراجعة');
+
+      const { writeFile } = await import('@/lib/excelUtils');
+      await writeFile(wb, `ميزان_المراجعة_${data.period.to || new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('تم تصدير ميزان المراجعة بنجاح');
+    } catch (error) {
+      console.error('Error exporting trial balance:', error);
+      toast.error('فشل تصدير ميزان المراجعة');
+    }
+  };
+
+  // تصدير ميزان المراجعة إلى PDF
+  const exportTrialBalanceToPdf = async () => {
+    if (!reconciliationData.rawAccounts.length) {
+      toast.error('لا توجد بيانات لتصديرها');
+      return;
+    }
+
+    try {
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      doc.setR2L(true);
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const mg = 10;
+
+      doc.setFillColor(59, 130, 246);
+      doc.rect(0, 0, pageWidth, 30, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.text(data.companyName || company?.name || 'الشركة', pageWidth - mg, 14, { align: 'right' });
+      doc.setFontSize(11);
+      doc.text('ميزان المراجعة الشامل (رصيد سابق + حركة + صافي)', pageWidth - mg, 24, { align: 'right' });
+
+      if (data.period.from && data.period.to) {
+        doc.setFontSize(9);
+        doc.text(`الفترة من ${data.period.from} إلى ${data.period.to}`, mg, 14, { align: 'left' });
+      }
+
+      const tableHeaders = ['الرمز', 'اسم الحساب', 'مدين', 'دائن', 'مدين', 'دائن', 'مدين', 'دائن'];
+      const tableData = reconciliationData.rawAccounts.map(acc => [
+        acc.code || '-',
+        acc.name,
+        acc.openingDebit > 0 ? formatCurrency(acc.openingDebit) : '-',
+        acc.openingCredit > 0 ? formatCurrency(acc.openingCredit) : '-',
+        acc.movementDebit > 0 ? formatCurrency(acc.movementDebit) : '-',
+        acc.movementCredit > 0 ? formatCurrency(acc.movementCredit) : '-',
+        acc.closingDebit > 0 ? formatCurrency(acc.closingDebit) : '-',
+        acc.closingCredit > 0 ? formatCurrency(acc.closingCredit) : '-',
+      ]);
+
+      tableData.push([
+        '', 'الإجمالي',
+        formatCurrency(calculatedTotals.openingDebit),
+        formatCurrency(calculatedTotals.openingCredit),
+        formatCurrency(calculatedTotals.movementDebit),
+        formatCurrency(calculatedTotals.movementCredit),
+        formatCurrency(calculatedTotals.closingDebit),
+        formatCurrency(calculatedTotals.closingCredit),
+      ]);
+
+      (doc as any).autoTable({
+        head: [tableHeaders],
+        body: tableData,
+        startY: 35,
+        margin: { left: mg, right: mg },
+        styles: { font: 'helvetica', fontSize: 8, cellPadding: 3, halign: 'center', valign: 'middle' },
+        headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [249, 250, 251] },
+        didParseCell: (cellData: any) => {
+          if (cellData.row.index === tableData.length - 1) {
+            cellData.cell.styles.fillColor = [219, 234, 254];
+            cellData.cell.styles.fontStyle = 'bold';
+            cellData.cell.styles.fontSize = 9;
+          }
+        },
+      });
+
+      const totalPages = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(156, 163, 175);
+        doc.text(`صفحة ${i} من ${totalPages}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
+      }
+
+      doc.save(`ميزان_المراجعة_${data.period.to || new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success('تم تصدير PDF بنجاح');
+    } catch (error) {
+      console.error('Error exporting trial balance PDF:', error);
+      toast.error('فشل تصدير PDF');
+    }
+  };
+
+  // طباعة ميزان المراجعة
+  const printTrialBalance = () => {
+    if (!reconciliationData.rawAccounts.length) {
+      toast.error('لا توجد بيانات للطباعة');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const rows = reconciliationData.rawAccounts.map(acc => {
+      const code = acc.code || '';
+      const isParent = acc.category === 'عنوان قسم' || acc.category === 'حساب رئيسي';
+      const indent = code.length <= 1 ? 0 : code.length <= 2 ? 15 : code.length <= 3 ? 30 : 45;
+      return `<tr style="${isParent ? 'font-weight:bold;background:#f0f4ff;' : ''}">
+        <td style="padding:4px 8px;border:1px solid #ddd;text-align:center;font-family:monospace;padding-right:${indent + 8}px">${escapeHtml(code)}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;padding-right:${indent + 8}px">${escapeHtml(acc.name)}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;text-align:center">${acc.openingDebit > 0 ? formatCurrency(acc.openingDebit) : '-'}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;text-align:center">${acc.openingCredit > 0 ? formatCurrency(acc.openingCredit) : '-'}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;text-align:center">${acc.movementDebit > 0 ? formatCurrency(acc.movementDebit) : '-'}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;text-align:center">${acc.movementCredit > 0 ? formatCurrency(acc.movementCredit) : '-'}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;text-align:center">${acc.closingDebit > 0 ? formatCurrency(acc.closingDebit) : '-'}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;text-align:center">${acc.closingCredit > 0 ? formatCurrency(acc.closingCredit) : '-'}</td>
+      </tr>`;
+    }).join('');
+
+    printWindow.document.write(`<!DOCTYPE html><html dir="rtl"><head>
+      <meta charset="UTF-8"><title>ميزان المراجعة</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; direction: rtl; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th { background: #3b82f6; color: white; padding: 6px; border: 1px solid #ddd; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .totals-row td { font-weight: bold; background: #dbeafe; font-size: 12px; }
+        @media print { body { margin: 5mm; } }
+      </style>
+    </head><body>
+      <div class="header">
+        <h2>${escapeHtml(data.companyName || company?.name || 'الشركة')}</h2>
+        <p>ميزان المراجعة الشامل (رصيد سابق + حركة + صافي)</p>
+        ${data.period.from && data.period.to ? `<p style="font-size:12px">الفترة من ${data.period.from} إلى ${data.period.to}</p>` : ''}
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th rowspan="2">الرمز</th><th rowspan="2">اسم الحساب</th>
+            <th colspan="2" style="background:#7c3aed">الرصيد السابق</th>
+            <th colspan="2" style="background:#2563eb">الحركة</th>
+            <th colspan="2" style="background:#d97706">الصافي</th>
+          </tr>
+          <tr>
+            <th style="background:#8b5cf6">مدين</th><th style="background:#8b5cf6">دائن</th>
+            <th style="background:#3b82f6">مدين</th><th style="background:#3b82f6">دائن</th>
+            <th style="background:#f59e0b">مدين</th><th style="background:#f59e0b">دائن</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr class="totals-row">
+            <td colspan="2" style="text-align:center;border:1px solid #ddd;padding:6px">الإجمالي</td>
+            <td style="text-align:center;border:1px solid #ddd;padding:6px">${formatCurrency(calculatedTotals.openingDebit)}</td>
+            <td style="text-align:center;border:1px solid #ddd;padding:6px">${formatCurrency(calculatedTotals.openingCredit)}</td>
+            <td style="text-align:center;border:1px solid #ddd;padding:6px">${formatCurrency(calculatedTotals.movementDebit)}</td>
+            <td style="text-align:center;border:1px solid #ddd;padding:6px">${formatCurrency(calculatedTotals.movementCredit)}</td>
+            <td style="text-align:center;border:1px solid #ddd;padding:6px">${formatCurrency(calculatedTotals.closingDebit)}</td>
+            <td style="text-align:center;border:1px solid #ddd;padding:6px">${formatCurrency(calculatedTotals.closingCredit)}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <p style="text-align:center;font-size:10px;color:#999;margin-top:20px">تاريخ الطباعة: ${new Date().toLocaleDateString('ar-SA')}</p>
+    </body></html>`);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   return (
     <div className="space-y-6" dir="rtl">
       {/* Upload Section */}
