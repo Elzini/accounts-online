@@ -9,6 +9,7 @@ interface PrintReportOptions {
   columns: TableColumn[];
   data: Record<string, any>[];
   summaryCards?: { label: string; value: string }[];
+  columnGroups?: { label: string; colSpan: number }[];
 }
 
 // HTML escaping function to prevent XSS attacks
@@ -32,6 +33,7 @@ export function usePrintReport() {
     columns,
     data,
     summaryCards,
+    columnGroups,
   }: PrintReportOptions) => {
     const currentDate = new Date().toLocaleDateString('ar-SA');
 
@@ -49,19 +51,40 @@ export function usePrintReport() {
       `
       : '';
 
+    // Build thead with optional column groups
+    const theadHtml = columnGroups && columnGroups.length > 0
+      ? `
+        <thead>
+          <tr>
+            <th rowspan="2" style="text-align:center;vertical-align:middle">${escapeHtml(columns[0].header)}</th>
+            <th rowspan="2" style="text-align:center;vertical-align:middle">${escapeHtml(columns[1].header)}</th>
+            ${columnGroups.map((g, i) => {
+              const colors = ['#16a34a', '#3b82f6', '#d97706'];
+              return `<th colspan="${g.colSpan}" style="text-align:center;background:${colors[i % colors.length]}">${escapeHtml(g.label)}</th>`;
+            }).join('')}
+          </tr>
+          <tr>
+            ${columns.slice(2).map(col => `<th style="text-align:center">${escapeHtml(col.header)}</th>`).join('')}
+          </tr>
+        </thead>
+      `
+      : `
+        <thead>
+          <tr>
+            ${columns.map(col => `<th>${escapeHtml(col.header)}</th>`).join('')}
+          </tr>
+        </thead>
+      `;
+
     // Create table HTML with escaped values
     const tableHtml = data.length > 0
       ? `
         <table>
-          <thead>
-            <tr>
-              ${columns.map(col => `<th>${escapeHtml(col.header)}</th>`).join('')}
-            </tr>
-          </thead>
+          ${theadHtml}
           <tbody>
             ${data.map(row => `
               <tr>
-                ${columns.map(col => `<td>${escapeHtml(row[col.key]) || '-'}</td>`).join('')}
+                ${columns.map(col => `<td style="text-align:center">${escapeHtml(row[col.key]) || '-'}</td>`).join('')}
               </tr>
             `).join('')}
           </tbody>

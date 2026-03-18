@@ -837,44 +837,80 @@ export async function getComprehensiveTrialBalance(
   };
 }> {
   const accounts = await fetchAccounts(companyId);
-  
-  let query = supabase
+
+  // Get current fiscal year start date for opening balance calculation
+  const { data: fiscalYear } = await supabase
+    .from('fiscal_years')
+    .select('start_date, end_date')
+    .eq('company_id', companyId)
+    .eq('is_current', true)
+    .single();
+
+  const fyStartDate = fiscalYear?.start_date;
+  const effectiveStartDate = startDate || fyStartDate;
+  const effectiveEndDate = endDate || fiscalYear?.end_date;
+
+  // 1) Fetch OPENING balances: all posted entries BEFORE the period start
+  const openingBalances = new Map<string, { debit: number; credit: number }>();
+  if (effectiveStartDate) {
+    const { data: openingLines } = await supabase
+      .from('journal_entry_lines')
+      .select(`
+        account_id, debit, credit,
+        journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
+      `)
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .lt('journal_entry.entry_date', effectiveStartDate);
+
+    (openingLines || []).forEach((line: any) => {
+      const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
+      current.debit += Number(line.debit) || 0;
+      current.credit += Number(line.credit) || 0;
+      openingBalances.set(line.account_id, current);
+    });
+  }
+
+  // 2) Fetch PERIOD movement: entries within the date range
+  let periodQuery = supabase
     .from('journal_entry_lines')
     .select(`
-      account_id,
-      debit,
-      credit,
+      account_id, debit, credit,
       journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
     `)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true);
 
-  if (startDate) {
-    query = query.gte('journal_entry.entry_date', startDate);
+  if (effectiveStartDate) {
+    periodQuery = periodQuery.gte('journal_entry.entry_date', effectiveStartDate);
   }
-  if (endDate) {
-    query = query.lte('journal_entry.entry_date', endDate);
+  if (effectiveEndDate) {
+    periodQuery = periodQuery.lte('journal_entry.entry_date', effectiveEndDate);
   }
 
-  const { data: lines, error } = await query;
-  
+  const { data: periodLines, error } = await periodQuery;
   if (error) throw error;
 
-  const balances = new Map<string, { debit: number; credit: number }>();
-  
-  (lines || []).forEach((line: any) => {
-    const current = balances.get(line.account_id) || { debit: 0, credit: 0 };
+  const periodBalances = new Map<string, { debit: number; credit: number }>();
+  (periodLines || []).forEach((line: any) => {
+    const current = periodBalances.get(line.account_id) || { debit: 0, credit: 0 };
     current.debit += Number(line.debit) || 0;
     current.credit += Number(line.credit) || 0;
-    balances.set(line.account_id, current);
+    periodBalances.set(line.account_id, current);
   });
 
-  // Build account balances map from journal entries (leaf-level only)
-  const leafBalances = new Map<string, { periodDebit: number; periodCredit: number }>();
+  // Build leaf-level balances
+  const leafOpening = new Map<string, { od: number; oc: number }>();
+  const leafPeriod = new Map<string, { pd: number; pc: number }>();
+
   accounts.forEach(account => {
-    const totals = balances.get(account.id) || { debit: 0, credit: 0 };
-    if (totals.debit > 0 || totals.credit > 0) {
-      leafBalances.set(account.id, { periodDebit: totals.debit, periodCredit: totals.credit });
+    const ob = openingBalances.get(account.id);
+    if (ob && (ob.debit > 0 || ob.credit > 0)) {
+      leafOpening.set(account.id, { od: ob.debit, oc: ob.credit });
+    }
+    const pb = periodBalances.get(account.id);
+    if (pb && (pb.debit > 0 || pb.credit > 0)) {
+      leafPeriod.set(account.id, { pd: pb.debit, pc: pb.credit });
     }
   });
 
@@ -882,30 +918,28 @@ export async function getComprehensiveTrialBalance(
   const accountMap = new Map(accounts.map(a => [a.id, a]));
   const childrenOf = (parentId: string) => accounts.filter(a => a.parent_id === parentId);
 
-  // Recursive bottom-up aggregation: returns { periodDebit, periodCredit } for account + all descendants
-  const aggregateCache = new Map<string, { periodDebit: number; periodCredit: number }>();
-  
-  const getAggregated = (accountId: string): { periodDebit: number; periodCredit: number } => {
-    if (aggregateCache.has(accountId)) return aggregateCache.get(accountId)!;
-    
-    const own = leafBalances.get(accountId) || { periodDebit: 0, periodCredit: 0 };
+  // Recursive aggregation
+  const aggCache = new Map<string, { od: number; oc: number; pd: number; pc: number }>();
+
+  const getAggregated = (accountId: string): { od: number; oc: number; pd: number; pc: number } => {
+    if (aggCache.has(accountId)) return aggCache.get(accountId)!;
+
+    const ownO = leafOpening.get(accountId) || { od: 0, oc: 0 };
+    const ownP = leafPeriod.get(accountId) || { pd: 0, pc: 0 };
     const children = childrenOf(accountId);
-    
-    let totalPD = own.periodDebit;
-    let totalPC = own.periodCredit;
-    
+
+    let tOD = ownO.od, tOC = ownO.oc, tPD = ownP.pd, tPC = ownP.pc;
+
     for (const child of children) {
-      const childAgg = getAggregated(child.id);
-      totalPD += childAgg.periodDebit;
-      totalPC += childAgg.periodCredit;
+      const c = getAggregated(child.id);
+      tOD += c.od; tOC += c.oc; tPD += c.pd; tPC += c.pc;
     }
-    
-    const result = { periodDebit: totalPD, periodCredit: totalPC };
-    aggregateCache.set(accountId, result);
+
+    const result = { od: tOD, oc: tOC, pd: tPD, pc: tPC };
+    aggCache.set(accountId, result);
     return result;
   };
 
-  // Pre-compute all aggregations
   accounts.forEach(a => getAggregated(a.id));
 
   // Build hierarchical list
@@ -924,17 +958,20 @@ export async function getComprehensiveTrialBalance(
     const hasChildren = children.length > 0;
     const agg = getAggregated(account.id);
 
-    // Skip accounts with no movement at all
-    if (agg.periodDebit === 0 && agg.periodCredit === 0) return;
+    // Skip accounts with no activity at all
+    if (agg.od === 0 && agg.oc === 0 && agg.pd === 0 && agg.pc === 0) return;
 
-    const netBalance = agg.periodDebit - agg.periodCredit;
+    const openingNet = agg.od - agg.oc;
+    const closingNet = (agg.od + agg.pd) - (agg.oc + agg.pc);
+
     trialAccounts.push({
       account,
-      openingDebit: 0, openingCredit: 0,
-      periodDebit: agg.periodDebit,
-      periodCredit: agg.periodCredit,
-      closingDebit: netBalance > 0 ? netBalance : 0,
-      closingCredit: netBalance < 0 ? Math.abs(netBalance) : 0,
+      openingDebit: openingNet > 0 ? openingNet : 0,
+      openingCredit: openingNet < 0 ? Math.abs(openingNet) : 0,
+      periodDebit: agg.pd,
+      periodCredit: agg.pc,
+      closingDebit: closingNet > 0 ? closingNet : 0,
+      closingCredit: closingNet < 0 ? Math.abs(closingNet) : 0,
       isParent: hasChildren,
       level,
     });
@@ -950,7 +987,7 @@ export async function getComprehensiveTrialBalance(
     .sort((a, b) => a.code.localeCompare(b.code))
     .forEach(account => addAccountHierarchy(account, 0));
 
-  // Calculate totals from leaf accounts only to avoid double counting
+  // Calculate totals from leaf accounts only
   const leafAccounts = trialAccounts.filter(a => !a.isParent);
   const totals = leafAccounts.reduce((acc, item) => ({
     openingDebit: acc.openingDebit + item.openingDebit,

@@ -102,21 +102,30 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
     if (!comprehensiveTrial) return;
     const columns = [
       { header: t.coa_col_code, key: 'code' }, { header: t.coa_col_name, key: 'name' },
+      { header: `${t.acc_debit}`, key: 'openingDebit' }, { header: `${t.acc_credit}`, key: 'openingCredit' },
       { header: `${t.acc_debit}`, key: 'periodDebit' }, { header: `${t.acc_credit}`, key: 'periodCredit' },
       { header: `${t.acc_debit}`, key: 'closingDebit' }, { header: `${t.acc_credit}`, key: 'closingCredit' },
     ];
     const data = comprehensiveTrial.accounts.map(item => ({
       code: item.account.code, name: item.account.name,
+      openingDebit: item.openingDebit > 0 ? fmt(item.openingDebit) : '-',
+      openingCredit: item.openingCredit > 0 ? fmt(item.openingCredit) : '-',
       periodDebit: item.periodDebit > 0 ? fmt(item.periodDebit) : '-',
       periodCredit: item.periodCredit > 0 ? fmt(item.periodCredit) : '-',
       closingDebit: item.closingDebit > 0 ? fmt(item.closingDebit) : '-',
       closingCredit: item.closingCredit > 0 ? fmt(item.closingCredit) : '-',
     }));
     const summaryCards = [
-      { label: t.acc_debit, value: fmt(comprehensiveTrial.totals.periodDebit) + ' ر.س' },
-      { label: t.acc_credit, value: fmt(comprehensiveTrial.totals.periodCredit) + ' ر.س' },
+      { label: `رصيد أول المدة - ${t.acc_debit}`, value: fmt(comprehensiveTrial.totals.openingDebit) + ' ر.س' },
+      { label: `رصيد أول المدة - ${t.acc_credit}`, value: fmt(comprehensiveTrial.totals.openingCredit) + ' ر.س' },
+      { label: `الحركة - ${t.acc_debit}`, value: fmt(comprehensiveTrial.totals.periodDebit) + ' ر.س' },
+      { label: `الحركة - ${t.acc_credit}`, value: fmt(comprehensiveTrial.totals.periodCredit) + ' ر.س' },
     ];
-    if (type === 'print') printReport({ title: t.fr_comprehensive_trial, columns, data, summaryCards });
+    if (type === 'print') printReport({ title: t.fr_comprehensive_trial, columns, data, summaryCards, columnGroups: [
+      { label: 'رصيد أول المدة', colSpan: 2 },
+      { label: t.fr_tab_account_movement || 'الحركة', colSpan: 2 },
+      { label: t.gl_closing_balance || 'رصيد آخر المدة', colSpan: 2 },
+    ] });
     else if (type === 'excel') exportToExcel({ title: t.fr_comprehensive_trial, columns, data, fileName: 'comprehensive-trial-balance', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
     else exportToPdf({ title: t.fr_comprehensive_trial, columns, data, fileName: 'comprehensive-trial-balance', summaryCards });
   };
@@ -495,30 +504,31 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead rowSpan={2} className="text-center border bg-muted/60 w-24">{t.coa_col_code}</TableHead>
+                      <TableHead rowSpan={2} className="text-center border bg-muted/60 w-20">{t.coa_col_code}</TableHead>
                       <TableHead rowSpan={2} className="text-center border bg-muted/60">{t.coa_col_name}</TableHead>
+                      <TableHead colSpan={2} className="text-center border bg-green-100 dark:bg-green-900/30">رصيد أول المدة</TableHead>
                       <TableHead colSpan={2} className="text-center border bg-blue-100 dark:bg-blue-900/30">{t.fr_tab_account_movement}</TableHead>
                       <TableHead colSpan={2} className="text-center border bg-amber-100 dark:bg-amber-900/30">{t.gl_closing_balance}</TableHead>
                     </TableRow>
                     <TableRow>
-                      <TableHead className="text-center border bg-blue-50 dark:bg-blue-900/20 w-32">{t.acc_debit}</TableHead>
-                      <TableHead className="text-center border bg-blue-50 dark:bg-blue-900/20 w-32">{t.acc_credit}</TableHead>
-                      <TableHead className="text-center border bg-amber-50 dark:bg-amber-900/20 w-32">{t.acc_debit}</TableHead>
-                      <TableHead className="text-center border bg-amber-50 dark:bg-amber-900/20 w-32">{t.acc_credit}</TableHead>
+                      <TableHead className="text-center border bg-green-50 dark:bg-green-900/20 w-28">{t.acc_debit}</TableHead>
+                      <TableHead className="text-center border bg-green-50 dark:bg-green-900/20 w-28">{t.acc_credit}</TableHead>
+                      <TableHead className="text-center border bg-blue-50 dark:bg-blue-900/20 w-28">{t.acc_debit}</TableHead>
+                      <TableHead className="text-center border bg-blue-50 dark:bg-blue-900/20 w-28">{t.acc_credit}</TableHead>
+                      <TableHead className="text-center border bg-amber-50 dark:bg-amber-900/20 w-28">{t.acc_debit}</TableHead>
+                      <TableHead className="text-center border bg-amber-50 dark:bg-amber-900/20 w-28">{t.acc_credit}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {comprehensiveTrial.accounts.map((item: any) => {
                       const code = item.account.code;
                       const firstDigit = code.charAt(0);
-                      // Color by account type based on first digit of code
                       const typeColors: Record<string, string> = {
-                        '1': 'bg-amber-50/70 dark:bg-amber-950/20', // Assets
-                        '2': 'bg-rose-50/70 dark:bg-rose-950/20',   // Liabilities
-                        '3': 'bg-emerald-50/70 dark:bg-emerald-950/20', // Revenue
-                        '4': 'bg-orange-50/70 dark:bg-orange-950/20', // Expenses
+                        '1': 'bg-amber-50/70 dark:bg-amber-950/20',
+                        '2': 'bg-rose-50/70 dark:bg-rose-950/20',
+                        '3': 'bg-emerald-50/70 dark:bg-emerald-950/20',
+                        '4': 'bg-orange-50/70 dark:bg-orange-950/20',
                       };
-                      // Special: equity codes (25xx)
                       const isEquity = code.startsWith('25') || item.account.type === 'equity';
                       const rowColor = isEquity 
                         ? 'bg-indigo-50/70 dark:bg-indigo-950/20' 
@@ -544,22 +554,30 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
                             {item.account.name}
                           </TableCell>
                           <TableCell className="text-center border tabular-nums">
-                            {item.periodDebit > 0 ? fmt(item.periodDebit) : ''}
+                            {item.openingDebit > 0 ? fmt(item.openingDebit) : '-'}
                           </TableCell>
                           <TableCell className="text-center border tabular-nums">
-                            {item.periodCredit > 0 ? fmt(item.periodCredit) : ''}
+                            {item.openingCredit > 0 ? fmt(item.openingCredit) : '-'}
                           </TableCell>
                           <TableCell className="text-center border tabular-nums">
-                            {item.closingDebit > 0 ? fmt(item.closingDebit) : ''}
+                            {item.periodDebit > 0 ? fmt(item.periodDebit) : '-'}
                           </TableCell>
                           <TableCell className="text-center border tabular-nums">
-                            {item.closingCredit > 0 ? fmt(item.closingCredit) : ''}
+                            {item.periodCredit > 0 ? fmt(item.periodCredit) : '-'}
+                          </TableCell>
+                          <TableCell className="text-center border tabular-nums">
+                            {item.closingDebit > 0 ? fmt(item.closingDebit) : '-'}
+                          </TableCell>
+                          <TableCell className="text-center border tabular-nums">
+                            {item.closingCredit > 0 ? fmt(item.closingCredit) : '-'}
                           </TableCell>
                         </TableRow>
                       );
                     })}
                     <TableRow className="bg-primary/10 font-bold text-lg border-t-4 border-primary">
                       <TableCell colSpan={2} className="text-center border">{t.total}</TableCell>
+                      <TableCell className="text-center border tabular-nums">{fmt(comprehensiveTrial.totals.openingDebit)}</TableCell>
+                      <TableCell className="text-center border tabular-nums">{fmt(comprehensiveTrial.totals.openingCredit)}</TableCell>
                       <TableCell className="text-center border tabular-nums">{fmt(comprehensiveTrial.totals.periodDebit)}</TableCell>
                       <TableCell className="text-center border tabular-nums">{fmt(comprehensiveTrial.totals.periodCredit)}</TableCell>
                       <TableCell className="text-center border tabular-nums">{fmt(comprehensiveTrial.totals.closingDebit)}</TableCell>
