@@ -177,9 +177,11 @@ export function AccountStatementReport() {
       title: `${t.as_title} - ${selectedAccount.name}`,
       columns, data, fileName: `account_statement_${selectedAccount.code}`,
       summaryData: [
+        { label: 'عدد عمليات الإيداع', value: processedData.debitCount },
+        { label: 'عدد عمليات السحب', value: processedData.creditCount },
         { label: t.as_opening_balance, value: processedData.openingBalance },
-        { label: t.gl_total_debit, value: processedData.totalDebit },
-        { label: t.gl_total_credit, value: processedData.totalCredit },
+        { label: 'إجمالي الإيداعات', value: processedData.totalDebit },
+        { label: 'إجمالي السحوبات', value: processedData.totalCredit },
         { label: t.as_closing_balance, value: processedData.closingBalance },
       ],
     });
