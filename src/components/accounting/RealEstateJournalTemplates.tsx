@@ -249,8 +249,8 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Banknote className="w-5 h-5" />,
     defaultDescription: 'تمويل بنكي / مرابحة للمشروع',
     lines: [
-      { accountCode: '1121', accountName: 'البنك', description: 'مبلغ التمويل المستلم', side: 'debit' },
-      { accountCode: '2210', accountName: 'قروض بنكية / مرابحة', description: 'أصل التمويل', side: 'credit' },
+      { accountCode: '1102', accountName: 'البنك', description: 'مبلغ التمويل المستلم', side: 'debit' },
+      { accountCode: '2201', accountName: 'قروض بنكية / مرابحة', description: 'أصل التمويل', side: 'credit' },
     ],
   },
   {
