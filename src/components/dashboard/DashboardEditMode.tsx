@@ -196,9 +196,12 @@ export function EditableWidgetWrapper({
     ? 'col-span-1' 
     : 'col-span-2 md:col-span-2';
 
+  const dimensionStyle: React.CSSProperties = {};
+  if (cardConfig?.height) dimensionStyle.height = cardConfig.height;
+
   if (!isEditMode) {
     return (
-      <div data-widget-id={id} className={cn(colSpanClass, 'h-fit', className)}>
+      <div data-widget-id={id} className={cn(colSpanClass, 'h-fit', className)} style={dimensionStyle}>
         {children}
       </div>
     );
@@ -248,6 +251,7 @@ export function EditableWidgetWrapper({
         'cursor-grab active:cursor-grabbing',
         className
       )}
+      style={dimensionStyle}
     >
       {/* Top controls */}
       <div className="absolute -top-2 -right-2 z-10 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
@@ -343,7 +347,7 @@ export function EditableWidgetWrapper({
         isResizing && 'border-accent border-solid'
       )} />
 
-      <div className="relative select-none" style={{ pointerEvents: 'none' }}>{children}</div>
+      <div className="relative select-none h-full" style={{ pointerEvents: 'none' }}>{children}</div>
     </div>
   );
 }
