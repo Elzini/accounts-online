@@ -843,24 +843,79 @@ export async function fetchStats(fiscalYearId?: string | null) {
         .lte('invoice_date', fiscalYearEnd);
     }
 
-    const [projectsResult, purchaseInvoicesResult, salesInvoicesResult] = await Promise.all([
+    // Also fetch account 1301 (Projects Under Development) balance from journal entries
+    const account1301Query = supabase
+      .from('account_categories')
+      .select('id')
+      .eq('company_id', companyId)
+      .eq('code', '1301')
+      .maybeSingle();
+
+    const [projectsResult, purchaseInvoicesResult, salesInvoicesResult, account1301Result] = await Promise.all([
       projectsQuery,
       purchaseInvoicesQuery,
       salesInvoicesQuery,
+      account1301Query,
     ]);
 
     const projects = projectsResult.data || [];
     const purchaseInvoices = purchaseInvoicesResult.data || [];
     const salesInvoices = salesInvoicesResult.data || [];
 
-    const activeProjects = projects.filter((project: any) => {
-      const status = String(project.status || '').toLowerCase();
-      return status !== 'completed' && status !== 'cancelled' && status !== 'canceled';
-    }).length;
+    // Calculate totalPurchases from account 1301 journal entries (source of truth)
+    let totalPurchases = 0;
+    const account1301 = account1301Result.data;
+    if (account1301) {
+      // Get all child accounts under 1301
+      const { data: allAccounts } = await supabase
+        .from('account_categories')
+        .select('id, parent_id, type')
+        .eq('company_id', companyId);
 
-    const totalPurchases = Math.round(
-      purchaseInvoices.reduce((sum: number, invoice: any) => sum + (Number(invoice.subtotal) || 0), 0)
-    );
+      if (allAccounts) {
+        const childrenOf = new Map<string, string[]>();
+        allAccounts.forEach(a => {
+          if (a.parent_id) {
+            const existing = childrenOf.get(a.parent_id) || [];
+            existing.push(a.id);
+            childrenOf.set(a.parent_id, existing);
+          }
+        });
+
+        function getLeaves(accountId: string): string[] {
+          const children = childrenOf.get(accountId);
+          if (!children || children.length === 0) return [accountId];
+          return children.flatMap(getLeaves);
+        }
+
+        const leafIds = getLeaves(account1301.id);
+
+        let journalQuery = supabase
+          .from('journal_entry_lines')
+          .select('debit, credit, journal_entries!inner(is_posted, company_id, fiscal_year_id)')
+          .eq('journal_entries.company_id', companyId)
+          .eq('journal_entries.is_posted', true)
+          .in('account_id', leafIds);
+
+        if (fiscalYearId) {
+          journalQuery = journalQuery.eq('journal_entries.fiscal_year_id', fiscalYearId);
+        }
+
+        const { data: lines } = await journalQuery;
+        if (lines) {
+          totalPurchases = lines.reduce((sum: number, line: any) => {
+            return sum + (Number(line.debit) || 0) - (Number(line.credit) || 0);
+          }, 0);
+        }
+      }
+    }
+
+    // Fallback to invoice sum if no account 1301 data
+    if (totalPurchases === 0 && purchaseInvoices.length > 0) {
+      totalPurchases = Math.round(
+        purchaseInvoices.reduce((sum: number, invoice: any) => sum + (Number(invoice.subtotal) || 0), 0)
+      );
+    }
 
     const totalSalesAmount = salesInvoices.reduce(
       (sum: number, invoice: any) => sum + (Number(invoice.subtotal) || 0),
