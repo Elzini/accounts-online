@@ -485,7 +485,7 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div><CardTitle className="flex items-center gap-2"><Scale className="w-5 h-5" />{t.fr_comprehensive_trial}</CardTitle></div>
-                <ExportActions onExport={exportComprehensiveTrial} />
+                {renderExportActions(exportComprehensiveTrial)}
               </div>
             </CardHeader>
             <CardContent>
