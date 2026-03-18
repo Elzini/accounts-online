@@ -116,11 +116,23 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
       closingDebit: item.closingDebit > 0 ? fmt(item.closingDebit) : '-',
       closingCredit: item.closingCredit > 0 ? fmt(item.closingCredit) : '-',
     }));
+    // Add totals row at the end of data
+    data.push({
+      code: '', name: t.total || 'الإجمالي',
+      openingDebit: fmt(comprehensiveTrial.totals.openingDebit),
+      openingCredit: fmt(comprehensiveTrial.totals.openingCredit),
+      periodDebit: fmt(comprehensiveTrial.totals.periodDebit),
+      periodCredit: fmt(comprehensiveTrial.totals.periodCredit),
+      closingDebit: fmt(comprehensiveTrial.totals.closingDebit),
+      closingCredit: fmt(comprehensiveTrial.totals.closingCredit),
+    });
     const summaryCards = [
       { label: `رصيد أول المدة - ${t.acc_debit}`, value: fmt(comprehensiveTrial.totals.openingDebit) + ' ر.س' },
       { label: `رصيد أول المدة - ${t.acc_credit}`, value: fmt(comprehensiveTrial.totals.openingCredit) + ' ر.س' },
       { label: `الحركة - ${t.acc_debit}`, value: fmt(comprehensiveTrial.totals.periodDebit) + ' ر.س' },
       { label: `الحركة - ${t.acc_credit}`, value: fmt(comprehensiveTrial.totals.periodCredit) + ' ر.س' },
+      { label: `رصيد آخر المدة - ${t.acc_debit}`, value: fmt(comprehensiveTrial.totals.closingDebit) + ' ر.س' },
+      { label: `رصيد آخر المدة - ${t.acc_credit}`, value: fmt(comprehensiveTrial.totals.closingCredit) + ' ر.س' },
     ];
     if (type === 'print') printReport({ title: t.fr_comprehensive_trial, columns, data, summaryCards, columnGroups: [
       { label: 'رصيد أول المدة', colSpan: 2 },
