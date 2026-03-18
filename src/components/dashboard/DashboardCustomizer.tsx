@@ -182,6 +182,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
   const { data: savedConfig, isLoading } = useDashboardConfig();
   const saveConfig = useSaveDashboardConfig();
   const { t } = useLanguage();
+  const industryLabels = useIndustryLabels();
 
   const [cards, setCards] = useState<CardConfig[]>(DEFAULT_STAT_CARDS);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
