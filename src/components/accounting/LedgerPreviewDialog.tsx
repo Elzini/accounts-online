@@ -42,7 +42,7 @@ interface LedgerPreviewDialogProps {
 }
 
 const formatCurrency = (value: number) => {
-  return String(Math.round(value));
+  return plainFormat(value);
 };
 
 const getAccountTypeLabel = (type: string) => {

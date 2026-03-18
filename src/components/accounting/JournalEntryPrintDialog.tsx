@@ -303,10 +303,10 @@ export function JournalEntryPrintDialog({ entry, accounts, open, onClose }: Jour
                   الإجـــــــــمـــالي
                 </td>
                 <td style={{ padding: '8px 6px', textAlign: 'center', border: '1px solid #000', borderTop: '2px solid #000', fontSize: '13px', fontFamily: "'Courier New', monospace", direction: 'ltr', fontWeight: 'bold' }}>
-                  {String(Math.round(entry.total_debit))}
+                  {plainFormat(entry.total_debit)}
                 </td>
                 <td style={{ padding: '8px 6px', textAlign: 'center', border: '1px solid #000', borderTop: '2px solid #000', fontSize: '13px', fontFamily: "'Courier New', monospace", direction: 'ltr', fontWeight: 'bold' }}>
-                  {String(Math.round(entry.total_credit))}
+                  {plainFormat(entry.total_credit)}
                 </td>
                 <td colSpan={2} style={{ padding: '8px 6px', border: '1px solid #000', borderTop: '2px solid #000' }}></td>
               </tr>

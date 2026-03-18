@@ -247,7 +247,7 @@ export function JournalEntriesPage() {
   // Get next entry number
   const nextEntryNumber = filteredEntries.length > 0 ? Math.max(...filteredEntries.map(e => e.entry_number)) + 1 : 1;
 
-  const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
+  const fmt = (n: number) => plainFormat(n);
 
   const printJournalSheet = () => {
     if (!filteredEntries.length) {
