@@ -616,7 +616,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
     }
     setDetailData(data);
     setDetailDialogOpen(true);
-  }, [fiscalYearCars, fiscalYearSales, buildPurchaseCarDetails, buildSalesCarDetails, getCardLabel, industryLabels]);
+  }, [fiscalYearCars, fiscalYearSales, buildPurchaseCarDetails, buildSalesCarDetails, getCardLabel, industryLabels, isCarDealership, companyId]);
 
   // Track animation index for staggered entry
   let statCardIndex = 0;
