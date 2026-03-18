@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ActivePage } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { useDraggable } from '@/hooks/useDraggable';
 
 interface FloatingQuickActionsProps {
   setActivePage: (page: ActivePage) => void;
@@ -23,18 +24,23 @@ export function FloatingQuickActions({ setActivePage }: FloatingQuickActionsProp
   const { language } = useLanguage();
   const isAr = language === 'ar';
 
+  const { position, dragHandleProps, wasDragged } = useDraggable({
+    initialPosition: { x: isAr ? 20 : window.innerWidth - 76, y: window.innerHeight - 80 },
+    storageKey: 'quick-actions-position',
+  });
+
   const handleAction = (page: ActivePage) => {
     setActivePage(page);
     setIsOpen(false);
   };
 
   return (
-    <div className={cn("fixed z-50", isAr ? "left-5 bottom-20 md:bottom-6" : "right-5 bottom-20 md:bottom-6")}>
+    <div className="fixed z-50" style={{ left: position.x, top: position.y }}>
       {/* Action buttons */}
       <div className={cn(
         "flex flex-col-reverse gap-2 mb-3 transition-all duration-300",
         isOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"
-      )}>
+      )} style={{ position: 'absolute', bottom: '100%', left: 0 }}>
         {actions.map((action, i) => {
           const Icon = action.icon;
           return (
@@ -65,20 +71,20 @@ export function FloatingQuickActions({ setActivePage }: FloatingQuickActionsProp
 
       {/* Main FAB */}
       <div className={cn("flex items-center gap-2", isAr ? "flex-row" : "flex-row-reverse")}>
-        <Button
-          size="icon"
-          onClick={() => setIsOpen(!isOpen)}
+        <div
+          {...dragHandleProps}
+          onClick={() => { if (!wasDragged()) setIsOpen(!isOpen); }}
           className={cn(
-            "w-14 h-14 rounded-full shadow-xl transition-all duration-300",
+            "w-14 h-14 rounded-full shadow-xl transition-all duration-300 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none select-none",
             isOpen
               ? "bg-destructive hover:bg-destructive/90 rotate-45"
               : "bg-primary hover:bg-primary/90"
           )}
         >
-          {isOpen ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
-        </Button>
+          {isOpen ? <X className="w-6 h-6 text-primary-foreground pointer-events-none" /> : <Plus className="w-6 h-6 text-primary-foreground pointer-events-none" />}
+        </div>
         {!isOpen && (
-          <span className="text-xs font-semibold bg-card text-card-foreground px-3 py-2 rounded-full shadow-lg border border-border whitespace-nowrap">
+          <span className="text-xs font-semibold bg-card text-card-foreground px-3 py-2 rounded-full shadow-lg border border-border whitespace-nowrap pointer-events-none">
             {isAr ? 'اختصارات' : 'Shortcuts'}
           </span>
         )}
