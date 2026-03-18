@@ -229,6 +229,11 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
   
   const [configLoaded, setConfigLoaded] = useState(false);
   
+  // Reset when dialog reopens
+  useEffect(() => {
+    if (open) setConfigLoaded(false);
+  }, [open]);
+  
   useEffect(() => {
     if (configLoaded) return; // Only load once
     const labels = industryLabelsRef.current;
