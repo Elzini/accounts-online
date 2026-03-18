@@ -315,6 +315,12 @@ export async function getSystemFinancialStatements(
     total: costOfRevenue,
   };
 
+  // إيضاح مصاريف البيع والتسويق (IAS 1.103)
+  const sellingExpensesNote = {
+    items: sellingAccounts.map(a => ({ name: a.name, amount: Math.abs(getBalance(a)) })).filter(a => a.amount !== 0),
+    total: sellingAndMarketingExpenses,
+  };
+
   // إيضاح المصاريف العمومية والإدارية
   const generalAndAdminExpensesNote = {
     items: adminAccounts.map(a => ({ name: a.name, amount: Math.abs(getBalance(a)) })).filter(a => a.amount !== 0),
