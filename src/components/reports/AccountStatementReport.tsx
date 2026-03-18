@@ -295,7 +295,13 @@ export function AccountStatementReport() {
                    {t.as_previous_balance}: <span className="font-bold text-foreground">{formatCurrency(processedData.openingBalance)}</span>
                  </span>
                  <span className="text-muted-foreground">
+                   عدد الإيداعات: <span className="font-bold text-foreground">{processedData.debitCount}</span>
+                 </span>
+                 <span className="text-muted-foreground">
                    إجمالي الإيداعات: <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(processedData.totalDebit)}</span>
+                 </span>
+                 <span className="text-muted-foreground">
+                   عدد السحوبات: <span className="font-bold text-foreground">{processedData.creditCount}</span>
                  </span>
                  <span className="text-muted-foreground">
                    إجمالي السحوبات: <span className="font-bold text-rose-600 dark:text-rose-400">{formatCurrency(processedData.totalCredit)}</span>
