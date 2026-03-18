@@ -197,7 +197,11 @@ export function EditableWidgetWrapper({
     : 'col-span-2 md:col-span-2';
 
   const dimensionStyle: React.CSSProperties = {};
-  if (cardConfig?.height) dimensionStyle.height = cardConfig.height;
+  if (cardConfig?.height) dimensionStyle.minHeight = cardConfig.height;
+  if (cardConfig?.width) {
+    dimensionStyle.width = cardConfig.width;
+    dimensionStyle.maxWidth = '100%';
+  }
 
   if (!isEditMode) {
     return (
