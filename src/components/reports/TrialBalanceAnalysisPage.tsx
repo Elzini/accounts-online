@@ -253,8 +253,8 @@ export function TrialBalanceAnalysisPage() {
         }
       });
 
-      // بناء بيانات ميزان المراجعة الشامل
-      const rawAccounts: AccountData[] = systemData.accounts.map(acc => ({
+      // بناء بيانات ميزان المراجعة الشامل مع الحسابات الرئيسية الهرمية
+      const leafAccounts: AccountData[] = systemData.accounts.map(acc => ({
         code: acc.code,
         name: acc.name,
         openingDebit: acc.openingDebit,
@@ -266,12 +266,82 @@ export function TrialBalanceAnalysisPage() {
         category: categorizeAccountByCode(acc.code, acc.name),
       }));
 
+      // بناء الحسابات الرئيسية (الأب) تلقائياً من أكواد الحسابات الفرعية
+      const parentMap = new Map<string, AccountData>();
+      
+      leafAccounts.forEach(acc => {
+        if (!acc.code || acc.code.length <= 1) return;
+        // إنشاء حسابات أب لكل مستوى أعلى
+        for (let len = 1; len < acc.code.length; len++) {
+          const parentCode = acc.code.substring(0, len);
+          const existing = parentMap.get(parentCode);
+          if (existing) {
+            existing.openingDebit += acc.openingDebit;
+            existing.openingCredit += acc.openingCredit;
+            existing.movementDebit += acc.movementDebit;
+            existing.movementCredit += acc.movementCredit;
+            existing.closingDebit += acc.closingDebit;
+            existing.closingCredit += acc.closingCredit;
+          } else {
+            // تحديد اسم الحساب الرئيسي
+            const parentNames: Record<string, string> = {
+              '1': 'الأصول',
+              '11': 'الأصول المتداولة',
+              '110': 'النقد والبنوك',
+              '1101': 'الصندوق',
+              '1102': 'البنوك',
+              '12': 'المدينون',
+              '13': 'المشاريع',
+              '130': 'مشاريع تحت التنفيذ',
+              '14': 'أصول أخرى',
+              '15': 'الأصول الثابتة',
+              '2': 'الخصوم',
+              '21': 'الخصوم المتداولة',
+              '22': 'خصوم طويلة الأجل',
+              '23': 'أطراف ذات علاقة',
+              '3': 'حقوق الملكية',
+              '31': 'رأس المال والاحتياطيات',
+              '4': 'الإيرادات',
+              '41': 'إيرادات النشاط',
+              '5': 'المصروفات',
+              '51': 'تكلفة المبيعات',
+              '52': 'مصاريف إدارية',
+              '53': 'مصاريف تشغيلية',
+            };
+            parentMap.set(parentCode, {
+              code: parentCode,
+              name: parentNames[parentCode] || `حساب ${parentCode}`,
+              openingDebit: acc.openingDebit,
+              openingCredit: acc.openingCredit,
+              movementDebit: acc.movementDebit,
+              movementCredit: acc.movementCredit,
+              closingDebit: acc.closingDebit,
+              closingCredit: acc.closingCredit,
+              category: 'حساب رئيسي',
+            });
+          }
+        }
+      });
+
+      // دمج الحسابات الرئيسية والفرعية وترتيبها
+      const allAccounts = [...leafAccounts];
+      parentMap.forEach((parentAcc) => {
+        // إعادة حساب صافي الرصيد للحساب الرئيسي
+        const netBalance = (parentAcc.openingDebit + parentAcc.movementDebit) - (parentAcc.openingCredit + parentAcc.movementCredit);
+        parentAcc.closingDebit = netBalance > 0 ? netBalance : 0;
+        parentAcc.closingCredit = netBalance < 0 ? Math.abs(netBalance) : 0;
+        allAccounts.push(parentAcc);
+      });
+      
+      // ترتيب حسب الكود
+      allAccounts.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
+
       setData(result);
       setReconciliationData({
         originalTotalDebit: systemData.totals.closingDebit,
         originalTotalCredit: systemData.totals.closingCredit,
         excludedAccounts: [],
-        rawAccounts,
+        rawAccounts: allAccounts,
       });
       setFileName('بيانات النظام');
       
@@ -2204,6 +2274,7 @@ export function TrialBalanceAnalysisPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
+                  <th className="text-center py-2 px-2 font-semibold w-24" rowSpan={2}>الرمز</th>
                   <th className="text-right py-2 px-2 font-semibold" rowSpan={2}>اسم الحساب</th>
                   <th className="text-center py-2 px-2 font-semibold border-x" colSpan={2}>الرصيد السابق</th>
                   <th className="text-center py-2 px-2 font-semibold border-x" colSpan={2}>الحركة</th>
@@ -2221,106 +2292,84 @@ export function TrialBalanceAnalysisPage() {
               </thead>
               <tbody>
                 {reconciliationData.rawAccounts
-                  .filter(acc => acc.category !== 'عنوان قسم' && acc.category !== 'حساب رئيسي')
-                  .map((acc, idx) => (
-                    <tr key={idx} className="border-b hover:bg-muted/20">
-                      <td className="py-2 px-2">
-                        {editMode ? (
-                          <Input
-                            value={acc.name}
-                            onChange={(e) => updateTrialBalanceAccount(idx, 'name', e.target.value)}
-                            className="h-7 text-sm min-w-[120px]"
-                          />
-                        ) : acc.name}
-                      </td>
-                      <td className="py-2 px-2 text-left border-x">
-                        {editMode ? (
-                          <Input
-                            type="number"
-                            value={acc.openingDebit || ''}
-                            onChange={(e) => updateTrialBalanceAccount(idx, 'openingDebit', parseFloat(e.target.value) || 0)}
-                            className="h-7 text-sm w-24 text-left"
-                            step="0.01"
-                          />
-                        ) : (acc.openingDebit > 0 ? formatCurrency(acc.openingDebit) : '-')}
-                      </td>
-                      <td className="py-2 px-2 text-left border-x">
-                        {editMode ? (
-                          <Input
-                            type="number"
-                            value={acc.openingCredit || ''}
-                            onChange={(e) => updateTrialBalanceAccount(idx, 'openingCredit', parseFloat(e.target.value) || 0)}
-                            className="h-7 text-sm w-24 text-left"
-                            step="0.01"
-                          />
-                        ) : (acc.openingCredit > 0 ? formatCurrency(acc.openingCredit) : '-')}
-                      </td>
-                      <td className="py-2 px-2 text-left border-x">
-                        {editMode ? (
-                          <Input
-                            type="number"
-                            value={acc.movementDebit || ''}
-                            onChange={(e) => updateTrialBalanceAccount(idx, 'movementDebit', parseFloat(e.target.value) || 0)}
-                            className="h-7 text-sm w-24 text-left"
-                            step="0.01"
-                          />
-                        ) : (acc.movementDebit > 0 ? formatCurrency(acc.movementDebit) : '-')}
-                      </td>
-                      <td className="py-2 px-2 text-left border-x">
-                        {editMode ? (
-                          <Input
-                            type="number"
-                            value={acc.movementCredit || ''}
-                            onChange={(e) => updateTrialBalanceAccount(idx, 'movementCredit', parseFloat(e.target.value) || 0)}
-                            className="h-7 text-sm w-24 text-left"
-                            step="0.01"
-                          />
-                        ) : (acc.movementCredit > 0 ? formatCurrency(acc.movementCredit) : '-')}
-                      </td>
-                      <td className="py-2 px-2 text-left">
-                        {editMode ? (
-                          <Input
-                            type="number"
-                            value={acc.closingDebit || ''}
-                            onChange={(e) => updateTrialBalanceAccount(idx, 'closingDebit', parseFloat(e.target.value) || 0)}
-                            className="h-7 text-sm w-24 text-left"
-                            step="0.01"
-                          />
-                        ) : (acc.closingDebit > 0 ? formatCurrency(acc.closingDebit) : '-')}
-                      </td>
-                      <td className="py-2 px-2 text-left">
-                        {editMode ? (
-                          <Input
-                            type="number"
-                            value={acc.closingCredit || ''}
-                            onChange={(e) => updateTrialBalanceAccount(idx, 'closingCredit', parseFloat(e.target.value) || 0)}
-                            className="h-7 text-sm w-24 text-left"
-                            step="0.01"
-                          />
-                        ) : (acc.closingCredit > 0 ? formatCurrency(acc.closingCredit) : '-')}
-                      </td>
-                      {editMode && (
-                        <td className="py-2 px-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                            onClick={() => deleteTrialBalanceAccount(idx)}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
+                  .map((acc, idx) => {
+                    const code = acc.code || '';
+                    const isParent = acc.category === 'حساب رئيسي' || acc.category === 'عنوان قسم' || (code.length <= 3 && code.length >= 1);
+                    const firstDigit = code.charAt(0);
+                    const typeColors: Record<string, string> = {
+                      '1': 'bg-amber-50/70 dark:bg-amber-950/20',
+                      '2': 'bg-rose-50/70 dark:bg-rose-950/20',
+                      '3': 'bg-indigo-50/70 dark:bg-indigo-950/20',
+                      '4': 'bg-emerald-50/70 dark:bg-emerald-950/20',
+                      '5': 'bg-orange-50/70 dark:bg-orange-950/20',
+                    };
+                    const rowColor = isParent ? (typeColors[firstDigit] || '') : '';
+                    const indent = code.length <= 1 ? 0 : code.length <= 2 ? 16 : code.length <= 3 ? 32 : code.length <= 4 ? 48 : 64;
+
+                    return (
+                      <tr key={idx} className={`border-b ${rowColor} ${isParent ? 'font-bold border-y-2 border-muted' : 'hover:bg-muted/20'}`}>
+                        <td className="py-2 px-2 font-mono text-center font-semibold text-xs">
+                          {code || '-'}
                         </td>
-                      )}
-                    </tr>
-                  ))}
-                <tr className="border-t-2 bg-primary/10 font-bold">
-                  <td className="py-3 px-2">الإجمالي</td>
-                  <td className="py-3 px-2 text-left border-x">{formatCurrency(calculatedTotals.openingDebit)}</td>
-                  <td className="py-3 px-2 text-left border-x">{formatCurrency(calculatedTotals.openingCredit)}</td>
-                  <td className="py-3 px-2 text-left border-x">{formatCurrency(calculatedTotals.movementDebit)}</td>
-                  <td className="py-3 px-2 text-left border-x">{formatCurrency(calculatedTotals.movementCredit)}</td>
-                  <td className="py-3 px-2 text-left">{formatCurrency(calculatedTotals.closingDebit)}</td>
-                  <td className="py-3 px-2 text-left">{formatCurrency(calculatedTotals.closingCredit)}</td>
+                        <td className={`py-2 px-2 ${isParent ? 'font-bold' : ''}`} style={{ paddingRight: `${indent + 8}px` }}>
+                          {editMode && !isParent ? (
+                            <Input
+                              value={acc.name}
+                              onChange={(e) => updateTrialBalanceAccount(idx, 'name', e.target.value)}
+                              className="h-7 text-sm min-w-[120px]"
+                            />
+                          ) : acc.name}
+                        </td>
+                        <td className="py-2 px-2 text-left border-x tabular-nums">
+                          {editMode && !isParent ? (
+                            <Input type="number" value={acc.openingDebit || ''} onChange={(e) => updateTrialBalanceAccount(idx, 'openingDebit', parseFloat(e.target.value) || 0)} className="h-7 text-sm w-24 text-left" step="0.01" />
+                          ) : (acc.openingDebit > 0 ? formatCurrency(acc.openingDebit) : '-')}
+                        </td>
+                        <td className="py-2 px-2 text-left border-x tabular-nums">
+                          {editMode && !isParent ? (
+                            <Input type="number" value={acc.openingCredit || ''} onChange={(e) => updateTrialBalanceAccount(idx, 'openingCredit', parseFloat(e.target.value) || 0)} className="h-7 text-sm w-24 text-left" step="0.01" />
+                          ) : (acc.openingCredit > 0 ? formatCurrency(acc.openingCredit) : '-')}
+                        </td>
+                        <td className="py-2 px-2 text-left border-x tabular-nums">
+                          {editMode && !isParent ? (
+                            <Input type="number" value={acc.movementDebit || ''} onChange={(e) => updateTrialBalanceAccount(idx, 'movementDebit', parseFloat(e.target.value) || 0)} className="h-7 text-sm w-24 text-left" step="0.01" />
+                          ) : (acc.movementDebit > 0 ? formatCurrency(acc.movementDebit) : '-')}
+                        </td>
+                        <td className="py-2 px-2 text-left border-x tabular-nums">
+                          {editMode && !isParent ? (
+                            <Input type="number" value={acc.movementCredit || ''} onChange={(e) => updateTrialBalanceAccount(idx, 'movementCredit', parseFloat(e.target.value) || 0)} className="h-7 text-sm w-24 text-left" step="0.01" />
+                          ) : (acc.movementCredit > 0 ? formatCurrency(acc.movementCredit) : '-')}
+                        </td>
+                        <td className="py-2 px-2 text-left tabular-nums">
+                          {editMode && !isParent ? (
+                            <Input type="number" value={acc.closingDebit || ''} onChange={(e) => updateTrialBalanceAccount(idx, 'closingDebit', parseFloat(e.target.value) || 0)} className="h-7 text-sm w-24 text-left" step="0.01" />
+                          ) : (acc.closingDebit > 0 ? formatCurrency(acc.closingDebit) : '-')}
+                        </td>
+                        <td className="py-2 px-2 text-left tabular-nums">
+                          {editMode && !isParent ? (
+                            <Input type="number" value={acc.closingCredit || ''} onChange={(e) => updateTrialBalanceAccount(idx, 'closingCredit', parseFloat(e.target.value) || 0)} className="h-7 text-sm w-24 text-left" step="0.01" />
+                          ) : (acc.closingCredit > 0 ? formatCurrency(acc.closingCredit) : '-')}
+                        </td>
+                        {editMode && (
+                          <td className="py-2 px-1">
+                            {!isParent && (
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => deleteTrialBalanceAccount(idx)}>
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                <tr className="border-t-4 border-primary bg-primary/10 font-bold text-base">
+                  <td className="py-3 px-2 text-center" colSpan={2}>الإجمالي</td>
+                  <td className="py-3 px-2 text-left border-x tabular-nums">{formatCurrency(calculatedTotals.openingDebit)}</td>
+                  <td className="py-3 px-2 text-left border-x tabular-nums">{formatCurrency(calculatedTotals.openingCredit)}</td>
+                  <td className="py-3 px-2 text-left border-x tabular-nums">{formatCurrency(calculatedTotals.movementDebit)}</td>
+                  <td className="py-3 px-2 text-left border-x tabular-nums">{formatCurrency(calculatedTotals.movementCredit)}</td>
+                  <td className="py-3 px-2 text-left tabular-nums">{formatCurrency(calculatedTotals.closingDebit)}</td>
+                  <td className="py-3 px-2 text-left tabular-nums">{formatCurrency(calculatedTotals.closingCredit)}</td>
                   {editMode && <td></td>}
                 </tr>
               </tbody>
