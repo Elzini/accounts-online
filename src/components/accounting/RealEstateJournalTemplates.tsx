@@ -45,10 +45,10 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Building2 className="w-5 h-5" />,
     defaultDescription: 'شراء أرض بالتقسيط - دفعة أولى',
     lines: [
-      { accountCode: '1221', accountName: 'مشاريع تحت التطوير - تكلفة الأرض', description: 'قيمة الأرض الكاملة', side: 'debit' },
+      { accountCode: '130101', accountName: 'مشاريع تحت التطوير - تكلفة الأرض', description: 'قيمة الأرض الكاملة', side: 'debit' },
       { accountCode: '1184', accountName: 'ضريبة التصرفات العقارية RETT', description: 'ضريبة تصرفات عقارية 5%', side: 'debit' },
-      { accountCode: '1121', accountName: 'البنك', description: 'الدفعة الأولى المدفوعة', side: 'credit' },
-      { accountCode: '2110', accountName: 'دائنون / ذمم دائنة', description: 'باقي الأقساط المستحقة', side: 'credit' },
+      { accountCode: '1102', accountName: 'البنك', description: 'الدفعة الأولى المدفوعة', side: 'credit' },
+      { accountCode: '2101', accountName: 'دائنون / ذمم دائنة', description: 'باقي الأقساط المستحقة', side: 'credit' },
     ],
   },
 
