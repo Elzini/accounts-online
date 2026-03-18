@@ -251,6 +251,7 @@ export function EditableWidgetWrapper({
         'cursor-grab active:cursor-grabbing',
         className
       )}
+      style={dimensionStyle}
     >
       {/* Top controls */}
       <div className="absolute -top-2 -right-2 z-10 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
