@@ -293,10 +293,76 @@ export function EditableWidgetWrapper({
         {colSpan === 2 ? <Minimize2 className="w-4 h-4 text-primary" /> : <Maximize2 className="w-4 h-4 text-primary" />}
       </div>
 
+      {/* Right edge resize handle (width only) */}
+      {onDimensionResize && (
+        <div
+          className="absolute top-1/2 -translate-y-1/2 left-0 z-10 w-2 h-12 rounded-full bg-primary/40 hover:bg-primary/70 cursor-ew-resize transition-colors opacity-0 group-hover:opacity-100"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const startX = e.clientX;
+            const el = containerRef.current;
+            if (!el) return;
+            const startW = cardConfig?.width || el.offsetWidth;
+            setIsResizing(true);
+
+            const onMove = (me: MouseEvent) => {
+              const deltaX = startX - me.clientX; // RTL: moving left increases width
+              const newW = Math.max(150, Math.round((startW + deltaX) / 10) * 10);
+              const h = cardConfig?.height || el.offsetHeight;
+              setResizeInfo({ w: newW, h });
+              onDimensionResize(id, newW, cardConfig?.height);
+            };
+            const onUp = () => {
+              setIsResizing(false);
+              setResizeInfo(null);
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+          }}
+          title="اسحب لتغيير العرض"
+        />
+      )}
+
+      {/* Bottom edge resize handle (height only) */}
+      {onDimensionResize && (
+        <div
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10 w-12 h-2 rounded-full bg-primary/40 hover:bg-primary/70 cursor-ns-resize transition-colors opacity-0 group-hover:opacity-100"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const startY = e.clientY;
+            const el = containerRef.current;
+            if (!el) return;
+            const startH = cardConfig?.height || el.offsetHeight;
+            setIsResizing(true);
+
+            const onMove = (me: MouseEvent) => {
+              const deltaY = me.clientY - startY;
+              const newH = Math.max(80, Math.round((startH + deltaY) / 10) * 10);
+              const w = cardConfig?.width || el.offsetWidth;
+              setResizeInfo({ w, h: newH });
+              onDimensionResize(id, cardConfig?.width, newH);
+            };
+            const onUp = () => {
+              setIsResizing(false);
+              setResizeInfo(null);
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+          }}
+          title="اسحب لتغيير الارتفاع"
+        />
+      )}
+
       {/* Corner dimension resize handle (drag to resize width/height) */}
       {onDimensionResize && (
         <div
-          className="absolute bottom-1 right-1 z-10 w-8 h-8 rounded-lg bg-accent/80 hover:bg-accent cursor-nwse-resize flex items-center justify-center transition-colors shadow-md opacity-0 group-hover:opacity-100"
+          className="absolute bottom-0 left-0 z-10 w-6 h-6 rounded-tl-lg bg-primary/60 hover:bg-primary cursor-nwse-resize flex items-center justify-center transition-colors shadow-md group-hover:opacity-100 opacity-60"
           onMouseDown={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -309,7 +375,7 @@ export function EditableWidgetWrapper({
             setIsResizing(true);
 
             const handleMouseMove = (me: MouseEvent) => {
-              const deltaX = me.clientX - startX;
+              const deltaX = startX - me.clientX; // RTL
               const deltaY = me.clientY - startY;
               const newW = Math.max(150, Math.round((startW + deltaX) / 10) * 10);
               const newH = Math.max(80, Math.round((startH + deltaY) / 10) * 10);
@@ -329,7 +395,7 @@ export function EditableWidgetWrapper({
           }}
           title="اسحب لتغيير الحجم"
         >
-          <Move className="w-4 h-4 text-foreground" />
+          <Move className="w-3.5 h-3.5 text-primary-foreground" />
         </div>
       )}
 
