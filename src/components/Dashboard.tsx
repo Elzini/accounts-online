@@ -119,6 +119,16 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   const saveDashboardConfig = useSaveDashboardConfig();
   const [cardConfigs, setCardConfigs] = useState<CardConfig[]>(DEFAULT_STAT_CARDS);
 
+  // For non-car companies, find project cost account (1301/130/13) to use for totalPurchases
+  const projectCostAccountId = useMemo(() => {
+    if (isCarDealership) return null;
+    // Find the most specific project account
+    const projectAccount = accountsList.find(a => a.code === '1301')
+      || accountsList.find(a => a.code === '130')
+      || accountsList.find(a => a.code === '13');
+    return projectAccount?.id || null;
+  }, [isCarDealership, accountsList]);
+
   // Collect all account IDs needed from card configs for batch fetching
   const accountIdsForCards = useMemo(() => {
     const ids = new Set<string>();
@@ -127,9 +137,16 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
       if (c.dataSource === 'formula' && c.formulaAccounts) {
         c.formulaAccounts.forEach(fa => ids.add(fa.accountId));
       }
+      // Legacy support
+      if (!c.dataSource && c.accountId) ids.add(c.accountId);
+      if (!c.dataSource && c.formulaAccounts) {
+        c.formulaAccounts.forEach(fa => ids.add(fa.accountId));
+      }
     });
+    // Include project cost account for non-car companies
+    if (projectCostAccountId) ids.add(projectCostAccountId);
     return Array.from(ids);
-  }, [cardConfigs]);
+  }, [cardConfigs, projectCostAccountId]);
 
   const { data: accountBalances = {} } = useCardAccountBalances(accountIdsForCards);
 
@@ -158,12 +175,17 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
       return total;
     }
 
+    // For non-car companies, use project cost account for totalPurchases
+    if (cardId === 'totalPurchases' && !isCarDealership && projectCostAccountId && accountBalances[projectCostAccountId] !== undefined) {
+      return accountBalances[projectCostAccountId];
+    }
+
     const formulaConfig = getFormula(cardId);
     if (!formulaConfig || !formulaConfig.isCustom) return defaultValue;
     const { result, error } = evaluateFormula(formulaConfig.formula, formulaVariables);
     if (error) return defaultValue;
     return formulaConfig.includeVAT ? result * 1.15 : result;
-  }, [getFormula, formulaVariables, cardConfigs, accountBalances]);
+  }, [getFormula, formulaVariables, cardConfigs, accountBalances, isCarDealership, projectCostAccountId]);
 
   // Widget-level edit mode
   const [isEditMode, setIsEditMode] = useState(false);
@@ -297,8 +319,16 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   }, [widgetConfigs]);
 
   const sortedWidgets = useMemo(() => {
-    return [...widgetConfigs].sort((a, b) => a.order - b.order).filter(w => w.visible);
-  }, [widgetConfigs]);
+    return [...widgetConfigs]
+      .sort((a, b) => a.order - b.order)
+      .filter(w => {
+        if (!w.visible) return false;
+        // Also check cardConfigs visibility (from customizer)
+        const cardCfg = cardConfigs.find(c => c.id === w.id);
+        if (cardCfg && !cardCfg.visible) return false;
+        return true;
+      });
+  }, [widgetConfigs, cardConfigs]);
 
   // Helper to get card config by id
   const getCardConfig = useCallback((id: string): CardConfig => {
@@ -667,9 +697,12 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
               showCarsTable: false,
             };
           } catch {
+            const fallbackVal = projectCostAccountId && accountBalances[projectCostAccountId] !== undefined
+              ? accountBalances[projectCostAccountId]
+              : stats.totalPurchases;
             data = {
               title: getCardLabel(cardId, industryLabels.totalPurchasesLabel),
-              value: formatCurrency(stats.totalPurchases),
+              value: formatCurrency(fallbackVal),
               breakdown: [],
               showCarsTable: false,
             };
@@ -781,6 +814,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
     isCarDealership,
     stats,
     t,
+    projectCostAccountId,
   ]);
 
   // Track animation index for staggered entry
