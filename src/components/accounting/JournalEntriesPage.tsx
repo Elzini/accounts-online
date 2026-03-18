@@ -24,6 +24,7 @@ import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { AccountSearchSelect } from './AccountSearchSelect';
 import { JournalEntryPrintDialog } from './JournalEntryPrintDialog';
+import { useDetailedJournalPrint } from './DetailedJournalPrint';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUnifiedPrintReport } from '@/hooks/useUnifiedPrintReport';
@@ -51,6 +52,7 @@ export function JournalEntriesPage() {
   const { data: costCenters = [] } = useCostCenters();
   const { filterByFiscalYear } = useFiscalYearFilter();
   const { printReport } = useUnifiedPrintReport();
+  const { printDetailedJournal } = useDetailedJournalPrint();
   const isRealEstate = company?.company_type === 'real_estate';
   const createJournalEntry = useCreateJournalEntry();
   const deleteJournalEntry = useDeleteJournalEntry();
@@ -301,6 +303,10 @@ export function JournalEntriesPage() {
           <Button variant="outline" onClick={printJournalSheet} className="gap-2">
             <FileText className="w-4 h-4" />
             {language === 'ar' ? 'طباعة كشف القيود' : 'Print Journal Sheet'}
+          </Button>
+          <Button variant="outline" onClick={() => printDetailedJournal(filteredEntries.map((e: any) => e.id))} className="gap-2">
+            <Printer className="w-4 h-4" />
+            {language === 'ar' ? 'طباعة تفصيلية' : 'Detailed Print'}
           </Button>
           {isRealEstate && (
             <RealEstateJournalTemplates onSelectTemplate={handleTemplateSelect} />
