@@ -175,12 +175,17 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
       return total;
     }
 
+    // For non-car companies, use project cost account for totalPurchases
+    if (cardId === 'totalPurchases' && !isCarDealership && projectCostAccountId && accountBalances[projectCostAccountId] !== undefined) {
+      return accountBalances[projectCostAccountId];
+    }
+
     const formulaConfig = getFormula(cardId);
     if (!formulaConfig || !formulaConfig.isCustom) return defaultValue;
     const { result, error } = evaluateFormula(formulaConfig.formula, formulaVariables);
     if (error) return defaultValue;
     return formulaConfig.includeVAT ? result * 1.15 : result;
-  }, [getFormula, formulaVariables, cardConfigs, accountBalances]);
+  }, [getFormula, formulaVariables, cardConfigs, accountBalances, isCarDealership, projectCostAccountId]);
 
   // Widget-level edit mode
   const [isEditMode, setIsEditMode] = useState(false);
