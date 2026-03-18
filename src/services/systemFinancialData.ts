@@ -115,7 +115,7 @@ export async function getSystemTrialBalance(
     closingCredit: 0,
   };
 
-  accounts.forEach(account => {
+  leafAccounts.forEach(account => {
     const opening = openingBalances.get(account.id) || { debit: 0, credit: 0 };
     const movement = movementBalances.get(account.id) || { debit: 0, credit: 0 };
     
