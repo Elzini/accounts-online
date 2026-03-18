@@ -613,6 +613,7 @@ function buildFinancialStatements(accounts: any, result: ComprehensiveFinancialD
     totalExpenses += acc.amount;
   });
   result.incomeStatement.generalAndAdminExpenses = totalExpenses;
+  result.incomeStatement.sellingAndMarketingExpenses = 0;
   
   // حساب الأرباح
   result.incomeStatement.grossProfit = totalRevenue - totalPurchases;
