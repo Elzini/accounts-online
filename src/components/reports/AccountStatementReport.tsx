@@ -150,6 +150,12 @@ export function AccountStatementReport() {
         { label: t.coa_col_name, value: selectedAccount.name },
         { label: t.as_from_date, value: startDate || '-' },
         { label: t.as_to_date, value: endDate || '-' },
+        { label: 'عدد عمليات الإيداع', value: String(processedData.debitCount) },
+        { label: 'عدد عمليات السحب', value: String(processedData.creditCount) },
+        { label: 'الرصيد الافتتاحي', value: formatCurrency(processedData.openingBalance) },
+        { label: 'إجمالي الإيداعات', value: formatCurrency(processedData.totalDebit) },
+        { label: 'إجمالي السحوبات', value: formatCurrency(processedData.totalCredit) },
+        { label: 'رصيد الإغلاق', value: formatCurrency(processedData.closingBalance) },
       ],
       columns, data, showSignatures: false,
     });
