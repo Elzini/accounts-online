@@ -93,6 +93,8 @@ export function AccountStatementReport() {
       entries, openingBalance: ledgerData.openingBalance || 0,
       totalDebit: entries.reduce((sum: number, e: any) => sum + (e.debit || 0), 0),
       totalCredit: entries.reduce((sum: number, e: any) => sum + (e.credit || 0), 0),
+      debitCount: entries.filter((e: any) => e.debit > 0).length,
+      creditCount: entries.filter((e: any) => e.credit > 0).length,
       closingBalance: runningBalance,
     };
   }, [ledgerData, documentType]);
