@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 import {
   GripVertical,
   Eye,
@@ -31,11 +32,17 @@ import {
   Ruler,
   Box,
   TrendingUp,
+  Search,
+  Calculator,
+  Database,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDashboardConfig, useSaveDashboardConfig } from '@/hooks/useSystemControl';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAccounts } from '@/hooks/useAccounting';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 // Card configuration interface
 export interface CardConfig {
