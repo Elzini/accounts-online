@@ -970,8 +970,8 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
           ) : (
           <div 
             className={cn(
-              "grid grid-cols-2",
-              displaySettings.density === 'compact' ? 'gap-2' : displaySettings.density === 'spacious' ? 'gap-6' : 'gap-3 sm:gap-5',
+              "grid grid-cols-1 xs:grid-cols-2",
+              displaySettings.density === 'compact' ? 'gap-2' : displaySettings.density === 'spacious' ? 'gap-4 sm:gap-6' : 'gap-2.5 sm:gap-3 md:gap-5',
               // Apply user kpiColumns only on md+ screens
               displaySettings.kpiColumns === 2 && 'md:grid-cols-2',
               displaySettings.kpiColumns === 3 && 'md:grid-cols-3',
