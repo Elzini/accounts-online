@@ -57,12 +57,12 @@ export async function recordProjectCost(params: {
 
   if (amount <= 0) throw new Error('المبلغ يجب أن يكون أكبر من صفر');
 
-  // مشاريع تحت التطوير: new 1220, legacy 1301
-  const projectCostAccountId = await resolveAccountFlex(companyId, '1220', '1301');
-  // البنك: new 1121, legacy 1101, or custom
+  // مشاريع تحت التطوير: 1301 (template), legacy 1220
+  const projectCostAccountId = await resolveAccountFlex(companyId, '1301', '1220');
+  // البنك: 110201 (sub), 1102 (header), legacy 1121/1101
   const paymentAccountId = paymentAccountCode
     ? await resolveAccountId(companyId, paymentAccountCode)
-    : await resolveAccountFlex(companyId, '1121', '1110', '1101');
+    : await resolveAccountFlex(companyId, '110201', '1102', '1121', '1101');
 
   if (!projectCostAccountId) throw new Error('حساب المشاريع تحت التطوير (1220/1301) غير موجود');
   if (!paymentAccountId) throw new Error('حساب الدفع غير موجود');
