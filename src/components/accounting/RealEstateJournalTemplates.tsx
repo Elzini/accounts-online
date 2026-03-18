@@ -276,9 +276,9 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Receipt className="w-5 h-5" />,
     defaultDescription: 'مصاريف عمومية وإدارية',
     lines: [
-      { accountCode: '6100', accountName: 'مصروفات إدارية', description: 'المصروف', side: 'debit' },
-      { accountCode: '1181', accountName: 'ضريبة مدخلات مشاريع', description: 'ضريبة 15% (إن وجدت)', side: 'debit' },
-      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
+      { accountCode: '62', accountName: 'مصروفات إدارية', description: 'المصروف', side: 'debit' },
+      { accountCode: '1108', accountName: 'ضريبة مدخلات مشاريع', description: 'ضريبة 15% (إن وجدت)', side: 'debit' },
+      { accountCode: '1102', accountName: 'البنك', description: 'المبلغ المدفوع', side: 'credit' },
     ],
   },
   {
