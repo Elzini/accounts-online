@@ -242,8 +242,11 @@ export function EditableWidgetWrapper({
     <div
       data-widget-id={id}
       ref={containerRef}
-      draggable
-      onDragStart={(e) => onDragStart(e, id)}
+      draggable={!isResizing}
+      onDragStart={(e) => {
+        if (isResizing) { e.preventDefault(); return; }
+        onDragStart(e, id);
+      }}
       onDragEnd={onDragEnd}
       onDragOver={(e) => onDragOver(e, id)}
       onDrop={(e) => onDrop(e, id)}
@@ -252,7 +255,7 @@ export function EditableWidgetWrapper({
         colSpanClass,
         isDragging && 'opacity-50 scale-[0.98]',
         isDragOver && 'ring-2 ring-primary ring-offset-2 scale-[1.01]',
-        'cursor-grab active:cursor-grabbing',
+        !isResizing && 'cursor-grab active:cursor-grabbing',
         className
       )}
       style={dimensionStyle}
