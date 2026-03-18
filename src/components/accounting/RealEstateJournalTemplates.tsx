@@ -197,7 +197,7 @@ const realEstateTemplates: JournalTemplate[] = [
     defaultDescription: 'سداد ضريبة تصرفات عقارية للهيئة',
     lines: [
       { accountCode: '2156', accountName: 'ضريبة تصرفات عقارية مستحقة', description: 'إقفال المستحق', side: 'debit' },
-      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المحول للهيئة', side: 'credit' },
+      { accountCode: '1102', accountName: 'البنك', description: 'المبلغ المحول للهيئة', side: 'credit' },
     ],
   },
   {
