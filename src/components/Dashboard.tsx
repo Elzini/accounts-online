@@ -1,4 +1,5 @@
 import { Car, ShoppingCart, DollarSign, TrendingUp, Package, BarChart3, RefreshCw, HardHat, Building2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { GettingStartedDashboard } from './dashboard/GettingStartedDashboard';
 import { AnimatedDashboardBackground } from './dashboard/AnimatedDashboardBackground';
 import { StatCard } from './StatCard';
