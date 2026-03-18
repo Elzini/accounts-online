@@ -1025,6 +1025,7 @@ export function generateFinancialStatementsFromTB(
       revenue: totalRevenue,
       costOfRevenue,
       grossProfit,
+      sellingAndMarketingExpenses: 0,
       generalAndAdminExpenses,
       operatingProfit,
       financingCost: 0,
