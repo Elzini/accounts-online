@@ -692,7 +692,7 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div><CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" />{t.fr_account_balances}</CardTitle></div>
-                <ExportActions onExport={exportAccountBalances} />
+                {renderExportActions(exportAccountBalances)}
               </div>
             </CardHeader>
             <CardContent>
