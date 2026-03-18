@@ -195,6 +195,9 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
           enable3D: c.enable3D || false,
           showTrend: c.showTrend ?? true,
           trendColor: c.trendColor || '',
+          dataSource: c.dataSource,
+          accountId: c.accountId,
+          formulaAccounts: c.formulaAccounts,
         })),
         ...DEFAULT_STAT_CARDS.filter(dc => !savedIds.has(dc.id)).map((dc, i) => ({
           ...dc,
