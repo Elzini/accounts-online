@@ -514,7 +514,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
               title: getCardLabel(cardId, industryLabels.totalPurchasesLabel),
               value: formatCurrency(totalCosts),
               subtitle: 'تفاصيل من شجرة الحسابات - مشاريع تحت التنفيذ',
-              breakdown,
+              breakdown: breakdownItems,
               formula: 'إجمالي التكاليف = مجموع أرصدة الحسابات الفرعية تحت حساب المشاريع (1301)',
               showCarsTable: false,
             };
