@@ -171,6 +171,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (user) {
+      setLoading(true);
       fetchCompanyData();
     } else {
       queryClient.clear();
