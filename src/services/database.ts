@@ -818,7 +818,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
   if (companyType === 'real_estate') {
     let projectsQuery = supabase
       .from('re_projects')
-      .select('id, status')
+      .select('id, name, status')
       .eq('company_id', companyId);
 
     let purchaseInvoicesQuery = supabase
