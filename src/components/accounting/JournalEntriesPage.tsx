@@ -315,7 +315,7 @@ export function JournalEntriesPage() {
               {t.je_new}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
+          <DialogContent className="w-[98vw] max-w-[98vw] h-[96vh] max-h-[96vh] overflow-y-auto">
             <DialogHeader className="border-b pb-4">
               <DialogTitle className="text-xl">{t.je_dialog_title}</DialogTitle>
             </DialogHeader>
