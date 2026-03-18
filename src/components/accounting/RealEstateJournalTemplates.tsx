@@ -237,7 +237,7 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Banknote className="w-5 h-5" />,
     defaultDescription: 'استلام قرض صندوق التنمية العقارية',
     lines: [
-      { accountCode: '1121', accountName: 'البنك', description: 'مبلغ القرض المستلم', side: 'debit' },
+      { accountCode: '1102', accountName: 'البنك', description: 'مبلغ القرض المستلم', side: 'debit' },
       { accountCode: '2235', accountName: 'تمويل صندوق التنمية العقاري REDF', description: 'التزام القرض', side: 'credit' },
     ],
   },
