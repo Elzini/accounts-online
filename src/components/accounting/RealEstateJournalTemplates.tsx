@@ -32,9 +32,9 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Building2 className="w-5 h-5" />,
     defaultDescription: 'شراء أرض مشروع - ضريبة تصرفات عقارية',
     lines: [
-      { accountCode: '1221', accountName: 'مشاريع تحت التطوير - تكلفة الأرض', description: 'قيمة الأرض', side: 'debit' },
+      { accountCode: '130101', accountName: 'مشاريع تحت التطوير - تكلفة الأرض', description: 'قيمة الأرض', side: 'debit' },
       { accountCode: '1184', accountName: 'ضريبة التصرفات العقارية المدفوعة RETT', description: 'ضريبة تصرفات عقارية 5%', side: 'debit' },
-      { accountCode: '1121', accountName: 'البنك / الصندوق', description: 'المبلغ المدفوع', side: 'credit' },
+      { accountCode: '1102', accountName: 'البنك / الصندوق', description: 'المبلغ المدفوع', side: 'credit' },
     ],
   },
   {
