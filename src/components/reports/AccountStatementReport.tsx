@@ -303,11 +303,11 @@ export function AccountStatementReport() {
       {showReport && selectedAccountId && (
         <Card>
           <CardHeader className="pb-2">
-             <div className="flex justify-between items-center flex-wrap gap-2">
-               <CardTitle className="text-base">
+             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+               <CardTitle className="text-sm sm:text-base">
                  {t.as_title}: {selectedAccount?.name} ({selectedAccount?.code})
                </CardTitle>
-               <div className="flex items-center gap-4 text-sm flex-wrap">
+               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm">
                  <span className="text-muted-foreground">
                    {t.as_previous_balance}: <span className="font-bold text-foreground">{formatCurrency(processedData.openingBalance)}</span>
                  </span>

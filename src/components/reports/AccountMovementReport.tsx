@@ -449,11 +449,11 @@ export function AccountMovementReport() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-700 hover:bg-slate-700">
-                    <TableHead className="text-right text-white font-medium">التاريخ</TableHead>
-                    <TableHead className="text-right text-white font-medium">البيان / الوصف</TableHead>
-                    <TableHead className="text-right text-emerald-300 font-medium">مدين</TableHead>
-                    <TableHead className="text-right text-rose-300 font-medium">دائن</TableHead>
-                    <TableHead className="text-right text-white font-medium">الرصيد</TableHead>
+                    <TableHead className="text-right text-white font-medium whitespace-nowrap">التاريخ</TableHead>
+                    <TableHead className="text-right text-white font-medium whitespace-nowrap min-w-[150px]">البيان / الوصف</TableHead>
+                    <TableHead className="text-right text-emerald-300 font-medium whitespace-nowrap">مدين</TableHead>
+                    <TableHead className="text-right text-rose-300 font-medium whitespace-nowrap">دائن</TableHead>
+                    <TableHead className="text-right text-white font-medium whitespace-nowrap">الرصيد</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
