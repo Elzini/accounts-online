@@ -656,11 +656,34 @@ export function JournalEntriesPage() {
       {/* Entries List */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5" />
-            {t.je_entries_title}
-          </CardTitle>
-          <CardDescription>{t.je_entries_desc}</CardDescription>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5" />
+                {t.je_entries_title}
+              </CardTitle>
+              <CardDescription>{t.je_entries_desc}</CardDescription>
+            </div>
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+              <Input
+                placeholder={language === 'ar' ? 'بحث برقم القيد، التاريخ، الوصف، أو القيمة...' : 'Search by number, date, description, or amount...'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-10 bg-muted/40 border-border/50 focus:bg-card focus:border-primary/40 transition-all"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setSearchQuery('')}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {filteredEntries.length === 0 ? (
