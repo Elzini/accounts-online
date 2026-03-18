@@ -113,13 +113,41 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   const { getFormula } = useCardFormulas();
   const formulaVariables = useMemo(() => buildFormulaVariables(stats), [stats]);
   
+  // Collect all account IDs needed from card configs for batch fetching
+  const accountIdsForCards = useMemo(() => {
+    const ids = new Set<string>();
+    cardConfigs.forEach(c => {
+      if (c.dataSource === 'account' && c.accountId) ids.add(c.accountId);
+      if (c.dataSource === 'formula' && c.formulaAccounts) {
+        c.formulaAccounts.forEach(fa => ids.add(fa.accountId));
+      }
+    });
+    return Array.from(ids);
+  }, [cardConfigs]);
+
+  const { data: accountBalances = {} } = useCardAccountBalances(accountIdsForCards);
+
   const getCardValue = useCallback((cardId: string, defaultValue: number): number => {
+    // Check account-based data source first
+    const cfg = cardConfigs.find(c => c.id === cardId);
+    if (cfg?.dataSource === 'account' && cfg.accountId && accountBalances[cfg.accountId] !== undefined) {
+      return accountBalances[cfg.accountId];
+    }
+    if (cfg?.dataSource === 'formula' && cfg.formulaAccounts && cfg.formulaAccounts.length > 0) {
+      let total = 0;
+      cfg.formulaAccounts.forEach(item => {
+        const bal = accountBalances[item.accountId] || 0;
+        total += item.operator === '+' ? bal : -bal;
+      });
+      return total;
+    }
+    // Fallback to legacy formula system
     const formulaConfig = getFormula(cardId);
     if (!formulaConfig || !formulaConfig.isCustom) return defaultValue;
     const { result, error } = evaluateFormula(formulaConfig.formula, formulaVariables);
     if (error) return defaultValue;
     return formulaConfig.includeVAT ? result * 1.15 : result;
-  }, [getFormula, formulaVariables]);
+  }, [getFormula, formulaVariables, cardConfigs, accountBalances]);
   
   // Dashboard customization
   const { data: dashboardConfig, isLoading: isDashboardConfigLoading } = useDashboardConfig();
