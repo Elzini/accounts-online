@@ -42,6 +42,9 @@ export async function getSystemTrialBalance(
 ): Promise<SystemTrialBalanceData> {
   const accounts = await fetchAccounts(companyId);
   
+  // تحديد الحسابات الورقية فقط (التي ليس لها أبناء) لمنع الازدواجية
+  const parentIds = new Set(accounts.filter(a => a.parent_id).map(a => a.parent_id!));
+  const leafAccounts = accounts.filter(a => !parentIds.has(a.id));
   // جلب الأرصدة الافتتاحية (قبل تاريخ البداية)
   let openingQuery = supabase
     .from('journal_entry_lines')
