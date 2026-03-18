@@ -492,7 +492,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
             });
             
             // Build breakdown
-            const breakdown = leafProjectAccounts
+            const breakdownItems: { label: string; value: number; type?: 'add' | 'subtract' | 'total'; description?: string }[] = leafProjectAccounts
               .map(a => ({
                 label: a.name,
                 value: balanceMap.get(a.id) || 0,
@@ -502,11 +502,11 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
               .filter(b => b.value !== 0)
               .sort((a, b) => b.value - a.value);
             
-            const totalCosts = breakdown.reduce((sum, b) => sum + b.value, 0);
-            breakdown.push({
+            const totalCosts = breakdownItems.reduce((sum, b) => sum + b.value, 0);
+            breakdownItems.push({
               label: 'إجمالي تكاليف المشاريع',
               value: totalCosts,
-              type: 'total' as const,
+              type: 'total',
               description: 'من حساب مشاريع تحت التنفيذ',
             });
             
