@@ -191,7 +191,7 @@ export function QuickAccessSection({ setActivePage }: QuickAccessSectionProps) {
 
       <div className={cn(
         "grid gap-2.5 sm:gap-3 md:gap-4",
-        quickAccessCards.length <= 4 ? "grid-cols-1 xs:grid-cols-2 lg:grid-cols-4" : "grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+        quickAccessCards.length <= 4 ? "grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" : "grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
       )}>
         {quickAccessCards.map((card) => (
           <Card key={card.id} className="group relative overflow-hidden bg-card hover:shadow-xl transition-all duration-300 rounded-xl border border-border/60">

@@ -12,7 +12,7 @@ export function ReportsWidget({ setActivePage }: ReportsWidgetProps) {
   return (
     <div className="bg-card rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-border">
       <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-card-foreground mb-3 sm:mb-4 md:mb-6">{t.chart_reports}</h2>
-      <div className="grid grid-cols-1 gap-1">
+      <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-1 gap-1">
         {[
           { page: 'inventory-report' as ActivePage, icon: Package, label: t.chart_inventory_report, color: 'text-primary', bg: 'bg-primary/10' },
           { page: 'profit-report' as ActivePage, icon: TrendingUp, label: t.chart_profit_report, color: 'text-success', bg: 'bg-success/10' },

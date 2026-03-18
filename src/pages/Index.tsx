@@ -527,7 +527,7 @@ const Index = () => {
             <MobileSidebar ref={mobileSidebarRef} activePage={activePage} setActivePage={handleSetActivePage} />
           )}
           
-          <main className="flex-1 min-w-0 overflow-x-hidden pb-20 md:pb-0">
+          <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto pb-24 md:pb-4">
             {/* Top Header Bar - hidden in focus mode */}
             {!isFocusMode && (
             <header className="sticky top-0 z-40 bg-background/98 backdrop-blur-lg border-b border-border/60 shadow-sm px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-2.5 safe-area-top">
