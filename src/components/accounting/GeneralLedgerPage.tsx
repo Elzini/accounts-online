@@ -235,7 +235,7 @@ export function GeneralLedgerPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-[300px]">
+            <div className="flex-1 min-w-0 sm:min-w-[300px]">
               <Popover open={showAccountDropdown && filteredAccounts.length > 0} onOpenChange={setShowAccountDropdown}>
                 <PopoverTrigger asChild>
                   <div className="relative">
