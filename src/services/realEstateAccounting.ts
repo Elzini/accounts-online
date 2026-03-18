@@ -57,14 +57,14 @@ export async function recordProjectCost(params: {
 
   if (amount <= 0) throw new Error('المبلغ يجب أن يكون أكبر من صفر');
 
-  // مشاريع تحت التطوير: new 1220, legacy 1301
-  const projectCostAccountId = await resolveAccountFlex(companyId, '1220', '1301');
-  // البنك: new 1121, legacy 1101, or custom
+  // مشاريع تحت التطوير: 1301 (template), legacy 1220
+  const projectCostAccountId = await resolveAccountFlex(companyId, '1301', '1220');
+  // البنك: 110201 (sub), 1102 (header), legacy 1121/1101
   const paymentAccountId = paymentAccountCode
     ? await resolveAccountId(companyId, paymentAccountCode)
-    : await resolveAccountFlex(companyId, '1121', '1110', '1101');
+    : await resolveAccountFlex(companyId, '110201', '1102', '1121', '1101');
 
-  if (!projectCostAccountId) throw new Error('حساب المشاريع تحت التطوير (1220/1301) غير موجود');
+  if (!projectCostAccountId) throw new Error('حساب المشاريع تحت التطوير (1301) غير موجود');
   if (!paymentAccountId) throw new Error('حساب الدفع غير موجود');
 
   const entry = await createJournalEntry(
@@ -120,10 +120,10 @@ export async function recordAdvancePayment(params: {
 
   if (amount <= 0) throw new Error('المبلغ يجب أن يكون أكبر من صفر');
 
-  // البنك: new 1121, legacy 1101
-  const bankAccountId = await resolveAccountFlex(companyId, '1121', '1110', '1101');
-  // دفعات مقدمة من العملاء: new 2120, legacy 2102
-  const advancePaymentAccountId = await resolveAccountFlex(companyId, '2120', '2102');
+  // البنك: 110201 (sub), 1102, legacy 1121/1101
+  const bankAccountId = await resolveAccountFlex(companyId, '110201', '1102', '1121', '1101');
+  // دفعات مقدمة من العملاء: 2102 (template), legacy 2120
+  const advancePaymentAccountId = await resolveAccountFlex(companyId, '2102', '2120');
 
   if (!bankAccountId) throw new Error('حساب البنك غير موجود');
   if (!advancePaymentAccountId) throw new Error('حساب الدفعات المقدمة غير موجود');
@@ -221,12 +221,12 @@ export async function completeUnitSale(params: {
   const unitCost = costCalc.unitCost;
 
   // Resolve accounts with fallback support
-  const receivableId = await resolveAccountFlex(companyId, '1130', '1131', '1103', '1201');
-  const advanceId = await resolveAccountFlex(companyId, '2120', '2102');
-  const revenueId = await resolveAccountFlex(companyId, '4110', '4101');
-  const vatId = await resolveAccountFlex(companyId, '2150', '2151', '21041');
-  const cogsId = await resolveAccountFlex(companyId, '5110', '5102', '5100');
-  const projectCostId = await resolveAccountFlex(companyId, '1220', '1301');
+  const receivableId = await resolveAccountFlex(companyId, '1103', '1130', '1201');
+  const advanceId = await resolveAccountFlex(companyId, '2102', '2120');
+  const revenueId = await resolveAccountFlex(companyId, '4101', '4110');
+  const vatId = await resolveAccountFlex(companyId, '2104', '210401', '2150', '2151');
+  const cogsId = await resolveAccountFlex(companyId, '5102', '5110', '5101');
+  const projectCostId = await resolveAccountFlex(companyId, '1301', '1220');
 
   if (!receivableId || !revenueId) throw new Error('حسابات الإيرادات غير مكتملة');
   if (!cogsId || !projectCostId) throw new Error('حسابات التكلفة غير مكتملة');
