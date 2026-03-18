@@ -21,6 +21,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { supabase } from '@/integrations/supabase/client';
 import { approveInvoiceWithJournal } from '@/services/invoiceJournal';
+import { InvoiceJournalEntry } from './InvoiceJournalEntry';
 import { toast } from 'sonner';
 
 interface PurchasesTableProps {
