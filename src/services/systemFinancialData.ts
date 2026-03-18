@@ -42,6 +42,9 @@ export async function getSystemTrialBalance(
 ): Promise<SystemTrialBalanceData> {
   const accounts = await fetchAccounts(companyId);
   
+  // تحديد الحسابات الورقية فقط (التي ليس لها أبناء) لمنع الازدواجية
+  const parentIds = new Set(accounts.filter(a => a.parent_id).map(a => a.parent_id!));
+  const leafAccounts = accounts.filter(a => !parentIds.has(a.id));
   // جلب الأرصدة الافتتاحية (قبل تاريخ البداية)
   let openingQuery = supabase
     .from('journal_entry_lines')
@@ -112,7 +115,7 @@ export async function getSystemTrialBalance(
     closingCredit: 0,
   };
 
-  accounts.forEach(account => {
+  leafAccounts.forEach(account => {
     const opening = openingBalances.get(account.id) || { debit: 0, credit: 0 };
     const movement = movementBalances.get(account.id) || { debit: 0, credit: 0 };
     
@@ -166,6 +169,10 @@ export async function getSystemFinancialStatements(
 ): Promise<ComprehensiveFinancialData> {
   const accounts = await fetchAccounts(companyId);
   
+  // تحديد الحسابات الورقية فقط (التي ليس لها أبناء) لمنع الازدواجية
+  const parentIds = new Set(accounts.filter(a => a.parent_id).map(a => a.parent_id!));
+  const leafAccounts = accounts.filter(a => !parentIds.has(a.id));
+  
   // جلب جميع القيود المحاسبية للفترة
   let query = supabase
     .from('journal_entry_lines')
@@ -206,12 +213,12 @@ export async function getSystemFinancialStatements(
     return totals.debit - totals.credit;
   };
 
-  // تصنيف الحسابات
-  const assetAccounts = accounts.filter(a => a.type === 'assets');
-  const liabilityAccounts = accounts.filter(a => a.type === 'liabilities');
-  const equityAccounts = accounts.filter(a => a.type === 'equity');
-  const revenueAccounts = accounts.filter(a => a.type === 'revenue');
-  const expenseAccounts = accounts.filter(a => a.type === 'expenses');
+  // تصنيف الحسابات الورقية فقط
+  const assetAccounts = leafAccounts.filter(a => a.type === 'assets');
+  const liabilityAccounts = leafAccounts.filter(a => a.type === 'liabilities');
+  const equityAccounts = leafAccounts.filter(a => a.type === 'equity');
+  const revenueAccounts = leafAccounts.filter(a => a.type === 'revenue');
+  const expenseAccounts = leafAccounts.filter(a => a.type === 'expenses');
 
   // تصنيف الأصول
   const currentAssetCodes = ['11', '12', '13'];

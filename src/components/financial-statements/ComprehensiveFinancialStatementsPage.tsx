@@ -1,6 +1,6 @@
 // صفحة القوائم المالية الشاملة - مطابق لتصدير مداد
 
-import { useState, useRef, useMemo, useCallback } from 'react';
+import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -120,6 +120,15 @@ export function ComprehensiveFinancialStatementsPage() {
   const { exportToExcel } = useExcelExport();
   
   const isCarDealership = company?.company_type === 'car_dealership';
+
+  // تحميل تلقائي من بيانات النظام عند فتح الصفحة
+  const autoLoadedRef = useRef(false);
+  useEffect(() => {
+    if (companyId && company?.name && !autoLoadedRef.current && dataSource === 'none') {
+      autoLoadedRef.current = true;
+      handleCalculateFromSystem();
+    }
+  }, [companyId, company?.name]);
   
   // حساب صافي الربح من تقرير الأرباح (للسيارات فقط)
   const profitReportData = useMemo(() => {
