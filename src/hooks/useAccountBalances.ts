@@ -81,8 +81,8 @@ async function fetchAccountBalances(
     leaves.forEach(leafId => {
       const totals = leafTotals.get(leafId) || { debit: 0, credit: 0 };
       const type = accountTypeMap.get(leafId) || accountTypeMap.get(id);
-      // Credit-normal accounts: liabilities, equity, revenue
-      if (['liabilities', 'equity', 'revenue'].includes(type || '')) {
+      // Credit-normal accounts: liability/liabilities, equity, revenue
+      if (['liability', 'liabilities', 'equity', 'revenue'].includes(type || '')) {
         balance += totals.credit - totals.debit;
       } else {
         balance += totals.debit - totals.credit;
@@ -102,7 +102,7 @@ export function useCardAccountBalances(accountIds: string[]) {
   const { selectedFiscalYear } = useFiscalYear();
 
   return useQuery({
-    queryKey: ['card-account-balances', companyId, selectedFiscalYear?.id, accountIds.sort().join(',')],
+    queryKey: ['card-account-balances', companyId, selectedFiscalYear?.id, [...accountIds].sort().join(',')],
     queryFn: () => fetchAccountBalances(accountIds, companyId!, selectedFiscalYear?.id),
     enabled: !!companyId && accountIds.length > 0,
     staleTime: 1000 * 60 * 2,

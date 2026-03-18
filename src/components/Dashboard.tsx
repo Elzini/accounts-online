@@ -135,17 +135,29 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
 
   const getCardValue = useCallback((cardId: string, defaultValue: number): number => {
     const cfg = cardConfigs.find(c => c.id === cardId);
-    if (cfg?.dataSource === 'account' && cfg.accountId && accountBalances[cfg.accountId] !== undefined) {
-      return accountBalances[cfg.accountId];
+
+    // Support both explicit source and legacy saved configs without dataSource
+    const accountIdToUse = cfg?.dataSource === 'account'
+      ? cfg.accountId
+      : (!cfg?.dataSource ? cfg?.accountId : undefined);
+
+    if (accountIdToUse && accountBalances[accountIdToUse] !== undefined) {
+      return accountBalances[accountIdToUse];
     }
-    if (cfg?.dataSource === 'formula' && cfg.formulaAccounts && cfg.formulaAccounts.length > 0) {
+
+    const formulaItems = cfg?.dataSource === 'formula'
+      ? cfg.formulaAccounts
+      : (!cfg?.dataSource && cfg?.formulaAccounts?.length ? cfg.formulaAccounts : undefined);
+
+    if (formulaItems && formulaItems.length > 0) {
       let total = 0;
-      cfg.formulaAccounts.forEach(item => {
+      formulaItems.forEach(item => {
         const bal = accountBalances[item.accountId] || 0;
         total += item.operator === '+' ? bal : -bal;
       });
       return total;
     }
+
     const formulaConfig = getFormula(cardId);
     if (!formulaConfig || !formulaConfig.isCustom) return defaultValue;
     const { result, error } = evaluateFormula(formulaConfig.formula, formulaVariables);
@@ -289,8 +301,28 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   }, [widgetConfigs]);
 
   // Helper to get card config by id
-  const getCardConfig = useCallback((id: string) => {
-    return cardConfigs.find(c => c.id === id) || { visible: true, size: 'medium' as const, bgColor: '', textColor: '', gradientFrom: '', gradientTo: '', fontSize: 100, height: undefined, width: undefined, enable3D: false, showTrend: true, trendColor: '', label: '' };
+  const getCardConfig = useCallback((id: string): CardConfig => {
+    return cardConfigs.find(c => c.id === id) || {
+      id,
+      type: 'stat',
+      label: '',
+      visible: true,
+      order: 999,
+      size: 'medium',
+      bgColor: '',
+      textColor: '',
+      gradientFrom: '',
+      gradientTo: '',
+      fontSize: 100,
+      height: undefined,
+      width: undefined,
+      enable3D: false,
+      showTrend: true,
+      trendColor: '',
+      dataSource: 'default',
+      accountId: undefined,
+      formulaAccounts: undefined,
+    };
   }, [cardConfigs]);
 
   // Spread helper for StatCard style props
@@ -794,6 +826,41 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
           >
             {sortedWidgets.map(widget => {
               const props = getWidgetProps(widget.id);
+              const cardCfg = getCardConfig(widget.id);
+              const hasAccountOverride = Boolean(
+                (cardCfg.dataSource === 'account' && cardCfg.accountId) ||
+                (cardCfg.dataSource === 'formula' && cardCfg.formulaAccounts?.length) ||
+                (!cardCfg.dataSource && (cardCfg.accountId || cardCfg.formulaAccounts?.length))
+              );
+              const nativeStatCardIds = [
+                'availableCars',
+                'totalPurchases',
+                'monthSales',
+                'totalProfit',
+                'todaySales',
+                'monthSalesCount',
+                'allTimePurchases',
+                'allTimeSales',
+              ];
+
+              // If user selected account/formula on any non-native stat widget,
+              // render it as a balance-driven stat card.
+              if (hasAccountOverride && !nativeStatCardIds.includes(widget.id)) {
+                return (
+                  <EditableWidgetWrapper key={widget.id} {...props}>
+                    <StatCard
+                      title={getCardLabel(widget.id, cardCfg.label || widget.label)}
+                      value={formatCurrencyWithMode(getCardValue(widget.id, 0))}
+                      icon={DollarSign}
+                      gradient="primary"
+                      subtitle={getCurrencySubtitle()}
+                      showAsWords={showAmountAsWords}
+                      {...getCardStyleProps(widget.id)}
+                      animationIndex={getNextAnimIndex()}
+                    />
+                  </EditableWidgetWrapper>
+                );
+              }
               
               switch (widget.id) {
                 case 'quickAccess':
