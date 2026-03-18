@@ -83,14 +83,17 @@ export function AccountStatementReport() {
     return new Date(dateStr).toLocaleDateString('en-CA');
   };
 
+  const isParentAccount = ledgerData?.isParentAccount || false;
+
   const processedData = useMemo(() => {
-    if (!ledgerData?.entries) return { entries: [], openingBalance: 0, totalDebit: 0, totalCredit: 0, closingBalance: 0 };
-    let runningBalance = ledgerData.openingBalance || 0;
+    if (!ledgerData?.entries) return { entries: [], openingBalance: 0, totalDebit: 0, totalCredit: 0, closingBalance: 0, debitCount: 0, creditCount: 0 };
+    const openBal = ledgerData.openingBalance || 0;
+    let runningBalance = openBal;
     const entries = ledgerData.entries
       .filter((entry: any) => { if (documentType === 'all') return true; return entry.reference_type === documentType; })
       .map((entry: any) => { runningBalance += entry.debit - entry.credit; return { ...entry, balance: runningBalance }; });
     return {
-      entries, openingBalance: ledgerData.openingBalance || 0,
+      entries, openingBalance: openBal,
       totalDebit: entries.reduce((sum: number, e: any) => sum + (e.debit || 0), 0),
       totalCredit: entries.reduce((sum: number, e: any) => sum + (e.credit || 0), 0),
       debitCount: entries.filter((e: any) => e.debit > 0).length,
@@ -122,26 +125,26 @@ export function AccountStatementReport() {
       { header: t.acc_entry_number, key: 'entryNumber', align: 'center', width: '60px' },
       { header: t.je_col_date, key: 'date', align: 'center', width: '90px' },
       { header: t.je_col_statement, key: 'description', align: 'right' },
+      ...(isParentAccount ? [{ header: 'الحساب الفرعي', key: 'subAccount', align: 'right' as const, width: '140px' }] : []),
       { header: t.je_col_type, key: 'type', align: 'center', width: '80px' },
-      { header: t.acc_debit, key: 'debit', align: 'right', type: 'currency', width: '100px' },
-      { header: t.acc_credit, key: 'credit', align: 'right', type: 'currency', width: '100px' },
-      { header: t.acc_balance, key: 'balance', align: 'right', type: 'currency', width: '110px' },
+      { header: t.acc_debit, key: 'debit', align: 'right', type: 'currency' as const, width: '100px' },
+      { header: t.acc_credit, key: 'credit', align: 'right', type: 'currency' as const, width: '100px' },
+      { header: t.acc_balance, key: 'balance', align: 'right', type: 'currency' as const, width: '110px' },
     ];
     const data: any[] = [];
     if (showOpeningBalance) {
-      data.push({ entryNumber: '', date: '', description: t.as_previous_balance, type: '', debit: '', credit: processedData.openingBalance < 0 ? Math.abs(processedData.openingBalance) : '', balance: processedData.openingBalance });
+      data.push({ entryNumber: '', date: '', description: t.as_previous_balance, subAccount: '', type: '', debit: '', credit: processedData.openingBalance < 0 ? Math.abs(processedData.openingBalance) : '', balance: processedData.openingBalance });
     }
     processedData.entries.forEach((entry: any) => {
-      data.push({ entryNumber: entry.entry_number, date: formatDate(entry.date), description: entry.description, type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : '', credit: entry.credit > 0 ? entry.credit : '', balance: entry.balance });
+      data.push({ entryNumber: entry.entry_number, date: formatDate(entry.date), description: entry.description, subAccount: entry.sub_account_name || '', type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : '', credit: entry.credit > 0 ? entry.credit : '', balance: entry.balance });
     });
-    // Add summary rows
-    data.push({ entryNumber: '', date: '', description: '', type: '', debit: '', credit: '', balance: '' });
-    data.push({ entryNumber: '', date: '', description: `عدد عمليات الإيداع: ${processedData.debitCount}`, type: '', debit: '', credit: '', balance: '' });
-    data.push({ entryNumber: '', date: '', description: `عدد عمليات السحب: ${processedData.creditCount}`, type: '', debit: '', credit: '', balance: '' });
-    data.push({ entryNumber: '', date: '', description: `الرصيد الافتتاحي: ${formatCurrency(processedData.openingBalance)}`, type: '', debit: '', credit: '', balance: '' });
-    data.push({ entryNumber: '', date: '', description: `إجمالي الإيداعات: ${formatCurrency(processedData.totalDebit)}`, type: '', debit: '', credit: '', balance: '' });
-    data.push({ entryNumber: '', date: '', description: `إجمالي السحوبات: ${formatCurrency(processedData.totalCredit)}`, type: '', debit: '', credit: '', balance: '' });
-    data.push({ entryNumber: '', date: '', description: `رصيد الإغلاق: ${formatCurrency(processedData.closingBalance)}`, type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: '', subAccount: '', type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `عدد عمليات الإيداع: ${processedData.debitCount}`, subAccount: '', type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `عدد عمليات السحب: ${processedData.creditCount}`, subAccount: '', type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `الرصيد الافتتاحي: ${formatCurrency(processedData.openingBalance)}`, subAccount: '', type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `إجمالي الإيداعات: ${formatCurrency(processedData.totalDebit)}`, subAccount: '', type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `إجمالي السحوبات: ${formatCurrency(processedData.totalCredit)}`, subAccount: '', type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `رصيد الإغلاق: ${formatCurrency(processedData.closingBalance)}`, subAccount: '', type: '', debit: '', credit: '', balance: '' });
 
     printReport({
       title: t.as_title,
@@ -167,6 +170,7 @@ export function AccountStatementReport() {
       { header: t.acc_entry_number, key: 'entryNumber' },
       { header: t.je_col_date, key: 'date' },
       { header: t.je_col_statement, key: 'description' },
+      ...(isParentAccount ? [{ header: 'الحساب الفرعي', key: 'subAccount' }] : []),
       { header: t.je_col_type, key: 'type' },
       { header: t.acc_debit, key: 'debit' },
       { header: t.acc_credit, key: 'credit' },
@@ -174,10 +178,10 @@ export function AccountStatementReport() {
     ];
     const data: any[] = [];
     if (showOpeningBalance) {
-      data.push({ entryNumber: '', date: '', description: t.as_previous_balance, type: '', debit: 0, credit: processedData.openingBalance < 0 ? Math.abs(processedData.openingBalance) : 0, balance: processedData.openingBalance });
+      data.push({ entryNumber: '', date: '', description: t.as_previous_balance, subAccount: '', type: '', debit: 0, credit: processedData.openingBalance < 0 ? Math.abs(processedData.openingBalance) : 0, balance: processedData.openingBalance });
     }
     processedData.entries.forEach((entry: any) => {
-      data.push({ entryNumber: entry.entry_number, date: formatDate(entry.date), description: entry.description, type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : 0, credit: entry.credit > 0 ? entry.credit : 0, balance: entry.balance });
+      data.push({ entryNumber: entry.entry_number, date: formatDate(entry.date), description: entry.description, subAccount: entry.sub_account_name || '', type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : 0, credit: entry.credit > 0 ? entry.credit : 0, balance: entry.balance });
     });
     exportToExcel({
       title: `${t.as_title} - ${selectedAccount.name}`,
@@ -340,6 +344,9 @@ export function AccountStatementReport() {
                       <TableHead className="text-center w-[60px]">{t.acc_entry_number}</TableHead>
                       <TableHead className="text-center w-[90px]">{t.je_col_date}</TableHead>
                       <TableHead className="text-right">{t.je_col_statement}</TableHead>
+                      {isParentAccount && (
+                        <TableHead className="text-right w-[150px]">{t.coa_col_name || 'الحساب الفرعي'}</TableHead>
+                      )}
                       <TableHead className="text-center w-[80px]">{t.je_col_type}</TableHead>
                       <TableHead className="text-right w-[100px]">{t.acc_debit}</TableHead>
                       <TableHead className="text-right w-[100px]">{t.acc_credit}</TableHead>
@@ -352,6 +359,7 @@ export function AccountStatementReport() {
                         <TableCell className="text-center">-</TableCell>
                         <TableCell className="text-center">-</TableCell>
                         <TableCell>{t.as_previous_balance}</TableCell>
+                        {isParentAccount && <TableCell>-</TableCell>}
                         <TableCell className="text-center">-</TableCell>
                         <TableCell className="text-right">-</TableCell>
                         <TableCell className="text-right">
@@ -363,7 +371,7 @@ export function AccountStatementReport() {
 
                     {processedData.entries.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t.as_no_transactions}</TableCell>
+                        <TableCell colSpan={isParentAccount ? 8 : 7} className="text-center py-8 text-muted-foreground">{t.as_no_transactions}</TableCell>
                       </TableRow>
                     ) : (
                       processedData.entries.map((entry: any, index: number) => (
@@ -371,14 +379,17 @@ export function AccountStatementReport() {
                           <TableCell className="text-center">{entry.entry_number}</TableCell>
                           <TableCell className="text-center">{formatDate(entry.date)}</TableCell>
                           <TableCell>{entry.description}</TableCell>
+                          {isParentAccount && (
+                            <TableCell className="text-right text-xs text-muted-foreground">{entry.sub_account_name || '-'}</TableCell>
+                          )}
                           <TableCell className="text-center text-xs">{getDocumentTypeLabel(entry.reference_type)}</TableCell>
-                          <TableCell className="text-right font-mono text-green-600 dark:text-green-400">
+                          <TableCell className="text-right font-mono text-emerald-600 dark:text-emerald-400">
                             {entry.debit > 0 ? formatCurrency(entry.debit) : '-'}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-red-600 dark:text-red-400">
+                          <TableCell className="text-right font-mono text-rose-600 dark:text-rose-400">
                             {entry.credit > 0 ? formatCurrency(entry.credit) : '-'}
                           </TableCell>
-                          <TableCell className={cn("text-right font-mono font-medium", entry.balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
+                          <TableCell className={cn("text-right font-mono font-medium", entry.balance >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
                             {formatCurrency(entry.balance)}
                           </TableCell>
                         </TableRow>
@@ -387,10 +398,10 @@ export function AccountStatementReport() {
 
                     {processedData.entries.length > 0 && (
                       <TableRow className="bg-primary/10 font-bold border-t-2">
-                        <TableCell colSpan={4} className="text-right">{t.total}</TableCell>
+                        <TableCell colSpan={isParentAccount ? 5 : 4} className="text-right">{t.total}</TableCell>
                         <TableCell className="text-right font-mono">{formatCurrency(processedData.totalDebit)}</TableCell>
                         <TableCell className="text-right font-mono">{formatCurrency(processedData.totalCredit)}</TableCell>
-                        <TableCell className={cn("text-right font-mono", processedData.closingBalance >= 0 ? "text-green-600" : "text-red-600")}>
+                        <TableCell className={cn("text-right font-mono", processedData.closingBalance >= 0 ? "text-emerald-600" : "text-rose-600")}>
                           {formatCurrency(processedData.closingBalance)}
                         </TableCell>
                       </TableRow>

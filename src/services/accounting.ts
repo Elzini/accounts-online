@@ -498,7 +498,7 @@ export async function getIncomeStatement(companyId: string, startDate?: string, 
   };
 }
 
-// General Ledger - حركة حساب معين
+// General Ledger - حركة حساب معين (يدعم تجميع الفروع)
 export async function getGeneralLedger(
   companyId: string, 
   accountId: string,
@@ -515,11 +515,13 @@ export async function getGeneralLedger(
     credit: number;
     balance: number;
     reference_type: string | null;
+    sub_account_name?: string;
   }>;
   openingBalance: number;
   totalDebit: number;
   totalCredit: number;
   closingBalance: number;
+  isParentAccount: boolean;
 }> {
   // Get account details
   const { data: account, error: accountError } = await supabase
@@ -530,11 +532,61 @@ export async function getGeneralLedger(
   
   if (accountError) throw accountError;
 
-  // Build query for journal entry lines
+  // Get all accounts to check for children
+  const allAccounts = await fetchAccounts(companyId);
+  const accountMap = new Map(allAccounts.map(a => [a.id, a]));
+
+  // Collect all descendant account IDs (recursive)
+  const getDescendantIds = (parentId: string): string[] => {
+    const children = allAccounts.filter(a => a.parent_id === parentId);
+    let ids: string[] = [];
+    for (const child of children) {
+      ids.push(child.id);
+      ids = ids.concat(getDescendantIds(child.id));
+    }
+    return ids;
+  };
+
+  const childIds = getDescendantIds(accountId);
+  const isParentAccount = childIds.length > 0;
+  const targetAccountIds = isParentAccount ? [accountId, ...childIds] : [accountId];
+
+  // Calculate opening balance (entries before startDate)
+  let openingBalance = 0;
+  if (startDate) {
+    const { data: priorLines, error: priorError } = await supabase
+      .from('journal_entry_lines')
+      .select(`
+        account_id,
+        debit,
+        credit,
+        journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
+      `)
+      .in('account_id', targetAccountIds)
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .lt('journal_entry.entry_date', startDate);
+
+    if (priorError) throw priorError;
+
+    const isDebitNormal = ['asset', 'assets', 'expense', 'expenses'].includes(account.type);
+    (priorLines || []).forEach((line: any) => {
+      const d = Number(line.debit) || 0;
+      const c = Number(line.credit) || 0;
+      if (isDebitNormal) {
+        openingBalance += d - c;
+      } else {
+        openingBalance += c - d;
+      }
+    });
+  }
+
+  // Build query for journal entry lines in the period
   let query = supabase
     .from('journal_entry_lines')
     .select(`
       id,
+      account_id,
       debit,
       credit,
       description,
@@ -548,7 +600,7 @@ export async function getGeneralLedger(
         is_posted
       )
     `)
-    .eq('account_id', accountId)
+    .in('account_id', targetAccountIds)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true)
     .order('journal_entry(entry_date)', { ascending: true })
@@ -565,20 +617,23 @@ export async function getGeneralLedger(
   if (linesError) throw linesError;
 
   // Calculate running balance
-  let runningBalance = 0;
-  const isDebitNormal = ['assets', 'expenses'].includes(account.type);
+  let runningBalance = openingBalance;
+  const isDebitNormal = ['asset', 'assets', 'expense', 'expenses'].includes(account.type);
 
   const entries = (lines || []).map((line: any) => {
     const debit = Number(line.debit) || 0;
     const credit = Number(line.credit) || 0;
     
-    // For debit-normal accounts: debit increases, credit decreases
-    // For credit-normal accounts: credit increases, debit decreases
     if (isDebitNormal) {
       runningBalance += debit - credit;
     } else {
       runningBalance += credit - debit;
     }
+
+    // Get sub-account name if this is a parent account query
+    const subAccount = isParentAccount && line.account_id !== accountId
+      ? accountMap.get(line.account_id)
+      : null;
 
     return {
       id: line.id,
@@ -589,6 +644,7 @@ export async function getGeneralLedger(
       credit,
       balance: runningBalance,
       reference_type: line.journal_entry.reference_type,
+      sub_account_name: subAccount ? `${subAccount.code} - ${subAccount.name}` : undefined,
     };
   });
 
@@ -598,10 +654,11 @@ export async function getGeneralLedger(
   return {
     account: account as AccountCategory,
     entries,
-    openingBalance: 0,
+    openingBalance,
     totalDebit,
     totalCredit,
     closingBalance: runningBalance,
+    isParentAccount,
   };
 }
 
