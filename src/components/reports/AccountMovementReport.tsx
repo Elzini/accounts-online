@@ -217,25 +217,25 @@ export function AccountMovementReport() {
   return (
     <div className="space-y-6">
       {/* Green Header Section */}
-      <div className="bg-gradient-to-l from-emerald-600 to-emerald-500 rounded-xl p-6 text-white">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <div className="bg-gradient-to-l from-emerald-600 to-emerald-500 rounded-xl p-3 sm:p-6 text-white">
+        <div className="flex flex-col gap-4">
           {/* Title Section */}
-          <div className="flex items-center gap-4">
-            <div className="bg-white/20 rounded-full p-3">
-              <Wallet className="h-8 w-8" />
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 rounded-full p-2 sm:p-3 shrink-0">
+              <Wallet className="h-5 w-5 sm:h-8 sm:w-8" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">تقرير حركة الحسابات</h1>
-              <p className="text-emerald-100 text-sm mt-1">
+              <h1 className="text-lg sm:text-2xl font-bold">تقرير حركة الحسابات</h1>
+              <p className="text-emerald-100 text-xs sm:text-sm mt-1">
                 عرض حركة جميع الحسابات مع الرصيد الحالي
               </p>
             </div>
           </div>
 
           {/* Filter Controls */}
-          <div className="bg-white rounded-xl p-3 flex flex-wrap items-center gap-3 text-foreground shadow-lg">
+          <div className="bg-card rounded-xl p-3 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 text-foreground shadow-lg">
             {/* Print & Export Buttons */}
-            <div className="flex items-center gap-1 border-l pl-3">
+            <div className="flex items-center gap-1 sm:border-l sm:pl-3">
               <Button
                 variant="ghost"
                 size="icon"
@@ -271,12 +271,12 @@ export function AccountMovementReport() {
 
             {/* Date Range */}
             <div className="flex items-center gap-2">
-              <div className="relative">
+              <div className="relative flex-1 sm:flex-none">
                 <Input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="h-9 w-36 text-sm border-emerald-200 focus:border-emerald-400 pl-8"
+                  className="h-9 w-full sm:w-36 text-sm border-muted focus:border-primary pl-8"
                   dir="ltr"
                 />
                 {endDate && (
@@ -288,13 +288,13 @@ export function AccountMovementReport() {
                   </button>
                 )}
               </div>
-              <ArrowLeft className="h-4 w-4 text-muted-foreground" />
-              <div className="relative">
+              <ArrowLeft className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="relative flex-1 sm:flex-none">
                 <Input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="h-9 w-36 text-sm border-emerald-200 focus:border-emerald-400 pl-8"
+                  className="h-9 w-full sm:w-36 text-sm border-muted focus:border-primary pl-8"
                   dir="ltr"
                 />
                 {startDate && (
@@ -315,7 +315,7 @@ export function AccountMovementReport() {
                   variant="outline"
                   role="combobox"
                   aria-expanded={open}
-                  className="w-48 justify-between h-9 border-emerald-200 hover:border-emerald-400"
+                  className="w-full sm:w-48 justify-between h-9 border-muted hover:border-primary"
                 >
                   {selectedAccount ? (
                     <div className="flex items-center gap-2 truncate">
@@ -328,7 +328,7 @@ export function AccountMovementReport() {
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[400px] p-0 bg-popover border shadow-lg z-50" align="start">
+              <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[400px] p-0 bg-popover border shadow-lg z-50" align="start">
                 <Command>
                   <CommandInput 
                     placeholder="ابحث برقم أو اسم الحساب..." 
