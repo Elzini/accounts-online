@@ -428,22 +428,45 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
                 <div className="space-y-4">
                   <Table>
                     <TableHeader><TableRow>
-                      <TableHead>{t.coa_col_code}</TableHead><TableHead>{t.coa_col_name}</TableHead><TableHead>{t.je_col_type}</TableHead>
-                      <TableHead className="text-left">{t.acc_debit}</TableHead><TableHead className="text-left">{t.acc_credit}</TableHead>
+                      <TableHead className="text-center border bg-muted/60 w-24">{t.coa_col_code}</TableHead>
+                      <TableHead className="text-center border bg-muted/60">{t.coa_col_name}</TableHead>
+                      <TableHead className="text-center border bg-muted/60">{t.je_col_type}</TableHead>
+                      <TableHead className="text-center border bg-blue-50 dark:bg-blue-900/20 w-32">{t.acc_debit}</TableHead>
+                      <TableHead className="text-center border bg-amber-50 dark:bg-amber-900/20 w-32">{t.acc_credit}</TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
-                      {trialBalance.accounts.map((item) => (
-                        <TableRow key={item.account.id}>
-                          <TableCell className="font-mono">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell>
-                          <TableCell>{getTypeLabel(item.account.type)}</TableCell>
-                          <TableCell className="text-left">{item.debit > 0 ? fmt(item.debit) : '-'}</TableCell>
-                          <TableCell className="text-left">{item.credit > 0 ? fmt(item.credit) : '-'}</TableCell>
-                        </TableRow>
-                      ))}
-                      <TableRow className="bg-muted/50 font-bold">
-                        <TableCell colSpan={3}>{t.total}</TableCell>
-                        <TableCell className="text-left">{fmt(trialBalance.totalDebit)}</TableCell>
-                        <TableCell className="text-left">{fmt(trialBalance.totalCredit)}</TableCell>
+                      {trialBalance.accounts.map((item: any) => {
+                        const code = item.account.code;
+                        const firstDigit = code.charAt(0);
+                        const typeColors: Record<string, string> = {
+                          '1': 'bg-amber-50/70 dark:bg-amber-950/20',
+                          '2': 'bg-rose-50/70 dark:bg-rose-950/20',
+                          '3': 'bg-emerald-50/70 dark:bg-emerald-950/20',
+                          '4': 'bg-orange-50/70 dark:bg-orange-950/20',
+                        };
+                        const isEquity = code.startsWith('25') || item.account.type === 'equity';
+                        const rowColor = isEquity ? 'bg-indigo-50/70 dark:bg-indigo-950/20' : (typeColors[firstDigit] || '');
+                        const parentStyle = item.isParent ? 'font-bold border-y-2 border-muted' : '';
+                        const indent = (item.level || 0) * 20;
+
+                        return (
+                          <TableRow key={item.account.id} className={cn(rowColor, parentStyle)}>
+                            <TableCell className="font-mono text-center border font-semibold" style={{ paddingRight: `${indent + 8}px` }}>
+                              {code}
+                            </TableCell>
+                            <TableCell className={cn("border", item.isParent && "font-bold")} style={{ paddingRight: `${indent + 8}px` }}>
+                              {item.account.name}
+                            </TableCell>
+                            <TableCell className="border text-center">{getTypeLabel(item.account.type)}</TableCell>
+                            <TableCell className="text-center border tabular-nums">{item.debit > 0 ? fmt(item.debit) : ''}</TableCell>
+                            <TableCell className="text-center border tabular-nums">{item.credit > 0 ? fmt(item.credit) : ''}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      <TableRow className="bg-primary/10 font-bold text-lg border-t-4 border-primary">
+                        <TableCell colSpan={3} className="text-center border">{t.total}</TableCell>
+                        <TableCell className="text-center border tabular-nums">{fmt(trialBalance.totalDebit)}</TableCell>
+                        <TableCell className="text-center border tabular-nums">{fmt(trialBalance.totalCredit)}</TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>

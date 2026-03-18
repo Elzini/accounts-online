@@ -1930,50 +1930,67 @@ export function TrialBalanceAnalysisPage() {
                   <div className="bg-muted/50 p-3 border-b">
                     <h4 className="font-semibold">جميع الحسابات المستخرجة من الملف ({reconciliationData.rawAccounts.length})</h4>
                   </div>
-                  <div className="max-h-[400px] overflow-y-auto">
+                  <div className="max-h-[500px] overflow-y-auto">
                     <table className="w-full text-sm">
-                      <thead className="bg-muted/30 sticky top-0">
+                      <thead className="bg-muted/30 sticky top-0 z-10">
                         <tr>
-                          <th className="p-2 text-right" rowSpan={2}>الرمز</th>
-                          <th className="p-2 text-right" rowSpan={2}>اسم الحساب</th>
-                          <th className="p-2 text-right" rowSpan={2}>التصنيف</th>
-                          <th className="p-2 text-center border-x" colSpan={2}>الرصيد السابق</th>
-                          <th className="p-2 text-center border-x" colSpan={2}>الحركة</th>
-                          <th className="p-2 text-center" colSpan={2}>الصافي</th>
+                          <th className="p-2 text-center border bg-muted/60 w-20" rowSpan={2}>الرمز</th>
+                          <th className="p-2 text-center border bg-muted/60" rowSpan={2}>اسم الحساب</th>
+                          <th className="p-2 text-center border bg-purple-100 dark:bg-purple-900/20" colSpan={2}>الرصيد السابق</th>
+                          <th className="p-2 text-center border bg-blue-100 dark:bg-blue-900/20" colSpan={2}>الحركة</th>
+                          <th className="p-2 text-center border bg-amber-100 dark:bg-amber-900/20" colSpan={2}>الصافي</th>
                         </tr>
                         <tr>
-                          <th className="p-1 text-left text-xs border-x">مدين</th>
-                          <th className="p-1 text-left text-xs border-x">دائن</th>
-                          <th className="p-1 text-left text-xs border-x">مدين</th>
-                          <th className="p-1 text-left text-xs border-x">دائن</th>
-                          <th className="p-1 text-left text-xs">مدين</th>
-                          <th className="p-1 text-left text-xs">دائن</th>
+                          <th className="p-1 text-center text-xs border bg-purple-50 dark:bg-purple-900/10">مدين</th>
+                          <th className="p-1 text-center text-xs border bg-purple-50 dark:bg-purple-900/10">دائن</th>
+                          <th className="p-1 text-center text-xs border bg-blue-50 dark:bg-blue-900/10">مدين</th>
+                          <th className="p-1 text-center text-xs border bg-blue-50 dark:bg-blue-900/10">دائن</th>
+                          <th className="p-1 text-center text-xs border bg-amber-50 dark:bg-amber-900/10">مدين</th>
+                          <th className="p-1 text-center text-xs border bg-amber-50 dark:bg-amber-900/10">دائن</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {reconciliationData.rawAccounts.map((acc, idx) => (
-                          <tr key={idx} className="border-b hover:bg-muted/20">
-                            <td className="p-2 font-mono text-xs">{acc.code || '-'}</td>
-                            <td className="p-2">{acc.name}</td>
-                            <td className="p-2">
-                              <span className="px-2 py-1 bg-muted rounded text-xs">{acc.category}</span>
-                            </td>
-                            <td className="p-2 text-left border-x">{acc.openingDebit > 0 ? formatCurrency(acc.openingDebit) : '-'}</td>
-                            <td className="p-2 text-left border-x">{acc.openingCredit > 0 ? formatCurrency(acc.openingCredit) : '-'}</td>
-                            <td className="p-2 text-left border-x">{acc.movementDebit > 0 ? formatCurrency(acc.movementDebit) : '-'}</td>
-                            <td className="p-2 text-left border-x">{acc.movementCredit > 0 ? formatCurrency(acc.movementCredit) : '-'}</td>
-                            <td className="p-2 text-left">{acc.closingDebit > 0 ? formatCurrency(acc.closingDebit) : '-'}</td>
-                            <td className="p-2 text-left">{acc.closingCredit > 0 ? formatCurrency(acc.closingCredit) : '-'}</td>
-                          </tr>
-                        ))}
+                        {reconciliationData.rawAccounts.map((acc, idx) => {
+                          const code = acc.code || '';
+                          const firstDigit = code.charAt(0);
+                          const isParent = acc.category === 'عنوان قسم' || acc.category === 'حساب رئيسي';
+                          const typeColors: Record<string, string> = {
+                            '1': 'bg-amber-50/70 dark:bg-amber-950/20',
+                            '2': 'bg-rose-50/70 dark:bg-rose-950/20',
+                            '3': 'bg-emerald-50/70 dark:bg-emerald-950/20',
+                            '4': 'bg-orange-50/70 dark:bg-orange-950/20',
+                            '5': 'bg-orange-50/70 dark:bg-orange-950/20',
+                          };
+                          const isEquity = code.startsWith('25');
+                          const rowColor = isEquity ? 'bg-indigo-50/70 dark:bg-indigo-950/20' : (typeColors[firstDigit] || '');
+                          const parentStyle = isParent ? 'font-bold border-y-2 border-muted' : '';
+                          const indent = code.length <= 1 ? 0 : code.length <= 2 ? 20 : code.length <= 3 ? 40 : 60;
+
+                          return (
+                            <tr key={idx} className={`border-b ${rowColor} ${parentStyle}`}>
+                              <td className="p-2 font-mono text-center border font-semibold" style={{ paddingRight: `${indent + 8}px` }}>
+                                {code || '-'}
+                              </td>
+                              <td className={`p-2 border ${isParent ? 'font-bold' : ''}`} style={{ paddingRight: `${indent + 8}px` }}>
+                                {acc.name}
+                              </td>
+                              <td className="p-2 text-center border tabular-nums">{acc.openingDebit > 0 ? formatCurrency(acc.openingDebit) : ''}</td>
+                              <td className="p-2 text-center border tabular-nums">{acc.openingCredit > 0 ? formatCurrency(acc.openingCredit) : ''}</td>
+                              <td className="p-2 text-center border tabular-nums">{acc.movementDebit > 0 ? formatCurrency(acc.movementDebit) : ''}</td>
+                              <td className="p-2 text-center border tabular-nums">{acc.movementCredit > 0 ? formatCurrency(acc.movementCredit) : ''}</td>
+                              <td className="p-2 text-center border tabular-nums">{acc.closingDebit > 0 ? formatCurrency(acc.closingDebit) : ''}</td>
+                              <td className="p-2 text-center border tabular-nums">{acc.closingCredit > 0 ? formatCurrency(acc.closingCredit) : ''}</td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
-                      <tfoot className="bg-muted/50 font-bold">
+                      <tfoot className="bg-primary/10 font-bold text-base border-t-4 border-primary">
                         <tr>
-                          <td className="p-2" colSpan={3}>الإجمالي</td>
-                          <td className="p-2 text-left border-x" colSpan={2}>-</td>
-                          <td className="p-2 text-left border-x" colSpan={2}>-</td>
-                          <td className="p-2 text-left">{formatCurrency(reconciliationData.originalTotalDebit)}</td>
-                          <td className="p-2 text-left">{formatCurrency(reconciliationData.originalTotalCredit)}</td>
+                          <td className="p-2 text-center border" colSpan={2}>الإجمالي</td>
+                          <td className="p-2 text-center border tabular-nums" colSpan={2}>-</td>
+                          <td className="p-2 text-center border tabular-nums" colSpan={2}>-</td>
+                          <td className="p-2 text-center border tabular-nums">{formatCurrency(reconciliationData.originalTotalDebit)}</td>
+                          <td className="p-2 text-center border tabular-nums">{formatCurrency(reconciliationData.originalTotalCredit)}</td>
                         </tr>
                       </tfoot>
                     </table>
