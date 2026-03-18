@@ -917,10 +917,12 @@ export async function fetchStats(fiscalYearId?: string | null) {
       );
     }
 
-    const activeProjects = projects.filter((project: any) => {
+    const activeProjectsList = projects.filter((project: any) => {
       const status = String(project.status || '').toLowerCase();
       return status !== 'completed' && status !== 'cancelled' && status !== 'canceled';
-    }).length;
+    });
+    const activeProjects = activeProjectsList.length;
+    const activeProjectNames = activeProjectsList.map((p: any) => p.name).filter(Boolean);
 
     const totalSalesAmount = salesInvoices.reduce(
       (sum: number, invoice: any) => sum + (Number(invoice.subtotal) || 0),
