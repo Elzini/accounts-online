@@ -343,7 +343,7 @@ export async function getTrialBalance(
   startDate?: string,
   endDate?: string
 ): Promise<{
-  accounts: Array<{ account: AccountCategory; debit: number; credit: number }>;
+  accounts: Array<{ account: AccountCategory; debit: number; credit: number; isParent?: boolean; level?: number }>;
   totalDebit: number;
   totalCredit: number;
 }> {
@@ -381,20 +381,46 @@ export async function getTrialBalance(
     balances.set(line.account_id, current);
   });
 
-  // Build trial balance with actual debit/credit totals
-  const trialAccounts = accounts
-    .map(account => {
-      const totals = balances.get(account.id) || { debit: 0, credit: 0 };
-      return {
-        account,
-        debit: totals.debit,
-        credit: totals.credit,
-      };
-    })
-    .filter(item => item.debit > 0 || item.credit > 0);
+  // Build hierarchical trial balance
+  const accountMap = new Map(accounts.map(a => [a.id, a]));
+  const childrenOf = (parentId: string) => accounts.filter(a => a.parent_id === parentId);
 
-  const totalDebit = trialAccounts.reduce((sum, a) => sum + a.debit, 0);
-  const totalCredit = trialAccounts.reduce((sum, a) => sum + a.credit, 0);
+  // Recursive bottom-up aggregation
+  const aggregateCache = new Map<string, { debit: number; credit: number }>();
+  const getAggregated = (accountId: string): { debit: number; credit: number } => {
+    if (aggregateCache.has(accountId)) return aggregateCache.get(accountId)!;
+    const own = balances.get(accountId) || { debit: 0, credit: 0 };
+    const children = childrenOf(accountId);
+    let totalD = own.debit, totalC = own.credit;
+    for (const child of children) {
+      const childAgg = getAggregated(child.id);
+      totalD += childAgg.debit;
+      totalC += childAgg.credit;
+    }
+    const result = { debit: totalD, credit: totalC };
+    aggregateCache.set(accountId, result);
+    return result;
+  };
+  accounts.forEach(a => getAggregated(a.id));
+
+  const trialAccounts: Array<{ account: AccountCategory; debit: number; credit: number; isParent: boolean; level: number }> = [];
+  const rootAccounts = accounts.filter(a => !a.parent_id || !accountMap.has(a.parent_id));
+
+  const addHierarchy = (account: AccountCategory, level: number) => {
+    const children = childrenOf(account.id);
+    const hasChildren = children.length > 0;
+    const agg = getAggregated(account.id);
+    if (agg.debit === 0 && agg.credit === 0) return;
+    trialAccounts.push({ account, debit: agg.debit, credit: agg.credit, isParent: hasChildren, level });
+    if (hasChildren) {
+      children.sort((a, b) => a.code.localeCompare(b.code)).forEach(child => addHierarchy(child, level + 1));
+    }
+  };
+  rootAccounts.sort((a, b) => a.code.localeCompare(b.code)).forEach(a => addHierarchy(a, 0));
+
+  const leafAccounts = trialAccounts.filter(a => !a.isParent);
+  const totalDebit = leafAccounts.reduce((sum, a) => sum + a.debit, 0);
+  const totalCredit = leafAccounts.reduce((sum, a) => sum + a.credit, 0);
 
   return { accounts: trialAccounts, totalDebit, totalCredit };
 }
