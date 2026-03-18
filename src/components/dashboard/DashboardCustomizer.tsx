@@ -176,6 +176,18 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
   const [cards, setCards] = useState<CardConfig[]>(DEFAULT_STAT_CARDS);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [accountSearch, setAccountSearch] = useState('');
+
+  // Load accounts for selector
+  const { data: accounts = [] } = useAccounts();
+  
+  const filteredAccounts = useMemo(() => {
+    if (!accountSearch.trim()) return accounts;
+    const q = accountSearch.toLowerCase();
+    return accounts.filter(a => 
+      a.name.toLowerCase().includes(q) || a.code.toLowerCase().includes(q)
+    );
+  }, [accounts, accountSearch]);
   
   // Drag and drop state
   const [draggedId, setDraggedId] = useState<string | null>(null);
