@@ -347,7 +347,7 @@ export function EditableWidgetWrapper({
         isResizing && 'border-accent border-solid'
       )} />
 
-      <div className="relative select-none" style={{ pointerEvents: 'none' }}>{children}</div>
+      <div className="relative select-none h-full" style={{ pointerEvents: 'none' }}>{children}</div>
     </div>
   );
 }
