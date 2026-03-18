@@ -2299,10 +2299,12 @@ export function TrialBalanceAnalysisPage() {
                       <tfoot className="bg-primary/10 font-bold text-base border-t-4 border-primary">
                         <tr>
                           <td className="p-2 text-center border" colSpan={2}>الإجمالي</td>
-                          <td className="p-2 text-center border tabular-nums" colSpan={2}>-</td>
-                          <td className="p-2 text-center border tabular-nums" colSpan={2}>-</td>
-                          <td className="p-2 text-center border tabular-nums">{formatCurrency(reconciliationData.originalTotalDebit)}</td>
-                          <td className="p-2 text-center border tabular-nums">{formatCurrency(reconciliationData.originalTotalCredit)}</td>
+                          <td className="p-2 text-center border tabular-nums">{formatCurrency(calculatedTotals.openingDebit)}</td>
+                          <td className="p-2 text-center border tabular-nums">{formatCurrency(calculatedTotals.openingCredit)}</td>
+                          <td className="p-2 text-center border tabular-nums">{formatCurrency(calculatedTotals.movementDebit)}</td>
+                          <td className="p-2 text-center border tabular-nums">{formatCurrency(calculatedTotals.movementCredit)}</td>
+                          <td className="p-2 text-center border tabular-nums">{formatCurrency(calculatedTotals.closingDebit)}</td>
+                          <td className="p-2 text-center border tabular-nums">{formatCurrency(calculatedTotals.closingCredit)}</td>
                         </tr>
                       </tfoot>
                     </table>
