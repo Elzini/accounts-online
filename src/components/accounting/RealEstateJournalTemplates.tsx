@@ -128,8 +128,8 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Users className="w-5 h-5" />,
     defaultDescription: 'دفعة مقدمة من عميل - حجز وحدة',
     lines: [
-      { accountCode: '1121', accountName: 'البنك / الصندوق', description: 'المبلغ المستلم من العميل', side: 'debit' },
-      { accountCode: '2120', accountName: 'دفعات مقدمة من العملاء (التزام تعاقدي)', description: 'دفعة مقدمة - حجز وحدة', side: 'credit' },
+      { accountCode: '1102', accountName: 'البنك / الصندوق', description: 'المبلغ المستلم من العميل', side: 'debit' },
+      { accountCode: '2102', accountName: 'دفعات مقدمة من العملاء (التزام تعاقدي)', description: 'دفعة مقدمة - حجز وحدة', side: 'credit' },
     ],
   },
   {
