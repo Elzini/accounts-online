@@ -824,6 +824,8 @@ export async function getComprehensiveTrialBalance(
     periodCredit: number;
     closingDebit: number;
     closingCredit: number;
+    isParent: boolean;
+    level: number;
   }>;
   totals: {
     openingDebit: number;
