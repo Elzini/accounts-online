@@ -944,7 +944,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
 
           {isLoading || isDashboardConfigLoading ? (
             <div className={cn(
-              "grid grid-cols-2 gap-3 sm:gap-5",
+              "grid grid-cols-1 xs:grid-cols-2 gap-2.5 sm:gap-3 md:gap-5",
               displaySettings.kpiColumns === 2 && 'md:grid-cols-2',
               displaySettings.kpiColumns === 3 && 'md:grid-cols-3',
               displaySettings.kpiColumns === 4 && 'md:grid-cols-4',

@@ -194,7 +194,7 @@ export function EditableWidgetWrapper({
 
   const colSpanClass = colSpan === 1 
     ? 'col-span-1' 
-    : 'col-span-2 md:col-span-2';
+    : 'col-span-1 xs:col-span-2';
 
   const dimensionStyle: React.CSSProperties = {};
   if (cardConfig?.height) dimensionStyle.minHeight = cardConfig.height;
