@@ -374,6 +374,18 @@ export function PurchaseReturnsPage() {
         if (insertedNote) {
           const linesWithId = noteLines.map(l => ({ ...l, note_id: insertedNote.id }));
           await supabase.from('credit_debit_note_lines').insert(linesWithId);
+          // Create reverse journal entry for trial balance
+          await createPurchaseReturnJournal(insertedNote.id);
+        }
+      } else {
+        // No line items - still create journal entry
+        const { data: insertedNote } = await supabase.from('credit_debit_notes')
+          .select('id')
+          .eq('company_id', companyId!)
+          .eq('note_number', num)
+          .single();
+        if (insertedNote) {
+          await createPurchaseReturnJournal(insertedNote.id);
         }
       }
     },
