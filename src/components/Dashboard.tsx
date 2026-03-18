@@ -814,6 +814,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
     isCarDealership,
     stats,
     t,
+    projectCostAccountId,
   ]);
 
   // Track animation index for staggered entry
