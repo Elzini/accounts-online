@@ -111,9 +111,8 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       if (linkedEntries && linkedEntries.length > 0) {
         const entryIds = linkedEntries.map(e => e.id);
         await supabase.from('journal_entry_lines').delete().in('journal_entry_id', entryIds);
-        // Disable protection triggers temporarily via direct deletion
-        for (const entryId of entryIds) {
-          await supabase.rpc('delete_orphan_journal_entry', { entry_id: entryId });
+        for (const eid of entryIds) {
+          await (supabase.rpc as any)('delete_orphan_journal_entry', { entry_id: eid });
         }
       }
 
