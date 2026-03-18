@@ -473,7 +473,10 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{card.label}</p>
+                      <p className="font-medium text-sm truncate">{getCardPrimaryLabel(card)}</p>
+                      {getCardSecondaryLabel(card) && (
+                        <p className="text-[11px] text-muted-foreground truncate">{getCardSecondaryLabel(card)}</p>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="secondary" className="text-[10px]">
                           {card.size === 'small' ? t.size_small : card.size === 'large' ? t.size_large : t.size_medium}
