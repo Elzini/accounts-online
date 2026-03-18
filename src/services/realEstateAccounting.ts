@@ -64,7 +64,7 @@ export async function recordProjectCost(params: {
     ? await resolveAccountId(companyId, paymentAccountCode)
     : await resolveAccountFlex(companyId, '110201', '1102', '1121', '1101');
 
-  if (!projectCostAccountId) throw new Error('حساب المشاريع تحت التطوير (1220/1301) غير موجود');
+  if (!projectCostAccountId) throw new Error('حساب المشاريع تحت التطوير (1301) غير موجود');
   if (!paymentAccountId) throw new Error('حساب الدفع غير موجود');
 
   const entry = await createJournalEntry(
