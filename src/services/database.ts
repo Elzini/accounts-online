@@ -953,6 +953,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
       availableNewCars: 0,
       availableUsedCars: 0,
       availableCars: activeProjects,
+      activeProjectNames,
       todaySales: salesInvoices.filter((invoice: any) => invoice.invoice_date === today).length,
       totalProfit: totalSalesAmount,
       monthSales: monthSalesData.length,
