@@ -135,17 +135,29 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
 
   const getCardValue = useCallback((cardId: string, defaultValue: number): number => {
     const cfg = cardConfigs.find(c => c.id === cardId);
-    if (cfg?.dataSource === 'account' && cfg.accountId && accountBalances[cfg.accountId] !== undefined) {
-      return accountBalances[cfg.accountId];
+
+    // Support both explicit source and legacy saved configs without dataSource
+    const accountIdToUse = cfg?.dataSource === 'account'
+      ? cfg.accountId
+      : (!cfg?.dataSource ? cfg?.accountId : undefined);
+
+    if (accountIdToUse && accountBalances[accountIdToUse] !== undefined) {
+      return accountBalances[accountIdToUse];
     }
-    if (cfg?.dataSource === 'formula' && cfg.formulaAccounts && cfg.formulaAccounts.length > 0) {
+
+    const formulaItems = cfg?.dataSource === 'formula'
+      ? cfg.formulaAccounts
+      : (!cfg?.dataSource && cfg?.formulaAccounts?.length ? cfg.formulaAccounts : undefined);
+
+    if (formulaItems && formulaItems.length > 0) {
       let total = 0;
-      cfg.formulaAccounts.forEach(item => {
+      formulaItems.forEach(item => {
         const bal = accountBalances[item.accountId] || 0;
         total += item.operator === '+' ? bal : -bal;
       });
       return total;
     }
+
     const formulaConfig = getFormula(cardId);
     if (!formulaConfig || !formulaConfig.isCustom) return defaultValue;
     const { result, error } = evaluateFormula(formulaConfig.formula, formulaVariables);
