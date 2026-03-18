@@ -1,4 +1,5 @@
 import { Car, ShoppingCart, DollarSign, TrendingUp, Package, BarChart3, RefreshCw, HardHat, Building2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { GettingStartedDashboard } from './dashboard/GettingStartedDashboard';
 import { AnimatedDashboardBackground } from './dashboard/AnimatedDashboardBackground';
 import { StatCard } from './StatCard';
@@ -80,7 +81,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   const { data: analytics, isLoading: analyticsLoading } = useAdvancedAnalytics();
   const { data: settings } = useAppSettings();
   const { permissions } = useAuth();
-  const { company } = useCompany();
+  const { company, companyId } = useCompany();
   const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
   const isCarDealership = companyType === 'car_dealership';
   const industryLabels = useIndustryLabels();
@@ -422,7 +423,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
     }));
   }, [fiscalYearCars]);
 
-  const showStatDetail = useCallback((cardId: string) => {
+  const showStatDetail = useCallback(async (cardId: string) => {
     // Prepare detail data based on cardId
     let data: StatDetailData | null = null;
     switch (cardId) {
@@ -435,15 +436,107 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
           showCarsTable: true,
         };
         break;
-      case 'totalPurchases':
-        data = {
-          title: getCardLabel(cardId, industryLabels.totalPurchasesLabel),
-          value: formatCurrency(stats.totalPurchases),
-          breakdown: [],
-          cars: buildPurchaseCarDetails(),
-          showCarsTable: true,
-        };
+      case 'totalPurchases': {
+        if (!isCarDealership && companyId) {
+          // For real estate/non-car companies: fetch cost breakdown from account 1301 (مشاريع تحت التنفيذ)
+          try {
+            // Find the parent account 1301 or similar project accounts
+            const { data: projectAccounts } = await supabase
+              .from('account_categories')
+              .select('id, code, name, parent_id')
+              .eq('company_id', companyId)
+              .in('code', ['1301', '130', '13']);
+            
+            const projectParentIds = (projectAccounts || []).map(a => a.id);
+            
+            // Get all sub-accounts under project accounts
+            const { data: subAccounts } = await supabase
+              .from('account_categories')
+              .select('id, code, name, parent_id')
+              .eq('company_id', companyId);
+            
+            // Build hierarchy: find all descendants of project parent accounts
+            const allAccounts = subAccounts || [];
+            const findDescendants = (parentIds: string[]): typeof allAccounts => {
+              const children = allAccounts.filter(a => a.parent_id && parentIds.includes(a.parent_id));
+              if (children.length === 0) return [];
+              return [...children, ...findDescendants(children.map(c => c.id))];
+            };
+            
+            const projectSubAccounts = findDescendants(projectParentIds);
+            const allProjectAccountIds = [...projectParentIds, ...projectSubAccounts.map(a => a.id)];
+            
+            // Find leaf accounts (no children)
+            const parentIdSet = new Set(allAccounts.filter(a => a.parent_id).map(a => a.parent_id!));
+            const leafProjectAccounts = allAccounts
+              .filter(a => allProjectAccountIds.includes(a.id) && !parentIdSet.has(a.id));
+            
+            // Fetch balances from journal entries for leaf accounts
+            let query = supabase
+              .from('journal_entry_lines')
+              .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted)')
+              .eq('journal_entry.company_id', companyId)
+              .eq('journal_entry.is_posted', true);
+            
+            if (leafProjectAccounts.length > 0) {
+              query = query.in('account_id', leafProjectAccounts.map(a => a.id));
+            }
+            
+            const { data: lines } = await query;
+            
+            // Aggregate balances per account
+            const balanceMap = new Map<string, number>();
+            (lines || []).forEach((line: any) => {
+              const current = balanceMap.get(line.account_id) || 0;
+              balanceMap.set(line.account_id, current + (Number(line.debit) || 0) - (Number(line.credit) || 0));
+            });
+            
+            // Build breakdown
+            const breakdownItems: { label: string; value: number; type?: 'add' | 'subtract' | 'total'; description?: string }[] = leafProjectAccounts
+              .map(a => ({
+                label: a.name,
+                value: balanceMap.get(a.id) || 0,
+                type: 'add' as const,
+                description: `حساب ${a.code}`,
+              }))
+              .filter(b => b.value !== 0)
+              .sort((a, b) => b.value - a.value);
+            
+            const totalCosts = breakdownItems.reduce((sum, b) => sum + b.value, 0);
+            breakdownItems.push({
+              label: 'إجمالي تكاليف المشاريع',
+              value: totalCosts,
+              type: 'total',
+              description: 'من حساب مشاريع تحت التنفيذ',
+            });
+            
+            data = {
+              title: getCardLabel(cardId, industryLabels.totalPurchasesLabel),
+              value: formatCurrency(totalCosts),
+              subtitle: 'تفاصيل من شجرة الحسابات - مشاريع تحت التنفيذ',
+              breakdown: breakdownItems,
+              formula: 'إجمالي التكاليف = مجموع أرصدة الحسابات الفرعية تحت حساب المشاريع (1301)',
+              showCarsTable: false,
+            };
+          } catch {
+            data = {
+              title: getCardLabel(cardId, industryLabels.totalPurchasesLabel),
+              value: formatCurrency(stats.totalPurchases),
+              breakdown: [],
+              showCarsTable: false,
+            };
+          }
+        } else {
+          data = {
+            title: getCardLabel(cardId, industryLabels.totalPurchasesLabel),
+            value: formatCurrency(stats.totalPurchases),
+            breakdown: [],
+            cars: buildPurchaseCarDetails(),
+            showCarsTable: true,
+          };
+        }
         break;
+      }
       case 'monthSales':
         data = {
           title: getCardLabel(cardId, t.dashboard_month_sales),
@@ -523,7 +616,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
     }
     setDetailData(data);
     setDetailDialogOpen(true);
-  }, [fiscalYearCars, fiscalYearSales, buildPurchaseCarDetails, buildSalesCarDetails, getCardLabel, industryLabels]);
+  }, [fiscalYearCars, fiscalYearSales, buildPurchaseCarDetails, buildSalesCarDetails, getCardLabel, industryLabels, isCarDealership, companyId]);
 
   // Track animation index for staggered entry
   let statCardIndex = 0;
