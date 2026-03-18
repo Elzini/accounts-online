@@ -314,8 +314,16 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   }, [widgetConfigs]);
 
   const sortedWidgets = useMemo(() => {
-    return [...widgetConfigs].sort((a, b) => a.order - b.order).filter(w => w.visible);
-  }, [widgetConfigs]);
+    return [...widgetConfigs]
+      .sort((a, b) => a.order - b.order)
+      .filter(w => {
+        if (!w.visible) return false;
+        // Also check cardConfigs visibility (from customizer)
+        const cardCfg = cardConfigs.find(c => c.id === w.id);
+        if (cardCfg && !cardCfg.visible) return false;
+        return true;
+      });
+  }, [widgetConfigs, cardConfigs]);
 
   // Helper to get card config by id
   const getCardConfig = useCallback((id: string): CardConfig => {
