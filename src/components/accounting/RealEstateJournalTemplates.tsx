@@ -61,10 +61,10 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Hammer className="w-5 h-5" />,
     defaultDescription: 'مستخلص مقاول - إنشاءات المشروع',
     lines: [
-      { accountCode: '1224', accountName: 'مشاريع تحت التطوير - الهيكل الإنشائي', description: 'قيمة المستخلص بدون ضريبة', side: 'debit' },
-      { accountCode: '1181', accountName: 'ضريبة مدخلات مشاريع', description: 'ضريبة مشتريات 15%', side: 'debit' },
+      { accountCode: '130104', accountName: 'مشاريع تحت التطوير - الهيكل الإنشائي', description: 'قيمة المستخلص بدون ضريبة', side: 'debit' },
+      { accountCode: '1108', accountName: 'ضريبة مدخلات مشاريع', description: 'ضريبة مشتريات 15%', side: 'debit' },
       { accountCode: '2115', accountName: 'محتجزات ضمان المقاولين', description: 'محتجز ضمان 10%', side: 'credit' },
-      { accountCode: '2110', accountName: 'دائنون - مقاولين', description: 'صافي المستحق للمقاول', side: 'credit' },
+      { accountCode: '2101', accountName: 'دائنون - مقاولين', description: 'صافي المستحق للمقاول', side: 'credit' },
     ],
   },
   {
