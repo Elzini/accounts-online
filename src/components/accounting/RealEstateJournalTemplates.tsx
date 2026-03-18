@@ -222,9 +222,9 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Calculator className="w-5 h-5" />,
     defaultDescription: 'تسوية ضريبة القيمة المضافة',
     lines: [
-      { accountCode: '2150', accountName: 'ضريبة القيمة المضافة المستحقة', description: 'إقفال ضريبة المبيعات', side: 'debit' },
-      { accountCode: '1180', accountName: 'ضريبة مدخلات قابلة للاسترداد', description: 'إقفال ضريبة المشتريات', side: 'credit' },
-      { accountCode: '2155', accountName: 'تسوية ضريبة القيمة المضافة', description: 'الفرق المستحق/لصالح الشركة', side: 'credit' },
+      { accountCode: '2104', accountName: 'ضريبة القيمة المضافة المستحقة', description: 'إقفال ضريبة المبيعات', side: 'debit' },
+      { accountCode: '1108', accountName: 'ضريبة مدخلات قابلة للاسترداد', description: 'إقفال ضريبة المشتريات', side: 'credit' },
+      { accountCode: '210402', accountName: 'تسوية ضريبة القيمة المضافة', description: 'الفرق المستحق/لصالح الشركة', side: 'credit' },
     ],
   },
 
