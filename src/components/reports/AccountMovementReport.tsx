@@ -217,25 +217,25 @@ export function AccountMovementReport() {
   return (
     <div className="space-y-6">
       {/* Green Header Section */}
-      <div className="bg-gradient-to-l from-emerald-600 to-emerald-500 rounded-xl p-6 text-white">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <div className="bg-gradient-to-l from-emerald-600 to-emerald-500 rounded-xl p-3 sm:p-6 text-white">
+        <div className="flex flex-col gap-4">
           {/* Title Section */}
-          <div className="flex items-center gap-4">
-            <div className="bg-white/20 rounded-full p-3">
-              <Wallet className="h-8 w-8" />
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 rounded-full p-2 sm:p-3 shrink-0">
+              <Wallet className="h-5 w-5 sm:h-8 sm:w-8" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">تقرير حركة الحسابات</h1>
-              <p className="text-emerald-100 text-sm mt-1">
+              <h1 className="text-lg sm:text-2xl font-bold">تقرير حركة الحسابات</h1>
+              <p className="text-emerald-100 text-xs sm:text-sm mt-1">
                 عرض حركة جميع الحسابات مع الرصيد الحالي
               </p>
             </div>
           </div>
 
           {/* Filter Controls */}
-          <div className="bg-white rounded-xl p-3 flex flex-wrap items-center gap-3 text-foreground shadow-lg">
+          <div className="bg-card rounded-xl p-3 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 text-foreground shadow-lg">
             {/* Print & Export Buttons */}
-            <div className="flex items-center gap-1 border-l pl-3">
+            <div className="flex items-center gap-1 sm:border-l sm:pl-3">
               <Button
                 variant="ghost"
                 size="icon"
@@ -271,12 +271,12 @@ export function AccountMovementReport() {
 
             {/* Date Range */}
             <div className="flex items-center gap-2">
-              <div className="relative">
+              <div className="relative flex-1 sm:flex-none">
                 <Input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="h-9 w-36 text-sm border-emerald-200 focus:border-emerald-400 pl-8"
+                  className="h-9 w-full sm:w-36 text-sm border-muted focus:border-primary pl-8"
                   dir="ltr"
                 />
                 {endDate && (
@@ -288,13 +288,13 @@ export function AccountMovementReport() {
                   </button>
                 )}
               </div>
-              <ArrowLeft className="h-4 w-4 text-muted-foreground" />
-              <div className="relative">
+              <ArrowLeft className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="relative flex-1 sm:flex-none">
                 <Input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="h-9 w-36 text-sm border-emerald-200 focus:border-emerald-400 pl-8"
+                  className="h-9 w-full sm:w-36 text-sm border-muted focus:border-primary pl-8"
                   dir="ltr"
                 />
                 {startDate && (
@@ -315,7 +315,7 @@ export function AccountMovementReport() {
                   variant="outline"
                   role="combobox"
                   aria-expanded={open}
-                  className="w-48 justify-between h-9 border-emerald-200 hover:border-emerald-400"
+                  className="w-full sm:w-48 justify-between h-9 border-muted hover:border-primary"
                 >
                   {selectedAccount ? (
                     <div className="flex items-center gap-2 truncate">
@@ -328,7 +328,7 @@ export function AccountMovementReport() {
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[400px] p-0 bg-popover border shadow-lg z-50" align="start">
+              <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[400px] p-0 bg-popover border shadow-lg z-50" align="start">
                 <Command>
                   <CommandInput 
                     placeholder="ابحث برقم أو اسم الحساب..." 
@@ -379,8 +379,8 @@ export function AccountMovementReport() {
       </div>
 
       {/* Quick Account Selection */}
-      <div className="flex flex-wrap gap-2">
-        <span className="text-sm text-muted-foreground self-center ml-2">اختصارات:</span>
+      <div className="flex flex-wrap gap-2 overflow-x-auto">
+        <span className="text-sm text-muted-foreground self-center ml-2 shrink-0">اختصارات:</span>
         {quickAccounts.slice(0, 6).map((account) => (
           <Button
             key={account.id}
@@ -388,7 +388,7 @@ export function AccountMovementReport() {
             size="sm"
             onClick={() => setSelectedAccountId(account.id)}
             className={cn(
-              "flex items-center gap-2",
+              "flex items-center gap-2 shrink-0 text-xs sm:text-sm",
               selectedAccountId === account.id && "bg-emerald-600 hover:bg-emerald-700"
             )}
           >
@@ -403,39 +403,39 @@ export function AccountMovementReport() {
           {/* Summary Cards - Bank Statement Style */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 rounded-xl overflow-hidden border shadow-sm">
             {/* Opening Balance */}
-            <div className="bg-white p-4 border-l">
-              <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
+            <div className="bg-card p-3 sm:p-4 border-l">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm mb-1 sm:mb-2">
                 <span className="h-2 w-2 rounded-full bg-blue-500"></span>
                 الرصيد الافتتاحي
               </div>
-              <p className="text-2xl font-bold text-foreground">{formatCurrency(processedData.openingBalance)}</p>
+              <p className="text-base sm:text-2xl font-bold text-foreground">{formatCurrency(processedData.openingBalance)}</p>
             </div>
             
             {/* Total Debit (like deposits) */}
-            <div className="bg-emerald-50 p-4 border-l">
-              <div className="flex items-center gap-2 text-emerald-600 text-sm mb-2">
-                <TrendingDown className="h-4 w-4" />
+            <div className="bg-emerald-50 dark:bg-emerald-950/30 p-3 sm:p-4 border-l">
+              <div className="flex items-center gap-2 text-emerald-600 text-xs sm:text-sm mb-1 sm:mb-2">
+                <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4" />
                 إجمالي المدين
               </div>
-              <p className="text-2xl font-bold text-emerald-600">{formatCurrency(processedData.totalDebit)}</p>
+              <p className="text-base sm:text-2xl font-bold text-emerald-600">{formatCurrency(processedData.totalDebit)}</p>
             </div>
             
             {/* Total Credit (like withdrawals) */}
-            <div className="bg-rose-50 p-4 border-l">
-              <div className="flex items-center gap-2 text-rose-600 text-sm mb-2">
-                <TrendingUp className="h-4 w-4" />
+            <div className="bg-rose-50 dark:bg-rose-950/30 p-3 sm:p-4 border-l">
+              <div className="flex items-center gap-2 text-rose-600 text-xs sm:text-sm mb-1 sm:mb-2">
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
                 إجمالي الدائن
               </div>
-              <p className="text-2xl font-bold text-rose-600">{formatCurrency(processedData.totalCredit)}</p>
+              <p className="text-base sm:text-2xl font-bold text-rose-600">{formatCurrency(processedData.totalCredit)}</p>
             </div>
             
             {/* Closing Balance */}
             <div className={cn(
-              "p-4",
+              "p-3 sm:p-4",
               processedData.closingBalance >= 0 ? "bg-emerald-600" : "bg-amber-500"
             )}>
-              <div className="text-white/80 text-sm mb-2">الرصيد الختامي</div>
-              <p className="text-2xl font-bold text-white">{formatCurrency(processedData.closingBalance)}</p>
+              <div className="text-white/80 text-xs sm:text-sm mb-1 sm:mb-2">الرصيد الختامي</div>
+              <p className="text-base sm:text-2xl font-bold text-white">{formatCurrency(processedData.closingBalance)}</p>
             </div>
           </div>
 
@@ -445,15 +445,15 @@ export function AccountMovementReport() {
               <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
             </div>
           ) : (
-            <div className="border rounded-xl overflow-hidden shadow-sm">
+            <div className="border rounded-xl overflow-x-auto shadow-sm">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-700 hover:bg-slate-700">
-                    <TableHead className="text-right text-white font-medium">التاريخ</TableHead>
-                    <TableHead className="text-right text-white font-medium">البيان / الوصف</TableHead>
-                    <TableHead className="text-right text-emerald-300 font-medium">مدين</TableHead>
-                    <TableHead className="text-right text-rose-300 font-medium">دائن</TableHead>
-                    <TableHead className="text-right text-white font-medium">الرصيد</TableHead>
+                    <TableHead className="text-right text-white font-medium whitespace-nowrap">التاريخ</TableHead>
+                    <TableHead className="text-right text-white font-medium whitespace-nowrap min-w-[150px]">البيان / الوصف</TableHead>
+                    <TableHead className="text-right text-emerald-300 font-medium whitespace-nowrap">مدين</TableHead>
+                    <TableHead className="text-right text-rose-300 font-medium whitespace-nowrap">دائن</TableHead>
+                    <TableHead className="text-right text-white font-medium whitespace-nowrap">الرصيد</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
