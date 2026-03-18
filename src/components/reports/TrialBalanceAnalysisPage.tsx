@@ -334,8 +334,8 @@ export function TrialBalanceAnalysisPage() {
         allAccounts.push(parentAcc);
       });
       
-      // ترتيب حسب الكود
-      allAccounts.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
+      // ترتيب شجري: حسب الكود كنص لضمان ظهور الأب ثم أبناءه (1, 11, 110, 1102...)
+      allAccounts.sort((a, b) => a.code.localeCompare(b.code));
 
       setData(result);
       setReconciliationData({
