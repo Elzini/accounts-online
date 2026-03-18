@@ -487,7 +487,92 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   }, [fiscalYearCars]);
 
   const showStatDetail = useCallback(async (cardId: string) => {
-    // Prepare detail data based on cardId
+    const cardCfg = getCardConfig(cardId);
+    const resolvedSource = cardCfg.dataSource ?? (cardCfg.formulaAccounts?.length ? 'formula' : cardCfg.accountId ? 'account' : 'default');
+
+    const defaultValueByCardId: Record<string, number> = {
+      availableCars: stats.availableCars,
+      totalPurchases: stats.totalPurchases,
+      monthSales: stats.monthSalesAmount,
+      totalProfit: stats.totalProfit,
+      todaySales: stats.todaySales,
+      monthSalesCount: stats.monthSales,
+      allTimePurchases: allTimeStats?.allTimePurchases || 0,
+      allTimeSales: allTimeStats?.allTimeSales || 0,
+    };
+
+    const fallbackValue = defaultValueByCardId[cardId] ?? 0;
+    const resolvedValue = getCardValue(cardId, fallbackValue);
+
+    // Unified detail mode for account/formula cards (native and non-native widgets)
+    if (resolvedSource === 'account' && cardCfg.accountId) {
+      const account = accountsList.find(a => a.id === cardCfg.accountId);
+      const accountLabel = [account?.code, account?.name || cardCfg.label || t.not_specified].filter(Boolean).join(' - ');
+
+      const data: StatDetailData = {
+        title: getCardLabel(cardId, cardCfg.label || account?.name || cardId),
+        value: formatCurrency(resolvedValue),
+        subtitle: 'من رصيد الحساب المحدد',
+        breakdown: [
+          {
+            label: accountLabel,
+            value: resolvedValue,
+            type: 'total',
+            description: 'الرصيد المجمع من القيود المرحلة',
+          },
+        ],
+        formula: `الرصيد = مجموع أرصدة الحساب ${account?.code ? `(${account.code})` : ''}`,
+        showCarsTable: false,
+      };
+
+      setDetailData(data);
+      setDetailDialogOpen(true);
+      return;
+    }
+
+    if (resolvedSource === 'formula' && cardCfg.formulaAccounts?.length) {
+      const formulaBreakdown: { label: string; value: number; type?: 'add' | 'subtract' | 'total'; description?: string }[] = cardCfg.formulaAccounts.map((item) => {
+        const account = accountsList.find(a => a.id === item.accountId);
+        const balance = accountBalances[item.accountId] || 0;
+        const label = [account?.code || item.accountCode, account?.name || item.accountName].filter(Boolean).join(' - ');
+
+        return {
+          label,
+          value: Math.abs(balance),
+          type: item.operator === '+' ? 'add' as const : 'subtract' as const,
+          description: 'رصيد الحساب المختار في المعادلة',
+        };
+      });
+
+      formulaBreakdown.push({
+        label: t.net_profit,
+        value: resolvedValue,
+        type: 'total',
+      });
+
+      const formulaText = cardCfg.formulaAccounts
+        .map((item, idx) => {
+          const account = accountsList.find(a => a.id === item.accountId);
+          const code = account?.code || item.accountCode || item.accountId;
+          return `${idx === 0 ? '' : item.operator} ${code}`.trim();
+        })
+        .join(' ');
+
+      const data: StatDetailData = {
+        title: getCardLabel(cardId, cardCfg.label || cardId),
+        value: formatCurrency(resolvedValue),
+        subtitle: 'محسوبة بمعادلة من الحسابات المختارة',
+        breakdown: formulaBreakdown,
+        formula: formulaText,
+        showCarsTable: false,
+      };
+
+      setDetailData(data);
+      setDetailDialogOpen(true);
+      return;
+    }
+
+    // Prepare detail data for default card behavior
     let data: StatDetailData | null = null;
     switch (cardId) {
       case 'availableCars':
@@ -677,9 +762,26 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
       default:
         data = null;
     }
+
+    if (!data) return;
     setDetailData(data);
     setDetailDialogOpen(true);
-  }, [fiscalYearCars, fiscalYearSales, buildPurchaseCarDetails, buildSalesCarDetails, getCardLabel, industryLabels, isCarDealership, companyId]);
+  }, [
+    accountBalances,
+    accountsList,
+    allTimeStats,
+    buildPurchaseCarDetails,
+    buildSalesCarDetails,
+    companyId,
+    formatCurrency,
+    getCardConfig,
+    getCardLabel,
+    getCardValue,
+    industryLabels,
+    isCarDealership,
+    stats,
+    t,
+  ]);
 
   // Track animation index for staggered entry
   let statCardIndex = 0;
@@ -855,6 +957,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
                       gradient="primary"
                       subtitle={getCurrencySubtitle()}
                       showAsWords={showAmountAsWords}
+                      onClick={() => showStatDetail(widget.id)}
                       {...getCardStyleProps(widget.id)}
                       animationIndex={getNextAnimIndex()}
                     />
