@@ -647,7 +647,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                       <div className="relative">
                         <Search className="absolute right-2 top-2.5 w-4 h-4 text-muted-foreground" />
                         <Input
-                          placeholder="ابحث عن حساب لإضافته..."
+                          placeholder="ابحث بالاسم أو رقم الحساب..."
                           value={accountSearch}
                           onChange={(e) => setAccountSearch(e.target.value)}
                           className="pr-8 text-sm"
