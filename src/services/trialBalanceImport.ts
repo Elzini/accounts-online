@@ -983,8 +983,13 @@ export function generateFinancialStatementsFromTB(
   const totalRevenue = revenueRows.reduce((s, r) => s + getNetBalance(r), 0);
   const costOfRevenue = cogsRows.reduce((s, r) => s + Math.abs(getNetBalance(r)), 0);
   const grossProfit = totalRevenue - costOfRevenue;
-  const generalAndAdminExpenses = expenseRows.reduce((s, r) => s + Math.abs(getNetBalance(r)), 0);
-  const operatingProfit = grossProfit - generalAndAdminExpenses;
+  const sellingExpenseRows = expenseRows.filter(r => 
+    r.code.startsWith('62') || r.name.includes('بيع') || r.name.includes('تسويق') || r.name.includes('دعاية')
+  );
+  const adminExpenseRows = expenseRows.filter(r => !sellingExpenseRows.includes(r));
+  const sellingAndMarketingExpenses = sellingExpenseRows.reduce((s, r) => s + Math.abs(getNetBalance(r)), 0);
+  const generalAndAdminExpenses = adminExpenseRows.reduce((s, r) => s + Math.abs(getNetBalance(r)), 0);
+  const operatingProfit = grossProfit - sellingAndMarketingExpenses - generalAndAdminExpenses;
   const profitBeforeZakat = operatingProfit;
 
   // الزكاة
