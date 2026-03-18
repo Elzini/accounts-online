@@ -134,6 +134,15 @@ export function AccountStatementReport() {
     processedData.entries.forEach((entry: any) => {
       data.push({ entryNumber: entry.entry_number, date: formatDate(entry.date), description: entry.description, type: getDocumentTypeLabel(entry.reference_type), debit: entry.debit > 0 ? entry.debit : '', credit: entry.credit > 0 ? entry.credit : '', balance: entry.balance });
     });
+    // Add summary rows
+    data.push({ entryNumber: '', date: '', description: '', type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `عدد عمليات الإيداع: ${processedData.debitCount}`, type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `عدد عمليات السحب: ${processedData.creditCount}`, type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `الرصيد الافتتاحي: ${formatCurrency(processedData.openingBalance)}`, type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `إجمالي الإيداعات: ${formatCurrency(processedData.totalDebit)}`, type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `إجمالي السحوبات: ${formatCurrency(processedData.totalCredit)}`, type: '', debit: '', credit: '', balance: '' });
+    data.push({ entryNumber: '', date: '', description: `رصيد الإغلاق: ${formatCurrency(processedData.closingBalance)}`, type: '', debit: '', credit: '', balance: '' });
+
     printReport({
       title: t.as_title,
       headerInfo: [
