@@ -74,8 +74,9 @@ export function AccountStatementReport() {
   };
 
   const { decimals } = useNumberFormat();
+  // Always show exact values with 2 decimal places - no rounding
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(value) : value);
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
   };
 
   const formatDate = (dateStr: string) => {
