@@ -81,7 +81,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   const { data: analytics, isLoading: analyticsLoading } = useAdvancedAnalytics();
   const { data: settings } = useAppSettings();
   const { permissions } = useAuth();
-  const { company } = useCompany();
+  const { company, companyId } = useCompany();
   const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
   const isCarDealership = companyType === 'car_dealership';
   const industryLabels = useIndustryLabels();
