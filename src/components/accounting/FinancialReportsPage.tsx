@@ -484,9 +484,14 @@ export function FinancialReportsPage({ defaultTab = 'journal-entries' }: { defau
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {comprehensiveTrial.accounts.map((item) => (
-                      <TableRow key={item.account.id}>
-                        <TableCell className="font-mono">{item.account.code}</TableCell><TableCell>{item.account.name}</TableCell>
+                    {comprehensiveTrial.accounts.map((item: any) => (
+                      <TableRow key={item.account.id} className={item.isParent ? 'bg-muted/40 font-semibold' : ''}>
+                        <TableCell className="font-mono" style={{ paddingRight: `${(item.level || 0) * 20 + 16}px` }}>
+                          {item.account.code}
+                        </TableCell>
+                        <TableCell style={{ paddingRight: `${(item.level || 0) * 20 + 16}px` }}>
+                          {item.isParent ? `📁 ${item.account.name}` : item.account.name}
+                        </TableCell>
                         <TableCell className="text-center border-x">{item.periodDebit > 0 ? fmt(item.periodDebit) : '-'}</TableCell>
                         <TableCell className="text-center border-x">{item.periodCredit > 0 ? fmt(item.periodCredit) : '-'}</TableCell>
                         <TableCell className="text-center">{item.closingDebit > 0 ? fmt(item.closingDebit) : '-'}</TableCell>

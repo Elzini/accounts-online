@@ -841,24 +841,97 @@ export async function getComprehensiveTrialBalance(
     balances.set(line.account_id, current);
   });
 
-  const trialAccounts = accounts
-    .map(account => {
-      const totals = balances.get(account.id) || { debit: 0, credit: 0 };
-      const netBalance = totals.debit - totals.credit;
-      
-      return {
-        account,
-        openingDebit: 0,
-        openingCredit: 0,
-        periodDebit: totals.debit,
-        periodCredit: totals.credit,
-        closingDebit: netBalance > 0 ? netBalance : 0,
-        closingCredit: netBalance < 0 ? Math.abs(netBalance) : 0,
-      };
-    })
-    .filter(item => item.periodDebit > 0 || item.periodCredit > 0);
+  // Build account balances for leaf accounts
+  const accountBalances = accounts.map(account => {
+    const totals = balances.get(account.id) || { debit: 0, credit: 0 };
+    const netBalance = totals.debit - totals.credit;
+    return {
+      account,
+      openingDebit: 0,
+      openingCredit: 0,
+      periodDebit: totals.debit,
+      periodCredit: totals.credit,
+      closingDebit: netBalance > 0 ? netBalance : 0,
+      closingCredit: netBalance < 0 ? Math.abs(netBalance) : 0,
+      isParent: false,
+      level: 0,
+    };
+  });
 
-  const totals = trialAccounts.reduce((acc, item) => ({
+  // Identify parent accounts (accounts that have children)
+  const parentIds = new Set(accounts.filter(a => a.parent_id).map(a => a.parent_id!));
+  
+  // Calculate parent totals by aggregating children
+  const parentTotals = new Map<string, { periodDebit: number; periodCredit: number; closingDebit: number; closingCredit: number }>();
+  for (const ab of accountBalances) {
+    if (ab.account.parent_id && (ab.periodDebit > 0 || ab.periodCredit > 0)) {
+      const current = parentTotals.get(ab.account.parent_id) || { periodDebit: 0, periodCredit: 0, closingDebit: 0, closingCredit: 0 };
+      current.periodDebit += ab.periodDebit;
+      current.periodCredit += ab.periodCredit;
+      current.closingDebit += ab.closingDebit;
+      current.closingCredit += ab.closingCredit;
+      parentTotals.set(ab.account.parent_id, current);
+    }
+  }
+
+  // Build hierarchical list: parent first, then children
+  const trialAccounts: Array<{
+    account: AccountCategory;
+    openingDebit: number; openingCredit: number;
+    periodDebit: number; periodCredit: number;
+    closingDebit: number; closingCredit: number;
+    isParent: boolean; level: number;
+  }> = [];
+
+  // Get top-level accounts (no parent, or parent not in our accounts)
+  const accountMap = new Map(accounts.map(a => [a.id, a]));
+  const rootAccounts = accounts.filter(a => !a.parent_id || !accountMap.has(a.parent_id));
+  const childrenOf = (parentId: string) => accounts.filter(a => a.parent_id === parentId);
+
+  const addAccountHierarchy = (account: AccountCategory, level: number) => {
+    const children = childrenOf(account.id);
+    const hasChildren = children.length > 0;
+    const ab = accountBalances.find(b => b.account.id === account.id);
+    const pt = parentTotals.get(account.id);
+
+    if (hasChildren) {
+      // Parent account - show aggregated totals
+      const aggPeriodDebit = (pt?.periodDebit || 0) + (ab?.periodDebit || 0);
+      const aggPeriodCredit = (pt?.periodCredit || 0) + (ab?.periodCredit || 0);
+      const aggClosingDebit = (pt?.closingDebit || 0) + (ab?.closingDebit || 0);
+      const aggClosingCredit = (pt?.closingCredit || 0) + (ab?.closingCredit || 0);
+      
+      if (aggPeriodDebit > 0 || aggPeriodCredit > 0) {
+        trialAccounts.push({
+          account,
+          openingDebit: 0, openingCredit: 0,
+          periodDebit: aggPeriodDebit,
+          periodCredit: aggPeriodCredit,
+          closingDebit: aggClosingDebit,
+          closingCredit: aggClosingCredit,
+          isParent: true,
+          level,
+        });
+        // Add children
+        children
+          .sort((a, b) => a.code.localeCompare(b.code))
+          .forEach(child => addAccountHierarchy(child, level + 1));
+      }
+    } else {
+      // Leaf account
+      if (ab && (ab.periodDebit > 0 || ab.periodCredit > 0)) {
+        trialAccounts.push({ ...ab, level, isParent: false });
+      }
+    }
+  };
+
+  rootAccounts
+    .sort((a, b) => a.code.localeCompare(b.code))
+    .forEach(account => addAccountHierarchy(account, 0));
+
+  // Calculate totals from leaf accounts only to avoid double counting
+  const leafAccounts = trialAccounts.filter(a => !a.isParent);
+  const totals = leafAccounts.reduce((acc, item) => ({
     openingDebit: acc.openingDebit + item.openingDebit,
     openingCredit: acc.openingCredit + item.openingCredit,
     periodDebit: acc.periodDebit + item.periodDebit,
