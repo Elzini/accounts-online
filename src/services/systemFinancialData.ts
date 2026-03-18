@@ -291,8 +291,8 @@ export async function getSystemFinancialStatements(
   // حساب الأرباح من القيود المحاسبية:
   // الربح الإجمالي = الإيرادات - تكلفة البضاعة المباعة
   const grossProfit = totalRevenue - costOfRevenue;
-  // ربح العمليات = الربح الإجمالي - المصروفات الإدارية
-  const operatingProfit = grossProfit - generalAndAdminExpenses;
+  // ربح العمليات = الربح الإجمالي - مصاريف البيع - المصروفات الإدارية (IAS 1.103)
+  const operatingProfit = grossProfit - sellingAndMarketingExpenses - generalAndAdminExpenses;
   // الربح قبل الزكاة
   const profitBeforeZakat = operatingProfit;
   
