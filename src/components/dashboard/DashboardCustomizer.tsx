@@ -42,6 +42,7 @@ import { useDashboardConfig, useSaveDashboardConfig } from '@/hooks/useSystemCon
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAccounts } from '@/hooks/useAccounting';
+import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 // Card configuration interface
@@ -181,6 +182,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
   const { data: savedConfig, isLoading } = useDashboardConfig();
   const saveConfig = useSaveDashboardConfig();
   const { t } = useLanguage();
+  const industryLabels = useIndustryLabels();
 
   const [cards, setCards] = useState<CardConfig[]>(DEFAULT_STAT_CARDS);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
@@ -240,9 +242,19 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
       ].sort((a, b) => a.order - b.order);
       setCards(mergedCards);
     } else {
-      setCards(DEFAULT_STAT_CARDS.map((c, i) => ({ ...c, order: i, fontSize: 100, bgColor: '' })));
+      setCards(DEFAULT_STAT_CARDS.map((c, i) => ({
+        ...c,
+        label: c.id === 'availableCars'
+          ? industryLabels.availableItems
+          : c.id === 'totalPurchases'
+            ? industryLabels.totalPurchasesLabel
+            : c.label,
+        order: i,
+        fontSize: 100,
+        bgColor: '',
+      })));
     }
-  }, [savedConfig]);
+  }, [savedConfig, industryLabels]);
 
   const moveCard = useCallback((id: string, direction: 'up' | 'down') => {
     setCards(prev => {
@@ -376,13 +388,34 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
   };
 
   const handleReset = () => {
-    setCards(DEFAULT_STAT_CARDS.map((c, i) => ({ ...c, order: i, fontSize: 100, bgColor: '' })));
+    setCards(DEFAULT_STAT_CARDS.map((c, i) => ({
+      ...c,
+      label: c.id === 'availableCars'
+        ? industryLabels.availableItems
+        : c.id === 'totalPurchases'
+          ? industryLabels.totalPurchasesLabel
+          : c.label,
+      order: i,
+      fontSize: 100,
+      bgColor: '',
+    })));
     setSelectedCard(null);
     setHasChanges(true);
   };
 
   const selected = cards.find(c => c.id === selectedCard);
   const sortedCards = [...cards].sort((a, b) => a.order - b.order);
+
+  const getCardPrimaryLabel = useCallback((card: CardConfig) => {
+    if (card.id === 'availableCars') return industryLabels.availableItems;
+    if (card.id === 'totalPurchases') return industryLabels.totalPurchasesLabel;
+    return card.label;
+  }, [industryLabels]);
+
+  const getCardSecondaryLabel = useCallback((card: CardConfig) => {
+    const primary = getCardPrimaryLabel(card);
+    return card.label && card.label !== primary ? card.label : null;
+  }, [getCardPrimaryLabel]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -460,7 +493,10 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{card.label}</p>
+                      <p className="font-medium text-sm truncate">{getCardPrimaryLabel(card)}</p>
+                      {getCardSecondaryLabel(card) && (
+                        <p className="text-[11px] text-muted-foreground truncate">{getCardSecondaryLabel(card)}</p>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="secondary" className="text-[10px]">
                           {card.size === 'small' ? t.size_small : card.size === 'large' ? t.size_large : t.size_medium}
@@ -526,7 +562,12 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
                       onClick={() => {
                         const defaultCard = DEFAULT_STAT_CARDS.find(c => c.id === selected.id);
                         if (defaultCard) {
-                          updateCard(selected.id, { label: defaultCard.label });
+                          const defaultLabel = defaultCard.id === 'availableCars'
+                            ? industryLabels.availableItems
+                            : defaultCard.id === 'totalPurchases'
+                              ? industryLabels.totalPurchasesLabel
+                              : defaultCard.label;
+                          updateCard(selected.id, { label: defaultLabel });
                         }
                       }}
                       title={t.restore_default_name}
