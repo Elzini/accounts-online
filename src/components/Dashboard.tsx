@@ -21,7 +21,8 @@ import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useFiscalYears } from '@/hooks/useFiscalYears';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { useDashboardConfig, useSaveDashboardConfig } from '@/hooks/useSystemControl';
-import { CardConfig, DEFAULT_STAT_CARDS } from './dashboard/DashboardCustomizer';
+import { CardConfig, DEFAULT_STAT_CARDS, FormulaAccountItem } from './dashboard/DashboardCustomizer';
+import { useCardAccountBalances } from '@/hooks/useAccountBalances';
 
 // Dashboard Components
 import { TrendCard } from './dashboard/TrendCard';
@@ -112,19 +113,46 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   const { getFormula } = useCardFormulas();
   const formulaVariables = useMemo(() => buildFormulaVariables(stats), [stats]);
   
-  const getCardValue = useCallback((cardId: string, defaultValue: number): number => {
-    const formulaConfig = getFormula(cardId);
-    if (!formulaConfig || !formulaConfig.isCustom) return defaultValue;
-    const { result, error } = evaluateFormula(formulaConfig.formula, formulaVariables);
-    if (error) return defaultValue;
-    return formulaConfig.includeVAT ? result * 1.15 : result;
-  }, [getFormula, formulaVariables]);
   
   // Dashboard customization
   const { data: dashboardConfig, isLoading: isDashboardConfigLoading } = useDashboardConfig();
   const saveDashboardConfig = useSaveDashboardConfig();
   const [cardConfigs, setCardConfigs] = useState<CardConfig[]>(DEFAULT_STAT_CARDS);
-  
+
+  // Collect all account IDs needed from card configs for batch fetching
+  const accountIdsForCards = useMemo(() => {
+    const ids = new Set<string>();
+    cardConfigs.forEach(c => {
+      if (c.dataSource === 'account' && c.accountId) ids.add(c.accountId);
+      if (c.dataSource === 'formula' && c.formulaAccounts) {
+        c.formulaAccounts.forEach(fa => ids.add(fa.accountId));
+      }
+    });
+    return Array.from(ids);
+  }, [cardConfigs]);
+
+  const { data: accountBalances = {} } = useCardAccountBalances(accountIdsForCards);
+
+  const getCardValue = useCallback((cardId: string, defaultValue: number): number => {
+    const cfg = cardConfigs.find(c => c.id === cardId);
+    if (cfg?.dataSource === 'account' && cfg.accountId && accountBalances[cfg.accountId] !== undefined) {
+      return accountBalances[cfg.accountId];
+    }
+    if (cfg?.dataSource === 'formula' && cfg.formulaAccounts && cfg.formulaAccounts.length > 0) {
+      let total = 0;
+      cfg.formulaAccounts.forEach(item => {
+        const bal = accountBalances[item.accountId] || 0;
+        total += item.operator === '+' ? bal : -bal;
+      });
+      return total;
+    }
+    const formulaConfig = getFormula(cardId);
+    if (!formulaConfig || !formulaConfig.isCustom) return defaultValue;
+    const { result, error } = evaluateFormula(formulaConfig.formula, formulaVariables);
+    if (error) return defaultValue;
+    return formulaConfig.includeVAT ? result * 1.15 : result;
+  }, [getFormula, formulaVariables, cardConfigs, accountBalances]);
+
   // Widget-level edit mode
   const [isEditMode, setIsEditMode] = useState(false);
   const [widgetConfigs, setWidgetConfigs] = useState<WidgetConfig[]>(DEFAULT_WIDGETS);
