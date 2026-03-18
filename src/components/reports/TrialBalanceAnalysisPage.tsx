@@ -2120,18 +2120,36 @@ export function TrialBalanceAnalysisPage() {
       {fileName && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <Calculator className="w-5 h-5" />
                 التحقق من مطابقة ميزان المراجعة
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowReconciliation(!showReconciliation)}
-              >
-                {showReconciliation ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
-              </Button>
+              <div className="flex items-center gap-2 flex-wrap">
+                {reconciliationData.rawAccounts.length > 0 && (
+                  <>
+                    <Button variant="outline" size="sm" className="gap-1" onClick={printTrialBalance}>
+                      <Printer className="w-4 h-4" />
+                      طباعة الميزان
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-1" onClick={exportTrialBalanceToPdf}>
+                      <FileText className="w-4 h-4" />
+                      PDF
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-white" onClick={exportTrialBalanceToExcel}>
+                      <FileSpreadsheet className="w-4 h-4" />
+                      Excel
+                    </Button>
+                  </>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowReconciliation(!showReconciliation)}
+                >
+                  {showReconciliation ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
+                </Button>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
