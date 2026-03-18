@@ -15,7 +15,7 @@ import { useJournalEntries, useAccounts, useCreateJournalEntry, useDeleteJournal
 import { useCostCenters } from '@/hooks/useCostCenters';
 import { ProjectSelector } from '@/components/forms/ProjectSelector';
 import { toast } from 'sonner';
-import { Loader2, Plus, Eye, Trash2, BookOpen, CalendarIcon, X, Printer, FileDown, Paperclip, FileText } from 'lucide-react';
+import { Loader2, Plus, Eye, Trash2, BookOpen, CalendarIcon, X, Printer, FileDown, Paperclip, FileText, Search } from 'lucide-react';
 import { JournalEntryEditDialog } from './JournalEntryEditDialog';
 import { JournalAttachments } from './JournalAttachments';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -61,6 +61,7 @@ export function JournalEntriesPage() {
   const [viewingEntryId, setViewingEntryId] = useState<string | null>(null);
   const [attachmentEntryId, setAttachmentEntryId] = useState<string | null>(null);
   const [printingEntryId, setPrintingEntryId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const { data: viewingEntry } = useJournalEntry(viewingEntryId);
   const { data: printingEntry } = useJournalEntry(printingEntryId);
   
@@ -226,10 +227,22 @@ export function JournalEntriesPage() {
     }
   };
 
-  // Filter entries by fiscal year
+  // Filter entries by fiscal year and search
   const filteredEntries = useMemo(() => {
-    return filterByFiscalYear(entries, 'entry_date');
-  }, [entries, filterByFiscalYear]);
+    let result = filterByFiscalYear(entries, 'entry_date');
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((entry: any) => {
+        const entryNum = String(entry.entry_number || '');
+        const entryDate = entry.entry_date ? format(new Date(entry.entry_date), 'yyyy/MM/dd') : '';
+        const desc = (entry.description || '').toLowerCase();
+        const debit = String(entry.total_debit || 0);
+        const credit = String(entry.total_credit || 0);
+        return entryNum.includes(q) || entryDate.includes(q) || desc.includes(q) || debit.includes(q) || credit.includes(q);
+      });
+    }
+    return result;
+  }, [entries, filterByFiscalYear, searchQuery]);
 
   // Get next entry number
   const nextEntryNumber = filteredEntries.length > 0 ? Math.max(...filteredEntries.map(e => e.entry_number)) + 1 : 1;
@@ -643,11 +656,34 @@ export function JournalEntriesPage() {
       {/* Entries List */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5" />
-            {t.je_entries_title}
-          </CardTitle>
-          <CardDescription>{t.je_entries_desc}</CardDescription>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5" />
+                {t.je_entries_title}
+              </CardTitle>
+              <CardDescription>{t.je_entries_desc}</CardDescription>
+            </div>
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+              <Input
+                placeholder={language === 'ar' ? 'بحث برقم القيد، التاريخ، الوصف، أو القيمة...' : 'Search by number, date, description, or amount...'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-10 bg-muted/40 border-border/50 focus:bg-card focus:border-primary/40 transition-all"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setSearchQuery('')}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {filteredEntries.length === 0 ? (
