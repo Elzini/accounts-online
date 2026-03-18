@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { createPurchaseReturnJournal } from '@/services/purchaseReturnJournal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -373,6 +374,18 @@ export function PurchaseReturnsPage() {
         if (insertedNote) {
           const linesWithId = noteLines.map(l => ({ ...l, note_id: insertedNote.id }));
           await supabase.from('credit_debit_note_lines').insert(linesWithId);
+          // Create reverse journal entry for trial balance
+          await createPurchaseReturnJournal(insertedNote.id);
+        }
+      } else {
+        // No line items - still create journal entry
+        const { data: insertedNote } = await supabase.from('credit_debit_notes')
+          .select('id')
+          .eq('company_id', companyId!)
+          .eq('note_number', num)
+          .single();
+        if (insertedNote) {
+          await createPurchaseReturnJournal(insertedNote.id);
         }
       }
     },
@@ -383,7 +396,9 @@ export function PurchaseReturnsPage() {
       queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['cars'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
-      toast.success(language === 'ar' ? 'تم اعتماد مرتجع المشتريات' : 'Purchase return approved');
+      queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+      toast.success(language === 'ar' ? 'تم اعتماد مرتجع المشتريات وتسجيل القيد المحاسبي' : 'Purchase return approved with journal entry');
       resetForm();
     },
     onError: (e) => {
