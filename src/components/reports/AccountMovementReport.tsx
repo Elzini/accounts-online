@@ -379,8 +379,8 @@ export function AccountMovementReport() {
       </div>
 
       {/* Quick Account Selection */}
-      <div className="flex flex-wrap gap-2">
-        <span className="text-sm text-muted-foreground self-center ml-2">اختصارات:</span>
+      <div className="flex flex-wrap gap-2 overflow-x-auto">
+        <span className="text-sm text-muted-foreground self-center ml-2 shrink-0">اختصارات:</span>
         {quickAccounts.slice(0, 6).map((account) => (
           <Button
             key={account.id}
@@ -388,7 +388,7 @@ export function AccountMovementReport() {
             size="sm"
             onClick={() => setSelectedAccountId(account.id)}
             className={cn(
-              "flex items-center gap-2",
+              "flex items-center gap-2 shrink-0 text-xs sm:text-sm",
               selectedAccountId === account.id && "bg-emerald-600 hover:bg-emerald-700"
             )}
           >
