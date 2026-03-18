@@ -140,8 +140,8 @@ const realEstateTemplates: JournalTemplate[] = [
     icon: <Banknote className="w-5 h-5" />,
     defaultDescription: 'تحصيل قسط من عميل',
     lines: [
-      { accountCode: '1121', accountName: 'البنك', description: 'المبلغ المحصل', side: 'debit' },
-      { accountCode: '1130', accountName: 'ذمم مدينة - عملاء', description: 'تخفيض رصيد العميل', side: 'credit' },
+      { accountCode: '1102', accountName: 'البنك', description: 'المبلغ المحصل', side: 'debit' },
+      { accountCode: '1103', accountName: 'ذمم مدينة - عملاء', description: 'تخفيض رصيد العميل', side: 'credit' },
     ],
   },
 
