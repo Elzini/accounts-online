@@ -136,7 +136,7 @@ export async function createBackup(companyId: string, name: string, description?
 
 async function fetchAllData(companyId: string): Promise<BackupData> {
   const companyType = await getCompanyType(companyId);
-  const isCarDealership = !companyType || companyType === 'car_dealership';
+  const isCarDealership = companyType === 'car_dealership';
 
   // Universal queries
   const universalQueries = [
