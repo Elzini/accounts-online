@@ -255,12 +255,13 @@ export async function getSystemFinancialStatements(
     return totals.debit - totals.credit;
   };
 
-  // تصنيف الحسابات الورقية فقط (دعم المفرد والجمع)
-  const assetAccounts = leafAccounts.filter(a => a.type === 'asset' || a.type === 'assets');
-  const liabilityAccounts = leafAccounts.filter(a => a.type === 'liability' || a.type === 'liabilities');
-  const equityAccounts = leafAccounts.filter(a => a.type === 'equity');
-  const revenueAccounts = leafAccounts.filter(a => a.type === 'revenue');
-  const expenseAccounts = leafAccounts.filter(a => a.type === 'expense' || a.type === 'expenses');
+  // تصنيف الحسابات الورقية فقط (دعم المفرد والجمع لتوافق قاعدة البيانات)
+  const typeMatch = (a: { type: string }, ...types: string[]) => types.includes(a.type);
+  const assetAccounts = leafAccounts.filter(a => typeMatch(a, 'asset', 'assets'));
+  const liabilityAccounts = leafAccounts.filter(a => typeMatch(a, 'liability', 'liabilities'));
+  const equityAccounts = leafAccounts.filter(a => typeMatch(a, 'equity'));
+  const revenueAccounts = leafAccounts.filter(a => typeMatch(a, 'revenue'));
+  const expenseAccounts = leafAccounts.filter(a => typeMatch(a, 'expense', 'expenses'));
 
   // تصنيف الأصول
   const currentAssetCodes = ['11', '12', '13'];
