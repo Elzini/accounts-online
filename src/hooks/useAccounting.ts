@@ -219,40 +219,48 @@ export function useUpdateJournalEntry() {
 // Reports
 export function useAccountBalances() {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['account-balances', companyId],
-    queryFn: () => companyId ? getAccountBalances(companyId) : [],
+    queryKey: ['account-balances', companyId, fyId],
+    queryFn: () => companyId ? getAccountBalances(companyId, undefined, undefined, fyId) : [],
     enabled: !!companyId,
   });
 }
 
 export function useAccountBalancesByDate(startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['account-balances', companyId, startDate, endDate],
-    queryFn: () => companyId ? getAccountBalances(companyId, startDate, endDate) : [],
+    queryKey: ['account-balances', companyId, startDate, endDate, fyId],
+    queryFn: () => companyId ? getAccountBalances(companyId, startDate, endDate, fyId) : [],
     enabled: !!companyId,
   });
 }
 
 export function useTrialBalance(startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['trial-balance', companyId, startDate, endDate],
-    queryFn: () => companyId ? getTrialBalance(companyId, startDate, endDate) : null,
+    queryKey: ['trial-balance', companyId, startDate, endDate, fyId],
+    queryFn: () => companyId ? getTrialBalance(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
   });
 }
 
 export function useIncomeStatement(startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['income-statement', companyId, startDate, endDate],
-    queryFn: () => companyId ? getIncomeStatement(companyId, startDate, endDate) : null,
+    queryKey: ['income-statement', companyId, startDate, endDate, fyId],
+    queryFn: () => companyId ? getIncomeStatement(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
   });
 }
@@ -260,10 +268,12 @@ export function useIncomeStatement(startDate?: string, endDate?: string) {
 // General Ledger
 export function useGeneralLedger(accountId: string | null, startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['general-ledger', companyId, accountId, startDate, endDate],
-    queryFn: () => companyId && accountId ? getGeneralLedger(companyId, accountId, startDate, endDate) : null,
+    queryKey: ['general-ledger', companyId, accountId, startDate, endDate, fyId],
+    queryFn: () => companyId && accountId ? getGeneralLedger(companyId, accountId, startDate, endDate, fyId) : null,
     enabled: !!companyId && !!accountId,
   });
 }
