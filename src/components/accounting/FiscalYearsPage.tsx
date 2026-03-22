@@ -18,8 +18,10 @@ import {
   useSetCurrentFiscalYear,
   useDeleteFiscalYear,
   useCarryForwardInventory,
-  useRefreshAllCarryForward
+  useRefreshAllCarryForward,
+  useRefreshClosingEntry
 } from '@/hooks/useFiscalYears';
+import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { 
@@ -42,7 +44,9 @@ export function FiscalYearsPage() {
   const { t, direction } = useLanguage();
   const { data: fiscalYears = [], isLoading } = useFiscalYears();
   const { permissions } = useAuth();
+  const { company } = useCompany();
   const isAdmin = permissions.admin || permissions.super_admin;
+  const isCarDealership = company?.company_type === 'car_dealership';
   
   const createFiscalYear = useCreateFiscalYear();
   const closeFiscalYear = useCloseFiscalYear();
@@ -51,6 +55,7 @@ export function FiscalYearsPage() {
   const deleteFiscalYear = useDeleteFiscalYear();
   const carryForwardInventory = useCarryForwardInventory();
   const refreshAllCarryForward = useRefreshAllCarryForward();
+  const refreshClosingEntry = useRefreshClosingEntry();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isNewYearDialogOpen, setIsNewYearDialogOpen] = useState(false);
@@ -200,8 +205,8 @@ export function FiscalYearsPage() {
             </Dialog>
           )}
 
-          {/* Carry forward inventory */}
-          {fiscalYears.length >= 2 && (
+          {/* Carry forward inventory - only for car dealerships */}
+          {isCarDealership && fiscalYears.length >= 2 && (
             <Dialog open={isInventoryDialogOpen} onOpenChange={setIsInventoryDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline"><Package className="h-4 w-4 ml-2" />{t.fy_carry_inventory}</Button>
@@ -291,8 +296,9 @@ export function FiscalYearsPage() {
                   <div className="p-4 bg-muted rounded-lg space-y-2">
                     <p className="text-sm font-medium">{t.fy_will_update}</p>
                     <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>تحديث قيد الإقفال للسنة المقفلة</li>
                       <li>{t.fy_update_list_1}</li>
-                      <li>{t.fy_update_list_2}</li>
+                      {isCarDealership && <li>{t.fy_update_list_2}</li>}
                       <li>{t.fy_update_list_3}</li>
                     </ul>
                     <p className="text-sm text-destructive mt-2">{t.fy_update_warning}</p>
@@ -375,6 +381,35 @@ export function FiscalYearsPage() {
                           <Button variant="ghost" size="sm" onClick={() => setCurrentFiscalYear.mutate(year.id)} disabled={setCurrentFiscalYear.isPending}>
                             <CheckCircle2 className="h-4 w-4" />
                           </Button>
+                        )}
+                        {/* Refresh closing entry for closed years */}
+                        {year.status === 'closed' && isAdmin && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" title="تحديث قيد الإقفال">
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="flex items-center gap-2">
+                                  <RefreshCw className="h-5 w-5 text-primary" />
+                                  تحديث قيد الإقفال
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  سيتم إعادة حساب قيد الإقفال للسنة المالية "{year.name}" بناءً على الأرصدة الحالية.
+                                  <br /><strong>يُستخدم هذا عند إضافة أو تعديل قيود في السنة المقفلة.</strong>
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => refreshClosingEntry.mutate(year.id)}>
+                                  {refreshClosingEntry.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <RefreshCw className="h-4 w-4 ml-2" />}
+                                  تحديث قيد الإقفال
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         )}
                         {year.status === 'open' && isAdmin && (
                           <AlertDialog>

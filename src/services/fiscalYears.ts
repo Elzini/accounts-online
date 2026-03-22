@@ -430,7 +430,7 @@ export async function deleteFiscalYear(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// ترحيل المخزون (السيارات المتاحة) من سنة مالية إلى أخرى
+// ترحيل المخزون (السيارات المتاحة) من سنة مالية إلى أخرى - خاص بشركات السيارات
 export async function carryForwardInventory(
   fromFiscalYearId: string,
   toFiscalYearId: string,
@@ -461,6 +461,171 @@ export async function carryForwardInventory(
     if (updateError) throw updateError;
 
     return { success: true, count: cars.length };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+// إعادة حساب قيد الإقفال للسنة المالية المقفلة (عند إجراء تعديلات على السنة المقفلة)
+export async function refreshClosingEntry(
+  fiscalYearId: string,
+  companyId: string,
+  closedBy: string
+): Promise<{ success: boolean; closingEntryId?: string; error?: string }> {
+  try {
+    // 1. جلب السنة المالية
+    const { data: fiscalYear } = await supabase
+      .from('fiscal_years')
+      .select('*')
+      .eq('id', fiscalYearId)
+      .single();
+    
+    if (!fiscalYear) throw new Error('السنة المالية غير موجودة');
+    if (fiscalYear.status !== 'closed') throw new Error('السنة المالية غير مقفلة');
+
+    // 2. حذف قيد الإقفال القديم إن وجد
+    if (fiscalYear.closing_balance_entry_id) {
+      await supabase
+        .from('journal_entry_lines')
+        .delete()
+        .eq('journal_entry_id', fiscalYear.closing_balance_entry_id);
+      
+      await supabase
+        .from('journal_entries')
+        .delete()
+        .eq('id', fiscalYear.closing_balance_entry_id);
+    }
+
+    // 3. حساب أرصدة الإيرادات والمصروفات من القيود (باستثناء قيد الإقفال المحذوف)
+    const { data: journalLines } = await supabase
+      .from('journal_entry_lines')
+      .select(`
+        account_id,
+        debit,
+        credit,
+        journal_entry:journal_entries!inner(company_id, entry_date, is_posted, reference_type)
+      `)
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .gte('journal_entry.entry_date', fiscalYear.start_date)
+      .lte('journal_entry.entry_date', fiscalYear.end_date);
+
+    // 4. جلب الحسابات
+    const { data: accounts } = await supabase
+      .from('account_categories')
+      .select('*')
+      .eq('company_id', companyId);
+
+    if (!accounts) throw new Error('لا توجد حسابات');
+
+    const revenueAccounts = accounts.filter(a => a.type === 'revenue');
+    const expenseAccounts = accounts.filter(a => a.type === 'expenses');
+    const retainedEarningsAccount = accounts.find(a => a.code.startsWith('33'));
+
+    // حساب الأرصدة (استبعاد قيود الإقفال)
+    const balances = new Map<string, number>();
+    (journalLines || []).forEach((line: any) => {
+      // استبعاد قيود الإقفال من الحساب
+      if (line.journal_entry?.reference_type === 'closing') return;
+      
+      const current = balances.get(line.account_id) || 0;
+      const account = accounts.find(a => a.id === line.account_id);
+      if (account && ['liabilities', 'equity', 'revenue'].includes(account.type)) {
+        balances.set(line.account_id, current + (Number(line.credit) - Number(line.debit)));
+      } else {
+        balances.set(line.account_id, current + (Number(line.debit) - Number(line.credit)));
+      }
+    });
+
+    // حساب صافي الربح
+    const totalRevenue = revenueAccounts.reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);
+    const totalExpenses = expenseAccounts.reduce((sum, a) => sum + Math.abs(balances.get(a.id) || 0), 0);
+    const netIncome = totalRevenue - totalExpenses;
+
+    // 5. إنشاء قيد إقفال جديد
+    if (retainedEarningsAccount && netIncome !== 0) {
+      const closingEntryLines: Array<{ account_id: string; debit: number; credit: number; description: string }> = [];
+      
+      // إقفال الإيرادات (مدين)
+      revenueAccounts.forEach(acc => {
+        const balance = balances.get(acc.id) || 0;
+        if (balance !== 0) {
+          closingEntryLines.push({
+            account_id: acc.id,
+            debit: balance,
+            credit: 0,
+            description: `إقفال ${acc.name}`
+          });
+        }
+      });
+
+      // إقفال المصروفات (دائن)
+      expenseAccounts.forEach(acc => {
+        const balance = balances.get(acc.id) || 0;
+        if (balance !== 0) {
+          closingEntryLines.push({
+            account_id: acc.id,
+            debit: 0,
+            credit: Math.abs(balance),
+            description: `إقفال ${acc.name}`
+          });
+        }
+      });
+
+      // قيد الأرباح المحتجزة
+      closingEntryLines.push({
+        account_id: retainedEarningsAccount.id,
+        debit: netIncome < 0 ? Math.abs(netIncome) : 0,
+        credit: netIncome > 0 ? netIncome : 0,
+        description: 'صافي الربح/الخسارة للسنة (مُحدّث)'
+      });
+
+      const totalDebit = closingEntryLines.reduce((sum, l) => sum + l.debit, 0);
+      const totalCredit = closingEntryLines.reduce((sum, l) => sum + l.credit, 0);
+
+      const { data: closingEntry, error: entryError } = await supabase
+        .from('journal_entries')
+        .insert({
+          company_id: companyId,
+          description: `قيد إقفال مُحدّث للسنة المالية ${fiscalYear.name}`,
+          entry_date: fiscalYear.end_date,
+          total_debit: totalDebit,
+          total_credit: totalCredit,
+          is_posted: true,
+          reference_type: 'closing',
+          fiscal_year_id: fiscalYearId,
+          created_by: closedBy
+        })
+        .select()
+        .single();
+
+      if (entryError) throw entryError;
+
+      const { error: linesError } = await supabase
+        .from('journal_entry_lines')
+        .insert(closingEntryLines.map(line => ({
+          ...line,
+          journal_entry_id: closingEntry.id
+        })));
+
+      if (linesError) throw linesError;
+
+      // تحديث السنة المالية بقيد الإقفال الجديد
+      await supabase
+        .from('fiscal_years')
+        .update({ closing_balance_entry_id: closingEntry.id })
+        .eq('id', fiscalYearId);
+
+      return { success: true, closingEntryId: closingEntry.id };
+    }
+
+    // لا توجد إيرادات أو مصروفات - إزالة مرجع قيد الإقفال
+    await supabase
+      .from('fiscal_years')
+      .update({ closing_balance_entry_id: null })
+      .eq('id', fiscalYearId);
+
+    return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -759,35 +924,59 @@ export async function refreshSupplierBalances(
   }
 }
 
-// تحديث شامل لجميع الأرصدة المرحلة
+// تحديث شامل لجميع الأرصدة المرحلة (يعمل لجميع أنواع الشركات)
 export async function refreshAllCarryForwardBalances(
   fiscalYearId: string,
   previousYearId: string,
-  companyId: string
+  companyId: string,
+  companyType?: string
 ): Promise<{ 
   success: boolean; 
   openingBalancesUpdated?: boolean;
+  closingEntryUpdated?: boolean;
   inventoryCount?: number;
   error?: string 
 }> {
   try {
-    // 1. تحديث الأرصدة الافتتاحية
+    // 1. تحديث قيد الإقفال للسنة المقفلة (إعادة حساب)
+    const { data: previousYear } = await supabase
+      .from('fiscal_years')
+      .select('status, closed_by')
+      .eq('id', previousYearId)
+      .single();
+
+    let closingEntryUpdated = false;
+    if (previousYear?.status === 'closed') {
+      const closingResult = await refreshClosingEntry(
+        previousYearId, 
+        companyId, 
+        previousYear.closed_by || ''
+      );
+      if (closingResult.success) {
+        closingEntryUpdated = true;
+      }
+    }
+
+    // 2. تحديث الأرصدة الافتتاحية (عام لجميع الشركات)
     const openingResult = await refreshOpeningBalances(fiscalYearId, previousYearId, companyId);
     if (!openingResult.success) throw new Error(openingResult.error);
 
-    // 2. ترحيل المخزون
-    const inventoryResult = await carryForwardInventory(previousYearId, fiscalYearId, companyId);
+    // 3. ترحيل المخزون - فقط لشركات السيارات
+    let inventoryCount = 0;
+    if (companyType === 'car_dealership') {
+      const inventoryResult = await carryForwardInventory(previousYearId, fiscalYearId, companyId);
+      inventoryCount = inventoryResult.count || 0;
+    }
 
-    // 3. تحديث أرصدة العملاء
+    // 4. تحديث أرصدة العملاء والموردين (عام)
     await refreshCustomerBalances(fiscalYearId, previousYearId, companyId);
-
-    // 4. تحديث أرصدة الموردين
     await refreshSupplierBalances(fiscalYearId, previousYearId, companyId);
 
     return { 
       success: true, 
       openingBalancesUpdated: true,
-      inventoryCount: inventoryResult.count || 0
+      closingEntryUpdated,
+      inventoryCount
     };
   } catch (error: any) {
     return { success: false, error: error.message };
