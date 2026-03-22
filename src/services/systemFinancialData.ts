@@ -249,18 +249,18 @@ export async function getSystemFinancialStatements(
   // دالة حساب الرصيد الصافي
   const getBalance = (account: AccountCategory): number => {
     const totals = balances.get(account.id) || { debit: 0, credit: 0 };
-    if (['liabilities', 'equity', 'revenue'].includes(account.type)) {
+    if (['liability', 'liabilities', 'equity', 'revenue'].includes(account.type)) {
       return totals.credit - totals.debit;
     }
     return totals.debit - totals.credit;
   };
 
-  // تصنيف الحسابات الورقية فقط
-  const assetAccounts = leafAccounts.filter(a => a.type === 'assets');
-  const liabilityAccounts = leafAccounts.filter(a => a.type === 'liabilities');
+  // تصنيف الحسابات الورقية فقط (دعم المفرد والجمع)
+  const assetAccounts = leafAccounts.filter(a => a.type === 'asset' || a.type === 'assets');
+  const liabilityAccounts = leafAccounts.filter(a => a.type === 'liability' || a.type === 'liabilities');
   const equityAccounts = leafAccounts.filter(a => a.type === 'equity');
   const revenueAccounts = leafAccounts.filter(a => a.type === 'revenue');
-  const expenseAccounts = leafAccounts.filter(a => a.type === 'expenses');
+  const expenseAccounts = leafAccounts.filter(a => a.type === 'expense' || a.type === 'expenses');
 
   // تصنيف الأصول
   const currentAssetCodes = ['11', '12', '13'];
