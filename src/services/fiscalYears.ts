@@ -691,20 +691,36 @@ export async function refreshOpeningBalances(
 
     if (!previousYear) throw new Error('السنة السابقة غير موجودة');
 
-    // حذف قيد الافتتاح القديم إن وجد
-    if (currentYear.opening_balance_entry_id) {
-      // حذف بنود القيد أولاً
-      await supabase
-        .from('journal_entry_lines')
-        .delete()
-        .eq('journal_entry_id', currentYear.opening_balance_entry_id);
-      
-      // حذف القيد
-      await supabase
-        .from('journal_entries')
-        .delete()
-        .eq('id', currentYear.opening_balance_entry_id);
+    // حذف جميع قيود الافتتاح القديمة لهذه السنة (سواء كانت مرتبطة أو لا)
+    const { data: oldOpeningEntries } = await supabase
+      .from('journal_entries')
+      .select('id')
+      .eq('company_id', companyId)
+      .eq('fiscal_year_id', fiscalYearId)
+      .eq('reference_type', 'opening');
+
+    if (oldOpeningEntries && oldOpeningEntries.length > 0) {
+      const oldIds = oldOpeningEntries.map(e => e.id);
+      // حذف بنود القيود أولاً
+      for (const oldId of oldIds) {
+        await supabase
+          .from('journal_entry_lines')
+          .delete()
+          .eq('journal_entry_id', oldId);
+      }
+      // حذف القيود
+      for (const oldId of oldIds) {
+        await supabase
+          .from('journal_entries')
+          .delete()
+          .eq('id', oldId);
+      }
     }
+    // مسح المرجع القديم
+    await supabase
+      .from('fiscal_years')
+      .update({ opening_balance_entry_id: null })
+      .eq('id', fiscalYearId);
 
     // جلب جميع القيود المحاسبية للسنة السابقة
     const { data: journalLines } = await supabase
