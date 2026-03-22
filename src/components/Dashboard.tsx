@@ -90,8 +90,11 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   const { data: transfers } = useCarTransfers();
   const { data: dealerships } = usePartnerDealerships();
   const { data: installmentSales = [] } = useInstallmentSales();
-  const { data: allSales = [] } = useSales();
-  const { data: allCars = [] } = useCars();
+  const { data: rawSales = [] } = useSales();
+  const { data: rawCars = [] } = useCars();
+  // Only use car-specific data for car dealerships
+  const allSales = isCarDealership ? rawSales : [];
+  const allCars = isCarDealership ? rawCars : [];
   const { data: allTimeStats } = useAllTimeStats();
   const { selectedFiscalYear } = useFiscalYear();
   const { data: fiscalYears = [] } = useFiscalYears();
@@ -514,8 +517,8 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   }, [allCars, selectedFiscalYear]);
 
   const buildSalesCarDetails = useCallback((): CarDetailItem[] => {
-    // Build details for sales cars
-      return fiscalYearSales.map(sale => ({
+    if (!isCarDealership) return [];
+    return fiscalYearSales.map(sale => ({
       id: sale.id,
       name: sale.car?.name || t.not_specified,
       model: sale.car?.model || '',
@@ -524,10 +527,10 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
       profit: sale.profit,
       saleDate: sale.sale_date,
     }));
-  }, [fiscalYearSales]);
+  }, [fiscalYearSales, isCarDealership]);
 
   const buildPurchaseCarDetails = useCallback((): CarDetailItem[] => {
-    // Build details for purchase cars
+    if (!isCarDealership) return [];
     return fiscalYearCars.map(car => ({
       id: car.id,
       name: car.name,
@@ -536,7 +539,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
       chassisNumber: car.chassis_number,
       status: car.status,
     }));
-  }, [fiscalYearCars]);
+  }, [fiscalYearCars, isCarDealership]);
 
   const showStatDetail = useCallback(async (cardId: string) => {
     const cardCfg = getCardConfig(cardId);
@@ -1315,14 +1318,20 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
 
               {/* Advanced Financial KPIs */}
               <FinancialKPICards
-                totalRevenue={(allSales || []).reduce((sum, s) => sum + (s.sale_price || 0), 0)}
-                totalCost={(allSales || []).reduce((sum, s) => sum + ((s.sale_price || 0) - (s.profit || 0)), 0)}
-                totalProfit={(allSales || []).reduce((sum, s) => sum + (s.profit || 0), 0)}
+                totalRevenue={isCarDealership
+                  ? allSales.reduce((sum, s) => sum + (s.sale_price || 0), 0)
+                  : analytics.salesTrend.thisMonth + analytics.salesTrend.lastMonth}
+                totalCost={isCarDealership
+                  ? allSales.reduce((sum, s) => sum + ((s.sale_price || 0) - (s.profit || 0)), 0)
+                  : analytics.purchasesTrend.thisMonth + analytics.purchasesTrend.lastMonth}
+                totalProfit={isCarDealership
+                  ? allSales.reduce((sum, s) => sum + (s.profit || 0), 0)
+                  : analytics.profitTrend.thisMonth + analytics.profitTrend.lastMonth}
                 totalExpenses={expenseBreakdown?.total || 0}
                 averageDaysToSell={analytics.averageDaysToSell}
                 inventoryCount={analytics.inventoryByStatus.available}
                 soldCount={analytics.inventoryByStatus.sold}
-                salesCount={allSales?.length || 0}
+                salesCount={isCarDealership ? allSales.length : analytics.inventoryByStatus.sold}
                 purchasesThisMonth={analytics.purchasesTrend.thisMonth}
                 salesThisMonth={analytics.salesTrend.thisMonth}
               />
