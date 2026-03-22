@@ -122,8 +122,14 @@ export async function getSystemTrialBalance(
   // تضمين الحسابات الأب أيضاً لأنها قد تظهر في القيود
   accounts.forEach(a => { if (!accountTypeMap.has(a.id)) accountTypeMap.set(a.id, a.type); });
 
-  const allOpeningLines = [...(openingLines || []), ...(openingEntryLines || [])];
-  allOpeningLines.forEach((line: any) => {
+  // إذا وُجد قيد افتتاحي داخل الفترة المختارة نستخدمه حصراً للافتتاح
+  // حتى لا تُحتسب أرصدة السنوات السابقة مرتين.
+  const openingLinesInPeriod = openingEntryLines || [];
+  const openingSourceLines = openingLinesInPeriod.length > 0
+    ? openingLinesInPeriod
+    : [...(openingLines || [])];
+
+  openingSourceLines.forEach((line: any) => {
     const accType = accountTypeMap.get(line.account_id);
     // فقط حسابات المركز المالي (أصول، خصوم، حقوق ملكية)
     if (!accType || !balanceSheetTypes.has(accType)) return;

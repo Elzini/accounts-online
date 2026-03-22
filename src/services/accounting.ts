@@ -937,7 +937,9 @@ export async function getComprehensiveTrialBalance(
   const effectiveStartDate = startDate || fyStartDate;
   const effectiveEndDate = endDate || fiscalYear?.end_date;
 
-  // 1) Fetch OPENING balances: all posted entries BEFORE the period start + opening entries within period
+  // 1) Fetch OPENING balances
+  // قاعدة مهمة: إذا وُجد قيد افتتاحي داخل الفترة المختارة نستخدمه كمصدر وحيد للافتتاح
+  // لمنع تكرار ترحيل أرصدة السنوات السابقة مرتين.
   const openingBalances = new Map<string, { debit: number; credit: number }>();
   if (effectiveStartDate) {
     const { data: openingLines } = await supabase
@@ -950,8 +952,8 @@ export async function getComprehensiveTrialBalance(
       .eq('journal_entry.is_posted', true)
       .lt('journal_entry.entry_date', effectiveStartDate);
 
-    // جلب قيود الافتتاح المرحّلة ضمن الفترة
-    const { data: openingEntryLines } = await supabase
+    // جلب قيود الافتتاح المرحّلة ضمن الفترة (من تاريخ البداية وحتى النهاية إن وُجدت)
+    let openingEntriesQuery = supabase
       .from('journal_entry_lines')
       .select(`
         account_id, debit, credit,
@@ -962,12 +964,23 @@ export async function getComprehensiveTrialBalance(
       .eq('journal_entry.reference_type', 'opening')
       .gte('journal_entry.entry_date', effectiveStartDate);
 
+    if (effectiveEndDate) {
+      openingEntriesQuery = openingEntriesQuery.lte('journal_entry.entry_date', effectiveEndDate);
+    }
+
+    const { data: openingEntryLines } = await openingEntriesQuery;
+
     // استبعاد حسابات الإيرادات والمصروفات من الأرصدة الافتتاحية (حسابات فترة)
     const balanceSheetTypes = new Set(['asset', 'assets', 'liability', 'liabilities', 'equity']);
     const accountTypeMap = new Map<string, string>();
     accounts.forEach(a => accountTypeMap.set(a.id, a.type));
 
-    const allOpeningLines = [...(openingLines || []), ...(openingEntryLines || [])];
+    const openingLinesInPeriod = openingEntryLines || [];
+    const openingSourceLines = openingLinesInPeriod.length > 0
+      ? openingLinesInPeriod
+      : (openingLines || []);
+
+    const allOpeningLines = openingSourceLines;
     allOpeningLines.forEach((line: any) => {
       const accType = accountTypeMap.get(line.account_id);
       if (!accType || !balanceSheetTypes.has(accType)) return;
