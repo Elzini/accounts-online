@@ -64,17 +64,34 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
     return;
   }
 
-  // 3. Find the necessary accounts
-  const { data: accounts } = await supabase
-    .from('account_categories')
-    .select('id, code, name')
-    .eq('company_id', companyId);
+  // 3. Find the necessary accounts - use account_mappings first, then settings, then code fallbacks
+  const [accountsRes, mappingsRes] = await Promise.all([
+    supabase.from('account_categories').select('id, code, name').eq('company_id', companyId),
+    supabase.from('account_mappings').select('mapping_key, account_id').eq('company_id', companyId).eq('is_active', true),
+  ]);
+  const accounts = accountsRes.data;
+  const mappings = mappingsRes.data;
 
-  const findAccount = (id: string | null, ...fallbackCodes: string[]) => {
+  const getMappedAccountId = (key: string): string | null => {
+    const mapping = mappings?.find(m => m.mapping_key === key);
+    return mapping?.account_id || null;
+  };
+
+  const findAccount = (id: string | null, mappingKey: string | null, ...fallbackCodes: string[]) => {
+    // Priority 1: explicit ID from settings
     if (id) {
       const acc = accounts?.find(a => a.id === id);
       if (acc) return acc;
     }
+    // Priority 2: account_mappings table
+    if (mappingKey) {
+      const mappedId = getMappedAccountId(mappingKey);
+      if (mappedId) {
+        const acc = accounts?.find(a => a.id === mappedId);
+        if (acc) return acc;
+      }
+    }
+    // Priority 3: fallback codes
     for (const code of fallbackCodes) {
       const acc = accounts?.find(a => a.code === code);
       if (acc) return acc;
