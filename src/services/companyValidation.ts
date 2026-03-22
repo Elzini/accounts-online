@@ -75,7 +75,7 @@ export async function validateCompany(companyId: string): Promise<ValidationResu
     .eq('company_id', companyId);
 
   const hasFiscalYear = (fiscalYears?.length || 0) > 0;
-  const hasActiveFiscalYear = fiscalYears?.some(fy => fy.is_active) || false;
+  const hasActiveFiscalYear = fiscalYears?.some(fy => fy.status === 'active') || false;
 
   checks.push({
     name: 'fiscal_years',
