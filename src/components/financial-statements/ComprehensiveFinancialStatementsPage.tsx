@@ -123,14 +123,7 @@ export function ComprehensiveFinancialStatementsPage() {
   
   const isCarDealership = company?.company_type === 'car_dealership';
 
-  // تحميل تلقائي من بيانات النظام عند فتح الصفحة
-  const autoLoadedRef = useRef(false);
-  useEffect(() => {
-    if (companyId && company?.name && !autoLoadedRef.current && dataSource === 'none') {
-      autoLoadedRef.current = true;
-      handleCalculateFromSystem();
-    }
-  }, [companyId, company?.name]);
+  // لا يوجد تحميل تلقائي - يختار المستخدم مصدر البيانات أولاً
   
   // حساب صافي الربح من تقرير الأرباح (للسيارات فقط)
   const profitReportData = useMemo(() => {
