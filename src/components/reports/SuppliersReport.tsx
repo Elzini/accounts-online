@@ -28,6 +28,7 @@ export function SuppliersReport() {
   const { exportToExcel } = useExcelExport();
   const labels = useIndustryLabels();
   const { t, language } = useLanguage();
+  const { decimals: numDecimals } = useNumberFormat();
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
 
   // Fetch purchase invoices for non-car companies
@@ -146,7 +147,8 @@ export function SuppliersReport() {
   const totalPurchasesAmount = supplierStats.reduce((sum, s) => sum + s.totalPurchases, 0);
   const totalCarsCount = supplierStats.reduce((sum, s) => sum + s.carsCount, 0);
 
-  const { decimals: numDecimals } = useNumberFormat();
+
+
   const formatCurrency = (amount: number) => new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'SAR',
