@@ -281,10 +281,12 @@ export function useGeneralLedger(accountId: string | null, startDate?: string, e
 // Balance Sheet - الميزانية العمومية
 export function useBalanceSheet(startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['balance-sheet', companyId, startDate, endDate],
-    queryFn: () => companyId ? getBalanceSheet(companyId, startDate, endDate) : null,
+    queryKey: ['balance-sheet', companyId, startDate, endDate, fyId],
+    queryFn: () => companyId ? getBalanceSheet(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
   });
 }
