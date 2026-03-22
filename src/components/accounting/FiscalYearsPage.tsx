@@ -205,8 +205,8 @@ export function FiscalYearsPage() {
             </Dialog>
           )}
 
-          {/* Carry forward inventory */}
-          {fiscalYears.length >= 2 && (
+          {/* Carry forward inventory - only for car dealerships */}
+          {isCarDealership && fiscalYears.length >= 2 && (
             <Dialog open={isInventoryDialogOpen} onOpenChange={setIsInventoryDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline"><Package className="h-4 w-4 ml-2" />{t.fy_carry_inventory}</Button>
