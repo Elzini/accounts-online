@@ -935,7 +935,8 @@ export async function getJournalEntriesReport(
 export async function getComprehensiveTrialBalance(
   companyId: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  fiscalYearId?: string
 ): Promise<{
   accounts: Array<{ 
     account: AccountCategory; 
