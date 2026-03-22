@@ -63,9 +63,15 @@ export function useDetailedJournalPrint() {
     const vatNumber = (companyData?.invoice_settings as any)?.vatNumber || '';
     const headerColor = reportSettings.header_color || '#3b82f6';
 
-    const currentDate = new Date();
-    const formattedDate = currentDate.toLocaleDateString('ar-SA');
-    const formattedTime = currentDate.toLocaleTimeString('ar-SA');
+    // حساب إجمالي جميع القيود
+    const grandTotalDebit = entries.reduce((sum: number, e: any) => {
+      const lines = e.lines || [];
+      return sum + lines.reduce((s: number, l: any) => s + (l.debit || 0), 0);
+    }, 0);
+    const grandTotalCredit = entries.reduce((sum: number, e: any) => {
+      const lines = e.lines || [];
+      return sum + lines.reduce((s: number, l: any) => s + (l.credit || 0), 0);
+    }, 0);
 
     // Build entries HTML
     const entriesHtml = entries.map((entry: any) => {
