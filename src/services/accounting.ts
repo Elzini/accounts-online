@@ -154,13 +154,18 @@ export async function deleteAccount(id: string): Promise<void> {
 }
 
 // Journal Entries
-export async function fetchJournalEntries(companyId: string): Promise<JournalEntry[]> {
-  const { data, error } = await supabase
+export async function fetchJournalEntries(companyId: string, fiscalYearId?: string): Promise<JournalEntry[]> {
+  let query = supabase
     .from('journal_entries')
     .select('*')
     .eq('company_id', companyId)
     .order('entry_number', { ascending: false });
   
+  if (fiscalYearId) {
+    query = query.eq('fiscal_year_id', fiscalYearId);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return (data || []) as JournalEntry[];
 }
