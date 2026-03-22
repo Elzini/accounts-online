@@ -1024,10 +1024,11 @@ export async function getComprehensiveTrialBalance(
     periodBalances.set(line.account_id, current);
   });
 
-  // Build leaf-level balances
+  // Build per-account balances (include ALL accounts that have direct journal entries)
   const leafOpening = new Map<string, { od: number; oc: number }>();
   const leafPeriod = new Map<string, { pd: number; pc: number }>();
 
+  // Include every account that has data (whether leaf or parent with direct entries)
   accounts.forEach(account => {
     const ob = openingBalances.get(account.id);
     if (ob && (ob.debit > 0 || ob.credit > 0)) {
