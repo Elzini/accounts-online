@@ -36,14 +36,18 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
 
   // Fetch invoices for non-car companies
   const { data: invoices = [], isLoading: invoicesLoading } = useQuery({
-    queryKey: ['company-invoices', companyId],
+    queryKey: ['company-invoices', companyId, selectedFiscalYear?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      let query = (supabase as any)
         .from('invoices')
         .select('*')
         .eq('company_id', companyId!)
         .eq('invoice_type', 'sales')
         .order('created_at', { ascending: false });
+      if (selectedFiscalYear) {
+        query = query.eq('fiscal_year_id', selectedFiscalYear.id);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },

@@ -40,15 +40,19 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
 
   // Fetch purchase invoices for non-car companies
   const { data: purchaseInvoices = [], isLoading: invoicesLoading } = useQuery({
-    queryKey: ['purchase-invoices', companyId],
+    queryKey: ['purchase-invoices', companyId, selectedFiscalYear?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      let query = (supabase as any)
         .from('invoices')
         .select('*, supplier:suppliers!invoices_supplier_id_fkey(id, name)')
         .eq('company_id', companyId!)
         .eq('invoice_type', 'purchase')
         .gte('total', 0)
         .order('created_at', { ascending: false });
+      if (selectedFiscalYear) {
+        query = query.eq('fiscal_year_id', selectedFiscalYear.id);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
@@ -282,18 +286,6 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
     if (isCarDealership) return [];
     let result = purchaseInvoices;
 
-    // Filter by selected fiscal year
-    if (selectedFiscalYear) {
-      const fyStart = new Date(selectedFiscalYear.start_date);
-      fyStart.setHours(0, 0, 0, 0);
-      const fyEnd = new Date(selectedFiscalYear.end_date);
-      fyEnd.setHours(23, 59, 59, 999);
-      result = result.filter((inv: any) => {
-        const invDate = new Date(inv.invoice_date || inv.created_at);
-        return invDate >= fyStart && invDate <= fyEnd;
-      });
-    }
-
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter((inv: any) =>
@@ -313,7 +305,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       }
     }
     return result;
-  }, [isCarDealership, purchaseInvoices, searchQuery, statusFilter, selectedFiscalYear]);
+  }, [isCarDealership, purchaseInvoices, searchQuery, statusFilter]);
 
   const invoiceTotals = useMemo(() => {
     return filteredInvoices.reduce(
