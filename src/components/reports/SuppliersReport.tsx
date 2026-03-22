@@ -147,7 +147,8 @@ export function SuppliersReport() {
   const totalPurchasesAmount = supplierStats.reduce((sum, s) => sum + s.totalPurchases, 0);
   const totalCarsCount = supplierStats.reduce((sum, s) => sum + s.carsCount, 0);
 
-  const { decimals: numDecimals } = useNumberFormat();
+
+
   const formatCurrency = (amount: number) => new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'SAR',
