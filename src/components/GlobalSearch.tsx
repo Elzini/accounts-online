@@ -35,7 +35,7 @@ const SEARCH_ITEMS: SearchItem[] = [
   { id: 'sales-report', label: 'تقرير المبيعات', section: 'التقارير', keywords: ['تقرير مبيعات'] },
   { id: 'purchases-report', label: 'تقرير المشتريات', section: 'التقارير', keywords: ['تقرير مشتريات'] },
   { id: 'financial-statements', label: 'القوائم المالية', section: 'التقارير', keywords: ['ميزانية', 'قائمة مالية', 'balance'] },
-  { id: 'trial-balance-analysis', label: 'ميزان المراجعة', section: 'التقارير', keywords: ['ميزان', 'trial balance'] },
+  { id: 'trial-balance', label: 'ميزان المراجعة', section: 'التقارير', keywords: ['ميزان', 'trial balance', 'شامل'] },
   { id: 'vat-return-report', label: 'إقرار الضريبة', section: 'التقارير', keywords: ['ضريبة', 'vat', 'ضريبة القيمة المضافة'] },
   { id: 'users-management', label: 'إدارة المستخدمين', section: 'الإدارة', keywords: ['مستخدم', 'user', 'صلاحية'] },
   { id: 'app-settings', label: 'الإعدادات', section: 'الإدارة', keywords: ['إعداد', 'setting', 'ضبط'] },
