@@ -370,11 +370,9 @@ export async function openNewFiscalYear(
           }
 
           // الحسابات التي تُرحّل (الأصول، الخصوم، حقوق الملكية)
-          // فقط الحسابات الورقية (بدون أبناء) لمنع تكرار الأرصدة في التقارير الهرمية
-          const parentIds = new Set(accounts.filter(a => a.parent_id).map(a => a.parent_id!));
-          const balanceSheetAccounts = accounts.filter(a => 
+          // نعتمد الأرصدة الفعلية المباشرة من القيود؛ إدراج الحسابات الأب يكون فقط إذا عليها حركة فعلية (رصيد ≠ 0)
+          const balanceSheetAccounts = accounts.filter(a =>
             ['asset', 'assets', 'liability', 'liabilities', 'equity'].includes(a.type)
-            && !parentIds.has(a.id)
           );
           if (retainedEarningsAcc && !balanceSheetAccounts.find(a => a.id === retainedEarningsAcc!.id)) {
             balanceSheetAccounts.push(retainedEarningsAcc);
@@ -410,6 +408,11 @@ export async function openNewFiscalYear(
           if (openingLines.length > 0) {
             const totalDebit = openingLines.reduce((sum, l) => sum + l.debit, 0);
             const totalCredit = openingLines.reduce((sum, l) => sum + l.credit, 0);
+
+            const balanceDiff = Math.abs(totalDebit - totalCredit);
+            if (balanceDiff > 0.005) {
+              throw new Error(`قيد الافتتاح غير متوازن (الفرق: ${balanceDiff.toFixed(2)})`);
+            }
 
             // إنشاء قيد الافتتاح
             const { data: openingEntry, error: entryError } = await supabase
@@ -802,11 +805,9 @@ export async function refreshOpeningBalances(
     }
 
     // الحسابات التي تُرحّل (الأصول، الخصوم، حقوق الملكية)
-    // فقط الحسابات الورقية (بدون أبناء) لمنع تكرار الأرصدة في التقارير الهرمية
-    const parentIds = new Set(accounts.filter(a => a.parent_id).map(a => a.parent_id!));
-    const balanceSheetAccounts = accounts.filter(a => 
+    // نعتمد الأرصدة الفعلية المباشرة من القيود؛ إدراج الحسابات الأب يكون فقط إذا عليها حركة فعلية (رصيد ≠ 0)
+    const balanceSheetAccounts = accounts.filter(a =>
       ['asset', 'assets', 'liability', 'liabilities', 'equity'].includes(a.type)
-      && !parentIds.has(a.id)
     );
     // إضافة حساب الأرباح المحتجزة إذا تم إنشاؤه حديثاً
     if (retainedEarningsAccount && !balanceSheetAccounts.find(a => a.id === retainedEarningsAccount!.id)) {
@@ -845,6 +846,11 @@ export async function refreshOpeningBalances(
     if (openingLines.length > 0) {
       const totalDebit = openingLines.reduce((sum, l) => sum + l.debit, 0);
       const totalCredit = openingLines.reduce((sum, l) => sum + l.credit, 0);
+
+      const balanceDiff = Math.abs(totalDebit - totalCredit);
+      if (balanceDiff > 0.005) {
+        throw new Error(`قيد الافتتاح غير متوازن (الفرق: ${balanceDiff.toFixed(2)})`);
+      }
 
       // تحديث القيد الحالي إن وجد، وإلا إنشاء أول قيد افتتاحي فقط عند عدم وجوده
       if (openingEntryIdToUpdate) {
