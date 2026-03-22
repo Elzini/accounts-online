@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useSales } from '@/hooks/useDatabase';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ActivePage } from '@/types';
 
@@ -27,12 +28,13 @@ type DashboardInvoiceRow = {
 export function RecentInvoicesCard({ setActivePage }: RecentInvoicesCardProps) {
   const { companyId, company } = useCompany();
   const isCarDealership = company?.company_type === 'car_dealership';
+  const { selectedFiscalYear } = useFiscalYear();
   const { data: sales = [] } = useSales();
   // For non-car companies, sales hook returns data but we ignore it
   const { data: invoices = [] } = useQuery({
-    queryKey: ['dashboard-recent-invoices', companyId],
+    queryKey: ['dashboard-recent-invoices', companyId, selectedFiscalYear?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      let query = (supabase as any)
         .from('invoices')
         .select('id, invoice_number, invoice_type, invoice_date, total, payment_status, customer_name, supplier:suppliers!invoices_supplier_id_fkey(name)')
         .eq('company_id', companyId!)
@@ -40,7 +42,10 @@ export function RecentInvoicesCard({ setActivePage }: RecentInvoicesCardProps) {
         .order('invoice_date', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(5);
-
+      if (selectedFiscalYear) {
+        query = query.eq('fiscal_year_id', selectedFiscalYear.id);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
