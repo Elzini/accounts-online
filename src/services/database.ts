@@ -972,6 +972,121 @@ export async function fetchStats(fiscalYearId?: string | null) {
     };
   }
 
+  // For non-car companies: use invoices table
+  if (companyType && companyType !== 'car_dealership') {
+    let purchaseInvoicesQuery = supabase
+      .from('invoices')
+      .select('subtotal, invoice_date')
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'purchase');
+
+    let salesInvoicesQuery = supabase
+      .from('invoices')
+      .select('subtotal, invoice_date')
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'sales');
+
+    if (fiscalYearStart && fiscalYearEnd) {
+      purchaseInvoicesQuery = purchaseInvoicesQuery
+        .gte('invoice_date', fiscalYearStart)
+        .lte('invoice_date', fiscalYearEnd);
+      salesInvoicesQuery = salesInvoicesQuery
+        .gte('invoice_date', fiscalYearStart)
+        .lte('invoice_date', fiscalYearEnd);
+    }
+
+    let expensesQueryGeneral = supabase
+      .from('expenses')
+      .select('amount, car_id, expense_date, payment_method')
+      .eq('company_id', companyId);
+    
+    if (fiscalYearStart && fiscalYearEnd) {
+      expensesQueryGeneral = expensesQueryGeneral
+        .gte('expense_date', fiscalYearStart)
+        .lte('expense_date', fiscalYearEnd);
+    }
+
+    let payrollQueryGeneral = supabase
+      .from('payroll_records')
+      .select('month, year, total_base_salaries, total_allowances, total_bonuses, total_overtime, total_absences')
+      .eq('status', 'approved')
+      .eq('company_id', companyId);
+
+    const [purchaseResult, salesResult, expensesResultGeneral, payrollResultGeneral] = await Promise.all([
+      purchaseInvoicesQuery,
+      salesInvoicesQuery,
+      expensesQueryGeneral,
+      payrollQueryGeneral,
+    ]);
+
+    const purchaseInvoices = purchaseResult.data || [];
+    const salesInvoices = salesResult.data || [];
+    const expensesDataGeneral = expensesResultGeneral.data || [];
+
+    const totalPurchasesGeneral = Math.round(
+      purchaseInvoices.reduce((sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0)
+    );
+    const totalSalesAmountGeneral = salesInvoices.reduce(
+      (sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0
+    );
+
+    const generalExpensesAmount = expensesDataGeneral
+      .filter(exp => !exp.car_id)
+      .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
+
+    let payrollDataGeneral = payrollResultGeneral.data || [];
+    if (fiscalYearStart && fiscalYearEnd) {
+      const fyStartDate = parseLocalISODate(fiscalYearStart, false);
+      const fyEndDate = parseLocalISODate(fiscalYearEnd, true);
+      payrollDataGeneral = payrollDataGeneral.filter(p => {
+        const payrollDate = new Date(Number(p.year), Number(p.month) - 1, 1);
+        return payrollDate >= fyStartDate && payrollDate <= fyEndDate;
+      });
+    }
+    const payrollExpensesGeneral = payrollDataGeneral.reduce((sum, p) => {
+      return sum + (Number(p.total_base_salaries) || 0) + (Number(p.total_allowances) || 0) 
+        + (Number(p.total_bonuses) || 0) + (Number(p.total_overtime) || 0) - (Number(p.total_absences) || 0);
+    }, 0);
+
+    const monthSalesInvoices = salesInvoices.filter((inv: any) => 
+      inv.invoice_date >= startOfMonth && inv.invoice_date <= endOfMonth
+    );
+    const monthPurchaseInvoices = purchaseInvoices.filter((inv: any) => 
+      inv.invoice_date >= startOfMonth && inv.invoice_date <= endOfMonth
+    );
+    const monthSalesAmountGeneral = monthSalesInvoices.reduce(
+      (sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0
+    );
+    const monthPurchasesAmount = monthPurchaseInvoices.reduce(
+      (sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0
+    );
+
+    const totalExpensesGeneral = generalExpensesAmount + payrollExpensesGeneral;
+    const netProfitGeneral = totalSalesAmountGeneral - totalPurchasesGeneral - totalExpensesGeneral;
+
+    return {
+      availableNewCars: 0,
+      availableUsedCars: 0,
+      availableCars: 0,
+      todaySales: salesInvoices.filter((inv: any) => inv.invoice_date === today).length,
+      totalProfit: netProfitGeneral,
+      monthSales: monthSalesInvoices.length,
+      totalPurchases: totalPurchasesGeneral,
+      monthSalesAmount: monthSalesAmountGeneral,
+      totalGrossProfit: totalSalesAmountGeneral - totalPurchasesGeneral,
+      totalCarExpenses: 0,
+      totalGeneralExpenses: totalExpensesGeneral,
+      payrollExpenses: payrollExpensesGeneral,
+      prepaidExpensesDue: 0,
+      otherGeneralExpenses: generalExpensesAmount,
+      purchasesCount: purchaseInvoices.length,
+      monthSalesProfit: monthSalesAmountGeneral - monthPurchasesAmount,
+      totalSalesCount: salesInvoices.length,
+      totalSalesAmount: totalSalesAmountGeneral,
+    };
+  }
+
+  // === Car dealership specific stats ===
   // Build all queries - always filter by company_id
   let availableCarsQuery = supabase
     .from('cars')
@@ -1237,15 +1352,41 @@ export async function fetchStats(fiscalYearId?: string | null) {
 export async function fetchAllTimeStats() {
   const companyId = await requireCompanyId();
   
-  // Total purchases across all years
+  // Get company type
+  const { data: companyRecord } = await supabase
+    .from('companies')
+    .select('company_type')
+    .eq('id', companyId)
+    .maybeSingle();
+
+  const companyType = companyRecord?.company_type;
+
+  // For non-car companies: use invoices
+  if (companyType && companyType !== 'car_dealership') {
+    const [purchaseResult, salesResult] = await Promise.all([
+      supabase.from('invoices').select('subtotal').eq('company_id', companyId).eq('invoice_type', 'purchase'),
+      supabase.from('invoices').select('subtotal').eq('company_id', companyId).eq('invoice_type', 'sales'),
+    ]);
+
+    const allTimePurchases = Math.round(
+      (purchaseResult.data || []).reduce((sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0)
+    );
+    const allTimeSales = (salesResult.data || []).reduce((sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0);
+
+    return {
+      allTimePurchases,
+      allTimeSales,
+      allTimeSalesCount: salesResult.data?.length || 0,
+      allTimeProfit: allTimeSales - allTimePurchases,
+      totalCarsCount: 0,
+    };
+  }
+
+  // Car dealership
   const { data: carsData } = await supabase.from('cars').select('purchase_price').eq('company_id', companyId);
-  
-  // Show raw purchase amounts from database as-is
   const allTimePurchases = Math.round(carsData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0);
   
-  // Total sales across all years
   const { data: salesData } = await supabase.from('sales').select('sale_price, profit').eq('company_id', companyId);
-  
   const allTimeSales = salesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
   const allTimeSalesCount = salesData?.length || 0;
   const allTimeProfit = salesData?.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0) || 0;
@@ -1294,39 +1435,76 @@ export async function fetchMonthlyChartData(fiscalYearId?: string) {
   }
 
   const companyId = await requireCompanyId();
-  const { data, error } = await supabase
-    .from('sales')
-    .select('sale_date, sale_price, profit')
-    .eq('company_id', companyId)
-    .gte('sale_date', startDate)
-    .lte('sale_date', endDate)
-    .order('sale_date', { ascending: true });
 
-  if (error) throw error;
+  // Get company type
+  const { data: companyRecord } = await supabase
+    .from('companies')
+    .select('company_type')
+    .eq('id', companyId)
+    .maybeSingle();
+
+  const companyType = companyRecord?.company_type;
+
+  let rawData: Array<{ date: string; amount: number; profit: number }> = [];
+
+  if (companyType && companyType !== 'car_dealership') {
+    // Non-car companies: use invoices
+    const { data: invoices, error } = await supabase
+      .from('invoices')
+      .select('invoice_date, subtotal')
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'sales')
+      .gte('invoice_date', startDate)
+      .lte('invoice_date', endDate)
+      .order('invoice_date', { ascending: true });
+
+    if (error) throw error;
+
+    rawData = (invoices || []).map((inv: any) => ({
+      date: inv.invoice_date,
+      amount: Number(inv.subtotal) || 0,
+      profit: Number(inv.subtotal) || 0,
+    }));
+  } else {
+    // Car dealership: use sales table
+    const { data, error } = await supabase
+      .from('sales')
+      .select('sale_date, sale_price, profit')
+      .eq('company_id', companyId)
+      .gte('sale_date', startDate)
+      .lte('sale_date', endDate)
+      .order('sale_date', { ascending: true });
+
+    if (error) throw error;
+
+    rawData = (data || []).map(sale => ({
+      date: sale.sale_date,
+      amount: Number(sale.sale_price) || 0,
+      profit: Number(sale.profit) || 0,
+    }));
+  }
 
   // Group by month
   const monthlyData: Record<string, { sales: number; profit: number }> = {};
   
-  data?.forEach(sale => {
-    const date = new Date(sale.sale_date);
+  rawData.forEach(item => {
+    const date = new Date(item.date);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     
     if (!monthlyData[monthKey]) {
       monthlyData[monthKey] = { sales: 0, profit: 0 };
     }
     
-    monthlyData[monthKey].sales += Number(sale.sale_price) || 0;
-    monthlyData[monthKey].profit += Number(sale.profit) || 0;
+    monthlyData[monthKey].sales += item.amount;
+    monthlyData[monthKey].profit += item.profit;
   });
 
   // Convert to array with Arabic month names
   const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
   
-  // Generate months for display based on fiscal year or last 6 months
   const result = [];
   
   if (fiscalYearStart && fiscalYearEnd) {
-    // Show months within the fiscal year
     const start = new Date(fiscalYearStart);
     const end = new Date(fiscalYearEnd);
     let current = new Date(start.getFullYear(), start.getMonth(), 1);
@@ -1334,23 +1512,19 @@ export async function fetchMonthlyChartData(fiscalYearId?: string) {
     while (current <= end) {
       const monthKey = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
       const monthName = arabicMonths[current.getMonth()];
-      
       result.push({
         month: monthName,
         sales: monthlyData[monthKey]?.sales || 0,
         profit: monthlyData[monthKey]?.profit || 0,
       });
-      
       current.setMonth(current.getMonth() + 1);
     }
   } else {
-    // Default: last 6 months
     for (let i = 0; i < 6; i++) {
       const date = new Date();
       date.setMonth(date.getMonth() - (5 - i));
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthName = arabicMonths[date.getMonth()];
-      
       result.push({
         month: monthName,
         sales: monthlyData[monthKey]?.sales || 0,
