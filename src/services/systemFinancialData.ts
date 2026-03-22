@@ -191,10 +191,12 @@ export async function getSystemTrialBalance(
       totals.openingCredit += openingCredit;
       totals.movementDebit += movementDebit;
       totals.movementCredit += movementCredit;
-      totals.closingDebit += closingDebit;
-      totals.closingCredit += closingCredit;
     }
   });
+
+  // حساب إجماليات الإقفال من البيانات الخام لضمان التوازن
+  totals.closingDebit = totals.openingDebit + totals.movementDebit;
+  totals.closingCredit = totals.openingCredit + totals.movementCredit;
 
   // ترتيب حسب رقم الحساب
   trialBalanceAccounts.sort((a, b) => a.code.localeCompare(b.code));
