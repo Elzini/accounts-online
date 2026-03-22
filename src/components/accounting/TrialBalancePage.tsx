@@ -221,8 +221,6 @@ export function TrialBalancePage() {
                   <TableHeader>
                     <TableRow className="bg-muted/40">
                       <TableHead rowSpan={2} className="text-center border bg-muted/80 sticky right-0 z-10 min-w-[220px]">اسم الحساب</TableHead>
-                      <TableHead rowSpan={2} className="text-center border bg-muted/80 w-[60px]">مدين</TableHead>
-                      <TableHead rowSpan={2} className="text-center border bg-muted/80 w-[60px]">دائن</TableHead>
                       <TableHead colSpan={2} className="text-center border bg-sky-100 dark:bg-sky-900/30 font-bold">الرصيد السابق</TableHead>
                       <TableHead colSpan={4} className="text-center border bg-emerald-100 dark:bg-emerald-900/30 font-bold">الحركة</TableHead>
                       <TableHead colSpan={2} className="text-center border bg-amber-100 dark:bg-amber-900/30 font-bold">الإجمالي</TableHead>
