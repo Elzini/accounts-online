@@ -1282,11 +1282,15 @@ export async function getVATSettlementReport(
     query = query.in('account_id', vatAccountIds);
   }
 
-  if (startDate) {
-    query = query.gte('journal_entry.entry_date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('journal_entry.entry_date', endDate);
+  if (fiscalYearId) {
+    query = query.eq('journal_entry.fiscal_year_id', fiscalYearId);
+  } else {
+    if (startDate) {
+      query = query.gte('journal_entry.entry_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('journal_entry.entry_date', endDate);
+    }
   }
 
   query = query.order('journal_entry(entry_date)', { ascending: true });
