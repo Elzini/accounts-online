@@ -44,7 +44,9 @@ export function FiscalYearsPage() {
   const { t, direction } = useLanguage();
   const { data: fiscalYears = [], isLoading } = useFiscalYears();
   const { permissions } = useAuth();
+  const { company } = useCompany();
   const isAdmin = permissions.admin || permissions.super_admin;
+  const isCarDealership = company?.company_type === 'car_dealership';
   
   const createFiscalYear = useCreateFiscalYear();
   const closeFiscalYear = useCloseFiscalYear();
@@ -53,6 +55,7 @@ export function FiscalYearsPage() {
   const deleteFiscalYear = useDeleteFiscalYear();
   const carryForwardInventory = useCarryForwardInventory();
   const refreshAllCarryForward = useRefreshAllCarryForward();
+  const refreshClosingEntry = useRefreshClosingEntry();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isNewYearDialogOpen, setIsNewYearDialogOpen] = useState(false);
