@@ -317,7 +317,7 @@ export default function Companies() {
       phone: company.phone || '',
       address: company.address || '',
       is_active: company.is_active,
-      company_type: ((company as any).company_type || 'car_dealership') as CompanyActivityType,
+      company_type: (company.company_type || 'general_trading') as CompanyActivityType,
     });
     setEditDialogOpen(true);
   };
