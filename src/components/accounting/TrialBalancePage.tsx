@@ -109,21 +109,20 @@ export function TrialBalancePage() {
       { header: 'مدين', key: 'openingDebit' }, { header: 'دائن', key: 'openingCredit' },
       { header: 'مدين', key: 'periodDebit' }, { header: 'دائن', key: 'periodCredit' },
       { header: 'الحالة', key: 'status' }, { header: 'الرصيد', key: 'netBalance' },
-      { header: 'مدين', key: 'totalDebit' }, { header: 'دائن', key: 'totalCredit' },
+      { header: 'مدين', key: 'closingDebit' }, { header: 'دائن', key: 'closingCredit' },
     ];
     const data = filteredAccounts.map(item => {
-      const tD = item.openingDebit + item.periodDebit;
-      const tC = item.openingCredit + item.periodCredit;
+      const closingNet = (item.openingDebit + item.periodDebit) - (item.openingCredit + item.periodCredit);
       return {
         name: `${item.account.code} - ${item.account.name}`,
         openingDebit: item.openingDebit > 0 ? fmt(item.openingDebit) : '-',
         openingCredit: item.openingCredit > 0 ? fmt(item.openingCredit) : '-',
         periodDebit: item.periodDebit > 0 ? fmt(item.periodDebit) : '-',
         periodCredit: item.periodCredit > 0 ? fmt(item.periodCredit) : '-',
-        status: getStatusLabel(tD, tC),
-        netBalance: getNetBalance(tD, tC) > 0 ? fmt(getNetBalance(tD, tC)) : '-',
-        totalDebit: tD > 0 ? fmt(tD) : '-',
-        totalCredit: tC > 0 ? fmt(tC) : '-',
+        status: getStatusLabel(item.closingDebit, item.closingCredit),
+        netBalance: Math.abs(closingNet) > 0 ? fmt(Math.abs(closingNet)) : '-',
+        closingDebit: item.closingDebit > 0 ? fmt(item.closingDebit) : '-',
+        closingCredit: item.closingCredit > 0 ? fmt(item.closingCredit) : '-',
       };
     });
     data.push({
@@ -131,22 +130,22 @@ export function TrialBalancePage() {
       openingDebit: fmt(totals.openingDebit), openingCredit: fmt(totals.openingCredit),
       periodDebit: fmt(totals.periodDebit), periodCredit: fmt(totals.periodCredit),
       status: '', netBalance: '',
-      totalDebit: fmt(totals.totalDebit), totalCredit: fmt(totals.totalCredit),
+      closingDebit: fmt(totals.closingDebit), closingCredit: fmt(totals.closingCredit),
     });
     const title = `ميزان المراجعة - ${company?.name || ''}`;
     const subtitle = queryDates.start && queryDates.end ? `من ${queryDates.start} إلى ${queryDates.end}` : undefined;
     const summaryCards = [
-      { label: 'الرصيد السابق - مدين', value: fmt(totals.openingDebit) },
-      { label: 'الرصيد السابق - دائن', value: fmt(totals.openingCredit) },
+      { label: 'رصيد أول المدة - مدين', value: fmt(totals.openingDebit) },
+      { label: 'رصيد أول المدة - دائن', value: fmt(totals.openingCredit) },
       { label: 'الحركة - مدين', value: fmt(totals.periodDebit) },
       { label: 'الحركة - دائن', value: fmt(totals.periodCredit) },
-      { label: 'الإجمالي - مدين', value: fmt(totals.totalDebit) },
-      { label: 'الإجمالي - دائن', value: fmt(totals.totalCredit) },
+      { label: 'رصيد آخر المدة - مدين', value: fmt(totals.closingDebit) },
+      { label: 'رصيد آخر المدة - دائن', value: fmt(totals.closingCredit) },
     ];
     const columnGroups = [
-      { label: 'الرصيد السابق', colSpan: 2 },
+      { label: 'رصيد أول المدة', colSpan: 2 },
       { label: 'الحركة', colSpan: 4 },
-      { label: 'الإجمالي', colSpan: 2 },
+      { label: 'رصيد آخر المدة', colSpan: 2 },
     ];
     if (type === 'print') printReport({ title, subtitle, columns, data, summaryCards, columnGroups });
     else if (type === 'excel') exportToExcel({ title, columns, data, fileName: 'trial-balance', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
