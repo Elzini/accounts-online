@@ -27,7 +27,7 @@ export function ExpensesPage() {
   const labels = useIndustryLabels();
   const { data: expenses = [], isLoading: expensesLoading } = useExpenses();
   const { data: categories = [], isLoading: categoriesLoading } = useExpenseCategories();
-  const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
+  const { data: accounts = [], isLoading: accountsLoading } = useLeafAccounts();
   const { data: cars = [], isLoading: carsLoading } = useCars();
   const addExpense = useAddExpense();
   const deleteExpense = useDeleteExpense();
