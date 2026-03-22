@@ -249,18 +249,19 @@ export async function getSystemFinancialStatements(
   // دالة حساب الرصيد الصافي
   const getBalance = (account: AccountCategory): number => {
     const totals = balances.get(account.id) || { debit: 0, credit: 0 };
-    if (['liabilities', 'equity', 'revenue'].includes(account.type)) {
+    if (['liability', 'liabilities', 'equity', 'revenue'].includes(account.type)) {
       return totals.credit - totals.debit;
     }
     return totals.debit - totals.credit;
   };
 
-  // تصنيف الحسابات الورقية فقط
-  const assetAccounts = leafAccounts.filter(a => a.type === 'assets');
-  const liabilityAccounts = leafAccounts.filter(a => a.type === 'liabilities');
-  const equityAccounts = leafAccounts.filter(a => a.type === 'equity');
-  const revenueAccounts = leafAccounts.filter(a => a.type === 'revenue');
-  const expenseAccounts = leafAccounts.filter(a => a.type === 'expenses');
+  // تصنيف الحسابات الورقية فقط (دعم المفرد والجمع لتوافق قاعدة البيانات)
+  const typeMatch = (a: { type: string }, ...types: string[]) => types.includes(a.type);
+  const assetAccounts = leafAccounts.filter(a => typeMatch(a, 'asset', 'assets'));
+  const liabilityAccounts = leafAccounts.filter(a => typeMatch(a, 'liability', 'liabilities'));
+  const equityAccounts = leafAccounts.filter(a => typeMatch(a, 'equity'));
+  const revenueAccounts = leafAccounts.filter(a => typeMatch(a, 'revenue'));
+  const expenseAccounts = leafAccounts.filter(a => typeMatch(a, 'expense', 'expenses'));
 
   // تصنيف الأصول
   const currentAssetCodes = ['11', '12', '13'];
@@ -521,8 +522,8 @@ export async function getSystemFinancialStatements(
   };
 
   const reportDate = endDate 
-    ? new Date(endDate).toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })
-    : new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+    ? `${new Date(endDate).getDate()} ${new Date(endDate).toLocaleDateString('ar-SA', { month: 'long' })} ${new Date(endDate).getFullYear()}م`
+    : `${new Date().getDate()} ${new Date().toLocaleDateString('ar-SA', { month: 'long' })} ${new Date().getFullYear()}م`;
 
   return {
     companyName,

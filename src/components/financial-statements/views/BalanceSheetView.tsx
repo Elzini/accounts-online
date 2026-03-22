@@ -13,8 +13,8 @@ interface Props {
 }
 
 export function BalanceSheetView({ data, reportDate, previousReportDate, editMode, onUpdate }: Props) {
-  const currentYear = reportDate ? reportDate.match(/\d{4}/)?.[0] + 'م' : '2025م';
-  const previousYear = previousReportDate ? previousReportDate.match(/\d{4}/)?.[0] + 'م' : '2024م';
+  const currentYear = reportDate ? (reportDate.match(/\d{4}/)?.[0] || reportDate.match(/[٠-٩]{4}/)?.[0]?.replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))) || '2025') + 'م' : '2025م';
+  const previousYear = previousReportDate ? (previousReportDate.match(/\d{4}/)?.[0] || previousReportDate.match(/[٠-٩]{4}/)?.[0]?.replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))) || '2024') + 'م' : '2024م';
   const hasPreviousData = data.previousTotalAssets !== undefined && data.previousTotalAssets > 0;
 
   return (
