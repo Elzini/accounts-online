@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 
 export function JournalRulesTab() {
   const { data: rules = [], isLoading } = useJournalEntryRules();
-  const { data: accounts = [] } = useAccounts();
+  const { data: accounts = [] } = useLeafAccounts();
   const createRule = useCreateJournalEntryRule();
   const updateRule = useUpdateJournalEntryRule();
   const deleteRule = useDeleteJournalEntryRule();

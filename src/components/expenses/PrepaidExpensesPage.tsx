@@ -24,7 +24,7 @@ export default function PrepaidExpensesPage() {
   const { t } = useLanguage();
   const { data: prepaidExpenses = [], isLoading } = usePrepaidExpenses();
   const { data: categories = [] } = useExpenseCategories();
-  const { data: accounts = [] } = useAccounts();
+  const { data: accounts = [] } = useLeafAccounts();
   const createMutation = useCreatePrepaidExpense();
   const updateMutation = useUpdatePrepaidExpense();
   const deleteMutation = useDeletePrepaidExpense();
