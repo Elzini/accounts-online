@@ -280,8 +280,20 @@ export function useDetailedJournalPrint() {
 
   ${entriesHtml}
 
+  <!-- Grand Totals -->
+  <div class="grand-totals">
+    <table style="width:100%; border-collapse:collapse;">
+      <tr>
+        <td style="text-align:right; padding:8px 12px; font-weight:700; font-size:14px;">إجمالي جميع القيود</td>
+        <td style="text-align:center; padding:8px 12px; font-weight:700; font-size:14px; width:150px;">عدد القيود: ${entries.length}</td>
+        <td style="text-align:center; padding:8px 12px; font-weight:700; font-size:14px; color:#1d4ed8; width:180px;">مدين: ${formatNumber(grandTotalDebit)}</td>
+        <td style="text-align:center; padding:8px 12px; font-weight:700; font-size:14px; color:#dc2626; width:180px;">دائن: ${formatNumber(grandTotalCredit)}</td>
+      </tr>
+    </table>
+  </div>
+
   <div class="footer">
-    <div>${formattedDate} ${formattedTime}</div>
+    <div>${new Date().toLocaleDateString('ar-SA')} ${new Date().toLocaleTimeString('ar-SA')}</div>
     <div>عدد القيود: ${entries.length}</div>
   </div>
 
