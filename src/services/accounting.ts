@@ -1124,13 +1124,11 @@ export async function getComprehensiveTrialBalance(
 
   // Calculate totals from RAW journal entry data (not netted display values)
   // This ensures totals are always balanced regardless of parent/child hierarchy
-  let rawOpeningDebit = 0, rawOpeningCredit = 0;
+  // Use raw totals from ALL accounts (including revenue/expense) to ensure balance
+  let rawOpeningDebit = rawOpeningDebitAll;
+  let rawOpeningCredit = rawOpeningCreditAll;
   let rawPeriodDebit = 0, rawPeriodCredit = 0;
 
-  openingBalances.forEach((val) => {
-    rawOpeningDebit += val.debit;
-    rawOpeningCredit += val.credit;
-  });
   periodBalances.forEach((val) => {
     rawPeriodDebit += val.debit;
     rawPeriodCredit += val.credit;
