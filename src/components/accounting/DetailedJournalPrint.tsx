@@ -63,9 +63,15 @@ export function useDetailedJournalPrint() {
     const vatNumber = (companyData?.invoice_settings as any)?.vatNumber || '';
     const headerColor = reportSettings.header_color || '#3b82f6';
 
-    const currentDate = new Date();
-    const formattedDate = currentDate.toLocaleDateString('ar-SA');
-    const formattedTime = currentDate.toLocaleTimeString('ar-SA');
+    // حساب إجمالي جميع القيود
+    const grandTotalDebit = entries.reduce((sum: number, e: any) => {
+      const lines = e.lines || [];
+      return sum + lines.reduce((s: number, l: any) => s + (l.debit || 0), 0);
+    }, 0);
+    const grandTotalCredit = entries.reduce((sum: number, e: any) => {
+      const lines = e.lines || [];
+      return sum + lines.reduce((s: number, l: any) => s + (l.credit || 0), 0);
+    }, 0);
 
     // Build entries HTML
     const entriesHtml = entries.map((entry: any) => {
@@ -237,6 +243,13 @@ export function useDetailedJournalPrint() {
       display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af;
     }
 
+    .grand-totals {
+      border: 2px solid ${headerColor}; border-radius: 8px; margin: 20px 0 10px;
+      background: linear-gradient(135deg, #eff6ff, #f0f4ff);
+      overflow: hidden;
+    }
+    .grand-totals td { border: none; }
+
     .print-actions {
       position: fixed; bottom: 20px; left: 20px; display: flex; gap: 10px; z-index: 1000;
     }
@@ -274,8 +287,20 @@ export function useDetailedJournalPrint() {
 
   ${entriesHtml}
 
+  <!-- Grand Totals -->
+  <div class="grand-totals">
+    <table style="width:100%; border-collapse:collapse;">
+      <tr>
+        <td style="text-align:right; padding:8px 12px; font-weight:700; font-size:14px;">إجمالي جميع القيود</td>
+        <td style="text-align:center; padding:8px 12px; font-weight:700; font-size:14px; width:150px;">عدد القيود: ${entries.length}</td>
+        <td style="text-align:center; padding:8px 12px; font-weight:700; font-size:14px; color:#1d4ed8; width:180px;">مدين: ${formatNumber(grandTotalDebit)}</td>
+        <td style="text-align:center; padding:8px 12px; font-weight:700; font-size:14px; color:#dc2626; width:180px;">دائن: ${formatNumber(grandTotalCredit)}</td>
+      </tr>
+    </table>
+  </div>
+
   <div class="footer">
-    <div>${formattedDate} ${formattedTime}</div>
+    <div>${new Date().toLocaleDateString('ar-SA')} ${new Date().toLocaleTimeString('ar-SA')}</div>
     <div>عدد القيود: ${entries.length}</div>
   </div>
 
