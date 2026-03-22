@@ -308,6 +308,9 @@ export async function getSystemFinancialStatements(
   // ===== قائمة الدخل - حساب من القيود المحاسبية =====
   // الإيرادات من حسابات الإيرادات
   const totalRevenue = revenueAccounts.reduce((sum, a) => sum + getBalance(a), 0);
+  console.log('=== DEBUG: Income Statement ===');
+  console.log('Revenue accounts:', revenueAccounts.map(a => ({ code: a.code, name: a.name, balance: getBalance(a) })));
+  console.log('Total Revenue:', totalRevenue);
   
   // تصنيف المصروفات من القيود وفقاً لـ IAS 1 (عرض حسب الوظيفة)
   // تكلفة البضاعة المباعة (COGS) - تشمل حساب 5101 وما يبدأ بـ 51
@@ -335,11 +338,14 @@ export async function getSystemFinancialStatements(
 
   // حساب الأرباح من القيود المحاسبية:
   // الربح الإجمالي = الإيرادات - تكلفة البضاعة المباعة
+  console.log('COGS:', cogsAccounts.map(a => ({ code: a.code, name: a.name, bal: getBalance(a) })));
+  console.log('Expense ALL:', expenseAccounts.map(a => ({ code: a.code, name: a.name, type: a.type, bal: getBalance(a) })));
+  console.log('costOfRevenue:', costOfRevenue, 'selling:', sellingAndMarketingExpenses, 'admin:', generalAndAdminExpenses);
   const grossProfit = totalRevenue - costOfRevenue;
-  // ربح العمليات = الربح الإجمالي - مصاريف البيع - المصروفات الإدارية (IAS 1.103)
   const operatingProfit = grossProfit - sellingAndMarketingExpenses - generalAndAdminExpenses;
-  // الربح قبل الزكاة
   const profitBeforeZakat = operatingProfit;
+  console.log('grossProfit:', grossProfit, 'operatingProfit:', operatingProfit, 'profitBeforeZakat:', profitBeforeZakat);
+  console.log('=== END DEBUG ===');
 
 
   // ===== بناء الإيضاحات =====
