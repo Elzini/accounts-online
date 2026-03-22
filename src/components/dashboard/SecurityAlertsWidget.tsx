@@ -147,7 +147,7 @@ export function SecurityAlertsWidget() {
       </Sheet>
     </>
   );
-});
+}
 
 function MiniStat({ icon, label, value, color, bg }: { icon: React.ReactNode; label: string; value: number; color: string; bg: string }) {
   return (
