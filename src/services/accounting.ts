@@ -554,6 +554,7 @@ export async function getGeneralLedger(
   // Calculate opening balance (entries before startDate)
   let openingBalance = 0;
   if (startDate) {
+    // جلب الأرصدة قبل بداية الفترة
     const { data: priorLines, error: priorError } = await supabase
       .from('journal_entry_lines')
       .select(`
@@ -569,8 +570,24 @@ export async function getGeneralLedger(
 
     if (priorError) throw priorError;
 
+    // جلب قيود الافتتاح المرحّلة ضمن الفترة
+    const { data: openingEntryLines } = await supabase
+      .from('journal_entry_lines')
+      .select(`
+        account_id,
+        debit,
+        credit,
+        journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type)
+      `)
+      .in('account_id', targetAccountIds)
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .eq('journal_entry.reference_type', 'opening')
+      .gte('journal_entry.entry_date', startDate);
+
     const isDebitNormal = ['asset', 'assets', 'expense', 'expenses'].includes(account.type);
-    (priorLines || []).forEach((line: any) => {
+    const allPriorLines = [...(priorLines || []), ...(openingEntryLines || [])];
+    allPriorLines.forEach((line: any) => {
       const d = Number(line.debit) || 0;
       const c = Number(line.credit) || 0;
       if (isDebitNormal) {
