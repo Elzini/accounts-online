@@ -28,6 +28,7 @@ export function SuppliersReport() {
   const { exportToExcel } = useExcelExport();
   const labels = useIndustryLabels();
   const { t, language } = useLanguage();
+  const { decimals: numDecimals } = useNumberFormat();
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
 
   // Fetch purchase invoices for non-car companies
