@@ -346,6 +346,7 @@ export function Sidebar({
     { id: 'profit-report' as ActivePage, label: s(settings?.profit_report_title, t.nav_profit_report), icon: TrendingUp, permission: 'reports' },
     { id: 'tax-settings' as ActivePage, label: s(settings?.tax_settings_title, t.nav_tax_settings), icon: Percent },
     { id: 'vat-return-report' as ActivePage, label: t.nav_vat_return, icon: Receipt },
+    { id: 'fiscal-years' as ActivePage, label: t.nav_fiscal_years, icon: Calendar },
   ];
 
   const warehouseMenuItems: MenuItem[] = [
