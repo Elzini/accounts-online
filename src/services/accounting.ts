@@ -865,7 +865,7 @@ export async function getVouchersReport(
   payment_method: string | null;
   related_to: string | null;
 }>> {
-  let query = supabase
+  let query = (supabase as any)
     .from('vouchers')
     .select('*')
     .eq('company_id', companyId)
