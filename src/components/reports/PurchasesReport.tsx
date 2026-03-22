@@ -42,7 +42,7 @@ export function PurchasesReport() {
   const { data: cars = [], isLoading: carsLoading, refetch } = useCars();
   const { data: suppliers = [] } = useSuppliers();
   const { data: allExpenses = [] } = useExpenses();
-  const { filterByFiscalYear } = useFiscalYearFilter();
+  const { filterByFiscalYear, selectedFiscalYear } = useFiscalYearFilter();
 
   const { data: purchaseInvoices = [], isLoading: invoicesLoading } = useQuery({
     queryKey: ['company-purchases-report', companyId, selectedFiscalYear?.id],
