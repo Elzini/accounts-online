@@ -99,16 +99,21 @@ export async function deleteExpenseCategory(id: string): Promise<void> {
 }
 
 // Expenses - General (works for all company types)
-export async function fetchExpenses(): Promise<Expense[]> {
+export async function fetchExpenses(fiscalYearId?: string): Promise<Expense[]> {
   const companyId = await getCurrentCompanyId();
   if (!companyId) return [];
   
-  const { data, error } = await supabase
+  let query = supabase
     .from('expenses')
     .select('*, category:expense_categories(*), account:account_categories(id, code, name)')
     .eq('company_id', companyId)
     .order('expense_date', { ascending: false });
   
+  if (fiscalYearId) {
+    query = query.eq('fiscal_year_id', fiscalYearId);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return (data || []).map(exp => ({
     ...exp,

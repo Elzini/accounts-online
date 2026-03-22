@@ -125,10 +125,12 @@ export function useDeleteAccount() {
 // Journal Entries
 export function useJournalEntries() {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['journal-entries', companyId],
-    queryFn: () => companyId ? fetchJournalEntries(companyId) : [],
+    queryKey: ['journal-entries', companyId, fyId],
+    queryFn: () => companyId ? fetchJournalEntries(companyId, fyId) : [],
     enabled: !!companyId,
   });
 }
@@ -294,10 +296,12 @@ export function useBalanceSheet(startDate?: string, endDate?: string) {
 // Vouchers Report - كشف السندات
 export function useVouchersReport(startDate?: string, endDate?: string, voucherType?: 'receipt' | 'payment') {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['vouchers-report', companyId, startDate, endDate, voucherType],
-    queryFn: () => companyId ? getVouchersReport(companyId, startDate, endDate, voucherType) : [],
+    queryKey: ['vouchers-report', companyId, startDate, endDate, voucherType, fyId],
+    queryFn: () => companyId ? getVouchersReport(companyId, startDate, endDate, voucherType, fyId) : [],
     enabled: !!companyId,
   });
 }

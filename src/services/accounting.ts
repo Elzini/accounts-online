@@ -154,13 +154,18 @@ export async function deleteAccount(id: string): Promise<void> {
 }
 
 // Journal Entries
-export async function fetchJournalEntries(companyId: string): Promise<JournalEntry[]> {
-  const { data, error } = await supabase
+export async function fetchJournalEntries(companyId: string, fiscalYearId?: string): Promise<JournalEntry[]> {
+  let query = supabase
     .from('journal_entries')
     .select('*')
     .eq('company_id', companyId)
     .order('entry_number', { ascending: false });
   
+  if (fiscalYearId) {
+    query = query.eq('fiscal_year_id', fiscalYearId);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return (data || []) as JournalEntry[];
 }
@@ -848,7 +853,8 @@ export async function getVouchersReport(
   companyId: string,
   startDate?: string,
   endDate?: string,
-  voucherType?: 'receipt' | 'payment'
+  voucherType?: 'receipt' | 'payment',
+  fiscalYearId?: string
 ): Promise<Array<{
   id: string;
   voucher_number: number;
@@ -859,17 +865,21 @@ export async function getVouchersReport(
   payment_method: string | null;
   related_to: string | null;
 }>> {
-  let query = supabase
+  let query = (supabase as any)
     .from('vouchers')
     .select('*')
     .eq('company_id', companyId)
     .order('voucher_date', { ascending: false });
 
-  if (startDate) {
-    query = query.gte('voucher_date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('voucher_date', endDate);
+  if (fiscalYearId) {
+    query = query.eq('fiscal_year_id', fiscalYearId);
+  } else {
+    if (startDate) {
+      query = query.gte('voucher_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('voucher_date', endDate);
+    }
   }
   if (voucherType) {
     query = query.eq('voucher_type', voucherType);

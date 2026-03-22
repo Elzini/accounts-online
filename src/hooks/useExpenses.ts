@@ -16,6 +16,7 @@ import {
   ExpenseInsert,
 } from '@/services/expenses';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 
 // Expense Categories Hooks
 export function useExpenseCategories() {
@@ -70,9 +71,11 @@ export function useCreateDefaultExpenseCategories() {
 // Expenses Hooks
 export function useExpenses() {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   return useQuery({
-    queryKey: ['expenses', companyId],
-    queryFn: fetchExpenses,
+    queryKey: ['expenses', companyId, fyId],
+    queryFn: () => fetchExpenses(fyId),
   });
 }
 

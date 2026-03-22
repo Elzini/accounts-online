@@ -34,29 +34,41 @@ export interface Voucher {
 
 export type VoucherInsert = Omit<Voucher, 'id' | 'voucher_number' | 'created_at' | 'updated_at' | 'journal_entry_id'>;
 
-export async function fetchVouchers(): Promise<Voucher[]> {
+export async function fetchVouchers(fiscalYearId?: string): Promise<Voucher[]> {
   const companyId = await getCurrentCompanyId();
   if (!companyId) return [];
   
-  const { data, error } = await supabase
+  let query = (supabase as any)
     .from('vouchers')
     .select('*')
     .eq('company_id', companyId)
     .order('created_at', { ascending: false });
+  
+  if (fiscalYearId) {
+    query = query.eq('fiscal_year_id', fiscalYearId);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data as Voucher[];
 }
 
-export async function fetchVouchersByType(type: 'receipt' | 'payment'): Promise<Voucher[]> {
+export async function fetchVouchersByType(type: 'receipt' | 'payment', fiscalYearId?: string): Promise<Voucher[]> {
   const companyId = await getCurrentCompanyId();
   if (!companyId) return [];
   
-  const { data, error } = await supabase
+  let query = (supabase as any)
     .from('vouchers')
     .select('*')
     .eq('voucher_type', type)
     .eq('company_id', companyId)
     .order('created_at', { ascending: false });
+  
+  if (fiscalYearId) {
+    query = query.eq('fiscal_year_id', fiscalYearId);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data as Voucher[];
 }
