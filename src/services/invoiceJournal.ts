@@ -126,8 +126,8 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
 
     const expenseAccount = findAccount(
       settings?.purchase_inventory_account_id || null,
-      '1301', // أراضي المشاريع / مخزون
-      '5101', // تكلفة المبيعات
+      'purchase_expense',
+      '1301', '5101',
     );
 
     const vatInputAccount = findAccount(
