@@ -977,13 +977,15 @@ export async function getComprehensiveTrialBalance(
 
     const { data: openingEntryLines } = await openingEntriesQuery;
 
-    // استبعاد حسابات الإيرادات والمصروفات من الأرصدة الافتتاحية (حسابات فترة)
+    // عند وجود قيد افتتاحي داخل الفترة: نستبعد الإيرادات/المصروفات من الافتتاح
+    // عند عدم وجوده: نستخدم الرصيد التراكمي قبل التاريخ المختار (لكل أنواع الحسابات)
     const balanceSheetTypes = new Set(['asset', 'assets', 'liability', 'liabilities', 'equity']);
     const accountTypeMap = new Map<string, string>();
     accounts.forEach(a => accountTypeMap.set(a.id, a.type));
 
     const openingLinesInPeriod = openingEntryLines || [];
-    const openingSourceLines = openingLinesInPeriod.length > 0
+    const hasOpeningEntryInRange = openingLinesInPeriod.length > 0;
+    const openingSourceLines = hasOpeningEntryInRange
       ? openingLinesInPeriod
       : (openingLines || []);
 
@@ -996,7 +998,11 @@ export async function getComprehensiveTrialBalance(
       rawOpeningCreditAll += c;
 
       const accType = accountTypeMap.get(line.account_id);
-      if (!accType || !balanceSheetTypes.has(accType)) return;
+      const shouldIncludeInOpening = hasOpeningEntryInRange
+        ? (!!accType && balanceSheetTypes.has(accType))
+        : true;
+
+      if (!shouldIncludeInOpening) return;
       const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
       current.debit += d;
       current.credit += c;
