@@ -231,7 +231,6 @@ const Index = () => {
 
   const handleFiscalYearSelect = (fy: typeof fiscalYears[0]) => {
     setSelectedFiscalYear(fy);
-    setShowFiscalYearDialog(false);
   };
 
   const defaultStats = { 
