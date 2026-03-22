@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Company members can manage rate limits" ON public.rate_limit_config;
