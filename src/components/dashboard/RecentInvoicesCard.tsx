@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, forwardRef } from 'react';
 import { FileText, ArrowLeft } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +25,7 @@ type DashboardInvoiceRow = {
   targetPage: ActivePage;
 };
 
-export function RecentInvoicesCard({ setActivePage }: RecentInvoicesCardProps) {
+export const RecentInvoicesCard = forwardRef<HTMLDivElement, RecentInvoicesCardProps>(function RecentInvoicesCard({ setActivePage }, ref) {
   const { companyId, company } = useCompany();
   const isCarDealership = company?.company_type === 'car_dealership';
   const { selectedFiscalYear } = useFiscalYear();
@@ -167,4 +167,4 @@ export function RecentInvoicesCard({ setActivePage }: RecentInvoicesCardProps) {
       </CardContent>
     </Card>
   );
-}
+});
