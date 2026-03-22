@@ -69,29 +69,7 @@ interface PurchaseInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
 }
 
-interface PurchaseInventoryItem {
-  id: string;
-  item_id: string | null;
-  item_name: string;
-  barcode: string;
-  unit_name: string;
-  unit_id: string | null;
-  purchase_price: string;
-  quantity: number;
-}
-
-interface CarItem {
-  id: string;
-  chassis_number: string;
-  plate_number: string;
-  name: string;
-  model: string;
-  color: string;
-  purchase_price: string;
-  quantity: number;
-  unit: string;
-  car_condition: 'new' | 'used';
-}
+// Types are now imported from ./purchase-invoice/types
 
 export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps) {
   const { data: suppliers = [] } = useSuppliers();
