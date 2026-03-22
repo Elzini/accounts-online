@@ -261,7 +261,7 @@ export function Sidebar({
     return settingValue || translationValue;
   };
 
-  const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
+  const companyType: CompanyActivityType = company?.company_type || 'general_trading';
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 

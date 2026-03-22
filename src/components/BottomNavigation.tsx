@@ -61,7 +61,7 @@ export function BottomNavigation({ activePage, setActivePage, onMenuClick }: Bot
   const { company } = useCompany();
   const { language } = useLanguage();
   const isEn = language === 'en';
-  const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
+  const companyType: CompanyActivityType = company?.company_type || 'general_trading';
   const navItems = getNavItems(companyType);
 
   return (

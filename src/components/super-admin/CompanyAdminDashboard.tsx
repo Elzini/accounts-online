@@ -129,7 +129,7 @@ export function CompanyAdminDashboard() {
           company_name: company.name,
           subdomain: (company as any).subdomain || null,
           is_active: company.is_active,
-          company_type: (company as any).company_type || 'car_dealership',
+          company_type: company.company_type || 'general_trading',
           created_at: company.created_at,
           users_count: usersRes.count || 0,
           cars_count: carsRes.count || 0,

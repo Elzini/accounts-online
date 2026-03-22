@@ -169,7 +169,7 @@ interface QuickAccessSectionProps {
 
 export function QuickAccessSection({ setActivePage }: QuickAccessSectionProps) {
   const { company } = useCompany();
-  const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
+  const companyType: CompanyActivityType = company?.company_type || 'general_trading';
   const labels = useIndustryLabels();
   const { t } = useLanguage();
   const quickAccessCards = getQuickAccessCards(companyType, labels, t);

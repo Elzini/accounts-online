@@ -1007,7 +1007,7 @@ export default function Companies() {
                 <div>
                   <Label className="text-muted-foreground text-sm">نوع النشاط</Label>
                   <p className="font-medium">
-                    {ACTIVITY_TYPE_LABELS[((selectedCompany as any).company_type || 'car_dealership') as CompanyActivityType]}
+                    {ACTIVITY_TYPE_LABELS[(selectedCompany.company_type || 'general_trading') as CompanyActivityType]}
                   </p>
                 </div>
                 <div>

@@ -163,9 +163,9 @@ function buildLabels(companyType: CompanyActivityType, t: TranslationKeys): Reco
 export function useIndustryLabels(): IndustryLabels {
   const { company } = useCompany();
   const { t } = useLanguage();
-  const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
+  const companyType: CompanyActivityType = company?.company_type || 'general_trading';
   const allLabels = buildLabels(companyType, t);
-  return allLabels[companyType] || allLabels.car_dealership;
+  return allLabels[companyType] || allLabels.general_trading;
 }
 
 export function getIndustryLabelsByType(companyType: CompanyActivityType): IndustryLabels {
