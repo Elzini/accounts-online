@@ -45,6 +45,7 @@ import {
   CreditorsNoteView,
 } from './notes/OtherNotesViews';
 import { FinancialStatementsFormulaEditor } from './FinancialStatementsFormulaEditor';
+import { ZakatDetailDialog } from './ZakatDetailDialog';
 import { TrialBalanceImportManager } from './TrialBalanceImportManager';
 import { AuditTrailPanel } from './AuditTrailPanel';
 import { BranchCurrencyBar, Branch, SUPPORTED_CURRENCIES, convertAmount } from './BranchCurrencySelector';
