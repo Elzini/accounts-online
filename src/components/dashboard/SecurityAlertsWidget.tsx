@@ -1,4 +1,4 @@
-import { useState, forwardRef } from 'react';
+import { useState } from 'react';
 import { Shield, ShieldAlert, AlertTriangle, CheckCircle2, XCircle, Clock, Eye, ChevronLeft, Snowflake, Activity } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { useSystemChangeAlerts, SystemChangeAlert } from '@/hooks/useSystemChang
 import { SystemChangeDetailView } from '@/components/system-alerts/SystemChangeDetailView';
 import { cn } from '@/lib/utils';
 
-export const SecurityAlertsWidget = forwardRef<HTMLDivElement>(function SecurityAlertsWidget(_, ref) {
+export function SecurityAlertsWidget() {
   const { alerts, pendingAlerts, approvedAlerts, rejectedAlerts, securityStatus, isFrozen, isLoading } = useSystemChangeAlerts();
   const [selectedAlert, setSelectedAlert] = useState<SystemChangeAlert | null>(null);
 
@@ -147,7 +147,7 @@ export const SecurityAlertsWidget = forwardRef<HTMLDivElement>(function Security
       </Sheet>
     </>
   );
-});
+}
 
 function MiniStat({ icon, label, value, color, bg }: { icon: React.ReactNode; label: string; value: number; color: string; bg: string }) {
   return (
