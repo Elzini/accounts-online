@@ -9,7 +9,7 @@ import { useSystemChangeAlerts, SystemChangeAlert } from '@/hooks/useSystemChang
 import { SystemChangeDetailView } from '@/components/system-alerts/SystemChangeDetailView';
 import { cn } from '@/lib/utils';
 
-export function SecurityAlertsWidget() {
+export const SecurityAlertsWidget = forwardRef<HTMLDivElement>(function SecurityAlertsWidget(_, ref) {
   const { alerts, pendingAlerts, approvedAlerts, rejectedAlerts, securityStatus, isFrozen, isLoading } = useSystemChangeAlerts();
   const [selectedAlert, setSelectedAlert] = useState<SystemChangeAlert | null>(null);
 
