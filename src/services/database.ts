@@ -2,73 +2,22 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { getCompanyOverride } from '@/lib/companyOverride';
 
+// Re-export car dealership module for backward compatibility
+export {
+  fetchCars, addCar, updateCar, deleteCar, updateCarStatus,
+  fetchSales, addSale, updateSale, updateSaleWithItems, deleteSale, reverseSale,
+  addPurchaseBatch, fetchPurchaseBatches,
+  addMultiCarSale, approveSale, fetchSalesWithItems, deleteMultiCarSale,
+  recalculateCompanySalesProfits,
+} from '@/services/carDealership';
+export type { CarWithSaleInfo, MultiCarSaleData } from '@/services/carDealership';
+
 type Customer = Database['public']['Tables']['customers']['Row'];
 type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
 type CustomerUpdate = Database['public']['Tables']['customers']['Update'];
 type Supplier = Database['public']['Tables']['suppliers']['Row'];
 type SupplierInsert = Database['public']['Tables']['suppliers']['Insert'];
 type SupplierUpdate = Database['public']['Tables']['suppliers']['Update'];
-type Car = Database['public']['Tables']['cars']['Row'];
-type CarInsert = Database['public']['Tables']['cars']['Insert'];
-type CarUpdate = Database['public']['Tables']['cars']['Update'];
-type Sale = Database['public']['Tables']['sales']['Row'];
-type SaleInsert = Database['public']['Tables']['sales']['Insert'];
-type SaleUpdate = Database['public']['Tables']['sales']['Update'];
-type PurchaseBatch = Database['public']['Tables']['purchase_batches']['Row'];
-type PurchaseBatchInsert = Database['public']['Tables']['purchase_batches']['Insert'];
-type SaleItem = Database['public']['Tables']['sale_items']['Row'];
-type SaleItemInsert = Database['public']['Tables']['sale_items']['Insert'];
-
-// Helper function to get current user's company_id
-async function getCurrentCompanyId(): Promise<string | null> {
-  // Check for super admin override first
-  const override = getCompanyOverride();
-  if (override) return override;
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('user_id', user.id)
-    .single();
-  
-  return profile?.company_id || null;
-}
-
-// Strict version that requires company_id - returns empty results if not available
-async function requireCompanyId(): Promise<string> {
-  const companyId = await getCurrentCompanyId();
-  if (!companyId) throw new Error('COMPANY_REQUIRED');
-  return companyId;
-}
-
-function toDateOnly(date: Date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-// Types for multi-car operations
-export interface CarWithSaleInfo extends Omit<CarInsert, 'batch_id'> {
-  sale_price?: number;
-}
-
-export interface MultiCarSaleData {
-  customer_id: string;
-  seller_name?: string;
-  commission?: number;
-  other_expenses?: number;
-  sale_date: string;
-  payment_account_id?: string;
-  cars: Array<{
-    car_id: string;
-    sale_price: number;
-    purchase_price: number;
-  }>;
-}
 
 // Customers
 // Use customers_safe view for read operations to mask sensitive PII (id_number, registration_number)
