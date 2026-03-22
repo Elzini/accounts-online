@@ -728,7 +728,7 @@ export async function refreshOpeningBalances(
       }
       
       if (balance !== 0) {
-        if (acc.type === 'assets') {
+        if (['asset', 'assets'].includes(acc.type)) {
           openingLines.push({
             account_id: acc.id,
             debit: balance > 0 ? balance : 0,
