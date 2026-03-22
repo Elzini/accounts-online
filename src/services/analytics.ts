@@ -90,6 +90,15 @@ export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<Adv
     return `${y}-${m}-${d}`;
   };
 
+  // Get company type
+  const { data: companyRecord } = await supabase
+    .from('companies')
+    .select('company_type')
+    .eq('id', companyId)
+    .maybeSingle();
+  const companyType = companyRecord?.company_type;
+  const isCarDealership = !companyType || companyType === 'car_dealership';
+
   // Get fiscal year dates if provided
   let fiscalYearStart: string | null = null;
   let fiscalYearEnd: string | null = null;
@@ -113,55 +122,231 @@ export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<Adv
   const thisMonthEnd = toDateOnly(new Date(now.getFullYear(), now.getMonth() + 1, 0));
   const lastMonthEnd = toDateOnly(new Date(now.getFullYear(), now.getMonth(), 0));
 
-  // Build queries with fiscal year filter AND mandatory company filter
-  let allCarsQuery = supabase
-    .from('cars')
-    .select('id, name, model, status, purchase_price, purchase_date, created_at, supplier_id')
-    .eq('company_id', companyId);
-  
-  let allSalesQuery = supabase
-    .from('sales')
-    .select(`
-      id,
-      sale_price,
-      profit,
-      sale_date,
-      created_at,
-      customer:customers(id, name, phone),
-      car:cars(id, name, model, purchase_price, purchase_date)
-    `)
-    .eq('company_id', companyId)
-    .order('sale_date', { ascending: false });
-
-  // Apply fiscal year filter - filter by date only
-  if (fiscalYearStart && fiscalYearEnd) {
-    allCarsQuery = allCarsQuery
-      .gte('purchase_date', fiscalYearStart)
-      .lte('purchase_date', fiscalYearEnd);
-    
-    allSalesQuery = allSalesQuery
-      .gte('sale_date', fiscalYearStart)
-      .lte('sale_date', fiscalYearEnd);
-  }
-
-  // Parallel fetches for better performance
+  // Build queries based on company type
   let customersQuery = supabase.from('customers').select('id, name, phone').eq('company_id', companyId);
   let suppliersQuery = supabase.from('suppliers').select('id, name').eq('company_id', companyId);
-  let transfersQuery = supabase.from('car_transfers').select('id, car_id, status').eq('company_id', companyId);
 
-  const [
-    allCars,
-    allSales,
-    customers,
-    suppliers,
-    transfers
-  ] = await Promise.all([
-    allCarsQuery,
-    allSalesQuery,
-    customersQuery,
-    suppliersQuery,
-    transfersQuery
-  ]);
+  if (isCarDealership) {
+    // Car dealership: use cars + sales tables
+    let allCarsQuery = supabase
+      .from('cars')
+      .select('id, name, model, status, purchase_price, purchase_date, created_at, supplier_id')
+      .eq('company_id', companyId);
+    
+    let allSalesQuery = supabase
+      .from('sales')
+      .select(`
+        id, sale_price, profit, sale_date, created_at,
+        customer:customers(id, name, phone),
+        car:cars(id, name, model, purchase_price, purchase_date)
+      `)
+      .eq('company_id', companyId)
+      .order('sale_date', { ascending: false });
+
+    let transfersQuery = supabase.from('car_transfers').select('id, car_id, status').eq('company_id', companyId);
+
+    if (fiscalYearStart && fiscalYearEnd) {
+      allCarsQuery = allCarsQuery
+        .gte('purchase_date', fiscalYearStart)
+        .lte('purchase_date', fiscalYearEnd);
+      allSalesQuery = allSalesQuery
+        .gte('sale_date', fiscalYearStart)
+        .lte('sale_date', fiscalYearEnd);
+    }
+
+    const [allCars, allSales, customers, suppliers, transfers] = await Promise.all([
+      allCarsQuery, allSalesQuery, customersQuery, suppliersQuery, transfersQuery
+    ]);
+
+    return buildCarDealershipAnalytics(
+      allCars.data || [], allSales.data || [], customers.data || [],
+      suppliers.data || [], transfers.data || [],
+      thisMonthStart, thisMonthEnd, lastMonthStart, lastMonthEnd,
+      fiscalYearStart, fiscalYearEnd, now
+    );
+  } else {
+    // Non-car companies: use invoices table
+    let salesInvoicesQuery = supabase
+      .from('invoices')
+      .select('id, subtotal, invoice_date, customer_id, supplier_id, status')
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'sales')
+      .order('invoice_date', { ascending: false });
+
+    let purchaseInvoicesQuery = supabase
+      .from('invoices')
+      .select('id, subtotal, invoice_date, supplier_id, status')
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'purchase');
+
+    if (fiscalYearStart && fiscalYearEnd) {
+      salesInvoicesQuery = salesInvoicesQuery
+        .gte('invoice_date', fiscalYearStart)
+        .lte('invoice_date', fiscalYearEnd);
+      purchaseInvoicesQuery = purchaseInvoicesQuery
+        .gte('invoice_date', fiscalYearStart)
+        .lte('invoice_date', fiscalYearEnd);
+    }
+
+    const [salesResult, purchasesResult, customers, suppliers] = await Promise.all([
+      salesInvoicesQuery, purchaseInvoicesQuery, customersQuery, suppliersQuery
+    ]);
+
+    return buildInvoiceBasedAnalytics(
+      salesResult.data || [], purchasesResult.data || [],
+      customers.data || [], suppliers.data || [],
+      thisMonthStart, thisMonthEnd, lastMonthStart, lastMonthEnd,
+      fiscalYearStart, fiscalYearEnd, now
+    );
+  }
+}
+
+// Analytics for non-car companies (invoice-based)
+function buildInvoiceBasedAnalytics(
+  salesInvoices: any[], purchaseInvoices: any[],
+  customers: any[], suppliers: any[],
+  thisMonthStart: string, thisMonthEnd: string,
+  lastMonthStart: string, lastMonthEnd: string,
+  fiscalYearStart: string | null, fiscalYearEnd: string | null,
+  now: Date
+): AdvancedStats {
+  const isWithinFiscalYear = (dateStr: string) => {
+    if (!fiscalYearStart || !fiscalYearEnd) return true;
+    return dateStr >= fiscalYearStart && dateStr <= fiscalYearEnd;
+  };
+
+  const salesThisMonth = salesInvoices.filter(inv =>
+    inv.invoice_date >= thisMonthStart && inv.invoice_date <= thisMonthEnd && isWithinFiscalYear(inv.invoice_date)
+  );
+  const salesLastMonth = salesInvoices.filter(inv =>
+    inv.invoice_date >= lastMonthStart && inv.invoice_date <= lastMonthEnd && isWithinFiscalYear(inv.invoice_date)
+  );
+
+  const thisMonthTotal = salesThisMonth.reduce((sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0);
+  const lastMonthTotal = salesLastMonth.reduce((sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0);
+  const salesPercentChange = lastMonthTotal > 0 ? ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100 : 0;
+
+  const purchasesThisMonth = purchaseInvoices.filter(inv =>
+    inv.invoice_date >= thisMonthStart && inv.invoice_date <= thisMonthEnd
+  ).reduce((sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0);
+  const purchasesLastMonth = purchaseInvoices.filter(inv =>
+    inv.invoice_date >= lastMonthStart && inv.invoice_date <= lastMonthEnd
+  ).reduce((sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0);
+  const purchasesPercentChange = purchasesLastMonth > 0
+    ? ((purchasesThisMonth - purchasesLastMonth) / purchasesLastMonth) * 100 : 0;
+
+  // Top customers from sales invoices
+  const customerSales: Record<string, { total: number; count: number }> = {};
+  salesInvoices.forEach(inv => {
+    if (inv.customer_id) {
+      if (!customerSales[inv.customer_id]) customerSales[inv.customer_id] = { total: 0, count: 0 };
+      customerSales[inv.customer_id].total += Number(inv.subtotal) || 0;
+      customerSales[inv.customer_id].count += 1;
+    }
+  });
+
+  const topCustomers = Object.entries(customerSales)
+    .map(([id, data]) => ({
+      id,
+      name: customers.find((c: any) => c.id === id)?.name || '',
+      phone: customers.find((c: any) => c.id === id)?.phone || '',
+      totalPurchases: data.count,
+      totalAmount: data.total
+    }))
+    .sort((a, b) => b.totalAmount - a.totalAmount)
+    .slice(0, 5);
+
+  // Top suppliers from purchase invoices
+  const supplierPurchases: Record<string, { count: number; total: number }> = {};
+  purchaseInvoices.forEach(inv => {
+    if (inv.supplier_id) {
+      if (!supplierPurchases[inv.supplier_id]) supplierPurchases[inv.supplier_id] = { count: 0, total: 0 };
+      supplierPurchases[inv.supplier_id].count += 1;
+      supplierPurchases[inv.supplier_id].total += Number(inv.subtotal) || 0;
+    }
+  });
+
+  const topSuppliers = Object.entries(supplierPurchases)
+    .map(([id, data]) => ({
+      id,
+      name: suppliers.find((s: any) => s.id === id)?.name || '',
+      totalCars: data.count,
+      totalAmount: data.total
+    }))
+    .sort((a, b) => b.totalAmount - a.totalAmount)
+    .slice(0, 5);
+
+  // Revenue by month
+  const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+  const monthlyData: Record<string, { revenue: number; cost: number; profit: number }> = {};
+
+  if (fiscalYearStart && fiscalYearEnd) {
+    const startDate = new Date(fiscalYearStart);
+    const endDate = new Date(fiscalYearEnd);
+    let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    while (currentDate <= endDate) {
+      const monthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+      monthlyData[monthKey] = { revenue: 0, cost: 0, profit: 0 };
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+  } else {
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthlyData[monthKey] = { revenue: 0, cost: 0, profit: 0 };
+    }
+  }
+
+  salesInvoices.forEach(inv => {
+    const date = new Date(inv.invoice_date);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    if (monthlyData[monthKey]) {
+      monthlyData[monthKey].revenue += Number(inv.subtotal) || 0;
+      monthlyData[monthKey].profit += Number(inv.subtotal) || 0;
+    }
+  });
+
+  const revenueByMonth = Object.entries(monthlyData).map(([key, data]) => {
+    const [, month] = key.split('-');
+    return { month: arabicMonths[parseInt(month) - 1], ...data };
+  });
+
+  const totalRevenue = salesInvoices.reduce((sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0);
+  const totalPurchasesAmount = purchaseInvoices.reduce((sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0);
+
+  return {
+    salesTrend: { thisMonth: thisMonthTotal, lastMonth: lastMonthTotal, percentChange: salesPercentChange },
+    profitTrend: { thisMonth: thisMonthTotal, lastMonth: lastMonthTotal, percentChange: salesPercentChange },
+    purchasesTrend: { thisMonth: purchasesThisMonth, lastMonth: purchasesLastMonth, percentChange: purchasesPercentChange },
+    inventoryByStatus: { available: 0, sold: salesInvoices.length, transferred: 0 },
+    topCustomers,
+    topSuppliers,
+    topSellingCars: [],
+    revenueByMonth,
+    averageSalePrice: salesInvoices.length > 0 ? totalRevenue / salesInvoices.length : 0,
+    averageProfitMargin: totalRevenue > 0 ? ((totalRevenue - totalPurchasesAmount) / totalRevenue) * 100 : 0,
+    inventoryTurnover: 0,
+    averageDaysToSell: 0,
+    recentSales: salesInvoices.slice(0, 5).map(inv => ({
+      id: inv.id,
+      date: inv.invoice_date,
+      customerName: customers.find((c: any) => c.id === inv.customer_id)?.name || 'غير محدد',
+      carName: '',
+      amount: Number(inv.subtotal) || 0,
+      profit: Number(inv.subtotal) || 0,
+    })),
+  };
+}
+
+// Analytics for car dealerships (original logic)
+function buildCarDealershipAnalytics(
+  allCarsData: any[], allSalesData: any[],
+  customersData: any[], suppliersData: any[], transfersData: any[],
+  thisMonthStart: string, thisMonthEnd: string,
+  lastMonthStart: string, lastMonthEnd: string,
+  fiscalYearStart: string | null, fiscalYearEnd: string | null,
+  now: Date
+): AdvancedStats {
 
   // Calculate sales for this month and last month (within fiscal year if specified)
   const isWithinFiscalYear = (dateStr: string) => {
