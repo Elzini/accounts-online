@@ -348,62 +348,46 @@ function buildCarDealershipAnalytics(
   now: Date
 ): AdvancedStats {
 
-  // Calculate sales for this month and last month (within fiscal year if specified)
   const isWithinFiscalYear = (dateStr: string) => {
     if (!fiscalYearStart || !fiscalYearEnd) return true;
     return dateStr >= fiscalYearStart && dateStr <= fiscalYearEnd;
   };
 
-  const salesThisMonthData = (allSales.data || []).filter(s => {
+  const salesThisMonthData = allSalesData.filter(s => {
     const saleDate = s.sale_date || s.created_at.split('T')[0];
     return saleDate >= thisMonthStart && saleDate <= thisMonthEnd && isWithinFiscalYear(saleDate);
   });
 
-  const salesLastMonthData = (allSales.data || []).filter(s => {
+  const salesLastMonthData = allSalesData.filter(s => {
     const saleDate = s.sale_date || s.created_at.split('T')[0];
     return saleDate >= lastMonthStart && saleDate <= lastMonthEnd && isWithinFiscalYear(saleDate);
   });
 
-  // Calculate trends
   const thisMonthSalesTotal = salesThisMonthData.reduce((sum, s) => sum + (s.sale_price || 0), 0);
   const lastMonthSalesTotal = salesLastMonthData.reduce((sum, s) => sum + (s.sale_price || 0), 0);
   const thisMonthProfit = salesThisMonthData.reduce((sum, s) => sum + (s.profit || 0), 0);
   const lastMonthProfit = salesLastMonthData.reduce((sum, s) => sum + (s.profit || 0), 0);
 
   const salesPercentChange = lastMonthSalesTotal > 0 
-    ? ((thisMonthSalesTotal - lastMonthSalesTotal) / lastMonthSalesTotal) * 100 
-    : 0;
+    ? ((thisMonthSalesTotal - lastMonthSalesTotal) / lastMonthSalesTotal) * 100 : 0;
   const profitPercentChange = lastMonthProfit > 0 
-    ? ((thisMonthProfit - lastMonthProfit) / lastMonthProfit) * 100 
-    : 0;
+    ? ((thisMonthProfit - lastMonthProfit) / lastMonthProfit) * 100 : 0;
 
-  // Purchases trends (within fiscal year)
-  const carsThisMonth = (allCars.data || []).filter(c => {
-    const purchaseDate = c.purchase_date;
-    return purchaseDate >= thisMonthStart && purchaseDate <= thisMonthEnd;
-  });
-  const carsLastMonth = (allCars.data || []).filter(c => {
-    const purchaseDate = c.purchase_date;
-    return purchaseDate >= lastMonthStart && purchaseDate <= lastMonthEnd;
-  });
+  const carsThisMonth = allCarsData.filter(c => c.purchase_date >= thisMonthStart && c.purchase_date <= thisMonthEnd);
+  const carsLastMonth = allCarsData.filter(c => c.purchase_date >= lastMonthStart && c.purchase_date <= lastMonthEnd);
   const purchasesThisMonth = carsThisMonth.reduce((sum, c) => sum + (c.purchase_price || 0), 0);
   const purchasesLastMonth = carsLastMonth.reduce((sum, c) => sum + (c.purchase_price || 0), 0);
   const purchasesPercentChange = purchasesLastMonth > 0 
-    ? ((purchasesThisMonth - purchasesLastMonth) / purchasesLastMonth) * 100 
-    : 0;
+    ? ((purchasesThisMonth - purchasesLastMonth) / purchasesLastMonth) * 100 : 0;
 
-  // Inventory by status (within fiscal year)
-  const availableCars = (allCars.data || []).filter(c => c.status === 'available').length;
-  const soldCars = (allCars.data || []).filter(c => c.status === 'sold').length;
-  const transferredCars = (transfers.data || []).filter(t => t.status === 'pending').length;
+  const availableCars = allCarsData.filter(c => c.status === 'available').length;
+  const soldCars = allCarsData.filter(c => c.status === 'sold').length;
+  const transferredCars = transfersData.filter(t => t.status === 'pending').length;
 
-  // Top customers (within fiscal year)
   const customerSales: Record<string, { total: number; count: number }> = {};
-  (allSales.data || []).forEach(sale => {
+  allSalesData.forEach(sale => {
     if (sale.customer?.id) {
-      if (!customerSales[sale.customer.id]) {
-        customerSales[sale.customer.id] = { total: 0, count: 0 };
-      }
+      if (!customerSales[sale.customer.id]) customerSales[sale.customer.id] = { total: 0, count: 0 };
       customerSales[sale.customer.id].total += sale.sale_price || 0;
       customerSales[sale.customer.id].count += 1;
     }
@@ -411,25 +395,16 @@ function buildCarDealershipAnalytics(
 
   const topCustomers = Object.entries(customerSales)
     .map(([id, data]) => {
-      const customer = (allSales.data || []).find(s => s.customer?.id === id)?.customer;
-      return {
-        id,
-        name: customer?.name || '',
-        phone: customer?.phone || '',
-        totalPurchases: data.count,
-        totalAmount: data.total
-      };
+      const customer = allSalesData.find(s => s.customer?.id === id)?.customer;
+      return { id, name: customer?.name || '', phone: customer?.phone || '', totalPurchases: data.count, totalAmount: data.total };
     })
     .sort((a, b) => b.totalAmount - a.totalAmount)
     .slice(0, 5);
 
-  // Top suppliers (within fiscal year)
   const supplierCars: Record<string, { count: number; total: number }> = {};
-  (allCars.data || []).forEach(car => {
+  allCarsData.forEach(car => {
     if (car.supplier_id) {
-      if (!supplierCars[car.supplier_id]) {
-        supplierCars[car.supplier_id] = { count: 0, total: 0 };
-      }
+      if (!supplierCars[car.supplier_id]) supplierCars[car.supplier_id] = { count: 0, total: 0 };
       supplierCars[car.supplier_id].count += 1;
       supplierCars[car.supplier_id].total += car.purchase_price || 0;
     }
@@ -437,25 +412,17 @@ function buildCarDealershipAnalytics(
 
   const topSuppliers = Object.entries(supplierCars)
     .map(([id, data]) => {
-      const supplier = (suppliers.data || []).find(s => s.id === id);
-      return {
-        id,
-        name: supplier?.name || '',
-        totalCars: data.count,
-        totalAmount: data.total
-      };
+      const supplier = suppliersData.find(s => s.id === id);
+      return { id, name: supplier?.name || '', totalCars: data.count, totalAmount: data.total };
     })
     .sort((a, b) => b.totalCars - a.totalCars)
     .slice(0, 5);
 
-  // Top selling cars (by model, within fiscal year)
   const carModelSales: Record<string, { count: number; revenue: number }> = {};
-  (allSales.data || []).forEach(sale => {
+  allSalesData.forEach(sale => {
     if (sale.car) {
       const key = `${sale.car.name} ${sale.car.model || ''}`.trim();
-      if (!carModelSales[key]) {
-        carModelSales[key] = { count: 0, revenue: 0 };
-      }
+      if (!carModelSales[key]) carModelSales[key] = { count: 0, revenue: 0 };
       carModelSales[key].count += 1;
       carModelSales[key].revenue += sale.sale_price || 0;
     }
@@ -463,32 +430,25 @@ function buildCarDealershipAnalytics(
 
   const topSellingCars = Object.entries(carModelSales)
     .map(([key, data]) => ({
-      name: key.split(' ')[0] || '',
-      model: key.split(' ').slice(1).join(' ') || '',
-      count: data.count,
-      totalRevenue: data.revenue
+      name: key.split(' ')[0] || '', model: key.split(' ').slice(1).join(' ') || '',
+      count: data.count, totalRevenue: data.revenue
     }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-  // Revenue by month (within fiscal year range or last 6 months)
   const monthlyData: Record<string, { revenue: number; cost: number; profit: number }> = {};
   const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
-  // Determine the range for monthly breakdown
   if (fiscalYearStart && fiscalYearEnd) {
-    // Use fiscal year range
     const startDate = new Date(fiscalYearStart);
     const endDate = new Date(fiscalYearEnd);
     let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-    
     while (currentDate <= endDate) {
       const monthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
       monthlyData[monthKey] = { revenue: 0, cost: 0, profit: 0 };
       currentDate.setMonth(currentDate.getMonth() + 1);
     }
   } else {
-    // Default to last 6 months
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -496,7 +456,7 @@ function buildCarDealershipAnalytics(
     }
   }
 
-  (allSales.data || []).forEach(sale => {
+  allSalesData.forEach(sale => {
     const saleDate = new Date(sale.sale_date || sale.created_at);
     const monthKey = `${saleDate.getFullYear()}-${String(saleDate.getMonth() + 1).padStart(2, '0')}`;
     if (monthlyData[monthKey]) {
@@ -507,43 +467,31 @@ function buildCarDealershipAnalytics(
   });
 
   const revenueByMonth = Object.entries(monthlyData).map(([key, data]) => {
-    const [year, month] = key.split('-');
-    return {
-      month: arabicMonths[parseInt(month) - 1],
-      ...data
-    };
+    const [, month] = key.split('-');
+    return { month: arabicMonths[parseInt(month) - 1], ...data };
   });
 
-  // Performance metrics (within fiscal year)
-  const totalSales = allSales.data?.length || 0;
-  const totalRevenue = (allSales.data || []).reduce((sum, s) => sum + (s.sale_price || 0), 0);
-  const totalProfit = (allSales.data || []).reduce((sum, s) => sum + (s.profit || 0), 0);
-
+  const totalSales = allSalesData.length;
+  const totalRevenue = allSalesData.reduce((sum, s) => sum + (s.sale_price || 0), 0);
+  const totalProfit = allSalesData.reduce((sum, s) => sum + (s.profit || 0), 0);
   const averageSalePrice = totalSales > 0 ? totalRevenue / totalSales : 0;
   const averageProfitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-
-  // Inventory turnover (sold cars / average inventory)
-  const totalCars = allCars.data?.length || 0;
+  const totalCars = allCarsData.length;
   const inventoryTurnover = totalCars > 0 ? (soldCars / totalCars) * 100 : 0;
 
-  // Average days to sell
   let totalDaysToSell = 0;
   let soldCount = 0;
-  (allSales.data || []).forEach(sale => {
+  allSalesData.forEach(sale => {
     if (sale.car?.purchase_date) {
       const purchaseDate = new Date(sale.car.purchase_date);
       const saleDate = new Date(sale.sale_date || sale.created_at);
       const days = Math.floor((saleDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24));
-      if (days >= 0) {
-        totalDaysToSell += days;
-        soldCount += 1;
-      }
+      if (days >= 0) { totalDaysToSell += days; soldCount += 1; }
     }
   });
   const averageDaysToSell = soldCount > 0 ? Math.round(totalDaysToSell / soldCount) : 0;
 
-  // Recent sales (within fiscal year)
-  const recentSales = (allSales.data || []).slice(0, 5).map(sale => ({
+  const recentSales = allSalesData.slice(0, 5).map(sale => ({
     id: sale.id,
     date: sale.sale_date || sale.created_at,
     customerName: sale.customer?.name || 'غير محدد',
@@ -553,34 +501,11 @@ function buildCarDealershipAnalytics(
   }));
 
   return {
-    salesTrend: {
-      thisMonth: thisMonthSalesTotal,
-      lastMonth: lastMonthSalesTotal,
-      percentChange: salesPercentChange
-    },
-    profitTrend: {
-      thisMonth: thisMonthProfit,
-      lastMonth: lastMonthProfit,
-      percentChange: profitPercentChange
-    },
-    purchasesTrend: {
-      thisMonth: purchasesThisMonth,
-      lastMonth: purchasesLastMonth,
-      percentChange: purchasesPercentChange
-    },
-    inventoryByStatus: {
-      available: availableCars,
-      sold: soldCars,
-      transferred: transferredCars
-    },
-    topCustomers,
-    topSuppliers,
-    topSellingCars,
-    revenueByMonth,
-    averageSalePrice,
-    averageProfitMargin,
-    inventoryTurnover,
-    averageDaysToSell,
-    recentSales
+    salesTrend: { thisMonth: thisMonthSalesTotal, lastMonth: lastMonthSalesTotal, percentChange: salesPercentChange },
+    profitTrend: { thisMonth: thisMonthProfit, lastMonth: lastMonthProfit, percentChange: profitPercentChange },
+    purchasesTrend: { thisMonth: purchasesThisMonth, lastMonth: purchasesLastMonth, percentChange: purchasesPercentChange },
+    inventoryByStatus: { available: availableCars, sold: soldCars, transferred: transferredCars },
+    topCustomers, topSuppliers, topSellingCars, revenueByMonth,
+    averageSalePrice, averageProfitMargin, inventoryTurnover, averageDaysToSell, recentSales
   };
 }
