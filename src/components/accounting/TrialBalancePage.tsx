@@ -84,7 +84,7 @@ export function TrialBalancePage() {
     const t = {
       openingDebit: 0, openingCredit: 0,
       periodDebit: 0, periodCredit: 0,
-      totalDebit: 0, totalCredit: 0,
+      closingDebit: 0, closingCredit: 0,
     };
     // Use leaf-only accounts for totals to avoid double-counting
     const leafAccounts = trialData.accounts.filter(a => !a.isParent);
@@ -96,8 +96,8 @@ export function TrialBalancePage() {
       t.openingCredit += item.openingCredit;
       t.periodDebit += item.periodDebit;
       t.periodCredit += item.periodCredit;
-      t.totalDebit += item.openingDebit + item.periodDebit;
-      t.totalCredit += item.openingCredit + item.periodCredit;
+      t.closingDebit += item.closingDebit;
+      t.closingCredit += item.closingCredit;
     });
     return t;
   }, [trialData, hideZero]);
@@ -109,21 +109,20 @@ export function TrialBalancePage() {
       { header: 'مدين', key: 'openingDebit' }, { header: 'دائن', key: 'openingCredit' },
       { header: 'مدين', key: 'periodDebit' }, { header: 'دائن', key: 'periodCredit' },
       { header: 'الحالة', key: 'status' }, { header: 'الرصيد', key: 'netBalance' },
-      { header: 'مدين', key: 'totalDebit' }, { header: 'دائن', key: 'totalCredit' },
+      { header: 'مدين', key: 'closingDebit' }, { header: 'دائن', key: 'closingCredit' },
     ];
     const data = filteredAccounts.map(item => {
-      const tD = item.openingDebit + item.periodDebit;
-      const tC = item.openingCredit + item.periodCredit;
+      const closingNet = (item.openingDebit + item.periodDebit) - (item.openingCredit + item.periodCredit);
       return {
         name: `${item.account.code} - ${item.account.name}`,
         openingDebit: item.openingDebit > 0 ? fmt(item.openingDebit) : '-',
         openingCredit: item.openingCredit > 0 ? fmt(item.openingCredit) : '-',
         periodDebit: item.periodDebit > 0 ? fmt(item.periodDebit) : '-',
         periodCredit: item.periodCredit > 0 ? fmt(item.periodCredit) : '-',
-        status: getStatusLabel(tD, tC),
-        netBalance: getNetBalance(tD, tC) > 0 ? fmt(getNetBalance(tD, tC)) : '-',
-        totalDebit: tD > 0 ? fmt(tD) : '-',
-        totalCredit: tC > 0 ? fmt(tC) : '-',
+        status: getStatusLabel(item.closingDebit, item.closingCredit),
+        netBalance: Math.abs(closingNet) > 0 ? fmt(Math.abs(closingNet)) : '-',
+        closingDebit: item.closingDebit > 0 ? fmt(item.closingDebit) : '-',
+        closingCredit: item.closingCredit > 0 ? fmt(item.closingCredit) : '-',
       };
     });
     data.push({
@@ -131,22 +130,22 @@ export function TrialBalancePage() {
       openingDebit: fmt(totals.openingDebit), openingCredit: fmt(totals.openingCredit),
       periodDebit: fmt(totals.periodDebit), periodCredit: fmt(totals.periodCredit),
       status: '', netBalance: '',
-      totalDebit: fmt(totals.totalDebit), totalCredit: fmt(totals.totalCredit),
+      closingDebit: fmt(totals.closingDebit), closingCredit: fmt(totals.closingCredit),
     });
     const title = `ميزان المراجعة - ${company?.name || ''}`;
     const subtitle = queryDates.start && queryDates.end ? `من ${queryDates.start} إلى ${queryDates.end}` : undefined;
     const summaryCards = [
-      { label: 'الرصيد السابق - مدين', value: fmt(totals.openingDebit) },
-      { label: 'الرصيد السابق - دائن', value: fmt(totals.openingCredit) },
+      { label: 'رصيد أول المدة - مدين', value: fmt(totals.openingDebit) },
+      { label: 'رصيد أول المدة - دائن', value: fmt(totals.openingCredit) },
       { label: 'الحركة - مدين', value: fmt(totals.periodDebit) },
       { label: 'الحركة - دائن', value: fmt(totals.periodCredit) },
-      { label: 'الإجمالي - مدين', value: fmt(totals.totalDebit) },
-      { label: 'الإجمالي - دائن', value: fmt(totals.totalCredit) },
+      { label: 'رصيد آخر المدة - مدين', value: fmt(totals.closingDebit) },
+      { label: 'رصيد آخر المدة - دائن', value: fmt(totals.closingCredit) },
     ];
     const columnGroups = [
-      { label: 'الرصيد السابق', colSpan: 2 },
+      { label: 'رصيد أول المدة', colSpan: 2 },
       { label: 'الحركة', colSpan: 4 },
-      { label: 'الإجمالي', colSpan: 2 },
+      { label: 'رصيد آخر المدة', colSpan: 2 },
     ];
     if (type === 'print') printReport({ title, subtitle, columns, data, summaryCards, columnGroups });
     else if (type === 'excel') exportToExcel({ title, columns, data, fileName: 'trial-balance', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
@@ -221,9 +220,9 @@ export function TrialBalancePage() {
                   <TableHeader>
                     <TableRow className="bg-muted/40">
                       <TableHead rowSpan={2} className="text-center border bg-muted/80 sticky right-0 z-10 min-w-[220px]">اسم الحساب</TableHead>
-                      <TableHead colSpan={2} className="text-center border bg-sky-100 dark:bg-sky-900/30 font-bold">الرصيد السابق</TableHead>
+                      <TableHead colSpan={2} className="text-center border bg-sky-100 dark:bg-sky-900/30 font-bold">رصيد أول المدة</TableHead>
                       <TableHead colSpan={4} className="text-center border bg-emerald-100 dark:bg-emerald-900/30 font-bold">الحركة</TableHead>
-                      <TableHead colSpan={2} className="text-center border bg-amber-100 dark:bg-amber-900/30 font-bold">الإجمالي</TableHead>
+                      <TableHead colSpan={2} className="text-center border bg-amber-100 dark:bg-amber-900/30 font-bold">رصيد آخر المدة</TableHead>
                     </TableRow>
                     <TableRow className="bg-muted/20">
                       <TableHead className="text-center border bg-sky-50 dark:bg-sky-900/20 w-[105px]">مدين</TableHead>
@@ -243,17 +242,15 @@ export function TrialBalancePage() {
                       filteredAccounts.map(item => {
                         const indent = (item.level || 0) * 16;
                         const isParent = item.isParent;
-                        const totalD = item.openingDebit + item.periodDebit;
-                        const totalC = item.openingCredit + item.periodCredit;
-                        const status = getStatusLabel(totalD, totalC);
-                        const netBal = getNetBalance(totalD, totalC);
+                        const status = getStatusLabel(item.closingDebit, item.closingCredit);
+                        const netBal = getNetBalance(item.closingDebit, item.closingCredit);
                         return (
                           <TableRow key={item.account.id} className={cn(isParent && 'bg-muted/40 font-bold', !isParent && 'hover:bg-muted/20')}>
                             <TableCell className={cn("border sticky right-0 z-10 bg-background", isParent && "bg-muted/40 font-bold")} style={{ paddingRight: `${indent + 12}px` }}>
                               <span className="text-muted-foreground font-mono text-xs ml-2">{item.account.code}</span>
                               {item.account.name}
                             </TableCell>
-                            {/* الرصيد السابق */}
+                            {/* رصيد أول المدة */}
                             <TableCell className="text-center border tabular-nums text-sm">{item.openingDebit > 0 ? fmt(item.openingDebit) : '-'}</TableCell>
                             <TableCell className="text-center border tabular-nums text-sm">{item.openingCredit > 0 ? fmt(item.openingCredit) : '-'}</TableCell>
                             {/* الحركة */}
@@ -261,9 +258,9 @@ export function TrialBalancePage() {
                             <TableCell className="text-center border tabular-nums text-sm">{item.periodCredit > 0 ? fmt(item.periodCredit) : '-'}</TableCell>
                             <TableCell className={cn("text-center border text-xs font-medium", status === 'مدين' && 'text-blue-600 dark:text-blue-400', status === 'دائن' && 'text-rose-600 dark:text-rose-400')}>{status}</TableCell>
                             <TableCell className="text-center border tabular-nums text-sm">{netBal > 0 ? fmt(netBal) : '-'}</TableCell>
-                            {/* الإجمالي = الرصيد السابق + الحركة (مجموع خام) */}
-                            <TableCell className="text-center border tabular-nums text-sm">{totalD > 0 ? fmt(totalD) : '-'}</TableCell>
-                            <TableCell className="text-center border tabular-nums text-sm">{totalC > 0 ? fmt(totalC) : '-'}</TableCell>
+                            {/* رصيد آخر المدة (صافي) */}
+                            <TableCell className="text-center border tabular-nums text-sm">{item.closingDebit > 0 ? fmt(item.closingDebit) : '-'}</TableCell>
+                            <TableCell className="text-center border tabular-nums text-sm">{item.closingCredit > 0 ? fmt(item.closingCredit) : '-'}</TableCell>
                           </TableRow>
                         );
                       })
@@ -278,8 +275,8 @@ export function TrialBalancePage() {
                         <TableCell className="text-center border tabular-nums">{fmt(totals.periodCredit)}</TableCell>
                         <TableCell className="text-center border"></TableCell>
                         <TableCell className="text-center border"></TableCell>
-                        <TableCell className="text-center border tabular-nums">{fmt(totals.totalDebit)}</TableCell>
-                        <TableCell className="text-center border tabular-nums">{fmt(totals.totalCredit)}</TableCell>
+                        <TableCell className="text-center border tabular-nums">{fmt(totals.closingDebit)}</TableCell>
+                        <TableCell className="text-center border tabular-nums">{fmt(totals.closingCredit)}</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -296,7 +293,7 @@ export function TrialBalancePage() {
           <CardContent className="py-3 px-4">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
               <div className="space-y-1">
-                <p className="font-semibold text-muted-foreground">الرصيد السابق</p>
+                <p className="font-semibold text-muted-foreground">رصيد أول المدة</p>
                 <div className="flex justify-between"><span>مدين:</span><span className="font-mono font-bold">{fmt(totals.openingDebit)}</span></div>
                 <div className="flex justify-between"><span>دائن:</span><span className="font-mono font-bold">{fmt(totals.openingCredit)}</span></div>
               </div>
@@ -306,19 +303,19 @@ export function TrialBalancePage() {
                 <div className="flex justify-between"><span>دائن:</span><span className="font-mono font-bold">{fmt(totals.periodCredit)}</span></div>
               </div>
               <div className="space-y-1">
-                <p className="font-semibold text-muted-foreground">الرصيد النهائي</p>
-                <div className="flex justify-between"><span>مدين:</span><span className="font-mono font-bold">{fmt(totals.totalDebit)}</span></div>
-                <div className="flex justify-between"><span>دائن:</span><span className="font-mono font-bold">{fmt(totals.totalCredit)}</span></div>
+                <p className="font-semibold text-muted-foreground">رصيد آخر المدة</p>
+                <div className="flex justify-between"><span>مدين:</span><span className="font-mono font-bold">{fmt(totals.closingDebit)}</span></div>
+                <div className="flex justify-between"><span>دائن:</span><span className="font-mono font-bold">{fmt(totals.closingCredit)}</span></div>
               </div>
             </div>
             <div className={cn("mt-3 p-2.5 rounded-lg text-center font-medium text-sm",
-              Math.abs(totals.totalDebit - totals.totalCredit) < 0.01
+              Math.abs(totals.closingDebit - totals.closingCredit) < 0.01
                 ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                 : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
             )}>
-              {Math.abs(totals.totalDebit - totals.totalCredit) < 0.01
+              {Math.abs(totals.closingDebit - totals.closingCredit) < 0.01
                 ? '✓ ميزان المراجعة متوازن'
-                : `✗ فرق في الميزان: ${fmt(Math.abs(totals.totalDebit - totals.totalCredit))}`}
+                : `✗ فرق في الميزان: ${fmt(Math.abs(totals.closingDebit - totals.closingCredit))}`}
             </div>
           </CardContent>
         </Card>
