@@ -338,11 +338,14 @@ export async function getSystemFinancialStatements(
 
   // حساب الأرباح من القيود المحاسبية:
   // الربح الإجمالي = الإيرادات - تكلفة البضاعة المباعة
+  console.log('COGS:', cogsAccounts.map(a => ({ code: a.code, name: a.name, bal: getBalance(a) })));
+  console.log('Expense ALL:', expenseAccounts.map(a => ({ code: a.code, name: a.name, type: a.type, bal: getBalance(a) })));
+  console.log('costOfRevenue:', costOfRevenue, 'selling:', sellingAndMarketingExpenses, 'admin:', generalAndAdminExpenses);
   const grossProfit = totalRevenue - costOfRevenue;
-  // ربح العمليات = الربح الإجمالي - مصاريف البيع - المصروفات الإدارية (IAS 1.103)
   const operatingProfit = grossProfit - sellingAndMarketingExpenses - generalAndAdminExpenses;
-  // الربح قبل الزكاة
   const profitBeforeZakat = operatingProfit;
+  console.log('grossProfit:', grossProfit, 'operatingProfit:', operatingProfit, 'profitBeforeZakat:', profitBeforeZakat);
+  console.log('=== END DEBUG ===');
 
 
   // ===== بناء الإيضاحات =====
