@@ -28,7 +28,7 @@ export function RecentInvoicesCard({ setActivePage }: RecentInvoicesCardProps) {
   const { companyId, company } = useCompany();
   const isCarDealership = company?.company_type === 'car_dealership';
   const { data: sales = [] } = useSales();
-
+  // For non-car companies, sales hook returns data but we ignore it
   const { data: invoices = [] } = useQuery({
     queryKey: ['dashboard-recent-invoices', companyId],
     queryFn: async () => {
