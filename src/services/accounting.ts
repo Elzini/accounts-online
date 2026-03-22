@@ -448,7 +448,7 @@ export async function getTrialBalance(
   return { accounts: trialAccounts, totalDebit, totalCredit };
 }
 
-export async function getIncomeStatement(companyId: string, startDate?: string, endDate?: string): Promise<{
+export async function getIncomeStatement(companyId: string, startDate?: string, endDate?: string, fiscalYearId?: string): Promise<{
   revenue: Array<{ account: AccountCategory; amount: number }>;
   expenses: Array<{ account: AccountCategory; amount: number }>;
   totalRevenue: number;
@@ -461,16 +461,20 @@ export async function getIncomeStatement(companyId: string, startDate?: string, 
       account_id,
       debit,
       credit,
-      journal_entry:journal_entries!inner(company_id, entry_date, is_posted)
+      journal_entry:journal_entries!inner(company_id, entry_date, is_posted, fiscal_year_id)
     `)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true);
 
-  if (startDate) {
-    query = query.gte('journal_entry.entry_date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('journal_entry.entry_date', endDate);
+  if (fiscalYearId) {
+    query = query.eq('journal_entry.fiscal_year_id', fiscalYearId);
+  } else {
+    if (startDate) {
+      query = query.gte('journal_entry.entry_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('journal_entry.entry_date', endDate);
+    }
   }
 
   const { data: lines, error } = await query;
