@@ -16,7 +16,7 @@ import {
   useUpdateJournalEntryRule, 
   useDeleteJournalEntryRule 
 } from '@/hooks/useSystemControl';
-import { useAccounts } from '@/hooks/useAccounting';
+import { useLeafAccounts } from '@/hooks/useLeafAccounts';
 import { TRIGGER_TYPES, JournalEntryRule } from '@/services/systemControl';
 import { toast } from 'sonner';
 

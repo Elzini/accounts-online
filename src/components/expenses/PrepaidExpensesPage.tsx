@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { usePrepaidExpenses, usePrepaidExpenseAmortizations, useCreatePrepaidExpense, useUpdatePrepaidExpense, useDeletePrepaidExpense, useProcessAmortization, useProcessAllDueAmortizations } from '@/hooks/usePrepaidExpenses';
 import { useExpenseCategories } from '@/hooks/useExpenses';
-import { useAccounts } from '@/hooks/useAccounting';
+import { useLeafAccounts } from '@/hooks/useLeafAccounts';
 import { PrepaidExpense, PrepaidExpenseAmortization } from '@/services/prepaidExpenses';
 import { AccountSearchSelect } from '@/components/accounting/AccountSearchSelect';
 import { useLanguage } from '@/contexts/LanguageContext';
