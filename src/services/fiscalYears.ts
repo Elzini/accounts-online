@@ -694,36 +694,47 @@ export async function refreshOpeningBalances(
 
     if (!previousYear) throw new Error('السنة السابقة غير موجودة');
 
-    // حذف جميع قيود الافتتاح القديمة لهذه السنة (سواء كانت مرتبطة أو لا)
-    const { data: oldOpeningEntries } = await supabase
+    // تحديد قيد افتتاحي واحد للتحديث + إزالة التكرارات إن وجدت
+    const { data: oldOpeningEntries, error: fetchOpeningError } = await supabase
       .from('journal_entries')
       .select('id')
       .eq('company_id', companyId)
       .eq('fiscal_year_id', fiscalYearId)
       .eq('reference_type', 'opening');
 
-    if (oldOpeningEntries && oldOpeningEntries.length > 0) {
-      const oldIds = oldOpeningEntries.map(e => e.id);
-      // حذف بنود القيود أولاً
-      for (const oldId of oldIds) {
-        await supabase
-          .from('journal_entry_lines')
-          .delete()
-          .eq('journal_entry_id', oldId);
-      }
-      // حذف القيود
-      for (const oldId of oldIds) {
-        await supabase
-          .from('journal_entries')
-          .delete()
-          .eq('id', oldId);
-      }
+    if (fetchOpeningError) throw fetchOpeningError;
+
+    const openingEntryIds = (oldOpeningEntries || []).map(e => e.id);
+    let openingEntryIdToUpdate =
+      currentYear.opening_balance_entry_id && openingEntryIds.includes(currentYear.opening_balance_entry_id)
+        ? currentYear.opening_balance_entry_id
+        : (openingEntryIds[0] || null);
+
+    if (openingEntryIdToUpdate) {
+      // تفريغ بنود القيد الأساسي ليتم إعادة تعبئته بنفس المعرّف
+      const { error: clearBaseLinesError } = await supabase
+        .from('journal_entry_lines')
+        .delete()
+        .eq('journal_entry_id', openingEntryIdToUpdate);
+
+      if (clearBaseLinesError) throw clearBaseLinesError;
     }
-    // مسح المرجع القديم
-    await supabase
-      .from('fiscal_years')
-      .update({ opening_balance_entry_id: null })
-      .eq('id', fiscalYearId);
+
+    // حذف أي قيود افتتاح إضافية (مكررة) لمنع التضاعف
+    const duplicateOpeningIds = openingEntryIds.filter(id => id !== openingEntryIdToUpdate);
+    if (duplicateOpeningIds.length > 0) {
+      const { error: deleteDuplicateLinesError } = await supabase
+        .from('journal_entry_lines')
+        .delete()
+        .in('journal_entry_id', duplicateOpeningIds);
+      if (deleteDuplicateLinesError) throw deleteDuplicateLinesError;
+
+      const { error: deleteDuplicateEntriesError } = await supabase
+        .from('journal_entries')
+        .delete()
+        .in('id', duplicateOpeningIds);
+      if (deleteDuplicateEntriesError) throw deleteDuplicateEntriesError;
+    }
 
     // جلب جميع القيود المحاسبية للسنة السابقة
     const { data: journalLines } = await supabase
@@ -835,38 +846,83 @@ export async function refreshOpeningBalances(
       const totalDebit = openingLines.reduce((sum, l) => sum + l.debit, 0);
       const totalCredit = openingLines.reduce((sum, l) => sum + l.credit, 0);
 
-      // إنشاء قيد الافتتاح الجديد
-      const { data: openingEntry, error: entryError } = await supabase
-        .from('journal_entries')
-        .insert({
-          company_id: companyId,
-          description: `قيد افتتاحي مُحدّث للسنة المالية ${currentYear.name}`,
-          entry_date: currentYear.start_date,
-          total_debit: totalDebit,
-          total_credit: totalCredit,
-          is_posted: true,
-          reference_type: 'opening',
-          fiscal_year_id: fiscalYearId
-        })
-        .select()
-        .single();
+      // تحديث القيد الحالي إن وجد، وإلا إنشاء أول قيد افتتاحي فقط عند عدم وجوده
+      if (openingEntryIdToUpdate) {
+        const { error: updateEntryError } = await supabase
+          .from('journal_entries')
+          .update({
+            description: `قيد افتتاحي مُحدّث للسنة المالية ${currentYear.name}`,
+            entry_date: currentYear.start_date,
+            total_debit: totalDebit,
+            total_credit: totalCredit,
+            is_posted: true,
+            reference_type: 'opening',
+            fiscal_year_id: fiscalYearId,
+          })
+          .eq('id', openingEntryIdToUpdate);
 
-      if (entryError) throw entryError;
+        if (updateEntryError) throw updateEntryError;
+      } else {
+        const { data: openingEntry, error: entryError } = await supabase
+          .from('journal_entries')
+          .insert({
+            company_id: companyId,
+            description: `قيد افتتاحي مُحدّث للسنة المالية ${currentYear.name}`,
+            entry_date: currentYear.start_date,
+            total_debit: totalDebit,
+            total_credit: totalCredit,
+            is_posted: true,
+            reference_type: 'opening',
+            fiscal_year_id: fiscalYearId
+          })
+          .select('id')
+          .single();
+
+        if (entryError) throw entryError;
+        openingEntryIdToUpdate = openingEntry.id;
+      }
 
       // إضافة بنود القيد
       const { error: linesError } = await supabase
         .from('journal_entry_lines')
         .insert(openingLines.map(line => ({
           ...line,
-          journal_entry_id: openingEntry.id
+          journal_entry_id: openingEntryIdToUpdate!
         })));
 
       if (linesError) throw linesError;
 
-      // تحديث السنة بقيد الافتتاح الجديد
+      // تحديث السنة بمعرّف القيد الافتتاحي الأساسي
       await supabase
         .from('fiscal_years')
-        .update({ opening_balance_entry_id: openingEntry.id })
+        .update({ opening_balance_entry_id: openingEntryIdToUpdate })
+        .eq('id', fiscalYearId);
+    } else if (openingEntryIdToUpdate) {
+      // لا توجد بنود بعد إعادة الاحتساب: نُبقي نفس القيد لكن برصيد صفري
+      const { error: zeroEntryError } = await supabase
+        .from('journal_entries')
+        .update({
+          description: `قيد افتتاحي مُحدّث للسنة المالية ${currentYear.name}`,
+          entry_date: currentYear.start_date,
+          total_debit: 0,
+          total_credit: 0,
+          is_posted: true,
+          reference_type: 'opening',
+          fiscal_year_id: fiscalYearId,
+        })
+        .eq('id', openingEntryIdToUpdate);
+
+      if (zeroEntryError) throw zeroEntryError;
+
+      await supabase
+        .from('fiscal_years')
+        .update({ opening_balance_entry_id: openingEntryIdToUpdate })
+        .eq('id', fiscalYearId);
+    } else {
+      // لا يوجد قيد افتتاحي ولا بنود مرحّلة
+      await supabase
+        .from('fiscal_years')
+        .update({ opening_balance_entry_id: null })
         .eq('id', fiscalYearId);
     }
 
