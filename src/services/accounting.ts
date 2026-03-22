@@ -945,6 +945,9 @@ export async function getComprehensiveTrialBalance(
   // قاعدة مهمة: إذا وُجد قيد افتتاحي داخل الفترة المختارة نستخدمه كمصدر وحيد للافتتاح
   // لمنع تكرار ترحيل أرصدة السنوات السابقة مرتين.
   const openingBalances = new Map<string, { debit: number; credit: number }>();
+  // Track raw totals from ALL accounts (including revenue/expense) for balanced grand totals
+  let rawOpeningDebitAll = 0, rawOpeningCreditAll = 0;
+
   if (effectiveStartDate) {
     const { data: openingLines } = await supabase
       .from('journal_entry_lines')
@@ -986,11 +989,17 @@ export async function getComprehensiveTrialBalance(
 
     const allOpeningLines = openingSourceLines;
     allOpeningLines.forEach((line: any) => {
+      const d = Number(line.debit) || 0;
+      const c = Number(line.credit) || 0;
+      // Accumulate raw totals from ALL accounts for balanced grand totals
+      rawOpeningDebitAll += d;
+      rawOpeningCreditAll += c;
+
       const accType = accountTypeMap.get(line.account_id);
       if (!accType || !balanceSheetTypes.has(accType)) return;
       const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
-      current.debit += Number(line.debit) || 0;
-      current.credit += Number(line.credit) || 0;
+      current.debit += d;
+      current.credit += c;
       openingBalances.set(line.account_id, current);
     });
   }
@@ -1115,13 +1124,11 @@ export async function getComprehensiveTrialBalance(
 
   // Calculate totals from RAW journal entry data (not netted display values)
   // This ensures totals are always balanced regardless of parent/child hierarchy
-  let rawOpeningDebit = 0, rawOpeningCredit = 0;
+  // Use raw totals from ALL accounts (including revenue/expense) to ensure balance
+  let rawOpeningDebit = rawOpeningDebitAll;
+  let rawOpeningCredit = rawOpeningCreditAll;
   let rawPeriodDebit = 0, rawPeriodCredit = 0;
 
-  openingBalances.forEach((val) => {
-    rawOpeningDebit += val.debit;
-    rawOpeningCredit += val.credit;
-  });
   periodBalances.forEach((val) => {
     rawPeriodDebit += val.debit;
     rawPeriodCredit += val.credit;
