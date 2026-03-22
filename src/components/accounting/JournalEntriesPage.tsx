@@ -12,7 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { useJournalEntries, useAccounts, useCreateJournalEntry, useDeleteJournalEntry, useJournalEntry } from '@/hooks/useAccounting';
+import { useJournalEntries, useCreateJournalEntry, useDeleteJournalEntry, useJournalEntry } from '@/hooks/useAccounting';
+import { useLeafAccounts } from '@/hooks/useLeafAccounts';
 import { useCostCenters } from '@/hooks/useCostCenters';
 import { ProjectSelector } from '@/components/forms/ProjectSelector';
 import { toast } from 'sonner';
@@ -49,7 +50,7 @@ export function JournalEntriesPage() {
   const { t, direction, language } = useLanguage();
   const { company } = useCompany();
   const { data: entries = [], isLoading } = useJournalEntries();
-  const { data: accounts = [] } = useAccounts();
+  const { data: accounts = [] } = useLeafAccounts();
   const { data: costCenters = [] } = useCostCenters();
   const { filterByFiscalYear } = useFiscalYearFilter();
   const { printReport } = useUnifiedPrintReport();

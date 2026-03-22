@@ -16,13 +16,13 @@ import {
   useUpdateJournalEntryRule, 
   useDeleteJournalEntryRule 
 } from '@/hooks/useSystemControl';
-import { useAccounts } from '@/hooks/useAccounting';
+import { useLeafAccounts } from '@/hooks/useLeafAccounts';
 import { TRIGGER_TYPES, JournalEntryRule } from '@/services/systemControl';
 import { toast } from 'sonner';
 
 export function JournalRulesTab() {
   const { data: rules = [], isLoading } = useJournalEntryRules();
-  const { data: accounts = [] } = useAccounts();
+  const { data: accounts = [] } = useLeafAccounts();
   const createRule = useCreateJournalEntryRule();
   const updateRule = useUpdateJournalEntryRule();
   const deleteRule = useDeleteJournalEntryRule();

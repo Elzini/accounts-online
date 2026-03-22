@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useExpenses, useExpenseCategories, useAddExpense, useDeleteExpense, useAddExpenseCategory, useCreateDefaultExpenseCategories } from '@/hooks/useExpenses';
 import { useCars } from '@/hooks/useDatabase';
-import { useAccounts } from '@/hooks/useAccounting';
+import { useLeafAccounts } from '@/hooks/useLeafAccounts';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Expense, ExpenseCategory } from '@/services/expenses';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
@@ -27,7 +27,7 @@ export function ExpensesPage() {
   const labels = useIndustryLabels();
   const { data: expenses = [], isLoading: expensesLoading } = useExpenses();
   const { data: categories = [], isLoading: categoriesLoading } = useExpenseCategories();
-  const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
+  const { data: accounts = [], isLoading: accountsLoading } = useLeafAccounts();
   const { data: cars = [], isLoading: carsLoading } = useCars();
   const addExpense = useAddExpense();
   const deleteExpense = useDeleteExpense();

@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import { useAddVoucher, useDeleteVoucher, useVouchers } from '@/hooks/useVouchers';
 import { useCompany } from '@/contexts/CompanyContext';
-import { useAccounts } from '@/hooks/useAccounting';
+import { useLeafAccounts } from '@/hooks/useLeafAccounts';
 import { useCustomers, useSuppliers } from '@/hooks/useDatabase';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
@@ -33,7 +33,7 @@ export function VoucherFormView({ type }: VoucherFormViewProps) {
   const { t, language } = useLanguage();
   const { companyId } = useCompany();
   const { data: allVouchers = [], isLoading } = useVouchers();
-  const { data: accounts = [] } = useAccounts();
+  const { data: accounts = [] } = useLeafAccounts();
   const { data: customers = [] } = useCustomers();
   const { data: suppliers = [] } = useSuppliers();
   const { filterByFiscalYear } = useFiscalYearFilter();
