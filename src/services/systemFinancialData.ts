@@ -510,19 +510,19 @@ export async function getSystemFinancialStatements(
           }
         });
 
-        // حساب المتوسط المرجح بالأشهر (Weighted Average Method)
-        // لكل شهر: الرصيد التراكمي × (الأشهر المتبقية / إجمالي الأشهر)
+        // حساب المتوسط المرجح بالأشهر (Time-Weighted Average)
+        // لكل شهر: نحسب الرصيد التراكمي ونقسم على عدد الأشهر الإجمالي
+        // مثال: مبلغ 7.5 مليون أُودع في الشهر 10 → يبقى شهرين → 7.5M × 2/12 = 1.25M
         let cumulativeBalance = 0;
-        let weightedTotal = 0;
+        let totalArea = 0;
         
         for (let m = 0; m < totalMonths; m++) {
           cumulativeBalance += (monthlyBalances.get(m) || 0);
-          const remainingMonths = totalMonths - m;
-          weightedTotal += Math.max(0, cumulativeBalance) * (remainingMonths / totalMonths);
+          totalArea += Math.max(0, cumulativeBalance);
         }
         
-        // المتوسط المرجح
-        partnersCurrentTotal = Math.max(0, Math.round(weightedTotal * 100) / 100);
+        // المتوسط المرجح = مجموع الأرصدة الشهرية / عدد الأشهر
+        partnersCurrentTotal = Math.max(0, Math.round((totalArea / totalMonths) * 100) / 100);
         
         // حساب نسبة الحَوْل التقريبية
         if (partnersCurrentFullBalance > 0) {
