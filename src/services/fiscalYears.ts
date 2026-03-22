@@ -791,42 +791,22 @@ export async function refreshOpeningBalances(
   }
 }
 
-// تحديث أرصدة العملاء المرحلة
+// تحديث أرصدة العملاء المرحلة (عام لجميع الشركات - يعتمد على القيود المحاسبية)
 export async function refreshCustomerBalances(
   fiscalYearId: string,
   previousYearId: string,
   companyId: string
 ): Promise<{ success: boolean; count?: number; error?: string }> {
   try {
-    // جلب السنة السابقة
     const { data: previousYear } = await supabase
       .from('fiscal_years')
-      .select('*')
+      .select('end_date')
       .eq('id', previousYearId)
       .single();
 
     if (!previousYear) throw new Error('السنة السابقة غير موجودة');
 
-    // جلب السنة الحالية
-    const { data: currentYear } = await supabase
-      .from('fiscal_years')
-      .select('*')
-      .eq('id', fiscalYearId)
-      .single();
-
-    if (!currentYear) throw new Error('السنة المالية غير موجودة');
-
-    // جلب جميع المبيعات من السنة السابقة
-    const { data: unpaidSales, error: salesError } = await supabase
-      .from('sales')
-      .select('id, customer_id, sale_price')
-      .eq('company_id', companyId)
-      .gte('sale_date', previousYear.start_date)
-      .lte('sale_date', previousYear.end_date);
-
-    if (salesError) throw salesError;
-
-    // جلب حساب العملاء (المدينون)
+    // جلب حساب العملاء (المدينون) - كود 1201
     const { data: receivablesAccount } = await supabase
       .from('account_categories')
       .select('id')
@@ -838,75 +818,46 @@ export async function refreshCustomerBalances(
       return { success: true, count: 0 };
     }
 
-    // حساب إجمالي المديونية
-    const totalReceivables = (unpaidSales || []).reduce((sum, sale) => sum + Number(sale.sale_price), 0);
+    // حساب رصيد المدينين من القيود المحاسبية حتى نهاية السنة السابقة
+    const { data: lines } = await supabase
+      .from('journal_entry_lines')
+      .select(`
+        debit,
+        credit,
+        journal_entry:journal_entries!inner(company_id, entry_date, is_posted)
+      `)
+      .eq('account_id', receivablesAccount.id)
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .lte('journal_entry.entry_date', previousYear.end_date);
 
-    if (totalReceivables > 0) {
-      // التحقق من وجود قيد مرحل للعملاء
-      const { data: existingEntry } = await supabase
-        .from('journal_entries')
-        .select('id')
-        .eq('company_id', companyId)
-        .eq('fiscal_year_id', fiscalYearId)
-        .eq('reference_type', 'customer_balance_forward')
-        .single();
+    const balance = (lines || []).reduce((sum: number, line: any) => {
+      return sum + (Number(line.debit) - Number(line.credit));
+    }, 0);
 
-      if (existingEntry) {
-        // حذف القيد القديم
-        await supabase
-          .from('journal_entry_lines')
-          .delete()
-          .eq('journal_entry_id', existingEntry.id);
-        
-        await supabase
-          .from('journal_entries')
-          .delete()
-          .eq('id', existingEntry.id);
-      }
-    }
-
-    return { success: true, count: unpaidSales?.length || 0 };
+    // الرصيد مُضمّن بالفعل في قيد الافتتاح عبر refreshOpeningBalances
+    return { success: true, count: balance !== 0 ? 1 : 0 };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
 
-// تحديث أرصدة الموردين المرحلة
+// تحديث أرصدة الموردين المرحلة (عام لجميع الشركات - يعتمد على القيود المحاسبية)
 export async function refreshSupplierBalances(
   fiscalYearId: string,
   previousYearId: string,
   companyId: string
 ): Promise<{ success: boolean; count?: number; error?: string }> {
   try {
-    // جلب السنة السابقة
     const { data: previousYear } = await supabase
       .from('fiscal_years')
-      .select('*')
+      .select('end_date')
       .eq('id', previousYearId)
       .single();
 
     if (!previousYear) throw new Error('السنة السابقة غير موجودة');
 
-    // جلب السنة الحالية
-    const { data: currentYear } = await supabase
-      .from('fiscal_years')
-      .select('*')
-      .eq('id', fiscalYearId)
-      .single();
-
-    if (!currentYear) throw new Error('السنة المالية غير موجودة');
-
-    // جلب جميع المشتريات غير المسددة بالكامل من السنة السابقة
-    const { data: unpaidPurchases, error: purchasesError } = await supabase
-      .from('cars')
-      .select('id, supplier_id, purchase_price')
-      .eq('company_id', companyId)
-      .gte('purchase_date', previousYear.start_date)
-      .lte('purchase_date', previousYear.end_date);
-
-    if (purchasesError) throw purchasesError;
-
-    // جلب حساب الموردين (الدائنون)
+    // جلب حساب الموردين (الدائنون) - كود 2101
     const { data: payablesAccount } = await supabase
       .from('account_categories')
       .select('id')
@@ -918,7 +869,25 @@ export async function refreshSupplierBalances(
       return { success: true, count: 0 };
     }
 
-    return { success: true, count: unpaidPurchases?.length || 0 };
+    // حساب رصيد الدائنين من القيود المحاسبية حتى نهاية السنة السابقة
+    const { data: lines } = await supabase
+      .from('journal_entry_lines')
+      .select(`
+        debit,
+        credit,
+        journal_entry:journal_entries!inner(company_id, entry_date, is_posted)
+      `)
+      .eq('account_id', payablesAccount.id)
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .lte('journal_entry.entry_date', previousYear.end_date);
+
+    const balance = (lines || []).reduce((sum: number, line: any) => {
+      return sum + (Number(line.credit) - Number(line.debit));
+    }, 0);
+
+    // الرصيد مُضمّن بالفعل في قيد الافتتاح عبر refreshOpeningBalances
+    return { success: true, count: balance !== 0 ? 1 : 0 };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
