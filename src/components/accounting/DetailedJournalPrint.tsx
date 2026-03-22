@@ -21,6 +21,7 @@ function formatNumber(n: number | null | undefined): string {
 
 export function useDetailedJournalPrint() {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
   const { data: reportSettings = defaultReportSettings } = useReportSettings();
   const { data: appSettings } = useAppSettings();
 
@@ -49,6 +50,8 @@ export function useDetailedJournalPrint() {
 
     if (entryIds && entryIds.length > 0) {
       query = query.in('id', entryIds);
+    } else if (selectedFiscalYear) {
+      query = query.eq('fiscal_year_id', selectedFiscalYear.id);
     }
 
     const { data: entries, error } = await query;
