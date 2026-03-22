@@ -18,7 +18,7 @@ export function SalesReport() {
   const { data: sales, isLoading } = useSales();
   const { companyId, company } = useCompany();
   const isCarDealership = company?.company_type === 'car_dealership';
-  const { filterByFiscalYear } = useFiscalYearFilter();
+  const { filterByFiscalYear, selectedFiscalYear } = useFiscalYearFilter();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const { printReport } = usePrintReport();
@@ -27,14 +27,18 @@ export function SalesReport() {
 
   // Fetch invoices for non-car companies
   const { data: invoices = [], isLoading: invoicesLoading } = useQuery({
-    queryKey: ['company-invoices-report', companyId],
+    queryKey: ['company-invoices-report', companyId, selectedFiscalYear?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      let query = (supabase as any)
         .from('invoices')
         .select('*')
         .eq('company_id', companyId!)
         .eq('invoice_type', 'sales')
         .order('created_at', { ascending: false });
+      if (selectedFiscalYear) {
+        query = query.eq('fiscal_year_id', selectedFiscalYear.id);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
