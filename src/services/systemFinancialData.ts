@@ -453,87 +453,80 @@ export async function getSystemFinancialStatements(
   const partnersDebits = partnerWithdrawals.reduce((sum, a) => sum + getPositiveDebitBalance(a), 0);
   const partnersCurrentFullBalance = Math.max(0, partnersCredits - partnersDebits);
 
-  // ===== احتساب الحَوْل (Pro-rata) لجاري الشركاء =====
-  // وفق ZATCA: يتم احتساب جاري الشركاء بالنسبة والتناسب حسب المدة الفعلية من السنة المالية
+  // ===== احتساب الحَوْل (شرط صارم) لجاري الشركاء =====
+  // المطلوب: لا يُحتسب جاري الشريك إلا إذا مرّ عليه سنة كاملة، وإلا يُستبعد
   let partnersCurrentTotal = partnersCurrentFullBalance;
-  let partnersHawlMonths = 12; // الافتراضي: سنة كاملة
-  
-  if (partnersCurrentFullBalance > 0) {
-    // جمع كافة حسابات جاري الشركاء (خصوم + حقوق ملكية) وسحوبات
+  let partnersHawlMonths = partnersCurrentFullBalance > 0 ? 12 : 0;
+
+  if (partnersCurrentFullBalance > 0 && endDate) {
     const allPartnerAccountIds = [
       ...partnersCurrentInLiabilities.map(a => a.id),
       ...partnersCurrentInEquity.map(a => a.id),
       ...partnerWithdrawals.map(a => a.id),
     ];
 
-    if (allPartnerAccountIds.length > 0 && startDate && endDate) {
-      // جلب الحركات الشهرية لحسابات جاري الشركاء
-      const { data: monthlyMovements } = await supabase
+    if (allPartnerAccountIds.length > 0) {
+      const hawlCutoffDate = new Date(endDate);
+      hawlCutoffDate.setFullYear(hawlCutoffDate.getFullYear() - 1);
+      const hawlCutoffDateStr = hawlCutoffDate.toISOString().split('T')[0];
+
+      // نقرأ كل حركات جاري الشريك حتى تاريخ التقرير لتحديد ما تجاوز الحَوْل
+      const { data: partnerMovements } = await supabase
         .from('journal_entry_lines')
         .select(`
           debit,
           credit,
           account_id,
-          journal_entry:journal_entries!inner(entry_date, company_id, is_posted)
+          journal_entry:journal_entries!inner(entry_date, entry_type, company_id, is_posted)
         `)
         .eq('journal_entry.company_id', companyId)
         .eq('journal_entry.is_posted', true)
-        .gte('journal_entry.entry_date', startDate)
         .lte('journal_entry.entry_date', endDate)
         .in('account_id', allPartnerAccountIds);
 
-      if (monthlyMovements && monthlyMovements.length > 0) {
-        // تحديد عدد أشهر السنة المالية
-        const fyStart = new Date(startDate);
-        const fyEnd = new Date(endDate);
-        const totalMonths = Math.max(1, Math.round((fyEnd.getTime() - fyStart.getTime()) / (30.44 * 24 * 60 * 60 * 1000)));
-        
-        // تجميع الحركات حسب الشهر
-        const monthlyBalances = new Map<number, number>();
+      if (partnerMovements && partnerMovements.length > 0) {
         const withdrawalIds = new Set(partnerWithdrawals.map(a => a.id));
-        
-        monthlyMovements.forEach((line: any) => {
-          const entryDate = new Date((line.journal_entry as any).entry_date);
-          // حساب رقم الشهر من بداية السنة المالية (0-based)
-          const monthIndex = Math.floor((entryDate.getTime() - fyStart.getTime()) / (30.44 * 24 * 60 * 60 * 1000));
-          const clampedMonth = Math.max(0, Math.min(totalMonths - 1, monthIndex));
-          
-          const current = monthlyBalances.get(clampedMonth) || 0;
+
+        let eligibleAfterHawl = 0;
+        let excludedBeforeHawl = 0;
+
+        partnerMovements.forEach((line: any) => {
+          const journal = line.journal_entry as any;
+          const entryDate = String(journal.entry_date || '');
+          const entryType = String(journal.entry_type || '');
+
           const debit = Number(line.debit) || 0;
           const credit = Number(line.credit) || 0;
-          
-          // السحوبات تُطرح (مدينة)، والإيداعات تُضاف (دائنة)
-          if (withdrawalIds.has(line.account_id)) {
-            monthlyBalances.set(clampedMonth, current - debit + credit);
-          } else {
-            monthlyBalances.set(clampedMonth, current + credit - debit);
+
+          // نفس منطق صافي جاري الشريك
+          const movement = withdrawalIds.has(line.account_id)
+            ? (credit - debit) // السحوبات (مدين) تُنقص الجاري
+            : (credit - debit); // الجاري في الخصوم/حقوق الملكية (دائن) يزيد الجاري
+
+          // يعتبر متجاوز الحَوْل إذا كان قيد افتتاحي أو تاريخه أقدم من سنة كاملة
+          const passedHawl = entryType === 'opening' || entryDate <= hawlCutoffDateStr;
+
+          if (movement > 0) {
+            if (passedHawl) {
+              eligibleAfterHawl += movement;
+            } else {
+              excludedBeforeHawl += movement;
+            }
+          } else if (movement < 0) {
+            // أي تخفيض (سحوبات/تسويات) يخصم من الرصيد المؤهل
+            eligibleAfterHawl += movement;
           }
         });
 
-        // حساب المتوسط المرجح بالأشهر (Time-Weighted Average)
-        // لكل شهر: نحسب الرصيد التراكمي ونقسم على عدد الأشهر الإجمالي
-        // مثال: مبلغ 7.5 مليون أُودع في الشهر 10 → يبقى شهرين → 7.5M × 2/12 = 1.25M
-        let cumulativeBalance = 0;
-        let totalArea = 0;
-        
-        for (let m = 0; m < totalMonths; m++) {
-          cumulativeBalance += (monthlyBalances.get(m) || 0);
-          totalArea += Math.max(0, cumulativeBalance);
-        }
-        
-        // المتوسط المرجح = مجموع الأرصدة الشهرية / عدد الأشهر
-        partnersCurrentTotal = Math.max(0, Math.round((totalArea / totalMonths) * 100) / 100);
-        
-        // حساب نسبة الحَوْل التقريبية
-        if (partnersCurrentFullBalance > 0) {
-          partnersHawlMonths = Math.round((partnersCurrentTotal / partnersCurrentFullBalance) * 12 * 10) / 10;
-        }
-        
-        console.log('=== احتساب الحَوْل لجاري الشركاء ===');
-        console.log(`الرصيد الكامل: ${partnersCurrentFullBalance}`);
-        console.log(`المتوسط المرجح (بعد الحَوْل): ${partnersCurrentTotal}`);
-        console.log(`نسبة الحَوْل التقريبية: ${partnersHawlMonths} شهر من ${totalMonths}`);
-        monthlyBalances.forEach((val, month) => console.log(`  الشهر ${month + 1}: حركة=${val}`));
+        partnersCurrentTotal = Math.max(0, eligibleAfterHawl);
+        partnersHawlMonths = partnersCurrentTotal > 0 ? 12 : 0;
+
+        console.log('=== شرط الحَوْل الصارم لجاري الشركاء ===');
+        console.log(`تاريخ التقرير: ${endDate}`);
+        console.log(`حد الحَوْل (قبل سنة): ${hawlCutoffDateStr}`);
+        console.log(`الرصيد الكامل قبل الشرط: ${partnersCurrentFullBalance}`);
+        console.log(`المبلغ المستبعد (لم يكمل سنة): ${excludedBeforeHawl}`);
+        console.log(`المبلغ المؤهل بعد الحَوْل: ${partnersCurrentTotal}`);
       }
     }
   }
