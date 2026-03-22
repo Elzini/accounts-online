@@ -280,19 +280,19 @@ export function TrialBalancePage() {
       {totals && (
         <Card>
           <CardContent className="py-3 px-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-              <div className="space-y-1">
-                <p className="font-semibold text-muted-foreground">رصيد أول المدة</p>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="space-y-1 bg-sky-50 dark:bg-sky-900/20 rounded-lg p-3">
+                <p className="font-semibold text-muted-foreground text-center">رصيد أول المدة</p>
                 <div className="flex justify-between"><span>مدين:</span><span className="font-mono font-bold">{fmt(totals.openingDebit)}</span></div>
                 <div className="flex justify-between"><span>دائن:</span><span className="font-mono font-bold">{fmt(totals.openingCredit)}</span></div>
               </div>
-              <div className="space-y-1">
-                <p className="font-semibold text-muted-foreground">الحركة</p>
+              <div className="space-y-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3">
+                <p className="font-semibold text-muted-foreground text-center">الحركة</p>
                 <div className="flex justify-between"><span>مدين:</span><span className="font-mono font-bold">{fmt(totals.periodDebit)}</span></div>
                 <div className="flex justify-between"><span>دائن:</span><span className="font-mono font-bold">{fmt(totals.periodCredit)}</span></div>
               </div>
-              <div className="space-y-1">
-                <p className="font-semibold text-muted-foreground">رصيد آخر المدة</p>
+              <div className="space-y-1 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3">
+                <p className="font-semibold text-muted-foreground text-center">رصيد آخر المدة</p>
                 <div className="flex justify-between"><span>مدين:</span><span className="font-mono font-bold">{fmt(totals.closingDebit)}</span></div>
                 <div className="flex justify-between"><span>دائن:</span><span className="font-mono font-bold">{fmt(totals.closingCredit)}</span></div>
               </div>
