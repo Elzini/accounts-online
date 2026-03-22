@@ -924,35 +924,59 @@ export async function refreshSupplierBalances(
   }
 }
 
-// تحديث شامل لجميع الأرصدة المرحلة
+// تحديث شامل لجميع الأرصدة المرحلة (يعمل لجميع أنواع الشركات)
 export async function refreshAllCarryForwardBalances(
   fiscalYearId: string,
   previousYearId: string,
-  companyId: string
+  companyId: string,
+  companyType?: string
 ): Promise<{ 
   success: boolean; 
   openingBalancesUpdated?: boolean;
+  closingEntryUpdated?: boolean;
   inventoryCount?: number;
   error?: string 
 }> {
   try {
-    // 1. تحديث الأرصدة الافتتاحية
+    // 1. تحديث قيد الإقفال للسنة المقفلة (إعادة حساب)
+    const { data: previousYear } = await supabase
+      .from('fiscal_years')
+      .select('status, closed_by')
+      .eq('id', previousYearId)
+      .single();
+
+    let closingEntryUpdated = false;
+    if (previousYear?.status === 'closed') {
+      const closingResult = await refreshClosingEntry(
+        previousYearId, 
+        companyId, 
+        previousYear.closed_by || ''
+      );
+      if (closingResult.success) {
+        closingEntryUpdated = true;
+      }
+    }
+
+    // 2. تحديث الأرصدة الافتتاحية (عام لجميع الشركات)
     const openingResult = await refreshOpeningBalances(fiscalYearId, previousYearId, companyId);
     if (!openingResult.success) throw new Error(openingResult.error);
 
-    // 2. ترحيل المخزون
-    const inventoryResult = await carryForwardInventory(previousYearId, fiscalYearId, companyId);
+    // 3. ترحيل المخزون - فقط لشركات السيارات
+    let inventoryCount = 0;
+    if (companyType === 'car_dealership') {
+      const inventoryResult = await carryForwardInventory(previousYearId, fiscalYearId, companyId);
+      inventoryCount = inventoryResult.count || 0;
+    }
 
-    // 3. تحديث أرصدة العملاء
+    // 4. تحديث أرصدة العملاء والموردين (عام)
     await refreshCustomerBalances(fiscalYearId, previousYearId, companyId);
-
-    // 4. تحديث أرصدة الموردين
     await refreshSupplierBalances(fiscalYearId, previousYearId, companyId);
 
     return { 
       success: true, 
       openingBalancesUpdated: true,
-      inventoryCount: inventoryResult.count || 0
+      closingEntryUpdated,
+      inventoryCount
     };
   } catch (error: any) {
     return { success: false, error: error.message };
