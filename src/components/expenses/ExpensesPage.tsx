@@ -203,7 +203,7 @@ export function ExpensesPage() {
                         <TableCell>{new Date(expense.expense_date).toLocaleDateString('ar-SA')}</TableCell>
                         <TableCell>{expense.account ? <Badge variant="outline" className="font-mono">{expense.account.code} - {expense.account.name}</Badge> : <span className="text-muted-foreground">-</span>}</TableCell>
                         <TableCell><Badge variant="secondary">{expense.category?.name || t.no_category}</Badge></TableCell>
-                        <TableCell>{expense.car ? <Badge variant="secondary" className="bg-orange-100 text-orange-700"><Car className="w-3 h-3 ml-1" />{expense.car.name}</Badge> : <span className="text-muted-foreground">{t.general_expense}</span>}</TableCell>
+                        <TableCell>{expense.car_id ? <Badge variant="secondary" className="bg-orange-100 text-orange-700"><Car className="w-3 h-3 ml-1" />{t.link_to_car}</Badge> : <span className="text-muted-foreground">{t.general_expense}</span>}</TableCell>
                         <TableCell>{expense.description}</TableCell>
                         <TableCell>
                           {expense.payment_method === 'cash' && t.cash_payment}
