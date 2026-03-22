@@ -296,8 +296,9 @@ export function FiscalYearsPage() {
                   <div className="p-4 bg-muted rounded-lg space-y-2">
                     <p className="text-sm font-medium">{t.fy_will_update}</p>
                     <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>تحديث قيد الإقفال للسنة المقفلة</li>
                       <li>{t.fy_update_list_1}</li>
-                      <li>{t.fy_update_list_2}</li>
+                      {isCarDealership && <li>{t.fy_update_list_2}</li>}
                       <li>{t.fy_update_list_3}</li>
                     </ul>
                     <p className="text-sm text-destructive mt-2">{t.fy_update_warning}</p>
