@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
-import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { useFiscalYearBounds } from '@/hooks/useFiscalYearBounds';
+import { getDashboardDateWindow } from '@/lib/dashboardDateWindow';
 
 export interface MonthlyExpenseBreakdown {
   custodyExpenses: number;
@@ -11,24 +12,23 @@ export interface MonthlyExpenseBreakdown {
   total: number;
 }
 
-async function fetchMonthlyExpenses(companyId: string): Promise<MonthlyExpenseBreakdown> {
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  
-  const formatDate = (d: Date) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  };
-  
-  const monthStart = formatDate(startOfMonth);
-  const monthEnd = formatDate(endOfMonth);
+async function fetchMonthlyExpenses(
+  companyId: string,
+  fiscalBounds?: { start: Date; end: Date } | null
+): Promise<MonthlyExpenseBreakdown> {
+  const window = getDashboardDateWindow(fiscalBounds);
+  const monthStart = window.monthStartISO;
+  const monthEnd = window.monthEndISO;
 
   const [custodyResult, payrollResult, prepaidResult, expensesResult] = await Promise.all([
     supabase.from('custody_transactions').select('amount').eq('company_id', companyId).gte('transaction_date', monthStart).lte('transaction_date', monthEnd),
-    supabase.from('payroll_records').select('total_base_salaries, total_allowances, total_bonuses, total_overtime, total_absences').eq('company_id', companyId).eq('status', 'approved').eq('month', now.getMonth() + 1).eq('year', now.getFullYear()),
+    supabase
+      .from('payroll_records')
+      .select('total_base_salaries, total_allowances, total_bonuses, total_overtime, total_absences')
+      .eq('company_id', companyId)
+      .eq('status', 'approved')
+      .eq('month', window.month)
+      .eq('year', window.year),
     supabase.from('prepaid_expense_amortizations').select('amount, amortization_date, prepaid_expense:prepaid_expenses!inner(company_id)').gte('amortization_date', monthStart).lte('amortization_date', monthEnd),
     supabase.from('expenses').select('amount, car_id, payment_method').eq('company_id', companyId).is('car_id', null).gte('expense_date', monthStart).lte('expense_date', monthEnd),
   ]);
@@ -43,11 +43,11 @@ async function fetchMonthlyExpenses(companyId: string): Promise<MonthlyExpenseBr
 
 export function useMonthlyExpenseBreakdown() {
   const { companyId } = useCompany();
-  const { selectedFiscalYear } = useFiscalYear();
+  const fiscalBounds = useFiscalYearBounds();
 
   return useQuery<MonthlyExpenseBreakdown>({
-    queryKey: ['monthly-expense-breakdown', companyId, selectedFiscalYear?.id],
-    queryFn: () => fetchMonthlyExpenses(companyId!),
+    queryKey: ['monthly-expense-breakdown', companyId, fiscalBounds?.fiscalYearId, fiscalBounds?.startISO, fiscalBounds?.endISO],
+    queryFn: () => fetchMonthlyExpenses(companyId!, fiscalBounds ? { start: fiscalBounds.start, end: fiscalBounds.end } : null),
     enabled: !!companyId,
     staleTime: 1000 * 60 * 5,
   });

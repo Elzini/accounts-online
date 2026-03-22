@@ -9,6 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useFiscalYearBounds } from '@/hooks/useFiscalYearBounds';
+import { getDashboardDateWindow } from '@/lib/dashboardDateWindow';
 
 interface MonthlyExpenseBreakdown {
   custodyExpenses: number;
@@ -18,20 +20,13 @@ interface MonthlyExpenseBreakdown {
   total: number;
 }
 
-async function fetchMonthlyExpenses(companyId: string, fiscalYearId?: string): Promise<MonthlyExpenseBreakdown> {
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  
-  const formatDate = (d: Date) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  };
-  
-  const monthStart = formatDate(startOfMonth);
-  const monthEnd = formatDate(endOfMonth);
+async function fetchMonthlyExpenses(
+  companyId: string,
+  fiscalBounds?: { start: Date; end: Date } | null
+): Promise<MonthlyExpenseBreakdown> {
+  const window = getDashboardDateWindow(fiscalBounds);
+  const monthStart = window.monthStartISO;
+  const monthEnd = window.monthEndISO;
 
   // 1. Custody transaction expenses this month
   const custodyPromise = supabase
@@ -42,15 +37,13 @@ async function fetchMonthlyExpenses(companyId: string, fiscalYearId?: string): P
     .lte('transaction_date', monthEnd);
 
   // 2. Payroll expenses this month (approved payroll records for current month/year)
-  const currentMonth = now.getMonth() + 1;
-  const currentYear = now.getFullYear();
   const payrollPromise = supabase
     .from('payroll_records')
     .select('total_base_salaries, total_allowances, total_bonuses, total_overtime, total_absences')
     .eq('company_id', companyId)
     .eq('status', 'approved')
-    .eq('month', currentMonth)
-    .eq('year', currentYear);
+    .eq('month', window.month)
+    .eq('year', window.year);
 
   // 3. Prepaid/Rent amortizations this month
   const prepaidPromise = supabase
@@ -114,12 +107,23 @@ async function fetchMonthlyExpenses(companyId: string, fiscalYearId?: string): P
 export function MonthlyExpensesCard() {
   const { companyId } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
+  const fiscalBounds = useFiscalYearBounds();
   const { t, language } = useLanguage();
   const [expanded, setExpanded] = useState(false);
+  const dashboardWindow = useMemo(
+    () => getDashboardDateWindow(fiscalBounds ? { start: fiscalBounds.start, end: fiscalBounds.end } : null),
+    [fiscalBounds?.fiscalYearId, fiscalBounds?.startISO, fiscalBounds?.endISO]
+  );
 
   const { data, isLoading } = useQuery({
-    queryKey: ['monthly-expenses-dashboard', companyId, selectedFiscalYear?.id],
-    queryFn: () => fetchMonthlyExpenses(companyId!, selectedFiscalYear?.id),
+    queryKey: [
+      'monthly-expenses-dashboard',
+      companyId,
+      selectedFiscalYear?.id,
+      fiscalBounds?.startISO,
+      fiscalBounds?.endISO,
+    ],
+    queryFn: () => fetchMonthlyExpenses(companyId!, fiscalBounds ? { start: fiscalBounds.start, end: fiscalBounds.end } : null),
     enabled: !!companyId,
     refetchInterval: 60000, // Refresh every minute
   });
@@ -128,7 +132,10 @@ export function MonthlyExpensesCard() {
     return `${Math.round(value)} ر.س`;
   };
 
-  const currentMonthName = new Date().toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', { month: 'long', year: 'numeric' });
+  const currentMonthName = dashboardWindow.referenceDate.toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
 
   const expenseItems = useMemo(() => {
     if (!data) return [];
