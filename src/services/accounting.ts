@@ -568,7 +568,7 @@ export async function getGeneralLedger(
 
   // Calculate opening balance (entries before startDate)
   let openingBalance = 0;
-  if (startDate) {
+  if (startDate && !fiscalYearId) {
     // جلب الأرصدة قبل بداية الفترة
     const { data: priorLines, error: priorError } = await supabase
       .from('journal_entry_lines')
@@ -633,7 +633,8 @@ export async function getGeneralLedger(
         description,
         reference_type,
         company_id,
-        is_posted
+        is_posted,
+        fiscal_year_id
       )
     `)
     .in('account_id', targetAccountIds)
@@ -642,11 +643,15 @@ export async function getGeneralLedger(
     .order('journal_entry(entry_date)', { ascending: true })
     .order('journal_entry(entry_number)', { ascending: true });
 
-  if (startDate) {
-    query = query.gte('journal_entry.entry_date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('journal_entry.entry_date', endDate);
+  if (fiscalYearId) {
+    query = query.eq('journal_entry.fiscal_year_id', fiscalYearId);
+  } else {
+    if (startDate) {
+      query = query.gte('journal_entry.entry_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('journal_entry.entry_date', endDate);
+    }
   }
 
   const { data: lines, error: linesError } = await query;
