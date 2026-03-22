@@ -71,7 +71,7 @@ export async function validateCompany(companyId: string): Promise<ValidationResu
   // 4. Check fiscal years
   const { data: fiscalYears } = await supabase
     .from('fiscal_years')
-    .select('id, name, is_active')
+    .select('id, name, status')
     .eq('company_id', companyId);
 
   const hasFiscalYear = (fiscalYears?.length || 0) > 0;
