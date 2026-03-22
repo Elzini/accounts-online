@@ -225,8 +225,11 @@ export function TrialBalanceAnalysisPage() {
         const absBalance = Math.abs(balance);
         if (absBalance === 0) return;
 
+        const accountType = acc.type?.toLowerCase();
+
         // تصنيف الحسابات بناءً على النوع
-        switch (acc.type) {
+        switch (accountType) {
+          case 'asset':
           case 'assets':
             if (acc.code.startsWith('11') || acc.code.startsWith('12') || acc.code.startsWith('13')) {
               result.currentAssets[acc.name] = balance > 0 ? balance : 0;
@@ -234,6 +237,7 @@ export function TrialBalanceAnalysisPage() {
               result.fixedAssets[acc.name] = balance > 0 ? balance : 0;
             }
             break;
+          case 'liability':
           case 'liabilities':
             result.liabilities[acc.name] = balance < 0 ? Math.abs(balance) : balance;
             break;
@@ -243,6 +247,7 @@ export function TrialBalanceAnalysisPage() {
           case 'revenue':
             result.revenue[acc.name] = balance < 0 ? Math.abs(balance) : balance;
             break;
+          case 'expense':
           case 'expenses':
             // تكلفة البضاعة المباعة من حساب 5101 (مسجلة من القيود الآلية)
             if (acc.code.startsWith('51') || acc.name.includes('تكلفة') || acc.name.includes('مشتريات')) {
