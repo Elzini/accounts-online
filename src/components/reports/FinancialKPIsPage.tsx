@@ -70,7 +70,10 @@ export function FinancialKPIsPage() {
         let salesQuery = supabase.from('invoices').select('subtotal, invoice_date').eq('company_id', companyId).eq('invoice_type', 'sales');
         let purchasesQuery = supabase.from('invoices').select('subtotal, invoice_date').eq('company_id', companyId).eq('invoice_type', 'purchase');
 
-        if (dateFilter) {
+        if (selectedFiscalYear) {
+          salesQuery = salesQuery.eq('fiscal_year_id', selectedFiscalYear.id);
+          purchasesQuery = purchasesQuery.eq('fiscal_year_id', selectedFiscalYear.id);
+        } else if (dateFilter) {
           salesQuery = salesQuery.gte('invoice_date', dateFilter.start).lte('invoice_date', dateFilter.end);
           purchasesQuery = purchasesQuery.gte('invoice_date', dateFilter.start).lte('invoice_date', dateFilter.end);
         }
