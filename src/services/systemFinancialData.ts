@@ -114,7 +114,9 @@ export async function getSystemTrialBalance(
   const openingBalances = new Map<string, { debit: number; credit: number }>();
   const movementBalances = new Map<string, { debit: number; credit: number }>();
 
-  (openingLines || []).forEach((line: any) => {
+  // تجميع الأرصدة الافتتاحية (ما قبل الفترة + قيود الافتتاح المرحّلة)
+  const allOpeningLines = [...(openingLines || []), ...(openingEntryLines || [])];
+  allOpeningLines.forEach((line: any) => {
     const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
     current.debit += Number(line.debit) || 0;
     current.credit += Number(line.credit) || 0;
