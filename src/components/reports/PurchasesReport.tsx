@@ -45,16 +45,19 @@ export function PurchasesReport() {
   const { filterByFiscalYear } = useFiscalYearFilter();
 
   const { data: purchaseInvoices = [], isLoading: invoicesLoading } = useQuery({
-    queryKey: ['company-purchases-report', companyId],
+    queryKey: ['company-purchases-report', companyId, selectedFiscalYear?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      let query = (supabase as any)
         .from('invoices')
         .select('*, supplier:suppliers!invoices_supplier_id_fkey(id, name)')
         .eq('company_id', companyId!)
         .eq('invoice_type', 'purchase')
         .gte('total', 0)
         .order('created_at', { ascending: false });
-
+      if (selectedFiscalYear) {
+        query = query.eq('fiscal_year_id', selectedFiscalYear.id);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
