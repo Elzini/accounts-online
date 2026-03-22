@@ -84,7 +84,7 @@ export function TrialBalancePage() {
     const t = {
       openingDebit: 0, openingCredit: 0,
       periodDebit: 0, periodCredit: 0,
-      totalDebit: 0, totalCredit: 0,
+      closingDebit: 0, closingCredit: 0,
     };
     // Use leaf-only accounts for totals to avoid double-counting
     const leafAccounts = trialData.accounts.filter(a => !a.isParent);
@@ -96,8 +96,8 @@ export function TrialBalancePage() {
       t.openingCredit += item.openingCredit;
       t.periodDebit += item.periodDebit;
       t.periodCredit += item.periodCredit;
-      t.totalDebit += item.openingDebit + item.periodDebit;
-      t.totalCredit += item.openingCredit + item.periodCredit;
+      t.closingDebit += item.closingDebit;
+      t.closingCredit += item.closingCredit;
     });
     return t;
   }, [trialData, hideZero]);
