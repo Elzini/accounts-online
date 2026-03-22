@@ -238,7 +238,7 @@ export function TrialBalancePage() {
                   </TableHeader>
                   <TableBody>
                     {filteredAccounts.length === 0 ? (
-                      <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-12">لا توجد بيانات</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-12">لا توجد بيانات</TableCell></TableRow>
                     ) : (
                       filteredAccounts.map(item => {
                         const indent = (item.level || 0) * 16;
