@@ -1352,15 +1352,41 @@ export async function fetchStats(fiscalYearId?: string | null) {
 export async function fetchAllTimeStats() {
   const companyId = await requireCompanyId();
   
-  // Total purchases across all years
+  // Get company type
+  const { data: companyRecord } = await supabase
+    .from('companies')
+    .select('company_type')
+    .eq('id', companyId)
+    .maybeSingle();
+
+  const companyType = companyRecord?.company_type;
+
+  // For non-car companies: use invoices
+  if (companyType && companyType !== 'car_dealership') {
+    const [purchaseResult, salesResult] = await Promise.all([
+      supabase.from('invoices').select('subtotal').eq('company_id', companyId).eq('invoice_type', 'purchase'),
+      supabase.from('invoices').select('subtotal').eq('company_id', companyId).eq('invoice_type', 'sales'),
+    ]);
+
+    const allTimePurchases = Math.round(
+      (purchaseResult.data || []).reduce((sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0)
+    );
+    const allTimeSales = (salesResult.data || []).reduce((sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0);
+
+    return {
+      allTimePurchases,
+      allTimeSales,
+      allTimeSalesCount: salesResult.data?.length || 0,
+      allTimeProfit: allTimeSales - allTimePurchases,
+      totalCarsCount: 0,
+    };
+  }
+
+  // Car dealership
   const { data: carsData } = await supabase.from('cars').select('purchase_price').eq('company_id', companyId);
-  
-  // Show raw purchase amounts from database as-is
   const allTimePurchases = Math.round(carsData?.reduce((sum, car) => sum + (Number(car.purchase_price) || 0), 0) || 0);
   
-  // Total sales across all years
   const { data: salesData } = await supabase.from('sales').select('sale_price, profit').eq('company_id', companyId);
-  
   const allTimeSales = salesData?.reduce((sum, sale) => sum + (Number(sale.sale_price) || 0), 0) || 0;
   const allTimeSalesCount = salesData?.length || 0;
   const allTimeProfit = salesData?.reduce((sum, sale) => sum + (Number(sale.profit) || 0), 0) || 0;
