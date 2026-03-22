@@ -167,4 +167,4 @@ export const RecentInvoicesCard = forwardRef<HTMLDivElement, RecentInvoicesCardP
       </CardContent>
     </Card>
   );
-}
+});
