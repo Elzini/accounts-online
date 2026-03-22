@@ -12,7 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { useJournalEntries, useAccounts, useCreateJournalEntry, useDeleteJournalEntry, useJournalEntry } from '@/hooks/useAccounting';
+import { useJournalEntries, useCreateJournalEntry, useDeleteJournalEntry, useJournalEntry } from '@/hooks/useAccounting';
+import { useLeafAccounts } from '@/hooks/useLeafAccounts';
 import { useCostCenters } from '@/hooks/useCostCenters';
 import { ProjectSelector } from '@/components/forms/ProjectSelector';
 import { toast } from 'sonner';

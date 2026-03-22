@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import { useAddVoucher, useDeleteVoucher, useVouchers } from '@/hooks/useVouchers';
 import { useCompany } from '@/contexts/CompanyContext';
-import { useAccounts } from '@/hooks/useAccounting';
+import { useLeafAccounts } from '@/hooks/useLeafAccounts';
 import { useCustomers, useSuppliers } from '@/hooks/useDatabase';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
