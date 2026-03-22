@@ -1126,16 +1126,32 @@ export async function getComprehensiveTrialBalance(
     rawPeriodCredit += val.credit;
   });
 
-  const rawClosingDebit = rawOpeningDebit + rawPeriodDebit;
-  const rawClosingCredit = rawOpeningCredit + rawPeriodCredit;
+  // Closing totals must be NETTED per account (not raw debit+credit sums)
+  // so "رصيد آخر المدة" differs from movement and reflects true ending balances.
+  const closingAccountIds = new Set<string>([
+    ...Array.from(openingBalances.keys()),
+    ...Array.from(periodBalances.keys()),
+  ]);
+
+  let netClosingDebit = 0;
+  let netClosingCredit = 0;
+
+  closingAccountIds.forEach((accountId) => {
+    const opening = openingBalances.get(accountId) || { debit: 0, credit: 0 };
+    const period = periodBalances.get(accountId) || { debit: 0, credit: 0 };
+
+    const net = (opening.debit + period.debit) - (opening.credit + period.credit);
+    if (net > 0) netClosingDebit += net;
+    else if (net < 0) netClosingCredit += Math.abs(net);
+  });
 
   const totals = {
     openingDebit: rawOpeningDebit,
     openingCredit: rawOpeningCredit,
     periodDebit: rawPeriodDebit,
     periodCredit: rawPeriodCredit,
-    closingDebit: rawClosingDebit,
-    closingCredit: rawClosingCredit,
+    closingDebit: netClosingDebit,
+    closingCredit: netClosingCredit,
   };
 
   return { accounts: trialAccounts, totals };
