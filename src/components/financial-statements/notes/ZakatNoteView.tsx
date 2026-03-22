@@ -71,7 +71,14 @@ export function ZakatNoteView({ data, reportDate, previousReportDate, noteNumber
               {hasPreviousData && <TableCell className="text-center font-mono">-</TableCell>}
             </TableRow>
             <TableRow>
-              <TableCell>جاري الشركاء</TableCell>
+              <TableCell>
+                جاري الشركاء
+                {data.partnersHawlMonths !== undefined && data.partnersHawlMonths < 12 && (
+                  <span className="text-xs text-muted-foreground mr-1">
+                    (حَوْل: {data.partnersHawlMonths} شهر — الرصيد الكامل: {formatNumber(data.partnersCurrentFullBalance ?? 0)})
+                  </span>
+                )}
+              </TableCell>
               <TableCell className="text-center font-mono">{formatNumber(data.partnersCurrentAccount)}</TableCell>
               {hasPreviousData && <TableCell className="text-center font-mono">-</TableCell>}
             </TableRow>
