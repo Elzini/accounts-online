@@ -18,8 +18,10 @@ import {
   useSetCurrentFiscalYear,
   useDeleteFiscalYear,
   useCarryForwardInventory,
-  useRefreshAllCarryForward
+  useRefreshAllCarryForward,
+  useRefreshClosingEntry
 } from '@/hooks/useFiscalYears';
+import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { 
