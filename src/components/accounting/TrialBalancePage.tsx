@@ -78,29 +78,18 @@ export function TrialBalancePage() {
 
   const getNetBalance = (debit: number, credit: number) => Math.abs(debit - credit);
 
-  // Compute bottom totals from filtered data
+  // Use raw balanced totals from service to avoid parent/child display double-counting issues
   const totals = useMemo(() => {
     if (!trialData) return null;
-    const t = {
-      openingDebit: 0, openingCredit: 0,
-      periodDebit: 0, periodCredit: 0,
-      closingDebit: 0, closingCredit: 0,
+    return {
+      openingDebit: trialData.totals.openingDebit,
+      openingCredit: trialData.totals.openingCredit,
+      periodDebit: trialData.totals.periodDebit,
+      periodCredit: trialData.totals.periodCredit,
+      closingDebit: trialData.totals.closingDebit,
+      closingCredit: trialData.totals.closingCredit,
     };
-    // Use leaf-only accounts for totals to avoid double-counting
-    const leafAccounts = trialData.accounts.filter(a => !a.isParent);
-    const filtered = hideZero
-      ? leafAccounts.filter(a => a.openingDebit > 0 || a.openingCredit > 0 || a.periodDebit > 0 || a.periodCredit > 0 || a.closingDebit > 0 || a.closingCredit > 0)
-      : leafAccounts;
-    filtered.forEach(item => {
-      t.openingDebit += item.openingDebit;
-      t.openingCredit += item.openingCredit;
-      t.periodDebit += item.periodDebit;
-      t.periodCredit += item.periodCredit;
-      t.closingDebit += item.closingDebit;
-      t.closingCredit += item.closingCredit;
-    });
-    return t;
-  }, [trialData, hideZero]);
+  }, [trialData]);
 
   const handleExport = (type: 'print' | 'excel' | 'pdf') => {
     if (!trialData || !totals) return;
