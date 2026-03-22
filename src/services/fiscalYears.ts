@@ -151,7 +151,7 @@ export async function closeFiscalYear(
     if (!accounts) throw new Error('لا توجد حسابات');
 
     const revenueAccounts = accounts.filter(a => a.type === 'revenue');
-    const expenseAccounts = accounts.filter(a => a.type === 'expenses');
+    const expenseAccounts = accounts.filter(a => a.type === 'expense' || a.type === 'expenses');
     const retainedEarningsAccount = accounts.find(a => a.code.startsWith('33'));
 
     // حساب الأرصدة
