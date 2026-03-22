@@ -774,6 +774,21 @@ export function JournalEntriesPage() {
                     </TableCell>
                   </TableRow>
                 ))}
+                {/* Totals Row */}
+                {filteredEntries.length > 0 && (
+                  <TableRow className="bg-primary/10 font-bold border-t-2 border-primary">
+                    <TableCell colSpan={4} className="text-center">{language === 'ar' ? 'الإجمالي' : 'Total'}</TableCell>
+                    <TableCell className="text-center font-mono">
+                      {filteredEntries.reduce((sum: number, e: any) => sum + (e.total_debit || 0), 0).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-center font-mono">
+                      {filteredEntries.reduce((sum: number, e: any) => sum + (e.total_credit || 0), 0).toLocaleString()}
+                    </TableCell>
+                    <TableCell colSpan={2} className="text-center text-muted-foreground text-sm">
+                      {filteredEntries.length} {language === 'ar' ? 'قيد' : 'entries'}
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           )}
