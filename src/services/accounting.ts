@@ -886,7 +886,8 @@ export async function getJournalEntriesReport(
   companyId: string,
   startDate?: string,
   endDate?: string,
-  referenceType?: string
+  referenceType?: string,
+  fiscalYearId?: string
 ): Promise<Array<{
   id: string;
   entry_number: number;
@@ -910,11 +911,15 @@ export async function getJournalEntriesReport(
     .eq('is_posted', true)
     .order('entry_date', { ascending: false });
 
-  if (startDate) {
-    query = query.gte('entry_date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('entry_date', endDate);
+  if (fiscalYearId) {
+    query = query.eq('fiscal_year_id', fiscalYearId);
+  } else {
+    if (startDate) {
+      query = query.gte('entry_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('entry_date', endDate);
+    }
   }
   if (referenceType) {
     query = query.eq('reference_type', referenceType);
