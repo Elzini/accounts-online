@@ -125,10 +125,12 @@ export function useDeleteAccount() {
 // Journal Entries
 export function useJournalEntries() {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['journal-entries', companyId],
-    queryFn: () => companyId ? fetchJournalEntries(companyId) : [],
+    queryKey: ['journal-entries', companyId, fyId],
+    queryFn: () => companyId ? fetchJournalEntries(companyId, fyId) : [],
     enabled: !!companyId,
   });
 }
