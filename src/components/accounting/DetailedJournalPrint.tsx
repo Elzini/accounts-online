@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useReportSettings, defaultReportSettings } from '@/hooks/useUnifiedPrintReport';
 import { useAppSettings } from '@/hooks/useSettings';
 import { toast } from 'sonner';
