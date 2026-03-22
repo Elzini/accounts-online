@@ -54,7 +54,7 @@ export function ZakatDetailDialog({ open, onOpenChange, data, currencySymbol = '
     { label: 'الاحتياطيات', value: data.reserves ?? 0 },
     { label: 'الأرباح المبقاة', value: data.retainedEarnings ?? 0 },
     { label: 'صافي الربح المعدل', value: data.adjustedNetProfit },
-    { label: 'صافي جاري الشركاء', value: data.partnersCurrentAccount },
+    { label: `صافي جاري الشركاء${data.partnersHawlMonths !== undefined && data.partnersHawlMonths < 12 ? ` (حَوْل: ${data.partnersHawlMonths} شهر من 12)` : ''}`, value: data.partnersCurrentAccount },
     { label: 'مخصص مكافأة نهاية الخدمة', value: data.employeeBenefitsLiabilities },
     { label: 'القروض طويلة الأجل', value: data.longTermLoans ?? 0 },
   ];
