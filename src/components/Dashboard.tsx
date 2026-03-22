@@ -90,8 +90,11 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   const { data: transfers } = useCarTransfers();
   const { data: dealerships } = usePartnerDealerships();
   const { data: installmentSales = [] } = useInstallmentSales();
-  const { data: allSales = [] } = useSales();
-  const { data: allCars = [] } = useCars();
+  const { data: rawSales = [] } = useSales();
+  const { data: rawCars = [] } = useCars();
+  // Only use car-specific data for car dealerships
+  const allSales = isCarDealership ? rawSales : [];
+  const allCars = isCarDealership ? rawCars : [];
   const { data: allTimeStats } = useAllTimeStats();
   const { selectedFiscalYear } = useFiscalYear();
   const { data: fiscalYears = [] } = useFiscalYears();
