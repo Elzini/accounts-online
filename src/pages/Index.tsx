@@ -252,7 +252,7 @@ const Index = () => {
 
   const renderContent = () => {
     switch (activePage) {
-      case 'dashboard': return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} isFocusMode={isFocusMode} onToggleFocusMode={toggleFocusMode} />;
+      case 'dashboard': return <SetupGuard setActivePage={setActivePage}><Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} isFocusMode={isFocusMode} onToggleFocusMode={toggleFocusMode} /></SetupGuard>;
       case 'customers': return <CustomersTable setActivePage={setActivePage} />;
       case 'suppliers': return <SuppliersTable setActivePage={setActivePage} />;
       case 'purchases': return <PurchasesTable setActivePage={setActivePage} />;
