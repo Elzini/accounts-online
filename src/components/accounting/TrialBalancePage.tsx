@@ -253,9 +253,6 @@ export function TrialBalancePage() {
                               <span className="text-muted-foreground font-mono text-xs ml-2">{item.account.code}</span>
                               {item.account.name}
                             </TableCell>
-                            {/* أعمدة مدين/دائن الأصلية من الصورة المرجعية */}
-                            <TableCell className="text-center border tabular-nums text-xs">{item.account.code}</TableCell>
-                            <TableCell className="text-center border tabular-nums text-xs">-</TableCell>
                             {/* الرصيد السابق */}
                             <TableCell className="text-center border tabular-nums text-sm">{item.openingDebit > 0 ? fmt(item.openingDebit) : '-'}</TableCell>
                             <TableCell className="text-center border tabular-nums text-sm">{item.openingCredit > 0 ? fmt(item.openingCredit) : '-'}</TableCell>
