@@ -502,13 +502,15 @@ const Index = () => {
 
   return (
     <>
-      {/* Mandatory Fiscal Year Selection Dialog - blocks access until selected */}
-      <FiscalYearSelectionDialog
-        open={mustSelectFiscalYear || showFiscalYearDialog}
-        fiscalYears={fiscalYears}
-        currentSelectedId={selectedFiscalYear?.id}
-        onSelect={handleFiscalYearSelect}
-      />
+      {/* Mandatory Fiscal Year Selection Dialog - only shows if no FY selected (e.g. first login) */}
+      {mustSelectFiscalYear && (
+        <FiscalYearSelectionDialog
+          open={true}
+          fiscalYears={fiscalYears}
+          currentSelectedId={selectedFiscalYear?.id}
+          onSelect={handleFiscalYearSelect}
+        />
+      )}
       
       {showSetupWizard ? (
         <SetupWizard onComplete={() => setShowSetupWizard(false)} />
