@@ -293,7 +293,8 @@ export async function updateJournalEntry(
 export async function getAccountBalances(
   companyId: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  fiscalYearId?: string
 ): Promise<Array<{
   account: AccountCategory;
   debit_total: number;
@@ -308,16 +309,20 @@ export async function getAccountBalances(
       account_id,
       debit,
       credit,
-      journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
+      journal_entry:journal_entries!inner(company_id, is_posted, entry_date, fiscal_year_id)
     `)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true);
 
-  if (startDate) {
-    query = query.gte('journal_entry.entry_date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('journal_entry.entry_date', endDate);
+  if (fiscalYearId) {
+    query = query.eq('journal_entry.fiscal_year_id', fiscalYearId);
+  } else {
+    if (startDate) {
+      query = query.gte('journal_entry.entry_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('journal_entry.entry_date', endDate);
+    }
   }
 
   const { data: lines, error } = await query;
@@ -354,7 +359,8 @@ export async function getAccountBalances(
 export async function getTrialBalance(
   companyId: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  fiscalYearId?: string
 ): Promise<{
   accounts: Array<{ account: AccountCategory; debit: number; credit: number; isParent?: boolean; level?: number }>;
   totalDebit: number;
@@ -368,16 +374,20 @@ export async function getTrialBalance(
       account_id,
       debit,
       credit,
-      journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
+      journal_entry:journal_entries!inner(company_id, is_posted, entry_date, fiscal_year_id)
     `)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true);
 
-  if (startDate) {
-    query = query.gte('journal_entry.entry_date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('journal_entry.entry_date', endDate);
+  if (fiscalYearId) {
+    query = query.eq('journal_entry.fiscal_year_id', fiscalYearId);
+  } else {
+    if (startDate) {
+      query = query.gte('journal_entry.entry_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('journal_entry.entry_date', endDate);
+    }
   }
 
   const { data: lines, error } = await query;
@@ -438,7 +448,7 @@ export async function getTrialBalance(
   return { accounts: trialAccounts, totalDebit, totalCredit };
 }
 
-export async function getIncomeStatement(companyId: string, startDate?: string, endDate?: string): Promise<{
+export async function getIncomeStatement(companyId: string, startDate?: string, endDate?: string, fiscalYearId?: string): Promise<{
   revenue: Array<{ account: AccountCategory; amount: number }>;
   expenses: Array<{ account: AccountCategory; amount: number }>;
   totalRevenue: number;
@@ -451,16 +461,20 @@ export async function getIncomeStatement(companyId: string, startDate?: string, 
       account_id,
       debit,
       credit,
-      journal_entry:journal_entries!inner(company_id, entry_date, is_posted)
+      journal_entry:journal_entries!inner(company_id, entry_date, is_posted, fiscal_year_id)
     `)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true);
 
-  if (startDate) {
-    query = query.gte('journal_entry.entry_date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('journal_entry.entry_date', endDate);
+  if (fiscalYearId) {
+    query = query.eq('journal_entry.fiscal_year_id', fiscalYearId);
+  } else {
+    if (startDate) {
+      query = query.gte('journal_entry.entry_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('journal_entry.entry_date', endDate);
+    }
   }
 
   const { data: lines, error } = await query;
@@ -503,7 +517,8 @@ export async function getGeneralLedger(
   companyId: string, 
   accountId: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  fiscalYearId?: string
 ): Promise<{
   account: AccountCategory;
   entries: Array<{
@@ -553,7 +568,7 @@ export async function getGeneralLedger(
 
   // Calculate opening balance (entries before startDate)
   let openingBalance = 0;
-  if (startDate) {
+  if (startDate && !fiscalYearId) {
     // جلب الأرصدة قبل بداية الفترة
     const { data: priorLines, error: priorError } = await supabase
       .from('journal_entry_lines')
@@ -618,7 +633,8 @@ export async function getGeneralLedger(
         description,
         reference_type,
         company_id,
-        is_posted
+        is_posted,
+        fiscal_year_id
       )
     `)
     .in('account_id', targetAccountIds)
@@ -627,11 +643,15 @@ export async function getGeneralLedger(
     .order('journal_entry(entry_date)', { ascending: true })
     .order('journal_entry(entry_number)', { ascending: true });
 
-  if (startDate) {
-    query = query.gte('journal_entry.entry_date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('journal_entry.entry_date', endDate);
+  if (fiscalYearId) {
+    query = query.eq('journal_entry.fiscal_year_id', fiscalYearId);
+  } else {
+    if (startDate) {
+      query = query.gte('journal_entry.entry_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('journal_entry.entry_date', endDate);
+    }
   }
 
   const { data: lines, error: linesError } = await query;
@@ -687,7 +707,8 @@ export async function getGeneralLedger(
 export async function getBalanceSheet(
   companyId: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  fiscalYearId?: string
 ): Promise<{
   currentAssets: Array<{ account: AccountCategory; balance: number }>;
   fixedAssets: Array<{ account: AccountCategory; balance: number }>;
@@ -711,16 +732,20 @@ export async function getBalanceSheet(
       account_id,
       debit,
       credit,
-      journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
+      journal_entry:journal_entries!inner(company_id, is_posted, entry_date, fiscal_year_id)
     `)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true);
 
-  if (startDate) {
-    query = query.gte('journal_entry.entry_date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('journal_entry.entry_date', endDate);
+  if (fiscalYearId) {
+    query = query.eq('journal_entry.fiscal_year_id', fiscalYearId);
+  } else {
+    if (startDate) {
+      query = query.gte('journal_entry.entry_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('journal_entry.entry_date', endDate);
+    }
   }
 
   const { data: lines, error } = await query;
@@ -861,7 +886,8 @@ export async function getJournalEntriesReport(
   companyId: string,
   startDate?: string,
   endDate?: string,
-  referenceType?: string
+  referenceType?: string,
+  fiscalYearId?: string
 ): Promise<Array<{
   id: string;
   entry_number: number;
@@ -885,11 +911,15 @@ export async function getJournalEntriesReport(
     .eq('is_posted', true)
     .order('entry_date', { ascending: false });
 
-  if (startDate) {
-    query = query.gte('entry_date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('entry_date', endDate);
+  if (fiscalYearId) {
+    query = query.eq('fiscal_year_id', fiscalYearId);
+  } else {
+    if (startDate) {
+      query = query.gte('entry_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('entry_date', endDate);
+    }
   }
   if (referenceType) {
     query = query.eq('reference_type', referenceType);
@@ -905,7 +935,8 @@ export async function getJournalEntriesReport(
 export async function getComprehensiveTrialBalance(
   companyId: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  fiscalYearId?: string
 ): Promise<{
   accounts: Array<{ 
     account: AccountCategory; 
@@ -1015,17 +1046,21 @@ export async function getComprehensiveTrialBalance(
     .from('journal_entry_lines')
     .select(`
       account_id, debit, credit,
-      journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type)
+      journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type, fiscal_year_id)
     `)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true)
     .neq('journal_entry.reference_type', 'opening');
 
-  if (effectiveStartDate) {
-    periodQuery = periodQuery.gte('journal_entry.entry_date', effectiveStartDate);
-  }
-  if (effectiveEndDate) {
-    periodQuery = periodQuery.lte('journal_entry.entry_date', effectiveEndDate);
+  if (fiscalYearId) {
+    periodQuery = periodQuery.eq('journal_entry.fiscal_year_id', fiscalYearId);
+  } else {
+    if (effectiveStartDate) {
+      periodQuery = periodQuery.gte('journal_entry.entry_date', effectiveStartDate);
+    }
+    if (effectiveEndDate) {
+      periodQuery = periodQuery.lte('journal_entry.entry_date', effectiveEndDate);
+    }
   }
 
   const { data: periodLines, error } = await periodQuery;
@@ -1195,7 +1230,8 @@ export interface VATSettlementReport {
 export async function getVATSettlementReport(
   companyId: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  fiscalYearId?: string
 ): Promise<VATSettlementReport> {
   // Get company accounting settings to find VAT accounts
   const { data: settings, error: settingsError } = await supabase
@@ -1246,11 +1282,15 @@ export async function getVATSettlementReport(
     query = query.in('account_id', vatAccountIds);
   }
 
-  if (startDate) {
-    query = query.gte('journal_entry.entry_date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('journal_entry.entry_date', endDate);
+  if (fiscalYearId) {
+    query = query.eq('journal_entry.fiscal_year_id', fiscalYearId);
+  } else {
+    if (startDate) {
+      query = query.gte('journal_entry.entry_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('journal_entry.entry_date', endDate);
+    }
   }
 
   query = query.order('journal_entry(entry_date)', { ascending: true });

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import {
   fetchTaxSettings,
   upsertTaxSettings,
@@ -218,40 +219,48 @@ export function useUpdateJournalEntry() {
 // Reports
 export function useAccountBalances() {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['account-balances', companyId],
-    queryFn: () => companyId ? getAccountBalances(companyId) : [],
+    queryKey: ['account-balances', companyId, fyId],
+    queryFn: () => companyId ? getAccountBalances(companyId, undefined, undefined, fyId) : [],
     enabled: !!companyId,
   });
 }
 
 export function useAccountBalancesByDate(startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['account-balances', companyId, startDate, endDate],
-    queryFn: () => companyId ? getAccountBalances(companyId, startDate, endDate) : [],
+    queryKey: ['account-balances', companyId, startDate, endDate, fyId],
+    queryFn: () => companyId ? getAccountBalances(companyId, startDate, endDate, fyId) : [],
     enabled: !!companyId,
   });
 }
 
 export function useTrialBalance(startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['trial-balance', companyId, startDate, endDate],
-    queryFn: () => companyId ? getTrialBalance(companyId, startDate, endDate) : null,
+    queryKey: ['trial-balance', companyId, startDate, endDate, fyId],
+    queryFn: () => companyId ? getTrialBalance(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
   });
 }
 
 export function useIncomeStatement(startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['income-statement', companyId, startDate, endDate],
-    queryFn: () => companyId ? getIncomeStatement(companyId, startDate, endDate) : null,
+    queryKey: ['income-statement', companyId, startDate, endDate, fyId],
+    queryFn: () => companyId ? getIncomeStatement(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
   });
 }
@@ -259,10 +268,12 @@ export function useIncomeStatement(startDate?: string, endDate?: string) {
 // General Ledger
 export function useGeneralLedger(accountId: string | null, startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['general-ledger', companyId, accountId, startDate, endDate],
-    queryFn: () => companyId && accountId ? getGeneralLedger(companyId, accountId, startDate, endDate) : null,
+    queryKey: ['general-ledger', companyId, accountId, startDate, endDate, fyId],
+    queryFn: () => companyId && accountId ? getGeneralLedger(companyId, accountId, startDate, endDate, fyId) : null,
     enabled: !!companyId && !!accountId,
   });
 }
@@ -270,10 +281,12 @@ export function useGeneralLedger(accountId: string | null, startDate?: string, e
 // Balance Sheet - الميزانية العمومية
 export function useBalanceSheet(startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['balance-sheet', companyId, startDate, endDate],
-    queryFn: () => companyId ? getBalanceSheet(companyId, startDate, endDate) : null,
+    queryKey: ['balance-sheet', companyId, startDate, endDate, fyId],
+    queryFn: () => companyId ? getBalanceSheet(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
   });
 }
@@ -292,10 +305,12 @@ export function useVouchersReport(startDate?: string, endDate?: string, voucherT
 // Journal Entries Report - كشف القيود
 export function useJournalEntriesReport(startDate?: string, endDate?: string, referenceType?: string) {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['journal-entries-report', companyId, startDate, endDate, referenceType],
-    queryFn: () => companyId ? getJournalEntriesReport(companyId, startDate, endDate, referenceType) : [],
+    queryKey: ['journal-entries-report', companyId, startDate, endDate, referenceType, fyId],
+    queryFn: () => companyId ? getJournalEntriesReport(companyId, startDate, endDate, referenceType, fyId) : [],
     enabled: !!companyId,
   });
 }
@@ -303,10 +318,12 @@ export function useJournalEntriesReport(startDate?: string, endDate?: string, re
 // Comprehensive Trial Balance - ميزان المراجعة الشامل
 export function useComprehensiveTrialBalance(startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['comprehensive-trial-balance', companyId, startDate, endDate],
-    queryFn: () => companyId ? getComprehensiveTrialBalance(companyId, startDate, endDate) : null,
+    queryKey: ['comprehensive-trial-balance', companyId, startDate, endDate, fyId],
+    queryFn: () => companyId ? getComprehensiveTrialBalance(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
   });
 }
@@ -314,10 +331,12 @@ export function useComprehensiveTrialBalance(startDate?: string, endDate?: strin
 // VAT Settlement Report - تقرير تسوية ضريبة القيمة المضافة
 export function useVATSettlementReport(startDate?: string, endDate?: string) {
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   
   return useQuery({
-    queryKey: ['vat-settlement-report', companyId, startDate, endDate],
-    queryFn: () => companyId ? getVATSettlementReport(companyId, startDate, endDate) : null,
+    queryKey: ['vat-settlement-report', companyId, startDate, endDate, fyId],
+    queryFn: () => companyId ? getVATSettlementReport(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
   });
 }
