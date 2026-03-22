@@ -282,6 +282,8 @@ export interface ZakatNote {
   // الوعاء الزكوي
   capital: number;
   partnersCurrentAccount: number;
+  partnersCurrentFullBalance?: number; // الرصيد الكامل قبل الحَوْل
+  partnersHawlMonths?: number; // عدد أشهر الحَوْل التقريبية
   statutoryReserve: number;
   employeeBenefitsLiabilities: number;
   zakatBaseSubtotal: number;
