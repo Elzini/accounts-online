@@ -677,9 +677,13 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
             // Fetch balances from journal entries for leaf accounts
             let query = supabase
               .from('journal_entry_lines')
-              .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted)')
+              .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, fiscal_year_id)')
               .eq('journal_entry.company_id', companyId)
               .eq('journal_entry.is_posted', true);
+            
+            if (selectedFiscalYear) {
+              query = query.eq('journal_entry.fiscal_year_id', selectedFiscalYear.id);
+            }
             
             if (leafProjectAccounts.length > 0) {
               query = query.in('account_id', leafProjectAccounts.map(a => a.id));
