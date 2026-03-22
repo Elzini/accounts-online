@@ -972,8 +972,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
     };
   }
 
-  // For non-car, non-real-estate companies: use invoices table
-  if (companyType && companyType !== 'car_dealership' && companyType !== 'real_estate') {
+  // For non-car companies: use invoices table
+  if (companyType && companyType !== 'car_dealership') {
     let purchaseInvoicesQuery = supabase
       .from('invoices')
       .select('subtotal, invoice_date')
