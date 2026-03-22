@@ -571,7 +571,7 @@ export async function refreshClosingEntry(
       
       const current = balances.get(line.account_id) || 0;
       const account = accounts.find(a => a.id === line.account_id);
-      if (account && ['liabilities', 'equity', 'revenue'].includes(account.type)) {
+      if (account && ['liability', 'liabilities', 'equity', 'revenue'].includes(account.type)) {
         balances.set(line.account_id, current + (Number(line.credit) - Number(line.debit)));
       } else {
         balances.set(line.account_id, current + (Number(line.debit) - Number(line.credit)));
