@@ -308,6 +308,9 @@ export async function getSystemFinancialStatements(
   // ===== قائمة الدخل - حساب من القيود المحاسبية =====
   // الإيرادات من حسابات الإيرادات
   const totalRevenue = revenueAccounts.reduce((sum, a) => sum + getBalance(a), 0);
+  console.log('=== DEBUG: Income Statement ===');
+  console.log('Revenue accounts:', revenueAccounts.map(a => ({ code: a.code, name: a.name, balance: getBalance(a) })));
+  console.log('Total Revenue:', totalRevenue);
   
   // تصنيف المصروفات من القيود وفقاً لـ IAS 1 (عرض حسب الوظيفة)
   // تكلفة البضاعة المباعة (COGS) - تشمل حساب 5101 وما يبدأ بـ 51
