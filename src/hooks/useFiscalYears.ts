@@ -274,12 +274,17 @@ export function useRefreshOpeningBalances() {
 
 export function useRefreshAllCarryForward() {
   const queryClient = useQueryClient();
-  const { companyId } = useCompany();
+  const { companyId, company } = useCompany();
   
   return useMutation({
     mutationFn: (data: { fiscalYearId: string; previousYearId: string }) => {
       if (!companyId) throw new Error('No company');
-      return refreshAllCarryForwardBalances(data.fiscalYearId, data.previousYearId, companyId);
+      return refreshAllCarryForwardBalances(
+        data.fiscalYearId, 
+        data.previousYearId, 
+        companyId,
+        company?.company_type
+      );
     },
     onSuccess: (result) => {
       if (result.success) {
@@ -289,13 +294,43 @@ export function useRefreshAllCarryForward() {
         queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
         queryClient.invalidateQueries({ queryKey: ['cars'] });
         queryClient.invalidateQueries({ queryKey: ['stats'] });
-        toast.success(`تم تحديث جميع الأرصدة المرحلة بنجاح (${result.inventoryCount} سيارة)`);
+        const parts = ['تم تحديث الأرصدة المرحلة بنجاح'];
+        if (result.closingEntryUpdated) parts.push('(تم تحديث قيد الإقفال)');
+        if (result.inventoryCount && result.inventoryCount > 0) parts.push(`(${result.inventoryCount} مخزون)`);
+        toast.success(parts.join(' '));
       } else {
         toast.error(result.error || 'فشل تحديث الأرصدة');
       }
     },
     onError: (error: any) => {
       toast.error(error.message || 'فشل تحديث الأرصدة');
+    },
+  });
+}
+
+export function useRefreshClosingEntry() {
+  const queryClient = useQueryClient();
+  const { companyId } = useCompany();
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: (fiscalYearId: string) => {
+      if (!companyId || !user?.id) throw new Error('Missing data');
+      return refreshClosingEntry(fiscalYearId, companyId, user.id);
+    },
+    onSuccess: (result) => {
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ['fiscal-years'] });
+        queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+        queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance'] });
+        queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
+        toast.success('تم تحديث قيد الإقفال بنجاح');
+      } else {
+        toast.error(result.error || 'فشل تحديث قيد الإقفال');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل تحديث قيد الإقفال');
     },
   });
 }
