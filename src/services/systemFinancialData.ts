@@ -191,8 +191,6 @@ export async function getSystemTrialBalance(
       totals.openingCredit += openingCredit;
       totals.movementDebit += movementDebit;
       totals.movementCredit += movementCredit;
-      totals.closingDebit += closingDebit;
-      totals.closingCredit += closingCredit;
     }
   });
 
