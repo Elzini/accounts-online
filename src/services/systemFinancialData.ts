@@ -471,21 +471,24 @@ export async function getSystemFinancialStatements(
       const hawlCutoffDateStr = hawlCutoffDate.toISOString().split('T')[0];
 
       // نقرأ كل حركات جاري الشريك حتى تاريخ التقرير لتحديد ما تجاوز الحَوْل
-      const { data: partnerMovements } = await supabase
+      const { data: partnerMovements, error: partnerMovementsError } = await supabase
         .from('journal_entry_lines')
         .select(`
           debit,
           credit,
           account_id,
-          journal_entry:journal_entries!inner(entry_date, entry_type, company_id, is_posted)
+          journal_entry:journal_entries!inner(entry_date, company_id, is_posted)
         `)
         .eq('journal_entry.company_id', companyId)
         .eq('journal_entry.is_posted', true)
         .lte('journal_entry.entry_date', endDate)
         .in('account_id', allPartnerAccountIds);
 
+      if (partnerMovementsError) {
+        throw partnerMovementsError;
+      }
+
       if (partnerMovements && partnerMovements.length > 0) {
-        const withdrawalIds = new Set(partnerWithdrawals.map(a => a.id));
 
         let eligibleAfterHawl = 0;
         let excludedBeforeHawl = 0;
@@ -493,18 +496,15 @@ export async function getSystemFinancialStatements(
         partnerMovements.forEach((line: any) => {
           const journal = line.journal_entry as any;
           const entryDate = String(journal.entry_date || '');
-          const entryType = String(journal.entry_type || '');
 
           const debit = Number(line.debit) || 0;
           const credit = Number(line.credit) || 0;
 
           // نفس منطق صافي جاري الشريك
-          const movement = withdrawalIds.has(line.account_id)
-            ? (credit - debit) // السحوبات (مدين) تُنقص الجاري
-            : (credit - debit); // الجاري في الخصوم/حقوق الملكية (دائن) يزيد الجاري
+          const movement = credit - debit;
 
-          // يعتبر متجاوز الحَوْل إذا كان قيد افتتاحي أو تاريخه أقدم من سنة كاملة
-          const passedHawl = entryType === 'opening' || entryDate <= hawlCutoffDateStr;
+          // شرط الحَوْل الصارم: فقط الحركات التي مر عليها سنة كاملة
+          const passedHawl = entryDate <= hawlCutoffDateStr;
 
           if (movement > 0) {
             if (passedHawl) {
