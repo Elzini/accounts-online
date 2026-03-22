@@ -111,6 +111,7 @@ interface Company {
   address: string | null;
   logo_url: string | null;
   is_active: boolean;
+  company_type?: CompanyActivityType;
   created_at: string;
   updated_at: string;
 }
@@ -317,7 +318,7 @@ export default function Companies() {
       phone: company.phone || '',
       address: company.address || '',
       is_active: company.is_active,
-      company_type: ((company as any).company_type || 'car_dealership') as CompanyActivityType,
+      company_type: (company.company_type || 'general_trading') as CompanyActivityType,
     });
     setEditDialogOpen(true);
   };
@@ -688,7 +689,7 @@ export default function Companies() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
-                          {ACTIVITY_TYPE_LABELS[((company as any).company_type || 'car_dealership') as CompanyActivityType]}
+                          {ACTIVITY_TYPE_LABELS[(company.company_type || 'general_trading') as CompanyActivityType]}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -1007,7 +1008,7 @@ export default function Companies() {
                 <div>
                   <Label className="text-muted-foreground text-sm">نوع النشاط</Label>
                   <p className="font-medium">
-                    {ACTIVITY_TYPE_LABELS[((selectedCompany as any).company_type || 'car_dealership') as CompanyActivityType]}
+                    {ACTIVITY_TYPE_LABELS[(selectedCompany.company_type || 'general_trading') as CompanyActivityType]}
                   </p>
                 </div>
                 <div>

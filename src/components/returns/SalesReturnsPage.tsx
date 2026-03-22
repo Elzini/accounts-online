@@ -68,7 +68,7 @@ export function SalesReturnsPage() {
   const { t, language } = useLanguage();
   const companyId = useCompanyId();
   const { company } = useCompany();
-  const companyType: CompanyActivityType = (company as any)?.company_type || 'car_dealership';
+  const companyType: CompanyActivityType = company?.company_type || 'general_trading';
   const isCarDealership = companyType === 'car_dealership';
   const queryClient = useQueryClient();
   const [searchList, setSearchList] = useState('');

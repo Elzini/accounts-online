@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { MobileSidebar, MobileSidebarRef } from '@/components/MobileSidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Dashboard } from '@/components/Dashboard';
+import { SetupGuard } from '@/components/setup/SetupGuard';
 import { FloatingMiniDashboard } from '@/components/dashboard/FloatingMiniDashboard';
 import { useFocusMode, FocusModeOverlay } from '@/components/dashboard/FocusMode';
 
@@ -251,7 +252,7 @@ const Index = () => {
 
   const renderContent = () => {
     switch (activePage) {
-      case 'dashboard': return <Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} isFocusMode={isFocusMode} onToggleFocusMode={toggleFocusMode} />;
+      case 'dashboard': return <SetupGuard setActivePage={setActivePage}><Dashboard stats={stats || defaultStats} setActivePage={setActivePage} isLoading={isStatsLoading} isFocusMode={isFocusMode} onToggleFocusMode={toggleFocusMode} /></SetupGuard>;
       case 'customers': return <CustomersTable setActivePage={setActivePage} />;
       case 'suppliers': return <SuppliersTable setActivePage={setActivePage} />;
       case 'purchases': return <PurchasesTable setActivePage={setActivePage} />;

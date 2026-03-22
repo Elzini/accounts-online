@@ -64,17 +64,34 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
     return;
   }
 
-  // 3. Find the necessary accounts
-  const { data: accounts } = await supabase
-    .from('account_categories')
-    .select('id, code, name')
-    .eq('company_id', companyId);
+  // 3. Find the necessary accounts - use account_mappings first, then settings, then code fallbacks
+  const [accountsRes, mappingsRes] = await Promise.all([
+    supabase.from('account_categories').select('id, code, name').eq('company_id', companyId),
+    supabase.from('account_mappings').select('mapping_key, account_id').eq('company_id', companyId).eq('is_active', true),
+  ]);
+  const accounts = accountsRes.data;
+  const mappings = mappingsRes.data;
 
-  const findAccount = (id: string | null, ...fallbackCodes: string[]) => {
+  const getMappedAccountId = (key: string): string | null => {
+    const mapping = mappings?.find(m => m.mapping_key === key);
+    return mapping?.account_id || null;
+  };
+
+  const findAccount = (id: string | null, mappingKey: string | null, ...fallbackCodes: string[]) => {
+    // Priority 1: explicit ID from settings
     if (id) {
       const acc = accounts?.find(a => a.id === id);
       if (acc) return acc;
     }
+    // Priority 2: account_mappings table
+    if (mappingKey) {
+      const mappedId = getMappedAccountId(mappingKey);
+      if (mappedId) {
+        const acc = accounts?.find(a => a.id === mappedId);
+        if (acc) return acc;
+      }
+    }
+    // Priority 3: fallback codes
     for (const code of fallbackCodes) {
       const acc = accounts?.find(a => a.code === code);
       if (acc) return acc;
@@ -95,7 +112,7 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
         if (subAcc) return subAcc;
       }
     }
-    return findAccount(settings?.suppliers_account_id || null, '2101');
+    return findAccount(settings?.suppliers_account_id || null, 'suppliers', '2101');
   };
 
   let journalLines: Array<{ account_id: string; description: string; debit: number; credit: number; cost_center_id?: string | null }> = [];
@@ -109,15 +126,14 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
 
     const expenseAccount = findAccount(
       settings?.purchase_inventory_account_id || null,
-      '1301', // أراضي المشاريع / مخزون
-      '5101', // تكلفة المبيعات
+      'purchase_expense',
+      '1301', '5101',
     );
 
     const vatInputAccount = findAccount(
       settings?.vat_recoverable_account_id || null,
-      '1108', // ضريبة مشتريات مستردة
-      '210402',
-      '21042',
+      'vat_input',
+      '1108', '210402', '21042',
     );
 
     // Determine credit account based on payment_account_id selection
@@ -125,7 +141,7 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
     
     if (invoice.payment_account_id) {
       // User selected a specific payment account (bank, partner, supplier, etc.)
-      creditAccount = findAccount(invoice.payment_account_id);
+      creditAccount = findAccount(invoice.payment_account_id, null);
     }
     
     // Fallback to supplier account if no payment account selected (آجل - on credit)
@@ -175,19 +191,20 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
 
     const cashAccount = findAccount(
       settings?.sales_cash_account_id || null,
-      '1101', // نقد
-      '1201', // عملاء
+      'sales_cash',
+      '1101', '1201',
     );
 
     const revenueAccount = findAccount(
       settings?.sales_revenue_account_id || null,
-      '4101', // إيرادات
+      'sales_revenue',
+      '4101',
     );
 
     const vatOutputAccount = findAccount(
       settings?.vat_payable_account_id || null,
-      '210401', // ضريبة مبيعات مستحقة
-      '21041',
+      'vat_output',
+      '210401', '21041',
     );
 
     if (!cashAccount || !revenueAccount) {

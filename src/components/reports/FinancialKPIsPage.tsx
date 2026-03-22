@@ -31,7 +31,7 @@ export function FinancialKPIsPage() {
   const companyId = useCompanyId();
   const { selectedFiscalYear } = useFiscalYear();
   const { company } = useCompany();
-  const isCarDealership = (company as any)?.company_type === 'car_dealership' || !(company as any)?.company_type;
+  const isCarDealership = company?.company_type === 'car_dealership';
 
   const { data: kpis, isLoading } = useQuery({
     queryKey: ['financial-kpis', companyId, selectedFiscalYear?.id, isCarDealership],
