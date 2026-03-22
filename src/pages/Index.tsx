@@ -58,7 +58,7 @@ import { FinancingPage } from '@/components/financing/FinancingPage';
 import { SetupWizard } from '@/components/setup/SetupWizard';
 import { BankingPage } from '@/components/banking/BankingPage';
 import { FiscalYearSelectionDialog } from '@/components/FiscalYearSelectionDialog';
-import { TrialBalanceAnalysisPage } from '@/components/reports/TrialBalanceAnalysisPage';
+import { TrialBalancePage } from '@/components/accounting/TrialBalancePage';
 import { ComprehensiveFinancialStatementsPage } from '@/components/financial-statements';
 import { VATReturnReportPage } from '@/components/accounting/VATReturnReportPage';
 import { EmployeesPage } from '@/components/payroll/EmployeesPage';
@@ -295,8 +295,7 @@ const Index = () => {
       case 'banking': return <BankingPage />;
       case 'zakat-reports': return <ZakatReportsPage />;
       case 'fiscal-years': return <FiscalYearsPage />;
-      case 'trial-balance-analysis': return <TrialBalanceAnalysisPage />;
-      case 'comprehensive-trial-balance': return <FinancialReportsPage defaultTab="comprehensive-trial" />;
+      case 'trial-balance': return <TrialBalancePage />;
       case 'financial-statements': return <ComprehensiveFinancialStatementsPage />;
       case 'vat-return-report': return <VATReturnReportPage />;
       case 'employees': return <EmployeesPage />;
