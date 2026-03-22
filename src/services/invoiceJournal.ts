@@ -112,7 +112,7 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
         if (subAcc) return subAcc;
       }
     }
-    return findAccount(settings?.suppliers_account_id || null, '2101');
+    return findAccount(settings?.suppliers_account_id || null, 'suppliers', '2101');
   };
 
   let journalLines: Array<{ account_id: string; description: string; debit: number; credit: number; cost_center_id?: string | null }> = [];
