@@ -45,14 +45,14 @@ export async function getSystemTrialBalance(
   // تحديد الحسابات الورقية فقط (التي ليس لها أبناء) لمنع الازدواجية
   const parentIds = new Set(accounts.filter(a => a.parent_id).map(a => a.parent_id!));
   const leafAccounts = accounts.filter(a => !parentIds.has(a.id));
-  // جلب الأرصدة الافتتاحية (قبل تاريخ البداية)
+  // جلب الأرصدة الافتتاحية (قبل تاريخ البداية + قيود الافتتاح بنفس التاريخ)
   let openingQuery = supabase
     .from('journal_entry_lines')
     .select(`
       account_id,
       debit,
       credit,
-      journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
+      journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type)
     `)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true);
@@ -64,17 +64,41 @@ export async function getSystemTrialBalance(
   const { data: openingLines, error: openingError } = await openingQuery;
   if (openingError) throw openingError;
 
-  // جلب حركة الفترة
+  // جلب قيود الافتتاح المرحّلة التي تاريخها يقع ضمن الفترة (reference_type = 'opening')
+  let openingEntriesQuery = supabase
+    .from('journal_entry_lines')
+    .select(`
+      account_id,
+      debit,
+      credit,
+      journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type)
+    `)
+    .eq('journal_entry.company_id', companyId)
+    .eq('journal_entry.is_posted', true)
+    .eq('journal_entry.reference_type', 'opening');
+  
+  if (startDate) {
+    openingEntriesQuery = openingEntriesQuery.gte('journal_entry.entry_date', startDate);
+  }
+  if (endDate) {
+    openingEntriesQuery = openingEntriesQuery.lte('journal_entry.entry_date', endDate);
+  }
+  
+  const { data: openingEntryLines, error: openingEntryError } = await openingEntriesQuery;
+  if (openingEntryError) throw openingEntryError;
+
+  // جلب حركة الفترة (باستثناء قيود الافتتاح)
   let movementQuery = supabase
     .from('journal_entry_lines')
     .select(`
       account_id,
       debit,
       credit,
-      journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
+      journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type)
     `)
     .eq('journal_entry.company_id', companyId)
-    .eq('journal_entry.is_posted', true);
+    .eq('journal_entry.is_posted', true)
+    .neq('journal_entry.reference_type', 'opening');
   
   if (startDate) {
     movementQuery = movementQuery.gte('journal_entry.entry_date', startDate);
@@ -90,7 +114,9 @@ export async function getSystemTrialBalance(
   const openingBalances = new Map<string, { debit: number; credit: number }>();
   const movementBalances = new Map<string, { debit: number; credit: number }>();
 
-  (openingLines || []).forEach((line: any) => {
+  // تجميع الأرصدة الافتتاحية (ما قبل الفترة + قيود الافتتاح المرحّلة)
+  const allOpeningLines = [...(openingLines || []), ...(openingEntryLines || [])];
+  allOpeningLines.forEach((line: any) => {
     const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
     current.debit += Number(line.debit) || 0;
     current.credit += Number(line.credit) || 0;

@@ -554,6 +554,7 @@ export async function getGeneralLedger(
   // Calculate opening balance (entries before startDate)
   let openingBalance = 0;
   if (startDate) {
+    // جلب الأرصدة قبل بداية الفترة
     const { data: priorLines, error: priorError } = await supabase
       .from('journal_entry_lines')
       .select(`
@@ -569,8 +570,24 @@ export async function getGeneralLedger(
 
     if (priorError) throw priorError;
 
+    // جلب قيود الافتتاح المرحّلة ضمن الفترة
+    const { data: openingEntryLines } = await supabase
+      .from('journal_entry_lines')
+      .select(`
+        account_id,
+        debit,
+        credit,
+        journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type)
+      `)
+      .in('account_id', targetAccountIds)
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .eq('journal_entry.reference_type', 'opening')
+      .gte('journal_entry.entry_date', startDate);
+
     const isDebitNormal = ['asset', 'assets', 'expense', 'expenses'].includes(account.type);
-    (priorLines || []).forEach((line: any) => {
+    const allPriorLines = [...(priorLines || []), ...(openingEntryLines || [])];
+    allPriorLines.forEach((line: any) => {
       const d = Number(line.debit) || 0;
       const c = Number(line.credit) || 0;
       if (isDebitNormal) {
@@ -920,7 +937,7 @@ export async function getComprehensiveTrialBalance(
   const effectiveStartDate = startDate || fyStartDate;
   const effectiveEndDate = endDate || fiscalYear?.end_date;
 
-  // 1) Fetch OPENING balances: all posted entries BEFORE the period start
+  // 1) Fetch OPENING balances: all posted entries BEFORE the period start + opening entries within period
   const openingBalances = new Map<string, { debit: number; credit: number }>();
   if (effectiveStartDate) {
     const { data: openingLines } = await supabase
@@ -933,7 +950,20 @@ export async function getComprehensiveTrialBalance(
       .eq('journal_entry.is_posted', true)
       .lt('journal_entry.entry_date', effectiveStartDate);
 
-    (openingLines || []).forEach((line: any) => {
+    // جلب قيود الافتتاح المرحّلة ضمن الفترة
+    const { data: openingEntryLines } = await supabase
+      .from('journal_entry_lines')
+      .select(`
+        account_id, debit, credit,
+        journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type)
+      `)
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .eq('journal_entry.reference_type', 'opening')
+      .gte('journal_entry.entry_date', effectiveStartDate);
+
+    const allOpeningLines = [...(openingLines || []), ...(openingEntryLines || [])];
+    allOpeningLines.forEach((line: any) => {
       const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
       current.debit += Number(line.debit) || 0;
       current.credit += Number(line.credit) || 0;
@@ -941,15 +971,16 @@ export async function getComprehensiveTrialBalance(
     });
   }
 
-  // 2) Fetch PERIOD movement: entries within the date range
+  // 2) Fetch PERIOD movement: entries within the date range (excluding opening entries)
   let periodQuery = supabase
     .from('journal_entry_lines')
     .select(`
       account_id, debit, credit,
-      journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
+      journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type)
     `)
     .eq('journal_entry.company_id', companyId)
-    .eq('journal_entry.is_posted', true);
+    .eq('journal_entry.is_posted', true)
+    .neq('journal_entry.reference_type', 'opening');
 
   if (effectiveStartDate) {
     periodQuery = periodQuery.gte('journal_entry.entry_date', effectiveStartDate);
