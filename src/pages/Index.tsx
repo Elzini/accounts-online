@@ -602,7 +602,7 @@ const Index = () => {
                   <div className="hidden sm:flex items-center gap-1">
                     <PushNotificationManager />
                     <OfflineDataIndicator />
-                    <CarSearch />
+                    {currentCompany?.company_type === 'car_dealership' && <CarSearch />}
                   </div>
                   <Button 
                     variant="ghost" 
