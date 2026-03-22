@@ -111,6 +111,7 @@ interface Company {
   address: string | null;
   logo_url: string | null;
   is_active: boolean;
+  company_type?: CompanyActivityType;
   created_at: string;
   updated_at: string;
 }
