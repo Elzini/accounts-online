@@ -451,17 +451,95 @@ export async function getSystemFinancialStatements(
     partnersCurrentInLiabilities.reduce((sum, a) => sum + getPositiveCreditBalance(a), 0) +
     partnersCurrentInEquity.reduce((sum, a) => sum + getPositiveCreditBalance(a), 0);
   const partnersDebits = partnerWithdrawals.reduce((sum, a) => sum + getPositiveDebitBalance(a), 0);
-  const partnersCurrentTotal = Math.max(0, partnersCredits - partnersDebits);
+  const partnersCurrentFullBalance = Math.max(0, partnersCredits - partnersDebits);
 
-  // DEBUG: تتبع حسابات جاري الشركاء
+  // ===== احتساب الحَوْل (Pro-rata) لجاري الشركاء =====
+  // وفق ZATCA: يتم احتساب جاري الشركاء بالنسبة والتناسب حسب المدة الفعلية من السنة المالية
+  let partnersCurrentTotal = partnersCurrentFullBalance;
+  let partnersHawlMonths = 12; // الافتراضي: سنة كاملة
+  
+  if (partnersCurrentFullBalance > 0) {
+    // جمع كافة حسابات جاري الشركاء (خصوم + حقوق ملكية) وسحوبات
+    const allPartnerAccountIds = [
+      ...partnersCurrentInLiabilities.map(a => a.id),
+      ...partnersCurrentInEquity.map(a => a.id),
+      ...partnerWithdrawals.map(a => a.id),
+    ];
+
+    if (allPartnerAccountIds.length > 0 && startDate && endDate) {
+      // جلب الحركات الشهرية لحسابات جاري الشركاء
+      const { data: monthlyMovements } = await supabase
+        .from('journal_entry_lines')
+        .select(`
+          debit,
+          credit,
+          account_id,
+          journal_entry:journal_entries!inner(entry_date, company_id, is_posted)
+        `)
+        .eq('journal_entry.company_id', companyId)
+        .eq('journal_entry.is_posted', true)
+        .gte('journal_entry.entry_date', startDate)
+        .lte('journal_entry.entry_date', endDate)
+        .in('account_id', allPartnerAccountIds);
+
+      if (monthlyMovements && monthlyMovements.length > 0) {
+        // تحديد عدد أشهر السنة المالية
+        const fyStart = new Date(startDate);
+        const fyEnd = new Date(endDate);
+        const totalMonths = Math.max(1, Math.round((fyEnd.getTime() - fyStart.getTime()) / (30.44 * 24 * 60 * 60 * 1000)));
+        
+        // تجميع الحركات حسب الشهر
+        const monthlyBalances = new Map<number, number>();
+        const withdrawalIds = new Set(partnerWithdrawals.map(a => a.id));
+        
+        monthlyMovements.forEach((line: any) => {
+          const entryDate = new Date((line.journal_entry as any).entry_date);
+          // حساب رقم الشهر من بداية السنة المالية (0-based)
+          const monthIndex = Math.floor((entryDate.getTime() - fyStart.getTime()) / (30.44 * 24 * 60 * 60 * 1000));
+          const clampedMonth = Math.max(0, Math.min(totalMonths - 1, monthIndex));
+          
+          const current = monthlyBalances.get(clampedMonth) || 0;
+          const debit = Number(line.debit) || 0;
+          const credit = Number(line.credit) || 0;
+          
+          // السحوبات تُطرح (مدينة)، والإيداعات تُضاف (دائنة)
+          if (withdrawalIds.has(line.account_id)) {
+            monthlyBalances.set(clampedMonth, current - debit + credit);
+          } else {
+            monthlyBalances.set(clampedMonth, current + credit - debit);
+          }
+        });
+
+        // حساب المتوسط المرجح بالأشهر (Weighted Average Method)
+        // لكل شهر: الرصيد التراكمي × (الأشهر المتبقية / إجمالي الأشهر)
+        let cumulativeBalance = 0;
+        let weightedTotal = 0;
+        
+        for (let m = 0; m < totalMonths; m++) {
+          cumulativeBalance += (monthlyBalances.get(m) || 0);
+          const remainingMonths = totalMonths - m;
+          weightedTotal += Math.max(0, cumulativeBalance) * (remainingMonths / totalMonths);
+        }
+        
+        // المتوسط المرجح
+        partnersCurrentTotal = Math.max(0, Math.round(weightedTotal * 100) / 100);
+        
+        // حساب نسبة الحَوْل التقريبية
+        if (partnersCurrentFullBalance > 0) {
+          partnersHawlMonths = Math.round((partnersCurrentTotal / partnersCurrentFullBalance) * 12 * 10) / 10;
+        }
+        
+        console.log('=== احتساب الحَوْل لجاري الشركاء ===');
+        console.log(`الرصيد الكامل: ${partnersCurrentFullBalance}`);
+        console.log(`المتوسط المرجح (بعد الحَوْل): ${partnersCurrentTotal}`);
+        console.log(`نسبة الحَوْل التقريبية: ${partnersHawlMonths} شهر من ${totalMonths}`);
+        monthlyBalances.forEach((val, month) => console.log(`  الشهر ${month + 1}: حركة=${val}`));
+      }
+    }
+  }
+
   console.log('=== تفاصيل جاري الشركاء في الزكاة ===');
-  console.log('جاري الشركاء في الخصوم:');
-  partnersCurrentInLiabilities.forEach(a => console.log(`  ${a.code} - ${a.name}: رصيد=${getBalance(a)}, دائن=${getPositiveCreditBalance(a)}`));
-  console.log('جاري الشركاء في حقوق الملكية:');
-  partnersCurrentInEquity.forEach(a => console.log(`  ${a.code} - ${a.name}: رصيد=${getBalance(a)}, دائن=${getPositiveCreditBalance(a)}`));
-  console.log('سحوبات الشركاء:');
-  partnerWithdrawals.forEach(a => console.log(`  ${a.code} - ${a.name}: رصيد=${getBalance(a)}, مدين=${getPositiveDebitBalance(a)}`));
-  console.log(`إجمالي الدائن: ${partnersCredits}, إجمالي المدين: ${partnersDebits}, الصافي: ${partnersCurrentTotal}`);
+  console.log(`الرصيد الكامل: ${partnersCurrentFullBalance}, بعد الحَوْل: ${partnersCurrentTotal}, نسبة الأشهر: ${partnersHawlMonths}/12`);
 
   // 1.6 المخصصات (provisions) - ما عدا مخصص الزكاة نفسه
   const provisionAccounts = liabilityAccounts.filter(a =>
@@ -546,6 +624,8 @@ export async function getSystemFinancialStatements(
     reserves: reservesTotal,
     retainedEarnings: Math.max(0, retainedEarnings),
     partnersCurrentAccount: partnersCurrentTotal,
+    partnersCurrentFullBalance: partnersCurrentFullBalance,
+    partnersHawlMonths: partnersHawlMonths,
     employeeBenefitsLiabilities: provisionsTotal,
     longTermLoans: longTermLoansTotal,
     statutoryReserve: reservesTotal, // backward compat
