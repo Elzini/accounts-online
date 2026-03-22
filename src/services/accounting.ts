@@ -586,7 +586,11 @@ export async function getGeneralLedger(
       .gte('journal_entry.entry_date', startDate);
 
     const isDebitNormal = ['asset', 'assets', 'expense', 'expenses'].includes(account.type);
-    const allPriorLines = [...(priorLines || []), ...(openingEntryLines || [])];
+    // إذا وُجد قيد افتتاحي داخل الفترة نستخدمه حصراً للافتتاح (لمنع التكرار)
+    const openingLinesInPeriod = openingEntryLines || [];
+    const allPriorLines = openingLinesInPeriod.length > 0
+      ? openingLinesInPeriod
+      : (priorLines || []);
     allPriorLines.forEach((line: any) => {
       const d = Number(line.debit) || 0;
       const c = Number(line.credit) || 0;
