@@ -1226,7 +1226,8 @@ export interface VATSettlementReport {
 export async function getVATSettlementReport(
   companyId: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  fiscalYearId?: string
 ): Promise<VATSettlementReport> {
   // Get company accounting settings to find VAT accounts
   const { data: settings, error: settingsError } = await supabase
