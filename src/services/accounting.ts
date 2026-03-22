@@ -293,7 +293,8 @@ export async function updateJournalEntry(
 export async function getAccountBalances(
   companyId: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  fiscalYearId?: string
 ): Promise<Array<{
   account: AccountCategory;
   debit_total: number;
@@ -308,16 +309,20 @@ export async function getAccountBalances(
       account_id,
       debit,
       credit,
-      journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
+      journal_entry:journal_entries!inner(company_id, is_posted, entry_date, fiscal_year_id)
     `)
     .eq('journal_entry.company_id', companyId)
     .eq('journal_entry.is_posted', true);
 
-  if (startDate) {
-    query = query.gte('journal_entry.entry_date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('journal_entry.entry_date', endDate);
+  if (fiscalYearId) {
+    query = query.eq('journal_entry.fiscal_year_id', fiscalYearId);
+  } else {
+    if (startDate) {
+      query = query.gte('journal_entry.entry_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('journal_entry.entry_date', endDate);
+    }
   }
 
   const { data: lines, error } = await query;
