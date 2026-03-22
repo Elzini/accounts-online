@@ -24,7 +24,7 @@ export interface FinancingContract {
   financing_company_id: string;
   customer_id?: string;
   sale_id?: string;
-  car_id?: string;
+  car_id?: string; // Only used for car dealerships
   total_amount: number;
   down_payment: number;
   financed_amount: number;
@@ -41,11 +41,11 @@ export interface FinancingContract {
   notes?: string;
   created_at: string;
   updated_at: string;
-  // Relations
+  // Relations (optional - populated based on company type)
   financing_company?: FinancingCompany;
   customer?: { id: string; name: string; phone: string };
-  car?: { id: string; name: string; model: string; chassis_number: string };
-  sale?: { id: string; sale_number: number };
+  car?: { id: string; name: string; model: string; chassis_number: string } | null;
+  sale?: { id: string; sale_number: number } | null;
   financing_payments?: FinancingPayment[];
 }
 

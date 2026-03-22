@@ -31,7 +31,7 @@ export interface AdvancedStats {
     lastMonth: number;
     percentChange: number;
   };
-  // Inventory analysis
+  // Inventory analysis (general: counts from invoices; car dealership: car inventory)
   inventoryByStatus: {
     available: number;
     sold: number;
@@ -51,6 +51,7 @@ export interface AdvancedStats {
     totalCars: number;
     totalAmount: number;
   }>;
+  // Top selling items (cars for dealerships, empty for general companies)
   topSellingCars: Array<{
     name: string;
     model: string;

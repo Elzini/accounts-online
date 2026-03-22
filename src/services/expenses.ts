@@ -46,11 +46,6 @@ export interface Expense {
     code: string;
     name: string;
   };
-  car?: {
-    id: string;
-    name: string;
-    chassis_number: string;
-  };
 }
 
 export type ExpenseInsert = Omit<Expense, 'id' | 'created_at' | 'updated_at' | 'category'>;
@@ -103,14 +98,14 @@ export async function deleteExpenseCategory(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// Expenses
+// Expenses - General (works for all company types)
 export async function fetchExpenses(): Promise<Expense[]> {
   const companyId = await getCurrentCompanyId();
   if (!companyId) return [];
   
   const { data, error } = await supabase
     .from('expenses')
-    .select('*, category:expense_categories(*), account:account_categories(id, code, name), car:cars(id, name, chassis_number)')
+    .select('*, category:expense_categories(*), account:account_categories(id, code, name)')
     .eq('company_id', companyId)
     .order('expense_date', { ascending: false });
   
@@ -121,41 +116,8 @@ export async function fetchExpenses(): Promise<Expense[]> {
   })) as Expense[];
 }
 
-// Fetch expenses for a specific car
-export async function fetchCarExpenses(carId: string): Promise<Expense[]> {
-  const { data, error } = await supabase
-    .from('expenses')
-    .select('*, category:expense_categories(*)')
-    .eq('car_id', carId)
-    .order('expense_date', { ascending: false });
-  
-  if (error) throw error;
-  return data as Expense[];
-}
-
-// Get total expenses for a car
-export async function getCarExpensesTotal(carId: string): Promise<number> {
-  const { data, error } = await supabase
-    .from('expenses')
-    .select('amount')
-    .eq('car_id', carId);
-  
-  if (error) throw error;
-  return data?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
-}
-
-// Get general (non-car) expenses for a company
-export async function fetchGeneralExpenses(companyId: string): Promise<Expense[]> {
-  const { data, error } = await supabase
-    .from('expenses')
-    .select('*, category:expense_categories(*)')
-    .eq('company_id', companyId)
-    .is('car_id', null)
-    .order('expense_date', { ascending: false });
-  
-  if (error) throw error;
-  return data as Expense[];
-}
+// Car-specific expense functions - moved to carDealership module
+// Use fetchCarExpenses/getCarExpensesTotal from '@/services/carDealership' for car dealerships
 
 export async function addExpense(expense: ExpenseInsert): Promise<Expense> {
   const { data, error } = await supabase
@@ -196,3 +158,6 @@ export async function createDefaultExpenseCategories(companyId: string): Promise
   
   if (error) throw error;
 }
+
+// Re-export car-specific functions for backward compatibility
+export { fetchCarExpenses, getCarExpensesTotal, fetchGeneralExpenses } from '@/services/carDealershipExpenses';
