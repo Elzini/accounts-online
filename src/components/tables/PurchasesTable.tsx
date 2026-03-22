@@ -281,6 +281,19 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const filteredInvoices = useMemo(() => {
     if (isCarDealership) return [];
     let result = purchaseInvoices;
+
+    // Filter by selected fiscal year
+    if (selectedFiscalYear) {
+      const fyStart = new Date(selectedFiscalYear.start_date);
+      fyStart.setHours(0, 0, 0, 0);
+      const fyEnd = new Date(selectedFiscalYear.end_date);
+      fyEnd.setHours(23, 59, 59, 999);
+      result = result.filter((inv: any) => {
+        const invDate = new Date(inv.invoice_date || inv.created_at);
+        return invDate >= fyStart && invDate <= fyEnd;
+      });
+    }
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter((inv: any) =>
@@ -300,7 +313,7 @@ export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
       }
     }
     return result;
-  }, [isCarDealership, purchaseInvoices, searchQuery, statusFilter]);
+  }, [isCarDealership, purchaseInvoices, searchQuery, statusFilter, selectedFiscalYear]);
 
   const invoiceTotals = useMemo(() => {
     return filteredInvoices.reduce(
