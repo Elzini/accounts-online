@@ -517,8 +517,8 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
   }, [allCars, selectedFiscalYear]);
 
   const buildSalesCarDetails = useCallback((): CarDetailItem[] => {
-    // Build details for sales cars
-      return fiscalYearSales.map(sale => ({
+    if (!isCarDealership) return [];
+    return fiscalYearSales.map(sale => ({
       id: sale.id,
       name: sale.car?.name || t.not_specified,
       model: sale.car?.model || '',
@@ -527,10 +527,10 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
       profit: sale.profit,
       saleDate: sale.sale_date,
     }));
-  }, [fiscalYearSales]);
+  }, [fiscalYearSales, isCarDealership]);
 
   const buildPurchaseCarDetails = useCallback((): CarDetailItem[] => {
-    // Build details for purchase cars
+    if (!isCarDealership) return [];
     return fiscalYearCars.map(car => ({
       id: car.id,
       name: car.name,
@@ -539,7 +539,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
       chassisNumber: car.chassis_number,
       status: car.status,
     }));
-  }, [fiscalYearCars]);
+  }, [fiscalYearCars, isCarDealership]);
 
   const showStatDetail = useCallback(async (cardId: string) => {
     const cardCfg = getCardConfig(cardId);
