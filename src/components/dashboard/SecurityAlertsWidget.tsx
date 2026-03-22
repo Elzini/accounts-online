@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 import { Shield, ShieldAlert, AlertTriangle, CheckCircle2, XCircle, Clock, Eye, ChevronLeft, Snowflake, Activity } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
