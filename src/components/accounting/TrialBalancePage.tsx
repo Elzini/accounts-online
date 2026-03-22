@@ -271,7 +271,7 @@ export function TrialBalancePage() {
                     {/* Totals row */}
                     {totals && (
                       <TableRow className="bg-primary/10 font-bold text-base border-t-4 border-primary">
-                        <TableCell className="text-center border sticky right-0 z-10 bg-primary/10" colSpan={3}>الإجمالي</TableCell>
+                        <TableCell className="text-center border sticky right-0 z-10 bg-primary/10">الإجمالي</TableCell>
                         <TableCell className="text-center border tabular-nums">{fmt(totals.openingDebit)}</TableCell>
                         <TableCell className="text-center border tabular-nums">{fmt(totals.openingCredit)}</TableCell>
                         <TableCell className="text-center border tabular-nums">{fmt(totals.periodDebit)}</TableCell>
