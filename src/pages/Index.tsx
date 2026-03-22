@@ -224,8 +224,7 @@ const Index = () => {
   });
   const mobileSidebarRef = useRef<MobileSidebarRef>(null);
   
-  // Fiscal year dialog for changing selection (accessible from header badge)
-  const [showFiscalYearDialog, setShowFiscalYearDialog] = useState(false);
+  // Fiscal year selection is locked after login - user must log out to change
 
   // Mandatory fiscal year gate: if fiscal years exist but none is selected, force selection
   const mustSelectFiscalYear = !isFiscalYearLoading && fiscalYears.length > 0 && !selectedFiscalYear;
