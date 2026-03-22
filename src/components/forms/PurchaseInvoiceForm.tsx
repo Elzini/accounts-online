@@ -61,6 +61,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { PurchaseInvoiceAIImport, ParsedInvoiceData, BatchParsedResult } from './PurchaseInvoiceAIImport';
 import { useCostCenters } from '@/hooks/useCostCenters';
+import { CarItem, PurchaseInventoryItem } from './purchase-invoice/types';
+import { handleBatchImport } from './purchase-invoice/batchImport';
 import { getNextInvoiceNumber } from '@/utils/invoiceNumberGenerator';
 
 interface PurchaseInvoiceFormProps {
