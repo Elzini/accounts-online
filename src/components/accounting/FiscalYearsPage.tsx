@@ -381,6 +381,35 @@ export function FiscalYearsPage() {
                             <CheckCircle2 className="h-4 w-4" />
                           </Button>
                         )}
+                        {/* Refresh closing entry for closed years */}
+                        {year.status === 'closed' && isAdmin && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" title="تحديث قيد الإقفال">
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="flex items-center gap-2">
+                                  <RefreshCw className="h-5 w-5 text-primary" />
+                                  تحديث قيد الإقفال
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  سيتم إعادة حساب قيد الإقفال للسنة المالية "{year.name}" بناءً على الأرصدة الحالية.
+                                  <br /><strong>يُستخدم هذا عند إضافة أو تعديل قيود في السنة المقفلة.</strong>
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => refreshClosingEntry.mutate(year.id)}>
+                                  {refreshClosingEntry.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <RefreshCw className="h-4 w-4 ml-2" />}
+                                  تحديث قيد الإقفال
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                         {year.status === 'open' && isAdmin && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
