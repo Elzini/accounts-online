@@ -19,6 +19,33 @@ type Supplier = Database['public']['Tables']['suppliers']['Row'];
 type SupplierInsert = Database['public']['Tables']['suppliers']['Insert'];
 type SupplierUpdate = Database['public']['Tables']['suppliers']['Update'];
 
+// Helper function to get current user's company_id
+async function getCurrentCompanyId(): Promise<string | null> {
+  const override = getCompanyOverride();
+  if (override) return override;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_id')
+    .eq('user_id', user.id)
+    .single();
+  return profile?.company_id || null;
+}
+
+async function requireCompanyId(): Promise<string> {
+  const companyId = await getCurrentCompanyId();
+  if (!companyId) throw new Error('COMPANY_REQUIRED');
+  return companyId;
+}
+
+function toDateOnly(date: Date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 // Customers
 // Use customers_safe view for read operations to mask sensitive PII (id_number, registration_number)
 // The view shows only last 4 digits of identity documents for non-admin users
