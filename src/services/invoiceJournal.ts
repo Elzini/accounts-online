@@ -132,9 +132,8 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
 
     const vatInputAccount = findAccount(
       settings?.vat_recoverable_account_id || null,
-      '1108', // ضريبة مشتريات مستردة
-      '210402',
-      '21042',
+      'vat_input',
+      '1108', '210402', '21042',
     );
 
     // Determine credit account based on payment_account_id selection
