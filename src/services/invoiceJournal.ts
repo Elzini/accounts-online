@@ -197,7 +197,8 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
 
     const revenueAccount = findAccount(
       settings?.sales_revenue_account_id || null,
-      '4101', // إيرادات
+      'sales_revenue',
+      '4101',
     );
 
     const vatOutputAccount = findAccount(
