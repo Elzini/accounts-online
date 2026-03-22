@@ -489,7 +489,6 @@ export async function getSystemFinancialStatements(
       }
 
       if (partnerMovements && partnerMovements.length > 0) {
-        const withdrawalIds = new Set(partnerWithdrawals.map(a => a.id));
 
         let eligibleAfterHawl = 0;
         let excludedBeforeHawl = 0;
