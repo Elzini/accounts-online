@@ -418,7 +418,8 @@ export async function getSystemFinancialStatements(
   // 1.4 صافي ربح/خسارة الفترة المعدّل
   const adjustedNetProfit = profitBeforeZakat;
 
-  // 1.5 جاري الشركاء/المالك - الرصيد الدائن فقط (ما يمثل تمويل من المالك للشركة)
+  // 1.5 جاري الشركاء/المالك - صافي الرصيد الدائن فقط (تمويل المالك - سحوبات المالك)
+  // حسب ZATCA: يُضاف صافي جاري الشركاء الدائن فقط (ما بقي من تمويل المالك بعد خصم السحوبات)
   const partnersCurrentInLiabilities = liabilityAccounts.filter(a =>
     a.name.includes('جاري المالك') || a.name.includes('جاري الشريك') ||
     a.name.includes('جاري الشركاء') || a.name.includes('جاري صاحب') ||
@@ -427,25 +428,23 @@ export async function getSystemFinancialStatements(
     a.name.includes('سلف من المالك') || a.name.includes('سلف من الشريك') ||
     a.code.startsWith('2108') // كود جاري الشركاء في الخصوم
   );
+  // سحوبات الشركاء (مدين - في حقوق الملكية) - تُخصم من جاري الشركاء
+  const partnerWithdrawals = equityAccounts.filter(a =>
+    a.name.includes('سحوبات') || a.name.includes('مسحوبات') ||
+    a.code.startsWith('3106') || a.code.startsWith('312')
+  );
+  // جاري الشركاء في حقوق الملكية (غير السحوبات)
   const partnersCurrentInEquity = equityAccounts.filter(a =>
     (a.name.includes('جاري') || a.name.includes('حساب جاري')) &&
-    !a.name.includes('سحوبات')
+    !a.name.includes('سحوبات') && !a.name.includes('مسحوبات')
   );
-  // الرصيد الدائن فقط يُضاف (= تمويل من المالك)؛ المدين (= سحوبات) لا يُضاف
-  const getNetCreditOnly = (accounts: typeof liabilityAccounts) => {
-    return accounts.reduce((sum, a) => {
-      const bal = getBalance(a);
-      // بالنسبة للخصوم: الرصيد الدائن (موجب) يعني المالك أقرض الشركة
-      return sum + Math.max(0, Math.abs(bal));
-    }, 0);
-  };
-  const partnersCurrentTotal =
+
+  // صافي جاري الشركاء = (الرصيد الدائن في الخصوم + الدائن في حقوق الملكية) - السحوبات
+  const partnersCredits =
     partnersCurrentInLiabilities.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0) +
-    partnersCurrentInEquity.reduce((sum, a) => {
-      const bal = getBalance(a);
-      // جاري في حقوق الملكية: الدائن (سالب في getBalance) يعني تمويل
-      return sum + Math.max(0, bal);
-    }, 0);
+    partnersCurrentInEquity.reduce((sum, a) => sum + Math.max(0, getBalance(a)), 0);
+  const partnersDebits = partnerWithdrawals.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
+  const partnersCurrentTotal = Math.max(0, partnersCredits - partnersDebits);
 
   // 1.6 المخصصات (provisions) - ما عدا مخصص الزكاة نفسه
   const provisionAccounts = liabilityAccounts.filter(a =>
