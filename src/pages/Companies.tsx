@@ -688,7 +688,7 @@ export default function Companies() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
-                          {ACTIVITY_TYPE_LABELS[((company as any).company_type || 'car_dealership') as CompanyActivityType]}
+                          {ACTIVITY_TYPE_LABELS[(company.company_type || 'general_trading') as CompanyActivityType]}
                         </Badge>
                       </TableCell>
                       <TableCell>
