@@ -13,6 +13,8 @@ interface ZakatData {
   reserves?: number;
   retainedEarnings?: number;
   partnersCurrentAccount: number;
+  partnersCurrentFullBalance?: number;
+  partnersHawlMonths?: number;
   employeeBenefitsLiabilities: number;
   longTermLoans?: number;
   zakatBaseSubtotal: number;
