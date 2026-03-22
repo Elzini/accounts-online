@@ -401,13 +401,21 @@ export async function getSystemFinancialStatements(
   const totalEquityFromAccounts = equity.reduce((sum, e) => sum + e.amount, 0);
 
   // ===== إضافات الوعاء الزكوي (طريقة صافي الأصول - ZATCA) =====
-  // 1. جاري الشركاء والقروض من الملاك (حسابات الالتزامات التي تحتوي على جاري/تمويل/قرض شريك)
+  // 1. جاري الشركاء/المالك فقط (وليس التمويل البنكي أو القروض التجارية)
   const partnersCurrentAccounts = liabilityAccounts.filter(a =>
-    a.name.includes('جاري') || a.name.includes('تمويل') || 
+    a.name.includes('جاري المالك') || a.name.includes('جاري الشريك') || 
+    a.name.includes('جاري الشركاء') || a.name.includes('جاري صاحب') ||
     a.name.includes('قرض الشريك') || a.name.includes('قروض الشركاء') ||
-    a.name.includes('سلف من')
+    a.name.includes('سلف من المالك') || a.name.includes('سلف من الشريك') ||
+    a.code.startsWith('32') // حسابات جاري الملاك عادةً تحت 32
   );
-  const partnersCurrentTotal = partnersCurrentAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
+  // أيضاً نبحث في حقوق الملكية عن جاري المالك
+  const equityPartnersAccounts = equityAccounts.filter(a =>
+    a.name.includes('جاري') || a.name.includes('حساب جاري')
+  );
+  const partnersCurrentTotal = 
+    partnersCurrentAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0) +
+    equityPartnersAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
 
   // 2. المخصصات (provisions) - ما عدا مخصص الزكاة نفسه
   const provisionAccounts = liabilityAccounts.filter(a =>
