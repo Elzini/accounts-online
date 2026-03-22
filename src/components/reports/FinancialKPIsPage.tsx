@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCompany } from '@/contexts/CompanyContext';
 
 interface KPIs {
   grossProfitMargin: number;
@@ -29,9 +30,11 @@ export function FinancialKPIsPage() {
   const { t, direction, language } = useLanguage();
   const companyId = useCompanyId();
   const { selectedFiscalYear } = useFiscalYear();
+  const { company } = useCompany();
+  const isCarDealership = (company as any)?.company_type === 'car_dealership' || !(company as any)?.company_type;
 
   const { data: kpis, isLoading } = useQuery({
-    queryKey: ['financial-kpis', companyId, selectedFiscalYear?.id],
+    queryKey: ['financial-kpis', companyId, selectedFiscalYear?.id, isCarDealership],
     queryFn: async (): Promise<KPIs> => {
       if (!companyId) return defaultKPIs();
 
@@ -39,45 +42,69 @@ export function FinancialKPIsPage() {
         ? { start: selectedFiscalYear.start_date, end: selectedFiscalYear.end_date }
         : null;
 
-      const [salesRes, carsRes, expensesRes, employeesRes] = await Promise.all([
-        supabase.from('sales').select('sale_price, profit, sale_date').eq('company_id', companyId),
-        supabase.from('cars').select('purchase_price, purchase_date, status').eq('company_id', companyId),
+      let totalRevenue = 0;
+      let totalCost = 0;
+      let salesCount = 0;
+      let inventoryCount = 0;
+
+      if (isCarDealership) {
+        // Car dealership: use sales + cars tables
+        const [salesRes, carsRes] = await Promise.all([
+          supabase.from('sales').select('sale_price, profit, sale_date').eq('company_id', companyId),
+          supabase.from('cars').select('purchase_price, purchase_date, status').eq('company_id', companyId),
+        ]);
+
+        const sales = (salesRes.data || []).filter((s: any) =>
+          !dateFilter || (s.sale_date >= dateFilter.start && s.sale_date <= dateFilter.end)
+        );
+        const cars = (carsRes.data || []).filter((c: any) =>
+          !dateFilter || (c.purchase_date >= dateFilter.start && c.purchase_date <= dateFilter.end)
+        );
+
+        totalRevenue = sales.reduce((s: number, r: any) => s + (r.sale_price || 0), 0);
+        totalCost = cars.filter((c: any) => c.status === 'sold').reduce((s: number, r: any) => s + (r.purchase_price || 0), 0);
+        salesCount = sales.length;
+        inventoryCount = carsRes.data?.filter((c: any) => c.status === 'available').length || 0;
+      } else {
+        // Non-car companies: use invoices table
+        let salesQuery = supabase.from('invoices').select('subtotal, invoice_date').eq('company_id', companyId).eq('invoice_type', 'sales');
+        let purchasesQuery = supabase.from('invoices').select('subtotal, invoice_date').eq('company_id', companyId).eq('invoice_type', 'purchase');
+
+        if (dateFilter) {
+          salesQuery = salesQuery.gte('invoice_date', dateFilter.start).lte('invoice_date', dateFilter.end);
+          purchasesQuery = purchasesQuery.gte('invoice_date', dateFilter.start).lte('invoice_date', dateFilter.end);
+        }
+
+        const [salesRes, purchasesRes] = await Promise.all([salesQuery, purchasesQuery]);
+
+        totalRevenue = (salesRes.data || []).reduce((s: number, r: any) => s + (Number(r.subtotal) || 0), 0);
+        totalCost = (purchasesRes.data || []).reduce((s: number, r: any) => s + (Number(r.subtotal) || 0), 0);
+        salesCount = salesRes.data?.length || 0;
+      }
+
+      const [expensesRes, employeesRes] = await Promise.all([
         supabase.from('expenses').select('amount, expense_date').eq('company_id', companyId),
         supabase.from('employees').select('id').eq('company_id', companyId).eq('is_active', true),
       ]);
 
-      const sales = (salesRes.data || []).filter((s: any) =>
-        !dateFilter || (s.sale_date >= dateFilter.start && s.sale_date <= dateFilter.end)
-      );
-      const cars = (carsRes.data || []).filter((c: any) =>
-        !dateFilter || (c.purchase_date >= dateFilter.start && c.purchase_date <= dateFilter.end)
-      );
       const expenses = (expensesRes.data || []).filter((e: any) =>
         !dateFilter || (e.expense_date >= dateFilter.start && e.expense_date <= dateFilter.end)
       );
 
-      const totalRevenue = sales.reduce((s: number, r: any) => s + (r.sale_price || 0), 0);
-      const totalProfit = sales.reduce((s: number, r: any) => s + (r.profit || 0), 0);
-      const totalCost = cars.filter((c: any) => c.status === 'sold').reduce((s: number, r: any) => s + (r.purchase_price || 0), 0);
       const totalExpenses = expenses.reduce((s: number, r: any) => s + (r.amount || 0), 0);
       const grossProfit = totalRevenue - totalCost;
       const netProfit = grossProfit - totalExpenses;
-
       const employeeCount = employeesRes.data?.length || 1;
-      const availableCars = carsRes.data?.filter((c: any) => c.status === 'available').length || 0;
-      const soldCars = sales.length;
 
-      // Break-even: Fixed costs / (1 - variable cost ratio)
-      const fixedCosts = totalExpenses * 0.6; // Estimate 60% fixed
+      // Break-even
+      const fixedCosts = totalExpenses * 0.6;
       const variableCostRatio = totalRevenue > 0 ? totalCost / totalRevenue : 0;
       const breakEvenRevenue = variableCostRatio < 1 ? fixedCosts / (1 - variableCostRatio) : 0;
 
-      // Inventory turnover
-      const avgInventory = (availableCars + soldCars) / 2 || 1;
-      const inventoryTurnover = soldCars / avgInventory;
-
-      // Average days to sell (simplified)
-      const avgDaysToSell = soldCars > 0 ? (dateFilter ? 365 / inventoryTurnover : 365 / (inventoryTurnover || 1)) : 0;
+      // Inventory turnover (car dealership only, otherwise use sales count)
+      const avgInventory = isCarDealership ? ((inventoryCount + salesCount) / 2 || 1) : (salesCount || 1);
+      const inventoryTurnover = salesCount / avgInventory;
+      const avgDaysToSell = salesCount > 0 ? 365 / (inventoryTurnover || 1) : 0;
 
       return {
         grossProfitMargin: totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0,

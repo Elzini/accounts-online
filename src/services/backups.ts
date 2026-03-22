@@ -32,12 +32,9 @@ export interface BackupSchedule {
 }
 
 export interface BackupData {
+  // Universal tables
   customers: any[];
   suppliers: any[];
-  cars: any[];
-  sales: any[];
-  sale_items: any[];
-  purchase_batches: any[];
   journal_entries: any[];
   journal_entry_lines: any[];
   account_categories: any[];
@@ -45,8 +42,24 @@ export interface BackupData {
   quotations: any[];
   installments: any[];
   vouchers: any[];
-  car_transfers: any[];
-  partner_dealerships: any[];
+  invoices: any[];
+  invoice_items: any[];
+  // Car dealership specific (optional)
+  cars?: any[];
+  sales?: any[];
+  sale_items?: any[];
+  purchase_batches?: any[];
+  car_transfers?: any[];
+  partner_dealerships?: any[];
+}
+
+async function getCompanyType(companyId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('companies')
+    .select('company_type')
+    .eq('id', companyId)
+    .maybeSingle();
+  return data?.company_type || null;
 }
 
 export async function getBackups(companyId: string): Promise<Backup[]> {
@@ -74,7 +87,6 @@ export async function getBackupSchedule(companyId: string): Promise<BackupSchedu
 export async function createBackup(companyId: string, name: string, description?: string): Promise<Backup> {
   const { data: { user } } = await supabase.auth.getUser();
   
-  // Create backup record
   const { data: backup, error: insertError } = await supabase
     .from('backups')
     .insert({
@@ -91,12 +103,10 @@ export async function createBackup(companyId: string, name: string, description?
   if (insertError) throw insertError;
 
   try {
-    // Fetch all data
     const backupData = await fetchAllData(companyId);
     const recordsCount = calculateRecordsCount(backupData);
     const fileSize = new Blob([JSON.stringify(backupData)]).size;
 
-    // Update backup with data
     const { data: updatedBackup, error: updateError } = await supabase
       .from('backups')
       .update({
@@ -113,7 +123,6 @@ export async function createBackup(companyId: string, name: string, description?
     if (updateError) throw updateError;
     return updatedBackup as unknown as Backup;
   } catch (error) {
-    // Mark as failed
     await supabase
       .from('backups')
       .update({
@@ -126,29 +135,13 @@ export async function createBackup(companyId: string, name: string, description?
 }
 
 async function fetchAllData(companyId: string): Promise<BackupData> {
-  const [
-    customers,
-    suppliers,
-    cars,
-    sales,
-    saleItems,
-    purchaseBatches,
-    journalEntries,
-    journalEntryLines,
-    accountCategories,
-    expenses,
-    quotations,
-    installments,
-    vouchers,
-    carTransfers,
-    partnerDealerships
-  ] = await Promise.all([
+  const companyType = await getCompanyType(companyId);
+  const isCarDealership = !companyType || companyType === 'car_dealership';
+
+  // Universal queries
+  const universalQueries = [
     supabase.from('customers').select('*').eq('company_id', companyId),
     supabase.from('suppliers').select('*').eq('company_id', companyId),
-    supabase.from('cars').select('*').eq('company_id', companyId),
-    supabase.from('sales').select('*').eq('company_id', companyId),
-    supabase.from('sale_items').select('*, sales!inner(company_id)').eq('sales.company_id', companyId),
-    supabase.from('purchase_batches').select('*').eq('company_id', companyId),
     supabase.from('journal_entries').select('*').eq('company_id', companyId),
     supabase.from('journal_entry_lines').select('*, journal_entries!inner(company_id)').eq('journal_entries.company_id', companyId),
     supabase.from('account_categories').select('*').eq('company_id', companyId),
@@ -156,17 +149,19 @@ async function fetchAllData(companyId: string): Promise<BackupData> {
     supabase.from('quotations').select('*').eq('company_id', companyId),
     (supabase as any).from('installments').select('*').eq('company_id', companyId),
     supabase.from('vouchers').select('*').eq('company_id', companyId),
-    supabase.from('car_transfers').select('*').eq('company_id', companyId),
-    supabase.from('partner_dealerships').select('*').eq('company_id', companyId)
-  ]);
+    supabase.from('invoices').select('*').eq('company_id', companyId),
+    supabase.from('invoice_items').select('*, invoices!inner(company_id)').eq('invoices.company_id', companyId),
+  ];
 
-  return {
+  const [
+    customers, suppliers, journalEntries, journalEntryLines,
+    accountCategories, expenses, quotations, installments,
+    vouchers, invoices, invoiceItems
+  ] = await Promise.all(universalQueries);
+
+  const backupData: BackupData = {
     customers: customers.data || [],
     suppliers: suppliers.data || [],
-    cars: cars.data || [],
-    sales: sales.data || [],
-    sale_items: saleItems.data || [],
-    purchase_batches: purchaseBatches.data || [],
     journal_entries: journalEntries.data || [],
     journal_entry_lines: journalEntryLines.data || [],
     account_categories: accountCategories.data || [],
@@ -174,19 +169,36 @@ async function fetchAllData(companyId: string): Promise<BackupData> {
     quotations: quotations.data || [],
     installments: installments.data || [],
     vouchers: vouchers.data || [],
-    car_transfers: carTransfers.data || [],
-    partner_dealerships: partnerDealerships.data || []
+    invoices: invoices.data || [],
+    invoice_items: invoiceItems.data || [],
   };
+
+  // Car dealership specific tables
+  if (isCarDealership) {
+    const [cars, sales, saleItems, purchaseBatches, carTransfers, partnerDealerships] = await Promise.all([
+      supabase.from('cars').select('*').eq('company_id', companyId),
+      supabase.from('sales').select('*').eq('company_id', companyId),
+      supabase.from('sale_items').select('*, sales!inner(company_id)').eq('sales.company_id', companyId),
+      supabase.from('purchase_batches').select('*').eq('company_id', companyId),
+      supabase.from('car_transfers').select('*').eq('company_id', companyId),
+      supabase.from('partner_dealerships').select('*').eq('company_id', companyId),
+    ]);
+
+    backupData.cars = cars.data || [];
+    backupData.sales = sales.data || [];
+    backupData.sale_items = saleItems.data || [];
+    backupData.purchase_batches = purchaseBatches.data || [];
+    backupData.car_transfers = carTransfers.data || [];
+    backupData.partner_dealerships = partnerDealerships.data || [];
+  }
+
+  return backupData;
 }
 
 function calculateRecordsCount(data: BackupData): Record<string, number> {
-  return {
+  const counts: Record<string, number> = {
     customers: data.customers.length,
     suppliers: data.suppliers.length,
-    cars: data.cars.length,
-    sales: data.sales.length,
-    sale_items: data.sale_items.length,
-    purchase_batches: data.purchase_batches.length,
     journal_entries: data.journal_entries.length,
     journal_entry_lines: data.journal_entry_lines.length,
     account_categories: data.account_categories.length,
@@ -194,27 +206,47 @@ function calculateRecordsCount(data: BackupData): Record<string, number> {
     quotations: data.quotations.length,
     installments: data.installments.length,
     vouchers: data.vouchers.length,
-    car_transfers: data.car_transfers.length,
-    partner_dealerships: data.partner_dealerships.length
+    invoices: data.invoices.length,
+    invoice_items: data.invoice_items.length,
   };
+
+  // Car-specific counts (only if present)
+  if (data.cars) counts.cars = data.cars.length;
+  if (data.sales) counts.sales = data.sales.length;
+  if (data.sale_items) counts.sale_items = data.sale_items.length;
+  if (data.purchase_batches) counts.purchase_batches = data.purchase_batches.length;
+  if (data.car_transfers) counts.car_transfers = data.car_transfers.length;
+  if (data.partner_dealerships) counts.partner_dealerships = data.partner_dealerships.length;
+
+  return counts;
 }
 
 async function deleteCompanyScopedChildRows(companyId: string) {
+  // Delete invoice items
+  const { data: invoiceRows } = await supabase
+    .from('invoices')
+    .select('id')
+    .eq('company_id', companyId);
+  const invoiceIds = (invoiceRows || []).map((row) => row.id);
+  if (invoiceIds.length > 0) {
+    await supabase.from('invoice_items').delete().in('invoice_id', invoiceIds);
+  }
+
+  // Delete sale items (car dealership)
   const { data: salesRows } = await supabase
     .from('sales')
     .select('id')
     .eq('company_id', companyId);
-
   const saleIds = (salesRows || []).map((row) => row.id);
   if (saleIds.length > 0) {
     await supabase.from('sale_items').delete().in('sale_id', saleIds);
   }
 
+  // Delete journal entry lines
   const { data: journalRows } = await supabase
     .from('journal_entries')
     .select('id')
     .eq('company_id', companyId);
-
   const journalIds = (journalRows || []).map((row) => row.id);
   if (journalIds.length > 0) {
     await supabase.from('journal_entry_lines').delete().in('journal_entry_id', journalIds);
@@ -231,7 +263,6 @@ export async function deleteBackup(backupId: string): Promise<void> {
 }
 
 export async function restoreBackup(backupId: string, companyId: string): Promise<void> {
-  // Get backup data
   const { data: backup, error } = await supabase
     .from('backups')
     .select('backup_data')
@@ -242,9 +273,15 @@ export async function restoreBackup(backupId: string, companyId: string): Promis
   if (!backup?.backup_data) throw new Error('لا توجد بيانات في النسخة الاحتياطية');
 
   const backupData = backup.backup_data as unknown as BackupData;
+  await restoreData(companyId, backupData);
+}
 
+async function restoreData(companyId: string, backupData: BackupData): Promise<void> {
   // Delete existing data (company-scoped only, in FK-safe order)
   await deleteCompanyScopedChildRows(companyId);
+  
+  // Delete parent tables
+  await supabase.from('invoices').delete().eq('company_id', companyId);
   await supabase.from('journal_entries').delete().eq('company_id', companyId);
   await supabase.from('sales').delete().eq('company_id', companyId);
   await supabase.from('cars').delete().eq('company_id', companyId);
@@ -259,39 +296,39 @@ export async function restoreBackup(backupId: string, companyId: string): Promis
   await supabase.from('partner_dealerships').delete().eq('company_id', companyId);
   await supabase.from('account_categories').delete().eq('company_id', companyId);
 
-  // Restore data (in correct order)
+  // Restore data (in correct FK order)
   if (backupData.account_categories?.length) {
-    await supabase.from('account_categories').insert(backupData.account_categories);
+    await supabase.from('account_categories').insert(backupData.account_categories as any);
   }
   if (backupData.customers?.length) {
-    await supabase.from('customers').insert(backupData.customers);
+    await supabase.from('customers').insert(backupData.customers as any);
   }
   if (backupData.suppliers?.length) {
-    await supabase.from('suppliers').insert(backupData.suppliers);
+    await supabase.from('suppliers').insert(backupData.suppliers as any);
   }
   if (backupData.partner_dealerships?.length) {
-    await supabase.from('partner_dealerships').insert(backupData.partner_dealerships);
+    await supabase.from('partner_dealerships').insert(backupData.partner_dealerships as any);
   }
   if (backupData.purchase_batches?.length) {
-    await supabase.from('purchase_batches').insert(backupData.purchase_batches);
+    await supabase.from('purchase_batches').insert(backupData.purchase_batches as any);
   }
   if (backupData.cars?.length) {
-    await supabase.from('cars').insert(backupData.cars);
+    await supabase.from('cars').insert(backupData.cars as any);
   }
   if (backupData.sales?.length) {
-    await supabase.from('sales').insert(backupData.sales);
+    await supabase.from('sales').insert(backupData.sales as any);
   }
   if (backupData.sale_items?.length) {
-    await supabase.from('sale_items').insert(backupData.sale_items);
+    await supabase.from('sale_items').insert(backupData.sale_items as any);
   }
   if (backupData.journal_entries?.length) {
-    await supabase.from('journal_entries').insert(backupData.journal_entries);
+    await supabase.from('journal_entries').insert(backupData.journal_entries as any);
   }
   if (backupData.journal_entry_lines?.length) {
-    await supabase.from('journal_entry_lines').insert(backupData.journal_entry_lines);
+    await supabase.from('journal_entry_lines').insert(backupData.journal_entry_lines as any);
   }
   if (backupData.expenses?.length) {
-    await supabase.from('expenses').insert(backupData.expenses);
+    await supabase.from('expenses').insert(backupData.expenses as any);
   }
   if (backupData.quotations?.length) {
     await supabase.from('quotations').insert(backupData.quotations as any);
@@ -300,10 +337,16 @@ export async function restoreBackup(backupId: string, companyId: string): Promis
     await (supabase as any).from('installments').insert(backupData.installments);
   }
   if (backupData.vouchers?.length) {
-    await supabase.from('vouchers').insert(backupData.vouchers);
+    await supabase.from('vouchers').insert(backupData.vouchers as any);
+  }
+  if (backupData.invoices?.length) {
+    await supabase.from('invoices').insert(backupData.invoices as any);
+  }
+  if (backupData.invoice_items?.length) {
+    await supabase.from('invoice_items').insert(backupData.invoice_items as any);
   }
   if (backupData.car_transfers?.length) {
-    await supabase.from('car_transfers').insert(backupData.car_transfers);
+    await supabase.from('car_transfers').insert(backupData.car_transfers as any);
   }
 }
 
@@ -375,74 +418,12 @@ export async function restoreFromLocalFile(
         const content = e.target?.result as string;
         const backupData = JSON.parse(content) as BackupData;
         
-        // Validate backup data structure
-        if (!backupData.customers && !backupData.cars && !backupData.sales) {
+        // Validate backup data structure - check for any valid data
+        if (!backupData.customers && !backupData.invoices && !backupData.journal_entries && !backupData.cars) {
           throw new Error('ملف النسخة الاحتياطية غير صالح');
         }
 
-        // Delete existing data (company-scoped only, in FK-safe order)
-        await deleteCompanyScopedChildRows(companyId);
-        await supabase.from('journal_entries').delete().eq('company_id', companyId);
-        await supabase.from('sales').delete().eq('company_id', companyId);
-        await supabase.from('cars').delete().eq('company_id', companyId);
-        await supabase.from('purchase_batches').delete().eq('company_id', companyId);
-        await supabase.from('expenses').delete().eq('company_id', companyId);
-        await supabase.from('quotations').delete().eq('company_id', companyId);
-        await (supabase as any).from('installments').delete().eq('company_id', companyId);
-        await supabase.from('vouchers').delete().eq('company_id', companyId);
-        await supabase.from('car_transfers').delete().eq('company_id', companyId);
-        await supabase.from('customers').delete().eq('company_id', companyId);
-        await supabase.from('suppliers').delete().eq('company_id', companyId);
-        await supabase.from('partner_dealerships').delete().eq('company_id', companyId);
-        await supabase.from('account_categories').delete().eq('company_id', companyId);
-
-        // Restore data (in correct order)
-        if (backupData.account_categories?.length) {
-          await supabase.from('account_categories').insert(backupData.account_categories as any);
-        }
-        if (backupData.customers?.length) {
-          await supabase.from('customers').insert(backupData.customers as any);
-        }
-        if (backupData.suppliers?.length) {
-          await supabase.from('suppliers').insert(backupData.suppliers as any);
-        }
-        if (backupData.partner_dealerships?.length) {
-          await supabase.from('partner_dealerships').insert(backupData.partner_dealerships as any);
-        }
-        if (backupData.purchase_batches?.length) {
-          await supabase.from('purchase_batches').insert(backupData.purchase_batches as any);
-        }
-        if (backupData.cars?.length) {
-          await supabase.from('cars').insert(backupData.cars as any);
-        }
-        if (backupData.sales?.length) {
-          await supabase.from('sales').insert(backupData.sales as any);
-        }
-        if (backupData.sale_items?.length) {
-          await supabase.from('sale_items').insert(backupData.sale_items as any);
-        }
-        if (backupData.journal_entries?.length) {
-          await supabase.from('journal_entries').insert(backupData.journal_entries as any);
-        }
-        if (backupData.journal_entry_lines?.length) {
-          await supabase.from('journal_entry_lines').insert(backupData.journal_entry_lines as any);
-        }
-        if (backupData.expenses?.length) {
-          await supabase.from('expenses').insert(backupData.expenses as any);
-        }
-        if (backupData.quotations?.length) {
-          await supabase.from('quotations').insert(backupData.quotations as any);
-        }
-        if (backupData.installments?.length) {
-          await (supabase as any).from('installments').insert(backupData.installments);
-        }
-        if (backupData.vouchers?.length) {
-          await supabase.from('vouchers').insert(backupData.vouchers as any);
-        }
-        if (backupData.car_transfers?.length) {
-          await supabase.from('car_transfers').insert(backupData.car_transfers as any);
-        }
-
+        await restoreData(companyId, backupData);
         resolve();
       } catch (error) {
         reject(error);
