@@ -453,6 +453,16 @@ export async function getSystemFinancialStatements(
   const partnersDebits = partnerWithdrawals.reduce((sum, a) => sum + getPositiveDebitBalance(a), 0);
   const partnersCurrentTotal = Math.max(0, partnersCredits - partnersDebits);
 
+  // DEBUG: تتبع حسابات جاري الشركاء
+  console.log('=== تفاصيل جاري الشركاء في الزكاة ===');
+  console.log('جاري الشركاء في الخصوم:');
+  partnersCurrentInLiabilities.forEach(a => console.log(`  ${a.code} - ${a.name}: رصيد=${getBalance(a)}, دائن=${getPositiveCreditBalance(a)}`));
+  console.log('جاري الشركاء في حقوق الملكية:');
+  partnersCurrentInEquity.forEach(a => console.log(`  ${a.code} - ${a.name}: رصيد=${getBalance(a)}, دائن=${getPositiveCreditBalance(a)}`));
+  console.log('سحوبات الشركاء:');
+  partnerWithdrawals.forEach(a => console.log(`  ${a.code} - ${a.name}: رصيد=${getBalance(a)}, مدين=${getPositiveDebitBalance(a)}`));
+  console.log(`إجمالي الدائن: ${partnersCredits}, إجمالي المدين: ${partnersDebits}, الصافي: ${partnersCurrentTotal}`);
+
   // 1.6 المخصصات (provisions) - ما عدا مخصص الزكاة نفسه
   const provisionAccounts = liabilityAccounts.filter(a =>
     (a.name.includes('مخصص') && !a.name.includes('زكاة')) ||
