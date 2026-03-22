@@ -370,8 +370,11 @@ export async function openNewFiscalYear(
           }
 
           // الحسابات التي تُرحّل (الأصول، الخصوم، حقوق الملكية)
+          // فقط الحسابات الورقية (بدون أبناء) لمنع تكرار الأرصدة في التقارير الهرمية
+          const parentIds = new Set(accounts.filter(a => a.parent_id).map(a => a.parent_id!));
           const balanceSheetAccounts = accounts.filter(a => 
             ['asset', 'assets', 'liability', 'liabilities', 'equity'].includes(a.type)
+            && !parentIds.has(a.id)
           );
           if (retainedEarningsAcc && !balanceSheetAccounts.find(a => a.id === retainedEarningsAcc!.id)) {
             balanceSheetAccounts.push(retainedEarningsAcc);
@@ -788,8 +791,11 @@ export async function refreshOpeningBalances(
     }
 
     // الحسابات التي تُرحّل (الأصول، الخصوم، حقوق الملكية)
+    // فقط الحسابات الورقية (بدون أبناء) لمنع تكرار الأرصدة في التقارير الهرمية
+    const parentIds = new Set(accounts.filter(a => a.parent_id).map(a => a.parent_id!));
     const balanceSheetAccounts = accounts.filter(a => 
       ['asset', 'assets', 'liability', 'liabilities', 'equity'].includes(a.type)
+      && !parentIds.has(a.id)
     );
     // إضافة حساب الأرباح المحتجزة إذا تم إنشاؤه حديثاً
     if (retainedEarningsAccount && !balanceSheetAccounts.find(a => a.id === retainedEarningsAccount!.id)) {
