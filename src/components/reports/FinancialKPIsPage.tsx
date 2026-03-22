@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCompany } from '@/contexts/CompanyContext';
 
 interface KPIs {
   grossProfitMargin: number;
