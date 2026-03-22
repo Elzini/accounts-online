@@ -853,7 +853,8 @@ export async function getVouchersReport(
   companyId: string,
   startDate?: string,
   endDate?: string,
-  voucherType?: 'receipt' | 'payment'
+  voucherType?: 'receipt' | 'payment',
+  fiscalYearId?: string
 ): Promise<Array<{
   id: string;
   voucher_number: number;
@@ -870,11 +871,15 @@ export async function getVouchersReport(
     .eq('company_id', companyId)
     .order('voucher_date', { ascending: false });
 
-  if (startDate) {
-    query = query.gte('voucher_date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('voucher_date', endDate);
+  if (fiscalYearId) {
+    query = query.eq('fiscal_year_id', fiscalYearId);
+  } else {
+    if (startDate) {
+      query = query.gte('voucher_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('voucher_date', endDate);
+    }
   }
   if (voucherType) {
     query = query.eq('voucher_type', voucherType);
