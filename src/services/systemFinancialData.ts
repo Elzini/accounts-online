@@ -257,6 +257,10 @@ export async function getSystemFinancialStatements(
     return totals.debit - totals.credit;
   };
 
+  // أرصدة موجبة حسب طبيعة الحساب (لتجنب احتساب الأرصدة العكسية ضمن الزكاة)
+  const getPositiveCreditBalance = (account: AccountCategory): number => Math.max(0, getBalance(account));
+  const getPositiveDebitBalance = (account: AccountCategory): number => Math.max(0, -getBalance(account));
+
   // تصنيف الحسابات الورقية فقط (دعم المفرد والجمع لتوافق قاعدة البيانات)
   const typeMatch = (a: { type: string }, ...types: string[]) => types.includes(a.type);
   const assetAccounts = leafAccounts.filter(a => typeMatch(a, 'asset', 'assets'));
@@ -308,9 +312,6 @@ export async function getSystemFinancialStatements(
   // ===== قائمة الدخل - حساب من القيود المحاسبية =====
   // الإيرادات من حسابات الإيرادات
   const totalRevenue = revenueAccounts.reduce((sum, a) => sum + getBalance(a), 0);
-  console.log('=== DEBUG: Income Statement ===');
-  console.log('Revenue accounts:', revenueAccounts.map(a => ({ code: a.code, name: a.name, balance: getBalance(a) })));
-  console.log('Total Revenue:', totalRevenue);
   
   // تصنيف المصروفات من القيود وفقاً لـ IAS 1 (عرض حسب الوظيفة)
   // تكلفة البضاعة المباعة (COGS) - تشمل حساب 5101 وما يبدأ بـ 51
@@ -338,14 +339,9 @@ export async function getSystemFinancialStatements(
 
   // حساب الأرباح من القيود المحاسبية:
   // الربح الإجمالي = الإيرادات - تكلفة البضاعة المباعة
-  console.log('COGS:', cogsAccounts.map(a => ({ code: a.code, name: a.name, bal: getBalance(a) })));
-  console.log('Expense ALL:', expenseAccounts.map(a => ({ code: a.code, name: a.name, type: a.type, bal: getBalance(a) })));
-  console.log('costOfRevenue:', costOfRevenue, 'selling:', sellingAndMarketingExpenses, 'admin:', generalAndAdminExpenses);
   const grossProfit = totalRevenue - costOfRevenue;
   const operatingProfit = grossProfit - sellingAndMarketingExpenses - generalAndAdminExpenses;
   const profitBeforeZakat = operatingProfit;
-  console.log('grossProfit:', grossProfit, 'operatingProfit:', operatingProfit, 'profitBeforeZakat:', profitBeforeZakat);
-  console.log('=== END DEBUG ===');
 
 
   // ===== بناء الإيضاحات =====
@@ -383,9 +379,14 @@ export async function getSystemFinancialStatements(
   };
 
   // إيضاح رأس المال
-  const capitalAccount = equityAccounts.find(a => a.code.startsWith('31') || a.name.includes('رأس المال'));
-  const capitalValue = capitalAccount ? getBalance(capitalAccount) : 0;
-  const capitalNote = capitalAccount ? {
+  const capitalAccounts = equityAccounts.filter(a =>
+    (a.name.includes('رأس المال') || a.name.includes('راس المال')) &&
+    !a.name.includes('جاري') &&
+    !a.name.includes('سحوبات') &&
+    !a.name.includes('مسحوبات')
+  );
+  const capitalValue = capitalAccounts.reduce((sum, a) => sum + getPositiveCreditBalance(a), 0);
+  const capitalNote = capitalAccounts.length > 0 ? {
     description: 'رأس مال الشركة',
     partners: [{ name: 'رأس المال', sharesCount: 1, shareValue: capitalValue, totalValue: capitalValue }],
     totalShares: 1,
@@ -410,7 +411,7 @@ export async function getSystemFinancialStatements(
     !a.name.includes('خسائر مرحلة') && !a.name.includes('خسائر متراكمة') &&
     (a.name.includes('احتياطي') || a.name.includes('احتياط') || a.code.startsWith('33'))
   );
-  const reservesTotal = reserveAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
+  const reservesTotal = reserveAccounts.reduce((sum, a) => sum + getPositiveCreditBalance(a), 0);
 
   // 1.3 الأرباح المبقاة (Retained Earnings)
   const retainedEarningsAccounts = equityAccounts.filter(a =>
@@ -447,9 +448,9 @@ export async function getSystemFinancialStatements(
 
   // صافي جاري الشركاء = (الرصيد الدائن في الخصوم + الدائن في حقوق الملكية) - السحوبات
   const partnersCredits =
-    partnersCurrentInLiabilities.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0) +
-    partnersCurrentInEquity.reduce((sum, a) => sum + Math.max(0, getBalance(a)), 0);
-  const partnersDebits = partnerWithdrawals.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
+    partnersCurrentInLiabilities.reduce((sum, a) => sum + getPositiveCreditBalance(a), 0) +
+    partnersCurrentInEquity.reduce((sum, a) => sum + getPositiveCreditBalance(a), 0);
+  const partnersDebits = partnerWithdrawals.reduce((sum, a) => sum + getPositiveDebitBalance(a), 0);
   const partnersCurrentTotal = Math.max(0, partnersCredits - partnersDebits);
 
   // 1.6 المخصصات (provisions) - ما عدا مخصص الزكاة نفسه
@@ -457,7 +458,7 @@ export async function getSystemFinancialStatements(
     (a.name.includes('مخصص') && !a.name.includes('زكاة')) ||
     a.name.includes('مكافأة نهاية') || a.name.includes('التزامات منافع')
   );
-  const provisionsTotal = provisionAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
+  const provisionsTotal = provisionAccounts.reduce((sum, a) => sum + getPositiveCreditBalance(a), 0);
 
   // 1.7 القروض والتمويل طويل الأجل (من غير الملاك)
   const longTermLoans = liabilityAccounts.filter(a =>
@@ -465,7 +466,7 @@ export async function getSystemFinancialStatements(
     (a.name.includes('قرض طويل') || a.name.includes('تمويل طويل') ||
      a.name.includes('صكوك') || a.code.startsWith('22'))
   );
-  const longTermLoansTotal = longTermLoans.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
+  const longTermLoansTotal = longTermLoans.reduce((sum, a) => sum + getPositiveCreditBalance(a), 0);
 
   // إجمالي مصادر الوعاء
   const zakatSources = capitalValue
@@ -508,10 +509,10 @@ export async function getSystemFinancialStatements(
 
   // إجمالي الحسميات
   const totalDeductions = totalNonCurrentAssets
-    + longTermInvestmentsTotal
+    + Math.max(0, longTermInvestmentsTotal)
     + accumulatedLosses
-    + prepaidRentLongTerm
-    + deferredExpensesTotal;
+    + Math.max(0, prepaidRentLongTerm)
+    + Math.max(0, deferredExpensesTotal);
 
   // ===== 3. الوعاء الزكوي =====
   const zakatBase = zakatSources - totalDeductions;
@@ -587,10 +588,10 @@ export async function getSystemFinancialStatements(
       rows: [
         {
           description: 'الرصيد في بداية السنة',
-          capital: capitalAccount ? getBalance(capitalAccount) : 0,
+          capital: capitalValue,
           statutoryReserve: 0,
           retainedEarnings: 0,
-          total: capitalAccount ? getBalance(capitalAccount) : 0,
+          total: capitalValue,
         },
         {
           description: 'صافي الربح للسنة',
@@ -601,7 +602,7 @@ export async function getSystemFinancialStatements(
         },
         {
           description: 'الرصيد في نهاية السنة',
-          capital: capitalAccount ? getBalance(capitalAccount) : 0,
+          capital: capitalValue,
           statutoryReserve: 0,
           retainedEarnings: netProfit,
           total: totalEquity,
