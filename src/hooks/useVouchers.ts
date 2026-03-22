@@ -7,25 +7,32 @@ import {
   deleteVoucher,
   VoucherInsert,
 } from '@/services/vouchers';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 
 export function useVouchers() {
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   return useQuery({
-    queryKey: ['vouchers'],
-    queryFn: fetchVouchers,
+    queryKey: ['vouchers', fyId],
+    queryFn: () => fetchVouchers(fyId),
   });
 }
 
 export function useReceiptVouchers() {
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   return useQuery({
-    queryKey: ['vouchers', 'receipt'],
-    queryFn: () => fetchVouchersByType('receipt'),
+    queryKey: ['vouchers', 'receipt', fyId],
+    queryFn: () => fetchVouchersByType('receipt', fyId),
   });
 }
 
 export function usePaymentVouchers() {
+  const { selectedFiscalYear } = useFiscalYear();
+  const fyId = selectedFiscalYear?.id;
   return useQuery({
-    queryKey: ['vouchers', 'payment'],
-    queryFn: () => fetchVouchersByType('payment'),
+    queryKey: ['vouchers', 'payment', fyId],
+    queryFn: () => fetchVouchersByType('payment', fyId),
   });
 }
 
