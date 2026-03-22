@@ -18,6 +18,7 @@ import {
   refreshClosingEntry,
   FiscalYear,
 } from '@/services/fiscalYears';
+import { invalidateFinancialReportQueries } from '@/hooks/utils/invalidateFinancialReports';
 import { toast } from 'sonner';
 
 export function useFiscalYears() {
@@ -150,12 +151,10 @@ export function useCloseFiscalYear() {
       if (!companyId || !user?.id) throw new Error('Missing data');
       return closeFiscalYear(fiscalYearId, companyId, user.id);
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['fiscal-years'] });
-        queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
-        queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance'] });
-        queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
+        await invalidateFinancialReportQueries(queryClient, companyId);
         toast.success('تم إغلاق السنة المالية بنجاح');
       } else {
         toast.error(result.error || 'فشل إغلاق السنة المالية');
@@ -189,13 +188,11 @@ export function useOpenNewFiscalYear() {
         data.autoCarryForward
       );
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['fiscal-years'] });
         queryClient.invalidateQueries({ queryKey: ['current-fiscal-year'] });
-        queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
-        queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance'] });
-        queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
+        await invalidateFinancialReportQueries(queryClient, companyId);
         toast.success('تم فتح السنة المالية الجديدة بنجاح');
       } else {
         toast.error(result.error || 'فشل فتح السنة المالية');
@@ -255,12 +252,10 @@ export function useRefreshOpeningBalances() {
       if (!companyId) throw new Error('No company');
       return refreshOpeningBalances(data.fiscalYearId, data.previousYearId, companyId);
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['fiscal-years'] });
-        queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
-        queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance'] });
-        queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
+        await invalidateFinancialReportQueries(queryClient, companyId);
         toast.success('تم تحديث الأرصدة الافتتاحية بنجاح');
       } else {
         toast.error(result.error || 'فشل تحديث الأرصدة الافتتاحية');
@@ -286,12 +281,10 @@ export function useRefreshAllCarryForward() {
         company?.company_type
       );
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['fiscal-years'] });
-        queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
-        queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance'] });
-        queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
+        await invalidateFinancialReportQueries(queryClient, companyId);
         queryClient.invalidateQueries({ queryKey: ['cars'] });
         queryClient.invalidateQueries({ queryKey: ['stats'] });
         const parts = ['تم تحديث الأرصدة المرحلة بنجاح'];
@@ -318,12 +311,10 @@ export function useRefreshClosingEntry() {
       if (!companyId || !user?.id) throw new Error('Missing data');
       return refreshClosingEntry(fiscalYearId, companyId, user.id);
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['fiscal-years'] });
-        queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
-        queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance'] });
-        queryClient.invalidateQueries({ queryKey: ['trial-balance'] });
+        await invalidateFinancialReportQueries(queryClient, companyId);
         toast.success('تم تحديث قيد الإقفال بنجاح');
       } else {
         toast.error(result.error || 'فشل تحديث قيد الإقفال');
