@@ -696,7 +696,7 @@ export async function refreshOpeningBalances(
     (journalLines || []).forEach((line: any) => {
       const current = balances.get(line.account_id) || 0;
       const account = accounts.find(a => a.id === line.account_id);
-      if (account && ['liabilities', 'equity', 'revenue'].includes(account.type)) {
+      if (account && ['liability', 'liabilities', 'equity', 'revenue'].includes(account.type)) {
         balances.set(line.account_id, current + (Number(line.credit) - Number(line.debit)));
       } else {
         balances.set(line.account_id, current + (Number(line.debit) - Number(line.credit)));
@@ -705,7 +705,7 @@ export async function refreshOpeningBalances(
 
     // حساب صافي الربح للسنة السابقة
     const revenueAccounts = accounts.filter(a => a.type === 'revenue');
-    const expenseAccounts = accounts.filter(a => a.type === 'expenses');
+    const expenseAccounts = accounts.filter(a => ['expense', 'expenses'].includes(a.type));
     const retainedEarningsAccount = accounts.find(a => a.code.startsWith('33'));
 
     const totalRevenue = revenueAccounts.reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);
@@ -714,7 +714,7 @@ export async function refreshOpeningBalances(
 
     // الحسابات التي تُرحّل (الأصول، الخصوم، حقوق الملكية)
     const balanceSheetAccounts = accounts.filter(a => 
-      a.type === 'assets' || a.type === 'liabilities' || a.type === 'equity'
+      ['asset', 'assets', 'liability', 'liabilities', 'equity'].includes(a.type)
     );
 
     const openingLines: Array<{ account_id: string; debit: number; credit: number; description: string }> = [];
