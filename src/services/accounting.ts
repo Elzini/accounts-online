@@ -517,7 +517,8 @@ export async function getGeneralLedger(
   companyId: string, 
   accountId: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  fiscalYearId?: string
 ): Promise<{
   account: AccountCategory;
   entries: Array<{
