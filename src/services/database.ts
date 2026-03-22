@@ -1435,39 +1435,76 @@ export async function fetchMonthlyChartData(fiscalYearId?: string) {
   }
 
   const companyId = await requireCompanyId();
-  const { data, error } = await supabase
-    .from('sales')
-    .select('sale_date, sale_price, profit')
-    .eq('company_id', companyId)
-    .gte('sale_date', startDate)
-    .lte('sale_date', endDate)
-    .order('sale_date', { ascending: true });
 
-  if (error) throw error;
+  // Get company type
+  const { data: companyRecord } = await supabase
+    .from('companies')
+    .select('company_type')
+    .eq('id', companyId)
+    .maybeSingle();
+
+  const companyType = companyRecord?.company_type;
+
+  let rawData: Array<{ date: string; amount: number; profit: number }> = [];
+
+  if (companyType && companyType !== 'car_dealership') {
+    // Non-car companies: use invoices
+    const { data: invoices, error } = await supabase
+      .from('invoices')
+      .select('invoice_date, subtotal')
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'sales')
+      .gte('invoice_date', startDate)
+      .lte('invoice_date', endDate)
+      .order('invoice_date', { ascending: true });
+
+    if (error) throw error;
+
+    rawData = (invoices || []).map((inv: any) => ({
+      date: inv.invoice_date,
+      amount: Number(inv.subtotal) || 0,
+      profit: Number(inv.subtotal) || 0,
+    }));
+  } else {
+    // Car dealership: use sales table
+    const { data, error } = await supabase
+      .from('sales')
+      .select('sale_date, sale_price, profit')
+      .eq('company_id', companyId)
+      .gte('sale_date', startDate)
+      .lte('sale_date', endDate)
+      .order('sale_date', { ascending: true });
+
+    if (error) throw error;
+
+    rawData = (data || []).map(sale => ({
+      date: sale.sale_date,
+      amount: Number(sale.sale_price) || 0,
+      profit: Number(sale.profit) || 0,
+    }));
+  }
 
   // Group by month
   const monthlyData: Record<string, { sales: number; profit: number }> = {};
   
-  data?.forEach(sale => {
-    const date = new Date(sale.sale_date);
+  rawData.forEach(item => {
+    const date = new Date(item.date);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     
     if (!monthlyData[monthKey]) {
       monthlyData[monthKey] = { sales: 0, profit: 0 };
     }
     
-    monthlyData[monthKey].sales += Number(sale.sale_price) || 0;
-    monthlyData[monthKey].profit += Number(sale.profit) || 0;
+    monthlyData[monthKey].sales += item.amount;
+    monthlyData[monthKey].profit += item.profit;
   });
 
   // Convert to array with Arabic month names
   const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
   
-  // Generate months for display based on fiscal year or last 6 months
   const result = [];
   
   if (fiscalYearStart && fiscalYearEnd) {
-    // Show months within the fiscal year
     const start = new Date(fiscalYearStart);
     const end = new Date(fiscalYearEnd);
     let current = new Date(start.getFullYear(), start.getMonth(), 1);
@@ -1475,23 +1512,19 @@ export async function fetchMonthlyChartData(fiscalYearId?: string) {
     while (current <= end) {
       const monthKey = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
       const monthName = arabicMonths[current.getMonth()];
-      
       result.push({
         month: monthName,
         sales: monthlyData[monthKey]?.sales || 0,
         profit: monthlyData[monthKey]?.profit || 0,
       });
-      
       current.setMonth(current.getMonth() + 1);
     }
   } else {
-    // Default: last 6 months
     for (let i = 0; i < 6; i++) {
       const date = new Date();
       date.setMonth(date.getMonth() - (5 - i));
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthName = arabicMonths[date.getMonth()];
-      
       result.push({
         month: monthName,
         sales: monthlyData[monthKey]?.sales || 0,
