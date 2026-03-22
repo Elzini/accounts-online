@@ -575,11 +575,11 @@ const Index = () => {
                       </SelectContent>
                     </Select>
                   )}
-                  {selectedFiscalYear && fiscalYears.length > 1 && (
+                  {selectedFiscalYear && (
                     <Badge 
                       variant="outline" 
-                      className="cursor-pointer hover:bg-accent gap-1 shrink-0 text-xs"
-                      onClick={() => setShowFiscalYearDialog(true)}
+                      className="gap-1 shrink-0 text-xs"
+                      title="لتغيير السنة المالية، سجل خروج وأعد الدخول"
                     >
                       <Calendar className="w-3 h-3" />
                       <span className="hidden sm:inline">{selectedFiscalYear.name}</span>
