@@ -45,6 +45,7 @@ import {
   CreditorsNoteView,
 } from './notes/OtherNotesViews';
 import { FinancialStatementsFormulaEditor } from './FinancialStatementsFormulaEditor';
+import { ZakatDetailDialog } from './ZakatDetailDialog';
 import { TrialBalanceImportManager } from './TrialBalanceImportManager';
 import { AuditTrailPanel } from './AuditTrailPanel';
 import { BranchCurrencyBar, Branch, SUPPORTED_CURRENCIES, convertAmount } from './BranchCurrencySelector';
@@ -68,6 +69,7 @@ export function ComprehensiveFinancialStatementsPage() {
   const [isFixingCogs, setIsFixingCogs] = useState(false);
   const [showTBImport, setShowTBImport] = useState(false);
   const [showAuditTrail, setShowAuditTrail] = useState(false);
+  const [zakatDialogOpen, setZakatDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // === سجل التدقيق ===
@@ -591,10 +593,15 @@ export function ComprehensiveFinancialStatementsPage() {
                     {formatCurrency(data.incomeStatement.netProfit)} {currencySymbol}
                   </p>
                 </div>
-                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <div 
+                  className="text-center p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-primary/10 transition-colors"
+                  onClick={() => setZakatDialogOpen(true)}
+                  title="اضغط لعرض التفاصيل"
+                >
                   <Calculator className="w-6 h-6 mx-auto text-primary mb-1" />
                   <p className="text-xs text-muted-foreground">مخصص الزكاة</p>
                   <p className="font-bold">{formatCurrency(data.notes.zakat?.totalZakatProvision || data.incomeStatement.zakat)} {currencySymbol}</p>
+                  <p className="text-[10px] text-primary mt-1">اضغط للتفاصيل</p>
                 </div>
               </div>
             </CardContent>
@@ -1029,6 +1036,12 @@ export function ComprehensiveFinancialStatementsPage() {
           </Tabs>
         </>
       )}
+      <ZakatDetailDialog
+        open={zakatDialogOpen}
+        onOpenChange={setZakatDialogOpen}
+        data={data.notes.zakat || null}
+        currencySymbol={currencySymbol}
+      />
     </div>
   );
 }
