@@ -341,15 +341,50 @@ export async function openNewFiscalYear(
             }
           });
 
+          // حساب صافي الربح
+          const revenueAccs = accounts.filter(a => a.type === 'revenue');
+          const expenseAccs = accounts.filter(a => ['expense', 'expenses'].includes(a.type));
+          let retainedEarningsAcc = accounts.find(a => a.code.startsWith('33'));
+
+          const totalRev = revenueAccs.reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);
+          const totalExp = expenseAccs.reduce((sum, a) => sum + Math.abs(balances.get(a.id) || 0), 0);
+          const netIncome = totalRev - totalExp;
+
+          // إنشاء حساب الأرباح المحتجزة تلقائياً إذا لم يكن موجوداً
+          if (!retainedEarningsAcc && netIncome !== 0) {
+            const equityParent = accounts.find(a => a.code === '31' && a.type === 'equity')
+              || accounts.find(a => a.code === '3' && a.type === 'equity');
+            const { data: newAcc } = await supabase
+              .from('account_categories')
+              .insert({
+                code: '3301',
+                name: 'أرباح مبقاة (محتجزة)',
+                type: 'equity',
+                company_id: companyId,
+                parent_id: equityParent?.id || null,
+                is_system: true,
+              })
+              .select()
+              .single();
+            if (newAcc) retainedEarningsAcc = newAcc;
+          }
+
           // الحسابات التي تُرحّل (الأصول، الخصوم، حقوق الملكية)
           const balanceSheetAccounts = accounts.filter(a => 
             ['asset', 'assets', 'liability', 'liabilities', 'equity'].includes(a.type)
           );
+          if (retainedEarningsAcc && !balanceSheetAccounts.find(a => a.id === retainedEarningsAcc!.id)) {
+            balanceSheetAccounts.push(retainedEarningsAcc);
+          }
 
           const openingLines: Array<{ account_id: string; debit: number; credit: number; description: string }> = [];
 
           balanceSheetAccounts.forEach(acc => {
-            const balance = balances.get(acc.id) || 0;
+            let balance = balances.get(acc.id) || 0;
+            // إضافة صافي الربح للأرباح المحتجزة
+            if (retainedEarningsAcc && acc.id === retainedEarningsAcc.id) {
+              balance += netIncome;
+            }
             if (balance !== 0) {
               if (['asset', 'assets'].includes(acc.type)) {
                 openingLines.push({
