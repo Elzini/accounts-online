@@ -25,7 +25,7 @@ type DashboardInvoiceRow = {
   targetPage: ActivePage;
 };
 
-export function RecentInvoicesCard({ setActivePage }: RecentInvoicesCardProps) {
+export const RecentInvoicesCard = forwardRef<HTMLDivElement, RecentInvoicesCardProps>(function RecentInvoicesCard({ setActivePage }, ref) {
   const { companyId, company } = useCompany();
   const isCarDealership = company?.company_type === 'car_dealership';
   const { selectedFiscalYear } = useFiscalYear();
