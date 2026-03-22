@@ -115,8 +115,18 @@ export async function getSystemTrialBalance(
   const movementBalances = new Map<string, { debit: number; credit: number }>();
 
   // تجميع الأرصدة الافتتاحية (ما قبل الفترة + قيود الافتتاح المرحّلة)
+  // استبعاد حسابات الإيرادات والمصروفات لأنها حسابات فترة تبدأ من صفر كل سنة
+  const balanceSheetTypes = new Set(['asset', 'assets', 'liability', 'liabilities', 'equity']);
+  const accountTypeMap = new Map<string, string>();
+  leafAccounts.forEach(a => accountTypeMap.set(a.id, a.type));
+  // تضمين الحسابات الأب أيضاً لأنها قد تظهر في القيود
+  accounts.forEach(a => { if (!accountTypeMap.has(a.id)) accountTypeMap.set(a.id, a.type); });
+
   const allOpeningLines = [...(openingLines || []), ...(openingEntryLines || [])];
   allOpeningLines.forEach((line: any) => {
+    const accType = accountTypeMap.get(line.account_id);
+    // فقط حسابات المركز المالي (أصول، خصوم، حقوق ملكية)
+    if (!accType || !balanceSheetTypes.has(accType)) return;
     const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
     current.debit += Number(line.debit) || 0;
     current.credit += Number(line.credit) || 0;
