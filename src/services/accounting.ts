@@ -962,8 +962,15 @@ export async function getComprehensiveTrialBalance(
       .eq('journal_entry.reference_type', 'opening')
       .gte('journal_entry.entry_date', effectiveStartDate);
 
+    // استبعاد حسابات الإيرادات والمصروفات من الأرصدة الافتتاحية (حسابات فترة)
+    const balanceSheetTypes = new Set(['asset', 'assets', 'liability', 'liabilities', 'equity']);
+    const accountTypeMap = new Map<string, string>();
+    accounts.forEach(a => accountTypeMap.set(a.id, a.type));
+
     const allOpeningLines = [...(openingLines || []), ...(openingEntryLines || [])];
     allOpeningLines.forEach((line: any) => {
+      const accType = accountTypeMap.get(line.account_id);
+      if (!accType || !balanceSheetTypes.has(accType)) return;
       const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
       current.debit += Number(line.debit) || 0;
       current.credit += Number(line.credit) || 0;
