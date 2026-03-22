@@ -521,8 +521,8 @@ export async function getSystemFinancialStatements(
   };
 
   const reportDate = endDate 
-    ? new Date(endDate).toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })
-    : new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+    ? `${new Date(endDate).getDate()} ${new Date(endDate).toLocaleDateString('ar-SA', { month: 'long' })} ${new Date(endDate).getFullYear()}م`
+    : `${new Date().getDate()} ${new Date().toLocaleDateString('ar-SA', { month: 'long' })} ${new Date().getFullYear()}م`;
 
   return {
     companyName,
