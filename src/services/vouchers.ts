@@ -57,7 +57,7 @@ export async function fetchVouchersByType(type: 'receipt' | 'payment', fiscalYea
   const companyId = await getCurrentCompanyId();
   if (!companyId) return [];
   
-  let query = supabase
+  let query = (supabase as any)
     .from('vouchers')
     .select('*')
     .eq('voucher_type', type)
