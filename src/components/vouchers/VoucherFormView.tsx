@@ -33,7 +33,7 @@ export function VoucherFormView({ type }: VoucherFormViewProps) {
   const { t, language } = useLanguage();
   const { companyId } = useCompany();
   const { data: allVouchers = [], isLoading } = useVouchers();
-  const { data: accounts = [] } = useAccounts();
+  const { data: accounts = [] } = useLeafAccounts();
   const { data: customers = [] } = useCustomers();
   const { data: suppliers = [] } = useSuppliers();
   const { filterByFiscalYear } = useFiscalYearFilter();

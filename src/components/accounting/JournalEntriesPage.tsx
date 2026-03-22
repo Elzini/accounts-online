@@ -50,7 +50,7 @@ export function JournalEntriesPage() {
   const { t, direction, language } = useLanguage();
   const { company } = useCompany();
   const { data: entries = [], isLoading } = useJournalEntries();
-  const { data: accounts = [] } = useAccounts();
+  const { data: accounts = [] } = useLeafAccounts();
   const { data: costCenters = [] } = useCostCenters();
   const { filterByFiscalYear } = useFiscalYearFilter();
   const { printReport } = useUnifiedPrintReport();
