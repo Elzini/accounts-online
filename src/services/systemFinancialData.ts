@@ -340,9 +340,7 @@ export async function getSystemFinancialStatements(
   const operatingProfit = grossProfit - sellingAndMarketingExpenses - generalAndAdminExpenses;
   // الربح قبل الزكاة
   const profitBeforeZakat = operatingProfit;
-  
-  // نسبة الزكاة 2.5%
-  const zakatRate = 0.025;
+
 
   // ===== بناء الإيضاحات =====
   // إيضاح النقد والبنوك
