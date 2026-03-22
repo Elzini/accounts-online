@@ -1112,20 +1112,31 @@ export async function getComprehensiveTrialBalance(
     .sort((a, b) => a.code.localeCompare(b.code))
     .forEach(account => addAccountHierarchy(account, 0));
 
-  // Calculate totals from leaf accounts only
-  const leafAccounts = trialAccounts.filter(a => !a.isParent);
-  const totals = leafAccounts.reduce((acc, item) => ({
-    openingDebit: acc.openingDebit + item.openingDebit,
-    openingCredit: acc.openingCredit + item.openingCredit,
-    periodDebit: acc.periodDebit + item.periodDebit,
-    periodCredit: acc.periodCredit + item.periodCredit,
-    closingDebit: acc.closingDebit + item.closingDebit,
-    closingCredit: acc.closingCredit + item.closingCredit,
-  }), {
-    openingDebit: 0, openingCredit: 0,
-    periodDebit: 0, periodCredit: 0,
-    closingDebit: 0, closingCredit: 0,
+  // Calculate totals from RAW journal entry data (not netted display values)
+  // This ensures totals are always balanced regardless of parent/child hierarchy
+  let rawOpeningDebit = 0, rawOpeningCredit = 0;
+  let rawPeriodDebit = 0, rawPeriodCredit = 0;
+
+  openingBalances.forEach((val) => {
+    rawOpeningDebit += val.debit;
+    rawOpeningCredit += val.credit;
   });
+  periodBalances.forEach((val) => {
+    rawPeriodDebit += val.debit;
+    rawPeriodCredit += val.credit;
+  });
+
+  const rawClosingDebit = rawOpeningDebit + rawPeriodDebit;
+  const rawClosingCredit = rawOpeningCredit + rawPeriodCredit;
+
+  const totals = {
+    openingDebit: rawOpeningDebit,
+    openingCredit: rawOpeningCredit,
+    periodDebit: rawPeriodDebit,
+    periodCredit: rawPeriodCredit,
+    closingDebit: rawClosingDebit,
+    closingCredit: rawClosingCredit,
+  };
 
   return { accounts: trialAccounts, totals };
 }
