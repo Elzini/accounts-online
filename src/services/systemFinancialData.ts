@@ -340,9 +340,7 @@ export async function getSystemFinancialStatements(
   const operatingProfit = grossProfit - sellingAndMarketingExpenses - generalAndAdminExpenses;
   // الربح قبل الزكاة
   const profitBeforeZakat = operatingProfit;
-  
-  // نسبة الزكاة 2.5%
-  const zakatRate = 0.025;
+
 
   // ===== بناء الإيضاحات =====
   // إيضاح النقد والبنوك
@@ -389,95 +387,173 @@ export async function getSystemFinancialStatements(
   } : undefined;
 
   // ===== حساب الزكاة - طريقة صافي الأصول (متوافق مع هيئة الزكاة والضريبة والجمارك ZATCA) =====
-  // البحث عن حسابات الإيجار المدفوع مقدماً
-  const prepaidRentAccounts = assetAccounts.filter(a => 
-    a.name.includes('إيجار مدفوع') || a.name.includes('ايجار مدفوع') || 
-    a.name.includes('إيجار مقدم') || a.name.includes('ايجار مقدم')
+  // نسبة الزكاة: 2.5775% للسنة الميلادية (365/354 × 2.5%)
+  const zakatRateGregorian = 0.025775;
+
+  // ===== 1. مصادر الوعاء الزكوي (الإضافات) =====
+
+  // 1.1 رأس المال المدفوع
+  // (capitalValue already computed above)
+
+  // 1.2 الاحتياطيات (نظامية + اختيارية + عامة) - ما عدا رأس المال نفسه وجاري الشركاء
+  const reserveAccounts = equityAccounts.filter(a =>
+    !a.code.startsWith('31') && // ليس رأس المال
+    !a.name.includes('جاري') && // ليس جاري شركاء
+    !a.name.includes('سحوبات') && // ليس سحوبات
+    !a.name.includes('أرباح مبقاة') && !a.name.includes('ارباح مبقاة') && // ليس أرباح مبقاة
+    !a.name.includes('خسائر مرحلة') && !a.name.includes('خسائر متراكمة') &&
+    (a.name.includes('احتياطي') || a.name.includes('احتياط') || a.code.startsWith('33'))
   );
-  const prepaidRent = prepaidRentAccounts.reduce((sum, a) => sum + getBalance(a), 0);
-  const prepaidRentLongTerm = prepaidRent * (11/12);
+  const reservesTotal = reserveAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
 
-  // حساب حقوق الملكية من الحسابات
-  const totalEquityFromAccounts = equity.reduce((sum, e) => sum + e.amount, 0);
+  // 1.3 الأرباح المبقاة (Retained Earnings)
+  const retainedEarningsAccounts = equityAccounts.filter(a =>
+    a.name.includes('أرباح مبقاة') || a.name.includes('ارباح مبقاة') ||
+    a.name.includes('أرباح محتجزة') || a.name.includes('ارباح محتجزة') ||
+    a.code === '3301' || a.code === '3302'
+  );
+  const retainedEarnings = retainedEarningsAccounts.reduce((sum, a) => sum + getBalance(a), 0);
+  // الأرباح المبقاة: الموجبة تُضاف، السالبة (خسائر مرحلة) تُحسم
 
-  // ===== إضافات الوعاء الزكوي (طريقة صافي الأصول - ZATCA) =====
-  // 1. جاري الشركاء/المالك فقط (وليس التمويل البنكي أو القروض التجارية)
-  const partnersCurrentAccounts = liabilityAccounts.filter(a =>
-    a.name.includes('جاري المالك') || a.name.includes('جاري الشريك') || 
+  // 1.4 صافي ربح/خسارة الفترة المعدّل
+  const adjustedNetProfit = profitBeforeZakat;
+
+  // 1.5 جاري الشركاء/المالك - الرصيد الدائن فقط (ما يمثل تمويل من المالك للشركة)
+  const partnersCurrentInLiabilities = liabilityAccounts.filter(a =>
+    a.name.includes('جاري المالك') || a.name.includes('جاري الشريك') ||
     a.name.includes('جاري الشركاء') || a.name.includes('جاري صاحب') ||
+    a.name.includes('تمويل جاري') ||
     a.name.includes('قرض الشريك') || a.name.includes('قروض الشركاء') ||
     a.name.includes('سلف من المالك') || a.name.includes('سلف من الشريك') ||
-    a.code.startsWith('32') // حسابات جاري الملاك عادةً تحت 32
+    a.code.startsWith('2108') // كود جاري الشركاء في الخصوم
   );
-  // أيضاً نبحث في حقوق الملكية عن جاري المالك
-  const equityPartnersAccounts = equityAccounts.filter(a =>
-    a.name.includes('جاري') || a.name.includes('حساب جاري')
+  const partnersCurrentInEquity = equityAccounts.filter(a =>
+    (a.name.includes('جاري') || a.name.includes('حساب جاري')) &&
+    !a.name.includes('سحوبات')
   );
-  const partnersCurrentTotal = 
-    partnersCurrentAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0) +
-    equityPartnersAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
+  // الرصيد الدائن فقط يُضاف (= تمويل من المالك)؛ المدين (= سحوبات) لا يُضاف
+  const getNetCreditOnly = (accounts: typeof liabilityAccounts) => {
+    return accounts.reduce((sum, a) => {
+      const bal = getBalance(a);
+      // بالنسبة للخصوم: الرصيد الدائن (موجب) يعني المالك أقرض الشركة
+      return sum + Math.max(0, Math.abs(bal));
+    }, 0);
+  };
+  const partnersCurrentTotal =
+    partnersCurrentInLiabilities.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0) +
+    partnersCurrentInEquity.reduce((sum, a) => {
+      const bal = getBalance(a);
+      // جاري في حقوق الملكية: الدائن (سالب في getBalance) يعني تمويل
+      return sum + Math.max(0, bal);
+    }, 0);
 
-  // 2. المخصصات (provisions) - ما عدا مخصص الزكاة نفسه
+  // 1.6 المخصصات (provisions) - ما عدا مخصص الزكاة نفسه
   const provisionAccounts = liabilityAccounts.filter(a =>
-    (a.name.includes('مخصص') || a.name.includes('احتياطي')) && !a.name.includes('زكاة')
+    (a.name.includes('مخصص') && !a.name.includes('زكاة')) ||
+    a.name.includes('مكافأة نهاية') || a.name.includes('التزامات منافع')
   );
   const provisionsTotal = provisionAccounts.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
 
-  // 3. الاحتياطي النظامي
-  const statutoryReserveAccounts = equityAccounts.filter(a => 
-    a.name.includes('احتياطي نظامي') || a.name.includes('احتياطي قانوني')
+  // 1.7 القروض والتمويل طويل الأجل (من غير الملاك)
+  const longTermLoans = liabilityAccounts.filter(a =>
+    !partnersCurrentInLiabilities.includes(a) &&
+    (a.name.includes('قرض طويل') || a.name.includes('تمويل طويل') ||
+     a.name.includes('صكوك') || a.code.startsWith('22'))
   );
-  const statutoryReserveTotal = statutoryReserveAccounts.reduce((sum, a) => sum + getBalance(a), 0);
+  const longTermLoansTotal = longTermLoans.reduce((sum, a) => sum + Math.abs(getBalance(a)), 0);
 
-  // ===== حسم من الوعاء الزكوي =====
-  // الأصول الثابتة + الاستثمارات طويلة الأجل
+  // إجمالي مصادر الوعاء
+  const zakatSources = capitalValue
+    + reservesTotal
+    + Math.max(0, retainedEarnings) // الأرباح المبقاة الموجبة فقط
+    + adjustedNetProfit
+    + partnersCurrentTotal
+    + provisionsTotal
+    + longTermLoansTotal;
+
+  // ===== 2. الحسميات (ما يُخصم من الوعاء) =====
+
+  // 2.1 صافي الأصول الثابتة
+  // (totalNonCurrentAssets already computed)
+
+  // 2.2 الاستثمارات طويلة الأجل
   const longTermInvestments = assetAccounts.filter(a =>
-    a.name.includes('استثمار') && !a.code.startsWith('11')
+    (a.name.includes('استثمار') && !a.code.startsWith('11')) ||
+    a.code.startsWith('12')
   );
   const longTermInvestmentsTotal = longTermInvestments.reduce((sum, a) => sum + getBalance(a), 0);
 
-  // الوعاء الزكوي = حقوق الملكية + جاري الشركاء + المخصصات + صافي الربح - الأصول الثابتة - الاستثمارات - الإيجار المدفوع مقدماً
-  const zakatBase = capitalValue 
-    + partnersCurrentTotal 
-    + provisionsTotal 
-    + statutoryReserveTotal
-    + profitBeforeZakat 
-    - totalNonCurrentAssets 
-    - longTermInvestmentsTotal
-    - prepaidRentLongTerm;
-  
-  // الزكاة المستحقة = الوعاء الزكوي × 2.5%
-  const zakat = zakatBase > 0 ? zakatBase * zakatRate : 0;
+  // 2.3 الخسائر المرحلة (المتراكمة)
+  const accumulatedLosses = Math.max(0, -retainedEarnings); // إذا كانت الأرباح المبقاة سالبة
+
+  // 2.4 المصروفات المؤجلة / مصاريف التأسيس / الإيجار المدفوع مقدماً (الجزء طويل الأجل)
+  const prepaidRentAccounts = assetAccounts.filter(a =>
+    a.name.includes('إيجار مدفوع') || a.name.includes('ايجار مدفوع') ||
+    a.name.includes('إيجار مقدم') || a.name.includes('ايجار مقدم')
+  );
+  const prepaidRent = prepaidRentAccounts.reduce((sum, a) => sum + getBalance(a), 0);
+  const prepaidRentLongTerm = prepaidRent * (11 / 12);
+
+  const deferredExpenseAccounts = assetAccounts.filter(a =>
+    (a.name.includes('مصاريف تأسيس') || a.name.includes('مصروفات مؤجلة') ||
+     a.name.includes('مصاريف ما قبل التشغيل')) &&
+    !prepaidRentAccounts.includes(a)
+  );
+  const deferredExpensesTotal = deferredExpenseAccounts.reduce((sum, a) => sum + getBalance(a), 0);
+
+  // إجمالي الحسميات
+  const totalDeductions = totalNonCurrentAssets
+    + longTermInvestmentsTotal
+    + accumulatedLosses
+    + prepaidRentLongTerm
+    + deferredExpensesTotal;
+
+  // ===== 3. الوعاء الزكوي =====
+  const zakatBase = zakatSources - totalDeductions;
+
+  // ===== 4. الزكاة المستحقة =====
+  const zakat = zakatBase > 0 ? zakatBase * zakatRateGregorian : 0;
   const netProfit = profitBeforeZakat - zakat;
 
   // حساب صافي حقوق الملكية
+  const totalEquityFromAccounts = equity.reduce((sum, e) => sum + e.amount, 0);
   const totalEquity = totalEquityFromAccounts + netProfit;
 
-  // إيضاح الزكاة - طريقة صافي الأصول
-  const totalDeductions = totalNonCurrentAssets + longTermInvestmentsTotal + prepaidRentLongTerm;
+  // إيضاح الزكاة المفصل - طريقة صافي الأصول (ZATCA)
   const zakatNote = {
     profitBeforeZakat,
     adjustmentsOnNetIncome: 0,
-    adjustedNetProfit: profitBeforeZakat,
-    zakatOnAdjustedProfit: profitBeforeZakat * zakatRate,
+    adjustedNetProfit,
+    zakatOnAdjustedProfit: adjustedNetProfit > 0 ? adjustedNetProfit * zakatRateGregorian : 0,
+    // مصادر الوعاء
     capital: capitalValue,
+    reserves: reservesTotal,
+    retainedEarnings: Math.max(0, retainedEarnings),
     partnersCurrentAccount: partnersCurrentTotal,
-    statutoryReserve: statutoryReserveTotal,
     employeeBenefitsLiabilities: provisionsTotal,
-    zakatBaseSubtotal: capitalValue + partnersCurrentTotal + provisionsTotal + statutoryReserveTotal + profitBeforeZakat,
+    longTermLoans: longTermLoansTotal,
+    statutoryReserve: reservesTotal, // backward compat
+    zakatBaseSubtotal: zakatSources,
+    // الحسميات
     fixedAssetsNet: totalNonCurrentAssets,
     intangibleAssetsNet: longTermInvestmentsTotal,
+    accumulatedLosses,
     prepaidRentLongTerm,
+    deferredExpenses: deferredExpensesTotal,
     other: 0,
     totalDeductions,
+    // الوعاء والزكاة
     zakatBase: Math.max(0, zakatBase),
+    zakatRate: zakatRateGregorian * 100,
     zakatOnBase: zakat,
     totalZakatProvision: zakat,
     openingBalance: 0,
     provisionForYear: zakat,
     paidDuringYear: 0,
     closingBalance: zakat,
-    zakatStatus: zakatBase > 0 ? 'تم احتساب مخصص الزكاة بطريقة صافي الأصول' : 'الوعاء الزكوي سالب - لا تستحق زكاة',
+    zakatStatus: zakatBase > 0
+      ? `تم احتساب مخصص الزكاة بطريقة صافي الأصول - نسبة ${(zakatRateGregorian * 100).toFixed(4)}% (سنة ميلادية)`
+      : 'الوعاء الزكوي سالب - لا تستحق زكاة',
   };
 
   // ===== قائمة التدفقات النقدية =====
