@@ -706,16 +706,44 @@ export async function refreshOpeningBalances(
     // حساب صافي الربح للسنة السابقة
     const revenueAccounts = accounts.filter(a => a.type === 'revenue');
     const expenseAccounts = accounts.filter(a => ['expense', 'expenses'].includes(a.type));
-    const retainedEarningsAccount = accounts.find(a => a.code.startsWith('33'));
+    let retainedEarningsAccount = accounts.find(a => a.code.startsWith('33'));
 
     const totalRevenue = revenueAccounts.reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);
     const totalExpenses = expenseAccounts.reduce((sum, a) => sum + Math.abs(balances.get(a.id) || 0), 0);
     const netIncome = totalRevenue - totalExpenses;
 
+    // إنشاء حساب الأرباح المحتجزة تلقائياً إذا لم يكن موجوداً
+    if (!retainedEarningsAccount && netIncome !== 0) {
+      // البحث عن حساب أب لحقوق الملكية (3 أو 31)
+      const equityParent = accounts.find(a => a.code === '31' && a.type === 'equity') 
+        || accounts.find(a => a.code === '3' && a.type === 'equity');
+      
+      const { data: newAccount } = await supabase
+        .from('account_categories')
+        .insert({
+          code: '3301',
+          name: 'أرباح مبقاة (محتجزة)',
+          type: 'equity',
+          company_id: companyId,
+          parent_id: equityParent?.id || null,
+          is_system: true,
+        })
+        .select()
+        .single();
+      
+      if (newAccount) {
+        retainedEarningsAccount = newAccount;
+      }
+    }
+
     // الحسابات التي تُرحّل (الأصول، الخصوم، حقوق الملكية)
     const balanceSheetAccounts = accounts.filter(a => 
       ['asset', 'assets', 'liability', 'liabilities', 'equity'].includes(a.type)
     );
+    // إضافة حساب الأرباح المحتجزة إذا تم إنشاؤه حديثاً
+    if (retainedEarningsAccount && !balanceSheetAccounts.find(a => a.id === retainedEarningsAccount!.id)) {
+      balanceSheetAccounts.push(retainedEarningsAccount);
+    }
 
     const openingLines: Array<{ account_id: string; debit: number; credit: number; description: string }> = [];
 
