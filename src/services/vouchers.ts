@@ -38,7 +38,7 @@ export async function fetchVouchers(fiscalYearId?: string): Promise<Voucher[]> {
   const companyId = await getCurrentCompanyId();
   if (!companyId) return [];
   
-  let query = supabase
+  let query = (supabase as any)
     .from('vouchers')
     .select('*')
     .eq('company_id', companyId)
