@@ -191,8 +191,8 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
 
     const cashAccount = findAccount(
       settings?.sales_cash_account_id || null,
-      '1101', // نقد
-      '1201', // عملاء
+      'sales_cash',
+      '1101', '1201',
     );
 
     const revenueAccount = findAccount(
