@@ -136,7 +136,7 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   // === النظام / System ===
   { id: 'users-management', label: 'إدارة المستخدمين', labelEn: 'User Management', section: 'النظام', sectionEn: 'System', icon: 'UserCog', keywords: ['مستخدم', 'صلاحية', 'user', 'permission'] },
   { id: 'branches', label: 'الفروع', labelEn: 'Branches', section: 'النظام', sectionEn: 'System', icon: 'GitFork', keywords: ['فرع', 'فروع', 'branch'] },
-  { id: 'fiscal-years', label: 'السنوات المالية', labelEn: 'Fiscal Years', section: 'النظام', sectionEn: 'System', icon: 'Calendar', keywords: ['سنة مالية', 'fiscal'] },
+  { id: 'fiscal-years', label: 'السنوات المالية', labelEn: 'Fiscal Years', section: 'الحسابات', sectionEn: 'Accounts', icon: 'Calendar', keywords: ['سنة مالية', 'fiscal'] },
   { id: 'tasks', label: 'إدارة المهام', labelEn: 'Tasks', section: 'النظام', sectionEn: 'System', icon: 'ListTodo', keywords: ['مهمة', 'مهام', 'task'] },
   { id: 'approvals', label: 'الموافقات', labelEn: 'Approvals', section: 'النظام', sectionEn: 'System', icon: 'GitBranch', keywords: ['موافقة', 'اعتماد', 'approval'] },
   { id: 'workflows', label: 'الدورات المستندية', labelEn: 'Workflows', section: 'النظام', sectionEn: 'System', icon: 'Workflow', keywords: ['دورة مستندية', 'workflow'] },
