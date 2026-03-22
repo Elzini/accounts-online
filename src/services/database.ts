@@ -972,6 +972,121 @@ export async function fetchStats(fiscalYearId?: string | null) {
     };
   }
 
+  // For non-car, non-real-estate companies: use invoices table
+  if (companyType && companyType !== 'car_dealership' && companyType !== 'real_estate') {
+    let purchaseInvoicesQuery = supabase
+      .from('invoices')
+      .select('subtotal, invoice_date')
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'purchase');
+
+    let salesInvoicesQuery = supabase
+      .from('invoices')
+      .select('subtotal, invoice_date')
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'sales');
+
+    if (fiscalYearStart && fiscalYearEnd) {
+      purchaseInvoicesQuery = purchaseInvoicesQuery
+        .gte('invoice_date', fiscalYearStart)
+        .lte('invoice_date', fiscalYearEnd);
+      salesInvoicesQuery = salesInvoicesQuery
+        .gte('invoice_date', fiscalYearStart)
+        .lte('invoice_date', fiscalYearEnd);
+    }
+
+    let expensesQueryGeneral = supabase
+      .from('expenses')
+      .select('amount, car_id, expense_date, payment_method')
+      .eq('company_id', companyId);
+    
+    if (fiscalYearStart && fiscalYearEnd) {
+      expensesQueryGeneral = expensesQueryGeneral
+        .gte('expense_date', fiscalYearStart)
+        .lte('expense_date', fiscalYearEnd);
+    }
+
+    let payrollQueryGeneral = supabase
+      .from('payroll_records')
+      .select('month, year, total_base_salaries, total_allowances, total_bonuses, total_overtime, total_absences')
+      .eq('status', 'approved')
+      .eq('company_id', companyId);
+
+    const [purchaseResult, salesResult, expensesResultGeneral, payrollResultGeneral] = await Promise.all([
+      purchaseInvoicesQuery,
+      salesInvoicesQuery,
+      expensesQueryGeneral,
+      payrollQueryGeneral,
+    ]);
+
+    const purchaseInvoices = purchaseResult.data || [];
+    const salesInvoices = salesResult.data || [];
+    const expensesDataGeneral = expensesResultGeneral.data || [];
+
+    const totalPurchasesGeneral = Math.round(
+      purchaseInvoices.reduce((sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0)
+    );
+    const totalSalesAmountGeneral = salesInvoices.reduce(
+      (sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0
+    );
+
+    const generalExpensesAmount = expensesDataGeneral
+      .filter(exp => !exp.car_id)
+      .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
+
+    let payrollDataGeneral = payrollResultGeneral.data || [];
+    if (fiscalYearStart && fiscalYearEnd) {
+      const fyStartDate = parseLocalISODate(fiscalYearStart, false);
+      const fyEndDate = parseLocalISODate(fiscalYearEnd, true);
+      payrollDataGeneral = payrollDataGeneral.filter(p => {
+        const payrollDate = new Date(Number(p.year), Number(p.month) - 1, 1);
+        return payrollDate >= fyStartDate && payrollDate <= fyEndDate;
+      });
+    }
+    const payrollExpensesGeneral = payrollDataGeneral.reduce((sum, p) => {
+      return sum + (Number(p.total_base_salaries) || 0) + (Number(p.total_allowances) || 0) 
+        + (Number(p.total_bonuses) || 0) + (Number(p.total_overtime) || 0) - (Number(p.total_absences) || 0);
+    }, 0);
+
+    const monthSalesInvoices = salesInvoices.filter((inv: any) => 
+      inv.invoice_date >= startOfMonth && inv.invoice_date <= endOfMonth
+    );
+    const monthPurchaseInvoices = purchaseInvoices.filter((inv: any) => 
+      inv.invoice_date >= startOfMonth && inv.invoice_date <= endOfMonth
+    );
+    const monthSalesAmountGeneral = monthSalesInvoices.reduce(
+      (sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0
+    );
+    const monthPurchasesAmount = monthPurchaseInvoices.reduce(
+      (sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0
+    );
+
+    const totalExpensesGeneral = generalExpensesAmount + payrollExpensesGeneral;
+    const netProfitGeneral = totalSalesAmountGeneral - totalPurchasesGeneral - totalExpensesGeneral;
+
+    return {
+      availableNewCars: 0,
+      availableUsedCars: 0,
+      availableCars: 0,
+      todaySales: salesInvoices.filter((inv: any) => inv.invoice_date === today).length,
+      totalProfit: netProfitGeneral,
+      monthSales: monthSalesInvoices.length,
+      totalPurchases: totalPurchasesGeneral,
+      monthSalesAmount: monthSalesAmountGeneral,
+      totalGrossProfit: totalSalesAmountGeneral - totalPurchasesGeneral,
+      totalCarExpenses: 0,
+      totalGeneralExpenses: totalExpensesGeneral,
+      payrollExpenses: payrollExpensesGeneral,
+      prepaidExpensesDue: 0,
+      otherGeneralExpenses: generalExpensesAmount,
+      purchasesCount: purchaseInvoices.length,
+      monthSalesProfit: monthSalesAmountGeneral - monthPurchasesAmount,
+      totalSalesCount: salesInvoices.length,
+      totalSalesAmount: totalSalesAmountGeneral,
+    };
+  }
+
+  // === Car dealership specific stats ===
   // Build all queries - always filter by company_id
   let availableCarsQuery = supabase
     .from('cars')
