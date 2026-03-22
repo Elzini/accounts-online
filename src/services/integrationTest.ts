@@ -48,7 +48,7 @@ export async function runComprehensiveTest(): Promise<{
       .from('companies')
       .insert({
         name: 'TestCompany_IntegrationTest_' + Date.now(),
-        company_type: 'general',
+        company_type: 'general_trading' as const,
         is_active: true,
       })
       .select()
