@@ -151,7 +151,7 @@ export async function closeFiscalYear(
     if (!accounts) throw new Error('لا توجد حسابات');
 
     const revenueAccounts = accounts.filter(a => a.type === 'revenue');
-    const expenseAccounts = accounts.filter(a => a.type === 'expenses');
+    const expenseAccounts = accounts.filter(a => a.type === 'expense' || a.type === 'expenses');
     const retainedEarningsAccount = accounts.find(a => a.code.startsWith('33'));
 
     // حساب الأرصدة
@@ -159,7 +159,7 @@ export async function closeFiscalYear(
     (journalLines || []).forEach((line: any) => {
       const current = balances.get(line.account_id) || 0;
       const account = accounts.find(a => a.id === line.account_id);
-      if (account && ['liabilities', 'equity', 'revenue'].includes(account.type)) {
+      if (account && ['liability', 'liabilities', 'equity', 'revenue'].includes(account.type)) {
         balances.set(line.account_id, current + (Number(line.credit) - Number(line.debit)));
       } else {
         balances.set(line.account_id, current + (Number(line.debit) - Number(line.credit)));
@@ -560,7 +560,7 @@ export async function refreshClosingEntry(
     if (!accounts) throw new Error('لا توجد حسابات');
 
     const revenueAccounts = accounts.filter(a => a.type === 'revenue');
-    const expenseAccounts = accounts.filter(a => a.type === 'expenses');
+    const expenseAccounts = accounts.filter(a => a.type === 'expense' || a.type === 'expenses');
     const retainedEarningsAccount = accounts.find(a => a.code.startsWith('33'));
 
     // حساب الأرصدة (استبعاد قيود الإقفال)
@@ -571,7 +571,7 @@ export async function refreshClosingEntry(
       
       const current = balances.get(line.account_id) || 0;
       const account = accounts.find(a => a.id === line.account_id);
-      if (account && ['liabilities', 'equity', 'revenue'].includes(account.type)) {
+      if (account && ['liability', 'liabilities', 'equity', 'revenue'].includes(account.type)) {
         balances.set(line.account_id, current + (Number(line.credit) - Number(line.debit)));
       } else {
         balances.set(line.account_id, current + (Number(line.debit) - Number(line.credit)));
