@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useExpenses, useExpenseCategories, useAddExpense, useDeleteExpense, useAddExpenseCategory, useCreateDefaultExpenseCategories } from '@/hooks/useExpenses';
 import { useCars } from '@/hooks/useDatabase';
-import { useAccounts } from '@/hooks/useAccounting';
+import { useLeafAccounts } from '@/hooks/useLeafAccounts';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Expense, ExpenseCategory } from '@/services/expenses';
 import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
