@@ -377,8 +377,9 @@ export async function fetchStats(fiscalYearId?: string | null) {
 
   let expensesQueryGeneral = supabase
     .from('expenses')
-    .select('amount, car_id, expense_date, payment_method')
-    .eq('company_id', companyId);
+    .select('amount, expense_date, payment_method')
+    .eq('company_id', companyId)
+    .is('car_id', null);
   
   if (fiscalYearStart && fiscalYearEnd) {
     expensesQueryGeneral = expensesQueryGeneral
