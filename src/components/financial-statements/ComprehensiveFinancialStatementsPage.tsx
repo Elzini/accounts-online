@@ -1036,6 +1036,12 @@ export function ComprehensiveFinancialStatementsPage() {
           </Tabs>
         </>
       )}
+      <ZakatDetailDialog
+        open={zakatDialogOpen}
+        onOpenChange={setZakatDialogOpen}
+        data={data.notes.zakat || null}
+        currencySymbol={currencySymbol}
+      />
     </div>
   );
 }
