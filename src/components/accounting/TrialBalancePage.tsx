@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,15 @@ export function TrialBalancePage() {
   // Lazy-fetch: only query when user clicks "بحث"
   const [queryDates, setQueryDates] = useState({ start: selectedFiscalYear?.start_date || '', end: selectedFiscalYear?.end_date || '' });
   const { data: trialData, isLoading } = useComprehensiveTrialBalance(queryDates.start || undefined, queryDates.end || undefined);
+
+  useEffect(() => {
+    if (!selectedFiscalYear) return;
+    const nextStart = selectedFiscalYear.start_date || '';
+    const nextEnd = selectedFiscalYear.end_date || '';
+    setStartDate(nextStart);
+    setEndDate(nextEnd);
+    setQueryDates({ start: nextStart, end: nextEnd });
+  }, [selectedFiscalYear?.id, selectedFiscalYear?.start_date, selectedFiscalYear?.end_date]);
 
   const [search, setSearch] = useState('');
   const [hideZero, setHideZero] = useState(true);
