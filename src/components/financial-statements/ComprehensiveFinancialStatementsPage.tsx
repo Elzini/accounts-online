@@ -69,6 +69,7 @@ export function ComprehensiveFinancialStatementsPage() {
   const [isFixingCogs, setIsFixingCogs] = useState(false);
   const [showTBImport, setShowTBImport] = useState(false);
   const [showAuditTrail, setShowAuditTrail] = useState(false);
+  const [zakatDialogOpen, setZakatDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // === سجل التدقيق ===
