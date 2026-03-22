@@ -624,6 +624,8 @@ export async function getSystemFinancialStatements(
     reserves: reservesTotal,
     retainedEarnings: Math.max(0, retainedEarnings),
     partnersCurrentAccount: partnersCurrentTotal,
+    partnersCurrentFullBalance: partnersCurrentFullBalance,
+    partnersHawlMonths: partnersHawlMonths,
     employeeBenefitsLiabilities: provisionsTotal,
     longTermLoans: longTermLoansTotal,
     statutoryReserve: reservesTotal, // backward compat
