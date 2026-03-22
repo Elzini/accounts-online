@@ -141,7 +141,7 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
     
     if (invoice.payment_account_id) {
       // User selected a specific payment account (bank, partner, supplier, etc.)
-      creditAccount = findAccount(invoice.payment_account_id);
+      creditAccount = findAccount(invoice.payment_account_id, null);
     }
     
     // Fallback to supplier account if no payment account selected (آجل - on credit)
