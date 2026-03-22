@@ -224,15 +224,13 @@ const Index = () => {
   });
   const mobileSidebarRef = useRef<MobileSidebarRef>(null);
   
-  // Fiscal year dialog for changing selection (accessible from header badge)
-  const [showFiscalYearDialog, setShowFiscalYearDialog] = useState(false);
+  // Fiscal year selection is locked after login - user must log out to change
 
   // Mandatory fiscal year gate: if fiscal years exist but none is selected, force selection
   const mustSelectFiscalYear = !isFiscalYearLoading && fiscalYears.length > 0 && !selectedFiscalYear;
 
   const handleFiscalYearSelect = (fy: typeof fiscalYears[0]) => {
     setSelectedFiscalYear(fy);
-    setShowFiscalYearDialog(false);
   };
 
   const defaultStats = { 
@@ -502,13 +500,15 @@ const Index = () => {
 
   return (
     <>
-      {/* Mandatory Fiscal Year Selection Dialog - blocks access until selected */}
-      <FiscalYearSelectionDialog
-        open={mustSelectFiscalYear || showFiscalYearDialog}
-        fiscalYears={fiscalYears}
-        currentSelectedId={selectedFiscalYear?.id}
-        onSelect={handleFiscalYearSelect}
-      />
+      {/* Mandatory Fiscal Year Selection Dialog - only shows if no FY selected (e.g. first login) */}
+      {mustSelectFiscalYear && (
+        <FiscalYearSelectionDialog
+          open={true}
+          fiscalYears={fiscalYears}
+          currentSelectedId={selectedFiscalYear?.id}
+          onSelect={handleFiscalYearSelect}
+        />
+      )}
       
       {showSetupWizard ? (
         <SetupWizard onComplete={() => setShowSetupWizard(false)} />
@@ -575,11 +575,11 @@ const Index = () => {
                       </SelectContent>
                     </Select>
                   )}
-                  {selectedFiscalYear && fiscalYears.length > 1 && (
+                  {selectedFiscalYear && (
                     <Badge 
                       variant="outline" 
-                      className="cursor-pointer hover:bg-accent gap-1 shrink-0 text-xs"
-                      onClick={() => setShowFiscalYearDialog(true)}
+                      className="gap-1 shrink-0 text-xs"
+                      title="لتغيير السنة المالية، سجل خروج وأعد الدخول"
                     >
                       <Calendar className="w-3 h-3" />
                       <span className="hidden sm:inline">{selectedFiscalYear.name}</span>
