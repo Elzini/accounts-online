@@ -243,6 +243,13 @@ export function useDetailedJournalPrint() {
       display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af;
     }
 
+    .grand-totals {
+      border: 2px solid ${headerColor}; border-radius: 8px; margin: 20px 0 10px;
+      background: linear-gradient(135deg, #eff6ff, #f0f4ff);
+      overflow: hidden;
+    }
+    .grand-totals td { border: none; }
+
     .print-actions {
       position: fixed; bottom: 20px; left: 20px; display: flex; gap: 10px; z-index: 1000;
     }
