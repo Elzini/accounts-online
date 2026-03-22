@@ -970,85 +970,106 @@ export async function getComprehensiveTrialBalance(
 }> {
   const accounts = await fetchAccounts(companyId);
 
-  // Get current fiscal year start date for opening balance calculation
-  const { data: fiscalYear } = await supabase
-    .from('fiscal_years')
-    .select('start_date, end_date')
-    .eq('company_id', companyId)
-    .eq('is_current', true)
-    .single();
+  // When fiscalYearId is provided, use that fiscal year's dates
+  let fyStartDate: string | undefined;
+  let effectiveStartDate: string | undefined;
+  let effectiveEndDate: string | undefined;
 
-  const fyStartDate = fiscalYear?.start_date;
-  const effectiveStartDate = startDate || fyStartDate;
-  const effectiveEndDate = endDate || fiscalYear?.end_date;
+  if (fiscalYearId) {
+    const { data: selectedFY } = await supabase
+      .from('fiscal_years')
+      .select('start_date, end_date')
+      .eq('id', fiscalYearId)
+      .single();
+    fyStartDate = selectedFY?.start_date;
+    effectiveStartDate = startDate || fyStartDate;
+    effectiveEndDate = endDate || selectedFY?.end_date;
+  } else {
+    const { data: fiscalYear } = await supabase
+      .from('fiscal_years')
+      .select('start_date, end_date')
+      .eq('company_id', companyId)
+      .eq('is_current', true)
+      .single();
+    fyStartDate = fiscalYear?.start_date;
+    effectiveStartDate = startDate || fyStartDate;
+    effectiveEndDate = endDate || fiscalYear?.end_date;
+  }
 
-  // 1) Fetch OPENING balances
-  // قاعدة مهمة: إذا وُجد قيد افتتاحي داخل الفترة المختارة نستخدمه كمصدر وحيد للافتتاح
-  // لمنع تكرار ترحيل أرصدة السنوات السابقة مرتين.
+  // 1) Fetch OPENING balances - ONLY from the same fiscal year's opening entries
   const openingBalances = new Map<string, { debit: number; credit: number }>();
-  // Track raw totals from ALL accounts (including revenue/expense) for balanced grand totals
   let rawOpeningDebitAll = 0, rawOpeningCreditAll = 0;
 
   if (effectiveStartDate) {
-    const { data: openingLines } = await supabase
-      .from('journal_entry_lines')
-      .select(`
-        account_id, debit, credit,
-        journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
-      `)
-      .eq('journal_entry.company_id', companyId)
-      .eq('journal_entry.is_posted', true)
-      .lt('journal_entry.entry_date', effectiveStartDate);
-
-    // جلب قيود الافتتاح المرحّلة ضمن الفترة (من تاريخ البداية وحتى النهاية إن وُجدت)
+    // Look for opening entries within the selected fiscal year
     let openingEntriesQuery = supabase
       .from('journal_entry_lines')
       .select(`
         account_id, debit, credit,
-        journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type)
+        journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type, fiscal_year_id)
       `)
       .eq('journal_entry.company_id', companyId)
       .eq('journal_entry.is_posted', true)
-      .eq('journal_entry.reference_type', 'opening')
-      .gte('journal_entry.entry_date', effectiveStartDate);
+      .eq('journal_entry.reference_type', 'opening');
 
-    if (effectiveEndDate) {
-      openingEntriesQuery = openingEntriesQuery.lte('journal_entry.entry_date', effectiveEndDate);
+    if (fiscalYearId) {
+      // Strict isolation: only opening entries for THIS fiscal year
+      openingEntriesQuery = openingEntriesQuery.eq('journal_entry.fiscal_year_id', fiscalYearId);
+    } else {
+      openingEntriesQuery = openingEntriesQuery.gte('journal_entry.entry_date', effectiveStartDate);
+      if (effectiveEndDate) {
+        openingEntriesQuery = openingEntriesQuery.lte('journal_entry.entry_date', effectiveEndDate);
+      }
     }
 
     const { data: openingEntryLines } = await openingEntriesQuery;
-
-    // عند وجود قيد افتتاحي داخل الفترة: نستبعد الإيرادات/المصروفات من الافتتاح
-    // عند عدم وجوده: نستخدم الرصيد التراكمي قبل التاريخ المختار (لكل أنواع الحسابات)
-    const balanceSheetTypes = new Set(['asset', 'assets', 'liability', 'liabilities', 'equity']);
-    const accountTypeMap = new Map<string, string>();
-    accounts.forEach(a => accountTypeMap.set(a.id, a.type));
-
     const openingLinesInPeriod = openingEntryLines || [];
     const hasOpeningEntryInRange = openingLinesInPeriod.length > 0;
-    const openingSourceLines = hasOpeningEntryInRange
-      ? openingLinesInPeriod
-      : (openingLines || []);
 
-    const allOpeningLines = openingSourceLines;
-    allOpeningLines.forEach((line: any) => {
-      const d = Number(line.debit) || 0;
-      const c = Number(line.credit) || 0;
-      // Accumulate raw totals from ALL accounts for balanced grand totals
-      rawOpeningDebitAll += d;
-      rawOpeningCreditAll += c;
+    if (hasOpeningEntryInRange) {
+      const balanceSheetTypes = new Set(['asset', 'assets', 'liability', 'liabilities', 'equity']);
+      const accountTypeMap = new Map<string, string>();
+      accounts.forEach(a => accountTypeMap.set(a.id, a.type));
 
-      const accType = accountTypeMap.get(line.account_id);
-      const shouldIncludeInOpening = hasOpeningEntryInRange
-        ? (!!accType && balanceSheetTypes.has(accType))
-        : true;
+      openingLinesInPeriod.forEach((line: any) => {
+        const d = Number(line.debit) || 0;
+        const c = Number(line.credit) || 0;
+        rawOpeningDebitAll += d;
+        rawOpeningCreditAll += c;
 
-      if (!shouldIncludeInOpening) return;
-      const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
-      current.debit += d;
-      current.credit += c;
-      openingBalances.set(line.account_id, current);
-    });
+        const accType = accountTypeMap.get(line.account_id);
+        const shouldIncludeInOpening = !!accType && balanceSheetTypes.has(accType);
+        if (!shouldIncludeInOpening) return;
+
+        const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
+        current.debit += d;
+        current.credit += c;
+        openingBalances.set(line.account_id, current);
+      });
+    } else if (!fiscalYearId) {
+      // Only fall back to historical data when NO specific fiscal year is selected
+      const { data: openingLines } = await supabase
+        .from('journal_entry_lines')
+        .select(`
+          account_id, debit, credit,
+          journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
+        `)
+        .eq('journal_entry.company_id', companyId)
+        .eq('journal_entry.is_posted', true)
+        .lt('journal_entry.entry_date', effectiveStartDate);
+
+      (openingLines || []).forEach((line: any) => {
+        const d = Number(line.debit) || 0;
+        const c = Number(line.credit) || 0;
+        rawOpeningDebitAll += d;
+        rawOpeningCreditAll += c;
+        const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
+        current.debit += d;
+        current.credit += c;
+        openingBalances.set(line.account_id, current);
+      });
+    }
+    // If fiscalYearId is set but no opening entries exist → opening is ZERO (correct isolation)
   }
 
   // 2) Fetch PERIOD movement: entries within the date range (excluding opening entries)
