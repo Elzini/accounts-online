@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { MobileSidebar, MobileSidebarRef } from '@/components/MobileSidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Dashboard } from '@/components/Dashboard';
+import { SetupGuard } from '@/components/setup/SetupGuard';
 import { FloatingMiniDashboard } from '@/components/dashboard/FloatingMiniDashboard';
 import { useFocusMode, FocusModeOverlay } from '@/components/dashboard/FocusMode';
 
