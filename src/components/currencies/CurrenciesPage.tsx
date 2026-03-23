@@ -27,24 +27,14 @@ export function CurrenciesPage() {
 
   const { data: currencies = [], isLoading } = useQuery({
     queryKey: ['currencies', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase.from('currencies').select('*').eq('company_id', companyId).order('is_base', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => fetchCurrencies(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: rates = [] } = useQuery({
     queryKey: ['exchange-rates', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase.from('exchange_rates').select('*, from_currency:currencies!exchange_rates_from_currency_id_fkey(code, name_ar), to_currency:currencies!exchange_rates_to_currency_id_fkey(code, name_ar)').eq('company_id', companyId).order('effective_date', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => fetchExchangeRates(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
