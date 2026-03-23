@@ -11,9 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Loader2, Plus, Factory, Package, ClipboardList } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useCompanyId } from '@/hooks/useCompanyId';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useManufacturingProducts, useProductionOrders, useCreateManufacturingProduct, useCreateProductionOrder, useUpdateProductionOrderStatus } from '@/hooks/modules/useBusinessServices';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function ManufacturingPage() {
