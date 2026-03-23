@@ -65,21 +65,18 @@ export function JournalEntriesPage() {
       {/* Entries List */}
       <JournalEntriesListCard hook={hook} />
 
-      {/* Attachments Dialog */}
+      {/* Attachments */}
       {attachmentEntryId && (
-        <JournalAttachments
-          entryId={attachmentEntryId}
-          open={!!attachmentEntryId}
-          onOpenChange={(open) => !open && setAttachmentEntryId(null)}
-        />
+        <JournalAttachments journalEntryId={attachmentEntryId} />
       )}
 
       {/* Print Dialog */}
       {printingEntry && (
         <JournalEntryPrintDialog
           entry={printingEntry}
+          accounts={hook.accounts}
           open={!!printingEntryId}
-          onOpenChange={(open) => !open && setPrintingEntryId(null)}
+          onClose={() => setPrintingEntryId(null)}
         />
       )}
     </div>
