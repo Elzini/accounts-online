@@ -184,7 +184,7 @@ export function useTasksRealtimeChannel(userId?: string) {
 
 // ── Dashboard: Monthly Expenses ──
 export function useMonthlyExpenses(companyId: string | null, fiscalBounds: { start: Date; end: Date } | null, fiscalYearId?: string, startISO?: string, endISO?: string) {
-  const { getDashboardDateWindow } = require('@/lib/dashboardDateWindow');
+  
   return useQuery({
     queryKey: ['monthly-expenses-dashboard', companyId, fiscalYearId, startISO, endISO],
     queryFn: async () => {
