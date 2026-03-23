@@ -250,44 +250,7 @@ export function usePurchaseInvoice() {
 
   // ===== Calculations =====
   const calculations = useMemo(() => {
-    let subtotal = 0;
-    let totalVAT = 0;
-    const calcItem = (price: number, quantity: number, itemTaxRate?: number) => {
-      const effectiveTaxRate = itemTaxRate ?? taxRate;
-      let baseAmount: number, vatAmount: number, total: number;
-      if (invoiceData.price_includes_tax && effectiveTaxRate > 0) {
-        total = price * quantity;
-        baseAmount = total / (1 + effectiveTaxRate / 100);
-        vatAmount = total - baseAmount;
-      } else {
-        baseAmount = price * quantity;
-        vatAmount = baseAmount * (effectiveTaxRate / 100);
-        total = baseAmount + vatAmount;
-      }
-      subtotal += baseAmount;
-      totalVAT += vatAmount;
-      return { baseAmount, vatAmount, total };
-    };
-    const itemsWithCalc = cars.map(car => {
-      const price = parseFloat(car.purchase_price) || 0;
-      const effectiveTaxRate = car.car_condition === 'used' ? 0 : taxRate;
-      const result = calcItem(price, car.quantity || 1, effectiveTaxRate);
-      return { ...car, ...result };
-    });
-    const inventoryItemsWithCalc = purchaseInventoryItems.map(item => {
-      const price = parseFloat(item.purchase_price) || 0;
-      const result = calcItem(price, item.quantity || 1);
-      return { ...item, ...result };
-    });
-    let discountAmount = discountType === 'percentage' ? subtotal * (discount / 100) : discount;
-    const subtotalAfterDiscount = subtotal - discountAmount;
-    const finalTotal = subtotalAfterDiscount + totalVAT;
-    return {
-      items: itemsWithCalc,
-      inventoryItems: inventoryItemsWithCalc,
-      subtotal, discountAmount, subtotalAfterDiscount, totalVAT, finalTotal,
-      roundedTotal: finalTotal,
-    };
+    return calculatePurchaseInvoice(cars, purchaseInventoryItems, invoiceData.price_includes_tax, taxRate, discount, discountType);
   }, [cars, purchaseInventoryItems, invoiceData.price_includes_tax, taxRate, discount, discountType]);
 
   const displayTotals = useMemo(() => {
