@@ -50,7 +50,7 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
             <p className="text-xs" dir="ltr">Vat : {vatNumber}</p>
           </div>
           <div className="text-left text-xs">
-            <QRCodeSVG value={qrData} size={60} level="M" />
+            <QRCodeSVG value={qrData} size={90} level="L" includeMargin={true} />
           </div>
         </div>
       </div>
