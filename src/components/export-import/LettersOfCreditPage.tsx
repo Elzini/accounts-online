@@ -8,8 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useLettersOfCredit } from '@/hooks/modules/useBusinessServices';
 
 interface LetterOfCredit {
   id: string;
