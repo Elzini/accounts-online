@@ -55,17 +55,7 @@ export function useSalesReturns() {
 
   const { data: availableInvoices = [] } = useQuery({
     queryKey: ['available-invoices-for-return', companyId, isCarDealership],
-    queryFn: async () => {
-      if (isCarDealership) {
-        const { data, error } = await supabase.from('sales').select('id, sale_number, sale_date, sale_price, customer:customers(name)').eq('company_id', companyId!).order('sale_number', { ascending: false }).limit(200);
-        if (error) throw error;
-        return (data || []).map((s: any) => ({ id: s.id, number: s.sale_number, date: s.sale_date, total: s.sale_price, customerName: s.customer?.name || '', source: 'sales' as const }));
-      } else {
-        const { data, error } = await supabase.from('invoices').select('id, invoice_number, invoice_date, total, customer_name').eq('company_id', companyId!).eq('invoice_type', 'sales').order('invoice_number', { ascending: false }).limit(200);
-        if (error) throw error;
-        return (data || []).map((inv: any) => ({ id: inv.id, number: inv.invoice_number, date: inv.invoice_date, total: inv.total, customerName: inv.customer_name || '', source: 'invoices' as const }));
-      }
-    },
+    queryFn: () => fetchAvailableInvoicesForReturn(companyId!, isCarDealership),
     enabled: !!companyId,
   });
 
