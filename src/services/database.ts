@@ -535,7 +535,7 @@ export async function fetchAllTimeStats() {
   const companyType = companyRecord?.company_type;
 
   // For non-car companies: use invoices
-  if (companyType && companyType !== 'car_dealership') {
+  if (companyType && !getIndustryFeatures(companyType).hasCarInventory) {
     const [purchaseResult, salesResult] = await Promise.all([
       supabase.from('invoices').select('subtotal').eq('company_id', companyId).eq('invoice_type', 'purchase'),
       supabase.from('invoices').select('subtotal').eq('company_id', companyId).eq('invoice_type', 'sales'),
