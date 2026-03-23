@@ -633,7 +633,6 @@ export async function getComprehensiveTrialBalance(
     const hasOpeningEntryInRange = openingLinesInPeriod.length > 0;
 
     if (hasOpeningEntryInRange) {
-      const balanceSheetTypes = new Set(['asset', 'assets', 'liability', 'liabilities', 'equity']);
       const accountTypeMap = new Map<string, string>();
       accounts.forEach(a => accountTypeMap.set(a.id, a.type));
 
@@ -644,7 +643,7 @@ export async function getComprehensiveTrialBalance(
         rawOpeningCreditAll += c;
 
         const accType = accountTypeMap.get(line.account_id);
-        const shouldIncludeInOpening = !!accType && balanceSheetTypes.has(accType);
+        const shouldIncludeInOpening = !!accType && isBalanceSheetType(accType);
         if (!shouldIncludeInOpening) return;
 
         const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
