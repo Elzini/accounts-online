@@ -1,8 +1,7 @@
 /**
- * Real Estate Module
- * Provides real estate-specific dashboard stats and menu items
+ * Real Estate Module (Plugin)
+ * Fully encapsulates real-estate-specific logic: stats, menus, posting rules, reports, labels
  */
-
 import { IndustryModule, DashboardStats, MenuItem } from '@/core/engine/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -52,5 +51,72 @@ export const RealEstateModule: IndustryModule = {
 
   getCoaTemplate(): string {
     return 'real_estate';
+  },
+
+  // === Extended Plugin Properties ===
+
+  postingRules: {
+    purchase: {
+      debitAccountKey: 'purchase_expense',
+      creditAccountKey: 'suppliers',
+      applyVat: true,
+      vatAccountKey: 'vat_input',
+      descriptionTemplate: 'مشتريات مشروع - {reference} - {party}',
+    },
+    sale: {
+      debitAccountKey: 'customers',
+      creditAccountKey: 'sales_revenue',
+      applyVat: true,
+      vatAccountKey: 'vat_output',
+      descriptionTemplate: 'بيع وحدة - {reference} - {party}',
+    },
+  },
+
+  purchaseItemTypes: [
+    {
+      id: 'material',
+      label: 'مواد بناء',
+      table: 'invoice_items',
+      fields: [
+        { key: 'item_name', label: 'اسم الصنف', type: 'text', required: true },
+        { key: 'quantity', label: 'الكمية', type: 'number', required: true },
+        { key: 'unit_price', label: 'سعر الوحدة', type: 'number', required: true },
+      ],
+    },
+  ],
+
+  reports: [
+    {
+      id: 're-project-profitability',
+      title: 'ربحية المشاريع',
+      subtitle: 'تحليل إيرادات ومصروفات كل مشروع',
+      table: 're_projects',
+      columns: [
+        { header: 'المشروع', key: 'name', type: 'text' },
+        { header: 'الميزانية', key: 'total_budget', type: 'currency' },
+        { header: 'المصروف', key: 'total_spent', type: 'currency' },
+        { header: 'الحالة', key: 'status', type: 'status' },
+      ],
+      statusOptions: [
+        { value: 'active', label: 'نشط' },
+        { value: 'completed', label: 'مكتمل' },
+        { value: 'on_hold', label: 'معلق' },
+      ],
+    },
+  ],
+
+  dashboardCards: [
+    { id: 'active-projects', title: 'مشاريع نشطة', icon: 'Building', valueKey: 'activeProjects', format: 'number' },
+    { id: 'sold-units', title: 'وحدات مباعة', icon: 'Home', valueKey: 'soldUnits', format: 'number' },
+    { id: 'available-units', title: 'وحدات متاحة', icon: 'Key', valueKey: 'availableUnits', format: 'number' },
+  ],
+
+  labelOverrides: {
+    'inv_item': 'المادة',
+    'inv_add_item': 'إضافة مادة',
+    'inv_items': 'المواد',
+    'purchases_title': 'مشتريات المشاريع',
+    'sales_title': 'مبيعات الوحدات',
+    'inventory_title': 'الوحدات العقارية',
   },
 };

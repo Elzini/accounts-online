@@ -138,6 +138,54 @@ export interface ValidationResult {
 }
 
 // ============ Module Registration ============
+
+/** Configuration for an industry-specific posting rule */
+export interface PostingRuleConfig {
+  /** Account mapping key for debit */
+  debitAccountKey: StandardMappingKey | string;
+  /** Account mapping key for credit */
+  creditAccountKey: StandardMappingKey | string;
+  /** Whether this posting applies VAT */
+  applyVat: boolean;
+  /** VAT account mapping key */
+  vatAccountKey?: string;
+  /** Description template (use {amount}, {reference}, {party} placeholders) */
+  descriptionTemplate: string;
+}
+
+/** Report column definition for industry-specific reports */
+export interface ReportColumnConfig {
+  header: string;
+  key: string;
+  type?: 'text' | 'number' | 'currency' | 'date' | 'status';
+  align?: 'left' | 'center' | 'right';
+}
+
+/** Industry-specific report configuration */
+export interface IndustryReportConfig {
+  id: string;
+  title: string;
+  subtitle?: string;
+  /** Data source table */
+  table: string;
+  /** Column definitions */
+  columns: ReportColumnConfig[];
+  /** Default filters */
+  defaultFilters?: Record<string, any>;
+  /** Status options for filtering */
+  statusOptions?: { value: string; label: string }[];
+}
+
+/** Purchase item type descriptor */
+export interface PurchaseItemType {
+  id: string;
+  label: string;
+  /** Which DB table stores these items */
+  table: string;
+  /** Fields specific to this item type */
+  fields: { key: string; label: string; type: 'text' | 'number' | 'select'; required?: boolean; options?: { value: string; label: string }[] }[];
+}
+
 export interface IndustryModule {
   /** Unique module identifier */
   id: string;
@@ -151,6 +199,23 @@ export interface IndustryModule {
   getMenuItems(): MenuItem[];
   /** Get COA template name */
   getCoaTemplate(): string;
+
+  // === Extended Plugin Interface ===
+
+  /** Posting rules for sales/purchase invoices */
+  postingRules?: {
+    sale?: PostingRuleConfig;
+    purchase?: PostingRuleConfig;
+    return?: PostingRuleConfig;
+  };
+  /** Purchase item types (e.g., cars, inventory items, units) */
+  purchaseItemTypes?: PurchaseItemType[];
+  /** Industry-specific reports */
+  reports?: IndustryReportConfig[];
+  /** Custom dashboard card definitions */
+  dashboardCards?: { id: string; title: string; icon: string; valueKey: string; format?: 'number' | 'currency' }[];
+  /** Labels overrides for shared components */
+  labelOverrides?: Record<string, string>;
 }
 
 export interface MenuItem {
