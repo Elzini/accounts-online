@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { isAccountType } from '@/utils/accountTypes';
 import {
   AuditFixAction,
   createFixUnbalancedEntries,

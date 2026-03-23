@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { isAccountType } from '@/utils/accountTypes';
 import { Plus, Pencil, Trash2, Calculator, TrendingDown, Building2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

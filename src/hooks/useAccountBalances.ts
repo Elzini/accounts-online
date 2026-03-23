@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { isCreditNormal } from '@/utils/accountTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
