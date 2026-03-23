@@ -223,10 +223,16 @@ export class InvoicePostingEngine {
 
     if (!cashAccount || !revenueAccount) return [];
 
+    // Debit: cash/receivable for total (including VAT)
     lines.push({ account_id: cashAccount.id, description: `مبيعات - ${inv.customer_name || inv.invoice_number}`, debit: total, credit: 0 });
-    lines.push({ account_id: revenueAccount.id, description: `إيرادات - ${inv.invoice_number}`, debit: 0, credit: subtotal });
+
     if (vatAmount > 0 && vatOutputAccount) {
+      // VAT account exists: split revenue and VAT
+      lines.push({ account_id: revenueAccount.id, description: `إيرادات - ${inv.invoice_number}`, debit: 0, credit: subtotal });
       lines.push({ account_id: vatOutputAccount.id, description: `ضريبة مبيعات - ${inv.invoice_number}`, debit: 0, credit: vatAmount });
+    } else {
+      // No VAT account: credit full total to revenue to keep entry balanced
+      lines.push({ account_id: revenueAccount.id, description: `إيرادات - ${inv.invoice_number}`, debit: 0, credit: total });
     }
 
     return lines;
