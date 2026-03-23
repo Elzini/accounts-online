@@ -134,7 +134,7 @@ export function EngineVersionManager() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNewVersion(false)}>إلغاء</Button>
-            <Button onClick={() => createVersion.mutate()} disabled={createVersion.isPending}>
+            <Button onClick={() => createVersion.mutate({ version: newVersion.version, description: newVersion.description })} disabled={createVersion.isPending}>
               إنشاء النسخة
             </Button>
           </DialogFooter>

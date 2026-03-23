@@ -158,6 +158,7 @@ export function TwoPersonApprovalPanel() {
                       onClick={() => approveRequest.mutate({
                         requestId: selectedRequest.id,
                         approverLevel: selectedRequest.status === 'pending' ? 'first' : 'second',
+                        authCode,
                       })}
                       disabled={approveRequest.isPending}
                     >
