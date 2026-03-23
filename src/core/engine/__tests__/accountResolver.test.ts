@@ -9,9 +9,11 @@ const mockAccounts: Account[] = [
   { id: 'a2', company_id: 'c1', code: '4101', name: 'إيرادات المبيعات', type: 'revenue', parent_id: null, is_system: true, description: null, created_at: '', updated_at: '' },
   { id: 'a3', company_id: 'c1', code: '5101', name: 'مصروفات المشتريات', type: 'expenses', parent_id: null, is_system: true, description: null, created_at: '', updated_at: '' },
   { id: 'a4', company_id: 'c1', code: '2101', name: 'الموردون', type: 'liabilities', parent_id: null, is_system: true, description: null, created_at: '', updated_at: '' },
-  { id: 'a5', company_id: 'c1', code: '21042', name: 'ضريبة مشتريات مستردة', type: 'liabilities', parent_id: null, is_system: false, description: null, created_at: '', updated_at: '' },
+  { id: 'a5', company_id: 'c1', code: '21042', name: 'ضريبة مشتريات مستردة', type: 'assets', parent_id: null, is_system: false, description: null, created_at: '', updated_at: '' },
   { id: 'a6', company_id: 'c1', code: '3103', name: 'أرباح مبقاة', type: 'equity', parent_id: null, is_system: false, description: null, created_at: '', updated_at: '' },
   { id: 'a7', company_id: 'c1', code: '210101', name: 'شركة الفهد', type: 'liabilities', parent_id: 'a4', is_system: false, description: null, created_at: '', updated_at: '' },
+  { id: 'a8', company_id: 'c1', code: '2103', name: 'ضريبة القيمة المضافة', type: 'liabilities', parent_id: null, is_system: false, description: null, created_at: '', updated_at: '' },
+  { id: 'a9', company_id: 'c1', code: '2104', name: 'أوراق دفع', type: 'liabilities', parent_id: null, is_system: false, description: null, created_at: '', updated_at: '' },
 ];
 
 const mockMappings: AccountMapping[] = [
@@ -20,6 +22,8 @@ const mockMappings: AccountMapping[] = [
   { mapping_key: 'purchase_expense', account_id: 'a3' },
   { mapping_key: 'suppliers', account_id: 'a4' },
   { mapping_key: 'vat_input', account_id: 'a5' },
+  // Intentional bad mapping (non-VAT account)
+  { mapping_key: 'vat_output', account_id: 'a9' },
 ];
 
 // ── Mock Repos ──
@@ -65,6 +69,12 @@ describe('AccountResolver', () => {
     resolver.setSettingsOverrides(new Map([['cash', 'a3']]));
     const cash = resolver.resolve('cash');
     expect(cash!.id).toBe('a3');
+  });
+
+  it('ignores bad vat_output mapping and resolves proper VAT account', () => {
+    const vatOutput = resolver.resolve('vat_output');
+    expect(vatOutput).not.toBeNull();
+    expect(vatOutput!.code).toBe('2103');
   });
 
   it('resolveFlexible: explicit ID first', () => {
