@@ -108,6 +108,17 @@ export class SupabaseJournalEntryRepository implements IJournalEntryRepository {
     if (error) throw error;
   }
 
+  async deleteByReference(companyId: string, referenceId: string, referenceType: string): Promise<void> {
+    const { error } = await supabase.from('journal_entries').delete()
+      .eq('company_id', companyId).eq('reference_id', referenceId).eq('reference_type', referenceType);
+    if (error) throw error;
+  }
+
+  async updateEntry(entryId: string, updates: Record<string, any>): Promise<void> {
+    const { error } = await supabase.from('journal_entries').update(updates).eq('id', entryId);
+    if (error) throw error;
+  }
+
   async fetchAllLines(companyId: string, fiscalYearId: string) {
     const allLines: Array<{
       journal_entry_id: string; account_id: string;
