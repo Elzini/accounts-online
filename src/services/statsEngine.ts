@@ -254,13 +254,12 @@ export async function fetchDashboardStats(fiscalYearId?: string | null): Promise
 
   // Enrich with industry-specific metrics via ModuleRegistry
   const { ModuleRegistry } = await import('@/core/engine/moduleRegistry');
-  // Ensure modules are registered
   await import('@/core/modules');
   const industryModule = ModuleRegistry.getForType(companyType || 'general_trading');
   if (industryModule) {
     const extraStats = await industryModule.getDashboardStats(companyId, fiscalYearId);
     if (extraStats.extra) {
-      stats.extra = { ...stats.extra, ...extraStats.extra };
+      stats.industryMetrics = { ...stats.industryMetrics, ...extraStats.extra };
     }
   }
 
