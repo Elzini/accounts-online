@@ -1,6 +1,7 @@
 /**
  * Purchase Returns - Form Tab (search, items table, totals, actions)
  */
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
