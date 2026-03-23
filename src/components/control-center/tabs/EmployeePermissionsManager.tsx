@@ -60,39 +60,18 @@ export function EmployeePermissionsManager() {
   const { data: permissions = [], isLoading } = useQuery({
     queryKey: ['field-permissions', companyId, selectedTable, selectedRole],
     queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase
-        .from('field_permissions')
-        .select('*')
-        .eq('company_id', companyId)
-        .eq('table_name', selectedTable)
-        .eq('role_name', selectedRole);
-      if (error) throw error;
-      return data || [];
+      // field_permissions table removed during schema cleanup - return empty
+      return [] as Array<{ id: string; field_name: string; can_view: boolean; can_edit: boolean }>;
     },
     enabled: !!companyId,
   });
 
   const togglePermission = useMutation({
     mutationFn: async ({ fieldName, canView, canEdit }: { fieldName: string; canView: boolean; canEdit: boolean }) => {
-      if (!companyId) throw new Error('لا يوجد سياق شركة');
-      const existing = permissions.find((p: any) => p.field_name === fieldName);
-      if (existing) {
-        const { error } = await supabase
-          .from('field_permissions')
-          .update({ can_view: canView, can_edit: canEdit, updated_at: new Date().toISOString() })
-          .eq('id', existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('field_permissions')
-          .insert({ company_id: companyId, table_name: selectedTable, role_name: selectedRole, field_name: fieldName, can_view: canView, can_edit: canEdit });
-        if (error) throw error;
-      }
+      toast.info('ميزة صلاحيات الحقول قيد التطوير');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['field-permissions', companyId, selectedTable, selectedRole] });
-      toast.success('تم تحديث الصلاحية');
     },
     onError: (err: any) => toast.error(err.message),
   });
