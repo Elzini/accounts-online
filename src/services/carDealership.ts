@@ -4,9 +4,19 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import { requireCompanyId } from '@/services/companyContext';
+import { requireCompanyId, getCurrentCompanyId } from '@/services/companyContext';
 
-// Types for multi-car operations
+type Car = Database['public']['Tables']['cars']['Row'];
+type CarInsert = Database['public']['Tables']['cars']['Insert'];
+type CarUpdate = Database['public']['Tables']['cars']['Update'];
+type Sale = Database['public']['Tables']['sales']['Row'];
+type SaleInsert = Database['public']['Tables']['sales']['Insert'];
+type SaleUpdate = Database['public']['Tables']['sales']['Update'];
+type PurchaseBatch = Database['public']['Tables']['purchase_batches']['Row'];
+type PurchaseBatchInsert = Database['public']['Tables']['purchase_batches']['Insert'];
+type SaleItem = Database['public']['Tables']['sale_items']['Row'];
+type SaleItemInsert = Database['public']['Tables']['sale_items']['Insert'];
+
 export interface CarWithSaleInfo extends Omit<CarInsert, 'batch_id'> {
   sale_price?: number;
 }

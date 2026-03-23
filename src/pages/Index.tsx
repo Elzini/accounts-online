@@ -193,6 +193,7 @@ const Index = () => {
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const { isFocusMode, toggleFocusMode, exitFocusMode } = useFocusMode();
+  const industryFeatures = useIndustryFeatures();
 
 
   // Show setup wizard if no fiscal years exist
