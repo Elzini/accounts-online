@@ -1470,150 +1470,76 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             </div>
           </div>
 
-          {/* ===== Modern Action Bar ===== */}
-          <div className="border-t-2 border-blue-100 dark:border-blue-900 bg-gradient-to-b from-card to-muted/30">
-            {/* Quick Menu Row */}
-            <div className="px-4 py-2 flex items-center gap-2 border-b border-border/50 overflow-x-auto">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-[11px] h-8 rounded-lg hover:bg-muted">
-                    عمليات الضرائب <ChevronDown className="w-3 h-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={() => setActivePage('vat-return-report')}>
-                    <FileText className="w-3.5 h-3.5 ml-2" /> إنشاء إقرار ضريبي
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActivePage('tax-settings')}>
-                    <FileSpreadsheet className="w-3.5 h-3.5 ml-2" /> إعدادات الضريبة
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-[11px] h-8 rounded-lg hover:bg-muted">
-                    تقارير <ChevronDown className="w-3 h-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={() => setActivePage('purchases-report')}>
-                    <FileText className="w-3.5 h-3.5 ml-2" /> تقرير المشتريات
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActivePage('account-statement')}>
-                    <FileText className="w-3.5 h-3.5 ml-2" /> كشف حساب
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-[11px] h-8 rounded-lg hover:bg-muted">
-                    {t.inv_operations || 'عمليات'} <ChevronDown className="w-3 h-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={() => setActivePage('medad-import')}>
-                    <FileSpreadsheet className="w-3.5 h-3.5 ml-2" /> {t.inv_import_data || 'استيراد بيانات'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem disabled={!isViewingExisting} onClick={() => setReverseDialogOpen(true)} className="text-amber-600">
-                    <RotateCcw className="w-3.5 h-3.5 ml-2" /> {t.inv_return}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => toast.info('سيتم إضافة خاصية إرسال SMS قريباً')}>
-                    <MessageSquare className="w-3.5 h-3.5 ml-2" /> إرسال SMS
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-[11px] h-8 rounded-lg hover:bg-muted">
-                    عرض <ChevronDown className="w-3 h-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={handlePrintExisting} disabled={!isViewingExisting}>
-                    <Printer className="w-3.5 h-3.5 ml-2" /> معاينة قبل الطباعة
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActivePage('journal-entries')} disabled={!isViewingExisting}>
-                    <FileText className="w-3.5 h-3.5 ml-2" /> عرض القيد المحاسبي
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            {/* Primary Action Buttons */}
-            <div className="px-4 py-2.5 flex items-center gap-2 flex-wrap">
-              {isViewingExisting && isEditing ? (
-                <Button onClick={handleUpdatePurchase} size="sm" className="gap-1.5 text-xs h-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-md" variant="outline" disabled={updateCar.isPending}>
-                  <Save className="w-3.5 h-3.5" />
-                  {updateCar.isPending ? t.inv_saving : t.inv_save_changes}
-                </Button>
-              ) : !isViewingExisting ? (
-                <Button onClick={handleSubmit} size="sm" className="gap-1.5 text-xs h-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-md" disabled={addPurchaseBatch.isPending}>
-                  <Plus className="w-3.5 h-3.5" />
-                  {addPurchaseBatch.isPending ? t.inv_saving : 'إضافة'}
-                </Button>
-              ) : null}
-
-              <Button variant="outline" onClick={handleNewInvoice} size="sm" className="gap-1.5 text-xs h-9 rounded-lg shadow-sm">
-                <FileText className="w-3.5 h-3.5 text-blue-600" /> جديد
-              </Button>
-
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className={`gap-1.5 text-xs h-9 rounded-lg shadow-sm ${isEditing ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-400' : ''}`}
-                disabled={!isViewingExisting}
-                onClick={() => { setIsEditing(!isEditing); if (!isEditing) toast.info('تم تفعيل وضع التعديل'); }}
-              >
-                <FileEdit className="w-3.5 h-3.5" />
-                {isEditing ? 'إلغاء التعديل' : 'تعديل'}
-              </Button>
-
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-9 rounded-lg shadow-sm" disabled={!isViewingExisting} onClick={() => setDeleteDialogOpen(true)}>
-                <Trash2 className="w-3.5 h-3.5 text-destructive" /> حذف
-              </Button>
-
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-1.5 text-xs h-9 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 shadow-sm" 
-                disabled={!isViewingExisting}
-                onClick={() => setActivePage('journal-entries')}
-              >
-                <CheckCircle className="w-3.5 h-3.5" /> محاسبة
-              </Button>
-
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-9 rounded-lg shadow-sm" onClick={() => { searchBarRef.current?.scrollIntoView({ behavior: 'smooth' }); const input = searchBarRef.current?.querySelector('input'); if (input) setTimeout(() => input.focus(), 300); }}>
-                <Search className="w-3.5 h-3.5 text-muted-foreground" /> بحث
-              </Button>
-
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-9 rounded-lg bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 shadow-sm" disabled={!isViewingExisting} onClick={handlePrintExisting}>
-                <Printer className="w-3.5 h-3.5 text-blue-600" /> طباعة
-              </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5 text-xs h-9 rounded-lg shadow-sm">
-                    مزيد.. <ChevronDown className="w-3 h-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={() => setActivePage('medad-import')}>
-                    <FileSpreadsheet className="w-3.5 h-3.5 ml-2" /> {t.inv_import_data || 'استيراد بيانات'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem disabled={!isViewingExisting} onClick={() => setReverseDialogOpen(true)} className="text-amber-600">
-                    <RotateCcw className="w-3.5 h-3.5 ml-2" /> {t.inv_return}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <Button variant="outline" onClick={() => setActivePage('purchases')} size="sm" className="gap-1.5 text-xs h-9 rounded-lg bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-100 shadow-sm">
-                <X className="w-3.5 h-3.5" /> إغلاق
-              </Button>
-            </div>
-          </div>
+          {/* ===== Shared Action Bar ===== */}
+          <InvoiceActionBar
+            theme="purchase"
+            isViewingExisting={isViewingExisting}
+            isEditing={isEditing}
+            isApproved={false}
+            isPending={addPurchaseBatch.isPending}
+            setActivePage={setActivePage}
+            searchBarRef={searchBarRef}
+            onSubmit={handleSubmit}
+            onNewInvoice={handleNewInvoice}
+            onToggleEdit={() => { setIsEditing(!isEditing); if (!isEditing) toast.info('تم تفعيل وضع التعديل'); }}
+            onDelete={() => setDeleteDialogOpen(true)}
+            onApprove={() => setActivePage('journal-entries')}
+            onPrint={handlePrintExisting}
+            onUpdate={handleUpdatePurchase}
+            onClose={() => setActivePage('purchases')}
+            closePage="purchases"
+            updatePending={updateCar.isPending}
+            quickMenus={[
+              {
+                label: 'عمليات الضرائب',
+                items: [
+                  { label: 'إنشاء إقرار ضريبي', icon: <FileText className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('vat-return-report') },
+                  { label: 'إعدادات الضريبة', icon: <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('tax-settings') },
+                ],
+              },
+              {
+                label: 'تقارير',
+                items: [
+                  { label: 'تقرير المشتريات', icon: <FileText className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('purchases-report') },
+                  { label: 'كشف حساب', icon: <FileText className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('account-statement') },
+                ],
+              },
+              {
+                label: t.inv_operations || 'عمليات',
+                items: [
+                  { label: t.inv_import_data || 'استيراد بيانات', icon: <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('medad-import') },
+                  { label: t.inv_return, icon: <RotateCcw className="w-3.5 h-3.5 ml-2" />, onClick: () => setReverseDialogOpen(true), disabled: !isViewingExisting, className: 'text-amber-600' },
+                  { label: 'إرسال SMS', icon: <MessageSquare className="w-3.5 h-3.5 ml-2" />, onClick: () => toast.info('سيتم إضافة خاصية إرسال SMS قريباً') },
+                ],
+              },
+              {
+                label: 'عرض',
+                items: [
+                  { label: 'معاينة قبل الطباعة', icon: <Printer className="w-3.5 h-3.5 ml-2" />, onClick: handlePrintExisting, disabled: !isViewingExisting },
+                  { label: 'عرض القيد المحاسبي', icon: <FileText className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('journal-entries'), disabled: !isViewingExisting },
+                ],
+              },
+            ]}
+            moreItems={[
+              { label: t.inv_import_data || 'استيراد بيانات', icon: <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('medad-import') },
+              { label: t.inv_return, icon: <RotateCcw className="w-3.5 h-3.5 ml-2" />, onClick: () => setReverseDialogOpen(true), disabled: !isViewingExisting, className: 'text-amber-600' },
+            ]}
+            labels={{
+              add: 'إضافة',
+              saving: t.inv_saving,
+              new: 'جديد',
+              edit: 'تعديل',
+              cancelEdit: 'إلغاء التعديل',
+              delete: 'حذف',
+              accounting: 'محاسبة',
+              search: 'بحث',
+              print: 'طباعة',
+              more: 'مزيد..',
+              close: 'إغلاق',
+              saveChanges: t.inv_save_changes,
+              approved: 'معتمدة',
+            }}
+          />
         </div>
       </div>
 
@@ -1626,56 +1552,37 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         />
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent dir={dir}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t.inv_delete_purchase_confirm}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t.inv_delete_purchase_desc}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeletePurchase}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteCar.isPending ? t.inv_deleting : t.delete}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Reverse Confirmation Dialog */}
-      <AlertDialog open={reverseDialogOpen} onOpenChange={setReverseDialogOpen}>
-        <AlertDialogContent dir={dir}>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <RotateCcw className="h-5 w-5 text-warning" />
-              {t.inv_return_purchase_invoice}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>{t.inv_return_purchase_confirm}</p>
-              <ul className="list-disc list-inside text-muted-foreground">
-                <li>{t.inv_delete_car_from_inventory}</li>
-                <li>{t.inv_delete_journal_entry}</li>
-                <li>{t.inv_update_stats}</li>
-              </ul>
-              <p className="text-destructive font-medium">{t.inv_cannot_undo}</p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleReversePurchase}
-              className="bg-warning text-warning-foreground hover:bg-warning/90"
-            >
-              {deleteCar.isPending ? t.inv_returning : t.inv_return_invoice_btn}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Shared Dialogs */}
+      <InvoiceDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeletePurchase}
+        isPending={deleteCar.isPending}
+        dir={dir}
+        labels={{
+          title: t.inv_delete_purchase_confirm,
+          description: t.inv_delete_purchase_desc,
+          cancel: t.cancel,
+          delete: t.delete,
+          deleting: t.inv_deleting,
+        }}
+      />
+      <InvoiceReverseDialog
+        open={reverseDialogOpen}
+        onOpenChange={setReverseDialogOpen}
+        onConfirm={handleReversePurchase}
+        isPending={deleteCar.isPending}
+        dir={dir}
+        labels={{
+          title: t.inv_return_purchase_invoice,
+          description: t.inv_return_purchase_confirm,
+          bulletPoints: [t.inv_delete_car_from_inventory, t.inv_delete_journal_entry, t.inv_update_stats],
+          warning: t.inv_cannot_undo,
+          cancel: t.cancel,
+          confirm: t.inv_return_invoice_btn,
+          confirming: t.inv_returning,
+        }}
+      />
       {/* AI Import Dialog */}
       <PurchaseInvoiceAIImport
         open={aiImportOpen}
