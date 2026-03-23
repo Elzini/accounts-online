@@ -469,10 +469,40 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
 
   const handleDeleteSale = async () => {
     if (!currentSaleId) return;
-    const sale = existingSales.find(s => s.id === currentSaleId);
-    if (!sale) return;
-    try { await deleteSale.mutateAsync({ saleId: currentSaleId, carId: sale.car_id }); toast.success(t.inv_toast_delete_success); setDeleteDialogOpen(false); handleNewInvoice(); }
-    catch (error) { toast.error(t.inv_toast_delete_error); }
+    try {
+      const isInvoiceRecord = existingInvoices.some(inv => inv.id === currentSaleId);
+
+      if (isInvoiceRecord) {
+        const currentInvoice = existingInvoices.find(inv => inv.id === currentSaleId);
+        if (currentInvoice?.status && currentInvoice.status !== 'draft') {
+          toast.error(t.inv_cannot_edit_approved);
+          return;
+        }
+
+        await supabase.from('invoice_items').delete().eq('invoice_id', currentSaleId);
+        const { error: deleteInvoiceError } = await supabase.from('invoices').delete().eq('id', currentSaleId);
+        if (deleteInvoiceError) throw deleteInvoiceError;
+
+        const { data: updatedInvoices } = await supabase
+          .from('invoices')
+          .select('*, invoice_items(*)')
+          .eq('company_id', companyId)
+          .eq('invoice_type', 'sales')
+          .order('created_at', { ascending: true });
+        setExistingInvoices(updatedInvoices || []);
+      } else {
+        const sale = existingSales.find(s => s.id === currentSaleId);
+        if (!sale) return;
+        await deleteSale.mutateAsync({ saleId: currentSaleId, carId: sale.car_id });
+      }
+
+      toast.success(t.inv_toast_delete_success);
+      setDeleteDialogOpen(false);
+      handleNewInvoice();
+    } catch (error) {
+      console.error('Delete sale error:', error);
+      toast.error(t.inv_toast_delete_error);
+    }
   };
 
   const handleReverseSale = async () => {
