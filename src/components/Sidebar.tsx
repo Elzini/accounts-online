@@ -30,7 +30,23 @@ import {
 interface SidebarProps {
   activePage: ActivePage;
   setActivePage: (page: ActivePage) => void;
+
+interface MenuItem {
+  id: ActivePage;
+  label: string;
+  icon: LucideIcon;
+  permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users';
 }
+
+interface Section {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  items: MenuItem[];
+  showCondition: boolean;
+  isMore?: boolean;
+}
+
 
 /** Collapsible section component */
 function SidebarSection({
