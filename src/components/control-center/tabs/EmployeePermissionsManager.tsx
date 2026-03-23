@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Users, Eye, EyeOff, Pencil, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
 
 const TABLES = [
   { key: 'journal_entries', label: 'القيود المحاسبية' },
