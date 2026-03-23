@@ -50,7 +50,7 @@ export function useSaveReportConfig() {
   });
 }
 
-// ── Sensitive Operations Log ──
+// ── Sensitive Operations Log (redirected to audit_logs) ──
 export function useSensitiveOpsLog() {
   const companyId = useCompanyId();
   return useQuery({
@@ -58,9 +58,10 @@ export function useSensitiveOpsLog() {
     queryFn: async () => {
       if (!companyId) return [];
       const { data, error } = await supabase
-        .from('sensitive_operations_log')
+        .from('audit_logs')
         .select('*')
         .eq('company_id', companyId)
+        .in('action', ['delete', 'update'])
         .order('created_at', { ascending: false })
         .limit(200);
       if (error) throw error;

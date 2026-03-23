@@ -174,7 +174,7 @@ function ReminderRuleForm({ open, onClose, companyId, isAr }: { open: boolean; o
   const queryClient = useQueryClient();
   const [form, setForm] = useState({ name: '', reminder_type: 'overdue', days_offset: '7', reminder_method: 'notification', escalation_level: '1', message_template: '' });
   const createMutation = useMutation({
-    mutationFn: async () => { if (!companyId) throw new Error('No company'); const { error } = await supabase.from('collection_reminder_rules').insert({ company_id: companyId, name: form.name, reminder_type: form.reminder_type, days_offset: Number(form.days_offset), reminder_method: form.reminder_method, escalation_level: Number(form.escalation_level), message_template: form.message_template || null }); if (error) throw error; },
+    mutationFn: async () => { if (!companyId) throw new Error('No company'); await (await import('@/services/automation')).createCollectionReminderRule(companyId, { name: form.name, reminder_type: form.reminder_type, days_offset: Number(form.days_offset), reminder_method: form.reminder_method, escalation_level: Number(form.escalation_level), message_template: form.message_template || null }); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['collection-reminder-rules'] }); toast.success(isAr ? 'تم إنشاء القاعدة' : 'Rule created'); onClose(); },
     onError: () => toast.error(isAr ? 'حدث خطأ' : 'Error'),
   });

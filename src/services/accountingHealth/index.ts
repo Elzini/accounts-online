@@ -38,15 +38,20 @@ export async function runFullAccountingHealthCheck(
   const { data: session } = await supabase.auth.getSession();
   const userId = session?.session?.user?.id;
 
+  // Log results to audit_logs instead of dropped data_integrity_checks
   for (const check of checks) {
-    await supabase.from('data_integrity_checks').insert({
+    await supabase.from('audit_logs').insert({
       company_id: companyId,
-      check_type: check.checkId,
-      check_name: check.checkName,
-      status: check.status,
-      details: { category: check.category, severity: check.severity, summary: check.summary, issuesCount: check.issuesCount, recommendations: check.recommendations, ...check.details },
-      issues_found: check.issuesCount,
-      checked_by: userId,
+      user_id: userId || 'system',
+      entity_type: 'integrity_check',
+      entity_id: check.checkId,
+      action: 'check',
+      new_data: { 
+        check_name: check.checkName, status: check.status, 
+        category: check.category, severity: check.severity, 
+        summary: check.summary, issuesCount: check.issuesCount,
+        recommendations: check.recommendations, ...check.details 
+      },
     });
   }
 

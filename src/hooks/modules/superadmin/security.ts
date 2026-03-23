@@ -24,12 +24,12 @@ export function useFinancialProtectionStats() {
   });
 }
 
-// ─── System Change Log ───
+// ─── System Change Log (redirected to audit_logs) ───
 export function useSystemChangeLog(limit = 100) {
   return useQuery({
     queryKey: ['system-change-log', limit],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('system_change_log').select('*').order('created_at', { ascending: false }).limit(limit);
+      const { data, error } = await supabase.from('audit_logs').select('*').eq('entity_type', 'system_config').order('created_at', { ascending: false }).limit(limit);
       if (error) throw error;
       return data || [];
     },
@@ -66,16 +66,13 @@ export function useToggleFreeze() {
       }
 
       const { data: { user } } = await supabase.auth.getUser();
-      await (supabase.from as any)('system_change_log').insert({
-        user_id: user?.id,
-        change_type: 'config_change',
-        module: 'system_freeze',
-        description: freeze ? 'تفعيل وضع التجميد الشامل' : 'إلغاء وضع التجميد',
-        previous_value: { frozen: !freeze },
-        new_value: { frozen: freeze },
-        authorization_method: 'master_code',
-        status: 'applied',
-        applied_at: new Date().toISOString(),
+      await supabase.from('audit_logs').insert({
+        user_id: user?.id || 'system',
+        entity_type: 'system_config',
+        entity_id: 'system_freeze',
+        action: 'update',
+        old_data: { frozen: !freeze },
+        new_data: { frozen: freeze, authorization_method: 'master_code' },
       });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['system-freeze-mode'] }),
@@ -232,14 +229,13 @@ export function useSecurityIncidents(limit = 100) {
   });
 }
 
-// ─── Tamper Detector ───
+// ─── Tamper Detector (redirected to audit_logs) ───
 export function useTamperScanRuns() {
   return useQuery({
     queryKey: ['tamper-scan-runs'],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('tamper_scan_runs').select('*').order('created_at', { ascending: false }).limit(50);
-      if (error) throw error;
-      return data || [];
+      // Scan runs no longer stored - return empty
+      return [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -249,7 +245,7 @@ export function useTamperEvents() {
   return useQuery({
     queryKey: ['tamper-events'],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('tamper_events').select('*').order('detected_at', { ascending: false }).limit(200);
+      const { data, error } = await supabase.from('audit_logs').select('*').in('action', ['update', 'delete']).order('created_at', { ascending: false }).limit(200);
       if (error) throw error;
       return data || [];
     },
@@ -262,18 +258,17 @@ export function useRunTamperScan() {
   return useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await (supabase.from as any)('tamper_scan_runs').insert({
-        initiated_by: user?.id,
-        status: 'completed',
-        tables_scanned: Object.keys({
-          invoices: true, invoice_items: true, journal_entries: true,
-          journal_entry_lines: true, account_categories: true, checks: true,
-          expenses: true, vouchers: true, app_settings: true,
-        }),
-        issues_found: 0,
-        completed_at: new Date().toISOString(),
-      } as any);
-      if (error) throw error;
+      // Log scan to audit_logs instead of tamper_scan_runs
+      await supabase.from('audit_logs').insert({
+        user_id: user?.id || 'system',
+        entity_type: 'tamper_scan',
+        action: 'scan',
+        new_data: {
+          status: 'completed',
+          tables_scanned: ['invoices', 'invoice_items', 'journal_entries', 'journal_entry_lines', 'account_categories', 'checks', 'expenses', 'vouchers', 'app_settings'],
+          issues_found: 0,
+        },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tamper-scan-runs'] });
