@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { fetchMenuConfiguration, saveMenuConfiguration, MenuItem } from '@/services/systemControl';
 import { supabase } from '@/integrations/supabase/client';
+import { getCompanyTypeLabel } from '@/core/engine/industryFeatures';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
