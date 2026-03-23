@@ -306,7 +306,7 @@ export function Sidebar({
     { id: 'customers-report' as ActivePage, label: s(settings?.customers_report_title, t.nav_customers_report), icon: Users, permission: 'reports' },
   ];
 
-  if (companyType === 'car_dealership') {
+  if (getIndustryFeatures(companyType).hasCarInventory) {
     salesMenuItems.splice(5, 0,
       { id: 'partner-dealerships' as ActivePage, label: s(settings?.partner_dealerships_title, t.nav_partner_dealerships), icon: Building2, permission: 'sales' },
       { id: 'car-transfers' as ActivePage, label: s(settings?.car_transfers_title, t.nav_car_transfers), icon: ArrowLeftRight, permission: 'sales' },

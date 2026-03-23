@@ -1080,7 +1080,7 @@ export async function refreshAllCarryForwardBalances(
 
     // 3. ترحيل المخزون - فقط لشركات السيارات
     let inventoryCount = 0;
-    if (companyType === 'car_dealership') {
+    if (getIndustryFeatures(companyType).hasCarInventory) {
       const inventoryResult = await carryForwardInventory(previousYearId, fiscalYearId, companyId);
       inventoryCount = inventoryResult.count || 0;
     }

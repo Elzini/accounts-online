@@ -152,7 +152,7 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
             { label: t.suppliers_label, page: 'suppliers' },
           ],
         },
-        ...(companyType === 'car_dealership' ? [{
+        ...(getIndustryFeatures(companyType).hasCarInventory ? [{
           id: 'inventory',
           title: labels.inventoryLabel,
           icon: Package as LucideIcon,

@@ -616,7 +616,7 @@ export async function fetchMonthlyChartData(fiscalYearId?: string) {
 
   let rawData: Array<{ date: string; amount: number; profit: number }> = [];
 
-  if (companyType && companyType !== 'car_dealership') {
+  if (companyType && !getIndustryFeatures(companyType).hasCarInventory) {
     const { data: invoices, error } = await supabase
       .from('invoices')
       .select('invoice_date, subtotal')
