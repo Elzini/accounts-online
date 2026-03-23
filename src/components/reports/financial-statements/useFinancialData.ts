@@ -55,12 +55,20 @@ export function useFinancialData() {
       const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined;
       const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined;
 
-      const { data: salesData } = await supabase.from('sales').select(`sale_price, car:cars(purchase_price), sale_items:sale_items(sale_price, car:cars(purchase_price))`).eq('company_id', companyId).gte('sale_date', startDate!).lte('sale_date', endDate!);
       let revenue = 0, costOfSales = 0;
-      (salesData || []).forEach((sale: any) => {
-        if (sale.sale_items && sale.sale_items.length > 0) { sale.sale_items.forEach((item: any) => { revenue += Number(item.sale_price) || 0; costOfSales += Number(item.car?.purchase_price) || 0; }); }
-        else { revenue += Number(sale.sale_price) || 0; costOfSales += Number(sale.car?.purchase_price) || 0; }
-      });
+
+      if (hasCarInventory) {
+        const { data: salesData } = await supabase.from('sales').select(`sale_price, car:cars(purchase_price), sale_items:sale_items(sale_price, car:cars(purchase_price))`).eq('company_id', companyId).gte('sale_date', startDate!).lte('sale_date', endDate!);
+        (salesData || []).forEach((sale: any) => {
+          if (sale.sale_items && sale.sale_items.length > 0) { sale.sale_items.forEach((item: any) => { revenue += Number(item.sale_price) || 0; costOfSales += Number(item.car?.purchase_price) || 0; }); }
+          else { revenue += Number(sale.sale_price) || 0; costOfSales += Number(sale.car?.purchase_price) || 0; }
+        });
+      } else {
+        const { data: salesInvoices } = await supabase.from('invoices').select('subtotal, total').eq('company_id', companyId).eq('invoice_type', 'sales').gte('invoice_date', startDate!).lte('invoice_date', endDate!);
+        const { data: purchaseInvoices } = await supabase.from('invoices').select('subtotal').eq('company_id', companyId).eq('invoice_type', 'purchase').gte('invoice_date', startDate!).lte('invoice_date', endDate!);
+        revenue = (salesInvoices || []).reduce((sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0);
+        costOfSales = (purchaseInvoices || []).reduce((sum: number, inv: any) => sum + (Number(inv.subtotal) || 0), 0);
+      }
 
       const { data: expensesData } = await supabase.from('expenses').select(`amount, description, category:expense_categories(name)`).eq('company_id', companyId).gte('expense_date', startDate!).lte('expense_date', endDate!);
       const expensesByCategory: { [key: string]: number } = {};
@@ -71,19 +79,24 @@ export function useFinancialData() {
       const { data: bankData } = await supabase.from('bank_accounts').select('current_balance').eq('company_id', companyId);
       const totalCash = (bankData || []).reduce((sum: number, b: any) => sum + (Number(b.current_balance) || 0), 0);
 
-      const { data: carsData } = await supabase.from('cars').select('purchase_price').eq('company_id', companyId).eq('status', 'available');
-      const inventoryValue = (carsData || []).reduce((sum: number, c: any) => sum + (Number(c.purchase_price) || 0), 0);
+      let inventoryValue = 0;
+      if (hasCarInventory) {
+        const { data: carsData } = await supabase.from('cars').select('purchase_price').eq('company_id', companyId).eq('status', 'available');
+        inventoryValue = (carsData || []).reduce((sum: number, c: any) => sum + (Number(c.purchase_price) || 0), 0);
+      }
 
       const grossProfit = revenue - costOfSales;
       const operatingProfit = grossProfit - totalExpenses;
       const zakat = Math.max(0, operatingProfit * 0.025);
       const netProfit = operatingProfit - zakat;
 
+      const inventoryLabel = hasCarInventory ? 'مخزون السيارات' : 'المخزون';
+
       setData({
         companyName: company?.name || '',
         period: { from: startDate || '', to: endDate || '' },
         balanceSheet: {
-          currentAssets: [{ name: 'النقد وأرصدة لدى البنوك', amount: totalCash }, { name: 'مخزون السيارات', amount: inventoryValue }],
+          currentAssets: [{ name: 'النقد وأرصدة لدى البنوك', amount: totalCash }, ...(inventoryValue > 0 ? [{ name: inventoryLabel, amount: inventoryValue }] : [])],
           fixedAssets: [], totalAssets: totalCash + inventoryValue,
           currentLiabilities: [], longTermLiabilities: [], totalLiabilities: 0,
           equity: [{ name: 'رأس المال', amount: 0 }, { name: 'الأرباح المحتجزة', amount: netProfit }], totalEquity: netProfit,

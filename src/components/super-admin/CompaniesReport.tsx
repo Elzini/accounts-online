@@ -62,53 +62,49 @@ export function CompaniesReport() {
       const stats: CompanyFullStats[] = [];
 
       for (const company of companies || []) {
-        const [
-          usersRes,
-          carsRes,
-          availableCarsRes,
-          soldCarsRes,
-          salesRes,
-          customersRes,
-          suppliersRes,
-          quotationsRes,
-          expensesRes,
-          vouchersRes,
-          journalRes
-        ] = await Promise.all([
+        const isCarCompany = company.company_type === 'car_dealership';
+
+        const baseQueries = [
           supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-          supabase.from('cars').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-          supabase.from('cars').select('id', { count: 'exact', head: true }).eq('company_id', company.id).eq('status', 'available'),
-          supabase.from('cars').select('id', { count: 'exact', head: true }).eq('company_id', company.id).eq('status', 'sold'),
-          supabase.from('sales').select('sale_price, profit').eq('company_id', company.id),
+          isCarCompany ? supabase.from('cars').select('id', { count: 'exact', head: true }).eq('company_id', company.id) : Promise.resolve({ count: 0 }),
+          isCarCompany ? supabase.from('cars').select('id', { count: 'exact', head: true }).eq('company_id', company.id).eq('status', 'available') : Promise.resolve({ count: 0 }),
+          isCarCompany ? supabase.from('cars').select('id', { count: 'exact', head: true }).eq('company_id', company.id).eq('status', 'sold') : Promise.resolve({ count: 0 }),
+          isCarCompany ? supabase.from('sales').select('sale_price, profit').eq('company_id', company.id) : supabase.from('invoices').select('subtotal').eq('company_id', company.id).eq('invoice_type', 'sales'),
           supabase.from('customers').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
           supabase.from('suppliers').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
           supabase.from('quotations').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
           supabase.from('expenses').select('amount').eq('company_id', company.id),
           supabase.from('vouchers').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
           supabase.from('journal_entries').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-        ]);
+        ];
 
-        const salesData = salesRes.data || [];
-        const expensesData = expensesRes.data || [];
+        const [
+          usersRes, carsRes, availableCarsRes, soldCarsRes,
+          salesRes, customersRes, suppliersRes, quotationsRes,
+          expensesRes, vouchersRes, journalRes
+        ] = await Promise.all(baseQueries);
+
+        const salesData = (salesRes as any).data || [];
+        const expensesData = (expensesRes as any).data || [];
 
         stats.push({
           company_id: company.id,
           company_name: company.name,
           is_active: company.is_active,
           created_at: company.created_at,
-          users_count: usersRes.count || 0,
-          cars_count: carsRes.count || 0,
-          available_cars: availableCarsRes.count || 0,
-          sold_cars: soldCarsRes.count || 0,
+          users_count: (usersRes as any).count || 0,
+          cars_count: (carsRes as any).count || 0,
+          available_cars: (availableCarsRes as any).count || 0,
+          sold_cars: (soldCarsRes as any).count || 0,
           sales_count: salesData.length,
-          total_sales: salesData.reduce((sum, s) => sum + (s.sale_price || 0), 0),
-          total_profit: salesData.reduce((sum, s) => sum + (s.profit || 0), 0),
-          customers_count: customersRes.count || 0,
-          suppliers_count: suppliersRes.count || 0,
-          quotations_count: quotationsRes.count || 0,
-          expenses_total: expensesData.reduce((sum, e) => sum + (e.amount || 0), 0),
-          vouchers_count: vouchersRes.count || 0,
-          journal_entries_count: journalRes.count || 0,
+          total_sales: salesData.reduce((sum: number, s: any) => sum + (s.sale_price || s.subtotal || 0), 0),
+          total_profit: isCarCompany ? salesData.reduce((sum: number, s: any) => sum + (s.profit || 0), 0) : 0,
+          customers_count: (customersRes as any).count || 0,
+          suppliers_count: (suppliersRes as any).count || 0,
+          quotations_count: (quotationsRes as any).count || 0,
+          expenses_total: expensesData.reduce((sum: number, e: any) => sum + (e.amount || 0), 0),
+          vouchers_count: (vouchersRes as any).count || 0,
+          journal_entries_count: (journalRes as any).count || 0,
         });
       }
 
