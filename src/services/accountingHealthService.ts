@@ -415,23 +415,32 @@ export async function checkSupplierReconciliation(companyId: string): Promise<Ac
 
   const discrepancies: any[] = [];
 
-  if (suppliers) {
+  if (suppliers && suppliers.length > 0) {
+    // Batch: fetch all outstanding invoices for all suppliers at once (fixes N+1)
+    const supplierIds = suppliers.map(s => s.id);
+    const { data: allInvoices } = await supabase
+      .from('invoices')
+      .select('supplier_id, total, amount_paid, status')
+      .eq('company_id', companyId)
+      .in('supplier_id', supplierIds)
+      .in('status', ['issued', 'partially_paid']);
+
+    const invoicesBySupplier = new Map<string, typeof allInvoices>();
+    for (const inv of allInvoices || []) {
+      const arr = invoicesBySupplier.get(inv.supplier_id!) || [];
+      arr.push(inv);
+      invoicesBySupplier.set(inv.supplier_id!, arr);
+    }
+
     for (const supplier of suppliers as any[]) {
-      const { data: invoices } = await supabase
-        .from('invoices')
-        .select('total, amount_paid, status')
-        .eq('company_id', companyId)
-        .eq('supplier_id', supplier.id)
-        .in('status', ['issued', 'partially_paid']);
-
-      const balance = (invoices || []).reduce((s: number, i: any) =>
+      const invoices = invoicesBySupplier.get(supplier.id) || [];
+      const balance = invoices.reduce((s: number, i: any) =>
         s + ((Number(i.total) || 0) - (Number(i.amount_paid) || 0)), 0);
-
       if (Math.abs(balance) > 1) {
         discrepancies.push({
           supplierName: supplier.name,
           outstandingBalance: Math.round(balance * 100) / 100,
-          invoicesCount: invoices?.length || 0,
+          invoicesCount: invoices.length,
         });
       }
     }
