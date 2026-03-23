@@ -71,14 +71,7 @@ export function ExecutiveKPIDashboard() {
   // Load saved targets from app_settings
   const { data: savedTargets } = useQuery({
     queryKey: ['kpi-targets', companyId],
-    queryFn: async () => {
-      const { data } = await supabase.from('app_settings')
-        .select('value')
-        .eq('company_id', companyId!)
-        .eq('key', 'kpi_targets')
-        .maybeSingle();
-      return data?.value ? JSON.parse(data.value) : null;
-    },
+    queryFn: () => fetchKPITargets(companyId!),
     enabled: !!companyId,
   });
 
