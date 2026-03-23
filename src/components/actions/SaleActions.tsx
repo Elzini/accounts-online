@@ -324,36 +324,23 @@ export function SaleActions({ sale }: SaleActionsProps) {
     return parts.length > 0 ? parts.join('، ') : 'المملكة العربية السعودية';
   };
 
-  // Build invoice items and calculate totals from sale_items if available (multi-car sale)
   const buildInvoiceData = () => {
+    const { calcCarTax } = require('@/utils/carTaxHelper');
+    
     if (sale.sale_items && sale.sale_items.length > 0) {
-      // Multi-car sale: build from sale_items
       const items = sale.sale_items.map(item => {
         const itemPrice = Number(item.sale_price);
         const carCondition = item.car?.car_condition;
         const purchasePrice = Number(item.car?.purchase_price || 0);
-        
-        let itemTaxAmount: number;
-        let itemSubtotal: number;
-        
-        if (carCondition === 'used' && taxRate > 0) {
-          // Used car: margin VAT - tax on profit margin only, added on top
-          itemSubtotal = itemPrice;
-          const margin = Math.max(0, itemPrice - purchasePrice);
-          itemTaxAmount = margin * taxRate / (100 + taxRate);
-        } else {
-          // New car: tax included in stored price
-          itemTaxAmount = itemPrice * (taxRate / (100 + taxRate));
-          itemSubtotal = itemPrice - itemTaxAmount;
-        }
+        const result = calcCarTax(itemPrice, carCondition, 'sale', taxRate, purchasePrice);
         
         return {
           description: `${item.car?.name || 'سيارة'} ${item.car?.model || ''} - ${item.car?.color || ''} - شاسيه: ${item.car?.chassis_number || ''}${(item.car as any)?.plate_number ? ` - لوحة: ${(item.car as any).plate_number}` : ''}`,
           quantity: 1,
-          unitPrice: itemSubtotal,
+          unitPrice: result.subtotal,
           taxRate: taxRate,
-          taxAmount: itemTaxAmount,
-          total: itemSubtotal + itemTaxAmount,
+          taxAmount: result.taxAmount,
+          total: result.subtotal + result.taxAmount,
         };
       });
       
@@ -363,36 +350,22 @@ export function SaleActions({ sale }: SaleActionsProps) {
       
       return { items, subtotal: totalSubtotal, taxAmount: totalTax, total: totalPrice };
     } else {
-      // Single car sale
       const salePrice = Number(sale.sale_price);
       const carCondition = sale.car?.car_condition;
       const purchasePrice = Number(sale.car?.purchase_price || 0);
-      
-      let taxAmount: number;
-      let subtotal: number;
-      
-      if (carCondition === 'used' && taxRate > 0) {
-        // Used car: margin VAT
-        subtotal = salePrice;
-        const margin = Math.max(0, salePrice - purchasePrice);
-        taxAmount = margin * taxRate / (100 + taxRate);
-      } else {
-        // New car: tax included in stored price
-        taxAmount = salePrice * (taxRate / (100 + taxRate));
-        subtotal = salePrice - taxAmount;
-      }
+      const result = calcCarTax(salePrice, carCondition, 'sale', taxRate, purchasePrice);
       
       return {
         items: [{
           description: `${sale.car?.name || 'سيارة'} ${sale.car?.model || ''} - ${sale.car?.color || ''} - شاسيه: ${sale.car?.chassis_number || ''}${(sale.car as any)?.plate_number ? ` - لوحة: ${(sale.car as any).plate_number}` : ''}`,
           quantity: 1,
-          unitPrice: subtotal,
+          unitPrice: result.subtotal,
           taxRate: taxRate,
-          total: subtotal + taxAmount,
+          total: result.subtotal + result.taxAmount,
         }],
-        subtotal,
-        taxAmount,
-        total: subtotal + taxAmount,
+        subtotal: result.subtotal,
+        taxAmount: result.taxAmount,
+        total: result.subtotal + result.taxAmount,
       };
     }
   };

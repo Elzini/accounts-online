@@ -230,12 +230,10 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
       const price = parseFloat(car.sale_price) || 0;
       if (car.car_condition === 'used' && taxRate > 0) {
         const quantity = car.quantity || 1;
-        const baseAmount = price * quantity;
-        const profitMargin = Math.max(0, baseAmount - (car.purchase_price * quantity));
-        const vatAmount = profitMargin * taxRate / (100 + taxRate);
-        const total = baseAmount + vatAmount;
-        subtotal += baseAmount; totalVAT += vatAmount;
-        return { ...car, baseAmount, vatAmount, total };
+        const { calcCarTax } = require('@/utils/carTaxHelper');
+        const result = calcCarTax(price * quantity, car.car_condition, 'sale', taxRate, car.purchase_price * quantity);
+        subtotal += result.subtotal; totalVAT += result.taxAmount;
+        return { ...car, baseAmount: result.subtotal, vatAmount: result.taxAmount, total: result.subtotal + result.taxAmount };
       } else {
         return { ...car, ...calcItem(price, car.quantity || 1) };
       }

@@ -289,12 +289,12 @@ export function PurchaseActions({ car }: PurchaseActionsProps) {
   const { data: taxSettings } = useTaxSettings();
   const { company } = useCompany();
 
-  // Calculate tax - used cars have 0% tax on purchases
+  // Calculate tax using configurable rules
   const isUsedCar = (car as any).car_condition === 'used';
   const taxRate = (!isUsedCar && taxSettings?.is_active) ? (taxSettings?.tax_rate || 0) : 0;
   const purchasePrice = Number(car.purchase_price);
-  const taxAmount = purchasePrice * (taxRate / (100 + taxRate));
-  const subtotal = purchasePrice - taxAmount;
+  const { calcCarTax } = require('@/utils/carTaxHelper');
+  const { taxAmount, subtotal } = calcCarTax(purchasePrice, (car as any).car_condition, 'purchase', taxRate);
 
   // Build address string
   const buildAddress = () => {

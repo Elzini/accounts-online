@@ -38,6 +38,7 @@ export function calcLineItem(
 
 /**
  * Calculate used car VAT (margin scheme: VAT on profit margin only).
+ * @deprecated Use calcCarTax from '@/utils/carTaxHelper' instead.
  */
 export function calcUsedCarVat(
   salePrice: number,
@@ -45,11 +46,13 @@ export function calcUsedCarVat(
   quantity: number,
   taxRate: number
 ): CalcItemResult {
+  const { findTaxRule, calculateTax, CAR_DEALERSHIP_TAX_RULES } = require('@/core/engine/taxRules');
+  const rule = findTaxRule(CAR_DEALERSHIP_TAX_RULES, 'used', 'sale');
   const baseAmount = salePrice * quantity;
-  const profitMargin = Math.max(0, baseAmount - purchasePrice * quantity);
-  const vatAmount = profitMargin * taxRate / (100 + taxRate);
-  const total = baseAmount + vatAmount;
-  return { baseAmount, vatAmount, total };
+  const totalPurchase = purchasePrice * quantity;
+  const result = calculateTax(rule, taxRate, baseAmount, totalPurchase);
+  const total = baseAmount + result.taxAmount;
+  return { baseAmount, vatAmount: result.taxAmount, total };
 }
 
 /**

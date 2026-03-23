@@ -89,22 +89,12 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
   };
 
   const calculateTaxDetails = (salePrice: number, carCondition?: string, purchasePrice?: number) => {
-    const baseAmount = salePrice;
-    let taxAmount: number;
-    
-    if (carCondition === 'used' || carCondition === 'مستعملة') {
-      // ضريبة هامش الربح للسيارات المستعملة - الهامش شامل الضريبة
-      const margin = Math.max(0, salePrice - (purchasePrice || 0));
-      taxAmount = margin * taxRate / (100 + taxRate);
-    } else {
-      taxAmount = salePrice * (taxRate / 100);
-    }
-    
-    const totalWithTax = salePrice + taxAmount;
+    const { calcCarTax } = require('@/utils/carTaxHelper');
+    const result = calcCarTax(salePrice, carCondition, 'sale', taxRate, purchasePrice);
     return {
-      baseAmount: Math.round(baseAmount * 100) / 100,
-      taxAmount: Math.round(taxAmount * 100) / 100,
-      totalWithTax: Math.round(totalWithTax * 100) / 100,
+      baseAmount: Math.round(result.subtotal * 100) / 100,
+      taxAmount: Math.round(result.taxAmount * 100) / 100,
+      totalWithTax: Math.round((result.subtotal + result.taxAmount) * 100) / 100,
     };
   };
 
