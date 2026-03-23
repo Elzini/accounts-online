@@ -71,16 +71,14 @@ export const PurchaseInvoice = forwardRef<HTMLDivElement, PurchaseInvoiceProps>(
     const formattedTime = format(new Date(invoiceDate), 'HH:mm:ss');
     const taxRate = taxSettings?.tax_rate || 15;
 
-    // Generate ZATCA-compliant QR code data
-    const qrData = useMemo(() => {
-      return generateZatcaQRData({
-        sellerName: supplierName,
-        vatNumber: supplierTaxNumber || '',
-        invoiceDateTime: formatDateTimeForZatca(invoiceDate),
-        invoiceTotal: total,
-        vatAmount: taxAmount,
-      });
-    }, [supplierName, supplierTaxNumber, invoiceDate, total, taxAmount]);
+    const qrData = useZatcaPhase2QR({
+      sellerName: supplierName,
+      vatNumber: supplierTaxNumber || '',
+      invoiceDateTime: invoiceDate,
+      invoiceTotal: total,
+      vatAmount: taxAmount,
+      invoiceNumber: String(invoiceNumber || ''),
+    });
 
     // Calculate item tax amount if not provided
     const itemsWithTax = items.map(item => ({

@@ -117,16 +117,14 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
 
     const isVatValid = qrVatNumber && qrVatNumber.replace(/\D/g, '').length === 15;
 
-    const qrData = useMemo(() => {
-      // إنشاء بيانات QR حتى لو لم يكن الرقم الضريبي صحيحاً
-      return generateZatcaQRData({
-        sellerName: qrSellerName,
-        vatNumber: qrVatNumber || '300000000000003', // رقم افتراضي للعرض
-        invoiceDateTime: formatDateTimeForZatca(invoiceDate),
-        invoiceTotal: total,
-        vatAmount: taxAmount,
-      });
-    }, [qrSellerName, qrVatNumber, invoiceDate, total, taxAmount]);
+    const qrData = useZatcaPhase2QR({
+      sellerName: qrSellerName,
+      vatNumber: qrVatNumber || '300000000000003',
+      invoiceDateTime: invoiceDate,
+      invoiceTotal: total,
+      vatAmount: taxAmount,
+      invoiceNumber: String(invoiceNumber || ''),
+    });
 
     const itemsWithTax = items.map(item => ({
       ...item,
