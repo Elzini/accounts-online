@@ -8,7 +8,7 @@
 import { AccountResolver } from './accountResolver';
 import { JournalEngine } from './journalEngine';
 import { JournalEntryLine } from './types';
-import { IInvoiceRepository, ISupplierRepository, IFiscalYearRepository } from './repositories';
+import { IInvoiceRepository, ISupplierRepository, IFiscalYearRepository, ICompanySettingsRepository } from './repositories';
 import { EventBus, Events, InvoicePostedEvent } from './eventBus';
 
 interface InvoiceData {
