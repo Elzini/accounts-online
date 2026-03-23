@@ -1,15 +1,13 @@
+/**
+ * ZakatReportsPage - Orchestrator
+ * Decomposed into tab components under ./zakat/
+ */
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { 
+import { Loader2, Wallet, Scale, Calculator, TrendingUp } from 'lucide-react';
+import { format } from 'date-fns';
+import {
   useCashFlowStatement,
   useChangesInEquityStatement,
   useZakatBaseStatement,
@@ -17,31 +15,20 @@ import {
 } from '@/hooks/useZakatReports';
 import { useUnifiedPrintReport } from '@/hooks/useUnifiedPrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
-import { 
-  Loader2, 
-  Download, 
-  Printer, 
-  FileText, 
-  FileSpreadsheet,
-  CalendarIcon,
-  ArrowUpCircle,
-  ArrowDownCircle,
-  Wallet,
-  TrendingUp,
-  Scale,
-  Receipt,
-  Building2,
-  Calculator,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { CashFlowTab } from './zakat/CashFlowTab';
+import { EquityChangesTab } from './zakat/EquityChangesTab';
+import { ZakatBaseTab } from './zakat/ZakatBaseTab';
+import { DetailedIncomeTab } from './zakat/DetailedIncomeTab';
+import {
+  buildCashFlowExportData,
+  buildEquityExportData,
+  buildZakatBaseExportData,
+  buildDetailedIncomeExportData,
+} from './zakat/exportUtils';
 
 export function ZakatReportsPage() {
   const currentYear = new Date().getFullYear();
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>({
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: new Date(currentYear, 0, 1),
     to: new Date(currentYear, 11, 31),
   });
@@ -50,256 +37,32 @@ export function ZakatReportsPage() {
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined;
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined;
 
-  const { data: cashFlow, isLoading: isLoadingCashFlow } = useCashFlowStatement(startDate, endDate);
-  const { data: equityChanges, isLoading: isLoadingEquity } = useChangesInEquityStatement(startDate, endDate);
-  const { data: zakatBase, isLoading: isLoadingZakat } = useZakatBaseStatement(fiscalYear);
-  const { data: detailedIncome, isLoading: isLoadingDetailedIncome } = useDetailedIncomeStatement(startDate, endDate);
+  const { data: cashFlow, isLoading: l1 } = useCashFlowStatement(startDate, endDate);
+  const { data: equityChanges, isLoading: l2 } = useChangesInEquityStatement(startDate, endDate);
+  const { data: zakatBase, isLoading: l3 } = useZakatBaseStatement(fiscalYear);
+  const { data: detailedIncome, isLoading: l4 } = useDetailedIncomeStatement(startDate, endDate);
 
   const { printReport } = useUnifiedPrintReport();
   const { exportToExcel } = useExcelExport();
 
-  const isLoading = isLoadingCashFlow || isLoadingEquity || isLoadingZakat || isLoadingDetailedIncome;
+  const dateSubtitle = dateRange.from && dateRange.to
+    ? `من ${format(dateRange.from, 'yyyy/MM/dd')} إلى ${format(dateRange.to, 'yyyy/MM/dd')}`
+    : undefined;
 
-  // Export functions for Cash Flow Statement
-  const exportCashFlow = (type: 'print' | 'excel' | 'pdf') => {
-    if (!cashFlow) return;
-    
-    const columns = [
-      { header: 'البند', key: 'item' },
-      { header: 'المبلغ (ر.س)', key: 'amount' },
-    ];
-    
-    const data = [
-      { item: 'صافي الربح', amount: String(cashFlow.operatingActivities.netIncome) },
-      { item: '--- الأنشطة التشغيلية ---', amount: '' },
-      ...cashFlow.operatingActivities.changesInWorkingCapital.map(c => ({
-        item: c.description,
-        amount: String(c.amount),
-      })),
-      { item: 'إجمالي التدفقات التشغيلية', amount: String(cashFlow.operatingActivities.total) },
-      { item: '--- الأنشطة الاستثمارية ---', amount: '' },
-      ...cashFlow.investingActivities.items.map(c => ({
-        item: c.description,
-        amount: String(c.amount),
-      })),
-      { item: 'إجمالي التدفقات الاستثمارية', amount: String(cashFlow.investingActivities.total) },
-      { item: '--- الأنشطة التمويلية ---', amount: '' },
-      ...cashFlow.financingActivities.items.map(c => ({
-        item: c.description,
-        amount: String(c.amount),
-      })),
-      { item: 'إجمالي التدفقات التمويلية', amount: String(cashFlow.financingActivities.total) },
-      { item: '---', amount: '' },
-      { item: 'صافي التغير في النقدية', amount: String(cashFlow.netChangeInCash) },
-      { item: 'النقدية في بداية الفترة', amount: String(cashFlow.cashAtBeginning) },
-      { item: 'النقدية في نهاية الفترة', amount: String(cashFlow.cashAtEnd) },
-    ];
-
-    const dateSubtitle = dateRange.from && dateRange.to 
-      ? `من ${format(dateRange.from, 'yyyy/MM/dd')} إلى ${format(dateRange.to, 'yyyy/MM/dd')}`
-      : undefined;
-
+  const handleExport = (
+    buildFn: () => { columns: any[]; data: any[]; summaryData?: any[]; title: string; subtitle?: string; fileName?: string } | null,
+    type: 'print' | 'excel' | 'pdf'
+  ) => {
+    const result = buildFn();
+    if (!result) return;
     if (type === 'excel') {
-      const summaryData = [
-        { label: 'التدفقات التشغيلية', value: cashFlow.operatingActivities.total + ' ر.س' },
-        { label: 'التدفقات الاستثمارية', value: cashFlow.investingActivities.total + ' ر.س' },
-        { label: 'التدفقات التمويلية', value: cashFlow.financingActivities.total + ' ر.س' },
-        { label: 'صافي التغير', value: cashFlow.netChangeInCash + ' ر.س' },
-      ];
-      exportToExcel({ title: 'قائمة التدفقات النقدية', columns, data, fileName: 'cash-flow-statement', summaryData });
+      exportToExcel({ title: result.title, columns: result.columns, data: result.data, fileName: result.fileName || 'report', summaryData: result.summaryData });
     } else {
-      printReport({ title: 'قائمة التدفقات النقدية', subtitle: dateSubtitle, columns, data });
+      printReport({ title: result.title, subtitle: result.subtitle, columns: result.columns, data: result.data });
     }
   };
 
-  // Export functions for Changes in Equity
-  const exportEquityChanges = (type: 'print' | 'excel' | 'pdf') => {
-    if (!equityChanges) return;
-    
-    const columns = [
-      { header: 'البيان', key: 'description' },
-      { header: 'رأس المال', key: 'capital' },
-      { header: 'الاحتياطيات', key: 'reserves' },
-      { header: 'الأرباح المحتجزة', key: 'retainedEarnings' },
-      { header: 'الإجمالي', key: 'total' },
-    ];
-    
-    const data = equityChanges.details.map(d => ({
-      description: d.description,
-      capital: String(d.capital),
-      reserves: String(d.reserves),
-      retainedEarnings: String(d.retainedEarnings),
-      total: String(d.total),
-    }));
-
-    const dateSubtitle = dateRange.from && dateRange.to 
-      ? `من ${format(dateRange.from, 'yyyy/MM/dd')} إلى ${format(dateRange.to, 'yyyy/MM/dd')}`
-      : undefined;
-
-    if (type === 'excel') {
-      const summaryData = [
-        { label: 'الرصيد الافتتاحي', value: equityChanges.openingBalance.total + ' ر.س' },
-        { label: 'الرصيد الختامي', value: equityChanges.closingBalance.total + ' ر.س' },
-      ];
-      exportToExcel({ title: 'قائمة التغيرات في حقوق الملكية', columns, data, fileName: 'equity-changes', summaryData });
-    } else {
-      printReport({ title: 'قائمة التغيرات في حقوق الملكية', subtitle: dateSubtitle, columns, data });
-    }
-  };
-
-  // Export functions for Zakat Base
-  const exportZakatBase = (type: 'print' | 'excel' | 'pdf') => {
-    if (!zakatBase) return;
-    
-    const columns = [
-      { header: 'البند', key: 'item' },
-      { header: 'المبلغ (ر.س)', key: 'amount' },
-    ];
-    
-    const data = [
-      { item: '=== مصادر الأموال الخاضعة للزكاة ===', amount: '' },
-      { item: 'رأس المال المدفوع', amount: String(zakatBase.zakatableSources.paidUpCapital) },
-      { item: 'الاحتياطيات', amount: String(zakatBase.zakatableSources.reserves) },
-      { item: 'الأرباح المحتجزة', amount: String(zakatBase.zakatableSources.retainedEarnings) },
-      { item: 'صافي ربح السنة', amount: String(zakatBase.zakatableSources.netIncomeForYear) },
-      { item: 'المخصصات', amount: String(zakatBase.zakatableSources.provisions) },
-      { item: 'القروض طويلة الأجل', amount: String(zakatBase.zakatableSources.longTermLoans) },
-      { item: 'إجمالي مصادر الأموال', amount: String(zakatBase.zakatableSources.total) },
-      { item: '', amount: '' },
-      { item: '=== الحسميات ===', amount: '' },
-      { item: 'صافي الأصول الثابتة', amount: String(zakatBase.deductions.netFixedAssets) },
-      { item: 'الاستثمارات طويلة الأجل', amount: String(zakatBase.deductions.investments) },
-      { item: 'مصاريف ما قبل التشغيل', amount: String(zakatBase.deductions.preOperatingExpenses) },
-      { item: 'الخسائر المتراكمة', amount: String(zakatBase.deductions.accumulatedLosses) },
-      { item: 'إجمالي الحسميات', amount: String(zakatBase.deductions.total) },
-      { item: '', amount: '' },
-      { item: '=== الوعاء الزكوي ===', amount: '' },
-      { item: 'الوعاء الزكوي المعدل', amount: String(zakatBase.adjustedZakatBase) },
-      { item: 'نسبة الزكاة', amount: '2.5%' },
-      { item: 'الزكاة المستحقة', amount: String(zakatBase.zakatDue) },
-    ];
-
-    if (type === 'excel') {
-      const summaryData = [
-        { label: 'الوعاء الزكوي', value: zakatBase.adjustedZakatBase + ' ر.س' },
-        { label: 'الزكاة المستحقة', value: zakatBase.zakatDue + ' ر.س' },
-      ];
-      exportToExcel({ title: 'قائمة الوعاء الزكوي', columns, data, fileName: 'zakat-base', summaryData });
-    } else {
-      printReport({ title: 'قائمة الوعاء الزكوي', subtitle: `السنة المالية: ${fiscalYear}`, columns, data });
-    }
-  };
-
-  // Export functions for Detailed Income Statement
-  const exportDetailedIncome = (type: 'print' | 'excel' | 'pdf') => {
-    if (!detailedIncome) return;
-    
-    const columns = [
-      { header: 'البند', key: 'item' },
-      { header: 'المبلغ (ر.س)', key: 'amount' },
-    ];
-    
-    const data = [
-      { item: '=== الإيرادات ===', amount: '' },
-      ...detailedIncome.revenue.items.map(i => ({ item: `${i.code} - ${i.name}`, amount: String(i.amount) })),
-      { item: 'إجمالي الإيرادات', amount: String(detailedIncome.revenue.total) },
-      { item: '', amount: '' },
-      { item: '=== تكلفة المبيعات ===', amount: '' },
-      ...detailedIncome.costOfSales.items.map(i => ({ item: `${i.code} - ${i.name}`, amount: `(${i.amount})` })),
-      { item: 'إجمالي تكلفة المبيعات', amount: `(${detailedIncome.costOfSales.total})` },
-      { item: '', amount: '' },
-      { item: 'مجمل الربح', amount: String(detailedIncome.grossProfit) },
-      { item: `هامش الربح الإجمالي`, amount: `${detailedIncome.stats.grossProfitMargin}%` },
-      { item: '', amount: '' },
-      { item: '=== المصروفات التشغيلية ===', amount: '' },
-      ...detailedIncome.operatingExpenses.items.map(e => ({ item: `${e.code} - ${e.name}`, amount: `(${e.amount})` })),
-      { item: 'إجمالي المصروفات التشغيلية', amount: `(${detailedIncome.operatingExpenses.total})` },
-      { item: '', amount: '' },
-      { item: 'الربح التشغيلي', amount: String(detailedIncome.operatingIncome) },
-      { item: '', amount: '' },
-      { item: '=== صافي الربح ===', amount: '' },
-      { item: 'صافي الربح', amount: String(detailedIncome.netIncomeBeforeZakat) },
-      { item: 'هامش صافي الربح', amount: `${detailedIncome.stats.netProfitMargin}%` },
-      { item: '', amount: '' },
-      { item: detailedIncome.zakatNote, amount: '' },
-    ];
-
-    const dateSubtitle = dateRange.from && dateRange.to 
-      ? `من ${format(dateRange.from, 'yyyy/MM/dd')} إلى ${format(dateRange.to, 'yyyy/MM/dd')}`
-      : undefined;
-
-    if (type === 'excel') {
-      const summaryData = [
-        { label: 'إجمالي الإيرادات', value: detailedIncome.revenue.total + ' ر.س' },
-        { label: 'مجمل الربح', value: detailedIncome.grossProfit + ' ر.س' },
-        { label: 'صافي الربح', value: detailedIncome.netIncomeBeforeZakat + ' ر.س' },
-        { label: 'عدد المبيعات', value: detailedIncome.stats.totalSalesCount.toString() },
-      ];
-      exportToExcel({ title: 'قائمة الدخل المفصلة', columns, data, fileName: 'detailed-income', summaryData });
-    } else {
-      printReport({ title: 'قائمة الدخل المفصلة', subtitle: dateSubtitle, columns, data });
-    }
-  };
-
-  // Export Actions - rendered inline instead of as a sub-component to avoid remounting
-  const renderExportActions = (onExport: (type: 'print' | 'excel' | 'pdf') => void) => (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Download className="w-4 h-4" />
-          تصدير
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onExport('print'); }} className="gap-2 cursor-pointer">
-          <Printer className="w-4 h-4" />
-          طباعة
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onExport('pdf'); }} className="gap-2 cursor-pointer">
-          <FileText className="w-4 h-4" />
-          تصدير PDF
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onExport('excel'); }} className="gap-2 cursor-pointer">
-          <FileSpreadsheet className="w-4 h-4" />
-          تصدير Excel
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-
-  // Date Range Picker - rendered inline to avoid remounting
-  const dateRangePicker = (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className={cn("justify-start text-right font-normal gap-2", !dateRange.from && "text-muted-foreground")}>
-          <CalendarIcon className="h-4 w-4" />
-          {dateRange.from ? (
-            dateRange.to ? (
-              <>
-                {format(dateRange.from, "yyyy/MM/dd")} - {format(dateRange.to, "yyyy/MM/dd")}
-              </>
-            ) : (
-              format(dateRange.from, "yyyy/MM/dd")
-            )
-          ) : (
-            <span>اختر الفترة</span>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="end">
-        <Calendar
-          initialFocus
-          mode="range"
-          defaultMonth={dateRange.from}
-          selected={dateRange}
-          onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
-          numberOfMonths={2}
-        />
-      </PopoverContent>
-    </Popover>
-  );
-
-  if (isLoading) {
+  if (l1 || l2 || l3 || l4) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -317,640 +80,48 @@ export function ZakatReportsPage() {
       <Tabs defaultValue="cash-flow" className="space-y-4">
         <ScrollArea className="w-full">
           <TabsList className="inline-flex w-max gap-1 p-1">
-            <TabsTrigger value="cash-flow" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
-              <Wallet className="w-4 h-4" />
-              التدفقات النقدية
-            </TabsTrigger>
-            <TabsTrigger value="equity-changes" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
-              <Scale className="w-4 h-4" />
-              التغيرات في حقوق الملكية
-            </TabsTrigger>
-            <TabsTrigger value="zakat-base" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
-              <Calculator className="w-4 h-4" />
-              الوعاء الزكوي
-            </TabsTrigger>
-            <TabsTrigger value="detailed-income" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
-              <TrendingUp className="w-4 h-4" />
-              قائمة الدخل المفصلة
-            </TabsTrigger>
+            <TabsTrigger value="cash-flow" className="gap-1 text-xs sm:text-sm whitespace-nowrap"><Wallet className="w-4 h-4" />التدفقات النقدية</TabsTrigger>
+            <TabsTrigger value="equity-changes" className="gap-1 text-xs sm:text-sm whitespace-nowrap"><Scale className="w-4 h-4" />التغيرات في حقوق الملكية</TabsTrigger>
+            <TabsTrigger value="zakat-base" className="gap-1 text-xs sm:text-sm whitespace-nowrap"><Calculator className="w-4 h-4" />الوعاء الزكوي</TabsTrigger>
+            <TabsTrigger value="detailed-income" className="gap-1 text-xs sm:text-sm whitespace-nowrap"><TrendingUp className="w-4 h-4" />قائمة الدخل المفصلة</TabsTrigger>
           </TabsList>
         </ScrollArea>
 
-        {/* Cash Flow Statement - قائمة التدفقات النقدية */}
         <TabsContent value="cash-flow">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Wallet className="w-5 h-5" />
-                    قائمة التدفقات النقدية
-                  </CardTitle>
-                  <CardDescription>توضح حركة النقد من الأنشطة التشغيلية والاستثمارية والتمويلية</CardDescription>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {renderExportActions(exportCashFlow)}
-                  {dateRangePicker}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {cashFlow ? (
-                <>
-                  {/* Summary Cards */}
-                  <div className="grid gap-4 md:grid-cols-4">
-                    <Card className="border-primary/20">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <ArrowUpCircle className="w-5 h-5 text-primary" />
-                          <span className="text-sm text-muted-foreground">التدفقات التشغيلية</span>
-                        </div>
-                        <p className={cn("text-2xl font-bold", cashFlow.operatingActivities.total >= 0 ? "text-primary" : "text-destructive")}>
-                          {cashFlow.operatingActivities.total.toLocaleString()} <span className="text-sm font-normal">ر.س</span>
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-primary/20">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Building2 className="w-5 h-5 text-primary" />
-                          <span className="text-sm text-muted-foreground">التدفقات الاستثمارية</span>
-                        </div>
-                        <p className={cn("text-2xl font-bold", cashFlow.investingActivities.total >= 0 ? "text-primary" : "text-destructive")}>
-                          {cashFlow.investingActivities.total.toLocaleString()} <span className="text-sm font-normal">ر.س</span>
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-primary/20">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Receipt className="w-5 h-5 text-primary" />
-                          <span className="text-sm text-muted-foreground">التدفقات التمويلية</span>
-                        </div>
-                        <p className={cn("text-2xl font-bold", cashFlow.financingActivities.total >= 0 ? "text-primary" : "text-destructive")}>
-                          {cashFlow.financingActivities.total.toLocaleString()} <span className="text-sm font-normal">ر.س</span>
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className={cn("border-2", cashFlow.netChangeInCash >= 0 ? "border-primary/50 bg-primary/5" : "border-destructive/50 bg-destructive/5")}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <TrendingUp className="w-5 h-5" />
-                          <span className="text-sm text-muted-foreground">صافي التغير</span>
-                        </div>
-                        <p className={cn("text-2xl font-bold", cashFlow.netChangeInCash >= 0 ? "text-primary" : "text-destructive")}>
-                          {cashFlow.netChangeInCash.toLocaleString()} <span className="text-sm font-normal">ر.س</span>
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Cash Flow Details */}
-                  <div className="space-y-6">
-                    {/* Operating Activities */}
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">التدفقات النقدية من الأنشطة التشغيلية</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <Table>
-                          <TableBody>
-                            <TableRow>
-                              <TableCell className="font-medium">صافي الربح</TableCell>
-                              <TableCell className="text-left">{cashFlow.operatingActivities.netIncome.toLocaleString()}</TableCell>
-                            </TableRow>
-                            {cashFlow.operatingActivities.changesInWorkingCapital.map((item, idx) => (
-                              <TableRow key={idx}>
-                                <TableCell>{item.description}</TableCell>
-                                <TableCell className={cn("text-left", item.amount >= 0 ? "text-primary" : "text-destructive")}>
-                                  {item.amount.toLocaleString()}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                            <TableRow className="bg-muted/50 font-bold">
-                              <TableCell>إجمالي التدفقات التشغيلية</TableCell>
-                              <TableCell className="text-left">{cashFlow.operatingActivities.total.toLocaleString()}</TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-                    </Card>
-
-                    {/* Investing Activities */}
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">التدفقات النقدية من الأنشطة الاستثمارية</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <Table>
-                          <TableBody>
-                            {cashFlow.investingActivities.items.map((item, idx) => (
-                              <TableRow key={idx}>
-                                <TableCell>{item.description}</TableCell>
-                                <TableCell className={cn("text-left", item.amount >= 0 ? "text-primary" : "text-destructive")}>
-                                  {item.amount.toLocaleString()}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                            <TableRow className="bg-muted/50 font-bold">
-                              <TableCell>إجمالي التدفقات الاستثمارية</TableCell>
-                              <TableCell className="text-left">{cashFlow.investingActivities.total.toLocaleString()}</TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-                    </Card>
-
-                    {/* Financing Activities */}
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">التدفقات النقدية من الأنشطة التمويلية</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <Table>
-                          <TableBody>
-                            {cashFlow.financingActivities.items.map((item, idx) => (
-                              <TableRow key={idx}>
-                                <TableCell>{item.description}</TableCell>
-                                <TableCell className={cn("text-left", item.amount >= 0 ? "text-primary" : "text-destructive")}>
-                                  {item.amount.toLocaleString()}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                            <TableRow className="bg-muted/50 font-bold">
-                              <TableCell>إجمالي التدفقات التمويلية</TableCell>
-                              <TableCell className="text-left">{cashFlow.financingActivities.total.toLocaleString()}</TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-                    </Card>
-
-                    {/* Summary */}
-                    <Card className="border-primary">
-                      <CardContent className="p-4">
-                        <Table>
-                          <TableBody>
-                            <TableRow>
-                              <TableCell className="font-medium">صافي التغير في النقدية</TableCell>
-                              <TableCell className={cn("text-left font-bold", cashFlow.netChangeInCash >= 0 ? "text-primary" : "text-destructive")}>
-                                {cashFlow.netChangeInCash.toLocaleString()}
-                              </TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>النقدية في بداية الفترة</TableCell>
-                              <TableCell className="text-left">{cashFlow.cashAtBeginning.toLocaleString()}</TableCell>
-                            </TableRow>
-                            <TableRow className="bg-primary/10">
-                              <TableCell className="font-bold">النقدية في نهاية الفترة</TableCell>
-                              <TableCell className="text-left font-bold text-primary">{cashFlow.cashAtEnd.toLocaleString()}</TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">اختر فترة لعرض التقرير</p>
-              )}
-            </CardContent>
-          </Card>
+          <CashFlowTab
+            data={cashFlow}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            onExport={(type) => handleExport(() => cashFlow ? buildCashFlowExportData(cashFlow, dateSubtitle) : null, type)}
+          />
         </TabsContent>
 
-        {/* Changes in Equity - قائمة التغيرات في حقوق الملكية */}
         <TabsContent value="equity-changes">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Scale className="w-5 h-5" />
-                    قائمة التغيرات في حقوق الملكية
-                  </CardTitle>
-                  <CardDescription>توضح التغيرات في رأس المال والاحتياطيات والأرباح المحتجزة</CardDescription>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {renderExportActions(exportEquityChanges)}
-                  {dateRangePicker}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {equityChanges ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>البيان</TableHead>
-                      <TableHead className="text-center">رأس المال</TableHead>
-                      <TableHead className="text-center">الاحتياطيات</TableHead>
-                      <TableHead className="text-center">الأرباح المحتجزة</TableHead>
-                      <TableHead className="text-center">الإجمالي</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {equityChanges.details.map((row, idx) => (
-                      <TableRow key={idx} className={idx === 0 || idx === equityChanges.details.length - 1 ? "bg-muted/50 font-medium" : ""}>
-                        <TableCell>{row.description}</TableCell>
-                        <TableCell className="text-center">{row.capital.toLocaleString()}</TableCell>
-                        <TableCell className="text-center">{row.reserves.toLocaleString()}</TableCell>
-                        <TableCell className="text-center">{row.retainedEarnings.toLocaleString()}</TableCell>
-                        <TableCell className="text-center font-bold">{row.total.toLocaleString()}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">اختر فترة لعرض التقرير</p>
-              )}
-            </CardContent>
-          </Card>
+          <EquityChangesTab
+            data={equityChanges}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            onExport={(type) => handleExport(() => equityChanges ? buildEquityExportData(equityChanges, dateSubtitle) : null, type)}
+          />
         </TabsContent>
 
-        {/* Zakat Base Statement - قائمة الوعاء الزكوي */}
         <TabsContent value="zakat-base">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calculator className="w-5 h-5" />
-                    قائمة الوعاء الزكوي
-                  </CardTitle>
-                  <CardDescription>احتساب الوعاء الزكوي والزكاة المستحقة حسب متطلبات هيئة الزكاة والضريبة والجمارك</CardDescription>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {renderExportActions(exportZakatBase)}
-                  <Select value={fiscalYear} onValueChange={setFiscalYear}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="السنة" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[currentYear, currentYear - 1, currentYear - 2].map(year => (
-                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {zakatBase ? (
-                <>
-                  {/* Company Info */}
-                  <Card className="bg-muted/30">
-                    <CardContent className="p-4">
-                      <div className="grid gap-2 md:grid-cols-3">
-                        <div>
-                          <span className="text-sm text-muted-foreground">اسم الشركة:</span>
-                          <p className="font-medium">{zakatBase.companyInfo.name || 'غير محدد'}</p>
-                        </div>
-                        <div>
-                          <span className="text-sm text-muted-foreground">الرقم الضريبي:</span>
-                          <p className="font-medium">{zakatBase.companyInfo.taxNumber || 'غير محدد'}</p>
-                        </div>
-                        <div>
-                          <span className="text-sm text-muted-foreground">السجل التجاري:</span>
-                          <p className="font-medium">{zakatBase.companyInfo.commercialRegister || 'غير محدد'}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Zakat Calculation */}
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {/* Sources */}
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg text-primary">مصادر الأموال الخاضعة للزكاة</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <Table>
-                          <TableBody>
-                            <TableRow>
-                              <TableCell>رأس المال المدفوع</TableCell>
-                              <TableCell className="text-left">{zakatBase.zakatableSources.paidUpCapital.toLocaleString()}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>الاحتياطيات</TableCell>
-                              <TableCell className="text-left">{zakatBase.zakatableSources.reserves.toLocaleString()}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>الأرباح المحتجزة</TableCell>
-                              <TableCell className="text-left">{zakatBase.zakatableSources.retainedEarnings.toLocaleString()}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>صافي ربح السنة</TableCell>
-                              <TableCell className="text-left">{zakatBase.zakatableSources.netIncomeForYear.toLocaleString()}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>المخصصات</TableCell>
-                              <TableCell className="text-left">{zakatBase.zakatableSources.provisions.toLocaleString()}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>القروض طويلة الأجل</TableCell>
-                              <TableCell className="text-left">{zakatBase.zakatableSources.longTermLoans.toLocaleString()}</TableCell>
-                            </TableRow>
-                            <TableRow className="bg-primary/10 font-bold">
-                              <TableCell>الإجمالي</TableCell>
-                              <TableCell className="text-left text-primary">{zakatBase.zakatableSources.total.toLocaleString()}</TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-                    </Card>
-
-                    {/* Deductions */}
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg text-destructive">الحسميات</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <Table>
-                          <TableBody>
-                            <TableRow>
-                              <TableCell>صافي الأصول الثابتة</TableCell>
-                              <TableCell className="text-left">{zakatBase.deductions.netFixedAssets.toLocaleString()}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>الاستثمارات طويلة الأجل</TableCell>
-                              <TableCell className="text-left">{zakatBase.deductions.investments.toLocaleString()}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>مصاريف ما قبل التشغيل</TableCell>
-                              <TableCell className="text-left">{zakatBase.deductions.preOperatingExpenses.toLocaleString()}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell>الخسائر المتراكمة</TableCell>
-                              <TableCell className="text-left">{zakatBase.deductions.accumulatedLosses.toLocaleString()}</TableCell>
-                            </TableRow>
-                            <TableRow className="bg-destructive/10 font-bold">
-                              <TableCell>الإجمالي</TableCell>
-                              <TableCell className="text-left text-destructive">{zakatBase.deductions.total.toLocaleString()}</TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Zakat Summary */}
-                  <Card className="border-2 border-primary">
-                    <CardContent className="p-6">
-                      <div className="grid gap-4 md:grid-cols-3 text-center">
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">الوعاء الزكوي المعدل</p>
-                          <p className="text-3xl font-bold text-primary">{zakatBase.adjustedZakatBase.toLocaleString()}</p>
-                          <p className="text-sm text-muted-foreground">ريال سعودي</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">نسبة الزكاة</p>
-                          <p className="text-3xl font-bold">2.5%</p>
-                          <p className="text-sm text-muted-foreground">حسب الشريعة الإسلامية</p>
-                        </div>
-                        <div className="bg-primary/10 rounded-lg p-4">
-                          <p className="text-sm text-muted-foreground mb-1">الزكاة المستحقة</p>
-                          <p className="text-3xl font-bold text-primary">{zakatBase.zakatDue.toLocaleString()}</p>
-                          <p className="text-sm text-muted-foreground">ريال سعودي</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">اختر السنة المالية لعرض التقرير</p>
-              )}
-            </CardContent>
-          </Card>
+          <ZakatBaseTab
+            data={zakatBase}
+            fiscalYear={fiscalYear}
+            onFiscalYearChange={setFiscalYear}
+            currentYear={currentYear}
+            onExport={(type) => handleExport(() => zakatBase ? buildZakatBaseExportData(zakatBase, fiscalYear) : null, type)}
+          />
         </TabsContent>
 
-        {/* Detailed Income Statement - قائمة الدخل المفصلة */}
         <TabsContent value="detailed-income">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5" />
-                    قائمة الدخل المفصلة
-                  </CardTitle>
-                  <CardDescription>قائمة الدخل مع تفاصيل الإيرادات والمصروفات وصافي الربح قبل وبعد الزكاة</CardDescription>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {renderExportActions(exportDetailedIncome)}
-                  {dateRangePicker}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {detailedIncome ? (
-                <>
-                  {/* Summary Cards */}
-                  <div className="grid gap-4 md:grid-cols-4">
-                    <Card className="border-primary/20">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <ArrowUpCircle className="w-5 h-5 text-primary" />
-                          <span className="text-sm text-muted-foreground">إجمالي الإيرادات</span>
-                        </div>
-                        <p className="text-2xl font-bold text-primary">{detailedIncome.revenue.total.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{detailedIncome.stats.totalSalesCount} عملية بيع</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-primary/20">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <TrendingUp className="w-5 h-5 text-primary" />
-                          <span className="text-sm text-muted-foreground">مجمل الربح</span>
-                        </div>
-                        <p className={cn("text-2xl font-bold", detailedIncome.grossProfit >= 0 ? "text-primary" : "text-destructive")}>
-                          {detailedIncome.grossProfit.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">هامش {detailedIncome.stats.grossProfitMargin}%</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-primary/20">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Scale className="w-5 h-5" />
-                          <span className="text-sm text-muted-foreground">الربح التشغيلي</span>
-                        </div>
-                        <p className={cn("text-2xl font-bold", detailedIncome.operatingIncome >= 0 ? "text-primary" : "text-destructive")}>
-                          {detailedIncome.operatingIncome.toLocaleString()}
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className={cn("border-2", detailedIncome.netIncomeBeforeZakat >= 0 ? "border-primary/50 bg-primary/5" : "border-destructive/50 bg-destructive/5")}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Calculator className="w-5 h-5" />
-                          <span className="text-sm text-muted-foreground">صافي الربح</span>
-                        </div>
-                        <p className={cn("text-2xl font-bold", detailedIncome.netIncomeBeforeZakat >= 0 ? "text-primary" : "text-destructive")}>
-                          {detailedIncome.netIncomeBeforeZakat.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">هامش {detailedIncome.stats.netProfitMargin}%</p>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Zakat Note */}
-                  <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <Calculator className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
-                        <div>
-                          <p className="font-medium text-amber-800 dark:text-amber-200">ملاحظة هامة عن الزكاة</p>
-                          <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">{detailedIncome.zakatNote}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Income Statement Table */}
-                  <Table>
-                    <TableBody>
-                      {/* Revenue */}
-                      <TableRow className="bg-primary/10 font-bold">
-                        <TableCell colSpan={2}>الإيرادات</TableCell>
-                      </TableRow>
-                      {detailedIncome.revenue.items.map((item, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell className="pr-8">
-                            <span className="text-xs text-muted-foreground ml-2">{item.code}</span>
-                            {item.name}
-                          </TableCell>
-                          <TableCell className="text-left text-primary">{item.amount.toLocaleString()}</TableCell>
-                        </TableRow>
-                      ))}
-                      {detailedIncome.revenue.items.length === 0 && (
-                        <TableRow>
-                          <TableCell className="pr-8 text-muted-foreground">لا توجد إيرادات</TableCell>
-                          <TableCell className="text-left">-</TableCell>
-                        </TableRow>
-                      )}
-                      <TableRow className="font-medium bg-primary/5">
-                        <TableCell>إجمالي الإيرادات</TableCell>
-                        <TableCell className="text-left text-primary font-bold">{detailedIncome.revenue.total.toLocaleString()}</TableCell>
-                      </TableRow>
-
-                      {/* Cost of Sales */}
-                      <TableRow className="bg-muted/50">
-                        <TableCell colSpan={2}></TableCell>
-                      </TableRow>
-                      <TableRow className="bg-destructive/10 font-bold">
-                        <TableCell colSpan={2}>تكلفة المبيعات (سعر الشراء)</TableCell>
-                      </TableRow>
-                      {detailedIncome.costOfSales.items.map((item, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell className="pr-8">
-                            <span className="text-xs text-muted-foreground ml-2">{item.code}</span>
-                            {item.name}
-                          </TableCell>
-                          <TableCell className="text-left text-destructive">({item.amount.toLocaleString()})</TableCell>
-                        </TableRow>
-                      ))}
-                      {detailedIncome.costOfSales.items.length === 0 && (
-                        <TableRow>
-                          <TableCell className="pr-8 text-muted-foreground">لا توجد تكاليف مبيعات</TableCell>
-                          <TableCell className="text-left">-</TableCell>
-                        </TableRow>
-                      )}
-                      <TableRow className="font-medium bg-destructive/5">
-                        <TableCell>إجمالي تكلفة المبيعات</TableCell>
-                        <TableCell className="text-left text-destructive font-bold">({detailedIncome.costOfSales.total.toLocaleString()})</TableCell>
-                      </TableRow>
-
-                      {/* Gross Profit */}
-                      <TableRow className="bg-primary/20 font-bold text-lg">
-                        <TableCell>
-                          مجمل الربح
-                          <span className="text-sm font-normal text-muted-foreground mr-2">
-                            (هامش {detailedIncome.stats.grossProfitMargin}%)
-                          </span>
-                        </TableCell>
-                        <TableCell className={cn("text-left", detailedIncome.grossProfit >= 0 ? "text-primary" : "text-destructive")}>
-                          {detailedIncome.grossProfit.toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-
-                      {/* Operating Expenses */}
-                      <TableRow className="bg-muted/50">
-                        <TableCell colSpan={2}></TableCell>
-                      </TableRow>
-                      <TableRow className="bg-orange-100 dark:bg-orange-900/30 font-bold">
-                        <TableCell colSpan={2}>المصروفات التشغيلية والإدارية</TableCell>
-                      </TableRow>
-                      {detailedIncome.operatingExpenses.items.map((exp, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell className="pr-8">
-                            <span className="text-xs text-muted-foreground ml-2">{exp.code}</span>
-                            {exp.name}
-                          </TableCell>
-                          <TableCell className="text-left text-destructive">({exp.amount.toLocaleString()})</TableCell>
-                        </TableRow>
-                      ))}
-                      {detailedIncome.operatingExpenses.items.length === 0 && (
-                        <TableRow>
-                          <TableCell className="pr-8 text-muted-foreground">لا توجد مصروفات تشغيلية</TableCell>
-                          <TableCell className="text-left">-</TableCell>
-                        </TableRow>
-                      )}
-                      <TableRow className="font-medium bg-orange-50 dark:bg-orange-900/20">
-                        <TableCell>إجمالي المصروفات التشغيلية</TableCell>
-                        <TableCell className="text-left text-destructive font-bold">({detailedIncome.operatingExpenses.total.toLocaleString()})</TableCell>
-                      </TableRow>
-
-                      {/* Operating Income */}
-                      <TableRow className="bg-primary/10 font-bold">
-                        <TableCell>الربح التشغيلي</TableCell>
-                        <TableCell className={cn("text-left", detailedIncome.operatingIncome >= 0 ? "text-primary" : "text-destructive")}>
-                          {detailedIncome.operatingIncome.toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-
-                      {/* Other Expenses */}
-                      {detailedIncome.otherExpenses.items.length > 0 && (
-                        <>
-                          <TableRow className="bg-muted/50">
-                            <TableCell colSpan={2}></TableCell>
-                          </TableRow>
-                          <TableRow className="bg-muted font-bold">
-                            <TableCell colSpan={2}>مصروفات أخرى</TableCell>
-                          </TableRow>
-                          {detailedIncome.otherExpenses.items.map((exp, idx) => (
-                            <TableRow key={idx}>
-                              <TableCell className="pr-8">
-                                <span className="text-xs text-muted-foreground ml-2">{exp.code}</span>
-                                {exp.name}
-                              </TableCell>
-                              <TableCell className="text-left text-destructive">({exp.amount.toLocaleString()})</TableCell>
-                            </TableRow>
-                          ))}
-                        </>
-                      )}
-
-                      {/* Net Income */}
-                      <TableRow className="bg-muted/50">
-                        <TableCell colSpan={2}></TableCell>
-                      </TableRow>
-                      <TableRow className="bg-primary font-bold text-lg text-primary-foreground">
-                        <TableCell>
-                          صافي الربح
-                          <span className="text-sm font-normal opacity-80 mr-2">
-                            (هامش {detailedIncome.stats.netProfitMargin}%)
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-left">{detailedIncome.netIncomeBeforeZakat.toLocaleString()}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">اختر فترة لعرض التقرير</p>
-              )}
-            </CardContent>
-          </Card>
+          <DetailedIncomeTab
+            data={detailedIncome}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            onExport={(type) => handleExport(() => detailedIncome ? buildDetailedIncomeExportData(detailedIncome, dateSubtitle) : null, type)}
+          />
         </TabsContent>
       </Tabs>
     </div>
