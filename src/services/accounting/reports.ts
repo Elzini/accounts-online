@@ -339,10 +339,9 @@ export async function getGeneralLedger(
 
   if (fiscalYearId) {
     query = query.eq('journal_entry.fiscal_year_id', fiscalYearId);
-  } else {
-    if (startDate) query = query.gte('journal_entry.entry_date', startDate);
-    if (endDate) query = query.lte('journal_entry.entry_date', endDate);
   }
+  if (startDate) query = query.gte('journal_entry.entry_date', startDate);
+  if (endDate) query = query.lte('journal_entry.entry_date', endDate);
 
   const { data: lines, error: linesError } = await query;
   if (linesError) throw linesError;
