@@ -3,9 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Loader2, Paperclip, Upload, Trash2, FileText, Image, File } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useCompanyId } from '@/hooks/useCompanyId';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useJournalAttachmentsList, useUploadJournalAttachment, useDeleteJournalAttachment } from '@/hooks/accounting/useJournalAttachmentsService';
 
 interface JournalAttachmentsProps {
   journalEntryId: string;
@@ -13,58 +12,23 @@ interface JournalAttachmentsProps {
 
 export function JournalAttachments({ journalEntryId }: JournalAttachmentsProps) {
   const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  const { data: attachments = [], isLoading } = useQuery({
-    queryKey: ['journal-attachments', journalEntryId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('journal_attachments')
-        .select('*')
-        .eq('journal_entry_id', journalEntryId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!journalEntryId,
-  });
+  const { data: attachments = [], isLoading } = useJournalAttachmentsList(journalEntryId);
+  const uploadMutation = useUploadJournalAttachment(companyId);
+  const deleteMutation = useDeleteJournalAttachment();
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !companyId) return;
-
     setUploading(true);
     try {
       for (const file of Array.from(files)) {
-        const fileExt = file.name.split('.').pop();
-        const filePath = `${companyId}/${journalEntryId}/${Date.now()}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('journal-attachments')
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage
-          .from('journal-attachments')
-          .getPublicUrl(filePath);
-
-        await supabase.from('journal_attachments').insert({
-          company_id: companyId,
-          journal_entry_id: journalEntryId,
-          file_name: file.name,
-          file_url: urlData.publicUrl,
-          file_size: file.size,
-          file_type: file.type,
-        });
+        await uploadMutation.mutateAsync({ journalEntryId, file });
       }
-
-      queryClient.invalidateQueries({ queryKey: ['journal-attachments', journalEntryId] });
       toast.success('تم رفع المرفقات بنجاح');
-    } catch (error) {
-      console.error('Upload error:', error);
+    } catch {
       toast.error('حدث خطأ أثناء رفع الملف');
     } finally {
       setUploading(false);
@@ -72,21 +36,12 @@ export function JournalAttachments({ journalEntryId }: JournalAttachmentsProps) 
     }
   };
 
-  const deleteAttachment = useMutation({
-    mutationFn: async (attachment: any) => {
-      // Extract path from URL
-      const urlParts = attachment.file_url.split('/journal-attachments/');
-      if (urlParts[1]) {
-        await supabase.storage.from('journal-attachments').remove([urlParts[1]]);
-      }
-      const { error } = await supabase.from('journal_attachments').delete().eq('id', attachment.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['journal-attachments', journalEntryId] });
-      toast.success('تم حذف المرفق');
-    },
-  });
+  const handleDelete = (att: any) => {
+    deleteMutation.mutate(
+      { id: att.id, fileUrl: att.file_url, journalEntryId },
+      { onSuccess: () => toast.success('تم حذف المرفق') }
+    );
+  };
 
   const getFileIcon = (type: string) => {
     if (type?.startsWith('image/')) return <Image className="w-4 h-4 text-blue-500" />;
@@ -108,21 +63,8 @@ export function JournalAttachments({ journalEntryId }: JournalAttachmentsProps) 
           المرفقات ({attachments.length})
         </h4>
         <div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-            className="hidden"
-            onChange={handleUpload}
-          />
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="gap-1"
-          >
+          <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" className="hidden" onChange={handleUpload} />
+          <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-1">
             {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
             رفع ملف
           </Button>
@@ -139,24 +81,10 @@ export function JournalAttachments({ journalEntryId }: JournalAttachmentsProps) 
             <div key={att.id} className="flex items-center justify-between p-2 rounded-lg border bg-muted/30 hover:bg-muted/50">
               <div className="flex items-center gap-2 min-w-0">
                 {getFileIcon(att.file_type)}
-                <a
-                  href={att.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-medium text-primary hover:underline truncate"
-                >
-                  {att.file_name}
-                </a>
-                {att.file_size && (
-                  <Badge variant="secondary" className="text-xs shrink-0">{formatSize(att.file_size)}</Badge>
-                )}
+                <a href={att.file_url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline truncate">{att.file_name}</a>
+                {att.file_size && <Badge variant="secondary" className="text-xs shrink-0">{formatSize(att.file_size)}</Badge>}
               </div>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="shrink-0 text-destructive h-7 w-7"
-                onClick={() => deleteAttachment.mutate(att)}
-              >
+              <Button size="icon" variant="ghost" className="shrink-0 text-destructive h-7 w-7" onClick={() => handleDelete(att)}>
                 <Trash2 className="w-3 h-3" />
               </Button>
             </div>

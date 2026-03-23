@@ -1,53 +1,47 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, RotateCcw, RotateCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCreditDebitNotes, useCreateCreditDebitNote, useDeleteCreditDebitNote } from '@/hooks/returns/useReturnsService';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function CreditDebitNotesPage() {
   const { t } = useLanguage();
   const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ type: 'credit', amount: '', reason: '' });
 
-  const { data: notes = [], isLoading } = useQuery({
-    queryKey: ['credit-debit-notes', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('credit_debit_notes').select('*').eq('company_id', companyId!).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
+  const { data: notes = [], isLoading } = useCreditDebitNotes(companyId);
+  const addMutation = useCreateCreditDebitNote(companyId);
+  const deleteMutation = useDeleteCreditDebitNote();
 
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const prefix = form.type === 'credit' ? 'CN' : 'DN';
-      const num = `${prefix}-${String(notes.length + 1).padStart(3, '0')}`;
-      const { error } = await supabase.from('credit_debit_notes').insert({ company_id: companyId!, note_number: num, note_type: form.type, note_date: new Date().toISOString().split('T')[0], total_amount: Number(form.amount) || 0, reason: form.reason || null, status: 'draft' });
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['credit-debit-notes'] }); toast.success(t.cdn_created); setShowAdd(false); setForm({ type: 'credit', amount: '', reason: '' }); },
-    onError: () => toast.error(t.mod_error),
-  });
+  const handleAdd = () => {
+    const prefix = form.type === 'credit' ? 'CN' : 'DN';
+    const num = `${prefix}-${String(notes.length + 1).padStart(3, '0')}`;
+    addMutation.mutate(
+      { note_number: num, note_type: form.type, note_date: new Date().toISOString().split('T')[0], total_amount: Number(form.amount) || 0, reason: form.reason || null, status: 'draft' },
+      {
+        onSuccess: () => { toast.success(t.cdn_created); setShowAdd(false); setForm({ type: 'credit', amount: '', reason: '' }); },
+        onError: () => toast.error(t.mod_error),
+      }
+    );
+  };
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('credit_debit_notes').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['credit-debit-notes'] }); toast.success(t.mod_deleted); },
-  });
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => toast.success(t.mod_deleted),
+    });
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -61,7 +55,7 @@ export function CreditDebitNotesPage() {
               <div><Label>{t.cdn_type}</Label><Select value={form.type} onValueChange={v => setForm(p => ({ ...p, type: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="credit">{t.cdn_type_credit}</SelectItem><SelectItem value="debit">{t.cdn_type_debit}</SelectItem></SelectContent></Select></div>
               <div><Label>{t.amount}</Label><Input type="number" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} /></div>
               <div><Label>{t.cdn_reason}</Label><Textarea value={form.reason} onChange={e => setForm(p => ({ ...p, reason: e.target.value }))} /></div>
-              <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending}>{t.save}</Button>
+              <Button className="w-full" onClick={handleAdd} disabled={addMutation.isPending}>{t.save}</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -91,7 +85,7 @@ export function CreditDebitNotesPage() {
                         <TableCell>{Number(n.total_amount || 0).toLocaleString()} {t.mod_currency}</TableCell>
                         <TableCell className="text-sm">{n.reason || '-'}</TableCell>
                         <TableCell><Badge variant={n.status === 'approved' ? 'default' : 'secondary'}>{n.status === 'approved' ? t.sv_status_approved : n.status === 'pending' ? t.sv_status_pending : t.sv_status_draft}</Badge></TableCell>
-                        <TableCell>{n.status === 'draft' && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(n.id)}><Trash2 className="w-3 h-3" /></Button>}</TableCell>
+                        <TableCell>{n.status === 'draft' && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(n.id)}><Trash2 className="w-3 h-3" /></Button>}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
