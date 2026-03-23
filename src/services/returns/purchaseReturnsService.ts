@@ -48,7 +48,8 @@ export async function markCarReturned(carId: string) {
 }
 
 export async function deleteJournalByBatch(batchId: string) {
-  await supabase.from('journal_entries').delete().eq('reference_type', 'purchase').eq('reference_id', batchId);
+  const { data: entries } = await supabase.from('journal_entries').select('id').eq('reference_type', 'purchase').eq('reference_id', batchId);
+  for (const e of entries || []) { await supabase.from('journal_entry_lines').delete().eq('journal_entry_id', e.id); await supabase.from('journal_entries').delete().eq('id', e.id); }
 }
 
 export async function insertDebitNote(companyId: string, noteData: {
