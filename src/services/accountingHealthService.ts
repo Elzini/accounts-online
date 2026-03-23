@@ -352,7 +352,6 @@ export async function checkVATAccuracy(companyId: string): Promise<AccountingChe
 // ========== 3. محرك التسوية التلقائي ==========
 
 export async function checkCustomerReconciliation(companyId: string): Promise<AccountingCheckResult> {
-  // مقارنة أرصدة العملاء من الفواتير مع القيود
   const { data: customers } = await supabase
     .from('customers')
     .select('id, name')
@@ -361,23 +360,32 @@ export async function checkCustomerReconciliation(companyId: string): Promise<Ac
 
   const discrepancies: any[] = [];
 
-  if (customers) {
+  if (customers && customers.length > 0) {
+    // Batch: fetch all outstanding invoices for all customers at once (fixes N+1)
+    const customerIds = customers.map(c => c.id);
+    const { data: allInvoices } = await supabase
+      .from('invoices')
+      .select('customer_id, total, amount_paid, status')
+      .eq('company_id', companyId)
+      .in('customer_id', customerIds)
+      .in('status', ['issued', 'partially_paid']);
+
+    const invoicesByCustomer = new Map<string, typeof allInvoices>();
+    for (const inv of allInvoices || []) {
+      const arr = invoicesByCustomer.get(inv.customer_id!) || [];
+      arr.push(inv);
+      invoicesByCustomer.set(inv.customer_id!, arr);
+    }
+
     for (const customer of customers as any[]) {
-      const { data: invoices } = await supabase
-        .from('invoices')
-        .select('total, amount_paid, status')
-        .eq('company_id', companyId)
-        .eq('customer_id', customer.id)
-        .in('status', ['issued', 'partially_paid']);
-
-      const balance = (invoices || []).reduce((s: number, i: any) =>
+      const invoices = invoicesByCustomer.get(customer.id) || [];
+      const balance = invoices.reduce((s: number, i: any) =>
         s + ((Number(i.total) || 0) - (Number(i.amount_paid) || 0)), 0);
-
       if (Math.abs(balance) > 1) {
         discrepancies.push({
           customerName: customer.name,
           outstandingBalance: Math.round(balance * 100) / 100,
-          invoicesCount: invoices?.length || 0,
+          invoicesCount: invoices.length,
         });
       }
     }
