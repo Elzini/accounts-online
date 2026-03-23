@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Plus, Target, TrendingUp, Award, Users, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { fetchSalesTargets, addSalesTarget, deleteSalesTarget } from '@/services/salesTargets';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -23,19 +23,19 @@ export function SalesTargetsPage() {
 
   const { data: targets = [], isLoading } = useQuery({
     queryKey: ['sales-targets', companyId],
-    queryFn: async () => { const { data, error } = await supabase.from('sales_targets').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
+    queryFn: fetchSalesTargets,
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const addMutation = useMutation({
-    mutationFn: async () => { const { error } = await supabase.from('sales_targets').insert({ company_id: companyId!, employee_name: form.employeeName, target_amount: Number(form.targetAmount) || 0, achieved_amount: 0, period_start: form.periodStart, period_end: form.periodEnd, status: 'active' }); if (error) throw error; },
+    mutationFn: async () => { await addSalesTarget({ employee_name: form.employeeName, target_amount: Number(form.targetAmount) || 0, period_start: form.periodStart, period_end: form.periodEnd }); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['sales-targets'] }); toast.success(t.target_created); setShowAdd(false); setForm({ employeeName: '', targetAmount: '', periodStart: '', periodEnd: '' }); },
     onError: () => toast.error(t.mod_error),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('sales_targets').delete().eq('id', id); if (error) throw error; },
+    mutationFn: async (id: string) => { await deleteSalesTarget(id); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['sales-targets'] }); toast.success(t.mod_deleted); },
   });
 

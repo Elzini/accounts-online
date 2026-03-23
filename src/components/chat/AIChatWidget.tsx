@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { getAuthToken } from '@/services/aiChat';
 import { useDraggable } from '@/hooks/useDraggable';
 
 type Message = {role: 'user' | 'assistant';content: string;};
@@ -60,8 +60,7 @@ export function AIChatWidget() {
     let assistantSoFar = '';
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      const token = await getAuthToken();
       if (!token) {
         setMessages((prev) => [...prev, { role: 'assistant', content: '⚠️ يجب تسجيل الدخول أولاً لاستخدام المساعد الذكي.' }]);
         setIsLoading(false);

@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CreditCard, Link2, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { fetchPaymentTransactions, addPaymentTransaction, deletePaymentTransaction } from '@/services/paymentGateway';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -23,19 +23,19 @@ export function PaymentGatewayPage() {
 
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ['payment-transactions', companyId],
-    queryFn: async () => { const { data, error } = await supabase.from('payment_transactions').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
+    queryFn: fetchPaymentTransactions,
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const addMutation = useMutation({
-    mutationFn: async () => { const ref = `PAY-${String(transactions.length + 1).padStart(3, '0')}`; const { error } = await supabase.from('payment_transactions').insert({ company_id: companyId!, transaction_ref: ref, amount: Number(form.amount) || 0, customer_name: form.customerName || null, customer_email: form.customerEmail || null, payment_method: form.paymentMethod, status: 'pending' }); if (error) throw error; },
+    mutationFn: async () => { const ref = `PAY-${String(transactions.length + 1).padStart(3, '0')}`; await addPaymentTransaction({ transaction_ref: ref, amount: Number(form.amount) || 0, customer_name: form.customerName || '', customer_email: form.customerEmail || undefined, payment_method: form.paymentMethod }); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['payment-transactions'] }); toast.success(t.pg_created); setShowAdd(false); setForm({ amount: '', customerName: '', paymentMethod: 'card', customerEmail: '' }); },
     onError: () => toast.error(t.mod_error),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('payment_transactions').delete().eq('id', id); if (error) throw error; },
+    mutationFn: async (id: string) => { await deletePaymentTransaction(id); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['payment-transactions'] }); toast.success(t.mod_deleted); },
   });
 

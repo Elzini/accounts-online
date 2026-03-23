@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Wrench, Clock, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { fetchWorkOrders, addWorkOrder, updateWorkOrderStatus, deleteWorkOrder } from '@/services/workOrders';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -27,11 +27,7 @@ export function WorkOrdersPage() {
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['work-orders', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('work_orders').select('*').eq('company_id', companyId!).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: fetchWorkOrders,
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
@@ -39,20 +35,19 @@ export function WorkOrdersPage() {
   const addMutation = useMutation({
     mutationFn: async () => {
       const num = `WO-${String(orders.length + 1).padStart(3, '0')}`;
-      const { error } = await supabase.from('work_orders').insert({ company_id: companyId!, order_number: num, title: form.title, description: form.description || null, priority: form.priority, due_date: form.dueDate || null, status: 'pending' });
-      if (error) throw error;
+      await addWorkOrder({ order_number: num, title: form.title, description: form.description || null, priority: form.priority, due_date: form.dueDate || null, status: 'pending' });
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['work-orders'] }); toast.success(t.wo_created); setShowAdd(false); setForm({ title: '', description: '', priority: 'medium', dueDate: '' }); },
     onError: () => toast.error(t.mod_error),
   });
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => { const { error } = await supabase.from('work_orders').update({ status }).eq('id', id); if (error) throw error; },
+    mutationFn: async ({ id, status }: { id: string; status: string }) => { await updateWorkOrderStatus(id, status); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['work-orders'] }); toast.success(t.crm_updated); },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('work_orders').delete().eq('id', id); if (error) throw error; },
+    mutationFn: async (id: string) => { await deleteWorkOrder(id); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['work-orders'] }); toast.success(t.mod_deleted); },
   });
 

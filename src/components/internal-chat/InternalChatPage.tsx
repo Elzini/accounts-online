@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MessagesSquare, Send, Hash, Users, Plus, Paperclip, Smile } from 'lucide-react';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { subscribeToTable } from '@/services/realtime';
 import { useChatChannels, useAddChatChannel, useChatMessages, useAddChatMessage } from '@/hooks/useModuleData';
 
 export function InternalChatPage() {
@@ -30,8 +30,7 @@ export function InternalChatPage() {
   // Realtime subscription
   useEffect(() => {
     if (!activeChannelId) return;
-    const channel = supabase.channel('chat-realtime').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `channel_id=eq.${activeChannelId}` }, () => refetchMessages()).subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return subscribeToTable('chat-realtime', 'chat_messages', `channel_id=eq.${activeChannelId}`, 'INSERT', () => refetchMessages());
   }, [activeChannelId, refetchMessages]);
 
   const handleSend = () => {

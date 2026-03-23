@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { Loader2, Plug, ShoppingBag, CreditCard, Building, Globe, ChevronDown } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { fetchIntegrationConfigs, toggleIntegrationConfig } from '@/services/integrations';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -32,15 +32,7 @@ export function IntegrationsPage() {
 
   const { data: configs = [], isLoading } = useQuery({
     queryKey: ['integrations', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase
-        .from('integration_configs')
-        .select('*')
-        .eq('company_id', companyId);
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: fetchIntegrationConfigs,
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
@@ -48,14 +40,7 @@ export function IntegrationsPage() {
   const toggleIntegration = useMutation({
     mutationFn: async ({ platform, is_active }: { platform: string; is_active: boolean }) => {
       if (!companyId) throw new Error('No company');
-      const existing = configs.find((c: any) => c.platform === platform);
-      if (existing) {
-        const { error } = await supabase.from('integration_configs').update({ is_active }).eq('id', existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('integration_configs').insert({ company_id: companyId, platform, is_active });
-        if (error) throw error;
-      }
+      await toggleIntegrationConfig(configs, platform, is_active);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['integrations'] });

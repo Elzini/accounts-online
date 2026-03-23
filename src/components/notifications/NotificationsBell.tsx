@@ -6,7 +6,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '@/services/notifications';
+import { subscribeToTable } from '@/services/realtime';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
@@ -46,17 +47,8 @@ export function NotificationsBell() {
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const { data } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(100);
-      return data || [];
-    },
-    enabled: !!user?.id,
+    queryFn: () => fetchNotifications(user!.id, companyId!),
+    enabled: !!user?.id && !!companyId,
     staleTime: 5 * 60 * 1000,
     refetchInterval: 30000,
   });
@@ -64,18 +56,9 @@ export function NotificationsBell() {
   // Realtime subscription for instant notifications
   useEffect(() => {
     if (!user?.id) return;
-    const channel = supabase
-      .channel('notifications-realtime')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${user.id}`,
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return subscribeToTable('notifications-realtime', 'notifications', `user_id=eq.${user.id}`, 'INSERT', () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    });
   }, [user?.id, queryClient]);
 
   const unreadCount = notifications.filter((n: any) => !n.is_read).length;
@@ -87,16 +70,14 @@ export function NotificationsBell() {
       : notifications.filter((n: any) => n.entity_type && categoryLabels[n.entity_type as string]);
 
   const markRead = useMutation({
-    mutationFn: async (id: string) => {
-      await supabase.from('notifications').update({ is_read: true }).eq('id', id);
-    },
+    mutationFn: (id: string) => markNotificationRead(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
 
   const markAllRead = useMutation({
-    mutationFn: async () => {
-      if (!user?.id) return;
-      await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false);
+    mutationFn: () => {
+      if (!user?.id || !companyId) return Promise.resolve();
+      return markAllNotificationsRead(user.id, companyId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -107,6 +88,7 @@ export function NotificationsBell() {
   const refreshNotifications = useMutation({
     mutationFn: async () => {
       if (!companyId) throw new Error('لا توجد شركة');
+      const { supabase } = await import('@/integrations/supabase/client');
       const { error } = await supabase.functions.invoke('smart-notifications', {
         body: { company_id: companyId },
       });

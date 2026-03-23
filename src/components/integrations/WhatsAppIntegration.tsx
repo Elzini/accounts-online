@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { MessageSquare, Send, FileText, Bell, Phone, ExternalLink, Copy, CheckCircle } from 'lucide-react';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { fetchContactsWithPhone } from '@/services/integrations';
 import { useQuery } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -45,32 +45,14 @@ export function WhatsAppIntegration() {
 
   const { data: customers = [] } = useQuery({
     queryKey: ['whatsapp-customers', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('customers')
-        .select('id, name, phone')
-        .eq('company_id', companyId)
-        .not('phone', 'is', null)
-        .order('name');
-      return data || [];
-    },
+    queryFn: () => fetchContactsWithPhone('customers'),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: suppliers = [] } = useQuery({
     queryKey: ['whatsapp-suppliers', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('suppliers')
-        .select('id, name, phone')
-        .eq('company_id', companyId)
-        .not('phone', 'is', null)
-        .order('name');
-      return data || [];
-    },
+    queryFn: () => fetchContactsWithPhone('suppliers'),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });

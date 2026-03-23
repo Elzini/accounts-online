@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { subscribeToTable } from '@/services/realtime';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { cn } from '@/lib/utils';
@@ -61,8 +61,7 @@ export function TasksPage() {
 
   useEffect(() => {
     if (!user) return;
-    const channel = supabase.channel('tasks-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `user_id=eq.${user.id}` }, () => { refetch(); }).subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return subscribeToTable('tasks-realtime', 'tasks', `user_id=eq.${user.id}`, '*', () => { refetch(); });
   }, [user, refetch]);
 
   const openNew = () => { setEditingTask(null); setForm({ title: '', description: '', priority: 'medium', status: 'todo', due_date: '', category: '', assigned_to: '' }); setShowDialog(true); };

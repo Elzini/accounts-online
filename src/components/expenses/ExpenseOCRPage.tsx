@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Camera, Upload, Loader2, FileText, Trash2, CheckCircle2, Eye, Receipt, ScanLine } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { invokeExpenseOcr, saveExpenseFromOcr } from '@/services/expenseOcr';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ScannedExpense {
@@ -57,11 +57,7 @@ export function ExpenseOCRPage() {
       });
 
       // Call AI to extract data
-      const { data, error } = await supabase.functions.invoke('expense-ocr', {
-        body: { image: base64 },
-      });
-
-      if (error) throw error;
+      const data = await invokeExpenseOcr(base64);
 
       setExpenses(prev =>
         prev.map(e =>
@@ -105,18 +101,13 @@ export function ExpenseOCRPage() {
   const saveExpense = async (expense: ScannedExpense) => {
     if (!companyId) return;
     try {
-      const { error } = await supabase.from('expenses').insert({
-        company_id: companyId,
-        vendor_name: expense.vendor,
+      await saveExpenseFromOcr({
+        vendor: expense.vendor,
         amount: expense.amount,
-        expense_date: expense.date,
+        date: expense.date,
         category: expense.category,
         description: expense.description || `فاتورة من ${expense.vendor}`,
-        payment_method: 'cash',
-        status: 'approved',
       });
-
-      if (error) throw error;
 
       setExpenses(prev => prev.map(e => (e.id === expense.id ? { ...e, status: 'saved' } : e)));
       toast.success('تم حفظ المصروف بنجاح');
