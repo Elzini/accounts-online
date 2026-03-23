@@ -77,7 +77,7 @@ export async function addApprovalDelegation(companyId: string, form: { delegate_
   if (error) throw error;
 }
 
-export async function createApprovalSteps(workflowId: string, stepsData: Array<{ step_order: number; approver_role?: string; approver_user_id?: string; is_mandatory?: boolean; company_id?: string }>) {
+export async function createApprovalSteps(stepsData: Array<{ workflow_id: string; step_order: number; approver_role?: string; approver_user_id?: string; is_mandatory?: boolean; company_id?: string }>) {
   const { error } = await supabase.from('approval_steps').insert(stepsData);
   if (error) throw error;
 }
