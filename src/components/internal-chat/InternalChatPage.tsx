@@ -30,8 +30,7 @@ export function InternalChatPage() {
   // Realtime subscription
   useEffect(() => {
     if (!activeChannelId) return;
-    const channel = supabase.channel('chat-realtime').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `channel_id=eq.${activeChannelId}` }, () => refetchMessages()).subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return subscribeToTable('chat-realtime', 'chat_messages', `channel_id=eq.${activeChannelId}`, 'INSERT', () => refetchMessages());
   }, [activeChannelId, refetchMessages]);
 
   const handleSend = () => {

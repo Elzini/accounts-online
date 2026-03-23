@@ -61,8 +61,7 @@ export function TasksPage() {
 
   useEffect(() => {
     if (!user) return;
-    const channel = supabase.channel('tasks-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `user_id=eq.${user.id}` }, () => { refetch(); }).subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return subscribeToTable('tasks-realtime', 'tasks', `user_id=eq.${user.id}`, '*', () => { refetch(); });
   }, [user, refetch]);
 
   const openNew = () => { setEditingTask(null); setForm({ title: '', description: '', priority: 'medium', status: 'todo', due_date: '', category: '', assigned_to: '' }); setShowDialog(true); };

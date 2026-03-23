@@ -24,25 +24,7 @@ export function AISalesForecastPage() {
   // Fetch historical sales - industry-aware
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ['ai-forecast-sales', companyId, hasCarInventory],
-    queryFn: async () => {
-      if (hasCarInventory) {
-        const { data } = await supabase.from('sales')
-          .select('sale_date, sale_price, purchase_price')
-          .eq('company_id', companyId!)
-          .order('sale_date', { ascending: true });
-        return data || [];
-      } else {
-        const { data } = await supabase.from('invoices')
-          .select('invoice_date, subtotal, total')
-          .eq('company_id', companyId!).eq('invoice_type', 'sales').neq('status', 'draft')
-          .order('invoice_date', { ascending: true });
-        return (data || []).map((inv: any) => ({
-          sale_date: inv.invoice_date,
-          sale_price: Number(inv.total) || 0,
-          purchase_price: 0,
-        }));
-      }
-    },
+    queryFn: () => fetchSalesForForecast(hasCarInventory),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });

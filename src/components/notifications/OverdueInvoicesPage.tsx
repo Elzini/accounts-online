@@ -30,11 +30,7 @@ export function OverdueInvoicesPage() {
     if (!companyId) return;
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('overdue-invoices-notify', {
-        body: { company_id: companyId, days_overdue: daysOverdue },
-      });
-
-      if (error) throw error;
+      const data = await invokeOverdueNotify(daysOverdue);
 
       setOverdueItems(data.items || []);
       setTotalAmount(data.totalAmount || 0);
