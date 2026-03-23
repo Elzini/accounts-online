@@ -66,16 +66,13 @@ export function useToggleFreeze() {
       }
 
       const { data: { user } } = await supabase.auth.getUser();
-      await (supabase.from as any)('system_change_log').insert({
-        user_id: user?.id,
-        change_type: 'config_change',
-        module: 'system_freeze',
-        description: freeze ? 'تفعيل وضع التجميد الشامل' : 'إلغاء وضع التجميد',
-        previous_value: { frozen: !freeze },
-        new_value: { frozen: freeze },
-        authorization_method: 'master_code',
-        status: 'applied',
-        applied_at: new Date().toISOString(),
+      await supabase.from('audit_logs').insert({
+        user_id: user?.id || 'system',
+        entity_type: 'system_config',
+        entity_id: 'system_freeze',
+        action: 'update',
+        old_data: { frozen: !freeze },
+        new_data: { frozen: freeze, authorization_method: 'master_code' },
       });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['system-freeze-mode'] }),
