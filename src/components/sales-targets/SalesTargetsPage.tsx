@@ -35,7 +35,7 @@ export function SalesTargetsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('sales_targets').delete().eq('id', id); if (error) throw error; },
+    mutationFn: async (id: string) => { await deleteSalesTarget(id); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['sales-targets'] }); toast.success(t.mod_deleted); },
   });
 

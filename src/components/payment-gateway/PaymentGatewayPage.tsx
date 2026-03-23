@@ -35,7 +35,7 @@ export function PaymentGatewayPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('payment_transactions').delete().eq('id', id); if (error) throw error; },
+    mutationFn: async (id: string) => { await deletePaymentTransaction(id); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['payment-transactions'] }); toast.success(t.mod_deleted); },
   });
 

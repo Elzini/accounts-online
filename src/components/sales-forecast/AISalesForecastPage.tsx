@@ -6,7 +6,7 @@ import {
   Brain, TrendingUp, Loader2, Sparkles, AlertTriangle, ArrowUpRight, CalendarDays, RefreshCw
 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { fetchSalesForForecast } from '@/services/salesForecast';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
