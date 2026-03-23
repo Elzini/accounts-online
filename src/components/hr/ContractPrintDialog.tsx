@@ -25,20 +25,7 @@ export function ContractPrintDialog({ open, onOpenChange, contract }: ContractPr
   const companyId = useCompanyId();
   const currentDate = new Date().toLocaleDateString('ar-SA');
 
-  const { data: taxSettings } = useQuery({
-    queryKey: ['tax-settings-print', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tax_settings')
-        .select('tax_number, company_name_ar, national_address, commercial_register, city, postal_code, building_number')
-        .eq('company_id', companyId!)
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: open && !!companyId,
-  });
+  const { data: taxSettings } = useTaxSettingsForPrint(companyId, open);
 
   const typeLabels: Record<string, string> = {
     'full-time': 'دوام كامل',

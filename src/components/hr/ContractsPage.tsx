@@ -70,10 +70,12 @@ export function EmployeeContractsPage() {
 
   const { data: contracts = [], isLoading } = useEmployeeContracts(companyId);
 
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from('employee_contracts').insert({
-        company_id: companyId!,
+  const addMutation = useCreateEmployeeContract(companyId);
+  const deleteMutation = useDeleteEmployeeContract();
+
+  const handleAdd = () => {
+    addMutation.mutate(
+      {
         employee_id: form.employeeId || null,
         employee_name: form.employeeName,
         contract_code: form.contractCode || null,
@@ -100,30 +102,17 @@ export function EmployeeContractsPage() {
         deductions_json: deductions,
         department: form.department || null,
         status: 'active',
-      } as any);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employee-contracts'] });
-      toast.success(t.ec_created);
-      setShowAdd(false);
-      setForm(initialForm);
-      setOtherAllowances([]);
-      setDeductions([]);
-    },
-    onError: () => toast.error(t.mod_error),
-  });
+      },
+      {
+        onSuccess: () => { toast.success(t.ec_created); setShowAdd(false); setForm(initialForm); setOtherAllowances([]); setDeductions([]); },
+        onError: () => toast.error(t.mod_error),
+      },
+    );
+  };
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('employee_contracts').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employee-contracts'] });
-      toast.success(t.mod_deleted);
-    },
-  });
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, { onSuccess: () => toast.success(t.mod_deleted) });
+  };
 
   const handleEmployeeSelect = (empId: string) => {
     const emp = hrEmployees.find((e: any) => e.id === empId);
