@@ -31,15 +31,19 @@ export async function checkFinancialReports(companyId: string, companyType?: str
   }
 
   // Sales/Purchases linkage
-  const { count: carSalesCount } = await supabase.from('sales').select('*', { count: 'exact', head: true }).eq('company_id', companyId);
+  const carSalesCount = features.hasCarInventory
+    ? (await supabase.from('sales').select('*', { count: 'exact', head: true }).eq('company_id', companyId)).count || 0
+    : 0;
   const { count: invoiceSalesCount } = await supabase.from('invoices').select('*', { count: 'exact', head: true }).eq('company_id', companyId).eq('invoice_type', 'sales');
-  const totalSalesCount = (carSalesCount || 0) + (invoiceSalesCount || 0);
+  const totalSalesCount = carSalesCount + (invoiceSalesCount || 0);
   const { count: saleEntriesCount } = await supabase.from('journal_entries').select('*', { count: 'exact', head: true }).eq('company_id', companyId).in('reference_type', ['sale', 'invoice_sale']);
   results.push({ id: 'reports-sales-linkage', category: 'financial-reports', name: 'ربط المبيعات بالقيود المحاسبية', status: totalSalesCount > 0 && (saleEntriesCount || 0) === 0 ? 'warning' : 'pass', message: totalSalesCount > 0 && (saleEntriesCount || 0) === 0 ? `⚠️ ${totalSalesCount} عملية بيع بدون قيود محاسبية مرتبطة` : `${totalSalesCount} مبيعات، ${saleEntriesCount || 0} قيد مرتبط`, severity: totalSalesCount > 0 && (saleEntriesCount || 0) === 0 ? 'high' : 'info' });
 
-  const { count: carPurchasesCount } = await supabase.from('cars').select('*', { count: 'exact', head: true }).eq('company_id', companyId);
+  const carPurchasesCount = features.hasCarInventory
+    ? (await supabase.from('cars').select('*', { count: 'exact', head: true }).eq('company_id', companyId)).count || 0
+    : 0;
   const { count: invoicePurchasesCount } = await supabase.from('invoices').select('*', { count: 'exact', head: true }).eq('company_id', companyId).eq('invoice_type', 'purchase');
-  const totalPurchasesCount = (carPurchasesCount || 0) + (invoicePurchasesCount || 0);
+  const totalPurchasesCount = carPurchasesCount + (invoicePurchasesCount || 0);
   const { count: purchaseEntriesCount } = await supabase.from('journal_entries').select('*', { count: 'exact', head: true }).eq('company_id', companyId).in('reference_type', ['purchase', 'invoice_purchase']);
   results.push({ id: 'reports-purchases-linkage', category: 'financial-reports', name: 'ربط المشتريات بالقيود المحاسبية', status: totalPurchasesCount > 0 && (purchaseEntriesCount || 0) === 0 ? 'warning' : 'pass', message: totalPurchasesCount > 0 && (purchaseEntriesCount || 0) === 0 ? `⚠️ ${totalPurchasesCount} عملية شراء بدون قيود محاسبية مرتبطة` : `${totalPurchasesCount} مشتريات، ${purchaseEntriesCount || 0} قيد مرتبط`, severity: totalPurchasesCount > 0 && (purchaseEntriesCount || 0) === 0 ? 'high' : 'info' });
 
