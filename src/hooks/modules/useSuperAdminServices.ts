@@ -760,7 +760,7 @@ export function useTamperScanRuns() {
   return useQuery({
     queryKey: ['tamper-scan-runs'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('tamper_scan_runs').select('*').order('created_at', { ascending: false }).limit(50);
+      const { data, error } = await (supabase.from as any)('tamper_scan_runs').select('*').order('created_at', { ascending: false }).limit(50);
       if (error) throw error;
       return data || [];
     },
