@@ -23,7 +23,7 @@ export function PaymentGatewayPage() {
 
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ['payment-transactions', companyId],
-    queryFn: async () => { const { data, error } = await supabase.from('payment_transactions').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
+    queryFn: fetchPaymentTransactions,
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
