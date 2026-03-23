@@ -72,17 +72,6 @@ export function EcommerceIntegrationPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ecommerce-integrations', companyId] });
     },
-  });
-          sync_orders: cfg.sync_orders,
-          sync_customers: cfg.sync_customers,
-          is_active: true,
-        }, { onConflict: 'company_id,platform' });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success('تم حفظ إعدادات التكامل');
-      queryClient.invalidateQueries({ queryKey: ['ecommerce-integrations'] });
-    },
     onError: () => toast.error('خطأ في حفظ الإعدادات'),
   });
 
