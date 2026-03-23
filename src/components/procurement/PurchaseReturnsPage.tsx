@@ -79,9 +79,8 @@ interface FoundInvoiceData {
 export function PurchaseReturnsPage() {
   const { t, language } = useLanguage();
   const companyId = useCompanyId();
-  const { company } = useCompany();
   const queryClient = useQueryClient();
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const { hasCarInventory: isCarDealership } = useIndustryFeatures();
 
   const [searchList, setSearchList] = useState('');
   const [activeTab, setActiveTab] = useState('form');

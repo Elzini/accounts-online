@@ -4,37 +4,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import { getCompanyOverride } from '@/lib/companyOverride';
-
-type Car = Database['public']['Tables']['cars']['Row'];
-type CarInsert = Database['public']['Tables']['cars']['Insert'];
-type CarUpdate = Database['public']['Tables']['cars']['Update'];
-type Sale = Database['public']['Tables']['sales']['Row'];
-type SaleInsert = Database['public']['Tables']['sales']['Insert'];
-type SaleUpdate = Database['public']['Tables']['sales']['Update'];
-type PurchaseBatch = Database['public']['Tables']['purchase_batches']['Row'];
-type PurchaseBatchInsert = Database['public']['Tables']['purchase_batches']['Insert'];
-type SaleItem = Database['public']['Tables']['sale_items']['Row'];
-type SaleItemInsert = Database['public']['Tables']['sale_items']['Insert'];
-
-async function getCurrentCompanyId(): Promise<string | null> {
-  const override = getCompanyOverride();
-  if (override) return override;
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('user_id', user.id)
-    .single();
-  return profile?.company_id || null;
-}
-
-async function requireCompanyId(): Promise<string> {
-  const companyId = await getCurrentCompanyId();
-  if (!companyId) throw new Error('COMPANY_REQUIRED');
-  return companyId;
-}
+import { requireCompanyId } from '@/services/companyContext';
 
 // Types for multi-car operations
 export interface CarWithSaleInfo extends Omit<CarInsert, 'batch_id'> {

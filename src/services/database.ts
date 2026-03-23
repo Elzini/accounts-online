@@ -6,51 +6,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import { getCompanyOverride } from '@/lib/companyOverride';
-
-// ── Re-exports from modular services ──
-// Car dealership
-export {
-  fetchCars, addCar, updateCar, deleteCar, updateCarStatus,
-  fetchSales, addSale, updateSale, updateSaleWithItems, deleteSale, reverseSale,
-  addPurchaseBatch, fetchPurchaseBatches,
-  addMultiCarSale, approveSale, fetchSalesWithItems, deleteMultiCarSale,
-  recalculateCompanySalesProfits,
-} from '@/services/carDealership';
-export type { CarWithSaleInfo, MultiCarSaleData } from '@/services/carDealership';
-
-// Customers (delegated to dedicated module)
-export { fetchCustomers, addCustomer, updateCustomer, deleteCustomer } from '@/services/customers';
-
-// Suppliers (delegated to dedicated module)
-export { fetchSuppliers, addSupplier, updateSupplier, deleteSupplier } from '@/services/suppliers';
-
-// ── Internal helpers (still used by stats functions below) ──
-async function getCurrentCompanyId(): Promise<string | null> {
-  const override = getCompanyOverride();
-  if (override) return override;
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('user_id', user.id)
-    .single();
-  return profile?.company_id || null;
-}
-
-async function requireCompanyId(): Promise<string> {
-  const companyId = await getCurrentCompanyId();
-  if (!companyId) throw new Error('COMPANY_REQUIRED');
-  return companyId;
-}
-
-function toDateOnly(date: Date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
+import { requireCompanyId, toDateOnly } from '@/services/companyContext';
 
 // ============================================
 // GENERAL FUNCTIONS (work for ALL company types)
