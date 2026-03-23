@@ -38,7 +38,6 @@ export function SystemChangeAlertProvider() {
     toast.info('🚫 تم رفض التغيير ومنعه بنجاح');
     setActiveAlert(null);
     dismissNewAlert();
-    });
   };
 
   return (
