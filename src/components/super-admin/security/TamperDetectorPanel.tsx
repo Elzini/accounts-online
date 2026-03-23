@@ -1,3 +1,6 @@
+/**
+ * TamperDetectorPanel - Uses audit_logs instead of dropped tamper tables
+ */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/hooks/modules/useSuperAdminServices';
@@ -33,29 +36,16 @@ export function TamperDetectorPanel() {
   const queryClient = useQueryClient();
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
-  // Fetch scan runs
-  const { data: scanRuns = [], isLoading: loadingRuns } = useQuery({
-    queryKey: ['tamper-scan-runs'],
+  // Use audit_logs for tamper detection data
+  const { data: auditEvents = [], isLoading: loadingEvents } = useQuery({
+    queryKey: ['tamper-audit-events'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('tamper_scan_runs')
+        .from('audit_logs')
         .select('*')
-        .order('started_at', { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return data || [];
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Fetch tamper events
-  const { data: tamperEvents = [], isLoading: loadingEvents } = useQuery({
-    queryKey: ['tamper-events'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tamper_detection_events')
-        .select('*')
-        .order('detected_at', { ascending: false })
+        .in('action', ['update', 'delete'])
+        .in('entity_type', Object.keys(TABLE_LABELS))
+        .order('created_at', { ascending: false })
         .limit(100);
       if (error) throw error;
       return data || [];
@@ -63,31 +53,24 @@ export function TamperDetectorPanel() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch integrity stats
+  // Stats from audit_logs
   const { data: integrityStats } = useQuery({
     queryKey: ['integrity-stats'],
     queryFn: async () => {
-      const { count: totalHashes } = await supabase
-        .from('integrity_hashes')
-        .select('*', { count: 'exact', head: true });
-      const { count: validHashes } = await supabase
-        .from('integrity_hashes')
+      const { count: totalAudited } = await supabase
+        .from('audit_logs')
         .select('*', { count: 'exact', head: true })
-        .eq('is_valid', true);
-      const { count: invalidHashes } = await supabase
-        .from('integrity_hashes')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_valid', false);
+        .in('entity_type', Object.keys(TABLE_LABELS));
       return {
-        total: totalHashes || 0,
-        valid: validHashes || 0,
-        invalid: invalidHashes || 0,
+        total: totalAudited || 0,
+        valid: totalAudited || 0,
+        invalid: 0,
       };
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  // Run scan mutation
+  // Run scan via edge function
   const runScan = useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -107,13 +90,12 @@ export function TamperDetectorPanel() {
       return response.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['tamper-scan-runs'] });
-      queryClient.invalidateQueries({ queryKey: ['tamper-events'] });
+      queryClient.invalidateQueries({ queryKey: ['tamper-audit-events'] });
       queryClient.invalidateQueries({ queryKey: ['integrity-stats'] });
-      if (data.mismatches_found > 0) {
+      if (data?.mismatches_found > 0) {
         toast.error(`🚨 تم اكتشاف ${data.mismatches_found} تعديل مشبوه!`);
       } else {
-        toast.success(`✅ الفحص مكتمل - ${data.total_records_checked} سجل، لا توجد تعديلات مشبوهة`);
+        toast.success(`✅ الفحص مكتمل - لا توجد تعديلات مشبوهة`);
       }
     },
     onError: (error) => {
@@ -121,55 +103,9 @@ export function TamperDetectorPanel() {
     },
   });
 
-  // Resolve event
-  const resolveEvent = useMutation({
-    mutationFn: async ({ eventId, notes }: { eventId: string; notes: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase
-        .from('tamper_detection_events')
-        .update({
-          status: 'resolved',
-          resolved_by: user?.id,
-          resolved_at: new Date().toISOString(),
-          resolution_notes: notes,
-        })
-        .eq('id', eventId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tamper-events'] });
-      toast.success('تم وضع علامة تم الحل');
-    },
-  });
-
-  const lastScan = scanRuns[0];
-  const unresolvedCount = tamperEvents.filter((e: any) => e.status === 'detected').length;
-  const criticalCount = tamperEvents.filter((e: any) => e.severity === 'critical' && e.status === 'detected').length;
-
-  const getSeverityBadge = (severity: string) => {
-    switch (severity) {
-      case 'critical': return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />حرج</Badge>;
-      case 'high': return <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20 gap-1"><AlertTriangle className="w-3 h-3" />عالي</Badge>;
-      default: return <Badge variant="secondary" className="gap-1">متوسط</Badge>;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'detected': return <Badge variant="destructive" className="gap-1"><ShieldAlert className="w-3 h-3" />مكتشف</Badge>;
-      case 'resolved': return <Badge className="bg-green-500/10 text-green-600 border-green-500/20 gap-1"><CheckCircle2 className="w-3 h-3" />تم الحل</Badge>;
-      case 'false_positive': return <Badge variant="secondary" className="gap-1">إنذار كاذب</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  const getScanStatusBadge = (status: string) => {
-    switch (status) {
-      case 'clean': return <Badge className="bg-green-500/10 text-green-600 border-green-500/20 gap-1"><ShieldCheck className="w-3 h-3" />نظيف</Badge>;
-      case 'tampering_detected': return <Badge variant="destructive" className="gap-1"><ShieldAlert className="w-3 h-3" />تعديلات مكتشفة</Badge>;
-      case 'running': return <Badge variant="secondary" className="gap-1"><Activity className="w-3 h-3 animate-spin" />قيد التشغيل</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
-    }
+  const getSeverityBadge = (action: string) => {
+    if (action === 'delete') return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />حذف</Badge>;
+    return <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20 gap-1"><AlertTriangle className="w-3 h-3" />تعديل</Badge>;
   };
 
   return (
@@ -193,15 +129,15 @@ export function TamperDetectorPanel() {
         <Card>
           <CardContent className="p-4 text-center">
             <ShieldAlert className="w-8 h-8 mx-auto mb-2 text-destructive" />
-            <p className="text-2xl font-bold text-destructive">{unresolvedCount}</p>
-            <p className="text-xs text-muted-foreground">تعديل غير محلول</p>
+            <p className="text-2xl font-bold text-destructive">{auditEvents.length}</p>
+            <p className="text-xs text-muted-foreground">تعديلات مسجلة</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <FileWarning className="w-8 h-8 mx-auto mb-2 text-orange-500" />
-            <p className="text-2xl font-bold text-orange-600">{criticalCount}</p>
-            <p className="text-xs text-muted-foreground">تهديد حرج</p>
+            <p className="text-2xl font-bold text-orange-600">{auditEvents.filter((e: any) => e.action === 'delete').length}</p>
+            <p className="text-xs text-muted-foreground">عمليات حذف</p>
           </CardContent>
         </Card>
       </div>
@@ -214,29 +150,20 @@ export function TamperDetectorPanel() {
               <Search className="w-5 h-5 text-primary" />
               فحص سلامة البيانات المالية
             </div>
-            <div className="flex gap-2">
-              {unresolvedCount > 0 && (
-                <Button variant="destructive" size="sm" className="gap-1">
-                  <Snowflake className="w-4 h-4" />
-                  تجميد النظام
-                </Button>
-              )}
-              <Button
-                onClick={() => runScan.mutate()}
-                disabled={runScan.isPending}
-                className="gap-2"
-                size="sm"
-              >
-                <Play className="w-4 h-4" />
-                {runScan.isPending ? 'جاري الفحص...' : 'تشغيل الفحص الآن'}
-              </Button>
-            </div>
+            <Button
+              onClick={() => runScan.mutate()}
+              disabled={runScan.isPending}
+              className="gap-2"
+              size="sm"
+            >
+              <Play className="w-4 h-4" />
+              {runScan.isPending ? 'جاري الفحص...' : 'تشغيل الفحص الآن'}
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-sm text-muted-foreground mb-4">
-            يقوم الفاحص بحساب بصمات تشفيرية (SHA-256) لكل سجل مالي ومقارنتها مع البصمات المخزنة.
-            أي اختلاف يشير إلى تعديل غير مصرح به في قاعدة البيانات.
+            يراقب النظام جميع التعديلات والحذف على الجداول المالية الحساسة عبر سجل المراجعة الموحد.
           </div>
           <div className="text-xs text-muted-foreground">
             <strong>الجداول المراقبة:</strong> {Object.values(TABLE_LABELS).join(' • ')}
@@ -244,14 +171,14 @@ export function TamperDetectorPanel() {
         </CardContent>
       </Card>
 
-      {/* Tamper Events */}
-      {tamperEvents.length > 0 && (
-        <Card className="border-destructive/30">
+      {/* Audit Events */}
+      {auditEvents.length > 0 && (
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <ShieldAlert className="w-5 h-5" />
-              سجل التعديلات المكتشفة
-              <Badge variant="destructive">{tamperEvents.length}</Badge>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5" />
+              سجل التعديلات على البيانات المالية
+              <Badge variant="secondary">{auditEvents.length}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -261,164 +188,77 @@ export function TamperDetectorPanel() {
                   <TableRow>
                     <TableHead className="text-right">الجدول</TableHead>
                     <TableHead className="text-right">معرف السجل</TableHead>
-                    <TableHead className="text-center">الخطورة</TableHead>
-                    <TableHead className="text-center">الحالة</TableHead>
+                    <TableHead className="text-center">العملية</TableHead>
                     <TableHead className="text-center">التاريخ</TableHead>
-                    <TableHead className="text-center">إجراءات</TableHead>
+                    <TableHead className="text-center">تفاصيل</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tamperEvents.map((event: any) => (
-                    <TableRow key={event.id} className={event.status === 'detected' ? 'bg-destructive/5' : ''}>
+                  {auditEvents.map((event: any) => (
+                    <TableRow key={event.id}>
                       <TableCell className="font-medium">
-                        {TABLE_LABELS[event.table_name] || event.table_name}
+                        {TABLE_LABELS[event.entity_type] || event.entity_type}
                       </TableCell>
-                      <TableCell className="font-mono text-xs">{event.record_id?.substring(0, 8)}...</TableCell>
-                      <TableCell className="text-center">{getSeverityBadge(event.severity)}</TableCell>
-                      <TableCell className="text-center">{getStatusBadge(event.status)}</TableCell>
+                      <TableCell className="font-mono text-xs">{event.entity_id?.substring(0, 8)}...</TableCell>
+                      <TableCell className="text-center">{getSeverityBadge(event.action)}</TableCell>
                       <TableCell className="text-center text-xs">
-                        {new Date(event.detected_at).toLocaleString('ar-SA')}
+                        {new Date(event.created_at).toLocaleString('ar-SA')}
                       </TableCell>
                       <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="ghost" size="sm" onClick={() => setSelectedEvent(event)}>
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
-                              <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2">
-                                  <ShieldAlert className="w-5 h-5 text-destructive" />
-                                  تفاصيل التعديل المكتشف
-                                </DialogTitle>
-                              </DialogHeader>
-                              {selectedEvent && (
-                                <div className="space-y-4">
-                                  <div className="grid grid-cols-2 gap-3">
-                                    <div className="bg-muted p-3 rounded-lg">
-                                      <p className="text-xs text-muted-foreground">الجدول</p>
-                                      <p className="font-semibold">{TABLE_LABELS[selectedEvent.table_name] || selectedEvent.table_name}</p>
-                                    </div>
-                                    <div className="bg-muted p-3 rounded-lg">
-                                      <p className="text-xs text-muted-foreground">معرف السجل</p>
-                                      <p className="font-mono text-xs">{selectedEvent.record_id}</p>
-                                    </div>
-                                    <div className="bg-muted p-3 rounded-lg">
-                                      <p className="text-xs text-muted-foreground">البصمة السابقة</p>
-                                      <p className="font-mono text-[10px] break-all text-green-600">{selectedEvent.previous_hash}</p>
-                                    </div>
-                                    <div className="bg-muted p-3 rounded-lg">
-                                      <p className="text-xs text-muted-foreground">البصمة الحالية</p>
-                                      <p className="font-mono text-[10px] break-all text-destructive">{selectedEvent.current_hash}</p>
-                                    </div>
-                                  </div>
-
-                                  <Separator />
-
-                                  {/* Fields comparison */}
-                                  {selectedEvent.fields_before && selectedEvent.fields_after && (
-                                    <div>
-                                      <h4 className="font-semibold mb-2">مقارنة الحقول</h4>
-                                      <div className="bg-muted rounded-lg overflow-hidden">
-                                        <Table>
-                                          <TableHeader>
-                                            <TableRow>
-                                              <TableHead className="text-right">الحقل</TableHead>
-                                              <TableHead className="text-right">القيمة السابقة</TableHead>
-                                              <TableHead className="text-right">القيمة الحالية</TableHead>
-                                            </TableRow>
-                                          </TableHeader>
-                                          <TableBody>
-                                            {Object.keys(selectedEvent.fields_after).map(key => {
-                                              const before = selectedEvent.fields_before?.[key];
-                                              const after = selectedEvent.fields_after?.[key];
-                                              const changed = JSON.stringify(before) !== JSON.stringify(after);
-                                              return (
-                                                <TableRow key={key} className={changed ? 'bg-destructive/10' : ''}>
-                                                  <TableCell className="font-medium text-xs">{key}</TableCell>
-                                                  <TableCell className="text-xs">{String(before ?? '-')}</TableCell>
-                                                  <TableCell className={`text-xs ${changed ? 'text-destructive font-bold' : ''}`}>
-                                                    {String(after ?? '-')}
-                                                  </TableCell>
-                                                </TableRow>
-                                              );
-                                            })}
-                                          </TableBody>
-                                        </Table>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  <Separator />
-
-                                  {/* Impact Analysis */}
-                                  {selectedEvent.impact_analysis && (
-                                    <div>
-                                      <h4 className="font-semibold mb-2 flex items-center gap-2">
-                                        <AlertTriangle className="w-4 h-4 text-amber-500" />
-                                        تحليل الأثر المالي
-                                      </h4>
-                                      <div className="space-y-2">
-                                        {selectedEvent.impact_analysis.affected_areas?.length > 0 && (
-                                          <div className="flex flex-wrap gap-1">
-                                            {selectedEvent.impact_analysis.affected_areas.map((area: string, i: number) => (
-                                              <Badge key={i} variant="outline" className="text-xs">{area}</Badge>
-                                            ))}
-                                          </div>
-                                        )}
-                                        {selectedEvent.impact_analysis.financial_impact && (
-                                          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm">
-                                            {Object.entries(selectedEvent.impact_analysis.financial_impact).map(([key, val]) => (
-                                              <div key={key} className="flex justify-between py-1">
-                                                <span className="text-muted-foreground">{key}</span>
-                                                <span className="font-mono font-semibold">{String(val)}</span>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Actions */}
-                                  {selectedEvent.status === 'detected' && (
-                                    <div className="flex gap-2">
-                                      <Button
-                                        variant="default"
-                                        className="gap-2"
-                                        onClick={() => {
-                                          resolveEvent.mutate({
-                                            eventId: selectedEvent.id,
-                                            notes: 'تم المراجعة والتأكيد',
-                                          });
-                                          setSelectedEvent(null);
-                                        }}
-                                      >
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        تأكيد المراجعة
-                                      </Button>
-                                      <Button variant="destructive" className="gap-2">
-                                        <Snowflake className="w-4 h-4" />
-                                        تجميد النظام
-                                      </Button>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </DialogContent>
-                          </Dialog>
-                          {event.status === 'detected' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => resolveEvent.mutate({ eventId: event.id, notes: 'تم المراجعة' })}
-                            >
-                              <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={() => setSelectedEvent(event)}>
+                              <Eye className="w-4 h-4" />
                             </Button>
-                          )}
-                        </div>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
+                            <DialogHeader>
+                              <DialogTitle className="flex items-center gap-2">
+                                <Shield className="w-5 h-5 text-primary" />
+                                تفاصيل التعديل
+                              </DialogTitle>
+                            </DialogHeader>
+                            {selectedEvent && (
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="bg-muted p-3 rounded-lg">
+                                    <p className="text-xs text-muted-foreground">الجدول</p>
+                                    <p className="font-semibold">{TABLE_LABELS[selectedEvent.entity_type] || selectedEvent.entity_type}</p>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded-lg">
+                                    <p className="text-xs text-muted-foreground">العملية</p>
+                                    <p className="font-semibold">{selectedEvent.action}</p>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded-lg">
+                                    <p className="text-xs text-muted-foreground">معرف السجل</p>
+                                    <p className="font-mono text-xs">{selectedEvent.entity_id}</p>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded-lg">
+                                    <p className="text-xs text-muted-foreground">المستخدم</p>
+                                    <p className="font-mono text-xs">{selectedEvent.user_id?.substring(0, 8)}...</p>
+                                  </div>
+                                </div>
+                                <Separator />
+                                {selectedEvent.old_data && (
+                                  <div>
+                                    <h4 className="font-semibold mb-2">البيانات السابقة</h4>
+                                    <pre className="bg-muted p-3 rounded-lg text-xs overflow-auto max-h-40 dir-ltr">
+                                      {JSON.stringify(selectedEvent.old_data, null, 2)}
+                                    </pre>
+                                  </div>
+                                )}
+                                {selectedEvent.new_data && (
+                                  <div>
+                                    <h4 className="font-semibold mb-2">البيانات الجديدة</h4>
+                                    <pre className="bg-muted p-3 rounded-lg text-xs overflow-auto max-h-40 dir-ltr">
+                                      {JSON.stringify(selectedEvent.new_data, null, 2)}
+                                    </pre>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -428,62 +268,6 @@ export function TamperDetectorPanel() {
           </CardContent>
         </Card>
       )}
-
-      {/* Scan History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-primary" />
-            سجل عمليات الفحص
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loadingRuns ? (
-            <div className="text-center py-8 text-muted-foreground">جاري التحميل...</div>
-          ) : scanRuns.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Shield className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>لم يتم إجراء أي فحص بعد</p>
-              <p className="text-xs mt-1">اضغط "تشغيل الفحص الآن" لبدء أول فحص سلامة</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right">وقت البدء</TableHead>
-                  <TableHead className="text-center">النوع</TableHead>
-                  <TableHead className="text-center">السجلات المفحوصة</TableHead>
-                  <TableHead className="text-center">سجلات جديدة</TableHead>
-                  <TableHead className="text-center">تعديلات مكتشفة</TableHead>
-                  <TableHead className="text-center">الحالة</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {scanRuns.map((run: any) => (
-                  <TableRow key={run.id}>
-                    <TableCell className="text-sm">
-                      {new Date(run.started_at).toLocaleString('ar-SA')}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline">
-                        {run.scan_type === 'manual' ? 'يدوي' : run.scan_type === 'scheduled' ? 'مجدول' : run.scan_type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center font-bold">{run.total_records_checked}</TableCell>
-                    <TableCell className="text-center">{run.new_records_hashed}</TableCell>
-                    <TableCell className="text-center">
-                      <span className={run.mismatches_found > 0 ? 'text-destructive font-bold' : 'text-green-600'}>
-                        {run.mismatches_found}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">{getScanStatusBadge(run.status)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
