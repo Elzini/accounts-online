@@ -148,10 +148,7 @@ export function useFinancialStatements() {
 
       // Try Edge Function first, fallback to local parser
       try {
-        const { data: edgeResult, error: edgeError } = await sbClient.functions.invoke('parse-medad-excel', {
-          body: { sheetNames: workbook.SheetNames, sheets },
-        });
-        if (edgeError) throw edgeError;
+        const edgeResult = await parseMedadExcelViaEdge(workbook.SheetNames, sheets);
         parsedData = edgeResult as ComprehensiveFinancialData;
       } catch (edgeFnError) {
         console.warn('Edge function unavailable, using local parser:', edgeFnError);
