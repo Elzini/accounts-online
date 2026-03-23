@@ -1,14 +1,19 @@
 /**
  * Sales Returns Hook - Extracted from SalesReturnsPage.tsx
+ * Uses service layer instead of direct DB access.
  */
 import { useState, useCallback } from 'react';
-import { supabase } from '@/hooks/modules/useMiscServices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
 import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
+import {
+  fetchAvailableInvoicesForReturn, fetchSalesReturns, searchSaleByNumber,
+  searchInvoiceByNumber, processCarReturn, deleteSaleWithJournal,
+  deleteInvoiceWithJournal, insertCreditNote, deleteCreditNote,
+} from '@/services/returns/salesReturnsService';
 
 export interface ReturnItem {
   id: string;
@@ -50,27 +55,13 @@ export function useSalesReturns() {
 
   const { data: availableInvoices = [] } = useQuery({
     queryKey: ['available-invoices-for-return', companyId, isCarDealership],
-    queryFn: async () => {
-      if (isCarDealership) {
-        const { data, error } = await supabase.from('sales').select('id, sale_number, sale_date, sale_price, customer:customers(name)').eq('company_id', companyId!).order('sale_number', { ascending: false }).limit(200);
-        if (error) throw error;
-        return (data || []).map((s: any) => ({ id: s.id, number: s.sale_number, date: s.sale_date, total: s.sale_price, customerName: s.customer?.name || '', source: 'sales' as const }));
-      } else {
-        const { data, error } = await supabase.from('invoices').select('id, invoice_number, invoice_date, total, customer_name').eq('company_id', companyId!).eq('invoice_type', 'sales').order('invoice_number', { ascending: false }).limit(200);
-        if (error) throw error;
-        return (data || []).map((inv: any) => ({ id: inv.id, number: inv.invoice_number, date: inv.invoice_date, total: inv.total, customerName: inv.customer_name || '', source: 'invoices' as const }));
-      }
-    },
+    queryFn: () => fetchAvailableInvoicesForReturn(companyId!, isCarDealership),
     enabled: !!companyId,
   });
 
   const { data: returns = [], isLoading } = useQuery({
     queryKey: ['sales-returns', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('credit_debit_notes').select('*').eq('company_id', companyId!).eq('note_type', 'credit').order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchSalesReturns(companyId!),
     enabled: !!companyId,
   });
 
@@ -79,8 +70,8 @@ export function useSalesReturns() {
     setIsSearching(true);
     try {
       if (isCarDealership) {
-        const { data: sale, error } = await supabase.from('sales').select(`*, car:cars(*), customer:customers(name, phone), sale_items:sale_items(*, car:cars(*))`).eq('company_id', companyId).eq('sale_number', parseInt(invoiceSearch)).single();
-        if (error || !sale) { toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found'); setFoundSale(null); setFoundInvoice(null); setItems([]); return; }
+        const sale = await searchSaleByNumber(companyId, parseInt(invoiceSearch));
+        if (!sale) { toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found'); setFoundSale(null); setFoundInvoice(null); setItems([]); return; }
         setFoundSale(sale); setFoundInvoice(null);
         const saleItems = (sale as any).sale_items || [];
         if (saleItems.length > 0) {
@@ -90,8 +81,8 @@ export function useSalesReturns() {
           setItems([{ id: '1', car_id: sale.car_id, description: `${car?.name || ''} ${car?.model || ''} - ${car?.color || ''} - شاسيه: ${car?.chassis_number || ''}`, quantity: 1, returnedQty: 1, unit: 'سيارة', price, total: price, discountPercent: 0, discount: 0, net: price, vat, grandTotal: price + vat }]);
         }
       } else {
-        const { data: invoice, error } = await supabase.from('invoices').select('*').eq('company_id', companyId).eq('invoice_type', 'sales').eq('invoice_number', invoiceSearch.trim()).single();
-        if (error || !invoice) { toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found'); setFoundSale(null); setFoundInvoice(null); setItems([]); return; }
+        const invoice = await searchInvoiceByNumber(companyId, invoiceSearch);
+        if (!invoice) { toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found'); setFoundSale(null); setFoundInvoice(null); setItems([]); return; }
         setFoundInvoice(invoice); setFoundSale(null);
         const invoiceItems = Array.isArray((invoice as any).items) ? (invoice as any).items : [];
         if (invoiceItems.length > 0) {
@@ -119,17 +110,17 @@ export function useSalesReturns() {
       if (!foundSale && !foundInvoice) throw new Error('No sale/invoice found');
       if (isCarDealership && foundSale) {
         const returnedItems = items.filter(i => i.returnedQty > 0);
-        for (const item of returnedItems) { if (item.car_id) { const { error: carErr } = await supabase.from('cars').update({ status: 'available' }).eq('id', item.car_id); if (carErr) throw carErr; } }
-        await supabase.from('journal_entries').delete().eq('reference_type', 'sale').eq('reference_id', foundSale.id);
-        if (form.fullInvoice) { await supabase.from('sale_items').delete().eq('sale_id', foundSale.id); await supabase.from('sales').delete().eq('id', foundSale.id); }
+        await processCarReturn(returnedItems);
+        await deleteSaleWithJournal(foundSale.id, form.fullInvoice);
       } else if (foundInvoice) {
-        await supabase.from('journal_entries').delete().eq('reference_type', 'invoice').eq('reference_id', foundInvoice.id);
-        if (form.fullInvoice) { await supabase.from('invoices').delete().eq('id', foundInvoice.id); }
+        await deleteInvoiceWithJournal(foundInvoice.id, form.fullInvoice);
       }
       const refNumber = foundSale ? foundSale.sale_number : foundInvoice?.invoice_number;
       const num = `SR-${String(returns.length + 1).padStart(4, '0')}`;
-      const { error } = await supabase.from('credit_debit_notes').insert({ company_id: companyId!, note_number: num, note_type: 'credit', note_date: form.returnDate, total_amount: totals.grandTotal, reason: `مرتجع فاتورة رقم ${refNumber}${form.notes ? ' - ' + form.notes : ''}`, status: 'approved' });
-      if (error) throw error;
+      await insertCreditNote(companyId!, {
+        note_number: num, note_date: form.returnDate, total_amount: totals.grandTotal,
+        reason: `مرتجع فاتورة رقم ${refNumber}${form.notes ? ' - ' + form.notes : ''}`,
+      });
     },
     onSuccess: () => {
       ['sales-returns', 'credit-debit-notes', 'sales', 'cars', 'stats', 'available-invoices-for-return', 'company-invoices'].forEach(k => queryClient.invalidateQueries({ queryKey: [k] }));
@@ -140,7 +131,7 @@ export function useSalesReturns() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('credit_debit_notes').delete().eq('id', id); if (error) throw error; },
+    mutationFn: (id: string) => deleteCreditNote(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['sales-returns'] }); toast.success(language === 'ar' ? 'تم الحذف' : 'Deleted'); },
   });
 
