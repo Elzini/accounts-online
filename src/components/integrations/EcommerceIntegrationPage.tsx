@@ -66,18 +66,13 @@ export function EcommerceIntegrationPage() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: async (platform: string) => {
-      if (!companyId) throw new Error('No company');
-      const cfg = config[platform];
-      const { error } = await supabase
-        .from('ecommerce_integrations')
-        .upsert({
-          company_id: companyId,
-          platform,
-          store_url: cfg.store_url,
-          api_key_encrypted: cfg.api_key !== '••••••••' ? cfg.api_key : undefined,
-          webhook_secret_encrypted: cfg.webhook_secret !== '••••••••' ? cfg.webhook_secret : undefined,
-          sync_products: cfg.sync_products,
+    mutationFn: async (_platform: string) => {
+      toast.info('ميزة التكامل مع المتاجر الإلكترونية قيد التطوير');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ecommerce-integrations', companyId] });
+    },
+  });
           sync_orders: cfg.sync_orders,
           sync_customers: cfg.sync_customers,
           is_active: true,
