@@ -137,7 +137,27 @@ export function useFinancialStatements() {
     try {
       const arrayBuffer = await file.arrayBuffer();
       const workbook = await readExcelFile(arrayBuffer);
-      const parsedData = parseMedadExcel(workbook);
+
+      // Serialize workbook data for edge function
+      const sheets: Record<string, any[][]> = {};
+      for (const name of workbook.SheetNames) {
+        sheets[name] = workbook.Sheets[name]?.data || [];
+      }
+
+      let parsedData: ComprehensiveFinancialData;
+
+      // Try Edge Function first, fallback to local parser
+      try {
+        const { data: edgeResult, error: edgeError } = await sbClient.functions.invoke('parse-medad-excel', {
+          body: { sheetNames: workbook.SheetNames, sheets },
+        });
+        if (edgeError) throw edgeError;
+        parsedData = edgeResult as ComprehensiveFinancialData;
+      } catch (edgeFnError) {
+        console.warn('Edge function unavailable, using local parser:', edgeFnError);
+        parsedData = parseMedadExcel(workbook);
+      }
+
       const isEffectivelyEmpty = (parsedData.balanceSheet?.totalAssets || 0) === 0 && (parsedData.balanceSheet?.totalLiabilitiesAndEquity || 0) === 0 && (parsedData.incomeStatement?.revenue || 0) === 0 && (parsedData.incomeStatement?.costOfRevenue || 0) === 0 && (parsedData.incomeStatement?.generalAndAdminExpenses || 0) === 0;
       if (isEffectivelyEmpty) {
         setData(emptyFinancialData); setFileName(null); setDataSource('none'); setActiveTab('overview');
