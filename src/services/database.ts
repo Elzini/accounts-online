@@ -52,67 +52,9 @@ function toDateOnly(date: Date) {
   return `${y}-${m}-${d}`;
 }
 
-// Suppliers
-// Use suppliers_safe view for read operations to mask sensitive data (phone, id_number, registration_number)
-// The view shows only last 4 digits for non-admin users
-export async function fetchSuppliers() {
-  const companyId = await requireCompanyId();
-  const { data, error } = await supabase
-    .from('suppliers_safe')
-    .select('*')
-    .eq('company_id', companyId)
-    .order('created_at', { ascending: false });
-  
-  if (error) throw error;
-  return data?.map(supplier => ({
-    id: supplier.id,
-    company_id: supplier.company_id,
-    name: supplier.name,
-    phone: supplier.phone_masked,
-    address: supplier.address,
-    notes: supplier.notes,
-    id_number: supplier.id_number_masked,
-    registration_number: supplier.registration_number_masked,
-    created_at: supplier.created_at,
-    updated_at: supplier.updated_at,
-    registration_number_encrypted: null as string | null,
-  })) || [];
-}
-
-export async function addSupplier(supplier: SupplierInsert) {
-  const companyId = await getCurrentCompanyId();
-  if (!companyId) throw new Error('No company found for user');
-  
-  const { data, error } = await supabase
-    .from('suppliers')
-    .insert({ ...supplier, company_id: companyId })
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
-}
-
-export async function updateSupplier(id: string, supplier: SupplierUpdate) {
-  const { data, error } = await supabase
-    .from('suppliers')
-    .update(supplier)
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
-}
-
-export async function deleteSupplier(id: string) {
-  const { error } = await supabase
-    .from('suppliers')
-    .delete()
-    .eq('id', id);
-  
-  if (error) throw error;
-}
+// ============================================
+// GENERAL FUNCTIONS (work for ALL company types)
+// ============================================
 
 // ============================================
 // GENERAL FUNCTIONS (work for ALL company types)
