@@ -34,7 +34,7 @@ export function useDashboardData() {
   const { permissions } = useAuth();
   const { company, companyId } = useCompany();
   const companyType: CompanyActivityType = company?.company_type || 'general_trading';
-  const isCarDealership = companyType === 'car_dealership';
+  const { hasCarInventory: isCarDealership } = getIndustryFeatures(companyType);
   const industryLabels = useIndustryLabels();
   const { t, language } = useLanguage();
   const { data: transfers } = useCarTransfers();

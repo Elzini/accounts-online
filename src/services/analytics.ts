@@ -85,7 +85,7 @@ export async function fetchAdvancedAnalytics(fiscalYearId?: string): Promise<Adv
     .eq('id', companyId)
     .maybeSingle();
   const companyType = companyRecord?.company_type;
-  const isCarDealership = companyType === 'car_dealership';
+  const isCarDealership = getIndustryFeatures(companyType).hasCarInventory;
 
   // Get fiscal year dates if provided
   let fiscalYearStart: string | null = null;

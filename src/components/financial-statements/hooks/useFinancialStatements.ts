@@ -90,7 +90,7 @@ export function useFinancialStatements() {
     return numDecimals === 0 ? String(v) : v.toFixed(numDecimals);
   }, [cv, numDecimals]);
 
-  const isCarDealership = false;
+  const { hasCarInventory: isCarDealership } = getIndustryFeatures(company?.company_type || 'general_trading');
 
   const profitReportData = useMemo(() => {
     if (!isCarDealership) {
