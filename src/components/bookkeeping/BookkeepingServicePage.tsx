@@ -8,8 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Plus, Users, DollarSign, Clock, CheckCircle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useBookkeepingClients, useBookkeepingTasks, useCreateBookkeepingClient, useDeleteBookkeepingClient } from '@/hooks/modules/useBusinessServices';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
 
