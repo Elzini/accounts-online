@@ -61,15 +61,12 @@ export function useUpdateAppSetting() {
 
 export function useResetDatabase() {
   const queryClient = useQueryClient();
-  
+  const { companyId } = useCompany();
+
   return useMutation({
-    mutationFn: resetDatabase,
+    mutationFn: async () => resetDatabase(companyId || undefined),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
-      queryClient.invalidateQueries({ queryKey: ['cars'] });
-      queryClient.invalidateQueries({ queryKey: ['sales'] });
-      queryClient.invalidateQueries({ queryKey: ['stats'] });
+      queryClient.clear();
     },
   });
 }

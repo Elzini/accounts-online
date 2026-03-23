@@ -189,36 +189,26 @@ export async function updateAppSetting(key: string, value: string) {
   }
 }
 
-export async function resetDatabase() {
-  const companyId = await getCurrentCompanyId();
+export async function resetDatabase(targetCompanyId?: string) {
+  const companyId = targetCompanyId || await getCurrentCompanyId();
   if (!companyId) throw new Error('No company ID found');
 
-  // Order matters: delete child tables first to respect foreign key constraints
-  const tablesToDelete = [
-    'car_transfers',    // references cars, sales
-    'checks',           // references customers, suppliers
-    'vouchers',         // references customers, suppliers
-    'installments',     // references sales
-    'sales',            // references cars, customers
-    'expenses',         // references suppliers
-    'cars',             // references suppliers
-    'customers',
-    'suppliers',
-  ];
+  const { data, error } = await supabase.rpc('reset_company_data', {
+    p_company_id: companyId,
+  });
 
-  for (const table of tablesToDelete) {
-    try {
-      const { error } = await supabase
-        .from(table as any)
-        .delete()
-        .eq('company_id', companyId);
-      
-      if (error) {
-        console.warn(`Warning deleting from ${table}:`, error.message);
-        // Continue with other tables even if one fails
-      }
-    } catch (e) {
-      console.warn(`Skipping table ${table}:`, e);
-    }
+  if (error) {
+    throw new Error(error.message || 'Failed to reset company data');
   }
+
+  const result = data as unknown as { success?: boolean; company_id?: string; deleted_rows?: number } | null;
+  if (!result?.success) {
+    throw new Error('Failed to reset company data');
+  }
+
+  return {
+    success: true,
+    company_id: result.company_id || companyId,
+    deleted_rows: Number(result.deleted_rows || 0),
+  };
 }
