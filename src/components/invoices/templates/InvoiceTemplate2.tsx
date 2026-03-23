@@ -1,7 +1,7 @@
-import { forwardRef, useMemo } from 'react';
+import { forwardRef } from 'react';
 import { format } from 'date-fns';
 import { QRCodeSVG } from 'qrcode.react';
-import { generateZatcaQRData, formatDateTimeForZatca } from '@/lib/zatcaQR';
+import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import logoImage from '@/assets/logo.png';
 import { InvoiceTemplateData } from './types';
 
