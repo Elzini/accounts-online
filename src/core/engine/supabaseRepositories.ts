@@ -243,11 +243,60 @@ export class SupabaseCompanySettingsRepository implements ICompanySettingsReposi
   }
 }
 
+// ============ Company Config Repository ============
+export class SupabaseCompanyConfigRepository implements ICompanyConfigRepository {
+  async load(companyId: string): Promise<CompanyConfig> {
+    const [companyRes, acctRes, taxRes, mappingsRes] = await Promise.all([
+      supabase.from('companies').select('id, name, company_type, is_active').eq('id', companyId).single(),
+      supabase.from('company_accounting_settings').select('*').eq('company_id', companyId).maybeSingle(),
+      supabase.from('tax_settings').select('*').eq('company_id', companyId).eq('is_active', true).maybeSingle(),
+      supabase.from('account_mappings').select('mapping_key, account_id').eq('company_id', companyId).eq('is_active', true),
+    ]);
+    if (companyRes.error) throw companyRes.error;
+    const company = companyRes.data;
+    const s = acctRes.data as any;
+    const tax = taxRes.data as any;
+
+    const accountMappings = new Map<string, string>();
+    for (const m of mappingsRes.data || []) {
+      if (m.account_id) accountMappings.set(m.mapping_key, m.account_id);
+    }
+    if (s) {
+      const overrides: Record<string, string | null> = {
+        cash: s.purchase_cash_account_id, sales_cash: s.sales_cash_account_id,
+        sales_revenue: s.sales_revenue_account_id, purchase_expense: s.purchase_inventory_account_id,
+        suppliers: s.suppliers_account_id, vat_input: s.vat_recoverable_account_id,
+        vat_output: s.vat_payable_account_id, cost_of_sales: s.cogs_account_id,
+      };
+      for (const [k, v] of Object.entries(overrides)) { if (v) accountMappings.set(k, v); }
+    }
+
+    return {
+      id: company.id, name: company.name,
+      company_type: company.company_type || 'general_trading',
+      is_active: company.is_active ?? true,
+      accounting: {
+        auto_journal_entries: s?.auto_journal_entries_enabled ?? true,
+        auto_purchase_entries: s?.auto_purchase_entries ?? true,
+        auto_sales_entries: s?.auto_sales_entries ?? true,
+        valuation_method: 'average',
+      },
+      tax: {
+        tax_rate: tax?.tax_rate ?? 15, tax_name: tax?.tax_name ?? 'ضريبة القيمة المضافة',
+        is_active: tax?.is_active ?? false, apply_to_sales: tax?.apply_to_sales ?? true,
+        apply_to_purchases: tax?.apply_to_purchases ?? true, tax_number: tax?.tax_number ?? null,
+      },
+      accountMappings,
+    };
+  }
+}
+
 // ============ Default instances ============
 export const defaultRepos = {
   accounts: new SupabaseAccountRepository(),
   journalEntries: new SupabaseJournalEntryRepository(),
   accountMappings: new SupabaseAccountMappingRepository(),
+  companyConfig: new SupabaseCompanyConfigRepository(),
   fiscalYears: new SupabaseFiscalYearRepository(),
   invoices: new SupabaseInvoiceRepository(),
   suppliers: new SupabaseSupplierRepository(),
