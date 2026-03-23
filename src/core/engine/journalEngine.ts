@@ -57,7 +57,7 @@ export class JournalEngine {
 
     if (linesError) throw linesError;
 
-    return entry as JournalEntryRecord;
+    return entry as unknown as JournalEntryRecord;
   }
 
   /** Check if a journal entry already exists for a reference */
