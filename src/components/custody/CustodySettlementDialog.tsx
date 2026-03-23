@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useCustodyAmountChangesList } from '@/hooks/modules/useBusinessServices';
 import { Plus, Trash2, FileDown, Eye, CheckCircle, Pencil, History, ArrowUp, ArrowDown } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
