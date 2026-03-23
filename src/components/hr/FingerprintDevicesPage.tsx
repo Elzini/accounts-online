@@ -336,7 +336,7 @@ export function FingerprintDevicesPage() {
                         <Button size="icon" variant="ghost" onClick={() => openEdit(device)}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا الجهاز؟' : 'Delete this device?')) deleteDevice.mutate(device.id); }}>
+                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا الجهاز؟' : 'Delete this device?')) deleteMutation.mutate(device.id, { onSuccess: () => toast.success(language === 'ar' ? 'تم حذف الجهاز' : 'Device deleted') }); }}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
