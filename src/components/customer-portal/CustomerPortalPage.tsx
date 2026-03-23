@@ -12,6 +12,8 @@ import { Globe, FileText, DollarSign, MessageSquare, User, Link2, Copy, Trash2, 
 import { toast } from 'sonner';
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { useCompanyId } from '@/hooks/useCompanyId';
+import { useCompany } from '@/contexts/CompanyContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface PortalCustomer {
   id: string;
@@ -41,6 +43,8 @@ interface SaleRecord {
 
 export function CustomerPortalPage() {
   const companyId = useCompanyId();
+  const { company } = useCompany();
+  const { hasCarInventory } = useIndustryFeatures();
   const [portalCustomers, setPortalCustomers] = useState<PortalCustomer[]>([]);
   const [sales, setSales] = useState<SaleRecord[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
@@ -55,18 +59,29 @@ export function CustomerPortalPage() {
     if (!companyId) return;
     setLoading(true);
 
+    const salesQuery = hasCarInventory
+      ? supabase
+          .from('sales')
+          .select('id, sale_number, customer_id, sale_price, sale_date, due_date, payment_status')
+          .eq('company_id', companyId)
+          .order('sale_date', { ascending: false })
+          .limit(50)
+      : supabase
+          .from('invoices')
+          .select('id, invoice_number, customer_id, total, invoice_date, due_date, payment_status')
+          .eq('company_id', companyId)
+          .eq('invoice_type', 'sales')
+          .neq('status', 'draft')
+          .order('invoice_date', { ascending: false })
+          .limit(50);
+
     const [tokensRes, salesRes, customersRes] = await Promise.all([
       supabase
         .from('customer_portal_tokens')
         .select('*')
         .eq('company_id', companyId)
         .order('created_at', { ascending: false }),
-      supabase
-        .from('sales')
-        .select('id, sale_number, customer_id, sale_price, sale_date, due_date, payment_status')
-        .eq('company_id', companyId)
-        .order('sale_date', { ascending: false })
-        .limit(50),
+      salesQuery,
       supabase
         .from('customers')
         .select('id, name')
@@ -86,14 +101,20 @@ export function CustomerPortalPage() {
     }
 
     if (salesRes.data) {
-      setSales(salesRes.data.map(s => ({
-        ...s,
+      setSales((salesRes.data as any[]).map(s => ({
+        id: s.id,
+        sale_number: s.sale_number || s.invoice_number || 0,
+        customer_id: s.customer_id || '',
+        sale_price: s.sale_price || Number(s.total) || 0,
+        sale_date: s.sale_date || s.invoice_date || '',
+        due_date: s.due_date || null,
+        payment_status: s.payment_status || null,
         customer_name: customerMap.get(s.customer_id || '') || 'غير معروف',
       })));
     }
 
     setLoading(false);
-  }, [companyId]);
+  }, [companyId, hasCarInventory]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

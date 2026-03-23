@@ -8,6 +8,7 @@ import {
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
@@ -16,18 +17,31 @@ const MONTH_NAMES = ['يناير', 'فبراير', 'مارس', 'أبريل', 'م
 
 export function AISalesForecastPage() {
   const { companyId } = useCompany();
+  const { hasCarInventory } = useIndustryFeatures();
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Fetch historical sales
+  // Fetch historical sales - industry-aware
   const { data: sales = [], isLoading } = useQuery({
-    queryKey: ['ai-forecast-sales', companyId],
+    queryKey: ['ai-forecast-sales', companyId, hasCarInventory],
     queryFn: async () => {
-      const { data } = await supabase.from('sales')
-        .select('sale_date, sale_price, purchase_price')
-        .eq('company_id', companyId!)
-        .order('sale_date', { ascending: true });
-      return data || [];
+      if (hasCarInventory) {
+        const { data } = await supabase.from('sales')
+          .select('sale_date, sale_price, purchase_price')
+          .eq('company_id', companyId!)
+          .order('sale_date', { ascending: true });
+        return data || [];
+      } else {
+        const { data } = await supabase.from('invoices')
+          .select('invoice_date, subtotal, total')
+          .eq('company_id', companyId!).eq('invoice_type', 'sales').neq('status', 'draft')
+          .order('invoice_date', { ascending: true });
+        return (data || []).map((inv: any) => ({
+          sale_date: inv.invoice_date,
+          sale_price: Number(inv.total) || 0,
+          purchase_price: 0,
+        }));
+      }
     },
     enabled: !!companyId,
   });

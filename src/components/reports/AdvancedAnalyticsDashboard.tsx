@@ -16,6 +16,7 @@ import { supabase } from '@/hooks/modules/useReportsServices';
 import { useQuery } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { toast } from 'sonner';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
@@ -24,35 +25,40 @@ export function AdvancedAnalyticsDashboard() {
   const { language } = useLanguage();
   const isRtl = language === 'ar';
   const companyId = useCompanyId();
+  const { hasCarInventory } = useIndustryFeatures();
   const [period, setPeriod] = useState('monthly');
   const [compareMode, setCompareMode] = useState(false);
 
-  // Fetch sales data
+  // Fetch sales data - industry-aware
   const { data: salesData = [] } = useQuery({
-    queryKey: ['analytics-sales', companyId],
+    queryKey: ['analytics-sales', companyId, hasCarInventory],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data } = await supabase
-        .from('sales')
-        .select('sale_price, sale_date, profit, commission')
-        .eq('company_id', companyId)
-        .order('sale_date', { ascending: true });
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
-
-  // Fetch invoices data
-  const { data: invoicesData = [] } = useQuery({
-    queryKey: ['analytics-invoices', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('invoices')
-        .select('total_amount, issue_date, status, invoice_type, paid_amount')
-        .eq('company_id', companyId)
-        .order('issue_date', { ascending: true });
-      return data || [];
+      if (hasCarInventory) {
+        const { data } = await supabase
+          .from('sales')
+          .select('sale_price, sale_date, profit, commission')
+          .eq('company_id', companyId)
+          .order('sale_date', { ascending: true });
+        return (data || []).map((s: any) => ({
+          sale_price: s.sale_price, sale_date: s.sale_date,
+          profit: s.profit, commission: s.commission,
+        }));
+      } else {
+        const { data } = await supabase
+          .from('invoices')
+          .select('total, subtotal, invoice_date, vat_amount')
+          .eq('company_id', companyId)
+          .eq('invoice_type', 'sales')
+          .neq('status', 'draft')
+          .order('invoice_date', { ascending: true });
+        return (data || []).map((inv: any) => ({
+          sale_price: Number(inv.total) || 0,
+          sale_date: inv.invoice_date,
+          profit: (Number(inv.subtotal) || 0) * 0.3, // estimated margin
+          commission: 0,
+        }));
+      }
     },
     enabled: !!companyId,
   });
@@ -88,17 +94,8 @@ export function AdvancedAnalyticsDashboard() {
       months[key].profit += Number(s.profit) || 0;
     });
 
-    // Invoice revenue
-    invoicesData.forEach((inv: any) => {
-      if (inv.invoice_type === 'sale' || inv.invoice_type === 'income') {
-        const d = new Date(inv.issue_date);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        if (!months[key]) months[key] = { month: `${monthNames[d.getMonth()]} ${d.getFullYear()}`, revenue: 0, expenses: 0, profit: 0, invoices: 0 };
-        months[key].revenue += Number(inv.total_amount) || 0;
-        months[key].invoices++;
-      }
-    });
-
+    // Note: salesData now already contains unified data from either sales or invoices table
+    // based on the industry type, so no separate invoicesData processing needed
     // Expenses
     expensesData.forEach((e: any) => {
       const d = new Date(e.expense_date);
@@ -111,7 +108,7 @@ export function AdvancedAnalyticsDashboard() {
       .sort(([a], [b]) => a.localeCompare(b))
       .slice(-12)
       .map(([, v]) => ({ ...v, net: v.revenue - v.expenses }));
-  }, [salesData, invoicesData, expensesData, isRtl]);
+  }, [salesData, expensesData, isRtl]);
 
   // Period comparison
   const periodComparison = useMemo(() => {
@@ -160,21 +157,7 @@ export function AdvancedAnalyticsDashboard() {
     return Object.entries(cats).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 8);
   }, [expensesData, isRtl]);
 
-  // Invoice status breakdown
-  const invoiceStatus = useMemo(() => {
-    const statuses: Record<string, number> = {};
-    invoicesData.forEach((inv: any) => {
-      const s = inv.status || 'draft';
-      statuses[s] = (statuses[s] || 0) + 1;
-    });
-    const labels: Record<string, string> = isRtl 
-      ? { draft: 'مسودة', approved: 'معتمدة', paid: 'مدفوعة', overdue: 'متأخرة', cancelled: 'ملغية' }
-      : { draft: 'Draft', approved: 'Approved', paid: 'Paid', overdue: 'Overdue', cancelled: 'Cancelled' };
-    return Object.entries(statuses).map(([name, value]) => ({ name: labels[name] || name, value }));
-  }, [invoicesData, isRtl]);
-
-  const totalRevenue = salesData.reduce((s: number, d: any) => s + (Number(d.sale_price) || 0), 0) +
-    invoicesData.filter((i: any) => i.invoice_type === 'sale').reduce((s: number, i: any) => s + (Number(i.total_amount) || 0), 0);
+  const totalRevenue = salesData.reduce((s: number, d: any) => s + (Number(d.sale_price) || 0), 0);
   const totalExpenses = expensesData.reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0);
   const totalProfit = totalRevenue - totalExpenses;
 
@@ -210,7 +193,7 @@ export function AdvancedAnalyticsDashboard() {
           { label: isRtl ? 'الإيرادات' : 'Revenue', value: totalRevenue, change: periodComparison.salesChange, icon: DollarSign, color: 'text-green-600' },
           { label: isRtl ? 'المصروفات' : 'Expenses', value: totalExpenses, change: periodComparison.expenseChange, icon: ShoppingCart, color: 'text-red-600' },
           { label: isRtl ? 'صافي الربح' : 'Net Profit', value: totalProfit, change: periodComparison.thisMonthProfit && periodComparison.lastMonthProfit ? ((periodComparison.thisMonthProfit - periodComparison.lastMonthProfit) / Math.abs(periodComparison.lastMonthProfit || 1) * 100) : 0, icon: TrendingUp, color: 'text-blue-600' },
-          { label: isRtl ? 'الفواتير' : 'Invoices', value: invoicesData.length, change: 0, icon: FileText, color: 'text-purple-600' },
+          { label: isRtl ? 'المبيعات' : 'Sales', value: salesData.length, change: 0, icon: FileText, color: 'text-purple-600' },
         ].map((kpi, i) => (
           <Card key={i}>
             <CardContent className="p-4">
@@ -307,12 +290,12 @@ export function AdvancedAnalyticsDashboard() {
               </CardContent>
             </Card>
             <Card>
-              <CardHeader><CardTitle>{isRtl ? 'حالة الفواتير' : 'Invoice Status'}</CardTitle></CardHeader>
+              <CardHeader><CardTitle>{isRtl ? 'توزيع المصروفات' : 'Expense Distribution'}</CardTitle></CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
-                    <Pie data={invoiceStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, value }) => `${name}: ${value}`}>
-                      {invoiceStatus.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    <Pie data={expenseBreakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, value }) => `${name}: ${value}`}>
+                      {expenseBreakdown.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                     </Pie>
                     <Tooltip />
                   </PieChart>
