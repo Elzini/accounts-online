@@ -318,7 +318,7 @@ export function FingerprintDevicesPage() {
                       <Badge
                         variant={device.status === 'active' ? 'default' : 'destructive'}
                         className="cursor-pointer"
-                        onClick={() => toggleStatus.mutate({ id: device.id, currentStatus: device.status })}
+                        onClick={() => toggleMutation.mutate({ id: device.id, currentStatus: device.status })}
                       >
                         {device.status === 'active' ? (language === 'ar' ? 'نشط' : 'Active') : (language === 'ar' ? 'معطل' : 'Inactive')}
                       </Badge>
