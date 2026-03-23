@@ -10,7 +10,7 @@ export function subscribeToTable(
 ) {
   const channel = supabase
     .channel(channelName)
-    .on('postgres_changes', { event, schema: 'public', table, filter }, callback)
+    .on('postgres_changes' as any, { event, schema: 'public', table, filter }, callback)
     .subscribe();
   return () => { supabase.removeChannel(channel); };
 }
