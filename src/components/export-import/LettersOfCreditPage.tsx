@@ -27,20 +27,7 @@ interface LetterOfCredit {
 export function LettersOfCreditPage() {
   const { companyId } = useCompany();
   const [search, setSearch] = useState('');
-
-  const { data: lcs = [], isLoading } = useQuery({
-    queryKey: ['letters-of-credit', companyId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('letters_of_credit')
-        .select('*')
-        .eq('company_id', companyId!)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as LetterOfCredit[];
-    },
-    enabled: !!companyId,
-  });
+  const { data: lcs = [], isLoading } = useLettersOfCredit(companyId);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
