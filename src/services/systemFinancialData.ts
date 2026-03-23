@@ -117,7 +117,7 @@ export async function getSystemTrialBalance(
 
   // تجميع الأرصدة الافتتاحية (ما قبل الفترة + قيود الافتتاح المرحّلة)
   // استبعاد حسابات الإيرادات والمصروفات لأنها حسابات فترة تبدأ من صفر كل سنة
-  const balanceSheetTypes = new Set(['asset', 'assets', 'liability', 'liabilities', 'equity']);
+  const checkBalanceSheet = (type: string) => isBalanceSheetType(type);
   const accountTypeMap = new Map<string, string>();
   leafAccounts.forEach(a => accountTypeMap.set(a.id, a.type));
   // تضمين الحسابات الأب أيضاً لأنها قد تظهر في القيود
