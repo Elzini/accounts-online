@@ -214,7 +214,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
   }
 
   // For car dealerships: use cars + sales tables
-  if (companyType === 'car_dealership') {
+  if (getIndustryFeatures(companyType).hasCarInventory) {
     return fetchCarDealershipStats(companyId, fiscalYearId, fiscalYearStart, fiscalYearEnd, startOfMonth, endOfMonth, today, now, parseLocalISODate);
   }
 
