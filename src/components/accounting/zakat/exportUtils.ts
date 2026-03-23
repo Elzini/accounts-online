@@ -1,9 +1,8 @@
 /**
- * ZakatReportsPage - Export Utilities (extracted from main component)
+ * ZakatReportsPage - Export Utilities
  */
-import { format } from 'date-fns';
 
-export function buildCashFlowExportData(cashFlow: any) {
+export function buildCashFlowExportData(cashFlow: any, dateSubtitle?: string) {
   const columns = [
     { header: 'البند', key: 'item' },
     { header: 'المبلغ (ر.س)', key: 'amount' },
@@ -30,10 +29,10 @@ export function buildCashFlowExportData(cashFlow: any) {
     { label: 'التدفقات التمويلية', value: cashFlow.financingActivities.total + ' ر.س' },
     { label: 'صافي التغير', value: cashFlow.netChangeInCash + ' ر.س' },
   ];
-  return { columns, data, summaryData };
+  return { title: 'قائمة التدفقات النقدية', subtitle: dateSubtitle, fileName: 'cash-flow-statement', columns, data, summaryData };
 }
 
-export function buildEquityExportData(equityChanges: any) {
+export function buildEquityExportData(equityChanges: any, dateSubtitle?: string) {
   const columns = [
     { header: 'البيان', key: 'description' },
     { header: 'رأس المال', key: 'capital' },
@@ -49,10 +48,10 @@ export function buildEquityExportData(equityChanges: any) {
     { label: 'الرصيد الافتتاحي', value: equityChanges.openingBalance.total + ' ر.س' },
     { label: 'الرصيد الختامي', value: equityChanges.closingBalance.total + ' ر.س' },
   ];
-  return { columns, data, summaryData };
+  return { title: 'قائمة التغيرات في حقوق الملكية', subtitle: dateSubtitle, fileName: 'equity-changes', columns, data, summaryData };
 }
 
-export function buildZakatBaseExportData(zakatBase: any) {
+export function buildZakatBaseExportData(zakatBase: any, fiscalYear: string) {
   const columns = [
     { header: 'البند', key: 'item' },
     { header: 'المبلغ (ر.س)', key: 'amount' },
@@ -83,10 +82,10 @@ export function buildZakatBaseExportData(zakatBase: any) {
     { label: 'الوعاء الزكوي', value: zakatBase.adjustedZakatBase + ' ر.س' },
     { label: 'الزكاة المستحقة', value: zakatBase.zakatDue + ' ر.س' },
   ];
-  return { columns, data, summaryData };
+  return { title: 'قائمة الوعاء الزكوي', subtitle: `السنة المالية: ${fiscalYear}`, fileName: 'zakat-base', columns, data, summaryData };
 }
 
-export function buildDetailedIncomeExportData(detailedIncome: any) {
+export function buildDetailedIncomeExportData(detailedIncome: any, dateSubtitle?: string) {
   const columns = [
     { header: 'البند', key: 'item' },
     { header: 'المبلغ (ر.س)', key: 'amount' },
@@ -121,5 +120,5 @@ export function buildDetailedIncomeExportData(detailedIncome: any) {
     { label: 'صافي الربح', value: detailedIncome.netIncomeBeforeZakat + ' ر.س' },
     { label: 'عدد المبيعات', value: detailedIncome.stats.totalSalesCount.toString() },
   ];
-  return { columns, data, summaryData };
+  return { title: 'قائمة الدخل المفصلة', subtitle: dateSubtitle, fileName: 'detailed-income', columns, data, summaryData };
 }
