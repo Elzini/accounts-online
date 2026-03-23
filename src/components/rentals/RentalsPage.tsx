@@ -8,34 +8,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Plus, Home, Key, DollarSign, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useRentalUnits, useCreateRentalUnit, useDeleteRentalUnit } from '@/hooks/modules/useModuleServices';
 
 export function RentalsPage() {
   const { t } = useLanguage();
-  const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ unitName: '', unitType: 'apartment', location: '', monthlyRent: '' });
 
-  const { data: units = [], isLoading } = useQuery({
-    queryKey: ['rental-units', companyId],
-    queryFn: async () => { const { data, error } = await supabase.from('rental_units').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
-    enabled: !!companyId,
-  });
+  const { data: units = [], isLoading } = useRentalUnits();
+  const addMutation = useCreateRentalUnit();
+  const deleteMutation = useDeleteRentalUnit();
 
-  const addMutation = useMutation({
-    mutationFn: async () => { const { error } = await supabase.from('rental_units').insert({ company_id: companyId!, unit_name: form.unitName, unit_type: form.unitType, location: form.location || null, monthly_rent: Number(form.monthlyRent) || 0, status: 'available' }); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['rental-units'] }); toast.success(t.rental_added); setShowAdd(false); setForm({ unitName: '', unitType: 'apartment', location: '', monthlyRent: '' }); },
-    onError: () => toast.error(t.mod_error),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('rental_units').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['rental-units'] }); toast.success(t.mod_deleted); },
-  });
+  const handleAdd = () => {
+    addMutation.mutate(form, {
+      onSuccess: () => { toast.success(t.rental_added); setShowAdd(false); setForm({ unitName: '', unitType: 'apartment', location: '', monthlyRent: '' }); },
+      onError: () => toast.error(t.mod_error),
+    });
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -49,7 +39,7 @@ export function RentalsPage() {
               <div><Label>{t.rental_unit_name}</Label><Input value={form.unitName} onChange={e => setForm(p => ({ ...p, unitName: e.target.value }))} /></div>
               <div><Label>{t.rental_location}</Label><Input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} /></div>
               <div><Label>{t.rental_monthly_rent}</Label><Input type="number" value={form.monthlyRent} onChange={e => setForm(p => ({ ...p, monthlyRent: e.target.value }))} /></div>
-              <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending || !form.unitName}>{t.save}</Button>
+              <Button className="w-full" onClick={handleAdd} disabled={addMutation.isPending || !form.unitName}>{t.save}</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -70,7 +60,7 @@ export function RentalsPage() {
                   <TableCell>{u.location || '-'}</TableCell>
                   <TableCell>{Number(u.monthly_rent || 0).toLocaleString()} {t.mod_currency}</TableCell>
                   <TableCell><Badge variant={u.status === 'occupied' ? 'default' : 'secondary'}>{u.status === 'occupied' ? t.rental_status_occupied : t.rental_status_available}</Badge></TableCell>
-                  <TableCell><Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(u.id)}><Trash2 className="w-3 h-3" /></Button></TableCell>
+                  <TableCell><Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(u.id, { onSuccess: () => toast.success(t.mod_deleted) })}><Trash2 className="w-3 h-3" /></Button></TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -8,41 +8,28 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Plus, CalendarCheck, Clock, Users, XCircle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBookings, useCreateBooking, useDeleteBooking } from '@/hooks/modules/useModuleServices';
 
 export function BookingsPage() {
   const { t } = useLanguage();
-  const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ customerName: '', customerPhone: '', serviceType: '', bookingDate: '', bookingTime: '' });
 
-  const { data: bookings = [], isLoading } = useQuery({
-    queryKey: ['bookings', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('bookings').select('*').eq('company_id', companyId!).order('booking_date', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
+  const { data: bookings = [], isLoading } = useBookings();
+  const addMutation = useCreateBooking();
+  const deleteMutation = useDeleteBooking();
 
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from('bookings').insert({ company_id: companyId!, customer_name: form.customerName, customer_phone: form.customerPhone || null, service_type: form.serviceType || null, booking_date: form.bookingDate, booking_time: form.bookingTime || null, status: 'confirmed' });
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['bookings'] }); toast.success(t.bk_created); setShowAdd(false); setForm({ customerName: '', customerPhone: '', serviceType: '', bookingDate: '', bookingTime: '' }); },
-    onError: () => toast.error(t.mod_error),
-  });
+  const handleAdd = () => {
+    addMutation.mutate(form, {
+      onSuccess: () => { toast.success(t.bk_created); setShowAdd(false); setForm({ customerName: '', customerPhone: '', serviceType: '', bookingDate: '', bookingTime: '' }); },
+      onError: () => toast.error(t.mod_error),
+    });
+  };
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('bookings').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['bookings'] }); toast.success(t.mod_deleted); },
-  });
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, { onSuccess: () => toast.success(t.mod_deleted) });
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -60,7 +47,7 @@ export function BookingsPage() {
                 <div><Label>{t.date}</Label><Input type="date" value={form.bookingDate} onChange={e => setForm(p => ({ ...p, bookingDate: e.target.value }))} /></div>
                 <div><Label>{t.bk_time}</Label><Input type="time" value={form.bookingTime} onChange={e => setForm(p => ({ ...p, bookingTime: e.target.value }))} /></div>
               </div>
-              <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending || !form.customerName || !form.bookingDate}>{t.save}</Button>
+              <Button className="w-full" onClick={handleAdd} disabled={addMutation.isPending || !form.customerName || !form.bookingDate}>{t.save}</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -85,7 +72,7 @@ export function BookingsPage() {
                   <TableCell>{b.booking_date}</TableCell>
                   <TableCell>{b.booking_time || '-'}</TableCell>
                   <TableCell><Badge variant={b.status === 'confirmed' ? 'default' : b.status === 'cancelled' ? 'destructive' : 'secondary'}>{b.status === 'confirmed' ? t.bk_confirmed : b.status === 'completed' ? t.bk_completed : b.status === 'cancelled' ? t.bk_cancelled : t.bk_pending}</Badge></TableCell>
-                  <TableCell><Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(b.id)}><Trash2 className="w-3 h-3" /></Button></TableCell>
+                  <TableCell><Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(b.id)}><Trash2 className="w-3 h-3" /></Button></TableCell>
                 </TableRow>
               ))}
             </TableBody>
