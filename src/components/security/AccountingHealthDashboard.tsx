@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
-import { runFullAccountingHealthCheck, SystemHealthReport, AccountingCheckResult } from '@/services/accountingHealthService';
+import { runFullAccountingHealthCheck, SystemHealthReport, AccountingCheckResult } from '@/services/accountingHealth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
