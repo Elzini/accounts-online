@@ -12,7 +12,6 @@ export const CarDealershipModule: IndustryModule = {
   supportedTypes: ['car_dealership'],
 
   async getDashboardStats(companyId: string, fiscalYearId?: string): Promise<Partial<DashboardStats>> {
-    // Fetch car-specific stats
     const [carsRes, salesRes, transfersRes] = await Promise.all([
       supabase.from('cars').select('id, status, purchase_price').eq('company_id', companyId),
       supabase.from('sales').select('id, selling_price, sale_date').eq('company_id', companyId),
@@ -25,7 +24,7 @@ export const CarDealershipModule: IndustryModule = {
 
     const availableCars = cars.filter(c => c.status === 'available').length;
     const soldCars = cars.filter(c => c.status === 'sold').length;
-    const activeTransfers = transfers.filter(t => t.status === 'transferred').length;
+    const activeTransfers = transfers.filter(t => t.status === 'pending').length;
 
     return {
       extra: {

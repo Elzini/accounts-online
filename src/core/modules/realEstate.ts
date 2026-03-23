@@ -13,8 +13,8 @@ export const RealEstateModule: IndustryModule = {
 
   async getDashboardStats(companyId: string, fiscalYearId?: string): Promise<Partial<DashboardStats>> {
     const [projectsRes, unitsRes] = await Promise.all([
-      supabase.from('re_projects').select('id, name, status, budget, total_spent').eq('company_id', companyId),
-      supabase.from('re_units').select('id, status, selling_price').eq('company_id', companyId),
+      supabase.from('re_projects').select('id, name, status, total_budget, total_spent').eq('company_id', companyId),
+      supabase.from('re_units').select('id, status, sale_price').eq('company_id', companyId),
     ]);
 
     const projects = projectsRes.data || [];
@@ -34,7 +34,7 @@ export const RealEstateModule: IndustryModule = {
         soldUnits,
         availableUnits,
         totalUnits: units.length,
-        totalBudget: projects.reduce((s, p) => s + (Number(p.budget) || 0), 0),
+        totalBudget: projects.reduce((s, p) => s + (Number(p.total_budget) || 0), 0),
         totalSpent: projects.reduce((s, p) => s + (Number(p.total_spent) || 0), 0),
       },
     };
