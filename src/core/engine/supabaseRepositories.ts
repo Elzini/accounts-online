@@ -10,12 +10,13 @@ import {
   IAccountRepository,
   IJournalEntryRepository,
   IAccountMappingRepository,
+  ICompanyConfigRepository,
   IFiscalYearRepository,
   IInvoiceRepository,
   ISupplierRepository,
   ICompanySettingsRepository,
 } from './repositories';
-import { Account, JournalEntryRecord, FiscalYear, AccountMapping } from './types';
+import { Account, JournalEntryRecord, FiscalYear, AccountMapping, CompanyConfig } from './types';
 
 // ============ Account Repository ============
 export class SupabaseAccountRepository implements IAccountRepository {
