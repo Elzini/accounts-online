@@ -8,7 +8,7 @@ export async function fetchPaymentTransactions() {
   return data || [];
 }
 
-export async function addPaymentTransaction(tx: { amount: number; customer_name: string; customer_email?: string; payment_method: string }) {
+export async function addPaymentTransaction(tx: { amount: number; customer_name: string; customer_email?: string; payment_method: string; transaction_ref: string }) {
   const companyId = await requireCompanyId();
   const { error } = await supabase.from('payment_transactions').insert({ ...tx, company_id: companyId, status: 'pending' });
   if (error) throw error;
