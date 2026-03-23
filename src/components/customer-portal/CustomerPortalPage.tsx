@@ -12,6 +12,8 @@ import { Globe, FileText, DollarSign, MessageSquare, User, Link2, Copy, Trash2, 
 import { toast } from 'sonner';
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { useCompanyId } from '@/hooks/useCompanyId';
+import { useCompany } from '@/contexts/CompanyContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface PortalCustomer {
   id: string;

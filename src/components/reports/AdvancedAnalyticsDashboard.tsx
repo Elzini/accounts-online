@@ -16,6 +16,7 @@ import { supabase } from '@/hooks/modules/useReportsServices';
 import { useQuery } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { toast } from 'sonner';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
@@ -24,35 +25,40 @@ export function AdvancedAnalyticsDashboard() {
   const { language } = useLanguage();
   const isRtl = language === 'ar';
   const companyId = useCompanyId();
+  const { hasCarInventory } = useIndustryFeatures();
   const [period, setPeriod] = useState('monthly');
   const [compareMode, setCompareMode] = useState(false);
 
-  // Fetch sales data
+  // Fetch sales data - industry-aware
   const { data: salesData = [] } = useQuery({
-    queryKey: ['analytics-sales', companyId],
+    queryKey: ['analytics-sales', companyId, hasCarInventory],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data } = await supabase
-        .from('sales')
-        .select('sale_price, sale_date, profit, commission')
-        .eq('company_id', companyId)
-        .order('sale_date', { ascending: true });
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
-
-  // Fetch invoices data
-  const { data: invoicesData = [] } = useQuery({
-    queryKey: ['analytics-invoices', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('invoices')
-        .select('total_amount, issue_date, status, invoice_type, paid_amount')
-        .eq('company_id', companyId)
-        .order('issue_date', { ascending: true });
-      return data || [];
+      if (hasCarInventory) {
+        const { data } = await supabase
+          .from('sales')
+          .select('sale_price, sale_date, profit, commission')
+          .eq('company_id', companyId)
+          .order('sale_date', { ascending: true });
+        return (data || []).map((s: any) => ({
+          sale_price: s.sale_price, sale_date: s.sale_date,
+          profit: s.profit, commission: s.commission,
+        }));
+      } else {
+        const { data } = await supabase
+          .from('invoices')
+          .select('total, subtotal, invoice_date, vat_amount')
+          .eq('company_id', companyId)
+          .eq('invoice_type', 'sales')
+          .neq('status', 'draft')
+          .order('invoice_date', { ascending: true });
+        return (data || []).map((inv: any) => ({
+          sale_price: Number(inv.total) || 0,
+          sale_date: inv.invoice_date,
+          profit: (Number(inv.subtotal) || 0) * 0.3, // estimated margin
+          commission: 0,
+        }));
+      }
     },
     enabled: !!companyId,
   });
