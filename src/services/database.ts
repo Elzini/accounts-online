@@ -281,9 +281,8 @@ export async function fetchStats(fiscalYearId?: string | null) {
           .eq('journal_entries.is_posted', true)
           .in('account_id', leafIds);
 
-        if (fiscalYearId) {
-          journalQuery = journalQuery.eq('journal_entries.fiscal_year_id', fiscalYearId);
-        }
+        // Enforce fiscal year isolation — always filter
+        journalQuery = journalQuery.eq('journal_entries.fiscal_year_id', fiscalYearId);
 
         const { data: lines } = await journalQuery;
         if (lines) {

@@ -85,6 +85,7 @@ export interface IInvoiceRepository {
     fiscal_year_id: string | null;
     invoice_type: string;
     invoice_number: string;
+    invoice_date: string | null;
     customer_name: string | null;
     supplier_id: string | null;
     subtotal: number;

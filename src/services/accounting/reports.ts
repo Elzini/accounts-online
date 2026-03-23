@@ -30,10 +30,10 @@ export async function getAccountBalances(
 
   if (fiscalYearId) {
     query = query.eq('journal_entry.fiscal_year_id', fiscalYearId);
-  } else {
-    if (startDate) query = query.gte('journal_entry.entry_date', startDate);
-    if (endDate) query = query.lte('journal_entry.entry_date', endDate);
   }
+  // Date range filters within the fiscal year
+  if (startDate) query = query.gte('journal_entry.entry_date', startDate);
+  if (endDate) query = query.lte('journal_entry.entry_date', endDate);
 
   const { data: lines, error } = await query;
   if (error) throw error;
@@ -243,7 +243,47 @@ export async function getGeneralLedger(
   const targetAccountIds = isParentAccount ? [accountId, ...childIds] : [accountId];
 
   let openingBalance = 0;
-  if (startDate && !fiscalYearId) {
+  if (startDate && fiscalYearId) {
+    // When fiscal year is set, get opening from 'opening' entries in this fiscal year
+    const { data: openingEntryLines } = await supabase
+      .from('journal_entry_lines')
+      .select(`
+        account_id, debit, credit,
+        journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type, fiscal_year_id)
+      `)
+      .in('account_id', targetAccountIds)
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .eq('journal_entry.fiscal_year_id', fiscalYearId)
+      .eq('journal_entry.reference_type', 'opening');
+
+    const { data: priorLines, error: priorError } = await supabase
+      .from('journal_entry_lines')
+      .select(`
+        account_id, debit, credit,
+        journal_entry:journal_entries!inner(company_id, is_posted, entry_date, fiscal_year_id)
+      `)
+      .in('account_id', targetAccountIds)
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .eq('journal_entry.fiscal_year_id', fiscalYearId)
+      .lt('journal_entry.entry_date', startDate);
+
+    if (priorError) throw priorError;
+
+    const isDebitNormal = ['asset', 'assets', 'expense', 'expenses'].includes(account.type);
+    const openingLinesInPeriod = openingEntryLines || [];
+    const allPriorLines = openingLinesInPeriod.length > 0 ? openingLinesInPeriod : (priorLines || []);
+    allPriorLines.forEach((line: any) => {
+      const d = Number(line.debit) || 0;
+      const c = Number(line.credit) || 0;
+      if (isDebitNormal) {
+        openingBalance += d - c;
+      } else {
+        openingBalance += c - d;
+      }
+    });
+  } else if (startDate && !fiscalYearId) {
     const { data: priorLines, error: priorError } = await supabase
       .from('journal_entry_lines')
       .select(`
@@ -299,10 +339,9 @@ export async function getGeneralLedger(
 
   if (fiscalYearId) {
     query = query.eq('journal_entry.fiscal_year_id', fiscalYearId);
-  } else {
-    if (startDate) query = query.gte('journal_entry.entry_date', startDate);
-    if (endDate) query = query.lte('journal_entry.entry_date', endDate);
   }
+  if (startDate) query = query.gte('journal_entry.entry_date', startDate);
+  if (endDate) query = query.lte('journal_entry.entry_date', endDate);
 
   const { data: lines, error: linesError } = await query;
   if (linesError) throw linesError;
@@ -651,28 +690,9 @@ export async function getComprehensiveTrialBalance(
         current.credit += c;
         openingBalances.set(line.account_id, current);
       });
-    } else if (!fiscalYearId) {
-      const { data: openingLines } = await supabase
-        .from('journal_entry_lines')
-        .select(`
-          account_id, debit, credit,
-          journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
-        `)
-        .eq('journal_entry.company_id', companyId)
-        .eq('journal_entry.is_posted', true)
-        .lt('journal_entry.entry_date', effectiveStartDate);
-
-      (openingLines || []).forEach((line: any) => {
-        const d = Number(line.debit) || 0;
-        const c = Number(line.credit) || 0;
-        rawOpeningDebitAll += d;
-        rawOpeningCreditAll += c;
-        const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
-        current.debit += d;
-        current.credit += c;
-        openingBalances.set(line.account_id, current);
-      });
     }
+    // Removed the fallback `else if (!fiscalYearId)` block that would query 
+    // ALL data without fiscal year isolation — this was a data leak vector.
   }
 
   // 2) Period movement
@@ -688,10 +708,9 @@ export async function getComprehensiveTrialBalance(
 
   if (fiscalYearId) {
     periodQuery = periodQuery.eq('journal_entry.fiscal_year_id', fiscalYearId);
-  } else {
-    if (effectiveStartDate) periodQuery = periodQuery.gte('journal_entry.entry_date', effectiveStartDate);
-    if (effectiveEndDate) periodQuery = periodQuery.lte('journal_entry.entry_date', effectiveEndDate);
   }
+  if (effectiveStartDate) periodQuery = periodQuery.gte('journal_entry.entry_date', effectiveStartDate);
+  if (effectiveEndDate) periodQuery = periodQuery.lte('journal_entry.entry_date', effectiveEndDate);
 
   const { data: periodLines, error } = await periodQuery;
   if (error) throw error;
