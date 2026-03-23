@@ -10,16 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Loader2, Plus, CalendarDays, CheckCircle, XCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useCompanyId } from '@/hooks/useCompanyId';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEmployees } from '@/hooks/usePayroll';
-import { format, differenceInDays } from 'date-fns';
+import { useLeaves, useCreateLeave, useUpdateLeaveStatus } from '@/hooks/hr/useHRService';
+import { differenceInDays } from 'date-fns';
+import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function LeavesPage() {
   const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const { data: employees = [] } = useEmployees();
   const { t } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -39,39 +38,21 @@ export function LeavesPage() {
     cancelled: { label: t.cancelled_status, variant: 'secondary' },
   };
 
-  const { data: leaves = [], isLoading } = useQuery({
-    queryKey: ['leaves', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase.from('employee_leaves').select('*, employees(name)')
-        .eq('company_id', companyId).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
+  const { data: leaves = [], isLoading } = useLeaves(companyId);
+  const addLeave = useCreateLeave(companyId);
+  const updateStatus = useUpdateLeaveStatus();
 
-  const addLeave = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      if (!companyId) throw new Error('No company');
-      const days = differenceInDays(new Date(data.end_date), new Date(data.start_date)) + 1;
-      const { error } = await supabase.from('employee_leaves').insert({
-        company_id: companyId, employee_id: data.employee_id, leave_type: data.leave_type,
-        start_date: data.start_date, end_date: data.end_date, days_count: days, reason: data.reason || null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['leaves'] }); toast.success(t.leave_submitted); setIsDialogOpen(false); },
-    onError: () => toast.error(t.error_occurred),
-  });
+  const handleAdd = (data: typeof formData) => {
+    const days = differenceInDays(new Date(data.end_date), new Date(data.start_date)) + 1;
+    addLeave.mutate(
+      { employee_id: data.employee_id, leave_type: data.leave_type, start_date: data.start_date, end_date: data.end_date, days_count: days, reason: data.reason || null },
+      { onSuccess: () => { toast.success(t.leave_submitted); setIsDialogOpen(false); }, onError: () => toast.error(t.error_occurred) },
+    );
+  };
 
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from('employee_leaves').update({ status }).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['leaves'] }); toast.success(t.status_updated); },
-  });
+  const handleStatusUpdate = (id: string, status: string) => {
+    updateStatus.mutate({ id, status }, { onSuccess: () => toast.success(t.status_updated) });
+  };
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
@@ -88,7 +69,7 @@ export function LeavesPage() {
           <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />{t.request_leave}</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>{t.new_leave_request}</DialogTitle></DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); addLeave.mutate(formData); }} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleAdd(formData); }} className="space-y-4">
               <div className="space-y-2">
                 <Label>{t.select_employee}</Label>
                 <Select value={formData.employee_id} onValueChange={(v) => setFormData({ ...formData, employee_id: v })}>
@@ -149,8 +130,8 @@ export function LeavesPage() {
                     <TableCell>
                       {leave.status === 'pending' && (
                         <div className="flex justify-center gap-1">
-                          <Button size="icon" variant="ghost" className="text-emerald-600" onClick={() => updateStatus.mutate({ id: leave.id, status: 'approved' })}><CheckCircle className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="ghost" className="text-destructive" onClick={() => updateStatus.mutate({ id: leave.id, status: 'rejected' })}><XCircle className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="ghost" className="text-emerald-600" onClick={() => handleStatusUpdate(leave.id, 'approved')}><CheckCircle className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleStatusUpdate(leave.id, 'rejected')}><XCircle className="w-4 h-4" /></Button>
                         </div>
                       )}
                     </TableCell>
