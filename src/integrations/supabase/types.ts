@@ -9462,6 +9462,44 @@ export type Database = {
           },
         ]
       }
+      tenant_db_roles: {
+        Row: {
+          company_id: string | null
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          is_active: boolean | null
+          role_name: string
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          role_name?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          role_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_db_roles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_rate_limits: {
         Row: {
           company_id: string
