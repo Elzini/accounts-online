@@ -263,6 +263,71 @@ export async function calculateAndRecordDepreciation(
 
   if (entryError) throw entryError;
 
+  // === IAS 16: Auto-create depreciation journal entry ===
+  // Dr: Depreciation Expense (6xxx)  |  Cr: Accumulated Depreciation (1xxx)
+  try {
+    const depExpenseAccountId = asset.depreciation_account_id;
+    const accumDepAccountId = asset.accumulated_depreciation_account_id;
+
+    if (depExpenseAccountId && accumDepAccountId) {
+      // Find active fiscal year
+      const { data: fiscalYear } = await supabase
+        .from('fiscal_years')
+        .select('id')
+        .eq('company_id', companyId)
+        .eq('is_current', true)
+        .maybeSingle();
+
+      const depAmount = Math.round(actualDepreciation * 100) / 100;
+      const description = `إهلاك ${asset.name} - ${periodStart} إلى ${periodEnd}`;
+
+      const { data: journalEntry, error: jeError } = await supabase
+        .from('journal_entries')
+        .insert({
+          company_id: companyId,
+          fiscal_year_id: fiscalYear?.id || null,
+          entry_date: new Date().toISOString().split('T')[0],
+          description,
+          reference_type: 'depreciation',
+          reference_id: entry.id,
+          status: 'posted',
+          is_approved: true,
+        })
+        .select('id')
+        .single();
+
+      if (!jeError && journalEntry) {
+        await supabase.from('journal_entry_lines').insert([
+          {
+            journal_entry_id: journalEntry.id,
+            account_id: depExpenseAccountId,
+            debit: depAmount,
+            credit: 0,
+            description: `مصروف إهلاك - ${asset.name}`,
+            company_id: companyId,
+          },
+          {
+            journal_entry_id: journalEntry.id,
+            account_id: accumDepAccountId,
+            debit: 0,
+            credit: depAmount,
+            description: `مجمع إهلاك - ${asset.name}`,
+            company_id: companyId,
+          },
+        ]);
+
+        // Link journal entry to depreciation record
+        await supabase
+          .from('depreciation_entries')
+          .update({ journal_entry_id: journalEntry.id })
+          .eq('id', entry.id);
+      }
+    }
+  } catch (journalError) {
+    console.warn('فشل إنشاء قيد الإهلاك التلقائي:', journalError);
+    // Don't block depreciation calculation if journal fails
+  }
+
   // Update asset
   const updateData: Record<string, unknown> = {
     accumulated_depreciation: Math.round(newAccumulated * 100) / 100,
