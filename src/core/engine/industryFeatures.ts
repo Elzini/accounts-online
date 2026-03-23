@@ -112,6 +112,100 @@ const COMPANY_TYPE_LABELS: Record<string, string> = {
   manufacturing: 'تصنيع',
 };
 
+/** Display metadata per company type */
+export interface IndustryDisplayMeta {
+  appName: string;
+  appNameEn: string;
+  appSubtitle: string;
+  appSubtitleEn: string;
+  footerText: string;
+  footerTextEn: string;
+}
+
+const DISPLAY_META: Record<string, IndustryDisplayMeta> = {
+  car_dealership: {
+    appName: 'نظام معارض السيارات',
+    appNameEn: 'Car Dealership System',
+    appSubtitle: 'إدارة المعرض',
+    appSubtitleEn: 'Dealership Management',
+    footerText: 'نظام معارض السيارات',
+    footerTextEn: 'Car Dealership System',
+  },
+  construction: {
+    appName: 'نظام المقاولات',
+    appNameEn: 'Construction System',
+    appSubtitle: 'إدارة المشاريع والمقاولات',
+    appSubtitleEn: 'Construction Management',
+    footerText: 'نظام المقاولات',
+    footerTextEn: 'Construction System',
+  },
+  general_trading: {
+    appName: 'نظام التجارة',
+    appNameEn: 'Trading System',
+    appSubtitle: 'إدارة التجارة العامة',
+    appSubtitleEn: 'General Trading Management',
+    footerText: 'نظام التجارة',
+    footerTextEn: 'Trading System',
+  },
+  restaurant: {
+    appName: 'نظام المطاعم',
+    appNameEn: 'Restaurant System',
+    appSubtitle: 'إدارة المطاعم والكافيهات',
+    appSubtitleEn: 'Restaurant Management',
+    footerText: 'نظام المطاعم',
+    footerTextEn: 'Restaurant System',
+  },
+  export_import: {
+    appName: 'نظام الاستيراد والتصدير',
+    appNameEn: 'Import/Export System',
+    appSubtitle: 'إدارة الاستيراد والتصدير',
+    appSubtitleEn: 'Import/Export Management',
+    footerText: 'نظام الاستيراد والتصدير',
+    footerTextEn: 'Import/Export System',
+  },
+  real_estate: {
+    appName: 'نظام التطوير العقاري',
+    appNameEn: 'Real Estate System',
+    appSubtitle: 'إدارة المشاريع العقارية',
+    appSubtitleEn: 'Real Estate Management',
+    footerText: 'نظام التطوير العقاري',
+    footerTextEn: 'Real Estate System',
+  },
+  medical: {
+    appName: 'النظام الطبي',
+    appNameEn: 'Medical System',
+    appSubtitle: 'إدارة الأدوية والمعدات الطبية',
+    appSubtitleEn: 'Medical Supply Management',
+    footerText: 'النظام الطبي',
+    footerTextEn: 'Medical System',
+  },
+  bookkeeping: {
+    appName: 'نظام مسك الدفاتر',
+    appNameEn: 'Bookkeeping System',
+    appSubtitle: 'خدمات محاسبية',
+    appSubtitleEn: 'Accounting Services',
+    footerText: 'نظام مسك الدفاتر',
+    footerTextEn: 'Bookkeeping System',
+  },
+  manufacturing: {
+    appName: 'نظام التصنيع',
+    appNameEn: 'Manufacturing System',
+    appSubtitle: 'إدارة التصنيع والإنتاج',
+    appSubtitleEn: 'Manufacturing Management',
+    footerText: 'نظام التصنيع',
+    footerTextEn: 'Manufacturing System',
+  },
+};
+
+const DEFAULT_DISPLAY_META: IndustryDisplayMeta = {
+  appName: 'Elzini SaaS',
+  appNameEn: 'Elzini SaaS',
+  appSubtitle: 'نظام محاسبي متكامل',
+  appSubtitleEn: 'Integrated ERP System',
+  footerText: 'Elzini SaaS',
+  footerTextEn: 'Elzini SaaS',
+};
+
 /**
  * Get feature flags for a company type
  */
