@@ -16173,6 +16173,10 @@ export type Database = {
         Returns: string
       }
       mask_phone: { Args: { phone: string }; Returns: string }
+      populate_account_mappings: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       process_prepaid_expense_amortizations: { Args: never; Returns: number }
       provision_tenant_complete: {
         Args: { p_company_id: string }
