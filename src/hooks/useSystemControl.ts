@@ -42,7 +42,7 @@ export function useCreateCustomReport() {
   
   return useMutation({
     mutationFn: (report: Omit<CustomReport, 'id' | 'created_at' | 'updated_at' | 'company_id'>) => 
-      createCustomReport({ ...report, company_id: companyId! }),
+      createCustomReport(companyId!, report),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custom-reports', companyId] });
     },

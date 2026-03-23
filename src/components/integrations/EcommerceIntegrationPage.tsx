@@ -59,29 +59,8 @@ export function EcommerceIntegrationPage() {
   const { data: integrations = [], isLoading } = useQuery({
     queryKey: ['ecommerce-integrations', companyId],
     queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('ecommerce_integrations')
-        .select('*')
-        .eq('company_id', companyId);
-      
-      if (data) {
-        const newConfig = { ...config };
-        data.forEach((int: any) => {
-          if (newConfig[int.platform]) {
-            newConfig[int.platform] = {
-              store_url: int.store_url || '',
-              api_key: int.api_key_encrypted ? '••••••••' : '',
-              webhook_secret: int.webhook_secret_encrypted ? '••••••••' : '',
-              sync_products: int.sync_products ?? true,
-              sync_orders: int.sync_orders ?? true,
-              sync_customers: int.sync_customers ?? true,
-            };
-          }
-        });
-        setConfig(newConfig);
-      }
-      return data || [];
+      // ecommerce_integrations table removed during schema cleanup
+      return [] as Array<{ platform: string; is_active: boolean; last_sync_at: string | null }>;
     },
     enabled: !!companyId,
   });
