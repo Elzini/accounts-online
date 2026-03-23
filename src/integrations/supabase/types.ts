@@ -9470,7 +9470,8 @@ export type Database = {
           id: string
           is_active: boolean | null
           role_name: string
-          user_id: string
+          schema_name: string | null
+          user_id: string | null
         }
         Insert: {
           company_id?: string | null
@@ -9479,7 +9480,8 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           role_name?: string
-          user_id: string
+          schema_name?: string | null
+          user_id?: string | null
         }
         Update: {
           company_id?: string | null
@@ -9488,7 +9490,8 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           role_name?: string
-          user_id?: string
+          schema_name?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
