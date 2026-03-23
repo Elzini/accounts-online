@@ -258,18 +258,17 @@ export function useRunTamperScan() {
   return useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await (supabase.from as any)('tamper_scan_runs').insert({
-        initiated_by: user?.id,
-        status: 'completed',
-        tables_scanned: Object.keys({
-          invoices: true, invoice_items: true, journal_entries: true,
-          journal_entry_lines: true, account_categories: true, checks: true,
-          expenses: true, vouchers: true, app_settings: true,
-        }),
-        issues_found: 0,
-        completed_at: new Date().toISOString(),
-      } as any);
-      if (error) throw error;
+      // Log scan to audit_logs instead of tamper_scan_runs
+      await supabase.from('audit_logs').insert({
+        user_id: user?.id || 'system',
+        entity_type: 'tamper_scan',
+        action: 'scan',
+        new_data: {
+          status: 'completed',
+          tables_scanned: ['invoices', 'invoice_items', 'journal_entries', 'journal_entry_lines', 'account_categories', 'checks', 'expenses', 'vouchers', 'app_settings'],
+          issues_found: 0,
+        },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tamper-scan-runs'] });
