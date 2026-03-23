@@ -64,6 +64,7 @@ import { useCostCenters } from '@/hooks/useCostCenters';
 import { CarItem, PurchaseInventoryItem } from './purchase-invoice/types';
 import { handleBatchImport } from './purchase-invoice/batchImport';
 import { getNextInvoiceNumber } from '@/utils/invoiceNumberGenerator';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface PurchaseInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
