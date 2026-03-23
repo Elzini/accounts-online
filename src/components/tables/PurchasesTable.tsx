@@ -23,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { approveInvoiceWithJournal } from '@/services/invoiceJournal';
 import { InvoiceJournalEntry } from './InvoiceJournalEntry';
 import { toast } from 'sonner';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface PurchasesTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -31,7 +32,7 @@ interface PurchasesTableProps {
 export function PurchasesTable({ setActivePage }: PurchasesTableProps) {
   const queryClient = useQueryClient();
   const { companyId, company } = useCompany();
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const isCarDealership = useIndustryFeatures().hasCarInventory;
   const industryLabels = useIndustryLabels();
   const { data: cars = [], isLoading, refetch } = useCars();
   const { data: allExpenses = [] } = useExpenses();
