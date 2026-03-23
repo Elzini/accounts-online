@@ -19,6 +19,7 @@ import {
   FileEdit,
   Search
 } from 'lucide-react';
+import { InvoiceNavHeader, InvoiceStatusBanner, InvoiceTotalsSection, InvoiceActionBar, InvoiceDeleteDialog, InvoiceReverseDialog, InvoiceApproveDialog } from './shared-invoice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
