@@ -92,7 +92,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   // Inventory hooks
   const { data: inventoryItems = [] } = useItems();
   const { data: units = [] } = useUnits();
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const isCarDealership = useIndustryFeatures().hasCarInventory;
   const locale = language === 'ar' ? 'ar-SA' : 'en-SA';
   const currency = t.inv_sar;
 
