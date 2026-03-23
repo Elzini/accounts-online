@@ -9,7 +9,7 @@
  */
 
 import { supabase } from '@/hooks/modules/useMiscServices';
-import { createJournalEntry } from './accounting';
+import { JournalEngine } from '@/core/engine/journalEngine';
 
 // ============================================================
 // Account code resolution helper (supports new + legacy codes)
@@ -28,6 +28,25 @@ async function resolveAccountFlex(companyId: string, ...codes: string[]): Promis
     if (found) return found.id;
   }
   return data[0].id;
+}
+
+/** Helper: create journal entry via Core Engine */
+async function createEngineEntry(
+  companyId: string,
+  params: { entry_date: string; description: string; reference_type: string; reference_id: string; fiscal_year_id?: string | null },
+  lines: Array<{ account_id: string; description: string; debit: number; credit: number }>
+) {
+  const engine = new JournalEngine(companyId);
+  return engine.createEntry({
+    company_id: companyId,
+    fiscal_year_id: params.fiscal_year_id || '',
+    entry_date: params.entry_date,
+    description: params.description,
+    reference_type: params.reference_type as any,
+    reference_id: params.reference_id,
+    is_posted: true,
+    lines: lines.map(l => ({ ...l, description: l.description || null, cost_center_id: null })),
+  });
 }
 
 async function resolveAccountId(companyId: string, code: string): Promise<string | null> {
@@ -67,21 +86,16 @@ export async function recordProjectCost(params: {
   if (!projectCostAccountId) throw new Error('حساب المشاريع تحت التطوير (1301) غير موجود');
   if (!paymentAccountId) throw new Error('حساب الدفع غير موجود');
 
-  const entry = await createJournalEntry(
-    {
-      company_id: companyId,
-      entry_date: new Date().toISOString().split('T')[0],
-      description: `تكلفة مشروع: ${projectName} - ${description}`,
-      status: 'posted',
-      reference_type: 'project_cost',
-      reference_id: projectId,
-      fiscal_year_id: fiscalYearId || null,
-    } as any,
-    [
-      { account_id: projectCostAccountId, description: `تكلفة ${costType} - ${projectName}`, debit: amount, credit: 0 },
-      { account_id: paymentAccountId, description: `دفع تكلفة ${costType}`, debit: 0, credit: amount },
-    ]
-  );
+  const entry = await createEngineEntry(companyId, {
+    entry_date: new Date().toISOString().split('T')[0],
+    description: `تكلفة مشروع: ${projectName} - ${description}`,
+    reference_type: 'project_cost',
+    reference_id: projectId,
+    fiscal_year_id: fiscalYearId,
+  }, [
+    { account_id: projectCostAccountId, description: `تكلفة ${costType} - ${projectName}`, debit: amount, credit: 0 },
+    { account_id: paymentAccountId, description: `دفع تكلفة ${costType}`, debit: 0, credit: amount },
+  ]);
 
   const { data: costRecord, error: costError } = await supabase
     .from('project_costs')
@@ -128,21 +142,16 @@ export async function recordAdvancePayment(params: {
   if (!bankAccountId) throw new Error('حساب البنك غير موجود');
   if (!advancePaymentAccountId) throw new Error('حساب الدفعات المقدمة غير موجود');
 
-  const entry = await createJournalEntry(
-    {
-      company_id: companyId,
-      entry_date: new Date().toISOString().split('T')[0],
-      description: `دفعة مقدمة من ${customerName} - وحدة ${unitNumber} - ${projectName}`,
-      status: 'posted',
-      reference_type: 'advance_payment',
-      reference_id: unitId,
-      fiscal_year_id: fiscalYearId || null,
-    } as any,
-    [
-      { account_id: bankAccountId, description: `تحصيل دفعة مقدمة - ${customerName}`, debit: amount, credit: 0 },
-      { account_id: advancePaymentAccountId, description: `دفعة مقدمة - وحدة ${unitNumber}`, debit: 0, credit: amount },
-    ]
-  );
+  const entry = await createEngineEntry(companyId, {
+    entry_date: new Date().toISOString().split('T')[0],
+    description: `دفعة مقدمة من ${customerName} - وحدة ${unitNumber} - ${projectName}`,
+    reference_type: 'advance_payment',
+    reference_id: unitId,
+    fiscal_year_id: fiscalYearId,
+  }, [
+    { account_id: bankAccountId, description: `تحصيل دفعة مقدمة - ${customerName}`, debit: amount, credit: 0 },
+    { account_id: advancePaymentAccountId, description: `دفعة مقدمة - وحدة ${unitNumber}`, debit: 0, credit: amount },
+  ]);
 
   return entry.id;
 }
@@ -271,37 +280,27 @@ export async function completeUnitSale(params: {
     });
   }
 
-  const revenueEntry = await createJournalEntry(
-    {
-      company_id: companyId,
-      entry_date: new Date().toISOString().split('T')[0],
-      description: `اعتراف بإيراد بيع وحدة ${unitNumber} - ${projectName} - ${customerName}`,
-      status: 'posted',
-      reference_type: 'unit_sale_revenue',
-      reference_id: unitId,
-      fiscal_year_id: fiscalYearId || null,
-    } as any,
-    revenueLines
-  );
+  const revenueEntry = await createEngineEntry(companyId, {
+    entry_date: new Date().toISOString().split('T')[0],
+    description: `اعتراف بإيراد بيع وحدة ${unitNumber} - ${projectName} - ${customerName}`,
+    reference_type: 'unit_sale_revenue',
+    reference_id: unitId,
+    fiscal_year_id: fiscalYearId,
+  }, revenueLines);
 
   // --- Entry 2: COGS Transfer ---
   let cogsEntryId = '';
   if (unitCost > 0) {
-    const cogsEntry = await createJournalEntry(
-      {
-        company_id: companyId,
-        entry_date: new Date().toISOString().split('T')[0],
-        description: `تحويل تكلفة وحدة مباعة ${unitNumber} - ${projectName} إلى تكلفة المبيعات`,
-        status: 'posted',
-        reference_type: 'unit_sale_cogs',
-        reference_id: unitId,
-        fiscal_year_id: fiscalYearId || null,
-      } as any,
-      [
-        { account_id: cogsId, description: `تكلفة وحدة مباعة ${unitNumber}`, debit: unitCost, credit: 0 },
-        { account_id: projectCostId, description: `تخفيض تكلفة مشروع ${projectName}`, debit: 0, credit: unitCost },
-      ]
-    );
+    const cogsEntry = await createEngineEntry(companyId, {
+      entry_date: new Date().toISOString().split('T')[0],
+      description: `تحويل تكلفة وحدة مباعة ${unitNumber} - ${projectName} إلى تكلفة المبيعات`,
+      reference_type: 'unit_sale_cogs',
+      reference_id: unitId,
+      fiscal_year_id: fiscalYearId,
+    }, [
+      { account_id: cogsId, description: `تكلفة وحدة مباعة ${unitNumber}`, debit: unitCost, credit: 0 },
+      { account_id: projectCostId, description: `تخفيض تكلفة مشروع ${projectName}`, debit: 0, credit: unitCost },
+    ]);
     cogsEntryId = cogsEntry.id;
   }
 

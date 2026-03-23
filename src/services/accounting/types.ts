@@ -18,7 +18,7 @@ export interface TaxSettings {
 }
 
 export type AccountType = 'assets' | 'liabilities' | 'equity' | 'revenue' | 'expenses';
-export type ReferenceType = 'sale' | 'purchase' | 'manual' | 'adjustment' | 'opening';
+export type ReferenceType = 'sale' | 'purchase' | 'manual' | 'adjustment' | 'opening' | 'voucher' | 'project_cost' | 'advance_payment' | 'unit_sale_revenue' | 'unit_sale_cogs' | 'closing';
 
 export interface AccountCategory {
   id: string;

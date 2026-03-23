@@ -5,7 +5,7 @@
 
 // ============ Account Types ============
 export type AccountType = 'assets' | 'liabilities' | 'equity' | 'revenue' | 'expenses';
-export type ReferenceType = 'sale' | 'purchase' | 'manual' | 'adjustment' | 'opening' | 'closing' | 'invoice_purchase' | 'invoice_sale' | 'purchase_return';
+export type ReferenceType = 'sale' | 'purchase' | 'manual' | 'adjustment' | 'opening' | 'closing' | 'invoice_purchase' | 'invoice_sale' | 'purchase_return' | 'voucher' | 'project_cost' | 'advance_payment' | 'unit_sale_revenue' | 'unit_sale_cogs' | 'expense';
 
 export interface Account {
   id: string;

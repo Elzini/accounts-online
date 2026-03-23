@@ -9832,50 +9832,6 @@ export type Database = {
           },
         ]
       }
-      tenant_encryption_keys: {
-        Row: {
-          algorithm: string | null
-          company_id: string
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          key_encrypted: string
-          key_version: number | null
-          rotated_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          algorithm?: string | null
-          company_id: string
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          key_encrypted: string
-          key_version?: number | null
-          rotated_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          algorithm?: string | null
-          company_id?: string
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          key_encrypted?: string
-          key_version?: number | null
-          rotated_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tenant_encryption_keys_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: true
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       tenant_rate_limits: {
         Row: {
           company_id: string
@@ -10177,48 +10133,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      user_2fa: {
-        Row: {
-          backup_codes: string[] | null
-          created_at: string
-          id: string
-          is_enabled: boolean | null
-          phone_number: string | null
-          secret_encrypted: string
-          sms_pin_id: string | null
-          two_fa_type: string | null
-          updated_at: string
-          user_id: string
-          verified_at: string | null
-        }
-        Insert: {
-          backup_codes?: string[] | null
-          created_at?: string
-          id?: string
-          is_enabled?: boolean | null
-          phone_number?: string | null
-          secret_encrypted: string
-          sms_pin_id?: string | null
-          two_fa_type?: string | null
-          updated_at?: string
-          user_id: string
-          verified_at?: string | null
-        }
-        Update: {
-          backup_codes?: string[] | null
-          created_at?: string
-          id?: string
-          is_enabled?: boolean | null
-          phone_number?: string | null
-          secret_encrypted?: string
-          sms_pin_id?: string | null
-          two_fa_type?: string | null
-          updated_at?: string
-          user_id?: string
-          verified_at?: string | null
-        }
-        Relationships: []
       }
       user_preferences: {
         Row: {
