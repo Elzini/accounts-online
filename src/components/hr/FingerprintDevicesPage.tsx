@@ -78,103 +78,14 @@ export function FingerprintDevicesPage() {
     notes: '',
   });
 
-  const { data: devices = [], isLoading } = useQuery({
-    queryKey: ['fingerprint-devices', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase
-        .from('hr_fingerprint_devices')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as FingerprintDevice[];
-    },
-    enabled: !!companyId,
-  });
+  const { data: devices = [], isLoading } = useFingerprintDevices(companyId);
+  const saveMutation = useSaveFingerprintDevice(companyId);
+  const deleteMutation = useDeleteFingerprintDevice();
+  const syncMutation = useSyncFingerprintDevice();
+  const toggleMutation = useToggleFingerprintDeviceStatus();
 
-  const addDevice = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      if (!companyId) throw new Error('No company');
-      const { error } = await supabase.from('hr_fingerprint_devices').insert({
-        company_id: companyId,
-        device_name: data.device_name,
-        device_model: data.device_model,
-        serial_number: data.serial_number || null,
-        ip_address: data.ip_address || null,
-        port: data.port,
-        location: data.location || null,
-        notes: data.notes || null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fingerprint-devices'] });
-      toast.success(language === 'ar' ? 'تم إضافة الجهاز بنجاح' : 'Device added successfully');
-      resetForm();
-    },
-    onError: () => toast.error(t.error_occurred),
-  });
-
-  const updateDevice = useMutation({
-    mutationFn: async ({ id, ...data }: typeof formData & { id: string }) => {
-      const { error } = await supabase.from('hr_fingerprint_devices').update({
-        device_name: data.device_name,
-        device_model: data.device_model,
-        serial_number: data.serial_number || null,
-        ip_address: data.ip_address || null,
-        port: data.port,
-        location: data.location || null,
-        notes: data.notes || null,
-      }).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fingerprint-devices'] });
-      toast.success(language === 'ar' ? 'تم تحديث الجهاز بنجاح' : 'Device updated successfully');
-      resetForm();
-    },
-    onError: () => toast.error(t.error_occurred),
-  });
-
-  const deleteDevice = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('hr_fingerprint_devices').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fingerprint-devices'] });
-      toast.success(language === 'ar' ? 'تم حذف الجهاز' : 'Device deleted');
-    },
-    onError: () => toast.error(t.error_occurred),
-  });
-
-  const syncDevice = useMutation({
-    mutationFn: async (id: string) => {
-      // Simulate sync - in production this would call the device API
-      const { error } = await supabase.from('hr_fingerprint_devices').update({
-        last_sync_at: new Date().toISOString(),
-      }).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fingerprint-devices'] });
-      toast.success(language === 'ar' ? 'تم مزامنة البيانات بنجاح' : 'Data synced successfully');
-    },
-    onError: () => toast.error(t.error_occurred),
-  });
-
-  const toggleStatus = useMutation({
-    mutationFn: async ({ id, currentStatus }: { id: string; currentStatus: string }) => {
-      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-      const { error } = await supabase.from('hr_fingerprint_devices').update({ status: newStatus }).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fingerprint-devices'] });
-      toast.success(language === 'ar' ? 'تم تحديث حالة الجهاز' : 'Device status updated');
-    },
-  });
+  const addDevice = { isPending: saveMutation.isPending };
+  const updateDevice = { isPending: saveMutation.isPending };
 
   const resetForm = () => {
     setFormData({ device_name: '', device_model: 'ZKTeco', serial_number: '', ip_address: '', port: 4370, location: '', notes: '' });
