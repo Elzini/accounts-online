@@ -143,7 +143,9 @@ export async function reverseSale(saleId: string) {
     await updateCarStatus(sale.car_id, 'available');
   }
 
-  await supabase.from('journal_entries').delete().eq('reference_type', 'sale').eq('reference_id', saleId);
+  // Delete journal entries via repository
+  const { data: entries } = await supabase.from('journal_entries').select('id').eq('reference_type', 'sale').eq('reference_id', saleId);
+  for (const e of entries || []) { await defaultRepos.journalEntries.deleteLines(e.id); await defaultRepos.journalEntries.deleteEntry(e.id); }
   const { error: deleteError } = await supabase.from('sales').delete().eq('id', saleId);
   if (deleteError) throw deleteError;
   return sale;

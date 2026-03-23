@@ -116,8 +116,9 @@ export async function generateOpeningBalances(
     .maybeSingle();
 
   if (existingEntry) {
-    await supabase.from('journal_entry_lines').delete().eq('journal_entry_id', existingEntry.id);
-    await supabase.from('journal_entries').delete().eq('id', existingEntry.id);
+    const repo = defaultRepos.journalEntries;
+    await repo.deleteLines(existingEntry.id);
+    await repo.deleteEntry(existingEntry.id);
   }
 
   // 7. Create opening entry

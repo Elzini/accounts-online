@@ -63,7 +63,8 @@ export async function deleteSaleWithJournal(saleId: string, fullInvoice: boolean
 }
 
 export async function deleteInvoiceWithJournal(invoiceId: string, fullInvoice: boolean) {
-  await supabase.from('journal_entries').delete().eq('reference_type', 'invoice').eq('reference_id', invoiceId);
+  const { data: entries } = await supabase.from('journal_entries').select('id').eq('reference_type', 'invoice').eq('reference_id', invoiceId);
+  for (const e of entries || []) { await supabase.from('journal_entry_lines').delete().eq('journal_entry_id', e.id); await supabase.from('journal_entries').delete().eq('id', e.id); }
   if (fullInvoice) {
     await supabase.from('invoices').delete().eq('id', invoiceId);
   }
