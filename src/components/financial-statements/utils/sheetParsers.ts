@@ -303,37 +303,3 @@ export function parseCashFlow(rows: any[][], result: ComprehensiveFinancialData)
     }
   }
 }
-
-export function parseNoteSheetDispatched2(sheetName: string, rows: any[][], result: ComprehensiveFinancialData) {
-  const lowerName = sheetName.toLowerCase();
-  
-  // إيضاح الزكاة
-  if (sheetName.includes('الزكاة') || sheetName.includes('مخصص الزكاة')) {
-    parseZakatNote(rows, result);
-  }
-  
-  // إيضاح تكلفة الإيرادات
-  if (sheetName.includes('تكلفة الإيرادات')) {
-    parseCostOfRevenueNote(rows, result);
-  }
-  
-  // إيضاح المصاريف الإدارية
-  if (sheetName.includes('مصاريف') && (sheetName.includes('إدارية') || sheetName.includes('ادارية'))) {
-    parseGeneralExpensesNote(rows, result);
-  }
-  
-  // إيضاح الممتلكات والمعدات
-  if (sheetName.includes('ممتلكات') || sheetName.includes('معدات')) {
-    parseFixedAssetsNote(rows, result);
-  }
-  
-  // إيضاح النقد والبنوك
-  if (sheetName.includes('النقد') && sheetName.includes('أرصدة')) {
-    parseCashAndBankNote(rows, result);
-  }
-  
-  // إيضاح المخصصات ورأس المال
-  if (sheetName.includes('المخصصات') && sheetName.includes('رأس المال')) {
-    parseCapitalAndProvisionsNote(rows, result);
-  }
-}
