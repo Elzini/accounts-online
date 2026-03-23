@@ -54,7 +54,8 @@ export async function processCarReturn(items: Array<{ car_id: string }>) {
 }
 
 export async function deleteSaleWithJournal(saleId: string, fullInvoice: boolean) {
-  await supabase.from('journal_entries').delete().eq('reference_type', 'sale').eq('reference_id', saleId);
+  const { data: entries } = await supabase.from('journal_entries').select('id').eq('reference_type', 'sale').eq('reference_id', saleId);
+  for (const e of entries || []) { await supabase.from('journal_entry_lines').delete().eq('journal_entry_id', e.id); await supabase.from('journal_entries').delete().eq('id', e.id); }
   if (fullInvoice) {
     await supabase.from('sale_items').delete().eq('sale_id', saleId);
     await supabase.from('sales').delete().eq('id', saleId);
