@@ -14,33 +14,15 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 export function BookkeepingServicePage() {
   const { t } = useLanguage();
-  const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ clientName: '', contactPerson: '', phone: '', monthlyFee: '' });
 
-  const { data: clients = [], isLoading: clientsLoading } = useQuery({
-    queryKey: ['bookkeeping-clients', companyId],
-    queryFn: async () => { const { data, error } = await supabase.from('bookkeeping_clients').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
-    enabled: !!companyId,
-  });
-
-  const { data: tasks = [] } = useQuery({
-    queryKey: ['bookkeeping-tasks', companyId],
-    queryFn: async () => { const { data, error } = await supabase.from('bookkeeping_tasks').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
-    enabled: !!companyId,
-  });
-
-  const addMutation = useMutation({
-    mutationFn: async () => { const { error } = await supabase.from('bookkeeping_clients').insert({ company_id: companyId!, client_name: form.clientName, contact_person: form.contactPerson || null, phone: form.phone || null, monthly_fee: Number(form.monthlyFee) || 0, status: 'active' }); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['bookkeeping-clients'] }); toast.success(t.bks_added); setShowAdd(false); setForm({ clientName: '', contactPerson: '', phone: '', monthlyFee: '' }); },
-    onError: () => toast.error(t.mod_error),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('bookkeeping_clients').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['bookkeeping-clients'] }); toast.success(t.mod_deleted); },
-  });
+  const { data: clients = [], isLoading: clientsLoading } = useBookkeepingClients();
+  const { data: tasks = [] } = useBookkeepingTasks();
+  const addMutationBase = useCreateBookkeepingClient();
+  const addMutation = { ...addMutationBase, mutate: () => addMutationBase.mutate({ client_name: form.clientName, contact_person: form.contactPerson || null, phone: form.phone || null, monthly_fee: Number(form.monthlyFee) || 0 }, { onSuccess: () => { toast.success(t.bks_added); setShowAdd(false); setForm({ clientName: '', contactPerson: '', phone: '', monthlyFee: '' }); }, onError: () => toast.error(t.mod_error) }) };
+  const deleteMutationBase = useDeleteBookkeepingClient();
+  const deleteMutation = { ...deleteMutationBase, mutate: (id: string) => deleteMutationBase.mutate(id, { onSuccess: () => toast.success(t.mod_deleted) }) };
 
   return (
     <div className="space-y-6 animate-fade-in">

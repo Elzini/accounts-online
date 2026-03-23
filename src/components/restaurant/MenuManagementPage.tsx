@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Edit, Trash2, UtensilsCrossed, Loader2 } from 'lucide-react';
+import { Plus, Search, UtensilsCrossed, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,20 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-interface MenuItem {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  cost: number;
-  description: string | null;
-  is_available: boolean;
-  company_id: string;
-  created_at: string;
-}
+import { useMenuItems, useCreateMenuItem } from '@/hooks/modules/useRestaurantServices';
 
 const categories = [
   'مقبلات', 'أطباق رئيسية', 'مشروبات ساخنة', 'مشروبات باردة',
@@ -37,48 +24,25 @@ const categories = [
 
 export function MenuManagementPage() {
   const { companyId } = useCompany();
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: '', category: 'أطباق رئيسية', price: '', cost: '', description: '' });
 
-  const { data: items = [], isLoading } = useQuery({
-    queryKey: ['menu-items', companyId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('restaurant_menu_items')
-        .select('*')
-        .eq('company_id', companyId!)
-        .order('category', { ascending: true });
-      if (error) throw error;
-      return data as MenuItem[];
-    },
-    enabled: !!companyId,
-  });
+  const { data: items = [], isLoading } = useMenuItems(companyId);
+  const createItem = useCreateMenuItem(companyId);
 
-  const createItem = useMutation({
-    mutationFn: async () => {
-      const { error } = await (supabase as any).from('restaurant_menu_items').insert({
-        company_id: companyId!,
-        name: form.name,
-        category: form.category,
-        price: parseFloat(form.price),
-        cost: parseFloat(form.cost) || 0,
-        description: form.description || null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['menu-items'] });
-      setIsDialogOpen(false);
-      setForm({ name: '', category: 'أطباق رئيسية', price: '', cost: '', description: '' });
-      toast.success('تم إضافة الصنف بنجاح');
-    },
-    onError: (e) => toast.error('خطأ: ' + (e as Error).message),
-  });
+  const handleCreate = () => {
+    createItem.mutate(
+      { name: form.name, category: form.category, price: parseFloat(form.price), cost: parseFloat(form.cost) || 0, description: form.description || undefined },
+      {
+        onSuccess: () => { setIsDialogOpen(false); setForm({ name: '', category: 'أطباق رئيسية', price: '', cost: '', description: '' }); toast.success('تم إضافة الصنف بنجاح'); },
+        onError: (e) => toast.error('خطأ: ' + (e as Error).message),
+      }
+    );
+  };
 
-  const filtered = items.filter(i => i.name.includes(search) || i.category.includes(search));
-  const totalProfit = items.reduce((s, i) => s + (i.price - i.cost), 0);
+  const filtered = (items as any[]).filter((i: any) => i.name.includes(search) || i.category.includes(search));
+  const totalProfit = (items as any[]).reduce((s: number, i: any) => s + (i.price - i.cost), 0);
 
   if (isLoading) return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
@@ -90,7 +54,7 @@ export function MenuManagementPage() {
             <UtensilsCrossed className="w-6 h-6" />
             قائمة الطعام
           </h1>
-          <p className="text-muted-foreground mt-1">{items.length} صنف - متوسط هامش الربح: {items.length ? (totalProfit / items.length).toFixed(0) : 0} ر.س</p>
+          <p className="text-muted-foreground mt-1">{(items as any[]).length} صنف - متوسط هامش الربح: {(items as any[]).length ? (totalProfit / (items as any[]).length).toFixed(0) : 0} ر.س</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -127,7 +91,7 @@ export function MenuManagementPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>إلغاء</Button>
-              <Button onClick={() => createItem.mutate()} disabled={!form.name || !form.price || createItem.isPending}>
+              <Button onClick={handleCreate} disabled={!form.name || !form.price || createItem.isPending}>
                 {createItem.isPending && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}إضافة
               </Button>
             </DialogFooter>
@@ -154,7 +118,7 @@ export function MenuManagementPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map(item => (
+              {filtered.map((item: any) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">{item.name}</TableCell>
                   <TableCell><Badge variant="outline">{item.category}</Badge></TableCell>

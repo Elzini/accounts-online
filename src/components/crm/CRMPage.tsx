@@ -36,37 +36,28 @@ export function CRMPage() {
     expected_value: t.crm_expected_value,
   };
 
-  const { data: leads = [], isLoading } = useQuery({
-    queryKey: ['crm-leads', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('crm_leads').select('*').eq('company_id', companyId!).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
+  const { data: leads = [], isLoading } = useCRMLeads();
 
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from('crm_leads').insert({ company_id: companyId!, name: form.name, email: form.email || null, phone: form.phone || null, source: form.source || null, expected_value: Number(form.expectedValue) || 0, status: 'new' });
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['crm-leads'] }); toast.success(t.crm_added); setShowAdd(false); setForm({ name: '', email: '', phone: '', source: '', expectedValue: '' }); },
-    onError: () => toast.error(t.mod_error),
-  });
+  const addMutationBase = useCreateCRMLead();
+  const addMutation = {
+    ...addMutationBase,
+    mutate: () => addMutationBase.mutate(
+      { name: form.name, email: form.email || null, phone: form.phone || null, source: form.source || null, expected_value: Number(form.expectedValue) || 0 },
+      { onSuccess: () => { toast.success(t.crm_added); setShowAdd(false); setForm({ name: '', email: '', phone: '', source: '', expectedValue: '' }); }, onError: () => toast.error(t.mod_error) }
+    ),
+  };
 
-  const updateStage = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from('crm_leads').update({ status }).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['crm-leads'] }); toast.success(t.crm_updated); setReviewData(null); },
-  });
+  const updateStageBase = useUpdateCRMLeadStage();
+  const updateStage = {
+    ...updateStageBase,
+    mutate: (args: { id: string; status: string }) => updateStageBase.mutate(args, { onSuccess: () => { toast.success(t.crm_updated); setReviewData(null); } }),
+  };
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('crm_leads').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['crm-leads'] }); toast.success(t.mod_deleted); },
-  });
+  const deleteMutationBase = useDeleteCRMLead();
+  const deleteMutation = {
+    ...deleteMutationBase,
+    mutate: (id: string) => deleteMutationBase.mutate(id, { onSuccess: () => toast.success(t.mod_deleted) }),
+  };
 
   const handleStageChange = (lead: any, newStatus: string) => {
     setReviewData({

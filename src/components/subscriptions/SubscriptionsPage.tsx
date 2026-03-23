@@ -15,36 +15,16 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 export function SubscriptionsPage() {
   const { t } = useLanguage();
-  const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ planName: '', amount: '', cycle: 'monthly' });
 
   const cycleLabels: Record<string, string> = { monthly: t.sub_cycle_monthly, quarterly: t.sub_cycle_quarterly, yearly: t.sub_cycle_yearly };
 
-  const { data: subs = [], isLoading } = useQuery({
-    queryKey: ['subscriptions', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('subscriptions').select('*').eq('company_id', companyId!).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
-
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from('subscriptions').insert({ company_id: companyId!, plan_name: form.planName, amount: Number(form.amount) || 0, billing_cycle: form.cycle, start_date: new Date().toISOString().split('T')[0], status: 'active' });
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['subscriptions'] }); toast.success(t.sub_created); setShowAdd(false); setForm({ planName: '', amount: '', cycle: 'monthly' }); },
-    onError: () => toast.error(t.mod_error),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('subscriptions').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['subscriptions'] }); toast.success(t.mod_deleted); },
-  });
+  const { data: subs = [], isLoading } = useSubscriptions();
+  const addMutationBase = useCreateSubscription();
+  const addMutation = { ...addMutationBase, mutate: () => addMutationBase.mutate({ plan_name: form.planName, amount: Number(form.amount) || 0, billing_cycle: form.cycle }, { onSuccess: () => { toast.success(t.sub_created); setShowAdd(false); setForm({ planName: '', amount: '', cycle: 'monthly' }); }, onError: () => toast.error(t.mod_error) }) };
+  const deleteMutationBase = useDeleteSubscription();
+  const deleteMutation = { ...deleteMutationBase, mutate: (id: string) => deleteMutationBase.mutate(id, { onSuccess: () => toast.success(t.mod_deleted) }) };
 
   return (
     <div className="space-y-6 animate-fade-in">

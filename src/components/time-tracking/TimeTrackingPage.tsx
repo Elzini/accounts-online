@@ -15,34 +15,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 export function TimeTrackingPage() {
   const { t } = useLanguage();
-  const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ projectName: '', taskName: '', hours: '', billable: true, date: new Date().toISOString().split('T')[0] });
 
-  const { data: entries = [], isLoading } = useQuery({
-    queryKey: ['time-entries', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('time_entries').select('*').eq('company_id', companyId!).order('entry_date', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
-
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from('time_entries').insert({ company_id: companyId!, project_name: form.projectName || null, task_name: form.taskName || null, hours: Number(form.hours) || 0, billable: form.billable, entry_date: form.date });
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['time-entries'] }); toast.success(t.tt_created); setShowAdd(false); setForm({ projectName: '', taskName: '', hours: '', billable: true, date: new Date().toISOString().split('T')[0] }); },
-    onError: () => toast.error(t.mod_error),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('time_entries').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['time-entries'] }); toast.success(t.mod_deleted); },
-  });
+  const { data: entries = [], isLoading } = useTimeEntries();
+  const addMutationBase = useCreateTimeEntry();
+  const addMutation = { ...addMutationBase, mutate: () => addMutationBase.mutate({ project_name: form.projectName || null, task_name: form.taskName || null, hours: Number(form.hours) || 0, billable: form.billable, entry_date: form.date }, { onSuccess: () => { toast.success(t.tt_created); setShowAdd(false); setForm({ projectName: '', taskName: '', hours: '', billable: true, date: new Date().toISOString().split('T')[0] }); }, onError: () => toast.error(t.mod_error) }) };
+  const deleteMutationBase = useDeleteTimeEntry();
+  const deleteMutation = { ...deleteMutationBase, mutate: (id: string) => deleteMutationBase.mutate(id, { onSuccess: () => toast.success(t.mod_deleted) }) };
 
   const totalHours = entries.reduce((s: number, e: any) => s + Number(e.hours || 0), 0);
   const billableHours = entries.filter((e: any) => e.billable).reduce((s: number, e: any) => s + Number(e.hours || 0), 0);
