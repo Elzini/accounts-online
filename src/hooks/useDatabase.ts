@@ -159,13 +159,16 @@ export function useAllTimeStats() {
   });
 }
 
-// Monthly chart data hook (kept in database.ts for now)
+// Monthly chart data hook - uses StatsEngine
 export function useMonthlyChartData() {
   const { companyId } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
   return useQuery({
     queryKey: ['monthly-chart-data', companyId, selectedFiscalYear?.id],
-    queryFn: () => db.fetchMonthlyChartData(selectedFiscalYear?.id),
+    queryFn: async () => {
+      const { fetchMonthlyChartData } = await import('@/services/statsEngine');
+      return fetchMonthlyChartData(selectedFiscalYear?.id);
+    },
     enabled: !!companyId,
     staleTime: 1000 * 60 * 5,
   });
