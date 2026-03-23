@@ -693,6 +693,7 @@ export async function getComprehensiveTrialBalance(
     }
     // Removed the fallback `else if (!fiscalYearId)` block that would query 
     // ALL data without fiscal year isolation — this was a data leak vector.
+  }
 
   // 2) Period movement
   let periodQuery = supabase
