@@ -34,12 +34,17 @@ export async function fetchSuppliers() {
 
 export async function addSupplier(supplier: SupplierInsert) {
   const companyId = await requireCompanyId();
+  console.log('[addSupplier] Inserting supplier for company:', companyId, supplier);
   const { data, error } = await supabase
     .from('suppliers')
     .insert({ ...supplier, company_id: companyId })
     .select()
     .single();
-  if (error) throw error;
+  if (error) {
+    console.error('[addSupplier] Error:', error.code, error.message, error.details, error.hint);
+    throw error;
+  }
+  console.log('[addSupplier] Success:', data);
   return data;
 }
 
