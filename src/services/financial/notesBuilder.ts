@@ -11,7 +11,7 @@ export function buildNotes(
   classified: ClassifiedAccounts,
   balances: Map<string, { debit: number; credit: number }>,
   income: IncomeComponents,
-  zakatNote: Record<string, any>
+  zakatNote: ZakatNote
 ) {
   const bal = (a: AccountCategory) => getBalance(a, balances);
   const posCr = (a: AccountCategory) => getPositiveCreditBalance(a, balances);

@@ -12,7 +12,7 @@ const ZAKAT_RATE_GREGORIAN = 0.025775; // 365/354 × 2.5%
 export interface ZakatResult {
   zakatBase: number;
   zakat: number;
-  zakatNote: Record<string, any>;
+  zakatNote: ZakatNote;
 }
 
 export async function calculateZakat(
