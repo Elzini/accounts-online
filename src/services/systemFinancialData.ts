@@ -133,7 +133,7 @@ export async function getSystemTrialBalance(
   openingSourceLines.forEach((line: any) => {
     const accType = accountTypeMap.get(line.account_id);
     // فقط حسابات المركز المالي (أصول، خصوم، حقوق ملكية)
-    if (!accType || !balanceSheetTypes.has(accType)) return;
+    if (!accType || !checkBalanceSheet(accType)) return;
     const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
     current.debit += Number(line.debit) || 0;
     current.credit += Number(line.credit) || 0;
