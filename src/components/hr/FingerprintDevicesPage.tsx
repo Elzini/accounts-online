@@ -33,7 +33,7 @@ interface FingerprintDevice {
 
 export function FingerprintDevicesPage() {
   const companyId = useCompanyId();
-  const queryClient = useQueryClient();
+  const { t, language } = useLanguage();
   const { t, language } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDevice, setEditingDevice] = useState<FingerprintDevice | null>(null);
