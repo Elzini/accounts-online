@@ -1,9 +1,9 @@
 /**
  * Returns DB Service Layer
- * Uses Core Engine's JournalEngine for journal entry operations.
+ * Uses ServiceContainer for journal entry operations.
  */
 import { supabase } from '@/integrations/supabase/client';
-import { JournalEngine } from '@/core/engine/journalEngine';
+import { getServiceContainer } from '@/core/engine/serviceContainer';
 
 // ── Sales Returns ──
 export async function deleteSaleAndRelated(saleId: string, fullInvoice: boolean, carIds: string[]) {
@@ -17,7 +17,7 @@ export async function deleteSaleAndRelated(saleId: string, fullInvoice: boolean,
   // Get company_id from sale
   const { data: sale } = await supabase.from('sales').select('company_id').eq('id', saleId).maybeSingle();
   if (sale?.company_id) {
-    const journal = new JournalEngine(sale.company_id);
+    const { journal } = getServiceContainer(sale.company_id);
     await journal.deleteByReference(saleId, 'sale');
   }
   if (fullInvoice) {
@@ -29,7 +29,7 @@ export async function deleteSaleAndRelated(saleId: string, fullInvoice: boolean,
 export async function deleteInvoiceAndRelated(invoiceId: string, fullInvoice: boolean) {
   const { data: invoice } = await supabase.from('invoices').select('company_id').eq('id', invoiceId).maybeSingle();
   if (invoice?.company_id) {
-    const journal = new JournalEngine(invoice.company_id);
+    const { journal } = getServiceContainer(invoice.company_id);
     await journal.deleteByReference(invoiceId, 'invoice');
   }
   if (fullInvoice) {
@@ -86,10 +86,10 @@ export async function markCarsAsReturned(carIds: string[]) {
 }
 
 export async function deletePurchaseJournalEntries(batchId: string) {
-  // Need company_id for JournalEngine - fetch from purchase_batches
+  // Need company_id for ServiceContainer - fetch from purchase_batches
   const { data: batch } = await supabase.from('purchase_batches').select('company_id').eq('id', batchId).maybeSingle();
   if (batch?.company_id) {
-    const journal = new JournalEngine(batch.company_id);
+    const { journal } = getServiceContainer(batch.company_id);
     await journal.deleteByReference(batchId, 'purchase');
   }
 }

@@ -1,6 +1,6 @@
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { getCurrentCompanyId } from '@/services/companyContext';
-import { JournalEngine } from '@/core/engine/journalEngine';
+import { getServiceContainer, getInitializedContainer } from '@/core/engine/serviceContainer';
 
 export interface Voucher {
   id: string;
@@ -61,11 +61,10 @@ export async function fetchVouchersByType(type: 'receipt' | 'payment', fiscalYea
 }
 
 
-// Helper to get default account IDs — uses Core Engine's AccountResolver
+// Helper to get default account IDs — uses ServiceContainer's resolver
 async function getDefaultAccounts(companyId: string) {
-  const { AccountResolver } = await import('@/core/engine/accountResolver');
-  const resolver = new AccountResolver(companyId);
-  await resolver.load();
+  const container = await getInitializedContainer(companyId);
+  const { resolver } = container;
 
   return {
     cashAccountId: resolver.resolve('cash')?.id,
@@ -129,8 +128,8 @@ export async function addVoucher(voucher: VoucherInsert): Promise<Voucher> {
             { account_id: paymentAccountId, debit: 0, credit: voucher.amount, description: voucher.description },
           ];
 
-      const engine = new JournalEngine(voucher.company_id);
-      const journalEntry = await engine.createEntry({
+      const { journal } = getServiceContainer(voucher.company_id);
+      const journalEntry = await journal.createEntry({
         company_id: voucher.company_id,
         fiscal_year_id: '',
         entry_date: voucher.voucher_date,
@@ -185,13 +184,12 @@ export async function deleteVoucher(id: string): Promise<void> {
   
   if (error) throw error;
 
-  // Delete linked journal entry if exists via engine
+  // Delete linked journal entry if exists via ServiceContainer
   if (voucher?.journal_entry_id) {
-    const { getCurrentCompanyId: getCompId } = await import('@/services/companyContext');
-    const compId = await getCompId();
+    const compId = await getCurrentCompanyId();
     if (compId) {
-      const engine = new JournalEngine(compId);
-      await engine.deleteEntry(voucher.journal_entry_id);
+      const { journal } = getServiceContainer(compId);
+      await journal.deleteEntry(voucher.journal_entry_id);
     }
   }
 }

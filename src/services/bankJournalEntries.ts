@@ -1,11 +1,11 @@
 /**
  * Bank Journal Entry Service
  * Creates journal entries from classified bank transactions.
- * Uses Core Engine's JournalEngine for all journal writes.
+ * Uses ServiceContainer for all journal writes.
  */
 
 import { supabase } from '@/hooks/modules/useMiscServices';
-import { JournalEngine } from '@/core/engine/journalEngine';
+import { getServiceContainer } from '@/core/engine/serviceContainer';
 
 export interface TransactionClassification {
   index: number;
@@ -52,7 +52,7 @@ export async function createJournalEntriesFromTransactions(
 ): Promise<{ created: number; errors: string[] }> {
   const errors: string[] = [];
   let created = 0;
-  const journal = new JournalEngine(companyId);
+  const { journal } = getServiceContainer(companyId);
 
   for (const txn of transactions) {
     if (!txn.classified_account_id) {

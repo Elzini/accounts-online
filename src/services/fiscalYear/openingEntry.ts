@@ -1,8 +1,8 @@
 /**
  * Fiscal Year - Opening Entry & Carry Forward Operations
- * Uses Core Engine for all journal entry and fiscal year operations.
+ * Uses ServiceContainer for all journal entry and fiscal year operations.
  */
-import { JournalEngine } from '@/core/engine/journalEngine';
+import { getServiceContainer } from '@/core/engine/serviceContainer';
 import { defaultRepos } from '@/core/engine/supabaseRepositories';
 import { computeBalances, buildOpeningLines, ensureRetainedEarningsAccount } from './balanceCalculator';
 
@@ -17,7 +17,7 @@ async function createOpeningEntry(
     throw new Error(`قيد الافتتاح غير متوازن (الفرق: ${balanceDiff.toFixed(2)})`);
   }
 
-  const journal = new JournalEngine(companyId);
+  const { journal } = getServiceContainer(companyId);
   const entry = await journal.createEntry({
     company_id: companyId,
     fiscal_year_id: fiscalYearId,
@@ -73,7 +73,7 @@ export async function refreshOpeningBalances(
     const previousYear = await defaultRepos.fiscalYears.findById(previousYearId);
     if (!previousYear) throw new Error('السنة السابقة غير موجودة');
 
-    const journal = new JournalEngine(companyId);
+    const { journal } = getServiceContainer(companyId);
     const repo = defaultRepos.journalEntries;
 
     // Find existing opening entries

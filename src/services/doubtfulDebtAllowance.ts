@@ -1,11 +1,11 @@
 /**
  * IFRS 9 - Expected Credit Loss (ECL) / مخصص الديون المشكوك في تحصيلها
- * Uses Core Engine for journal entries and fiscal year lookups.
+ * Uses ServiceContainer for journal entries and fiscal year lookups.
  */
 
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { getCurrentCompanyId } from '@/services/companyContext';
-import { JournalEngine } from '@/core/engine/journalEngine';
+import { getServiceContainer } from '@/core/engine/serviceContainer';
 import { defaultRepos } from '@/core/engine/supabaseRepositories';
 
 export interface AgingBucket {
@@ -92,7 +92,7 @@ export async function calculateECL(
 }
 
 /**
- * Post ECL adjustment journal entry via Core Engine
+ * Post ECL adjustment journal entry via ServiceContainer
  */
 export async function postECLJournalEntry(
   eclAmount: number,
@@ -107,7 +107,7 @@ export async function postECLJournalEntry(
   const amount = Math.round(eclAmount * 100) / 100;
   const desc = description || `تكوين مخصص ديون مشكوك فيها - IFRS 9 ECL`;
 
-  const journal = new JournalEngine(companyId);
+  const { journal } = getServiceContainer(companyId);
   const entry = await journal.createEntry({
     company_id: companyId,
     fiscal_year_id: fiscalYear?.id || '',
