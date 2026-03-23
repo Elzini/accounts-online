@@ -13,9 +13,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const emptyForm = {
-  car_id: '', partner_dealership_id: '', transfer_type: 'outgoing' as const,
+  car_id: '', partner_dealership_id: '', transfer_type: 'outgoing' as 'outgoing' | 'incoming',
   transfer_date: format(new Date(), 'yyyy-MM-dd'), return_date: '',
-  agreed_commission: 0, commission_percentage: 0, status: 'pending' as const, notes: '',
+  agreed_commission: 0, commission_percentage: 0, status: 'pending' as 'pending' | 'sold' | 'returned', notes: '',
 };
 
 const emptyIncoming = {
