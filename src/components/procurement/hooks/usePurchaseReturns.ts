@@ -4,6 +4,11 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/hooks/modules/useMiscServices';
+import {
+  fetchPurchaseReturns, searchCarByInventoryNumber, fetchSupplierName,
+  searchPurchaseInvoice, markCarReturned, deleteJournalByBatch,
+  insertDebitNote, fetchInsertedNote, insertNoteLines, deleteDebitNote, updateDebitNote,
+} from '@/services/returns/purchaseReturnsService';
 import { createPurchaseReturnJournal } from '@/services/purchaseReturnJournal';
 import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
