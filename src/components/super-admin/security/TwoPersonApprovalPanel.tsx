@@ -167,7 +167,7 @@ export function TwoPersonApprovalPanel() {
                     </Button>
                     <Button
                       variant="destructive"
-                      onClick={() => rejectRequest.mutate(selectedRequest.id)}
+                      onClick={() => rejectRequest.mutate({ requestId: selectedRequest.id, reason: rejectionReason })}
                       disabled={rejectRequest.isPending}
                     >
                       <XCircle className="h-4 w-4 ml-1" />
