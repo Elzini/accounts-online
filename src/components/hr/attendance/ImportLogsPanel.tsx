@@ -6,9 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2, Upload, FileText, CheckCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useFingerprintDevices, useImportDeviceLogs } from '@/hooks/hr/useHRService';
 import { useCompanyId } from '@/hooks/useCompanyId';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ParsedLog {
@@ -20,7 +19,6 @@ interface ParsedLog {
 
 export function ImportLogsPanel() {
   const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const { language } = useLanguage();
   const fileRef = useRef<HTMLInputElement>(null);
   const [parsedData, setParsedData] = useState<ParsedLog[]>([]);
@@ -28,15 +26,8 @@ export function ImportLogsPanel() {
   const [fileFormat, setFileFormat] = useState('zk_dat');
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
 
-  const { data: devices = [] } = useQuery({
-    queryKey: ['fingerprint-devices', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase.from('hr_fingerprint_devices').select('*').eq('company_id', companyId);
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
+  const { data: devices = [] } = useFingerprintDevices(companyId);
+  const importLogs = useImportDeviceLogs(companyId);
 
   const parseFile = (content: string) => {
     const lines = content.trim().split('\n');
@@ -114,7 +105,6 @@ export function ImportLogsPanel() {
   const importToDatabase = async () => {
     if (!companyId || parsedData.length === 0) return;
     setImporting(true);
-
     try {
       const logs = parsedData.map(p => ({
         company_id: companyId,
@@ -126,16 +116,8 @@ export function ImportLogsPanel() {
         source: 'file_import',
         is_processed: false,
       }));
-
-      const { error } = await supabase.from('hr_device_logs').insert(logs);
-      if (error) throw error;
-
-      queryClient.invalidateQueries({ queryKey: ['device-logs'] });
-      toast.success(
-        language === 'ar'
-          ? `تم استيراد ${logs.length} حركة بنجاح`
-          : `Successfully imported ${logs.length} records`
-      );
+      await importLogs.mutateAsync(logs);
+      toast.success(language === 'ar' ? `تم استيراد ${logs.length} حركة بنجاح` : `Successfully imported ${logs.length} records`);
       setParsedData([]);
     } catch (error: any) {
       toast.error(error.message);

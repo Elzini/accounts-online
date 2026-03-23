@@ -8,9 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, BarChart3, Download, UserCheck, UserX, AlertTriangle, Clock } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useAttendanceReport, useEmployeesList } from '@/hooks/hr/useHRService';
 import { useCompanyId } from '@/hooks/useCompanyId';
-import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { format, eachDayOfInterval, parseISO } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -24,34 +23,9 @@ export function AttendanceReportsPanel() {
   const [dateTo, setDateTo] = useState(today.toISOString().split('T')[0]);
   const [selectedEmployee, setSelectedEmployee] = useState('all');
 
-  const { data: employees = [] } = useQuery({
-    queryKey: ['employees-list', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase.from('employees').select('id, name, employee_number, job_title, department').eq('company_id', companyId).eq('is_active', true).order('name');
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
+  const { data: employees = [] } = useEmployeesList(companyId);
 
-  const { data: attendance = [], isLoading } = useQuery({
-    queryKey: ['attendance-report', companyId, dateFrom, dateTo, selectedEmployee],
-    queryFn: async () => {
-      if (!companyId) return [];
-      let query = supabase.from('employee_attendance').select('*, employees(name, employee_number, job_title, department)')
-        .eq('company_id', companyId)
-        .gte('date', dateFrom)
-        .lte('date', dateTo)
-        .order('date', { ascending: true });
-      if (selectedEmployee !== 'all') {
-        query = query.eq('employee_id', selectedEmployee);
-      }
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
+  const { data: attendance = [], isLoading } = useAttendanceReport(companyId, dateFrom, dateTo, selectedEmployee);
 
   // Compute stats
   const totalDays = eachDayOfInterval({ start: parseISO(dateFrom), end: parseISO(dateTo) }).length;

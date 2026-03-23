@@ -9,9 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2, Plus, Fingerprint, Wifi, WifiOff, RefreshCw, Trash2, Edit, Monitor } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useFingerprintDevices, useSaveFingerprintDevice, useDeleteFingerprintDevice, useSyncFingerprintDevice, useToggleFingerprintDeviceStatus } from '@/hooks/hr/useHRService';
 import { useCompanyId } from '@/hooks/useCompanyId';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -34,7 +33,6 @@ interface FingerprintDevice {
 
 export function FingerprintDevicesPage() {
   const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const { t, language } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDevice, setEditingDevice] = useState<FingerprintDevice | null>(null);
@@ -79,103 +77,14 @@ export function FingerprintDevicesPage() {
     notes: '',
   });
 
-  const { data: devices = [], isLoading } = useQuery({
-    queryKey: ['fingerprint-devices', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase
-        .from('hr_fingerprint_devices')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as FingerprintDevice[];
-    },
-    enabled: !!companyId,
-  });
+  const { data: devices = [], isLoading } = useFingerprintDevices(companyId);
+  const saveMutation = useSaveFingerprintDevice(companyId);
+  const deleteMutation = useDeleteFingerprintDevice();
+  const syncMutation = useSyncFingerprintDevice();
+  const toggleMutation = useToggleFingerprintDeviceStatus();
 
-  const addDevice = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      if (!companyId) throw new Error('No company');
-      const { error } = await supabase.from('hr_fingerprint_devices').insert({
-        company_id: companyId,
-        device_name: data.device_name,
-        device_model: data.device_model,
-        serial_number: data.serial_number || null,
-        ip_address: data.ip_address || null,
-        port: data.port,
-        location: data.location || null,
-        notes: data.notes || null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fingerprint-devices'] });
-      toast.success(language === 'ar' ? 'تم إضافة الجهاز بنجاح' : 'Device added successfully');
-      resetForm();
-    },
-    onError: () => toast.error(t.error_occurred),
-  });
-
-  const updateDevice = useMutation({
-    mutationFn: async ({ id, ...data }: typeof formData & { id: string }) => {
-      const { error } = await supabase.from('hr_fingerprint_devices').update({
-        device_name: data.device_name,
-        device_model: data.device_model,
-        serial_number: data.serial_number || null,
-        ip_address: data.ip_address || null,
-        port: data.port,
-        location: data.location || null,
-        notes: data.notes || null,
-      }).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fingerprint-devices'] });
-      toast.success(language === 'ar' ? 'تم تحديث الجهاز بنجاح' : 'Device updated successfully');
-      resetForm();
-    },
-    onError: () => toast.error(t.error_occurred),
-  });
-
-  const deleteDevice = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('hr_fingerprint_devices').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fingerprint-devices'] });
-      toast.success(language === 'ar' ? 'تم حذف الجهاز' : 'Device deleted');
-    },
-    onError: () => toast.error(t.error_occurred),
-  });
-
-  const syncDevice = useMutation({
-    mutationFn: async (id: string) => {
-      // Simulate sync - in production this would call the device API
-      const { error } = await supabase.from('hr_fingerprint_devices').update({
-        last_sync_at: new Date().toISOString(),
-      }).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fingerprint-devices'] });
-      toast.success(language === 'ar' ? 'تم مزامنة البيانات بنجاح' : 'Data synced successfully');
-    },
-    onError: () => toast.error(t.error_occurred),
-  });
-
-  const toggleStatus = useMutation({
-    mutationFn: async ({ id, currentStatus }: { id: string; currentStatus: string }) => {
-      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-      const { error } = await supabase.from('hr_fingerprint_devices').update({ status: newStatus }).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fingerprint-devices'] });
-      toast.success(language === 'ar' ? 'تم تحديث حالة الجهاز' : 'Device status updated');
-    },
-  });
+  const addDevice = { isPending: saveMutation.isPending };
+  const updateDevice = { isPending: saveMutation.isPending };
 
   const resetForm = () => {
     setFormData({ device_name: '', device_model: 'ZKTeco', serial_number: '', ip_address: '', port: 4370, location: '', notes: '' });
@@ -199,11 +108,16 @@ export function FingerprintDevicesPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingDevice) {
-      updateDevice.mutate({ ...formData, id: editingDevice.id });
-    } else {
-      addDevice.mutate(formData);
-    }
+    saveMutation.mutate(
+      { id: editingDevice?.id, ...formData },
+      {
+        onSuccess: () => {
+          toast.success(editingDevice ? (language === 'ar' ? 'تم تحديث الجهاز بنجاح' : 'Device updated successfully') : (language === 'ar' ? 'تم إضافة الجهاز بنجاح' : 'Device added successfully'));
+          resetForm();
+        },
+        onError: () => toast.error(t.error_occurred),
+      },
+    );
   };
 
   const activeCount = devices.filter(d => d.status === 'active').length;
@@ -404,7 +318,7 @@ export function FingerprintDevicesPage() {
                       <Badge
                         variant={device.status === 'active' ? 'default' : 'destructive'}
                         className="cursor-pointer"
-                        onClick={() => toggleStatus.mutate({ id: device.id, currentStatus: device.status })}
+                        onClick={() => toggleMutation.mutate({ id: device.id, currentStatus: device.status })}
                       >
                         {device.status === 'active' ? (language === 'ar' ? 'نشط' : 'Active') : (language === 'ar' ? 'معطل' : 'Inactive')}
                       </Badge>
@@ -416,13 +330,13 @@ export function FingerprintDevicesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => syncDevice.mutate(device.id)} title={language === 'ar' ? 'مزامنة' : 'Sync'}>
-                          <RefreshCw className={`w-4 h-4 ${syncDevice.isPending ? 'animate-spin' : ''}`} />
+                         <Button size="icon" variant="ghost" onClick={() => syncMutation.mutate(device.id)} title={language === 'ar' ? 'مزامنة' : 'Sync'}>
+                          <RefreshCw className={`w-4 h-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
                         </Button>
                         <Button size="icon" variant="ghost" onClick={() => openEdit(device)}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا الجهاز؟' : 'Delete this device?')) deleteDevice.mutate(device.id); }}>
+                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا الجهاز؟' : 'Delete this device?')) deleteMutation.mutate(device.id, { onSuccess: () => toast.success(language === 'ar' ? 'تم حذف الجهاز' : 'Device deleted') }); }}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>

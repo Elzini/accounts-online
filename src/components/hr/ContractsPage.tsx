@@ -13,8 +13,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { Plus, FileText, CheckCircle, AlertTriangle, Clock, Trash2, Lock, PlusCircle, MinusCircle, Printer } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEmployeeContracts, useCreateEmployeeContract, useDeleteEmployeeContract } from '@/hooks/hr/useHRService';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useHREmployees } from '@/hooks/useHR';
@@ -55,7 +54,6 @@ const initialForm = {
 export function EmployeeContractsPage() {
   const { t } = useLanguage();
   const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [otherAllowances, setOtherAllowances] = useState<AllowanceItem[]>([]);
@@ -70,24 +68,14 @@ export function EmployeeContractsPage() {
     temporary: t.ec_type_temporary,
   };
 
-  const { data: contracts = [], isLoading } = useQuery({
-    queryKey: ['employee-contracts', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employee_contracts')
-        .select('*')
-        .eq('company_id', companyId!)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
+  const { data: contracts = [], isLoading } = useEmployeeContracts(companyId);
 
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from('employee_contracts').insert({
-        company_id: companyId!,
+  const addMutation = useCreateEmployeeContract(companyId);
+  const deleteMutation = useDeleteEmployeeContract();
+
+  const handleAdd = () => {
+    addMutation.mutate(
+      {
         employee_id: form.employeeId || null,
         employee_name: form.employeeName,
         contract_code: form.contractCode || null,
@@ -114,30 +102,17 @@ export function EmployeeContractsPage() {
         deductions_json: deductions,
         department: form.department || null,
         status: 'active',
-      } as any);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employee-contracts'] });
-      toast.success(t.ec_created);
-      setShowAdd(false);
-      setForm(initialForm);
-      setOtherAllowances([]);
-      setDeductions([]);
-    },
-    onError: () => toast.error(t.mod_error),
-  });
+      },
+      {
+        onSuccess: () => { toast.success(t.ec_created); setShowAdd(false); setForm(initialForm); setOtherAllowances([]); setDeductions([]); },
+        onError: () => toast.error(t.mod_error),
+      },
+    );
+  };
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('employee_contracts').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employee-contracts'] });
-      toast.success(t.mod_deleted);
-    },
-  });
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, { onSuccess: () => toast.success(t.mod_deleted) });
+  };
 
   const handleEmployeeSelect = (empId: string) => {
     const emp = hrEmployees.find((e: any) => e.id === empId);
@@ -500,7 +475,7 @@ export function EmployeeContractsPage() {
                 {/* Submit */}
                 <Button
                   className="w-full"
-                  onClick={() => addMutation.mutate()}
+                  onClick={handleAdd}
                   disabled={addMutation.isPending || !form.employeeName || !form.startDate}
                 >
                   {t.save}
@@ -554,7 +529,7 @@ export function EmployeeContractsPage() {
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPrintContract(c)} title="طباعة العقد">
                         <Printer className="w-3 h-3" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(c.id)}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(c.id)}>
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
