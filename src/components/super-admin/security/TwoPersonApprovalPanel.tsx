@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,73 +12,17 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from '@/components/ui/dialog';
+import { useTwoPersonApprovals, useApproveTwoPersonRequest, useRejectTwoPersonRequest } from '@/hooks/modules/useSuperAdminServices';
 
 export function TwoPersonApprovalPanel() {
-  const queryClient = useQueryClient();
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [authCode, setAuthCode] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
 
-  const { data: requests = [], isLoading } = useQuery({
-    queryKey: ['two-person-approvals'],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('two_person_approvals')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data || [];
-    },
-  });
+  const { data: requests = [], isLoading } = useTwoPersonApprovals();
 
-  const approveRequest = useMutation({
-    mutationFn: async ({ requestId, approverLevel }: { requestId: string; approverLevel: 'first' | 'second' }) => {
-      if (!authCode || authCode.length < 4) throw new Error('كود التفويض مطلوب');
-      const { data: { user } } = await supabase.auth.getUser();
-
-      const updateData: any = {};
-      if (approverLevel === 'first') {
-        updateData.first_approver_id = user?.id;
-        updateData.first_approver_role = 'system_owner';
-        updateData.first_approved_at = new Date().toISOString();
-        updateData.status = 'first_approved';
-      } else {
-        updateData.second_approver_id = user?.id;
-        updateData.second_approver_role = 'financial_controller';
-        updateData.second_approved_at = new Date().toISOString();
-        updateData.authorization_method = 'master_code';
-        updateData.status = 'approved';
-        updateData.applied_at = new Date().toISOString();
-      }
-
-      const { error } = await (supabase.from as any)('two_person_approvals')
-        .update(updateData)
-        .eq('id', requestId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['two-person-approvals'] });
-      setSelectedRequest(null);
-      setAuthCode('');
-      toast.success('تمت الموافقة بنجاح');
-    },
-    onError: (err: any) => toast.error(err.message),
-  });
-
-  const rejectRequest = useMutation({
-    mutationFn: async (requestId: string) => {
-      const { error } = await (supabase.from as any)('two_person_approvals')
-        .update({ status: 'rejected', rejection_reason: rejectionReason })
-        .eq('id', requestId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['two-person-approvals'] });
-      setSelectedRequest(null);
-      setRejectionReason('');
-      toast.success('تم رفض الطلب');
-    },
-  });
+  const approveRequest = useApproveTwoPersonRequest();
+  const rejectRequest = useRejectTwoPersonRequest();
 
   const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
     pending: { label: 'في انتظار الموافقة الأولى', color: 'bg-yellow-500/10 text-yellow-600', icon: Clock },
