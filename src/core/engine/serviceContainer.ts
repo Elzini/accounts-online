@@ -40,6 +40,7 @@ export interface ServiceContainerDeps {
   fiscalYears?: IFiscalYearRepository;
   invoices?: IInvoiceRepository;
   suppliers?: ISupplierRepository;
+  companySettings?: ICompanySettingsRepository;
 }
 
 /**
