@@ -83,6 +83,15 @@ export function ExecutiveKPIDashboard() {
 
   const { hasCarInventory } = useIndustryFeatures();
 
+  const METRIC_OPTIONS = useMemo(() => 
+    hasCarInventory ? [...COMMON_METRIC_OPTIONS, ...CAR_METRIC_OPTIONS] : COMMON_METRIC_OPTIONS,
+    [hasCarInventory]
+  );
+  const DEFAULT_TARGETS = useMemo(() => 
+    hasCarInventory ? [...COMMON_DEFAULT_TARGETS, ...CAR_DEFAULT_TARGETS] : COMMON_DEFAULT_TARGETS,
+    [hasCarInventory]
+  );
+
   // Fetch actual metrics
   const { data: metrics, isLoading } = useQuery({
     queryKey: ['kpi-actuals', companyId, hasCarInventory],
