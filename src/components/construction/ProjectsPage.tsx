@@ -32,6 +32,8 @@ import {
 } from '@/components/ui/select';
 import { Plus, Pencil, Trash2, Building2, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
 import { format } from 'date-fns';
 
 interface Project {
@@ -300,11 +302,9 @@ export function ProjectsPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">جاري التحميل...</div>
+            <TableSkeleton columns={7} rows={5} />
           ) : filteredProjects.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              لا توجد مشاريع
-            </div>
+            <EmptyState title="لا توجد مشاريع" description="أضف مشروعاً جديداً للبدء" />
           ) : (
             <Table>
               <TableHeader>

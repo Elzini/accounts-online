@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,8 +39,8 @@ export function AppointmentsPage() {
       </div>
 
       <Card><CardContent className="pt-4">
-        {isLoading ? <p className="text-center py-8 text-muted-foreground">جاري التحميل...</p> :
-        appointments.length === 0 ? <p className="text-center py-8 text-muted-foreground">لا توجد مواعيد.</p> :
+        {isLoading ? <TableSkeleton columns={7} rows={4} /> :
+        appointments.length === 0 ? <EmptyState icon={CalendarCheck} title="لا توجد مواعيد" description="أضف موعداً جديداً للبدء" actionLabel="موعد جديد" onAction={() => setShowAdd(true)} /> :
         <Table>
           <TableHeader><TableRow><TableHead>العميل</TableHead><TableHead>الخدمة</TableHead><TableHead>التاريخ</TableHead><TableHead>الوقت</TableHead><TableHead>المدة</TableHead><TableHead>الحالة</TableHead><TableHead>إجراءات</TableHead></TableRow></TableHeader>
           <TableBody>{appointments.map((a: any) => (

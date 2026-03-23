@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Users, Eye, EyeOff, Pencil, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
 
 const TABLES = [
   { key: 'journal_entries', label: 'القيود المحاسبية' },
@@ -133,7 +134,7 @@ export function EmployeePermissionsManager() {
 
         <ScrollArea className="h-[400px]">
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">جاري التحميل...</div>
+            <div className="text-center py-8"><TableSkeleton columns={3} rows={4} /></div>
           ) : (
             <Table>
               <TableHeader>
