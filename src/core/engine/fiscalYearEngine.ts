@@ -123,7 +123,7 @@ export async function generateOpeningBalances(
   }
 
   // 7. Create opening entry
-  const engine = new JournalEngine(companyId);
+  const { journal: engine } = getServiceContainer(companyId);
   await engine.createEntry({
     company_id: companyId,
     fiscal_year_id: newFiscalYearId,
