@@ -32,76 +32,35 @@ export function ApprovalDashboard() {
 
   const { data: requests = [] } = useQuery({
     queryKey: ['approval-requests-dashboard', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('approval_requests')
-        .select('*, approval_workflows(name, entity_type, min_amount, max_amount)')
-        .eq('company_id', companyId)
-        .order('requested_at', { ascending: false });
-      return data || [];
-    },
+    queryFn: () => fetchApprovalRequests(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: workflows = [] } = useQuery({
     queryKey: ['approval-workflows-dashboard', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('approval_workflows')
-        .select('*, approval_steps(*)')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false });
-      return data || [];
-    },
+    queryFn: () => fetchApprovalWorkflows(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: actions = [] } = useQuery({
     queryKey: ['approval-actions-dashboard', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const requestIds = requests.map((r: any) => r.id);
-      if (requestIds.length === 0) return [];
-      const { data } = await supabase
-        .from('approval_actions')
-        .select('*')
-        .in('request_id', requestIds)
-        .order('acted_at', { ascending: false });
-      return data || [];
-    },
+    queryFn: () => fetchApprovalActions(requests.map((r: any) => r.id)),
     enabled: !!companyId && requests.length > 0,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: delegations = [] } = useQuery({
     queryKey: ['approval-delegations', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('approval_delegations' as any)
-        .select('*')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false });
-      return (data || []) as any[];
-    },
+    queryFn: () => fetchApprovalDelegations(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['company-users', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('profiles')
-        .select('user_id, username')
-        .eq('company_id', companyId);
-      return data || [];
-    },
+    queryFn: () => fetchCompanyUsers(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
