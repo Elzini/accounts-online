@@ -33,43 +33,9 @@ export function DeviceOperationsPanel({ showOperations = false }: DeviceOperatio
   const [syncResults, setSyncResults] = useState<any[]>([]);
   const [showResultsDialog, setShowResultsDialog] = useState(false);
 
-  const { data: devices = [] } = useQuery({
-    queryKey: ['fingerprint-devices', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase
-        .from('hr_fingerprint_devices')
-        .select('*')
-        .eq('company_id', companyId)
-        .eq('status', 'active')
-        .order('device_name');
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
+  const { data: devices = [] } = useFingerprintDevices(companyId, true);
 
-  const { data: deviceLogs = [], isLoading: logsLoading } = useQuery({
-    queryKey: ['device-logs', companyId, selectedDevice, dateFrom, dateTo],
-    queryFn: async () => {
-      if (!companyId) return [];
-      let query = supabase
-        .from('hr_device_logs')
-        .select('*, hr_fingerprint_devices(device_name)')
-        .eq('company_id', companyId)
-        .gte('punch_time', `${dateFrom}T00:00:00`)
-        .lte('punch_time', `${dateTo}T23:59:59`)
-        .order('punch_time', { ascending: false })
-        .limit(500);
-      if (selectedDevice) {
-        query = query.eq('device_id', selectedDevice);
-      }
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
+  const { data: deviceLogs = [], isLoading: logsLoading } = useDeviceLogs(companyId, selectedDevice, dateFrom, dateTo);
 
   const simulateDeviceSync = useMutation({
     mutationFn: async (deviceId: string) => {
