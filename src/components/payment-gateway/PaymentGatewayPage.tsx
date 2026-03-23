@@ -29,7 +29,7 @@ export function PaymentGatewayPage() {
   });
 
   const addMutation = useMutation({
-    mutationFn: async () => { const ref = `PAY-${String(transactions.length + 1).padStart(3, '0')}`; const { error } = await supabase.from('payment_transactions').insert({ company_id: companyId!, transaction_ref: ref, amount: Number(form.amount) || 0, customer_name: form.customerName || null, customer_email: form.customerEmail || null, payment_method: form.paymentMethod, status: 'pending' }); if (error) throw error; },
+    mutationFn: async () => { const ref = `PAY-${String(transactions.length + 1).padStart(3, '0')}`; await addPaymentTransaction({ transaction_ref: ref, amount: Number(form.amount) || 0, customer_name: form.customerName || '', customer_email: form.customerEmail || undefined, payment_method: form.paymentMethod }); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['payment-transactions'] }); toast.success(t.pg_created); setShowAdd(false); setForm({ amount: '', customerName: '', paymentMethod: 'card', customerEmail: '' }); },
     onError: () => toast.error(t.mod_error),
   });
