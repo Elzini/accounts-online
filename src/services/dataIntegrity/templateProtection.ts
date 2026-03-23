@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { IntegrityCheckResult } from './types';
 
 export async function checkTemplateProtection(companyId: string): Promise<IntegrityCheckResult> {

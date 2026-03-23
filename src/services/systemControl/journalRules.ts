@@ -1,7 +1,7 @@
 /**
  * System Control - Journal Entry Rules & Financial Statement Config
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import type { FinancialStatementConfig, FinancialStatementSection, JournalEntryRule, RuleCondition } from './types';
 
 export async function fetchFinancialStatementConfig(companyId: string, statementType: string): Promise<FinancialStatementConfig | null> {

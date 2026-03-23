@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { AccountCategory } from './types';
 
 export async function fetchAccounts(companyId: string): Promise<AccountCategory[]> {

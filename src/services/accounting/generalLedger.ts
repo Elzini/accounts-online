@@ -2,7 +2,7 @@
  * General Ledger Report
  * Extracted from reports.ts (200 lines → isolated module)
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { AccountCategory } from './types';
 import { fetchAccounts } from './accounts';
 

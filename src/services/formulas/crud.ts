@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { FormulaDefinition, FormulaVariable, FormulaNode } from './types';
 import { DEFAULT_FORMULAS } from './defaults';
 

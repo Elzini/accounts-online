@@ -5,7 +5,7 @@
  * All engine classes depend on repository interfaces, not this file.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import {
   IAccountRepository,
   IJournalEntryRepository,

@@ -5,7 +5,7 @@
  * Uses aging buckets with historical loss rates.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { getCurrentCompanyId } from '@/services/companyContext';
 
 export interface AgingBucket {

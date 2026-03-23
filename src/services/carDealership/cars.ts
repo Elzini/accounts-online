@@ -1,7 +1,7 @@
 /**
  * Car Dealership - Car CRUD & Journal Entries
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { requireCompanyId, getCurrentCompanyId } from '@/services/companyContext';
 import type { CarInsert, CarUpdate } from './types';
 import { recalculateSalesProfitForCar } from './profitCalculations';

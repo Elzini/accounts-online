@@ -2,7 +2,7 @@
  * Fiscal Year - CRUD Operations
  * Simple data access functions extracted from the 1102-line fiscalYears.ts
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 
 export interface FiscalYear {
   id: string;

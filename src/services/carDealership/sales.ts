@@ -1,7 +1,7 @@
 /**
  * Car Dealership - Sales Operations
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { requireCompanyId, getCurrentCompanyId } from '@/services/companyContext';
 import type { SaleInsert, SaleUpdate, MultiCarSaleData } from './types';
 import { updateCarStatus } from './cars';

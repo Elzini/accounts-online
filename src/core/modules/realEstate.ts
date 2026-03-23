@@ -3,7 +3,7 @@
  * Fully encapsulates real-estate-specific logic: stats, menus, posting rules, reports, labels
  */
 import { IndustryModule, DashboardStats, MenuItem } from '@/core/engine/types';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 
 export const RealEstateModule: IndustryModule = {
   id: 'real_estate',

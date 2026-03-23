@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 
 export interface ParsedTransaction {
   transaction_date: string;

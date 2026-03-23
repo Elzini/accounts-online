@@ -1,5 +1,5 @@
 // مدقق ضريبة القيمة المضافة
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { AccountingCheckResult } from './types';
 
 export async function checkVATAccuracy(companyId: string): Promise<AccountingCheckResult> {

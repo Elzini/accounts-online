@@ -3,7 +3,7 @@
  * Fully encapsulates car-specific logic: stats, menus, posting rules, reports, labels
  */
 import { IndustryModule, DashboardStats, MenuItem } from '@/core/engine/types';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 
 export const CarDealershipModule: IndustryModule = {
   id: 'car_dealership',

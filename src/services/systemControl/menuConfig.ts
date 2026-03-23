@@ -1,7 +1,7 @@
 /**
  * System Control - Menu & Account Mapping Configuration
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import type { MenuConfiguration, MenuItem, ThemeSettings, AccountMapping } from './types';
 
 export async function fetchMenuConfiguration(companyId: string): Promise<MenuConfiguration | null> {

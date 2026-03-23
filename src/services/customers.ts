@@ -1,7 +1,7 @@
 /**
  * Customer Service - Isolated CRUD operations for customers
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import type { Database } from '@/integrations/supabase/types';
 import { requireCompanyId } from '@/services/companyContext';
 

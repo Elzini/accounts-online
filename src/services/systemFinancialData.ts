@@ -2,7 +2,7 @@
  * System Financial Data - Thin Orchestrator
  * Formerly 756 lines → now ~120 lines delegating to focused modules
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { isBalanceSheetType } from '@/utils/accountTypes';
 import {
   ComprehensiveFinancialData,

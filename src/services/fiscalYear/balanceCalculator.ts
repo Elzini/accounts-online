@@ -3,7 +3,7 @@
  * DRY: This logic was duplicated 4x across closeFiscalYear, openNewFiscalYear,
  * refreshClosingEntry, and refreshOpeningBalances
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { isAccountType } from '@/utils/accountTypes';
 
 export interface AccountBalance {

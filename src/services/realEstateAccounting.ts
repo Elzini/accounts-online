@@ -8,7 +8,7 @@
  * 4. Advance payments recorded as liabilities
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { createJournalEntry } from './accounting';
 
 // ============================================================
