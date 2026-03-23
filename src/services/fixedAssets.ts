@@ -76,23 +76,6 @@ export interface CreateAssetInput {
   notes?: string;
 }
 
-// Helper function to get current user's company_id
-async function getCurrentCompanyId(): Promise<string | null> {
-  const override = getCompanyOverride();
-  if (override) return override;
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('user_id', user.id)
-    .single();
-  
-  return profile?.company_id || null;
-}
-
 // Fixed Assets CRUD
 export async function fetchFixedAssets(): Promise<FixedAsset[]> {
   const { data, error } = await supabase

@@ -1,19 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
-import { getCompanyOverride } from '@/lib/companyOverride';
+import { getCurrentCompanyId } from '@/services/companyContext';
 import { createJournalEntry } from './accounting';
-
-async function getCurrentCompanyId(): Promise<string | null> {
-  const override = getCompanyOverride();
-  if (override) return override;
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('user_id', user.id)
-    .single();
-  return profile?.company_id || null;
-}
 
 export interface Voucher {
   id: string;

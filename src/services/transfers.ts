@@ -68,22 +68,6 @@ export interface CarTransferInsert {
   sale_price?: number;
 }
 
-// Helper function to get current user's company_id
-async function getCurrentCompanyId(): Promise<string | null> {
-  const override = getCompanyOverride();
-  if (override) return override;
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('user_id', user.id)
-    .single();
-  
-  return profile?.company_id || null;
-}
 
 // Function to get pending transfer for a car
 export async function getPendingTransferForCar(carId: string): Promise<CarTransfer | null> {
