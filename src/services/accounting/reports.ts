@@ -690,29 +690,9 @@ export async function getComprehensiveTrialBalance(
         current.credit += c;
         openingBalances.set(line.account_id, current);
       });
-    } else if (!fiscalYearId) {
-      const { data: openingLines } = await supabase
-        .from('journal_entry_lines')
-        .select(`
-          account_id, debit, credit,
-          journal_entry:journal_entries!inner(company_id, is_posted, entry_date)
-        `)
-        .eq('journal_entry.company_id', companyId)
-        .eq('journal_entry.is_posted', true)
-        .lt('journal_entry.entry_date', effectiveStartDate);
-
-      (openingLines || []).forEach((line: any) => {
-        const d = Number(line.debit) || 0;
-        const c = Number(line.credit) || 0;
-        rawOpeningDebitAll += d;
-        rawOpeningCreditAll += c;
-        const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
-        current.debit += d;
-        current.credit += c;
-        openingBalances.set(line.account_id, current);
-      });
     }
-  }
+    // Removed the fallback `else if (!fiscalYearId)` block that would query 
+    // ALL data without fiscal year isolation — this was a data leak vector.
 
   // 2) Period movement
   let periodQuery = supabase
