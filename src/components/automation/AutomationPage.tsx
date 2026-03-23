@@ -148,8 +148,7 @@ export function AutomationPage() {
 function RecurringInvoiceForm({ open, onClose, companyId, isAr }: { open: boolean; onClose: () => void; companyId: string | null; isAr: boolean }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({ invoice_type: 'sale', frequency: 'monthly', start_date: format(new Date(), 'yyyy-MM-dd'), next_due_date: format(new Date(), 'yyyy-MM-dd'), total_amount: '', notes: '', auto_approve: false, max_occurrences: '' });
-  const { data: customers = [] } = useQuery({ queryKey: ['customers-list', companyId], queryFn: async () => { if (!companyId) return []; const { data } = await (supabase.from('customers') as any).select('id, name').eq('company_id', companyId).eq('is_active', true); return data || []; }, enabled: !!companyId && open });,
-  staleTime: 5 * 60 * 1000,
+  const { data: customers = [] } = useQuery({ queryKey: ['customers-list', companyId], queryFn: async () => { if (!companyId) return []; const { data } = await (supabase.from('customers') as any).select('id, name').eq('company_id', companyId).eq('is_active', true); return data || []; }, enabled: !!companyId && open, staleTime: 5 * 60 * 1000 });
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const createMutation = useMutation({
     mutationFn: async () => { if (!companyId) throw new Error('No company'); const { error } = await supabase.from('recurring_invoices').insert({ company_id: companyId, customer_id: selectedCustomerId || null, invoice_type: form.invoice_type, frequency: form.frequency, start_date: form.start_date, next_due_date: form.next_due_date, total_amount: Number(form.total_amount) || 0, notes: form.notes, auto_approve: form.auto_approve, max_occurrences: form.max_occurrences ? Number(form.max_occurrences) : null }); if (error) throw error; },

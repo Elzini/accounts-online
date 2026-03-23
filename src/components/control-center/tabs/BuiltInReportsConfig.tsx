@@ -34,8 +34,7 @@ function useBuiltInReportConfigs() {
         .like('key', 'report_config_%');
 
       if (error) throw error;
-      const configs: Record<string, { columns: ReportColumnConfig[]; enabled: boolean }> = {};,
-      staleTime: 5 * 60 * 1000,
+      const configs: Record<string, { columns: ReportColumnConfig[]; enabled: boolean }> = {};
       data?.forEach(row => {
         const reportKey = row.key.replace('report_config_', '');
         try {
