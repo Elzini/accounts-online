@@ -110,17 +110,17 @@ export function useSalesReturns() {
       if (!foundSale && !foundInvoice) throw new Error('No sale/invoice found');
       if (isCarDealership && foundSale) {
         const returnedItems = items.filter(i => i.returnedQty > 0);
-        for (const item of returnedItems) { if (item.car_id) { const { error: carErr } = await supabase.from('cars').update({ status: 'available' }).eq('id', item.car_id); if (carErr) throw carErr; } }
-        await supabase.from('journal_entries').delete().eq('reference_type', 'sale').eq('reference_id', foundSale.id);
-        if (form.fullInvoice) { await supabase.from('sale_items').delete().eq('sale_id', foundSale.id); await supabase.from('sales').delete().eq('id', foundSale.id); }
+        await processCarReturn(returnedItems);
+        await deleteSaleWithJournal(foundSale.id, form.fullInvoice);
       } else if (foundInvoice) {
-        await supabase.from('journal_entries').delete().eq('reference_type', 'invoice').eq('reference_id', foundInvoice.id);
-        if (form.fullInvoice) { await supabase.from('invoices').delete().eq('id', foundInvoice.id); }
+        await deleteInvoiceWithJournal(foundInvoice.id, form.fullInvoice);
       }
       const refNumber = foundSale ? foundSale.sale_number : foundInvoice?.invoice_number;
       const num = `SR-${String(returns.length + 1).padStart(4, '0')}`;
-      const { error } = await supabase.from('credit_debit_notes').insert({ company_id: companyId!, note_number: num, note_type: 'credit', note_date: form.returnDate, total_amount: totals.grandTotal, reason: `مرتجع فاتورة رقم ${refNumber}${form.notes ? ' - ' + form.notes : ''}`, status: 'approved' });
-      if (error) throw error;
+      await insertCreditNote(companyId!, {
+        note_number: num, note_date: form.returnDate, total_amount: totals.grandTotal,
+        reason: `مرتجع فاتورة رقم ${refNumber}${form.notes ? ' - ' + form.notes : ''}`,
+      });
     },
     onSuccess: () => {
       ['sales-returns', 'credit-debit-notes', 'sales', 'cars', 'stats', 'available-invoices-for-return', 'company-invoices'].forEach(k => queryClient.invalidateQueries({ queryKey: [k] }));
@@ -131,7 +131,7 @@ export function useSalesReturns() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('credit_debit_notes').delete().eq('id', id); if (error) throw error; },
+    mutationFn: (id: string) => deleteCreditNote(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['sales-returns'] }); toast.success(language === 'ar' ? 'تم الحذف' : 'Deleted'); },
   });
 
