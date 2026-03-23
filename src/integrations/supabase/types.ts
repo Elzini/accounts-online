@@ -7157,42 +7157,6 @@ export type Database = {
           },
         ]
       }
-      network_access_log: {
-        Row: {
-          allowed: boolean
-          block_reason: string | null
-          created_at: string | null
-          id: string
-          ip_address: string
-          request_method: string | null
-          request_path: string | null
-          tenant_id: string | null
-          user_agent: string | null
-        }
-        Insert: {
-          allowed: boolean
-          block_reason?: string | null
-          created_at?: string | null
-          id?: string
-          ip_address: string
-          request_method?: string | null
-          request_path?: string | null
-          tenant_id?: string | null
-          user_agent?: string | null
-        }
-        Update: {
-          allowed?: boolean
-          block_reason?: string | null
-          created_at?: string | null
-          id?: string
-          ip_address?: string
-          request_method?: string | null
-          request_path?: string | null
-          tenant_id?: string | null
-          user_agent?: string | null
-        }
-        Relationships: []
-      }
       notifications: {
         Row: {
           company_id: string
@@ -7602,42 +7566,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      penetration_test_results: {
-        Row: {
-          created_at: string | null
-          details: Json | null
-          id: string
-          passed: boolean
-          severity: string | null
-          target_tenant_id: string | null
-          test_description: string
-          test_type: string
-          tested_by: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          details?: Json | null
-          id?: string
-          passed: boolean
-          severity?: string | null
-          target_tenant_id?: string | null
-          test_description: string
-          test_type: string
-          tested_by?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          details?: Json | null
-          id?: string
-          passed?: boolean
-          severity?: string | null
-          target_tenant_id?: string | null
-          test_description?: string
-          test_type?: string
-          tested_by?: string | null
-        }
-        Relationships: []
       }
       plans: {
         Row: {
@@ -10339,109 +10267,6 @@ export type Database = {
           },
         ]
       }
-      security_alerts: {
-        Row: {
-          alert_type: string
-          company_id: string
-          created_at: string
-          event_data: Json | null
-          id: string
-          is_dismissed: boolean | null
-          is_read: boolean | null
-          message: string
-          severity: string
-          title: string
-          triggered_by: string | null
-        }
-        Insert: {
-          alert_type: string
-          company_id: string
-          created_at?: string
-          event_data?: Json | null
-          id?: string
-          is_dismissed?: boolean | null
-          is_read?: boolean | null
-          message: string
-          severity?: string
-          title: string
-          triggered_by?: string | null
-        }
-        Update: {
-          alert_type?: string
-          company_id?: string
-          created_at?: string
-          event_data?: Json | null
-          id?: string
-          is_dismissed?: boolean | null
-          is_read?: boolean | null
-          message?: string
-          severity?: string
-          title?: string
-          triggered_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "security_alerts_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      security_anomalies: {
-        Row: {
-          anomaly_type: string
-          company_id: string
-          created_at: string
-          description: string
-          detection_source: string
-          event_data: Json | null
-          id: string
-          is_resolved: boolean | null
-          resolution_notes: string | null
-          resolved_at: string | null
-          resolved_by: string | null
-          severity: string
-        }
-        Insert: {
-          anomaly_type: string
-          company_id: string
-          created_at?: string
-          description: string
-          detection_source?: string
-          event_data?: Json | null
-          id?: string
-          is_resolved?: boolean | null
-          resolution_notes?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          severity?: string
-        }
-        Update: {
-          anomaly_type?: string
-          company_id?: string
-          created_at?: string
-          description?: string
-          detection_source?: string
-          event_data?: Json | null
-          id?: string
-          is_resolved?: boolean | null
-          resolution_notes?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          severity?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "security_anomalies_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       security_audit_trail: {
         Row: {
           blocked: boolean | null
@@ -10554,54 +10379,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      security_incidents: {
-        Row: {
-          auto_freeze_triggered: boolean | null
-          created_at: string
-          description: string
-          details: Json | null
-          detected_by: string
-          id: string
-          incident_type: string
-          ip_address: string | null
-          resolution: string | null
-          resolved_at: string | null
-          resolved_by: string | null
-          severity: string
-          user_id: string | null
-        }
-        Insert: {
-          auto_freeze_triggered?: boolean | null
-          created_at?: string
-          description: string
-          details?: Json | null
-          detected_by?: string
-          id?: string
-          incident_type: string
-          ip_address?: string | null
-          resolution?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          severity?: string
-          user_id?: string | null
-        }
-        Update: {
-          auto_freeze_triggered?: boolean | null
-          created_at?: string
-          description?: string
-          details?: Json | null
-          detected_by?: string
-          id?: string
-          incident_type?: string
-          ip_address?: string | null
-          resolution?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          severity?: string
-          user_id?: string | null
-        }
-        Relationships: []
       }
       sensitive_operations_log: {
         Row: {
@@ -11212,47 +10989,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "support_tickets_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      system_activity_logs: {
-        Row: {
-          activity_type: string
-          company_id: string | null
-          created_at: string
-          description: string | null
-          id: string
-          ip_address: string | null
-          metadata: Json | null
-          user_id: string | null
-        }
-        Insert: {
-          activity_type: string
-          company_id?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          ip_address?: string | null
-          metadata?: Json | null
-          user_id?: string | null
-        }
-        Update: {
-          activity_type?: string
-          company_id?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          ip_address?: string | null
-          metadata?: Json | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "system_activity_logs_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
