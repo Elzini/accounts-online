@@ -26,7 +26,7 @@ export { AccountResolver } from './accountResolver';
 export type { AccountRef } from './accountResolver';
 export { JournalEngine } from './journalEngine';
 export { InvoicePostingEngine } from './invoicePostingEngine';
-export { getCoreDashboardStats } from './dashboardEngine';
+// DashboardEngine removed — statsEngine.ts is the canonical dashboard stats service
 export { ModuleRegistry } from './moduleRegistry';
 
 // Dynamic Configuration
