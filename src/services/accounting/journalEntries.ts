@@ -6,7 +6,7 @@
  */
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { JournalEntry, JournalEntryLine } from './types';
-import { JournalEngine } from '@/core/engine/journalEngine';
+import { getServiceContainer } from '@/core/engine/serviceContainer';
 import { defaultRepos } from '@/core/engine/supabaseRepositories';
 
 // ── READ operations (no engine needed) ──
