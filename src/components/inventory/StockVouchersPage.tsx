@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Search, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { fetchStockVouchers, createStockVoucher, deleteStockVoucher } from '@/services/inventoryService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
