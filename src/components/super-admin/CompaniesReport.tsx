@@ -63,7 +63,8 @@ export function CompaniesReport() {
       const stats: CompanyFullStats[] = [];
 
       for (const company of companies || []) {
-        const isCarCompany = company.company_type === 'car_dealership';
+        const features = getIndustryFeatures(company.company_type || 'general_trading');
+        const isCarCompany = features.useCarSalesTable;
 
         const baseQueries = [
           supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('company_id', company.id),

@@ -11,7 +11,7 @@ export async function checkCoreTables(companyId: string): Promise<AuditCheckResu
     status: accErr ? 'fail' : (accountsCount && accountsCount > 0 ? 'pass' : 'warning'),
     message: accErr ? 'خطأ في الوصول لجدول الحسابات' : (accountsCount && accountsCount > 0 ? `تم العثور على ${accountsCount} حساب` : 'لا توجد حسابات - يجب إنشاء شجرة الحسابات'),
     severity: accErr ? 'critical' : (accountsCount && accountsCount > 0 ? 'info' : 'high'),
-    fixActions: (!accErr && (!accountsCount || accountsCount === 0)) ? [createFixMissingCOA(companyId, 'car_dealership')] : undefined,
+    fixActions: (!accErr && (!accountsCount || accountsCount === 0)) ? [createFixMissingCOA(companyId, 'general_trading')] : undefined,
   });
 
   const { count: jeCount, error: jeErr } = await supabase.from('journal_entries').select('*', { count: 'exact', head: true }).eq('company_id', companyId);

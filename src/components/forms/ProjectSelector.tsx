@@ -19,11 +19,11 @@ export function ProjectSelector({
   className,
   hideLabel = false,
 }: ProjectSelectorProps) {
-  const { company } = useCompany();
+  const features = useIndustryFeatures();
   const { data: projects = [] } = useREProjects();
   
-  // Only show for real_estate companies
-  if (company?.company_type !== 'real_estate') return null;
+  // Only show for companies with real estate projects
+  if (!features.hasRealEstateProjects) return null;
 
   return (
     <div className={hideLabel ? '' : 'space-y-2'}>

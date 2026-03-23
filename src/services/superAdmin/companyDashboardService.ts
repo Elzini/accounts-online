@@ -53,7 +53,9 @@ export async function fetchCompaniesWithStats() {
         const companySales = (salesRes.data || []).filter((r: any) => r.company_id === cid);
         const companyInvoices = (invoicesRes.data || []).filter((r: any) => r.company_id === cid);
         const companyExpenses = (expensesRes.data || []).filter((r: any) => r.company_id === cid);
-        const isCarCompany = (companies || []).find(c => c.id === cid)?.company_type === 'car_dealership';
+        const companyType = (companies || []).find(c => c.id === cid)?.company_type || 'general_trading';
+        const features = getIndustryFeatures(companyType);
+        const isCarCompany = features.useCarSalesTable;
 
         statsMap.set(cid, {
           company_id: cid,
