@@ -123,4 +123,6 @@ export const CarDealershipModule: IndustryModule = {
     'rpt_status_available': 'متاحة',
     'rpt_status_sold': 'مباعة',
   },
+
+  taxRules: CAR_DEALERSHIP_TAX_RULES,
 };
