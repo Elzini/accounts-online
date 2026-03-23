@@ -130,9 +130,9 @@ export function useShowStatDetail(opts: UseShowStatDetailOptions) {
               balanceMap.set(line.account_id, current + (Number(line.debit) || 0) - (Number(line.credit) || 0));
             });
 
-            const breakdownItems = leafProjectAccounts.map(a => ({ label: a.name, value: balanceMap.get(a.id) || 0, type: 'add' as const, description: `حساب ${a.code}` })).filter(b => b.value !== 0).sort((a, b) => b.value - a.value);
+            const breakdownItems: { label: string; value: number; type?: 'add' | 'subtract' | 'total'; description?: string }[] = leafProjectAccounts.map(a => ({ label: a.name, value: balanceMap.get(a.id) || 0, type: 'add' as const, description: `حساب ${a.code}` })).filter(b => b.value !== 0).sort((a, b) => b.value - a.value);
             const totalCosts = breakdownItems.reduce((sum, b) => sum + b.value, 0);
-            breakdownItems.push({ label: 'إجمالي تكاليف المشاريع', value: totalCosts, type: 'total' as const, description: 'من حساب مشاريع تحت التنفيذ' });
+            breakdownItems.push({ label: 'إجمالي تكاليف المشاريع', value: totalCosts, type: 'total', description: 'من حساب مشاريع تحت التنفيذ' });
             data = { title: getCardLabel(cardId, industryLabels.totalPurchasesLabel), value: formatCurrency(totalCosts), subtitle: 'تفاصيل من شجرة الحسابات - مشاريع تحت التنفيذ', breakdown: breakdownItems, formula: 'إجمالي التكاليف = مجموع أرصدة الحسابات الفرعية تحت حساب المشاريع (1301)', showCarsTable: false };
           } catch {
             const fallbackVal = projectCostAccountId && accountBalances[projectCostAccountId] !== undefined ? accountBalances[projectCostAccountId] : stats.totalPurchases;
