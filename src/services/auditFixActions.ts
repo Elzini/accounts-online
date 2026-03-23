@@ -174,7 +174,7 @@ export function createFixMissingTaxSettings(companyId: string): AuditFixAction {
 }
 
 // ===== Fix: Initialize COA from templates =====
-export function createFixMissingCOA(companyId: string, companyType: 'car_dealership' | 'construction' | 'export_import' | 'general_trading' | 'restaurant'): AuditFixAction {
+export function createFixMissingCOA(companyId: string, companyType: string): AuditFixAction {
   return {
     id: 'fix-missing-coa',
     label: 'إنشاء شجرة حسابات من القالب',
@@ -185,7 +185,7 @@ export function createFixMissingCOA(companyId: string, companyType: 'car_dealers
       const { data: templates, error: tErr } = await supabase
         .from('coa_templates')
         .select('*')
-        .eq('company_type', companyType)
+        .eq('company_type', companyType as any)
         .order('sort_order');
 
       if (tErr || !templates || templates.length === 0) {

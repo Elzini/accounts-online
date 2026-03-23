@@ -2,7 +2,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2 } from 'lucide-react';
 import { useREProjects } from '@/hooks/useRealEstate';
-import { useCompany } from '@/contexts/CompanyContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface ProjectSelectorProps {
   value: string | null;
@@ -19,11 +19,11 @@ export function ProjectSelector({
   className,
   hideLabel = false,
 }: ProjectSelectorProps) {
-  const { company } = useCompany();
+  const features = useIndustryFeatures();
   const { data: projects = [] } = useREProjects();
   
-  // Only show for real_estate companies
-  if (company?.company_type !== 'real_estate') return null;
+  // Only show for companies with real estate projects
+  if (!features.hasRealEstateProjects) return null;
 
   return (
     <div className={hideLabel ? '' : 'space-y-2'}>
