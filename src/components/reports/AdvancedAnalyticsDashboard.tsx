@@ -157,21 +157,7 @@ export function AdvancedAnalyticsDashboard() {
     return Object.entries(cats).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 8);
   }, [expensesData, isRtl]);
 
-  // Invoice status breakdown
-  const invoiceStatus = useMemo(() => {
-    const statuses: Record<string, number> = {};
-    invoicesData.forEach((inv: any) => {
-      const s = inv.status || 'draft';
-      statuses[s] = (statuses[s] || 0) + 1;
-    });
-    const labels: Record<string, string> = isRtl 
-      ? { draft: 'مسودة', approved: 'معتمدة', paid: 'مدفوعة', overdue: 'متأخرة', cancelled: 'ملغية' }
-      : { draft: 'Draft', approved: 'Approved', paid: 'Paid', overdue: 'Overdue', cancelled: 'Cancelled' };
-    return Object.entries(statuses).map(([name, value]) => ({ name: labels[name] || name, value }));
-  }, [invoicesData, isRtl]);
-
-  const totalRevenue = salesData.reduce((s: number, d: any) => s + (Number(d.sale_price) || 0), 0) +
-    invoicesData.filter((i: any) => i.invoice_type === 'sale').reduce((s: number, i: any) => s + (Number(i.total_amount) || 0), 0);
+  const totalRevenue = salesData.reduce((s: number, d: any) => s + (Number(d.sale_price) || 0), 0);
   const totalExpenses = expensesData.reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0);
   const totalProfit = totalRevenue - totalExpenses;
 
