@@ -7,6 +7,7 @@ import { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { supabase } from '@/hooks/modules/useReportsServices';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { toast } from 'sonner';
 import { readExcelFile } from '@/lib/excelUtils';
 import { FinancialData, emptyFinancialData } from './types';

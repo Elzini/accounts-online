@@ -81,41 +81,69 @@ export function ExecutiveKPIDashboard() {
       const now = new Date();
       const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
-      const [salesRes, carsRes, customersRes, expensesRes] = await Promise.all([
-        supabase.from('sales').select('sale_price, purchase_price, sale_date, customer_id').eq('company_id', companyId!).gte('sale_date', monthStart),
-        supabase.from('cars').select('id, status, purchase_date').eq('company_id', companyId!),
+      const { hasCarInventory } = useIndustryFeatures();
+
+      if (hasCarInventory) {
+        const [salesRes, carsRes, customersRes, expensesRes] = await Promise.all([
+          supabase.from('sales').select('sale_price, purchase_price, sale_date, customer_id').eq('company_id', companyId!).gte('sale_date', monthStart),
+          supabase.from('cars').select('id, status, purchase_date').eq('company_id', companyId!),
+          supabase.from('customers').select('id, created_at').eq('company_id', companyId!).gte('created_at', monthStart),
+          supabase.from('expenses').select('amount, expense_date').eq('company_id', companyId!).gte('expense_date', monthStart),
+        ]);
+
+        const sales = salesRes.data || [];
+        const cars = carsRes.data || [];
+        const customers = customersRes.data || [];
+        const expenses = expensesRes.data || [];
+
+        const totalSales = sales.reduce((s: number, r: any) => s + (r.sale_price || 0), 0);
+        const totalPurchasePrice = sales.reduce((s: number, r: any) => s + (r.purchase_price || 0), 0);
+        const totalProfit = totalSales - totalPurchasePrice;
+        const totalExpenses = expenses.reduce((s: number, r: any) => s + (r.amount || 0), 0);
+        const availableCars = cars.filter((c: any) => c.status === 'available').length;
+        const profitMargin = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
+
+        const soldCars = cars.filter((c: any) => c.status === 'sold');
+        const avgDays = soldCars.length > 0 ? soldCars.reduce((s: number, c: any) => {
+          const purchaseDate = new Date(c.purchase_date);
+          const daysDiff = Math.floor((now.getTime() - purchaseDate.getTime()) / 86400000);
+          return s + daysDiff;
+        }, 0) / soldCars.length : 0;
+
+        return {
+          total_sales: totalSales,
+          total_profit: totalProfit,
+          sales_count: sales.length,
+          new_customers: customers.length,
+          available_cars: availableCars,
+          profit_margin: Math.round(profitMargin * 10) / 10,
+          avg_days_to_sell: Math.round(avgDays),
+          total_expenses: totalExpenses,
+        } as Record<string, number>;
+      }
+
+      // Non-car: use invoices table
+      const [invoicesRes, customersRes, expensesRes] = await Promise.all([
+        supabase.from('invoices').select('subtotal, invoice_date').eq('company_id', companyId!).eq('invoice_type', 'sales').gte('invoice_date', monthStart),
         supabase.from('customers').select('id, created_at').eq('company_id', companyId!).gte('created_at', monthStart),
         supabase.from('expenses').select('amount, expense_date').eq('company_id', companyId!).gte('expense_date', monthStart),
       ]);
 
-      const sales = salesRes.data || [];
-      const cars = carsRes.data || [];
+      const invoices = invoicesRes.data || [];
       const customers = customersRes.data || [];
       const expenses = expensesRes.data || [];
 
-      const totalSales = sales.reduce((s: number, r: any) => s + (r.sale_price || 0), 0);
-      const totalPurchasePrice = sales.reduce((s: number, r: any) => s + (r.purchase_price || 0), 0);
-      const totalProfit = totalSales - totalPurchasePrice;
+      const totalSales = invoices.reduce((s: number, r: any) => s + (r.subtotal || 0), 0);
       const totalExpenses = expenses.reduce((s: number, r: any) => s + (r.amount || 0), 0);
-      const availableCars = cars.filter((c: any) => c.status === 'available').length;
-      const profitMargin = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
-
-      // Avg days to sell (sold cars this month)
-      const soldCars = cars.filter((c: any) => c.status === 'sold');
-      const avgDays = soldCars.length > 0 ? soldCars.reduce((s: number, c: any) => {
-        const purchaseDate = new Date(c.purchase_date);
-        const daysDiff = Math.floor((now.getTime() - purchaseDate.getTime()) / 86400000);
-        return s + daysDiff;
-      }, 0) / soldCars.length : 0;
 
       return {
         total_sales: totalSales,
-        total_profit: totalProfit,
-        sales_count: sales.length,
+        total_profit: totalSales - totalExpenses,
+        sales_count: invoices.length,
         new_customers: customers.length,
-        available_cars: availableCars,
-        profit_margin: Math.round(profitMargin * 10) / 10,
-        avg_days_to_sell: Math.round(avgDays),
+        available_cars: 0,
+        profit_margin: totalSales > 0 ? Math.round(((totalSales - totalExpenses) / totalSales) * 1000) / 10 : 0,
+        avg_days_to_sell: 0,
         total_expenses: totalExpenses,
       } as Record<string, number>;
     },
