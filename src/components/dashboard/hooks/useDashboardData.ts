@@ -18,6 +18,7 @@ import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { useCardFormulas, buildFormulaVariables, evaluateFormula } from '@/hooks/useCardFormulas';
 import { useMonthlyExpenseBreakdown } from '@/hooks/useMonthlyExpenseBreakdown';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
+import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useInstallmentStats } from '@/components/dashboard/widgets/InstallmentsWidget';
 import { useDashboardDisplay } from '@/hooks/useUserPreferences';
