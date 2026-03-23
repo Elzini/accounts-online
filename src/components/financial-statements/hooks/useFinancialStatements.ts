@@ -19,7 +19,7 @@ import { getSystemFinancialStatements } from '@/services/systemFinancialData';
 import { ComprehensiveFinancialData, emptyFinancialData } from '../types';
 import parseMedadExcel from '../utils/medadParser';
 import { printFinancialStatementsPDF } from '../utils/pdfExport';
-import { supabase as sbClient } from '@/integrations/supabase/client';
+import { parseMedadExcelViaEdge } from '@/services/financialStatements';
 import { createAuditLog, AuditLogEntry } from '@/services/importAuditLog';
 import { SUPPORTED_CURRENCIES, convertAmount, Branch } from '../BranchCurrencySelector';
 
