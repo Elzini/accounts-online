@@ -356,9 +356,9 @@ export function useSaveCommissionRules(companyId: string | null) {
 // ── Construction ──
 export function useConstructionProjects(companyId: string | null) {
   return useQuery({
-    queryKey: ['construction-projects', companyId],
+    queryKey: ['projects', companyId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from('construction_projects').select('*').eq('company_id', companyId!).order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('projects').select('*').eq('company_id', companyId!).order('project_number', { ascending: false });
       if (error) throw error; return data || [];
     },
     enabled: !!companyId,
@@ -368,38 +368,58 @@ export function useCreateConstructionProject(companyId: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (form: any) => {
-      const { error } = await (supabase as any).from('construction_projects').insert({ company_id: companyId!, ...form });
+      const { error } = await supabase.from('projects').insert({ company_id: companyId!, ...form });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['construction-projects'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
   });
 }
 export function useUpdateConstructionProject() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
-      const { error } = await (supabase as any).from('construction_projects').update(updates).eq('id', id);
+      const { error } = await supabase.from('projects').update(updates).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['construction-projects'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
   });
 }
 export function useDeleteConstructionProject() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from('construction_projects').delete().eq('id', id);
+      const { error } = await supabase.from('projects').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['construction-projects'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
   });
 }
 
 export function useConstructionContracts(companyId: string | null) {
   return useQuery({
-    queryKey: ['construction-contracts', companyId],
+    queryKey: ['contracts', companyId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from('construction_contracts').select('*, project:construction_projects(project_name)').eq('company_id', companyId!).order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('contracts').select('*, project:projects(project_name)').eq('company_id', companyId!).order('contract_number', { ascending: false });
+      if (error) throw error; return data || [];
+    },
+    enabled: !!companyId,
+  });
+}
+export function useProjectsList(companyId: string | null) {
+  return useQuery({
+    queryKey: ['projects-list', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('projects').select('id, project_name, project_code').eq('company_id', companyId!).order('project_name');
+      if (error) throw error; return data || [];
+    },
+    enabled: !!companyId,
+  });
+}
+export function useContractsList(companyId: string | null) {
+  return useQuery({
+    queryKey: ['contracts-list', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('contracts').select('id, title, project_id').eq('company_id', companyId!).order('title');
       if (error) throw error; return data || [];
     },
     enabled: !!companyId,
@@ -409,30 +429,30 @@ export function useCreateConstructionContract(companyId: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (form: any) => {
-      const { error } = await (supabase as any).from('construction_contracts').insert({ company_id: companyId!, ...form });
+      const { error } = await supabase.from('contracts').insert({ company_id: companyId!, ...form });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['construction-contracts'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['contracts'] }),
   });
 }
 export function useUpdateConstructionContract() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
-      const { error } = await (supabase as any).from('construction_contracts').update(updates).eq('id', id);
+      const { error } = await supabase.from('contracts').update(updates).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['construction-contracts'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['contracts'] }),
   });
 }
 export function useDeleteConstructionContract() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from('construction_contracts').delete().eq('id', id);
+      const { error } = await supabase.from('contracts').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['construction-contracts'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['contracts'] }),
   });
 }
 
@@ -440,7 +460,7 @@ export function useProgressBillings(companyId: string | null) {
   return useQuery({
     queryKey: ['progress-billings', companyId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from('progress_billings').select('*, project:construction_projects(project_name), contract:construction_contracts(title)').eq('company_id', companyId!).order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('progress_billings').select('*, project:projects(project_name), contract:contracts(title)').eq('company_id', companyId!).order('billing_number', { ascending: false });
       if (error) throw error; return data || [];
     },
     enabled: !!companyId,
@@ -450,7 +470,7 @@ export function useCreateProgressBilling(companyId: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (form: any) => {
-      const { error } = await (supabase as any).from('progress_billings').insert({ company_id: companyId!, ...form });
+      const { error } = await supabase.from('progress_billings').insert({ company_id: companyId!, ...form });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['progress-billings'] }),
@@ -460,7 +480,7 @@ export function useUpdateProgressBilling() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
-      const { error } = await (supabase as any).from('progress_billings').update(updates).eq('id', id);
+      const { error } = await supabase.from('progress_billings').update(updates).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['progress-billings'] }),
@@ -470,9 +490,80 @@ export function useDeleteProgressBilling() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from('progress_billings').delete().eq('id', id);
+      const { error } = await supabase.from('progress_billings').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['progress-billings'] }),
+  });
+}
+
+// ── Custody ──
+export function useCustodyAmountChanges(custodyIds: string[]) {
+  return useQuery({
+    queryKey: ['all-custody-amount-changes', custodyIds],
+    queryFn: async () => {
+      if (custodyIds.length === 0) return [];
+      const { data, error } = await supabase.from('custody_amount_changes').select('custody_id, change_amount').in('custody_id', custodyIds);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: custodyIds.length > 0,
+  });
+}
+export function useCustodyAmountChangesList(custodyId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['custody-amount-changes', custodyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('custody_amount_changes').select('id, old_amount, new_amount, change_amount, changed_at, notes').eq('custody_id', custodyId).order('changed_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: enabled && !!custodyId,
+  });
+}
+export function useCreateCustodyAmountChange() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (entry: { custody_id: string; company_id: string; change_amount: number; old_amount: number; new_amount: number; changed_at: string; notes: string }) => {
+      const { error } = await supabase.from('custody_amount_changes').insert(entry);
+      if (error) throw error;
+      // Also update the custody amount
+      const { error: updateError } = await supabase.from('custodies').update({ amount: entry.new_amount }).eq('id', entry.custody_id);
+      if (updateError) throw updateError;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['custody-amount-changes'] }); qc.invalidateQueries({ queryKey: ['all-custody-amount-changes'] }); qc.invalidateQueries({ queryKey: ['custodies'] }); },
+  });
+}
+export function useDeleteCustodyAmountChange() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('custody_amount_changes').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['custody-amount-changes'] }); qc.invalidateQueries({ queryKey: ['all-custody-amount-changes'] }); qc.invalidateQueries({ queryKey: ['custodies'] }); },
+  });
+}
+export function useCustodyAmountChangesPrint(custodyId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['custody-amount-changes-print', custodyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('custody_amount_changes').select('id, old_amount, new_amount, change_amount, changed_at, notes').eq('custody_id', custodyId).order('changed_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: enabled && !!custodyId,
+  });
+}
+// Custody settlement transactions query
+export function useCustodyTransactionsForSettlement(custodyId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['custody-transactions-settlement', custodyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('custody_transactions').select('*').eq('custody_id', custodyId).order('transaction_date', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: enabled && !!custodyId,
   });
 }
