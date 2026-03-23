@@ -71,7 +71,7 @@ export async function calculateECL(
   const refDateObj = new Date(refDate);
 
   for (const inv of (invoices || [])) {
-    const invDate = new Date(inv.invoice_date || inv.created_at);
+    const invDate = new Date(inv.invoice_date);
     const daysPast = Math.floor((refDateObj.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24));
     const amount = inv.total || 0;
 
