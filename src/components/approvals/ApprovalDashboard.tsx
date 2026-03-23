@@ -369,7 +369,7 @@ export function ApprovalDashboard() {
             </Button>
             <Button
               variant={actionDialog.action === 'approve' ? 'default' : 'destructive'}
-              onClick={() => processAction.mutate({ requestId: actionDialog.requestId, action: actionDialog.action })}
+              onClick={() => processActionMut.mutate({ requestId: actionDialog.requestId, action: actionDialog.action })}
             >
               {actionDialog.action === 'approve' ? (isRtl ? 'موافقة' : 'Approve') : (isRtl ? 'رفض' : 'Reject')}
             </Button>
