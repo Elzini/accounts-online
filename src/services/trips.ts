@@ -84,13 +84,14 @@ export async function getTrip(tripId: string) {
 export async function createTrip(tripData: CreateTripData) {
   const { passengers, ...trip } = tripData;
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { requireUserId } = await import('@/services/companyContext');
+  const userId = await requireUserId();
 
   const { data, error } = await supabase
     .from('trips')
     .insert({
       ...trip,
-      created_by: user?.id,
+      created_by: userId,
     })
     .select()
     .single();
