@@ -68,19 +68,7 @@ export function EmployeeContractsPage() {
     temporary: t.ec_type_temporary,
   };
 
-  const { data: contracts = [], isLoading } = useQuery({
-    queryKey: ['employee-contracts', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employee_contracts')
-        .select('*')
-        .eq('company_id', companyId!)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
+  const { data: contracts = [], isLoading } = useEmployeeContracts(companyId);
 
   const addMutation = useMutation({
     mutationFn: async () => {
