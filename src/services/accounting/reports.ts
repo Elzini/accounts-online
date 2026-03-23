@@ -166,8 +166,8 @@ export async function getIncomeStatement(companyId: string, startDate?: string, 
   if (error) throw error;
 
   const accounts = await fetchAccounts(companyId);
-  const revenueAccounts = accounts.filter(a => a.type === 'revenue');
-  const expenseAccounts = accounts.filter(a => a.type === 'expenses');
+  const revenueAccounts = accounts.filter(a => isAccountType(a.type, 'revenue'));
+  const expenseAccounts = accounts.filter(a => isAccountType(a.type, 'expense'));
 
   const balances = new Map<string, number>();
   (lines || []).forEach((line: any) => {
