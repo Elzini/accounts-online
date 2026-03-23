@@ -12,6 +12,7 @@ import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { useNumberFormat } from '@/hooks/useNumberFormat';
+import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 import { supabase } from '@/integrations/supabase/client';
 import { readExcelFile } from '@/lib/excelUtils';
 import { getSystemFinancialStatements } from '@/services/systemFinancialData';
@@ -90,7 +91,7 @@ export function useFinancialStatements() {
     return numDecimals === 0 ? String(v) : v.toFixed(numDecimals);
   }, [cv, numDecimals]);
 
-  const isCarDealership = false;
+  const { hasCarInventory: isCarDealership } = getIndustryFeatures(company?.company_type || 'general_trading');
 
   const profitReportData = useMemo(() => {
     if (!isCarDealership) {

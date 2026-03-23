@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 
 export interface Backup {
   id: string;
@@ -136,7 +137,7 @@ export async function createBackup(companyId: string, name: string, description?
 
 async function fetchAllData(companyId: string): Promise<BackupData> {
   const companyType = await getCompanyType(companyId);
-  const isCarDealership = companyType === 'car_dealership';
+  const isCarDealership = getIndustryFeatures(companyType).hasCarInventory;
 
   // Universal queries
   const universalQueries = [

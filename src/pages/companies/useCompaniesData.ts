@@ -47,7 +47,7 @@ export interface CompanyFormData {
 }
 
 const defaultFormData: CompanyFormData = {
-  name: '', phone: '', address: '', is_active: true, company_type: 'car_dealership',
+  name: '', phone: '', address: '', is_active: true, company_type: 'general_trading',
 };
 
 export function useCompaniesData() {

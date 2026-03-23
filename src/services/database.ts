@@ -7,6 +7,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { requireCompanyId, toDateOnly } from '@/services/companyContext';
+import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 
 // ── Re-exports from modular services ──
 // Car dealership
@@ -214,7 +215,7 @@ export async function fetchStats(fiscalYearId?: string | null) {
   }
 
   // For car dealerships: use cars + sales tables
-  if (companyType === 'car_dealership') {
+  if (getIndustryFeatures(companyType).hasCarInventory) {
     return fetchCarDealershipStats(companyId, fiscalYearId, fiscalYearStart, fiscalYearEnd, startOfMonth, endOfMonth, today, now, parseLocalISODate);
   }
 
@@ -535,7 +536,7 @@ export async function fetchAllTimeStats() {
   const companyType = companyRecord?.company_type;
 
   // For non-car companies: use invoices
-  if (companyType && companyType !== 'car_dealership') {
+  if (companyType && !getIndustryFeatures(companyType).hasCarInventory) {
     const [purchaseResult, salesResult] = await Promise.all([
       supabase.from('invoices').select('subtotal').eq('company_id', companyId).eq('invoice_type', 'purchase'),
       supabase.from('invoices').select('subtotal').eq('company_id', companyId).eq('invoice_type', 'sales'),
@@ -616,7 +617,7 @@ export async function fetchMonthlyChartData(fiscalYearId?: string) {
 
   let rawData: Array<{ date: string; amount: number; profit: number }> = [];
 
-  if (companyType && companyType !== 'car_dealership') {
+  if (companyType && !getIndustryFeatures(companyType).hasCarInventory) {
     const { data: invoices, error } = await supabase
       .from('invoices')
       .select('invoice_date, subtotal')
