@@ -10,22 +10,14 @@ export const CarDealershipModule: IndustryModule = {
   name: 'معارض السيارات',
   supportedTypes: ['car_dealership'],
 
-  async getDashboardStats(companyId: string, fiscalYearId?: string): Promise<Partial<DashboardStats>> {
-    // This delegates to the existing carDealership service
-    // but returns data in the unified DashboardStats format
-    const { fetchCarDealershipDashboard } = await import('@/services/carDealership');
-    try {
-      const stats = await fetchCarDealershipDashboard(companyId, fiscalYearId);
-      return {
-        extra: {
-          availableNewCars: stats?.availableNewCars || 0,
-          availableUsedCars: stats?.availableUsedCars || 0,
-          availableCars: stats?.availableCars || 0,
-        },
-      };
-    } catch {
-      return { extra: {} };
-    }
+  async getDashboardStats(): Promise<Partial<DashboardStats>> {
+    // Car dealership stats are fetched separately in database.ts
+    // This module just provides the extra metadata
+    return {
+      extra: {
+        moduleType: 'car_dealership',
+      },
+    };
   },
 
   getMenuItems(): MenuItem[] {
