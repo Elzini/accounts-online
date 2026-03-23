@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ActivePage } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { useCompany } from '@/contexts/CompanyContext';
 
 interface SetupGuardProps {
   children: React.ReactNode;
@@ -20,7 +22,9 @@ export function SetupGuard({ children, setActivePage }: SetupGuardProps) {
   const createAccounts = useCreateDefaultAccounts();
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
+  const [isFixingMappings, setIsFixingMappings] = useState(false);
   const isAr = language === 'ar';
+  const { companyId } = useCompany();
 
   if (isLoading) return null; // Don't block while checking
   if (!readiness || readiness.isReady) return <>{children}</>;
@@ -38,6 +42,20 @@ export function SetupGuard({ children, setActivePage }: SetupGuardProps) {
     }
   };
 
+  const handleFixMappings = async () => {
+    if (!companyId) return;
+    setIsFixingMappings(true);
+    try {
+      await supabase.rpc('populate_account_mappings', { p_company_id: companyId });
+      await queryClient.invalidateQueries({ queryKey: ['company-readiness'] });
+      toast.success(isAr ? '✅ تم ربط الحسابات بنجاح' : '✅ Account mappings created');
+    } catch (e) {
+      toast.error(isAr ? 'حدث خطأ' : 'Error occurred');
+    } finally {
+      setIsFixingMappings(false);
+    }
+  };
+
   const steps = [
     {
       key: 'accounts',
@@ -46,6 +64,14 @@ export function SetupGuard({ children, setActivePage }: SetupGuardProps) {
       action: handleCreateAccounts,
       actionLabel: isAr ? 'إنشاء تلقائي' : 'Create Automatically',
       loading: isCreating,
+    },
+    {
+      key: 'account_mappings',
+      label: isAr ? 'ربط الحسابات بالعمليات' : 'Account Mappings',
+      done: readiness.hasAccountMappings,
+      action: handleFixMappings,
+      actionLabel: isAr ? 'ربط تلقائي' : 'Auto-Map',
+      loading: isFixingMappings,
     },
     {
       key: 'fiscal_year',
