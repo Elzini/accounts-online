@@ -291,21 +291,16 @@ export async function completeUnitSale(params: {
   // --- Entry 2: COGS Transfer ---
   let cogsEntryId = '';
   if (unitCost > 0) {
-    const cogsEntry = await createJournalEntry(
-      {
-        company_id: companyId,
-        entry_date: new Date().toISOString().split('T')[0],
-        description: `تحويل تكلفة وحدة مباعة ${unitNumber} - ${projectName} إلى تكلفة المبيعات`,
-        status: 'posted',
-        reference_type: 'unit_sale_cogs',
-        reference_id: unitId,
-        fiscal_year_id: fiscalYearId || null,
-      } as any,
-      [
-        { account_id: cogsId, description: `تكلفة وحدة مباعة ${unitNumber}`, debit: unitCost, credit: 0 },
-        { account_id: projectCostId, description: `تخفيض تكلفة مشروع ${projectName}`, debit: 0, credit: unitCost },
-      ]
-    );
+    const cogsEntry = await createEngineEntry(companyId, {
+      entry_date: new Date().toISOString().split('T')[0],
+      description: `تحويل تكلفة وحدة مباعة ${unitNumber} - ${projectName} إلى تكلفة المبيعات`,
+      reference_type: 'unit_sale_cogs',
+      reference_id: unitId,
+      fiscal_year_id: fiscalYearId,
+    }, [
+      { account_id: cogsId, description: `تكلفة وحدة مباعة ${unitNumber}`, debit: unitCost, credit: 0 },
+      { account_id: projectCostId, description: `تخفيض تكلفة مشروع ${projectName}`, debit: 0, credit: unitCost },
+    ]);
     cogsEntryId = cogsEntry.id;
   }
 
