@@ -1,7 +1,7 @@
-import { forwardRef, useMemo } from 'react';
+import { forwardRef } from 'react';
 import { format } from 'date-fns';
 import { QRCodeSVG } from 'qrcode.react';
-import { generateZatcaQRData, formatDateTimeForZatca } from '@/lib/zatcaQR';
+import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import { numberToArabicWords } from '@/lib/numberToArabicWords';
 import logoImage from '@/assets/logo.png';
 import { InvoiceTemplateData } from './types';
@@ -22,12 +22,13 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
   const companyName = taxSettings?.company_name_ar || sellerName;
   const companyAddress = taxSettings?.national_address || sellerAddress || '';
 
-  const qrData = useMemo(() => generateZatcaQRData({
+  const qrData = useZatcaPhase2QR({
     sellerName: invoiceType === 'sale' ? companyName : sellerName,
     vatNumber: vatNumber || '300000000000003',
-    invoiceDateTime: formatDateTimeForZatca(invoiceDate),
+    invoiceDateTime: invoiceDate,
     invoiceTotal: total, vatAmount: taxAmount,
-  }), [companyName, sellerName, vatNumber, invoiceDate, total, taxAmount]);
+    invoiceNumber,
+  });
 
   const itemsWithTax = items.map(item => ({
     ...item,

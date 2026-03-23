@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { QRCodeSVG } from 'qrcode.react';
 import { TaxSettings } from '@/services/accounting';
-import { generateZatcaQRData, formatDateTimeForZatca } from '@/lib/zatcaQR';
+import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import logoImage from '@/assets/logo.png';
 
 interface InvoiceItem {
@@ -117,16 +117,14 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
 
     const isVatValid = qrVatNumber && qrVatNumber.replace(/\D/g, '').length === 15;
 
-    const qrData = useMemo(() => {
-      // إنشاء بيانات QR حتى لو لم يكن الرقم الضريبي صحيحاً
-      return generateZatcaQRData({
-        sellerName: qrSellerName,
-        vatNumber: qrVatNumber || '300000000000003', // رقم افتراضي للعرض
-        invoiceDateTime: formatDateTimeForZatca(invoiceDate),
-        invoiceTotal: total,
-        vatAmount: taxAmount,
-      });
-    }, [qrSellerName, qrVatNumber, invoiceDate, total, taxAmount]);
+    const qrData = useZatcaPhase2QR({
+      sellerName: qrSellerName,
+      vatNumber: qrVatNumber || '300000000000003',
+      invoiceDateTime: invoiceDate,
+      invoiceTotal: total,
+      vatAmount: taxAmount,
+      invoiceNumber: String(invoiceNumber || ''),
+    });
 
     const itemsWithTax = items.map(item => ({
       ...item,
