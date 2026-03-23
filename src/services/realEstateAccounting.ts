@@ -86,21 +86,16 @@ export async function recordProjectCost(params: {
   if (!projectCostAccountId) throw new Error('حساب المشاريع تحت التطوير (1301) غير موجود');
   if (!paymentAccountId) throw new Error('حساب الدفع غير موجود');
 
-  const entry = await createJournalEntry(
-    {
-      company_id: companyId,
-      entry_date: new Date().toISOString().split('T')[0],
-      description: `تكلفة مشروع: ${projectName} - ${description}`,
-      status: 'posted',
-      reference_type: 'project_cost',
-      reference_id: projectId,
-      fiscal_year_id: fiscalYearId || null,
-    } as any,
-    [
-      { account_id: projectCostAccountId, description: `تكلفة ${costType} - ${projectName}`, debit: amount, credit: 0 },
-      { account_id: paymentAccountId, description: `دفع تكلفة ${costType}`, debit: 0, credit: amount },
-    ]
-  );
+  const entry = await createEngineEntry(companyId, {
+    entry_date: new Date().toISOString().split('T')[0],
+    description: `تكلفة مشروع: ${projectName} - ${description}`,
+    reference_type: 'project_cost',
+    reference_id: projectId,
+    fiscal_year_id: fiscalYearId,
+  }, [
+    { account_id: projectCostAccountId, description: `تكلفة ${costType} - ${projectName}`, debit: amount, credit: 0 },
+    { account_id: paymentAccountId, description: `دفع تكلفة ${costType}`, debit: 0, credit: amount },
+  ]);
 
   const { data: costRecord, error: costError } = await supabase
     .from('project_costs')
