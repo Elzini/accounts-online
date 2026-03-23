@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentCompanyId } from '@/services/companyContext';
+import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 
 export interface AdvancedStats {
   // Trend comparisons
