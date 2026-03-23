@@ -619,11 +619,7 @@ export function Sidebar({
       <div className="p-3 border-t border-sidebar-border/50 space-y-2">
         <LanguageSwitcher variant="sidebar" />
         <p className="text-[10px] text-center text-sidebar-foreground/30 font-medium">
-          {companyType === 'construction' ? t.nav_system_footer_construction :
-            companyType === 'general_trading' ? t.nav_system_footer_trading :
-              companyType === 'restaurant' ? t.nav_system_footer_restaurant :
-                companyType === 'export_import' ? t.nav_system_footer_export_import :
-                  t.nav_system_footer_car} © 2026
+          {language === 'ar' ? displayMeta.footerText : displayMeta.footerTextEn} © 2026
         </p>
       </div>
     </aside>
