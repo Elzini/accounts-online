@@ -17,25 +17,10 @@ const actionConfig: Record<string, { icon: any; color: string; label: string }> 
 };
 
 export function UserActivityLog() {
-  const { companyId } = useCompany();
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState<string>('all');
 
-  const { data: logs = [], isLoading } = useQuery({
-    queryKey: ['user-activity-log', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false })
-        .limit(300);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
+  const { data: logs = [], isLoading } = useUserActivityLog();
 
   const filtered = logs.filter((log: any) => {
     const matchSearch = !search || log.entity_type?.includes(search) || log.action?.includes(search) || log.user_id?.includes(search);
