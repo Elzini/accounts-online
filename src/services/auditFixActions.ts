@@ -174,7 +174,7 @@ export function createFixMissingTaxSettings(companyId: string): AuditFixAction {
 }
 
 // ===== Fix: Initialize COA from templates =====
-export function createFixMissingCOA(companyId: string, companyType: 'car_dealership' | 'construction' | 'export_import' | 'general_trading' | 'restaurant'): AuditFixAction {
+export function createFixMissingCOA(companyId: string, companyType: string): AuditFixAction {
   return {
     id: 'fix-missing-coa',
     label: 'إنشاء شجرة حسابات من القالب',
