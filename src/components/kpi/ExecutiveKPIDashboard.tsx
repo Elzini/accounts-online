@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/hooks/modules/useReportsServices';
+import { fetchKPITargets, saveKPITargets, fetchCarKPIMetrics, fetchInvoiceKPIMetrics } from '@/services/kpi/kpiService';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { toast } from 'sonner';
