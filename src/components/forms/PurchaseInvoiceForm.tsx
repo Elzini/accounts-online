@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { 
   Save, Plus, X, Printer, FileText, Trash2,
   Car, ArrowRight, RotateCcw, Package,
@@ -13,1038 +13,47 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
-import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { useSuppliers, useAddPurchaseBatch, useCars, useUpdateCar, useDeleteCar, usePurchaseBatches } from '@/hooks/useDatabase';
-import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { PurchaseInvoiceDialog } from '@/components/invoices/PurchaseInvoiceDialog';
-import { useCompany } from '@/contexts/CompanyContext';
-import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { PaymentAccountSelector } from './PaymentAccountSelector';
 import { ProjectSelector } from './ProjectSelector';
 import { InvoiceSearchBar } from './InvoiceSearchBar';
-import { useItems, useUnits } from '@/hooks/useInventory';
-import { useCompanyId } from '@/hooks/useCompanyId';
-import { supabase } from '@/integrations/supabase/client';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useNumberFormat } from '@/hooks/useNumberFormat';
-import { PurchaseInvoiceAIImport, ParsedInvoiceData, BatchParsedResult } from './PurchaseInvoiceAIImport';
-import { useCostCenters } from '@/hooks/useCostCenters';
-import { CarItem, PurchaseInventoryItem } from './purchase-invoice/types';
-import { handleBatchImport } from './purchase-invoice/batchImport';
-import { getNextInvoiceNumber } from '@/utils/invoiceNumberGenerator';
-import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
+import { PurchaseInvoiceAIImport } from './PurchaseInvoiceAIImport';
 import {
   InvoiceNavHeader, InvoiceTotalsSection, InvoiceActionBar,
   InvoiceDeleteDialog, InvoiceReverseDialog,
-  formatInvoiceCurrency,
 } from './shared-invoice';
+import { usePurchaseInvoice } from '@/hooks/usePurchaseInvoice';
 
 interface PurchaseInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
 }
 
-// Types are now imported from ./purchase-invoice/types
-
 export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps) {
-  const { data: suppliers = [] } = useSuppliers();
-  const { data: taxSettings } = useTaxSettings();
-  const { data: accounts = [] } = useAccounts();
-  const { data: existingCars = [] } = useCars();
-  const { data: purchaseBatches = [] } = usePurchaseBatches();
-  const { company } = useCompany();
-  const { selectedFiscalYear } = useFiscalYear();
-  const { data: costCenters = [] } = useCostCenters();
-  const addPurchaseBatch = useAddPurchaseBatch();
-  const updateCar = useUpdateCar();
-  const deleteCar = useDeleteCar();
-  const companyId = useCompanyId();
-  const { t, language } = useLanguage();
-  const { decimals } = useNumberFormat();
-  const queryClient = useQueryClient();
-
-  // Inventory hooks
-  const { data: inventoryItems = [] } = useItems();
-  const { data: units = [] } = useUnits();
-  const isCarDealership = useIndustryFeatures().hasCarInventory;
-  const locale = language === 'ar' ? 'ar-SA' : 'en-SA';
-  const currency = t.inv_sar;
-
-  const createEmptyCar = (): CarItem => ({
-    id: crypto.randomUUID(),
-    chassis_number: '',
-    plate_number: '',
-    name: '',
-    model: '',
-    color: '',
-    purchase_price: '',
-    quantity: 1,
-    unit: t.inv_car_unit,
-    car_condition: 'new',
-  });
-
-  // Inventory items state for non-car companies
-  const [purchaseInventoryItems, setPurchaseInventoryItems] = useState<PurchaseInventoryItem[]>([]);
-
-  const createEmptyInventoryItem = (): PurchaseInventoryItem => ({
-    id: crypto.randomUUID(),
-    item_id: null,
-    item_name: '',
-    barcode: '',
-    unit_name: t.inv_unit,
-    unit_id: null,
-    purchase_price: '',
-    quantity: 1,
-  });
-
-  const handleAddInventoryItem = () => {
-    setPurchaseInventoryItems([...purchaseInventoryItems, createEmptyInventoryItem()]);
-  };
-
-  const handleSelectExistingItem = (itemId: string) => {
-    const item = (inventoryItems || []).find((i: any) => i.id === itemId) as any;
-    if (!item) return;
-    setPurchaseInventoryItems([...purchaseInventoryItems, {
-      id: crypto.randomUUID(),
-      item_id: item.id,
-      item_name: item.name,
-      barcode: item.barcode || '',
-      unit_name: item.units_of_measure?.abbreviation || item.units_of_measure?.name || t.inv_unit,
-      unit_id: item.unit_id,
-      purchase_price: String(item.cost_price || ''),
-      quantity: 1,
-    }]);
-  };
-
-  const handleRemoveInventoryItem = (id: string) => {
-    if (purchaseInventoryItems.length === 1) {
-      toast.error(t.inv_toast_min_one_item);
-      return;
-    }
-    setPurchaseInventoryItems(purchaseInventoryItems.filter(i => i.id !== id));
-  };
-
-  const handleInventoryItemChange = (id: string, field: keyof PurchaseInventoryItem, value: string | number) => {
-    setPurchaseInventoryItems(purchaseInventoryItems.map(item =>
-      item.id === id ? { ...item, [field]: value } : item
-    ));
-  };
-
-  // Filter purchase batches by fiscal year and sort
-  const fiscalYearFilteredBatches = useMemo(() => {
-    let filtered = purchaseBatches;
-    
-    if (selectedFiscalYear) {
-      const fyStart = new Date(selectedFiscalYear.start_date);
-      fyStart.setHours(0, 0, 0, 0);
-      const fyEnd = new Date(selectedFiscalYear.end_date);
-      fyEnd.setHours(23, 59, 59, 999);
-      
-      filtered = purchaseBatches.filter(batch => {
-        const purchaseDate = new Date(batch.purchase_date);
-        return purchaseDate >= fyStart && purchaseDate <= fyEnd;
-      });
-    }
-    
-    return [...filtered].sort((a, b) => {
-      const dateA = new Date(a.purchase_date).getTime();
-      const dateB = new Date(b.purchase_date).getTime();
-      if (dateA !== dateB) return dateA - dateB;
-      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-    });
-  }, [purchaseBatches, selectedFiscalYear]);
-
-  const fiscalYearFilteredCars = useMemo(() => {
-    if (!selectedFiscalYear) return existingCars;
-    
-    const fyStart = new Date(selectedFiscalYear.start_date);
-    fyStart.setHours(0, 0, 0, 0);
-    const fyEnd = new Date(selectedFiscalYear.end_date);
-    fyEnd.setHours(23, 59, 59, 999);
-    
-    return existingCars.filter(car => {
-      const purchaseDate = new Date(car.purchase_date);
-      return purchaseDate >= fyStart && purchaseDate <= fyEnd;
-    });
-  }, [existingCars, selectedFiscalYear]);
-
-  const { data: purchaseInvoices = [] } = useQuery({
-    queryKey: ['purchase-invoices-nav', companyId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('invoices')
-        .select('*, invoice_items(*), supplier:suppliers!invoices_supplier_id_fkey(name, id_number)')
-        .eq('company_id', companyId!)
-        .eq('invoice_type', 'purchase')
-        .order('invoice_date', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!companyId && !isCarDealership,
-  });
-
-  const filteredPurchaseInvoices = useMemo(() => {
-    if (isCarDealership) return [];
-    let filtered = purchaseInvoices;
-    if (selectedFiscalYear) {
-      const fyStart = new Date(selectedFiscalYear.start_date);
-      fyStart.setHours(0, 0, 0, 0);
-      const fyEnd = new Date(selectedFiscalYear.end_date);
-      fyEnd.setHours(23, 59, 59, 999);
-      filtered = purchaseInvoices.filter((inv: any) => {
-        const d = new Date(inv.invoice_date);
-        return d >= fyStart && d <= fyEnd;
-      });
-    }
-    return filtered;
-  }, [purchaseInvoices, selectedFiscalYear, isCarDealership]);
-
-  // Unified navigation records
-  const navigationRecords = useMemo(() => {
-    return isCarDealership ? fiscalYearFilteredBatches : filteredPurchaseInvoices;
-  }, [isCarDealership, fiscalYearFilteredBatches, filteredPurchaseInvoices]);
-
-  const nextInvoiceNumber = useMemo(() => {
-    if (isCarDealership) {
-      return purchaseBatches.length + 1;
-    }
-
-    const maxInvoiceNumber = filteredPurchaseInvoices.reduce((max: number, inv: any) => {
-      const parsed = parseInt(String(inv.invoice_number || ''), 10);
-      return Number.isNaN(parsed) ? max : Math.max(max, parsed);
-    }, 0);
-
-    return maxInvoiceNumber + 1;
-  }, [isCarDealership, purchaseBatches, filteredPurchaseInvoices]);
-
-  const [invoiceData, setInvoiceData] = useState({
-    invoice_number: '',
-    supplier_id: '',
-    purchase_date: new Date().toISOString().split('T')[0],
-    due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    payment_account_id: '',
-    warehouse: 'main',
-    notes: '',
-    price_includes_tax: false,
-    project_id: null as string | null,
-    cost_center_id: null as string | null,
-    payment_status: 'unpaid' as string,
-    supplier_invoice_number: '',
-  });
-
-  useEffect(() => {
-    if (accounts.length > 0 && !invoiceData.payment_account_id) {
-      const cashAccount = accounts.find(a => a.code === '1101');
-      if (cashAccount) {
-        setInvoiceData(prev => ({ ...prev, payment_account_id: cashAccount.id }));
-      }
-    }
-  }, [accounts, invoiceData.payment_account_id]);
-
-  const [cars, setCars] = useState<CarItem[]>([createEmptyCar()]);
-  const [invoiceOpen, setInvoiceOpen] = useState(false);
-  const [savedBatchData, setSavedBatchData] = useState<any>(null);
-  const [discount, setDiscount] = useState(0);
-  const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('amount');
-  const [currentInvoiceIndex, setCurrentInvoiceIndex] = useState(0);
-  const [isViewingExisting, setIsViewingExisting] = useState(false);
-  const [currentBatchId, setCurrentBatchId] = useState<string | null>(null);
-  const [currentInvoiceStatus, setCurrentInvoiceStatus] = useState<string>('draft');
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const searchBarRef = useRef<HTMLDivElement>(null);
-  const [aiImportOpen, setAiImportOpen] = useState(false);
-  // Store header totals from DB for existing invoices (to use when items don't match)
-  const [storedHeaderTotals, setStoredHeaderTotals] = useState<{
-    subtotal: number; vat_amount: number; total: number;
-  } | null>(null);
-
-  // Navigate to a specific invoice if viewPurchaseInvoiceId is set in sessionStorage
-  const initialNavDone = useRef(false);
-  useEffect(() => {
-    if (initialNavDone.current) return;
-    const targetId = sessionStorage.getItem('viewPurchaseInvoiceId');
-    if (targetId && navigationRecords.length > 0) {
-      sessionStorage.removeItem('viewPurchaseInvoiceId');
-      initialNavDone.current = true;
-      const idx = navigationRecords.findIndex((r: any) => r.id === targetId);
-      if (idx >= 0) {
-        setCurrentInvoiceIndex(idx);
-        loadRecordData(navigationRecords[idx]);
-      }
-    }
-  }, [navigationRecords]);
-
-  const selectedSupplier = suppliers.find(s => s.id === invoiceData.supplier_id);
-  const taxRate = taxSettings?.is_active && taxSettings?.apply_to_purchases ? (taxSettings?.tax_rate || 15) : 0;
-
-  const handleAddCar = () => {
-    setCars([...cars, createEmptyCar()]);
-  };
-
-  const handleRemoveCar = (id: string) => {
-    if (cars.length === 1) {
-      toast.error(t.inv_toast_min_one_car);
-      return;
-    }
-    setCars(cars.filter(car => car.id !== id));
-  };
-
-  const handleCarChange = (id: string, field: keyof CarItem, value: string | number) => {
-    setCars(cars.map(car => 
-      car.id === id ? { ...car, [field]: value } : car
-    ));
-  };
-
-  const calculations = useMemo(() => {
-    let subtotal = 0;
-    let totalVAT = 0;
-
-    const calcItem = (price: number, quantity: number, itemTaxRate?: number) => {
-      const effectiveTaxRate = itemTaxRate ?? taxRate;
-      let baseAmount: number, vatAmount: number, total: number;
-      if (invoiceData.price_includes_tax && effectiveTaxRate > 0) {
-        total = price * quantity;
-        baseAmount = total / (1 + effectiveTaxRate / 100);
-        vatAmount = total - baseAmount;
-      } else {
-        baseAmount = price * quantity;
-        vatAmount = baseAmount * (effectiveTaxRate / 100);
-        total = baseAmount + vatAmount;
-      }
-      subtotal += baseAmount;
-      totalVAT += vatAmount;
-      return { baseAmount, vatAmount, total };
-    };
-
-    // Car items - used cars have 0% tax
-    const itemsWithCalc = cars.map(car => {
-      const price = parseFloat(car.purchase_price) || 0;
-      const effectiveTaxRate = car.car_condition === 'used' ? 0 : taxRate;
-      const result = calcItem(price, car.quantity || 1, effectiveTaxRate);
-      return { ...car, ...result };
-    });
-
-    const inventoryItemsWithCalc = purchaseInventoryItems.map(item => {
-      const price = parseFloat(item.purchase_price) || 0;
-      const result = calcItem(price, item.quantity || 1);
-      return { ...item, ...result };
-    });
-
-    let discountAmount = 0;
-    if (discountType === 'percentage') {
-      discountAmount = subtotal * (discount / 100);
-    } else {
-      discountAmount = discount;
-    }
-
-    const subtotalAfterDiscount = subtotal - discountAmount;
-    const finalTotal = subtotalAfterDiscount + totalVAT;
-
-    return {
-      items: itemsWithCalc,
-      inventoryItems: inventoryItemsWithCalc,
-      subtotal,
-      discountAmount,
-      subtotalAfterDiscount,
-      totalVAT,
-      finalTotal,
-      roundedTotal: finalTotal,
-    };
-  }, [cars, purchaseInventoryItems, invoiceData.price_includes_tax, taxRate, discount, discountType]);
-
-  // Use stored header totals for display when viewing existing invoices with mismatched items
-  const displayTotals = useMemo(() => {
-    if (isViewingExisting && !isEditing && storedHeaderTotals && storedHeaderTotals.total > 0) {
-      // Always use stored header values for existing invoices (frozen financial snapshot)
-      return {
-        subtotal: storedHeaderTotals.subtotal,
-        totalVAT: storedHeaderTotals.vat_amount,
-        finalTotal: storedHeaderTotals.total,
-        discountAmount: calculations.discountAmount,
-        subtotalAfterDiscount: storedHeaderTotals.subtotal - calculations.discountAmount,
-      };
-    }
-    return {
-      subtotal: calculations.subtotal,
-      totalVAT: calculations.totalVAT,
-      finalTotal: calculations.finalTotal,
-      discountAmount: calculations.discountAmount,
-      subtotalAfterDiscount: calculations.subtotalAfterDiscount,
-    };
-  }, [calculations, storedHeaderTotals, isViewingExisting, isEditing]);
-
-  const formatCurrency = (value: number) => formatInvoiceCurrency(value, decimals);
-
-  const handleSubmit = async () => {
-    if (!invoiceData.supplier_id) {
-      toast.error(t.inv_toast_select_supplier);
-      return;
-    }
-
-    if (isCarDealership) {
-      const invalidCar = cars.find(car => 
-        !car.chassis_number || !car.name || !car.purchase_price
-      );
-      if (invalidCar) {
-        toast.error(t.inv_toast_fill_fields);
-        return;
-      }
-
-      const chassisNumbers = cars.map(car => car.chassis_number);
-      const duplicates = chassisNumbers.filter((item, index) => chassisNumbers.indexOf(item) !== index);
-      if (duplicates.length > 0) {
-        toast.error(t.inv_toast_duplicate_chassis);
-        return;
-      }
-
-      try {
-        const carsWithPrices = calculations.items.map((car, index) => ({
-          chassis_number: cars[index].chassis_number,
-          plate_number: cars[index].plate_number || null,
-          name: cars[index].name,
-          model: cars[index].model || null,
-          color: cars[index].color || null,
-          purchase_price: car.baseAmount / (cars[index].quantity || 1),
-          fiscal_year_id: selectedFiscalYear?.id ?? null,
-          car_condition: cars[index].car_condition || 'new',
-        }));
-
-        const result = await addPurchaseBatch.mutateAsync({
-          batch: {
-            supplier_id: invoiceData.supplier_id,
-            purchase_date: invoiceData.purchase_date,
-            notes: invoiceData.notes || null,
-            payment_account_id: invoiceData.payment_account_id || undefined,
-          },
-          cars: carsWithPrices,
-        });
-        
-        setSavedBatchData({
-          ...result,
-          supplier: selectedSupplier,
-          cars: cars,
-        });
-        
-        toast.success(t.inv_toast_purchase_success);
-        setInvoiceOpen(true);
-      } catch (error: any) {
-        if (error.message?.includes('duplicate')) {
-          toast.error(t.inv_toast_duplicate_exists);
-        } else {
-          console.error('Purchase batch error:', error);
-          toast.error(t.inv_toast_purchase_error);
-        }
-      }
-    } else {
-      if (purchaseInventoryItems.length === 0) {
-        toast.error(t.inv_toast_add_item);
-        return;
-      }
-      const emptyNameItem = purchaseInventoryItems.find(i => !i.item_name?.trim());
-      if (emptyNameItem) {
-        toast.error('الرجاء إدخال اسم الصنف لجميع العناصر');
-        return;
-      }
-      const invalidItem = purchaseInventoryItems.find(i => !i.purchase_price || parseFloat(i.purchase_price) <= 0);
-      if (invalidItem) {
-        toast.error(t.inv_toast_enter_item_price);
-        return;
-      }
-
-      try {
-        if (!companyId) throw new Error(t.inv_toast_company_not_found);
-        const invoiceNumber = await getNextInvoiceNumber(companyId, 'purchase');
-
-        const { data: invoice, error: invoiceError } = await supabase
-          .from('invoices')
-          .insert({
-            company_id: companyId,
-            invoice_number: invoiceData.invoice_number || invoiceNumber,
-            invoice_type: 'purchase',
-            supplier_id: invoiceData.supplier_id,
-            customer_name: selectedSupplier?.name || '',
-            invoice_date: invoiceData.purchase_date,
-            due_date: invoiceData.due_date,
-            subtotal: calculations.subtotal,
-            taxable_amount: calculations.subtotalAfterDiscount,
-            vat_rate: taxRate,
-            vat_amount: calculations.totalVAT,
-            total: calculations.finalTotal,
-            discount_amount: calculations.discountAmount,
-            amount_paid: invoiceData.payment_status === 'paid' ? calculations.finalTotal : 0,
-            payment_status: invoiceData.payment_status || 'unpaid',
-            status: 'draft',
-            fiscal_year_id: selectedFiscalYear?.id || null,
-            notes: invoiceData.notes || null,
-            project_id: invoiceData.project_id || null,
-            supplier_invoice_number: invoiceData.supplier_invoice_number || null,
-            payment_account_id: invoiceData.payment_account_id || null,
-          })
-          .select()
-          .single();
-
-        if (invoiceError) throw invoiceError;
-
-        const invoiceItems = purchaseInventoryItems.map((item, index) => ({
-          invoice_id: invoice.id,
-          item_description: item.item_name,
-          item_code: item.barcode || '',
-          quantity: item.quantity,
-          unit: item.unit_name,
-          unit_price: calculations.inventoryItems[index].baseAmount / item.quantity,
-          taxable_amount: calculations.inventoryItems[index].baseAmount,
-          vat_rate: taxRate,
-          vat_amount: calculations.inventoryItems[index].vatAmount,
-          total: calculations.inventoryItems[index].total,
-          inventory_item_id: item.item_id,
-        }));
-
-        const { error: itemsError } = await supabase.from('invoice_items').insert(invoiceItems);
-        if (itemsError) throw itemsError;
-
-        setSavedBatchData({ batch: { id: invoice.id }, supplier: selectedSupplier, inventoryItems: purchaseInventoryItems });
-        
-        // Invalidate all related queries so data appears in tables, dashboard, and reports
-        queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
-        queryClient.invalidateQueries({ queryKey: ['purchase-invoices-nav', companyId] });
-        queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
-        queryClient.invalidateQueries({ queryKey: ['invoices'] });
-        queryClient.invalidateQueries({ queryKey: ['purchases-report'] });
-        queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
-        queryClient.invalidateQueries({ queryKey: ['stats'] });
-        queryClient.invalidateQueries({ queryKey: ['advanced-analytics'] });
-        queryClient.invalidateQueries({ queryKey: ['monthly-chart-data'] });
-        queryClient.invalidateQueries({ queryKey: ['dashboard-recent-invoices'] });
-
-        toast.success(t.inv_toast_purchase_inv_success);
-        setInvoiceOpen(true);
-      } catch (error: any) {
-        console.error('Purchase invoice error:', error);
-        toast.error(t.inv_toast_purchase_inv_error);
-      }
-    }
-  };
-
-  const handleNewInvoice = () => {
-    setInvoiceData({
-      invoice_number: '',
-      supplier_id: '',
-      purchase_date: new Date().toISOString().split('T')[0],
-      due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      payment_account_id: accounts.find(a => a.code === '1101')?.id || '',
-      warehouse: 'main',
-      notes: '',
-      price_includes_tax: false,
-      project_id: null,
-      cost_center_id: null,
-      payment_status: 'unpaid',
-      supplier_invoice_number: '',
-    });
-    setCars([createEmptyCar()]);
-    setDiscount(0);
-    setSavedBatchData(null);
-    setIsViewingExisting(false);
-    setCurrentBatchId(null);
-    setIsEditing(false);
-    setStoredHeaderTotals(null);
-  };
+  const inv = usePurchaseInvoice();
+  const {
+    suppliers, accounts, taxSettings, costCenters, inventoryItems, company,
+    invoiceData, setInvoiceData, cars, purchaseInventoryItems,
+    invoiceOpen, setInvoiceOpen, savedBatchData, discount, setDiscount,
+    discountType, setDiscountType, isViewingExisting,
+    deleteDialogOpen, setDeleteDialogOpen,
+    reverseDialogOpen, setReverseDialogOpen, isEditing, setIsEditing,
+    aiImportOpen, setAiImportOpen, searchBarRef,
+    isCarDealership, selectedSupplier, taxRate, calculations, displayTotals,
+    navigationRecords, nextInvoiceNumber, invoicePreviewData, fiscalYearFilteredCars,
+    locale, currency, language, t, companyId, currentInvoiceIndex,
+    handleAddCar, handleRemoveCar, handleCarChange,
+    handleAddInventoryItem, handleSelectExistingItem, handleRemoveInventoryItem, handleInventoryItemChange,
+    handleFirstPurchase, handlePreviousPurchase, handleNextPurchase, handleLastPurchase,
+    handleNewInvoice, handleSubmit, handleDeletePurchase, handleReversePurchase,
+    handleUpdatePurchase, handlePrintExisting, handleAIImport, onBatchImport,
+    loadRecordData, formatCurrency,
+    addPurchaseBatch, updateCar,
+  } = inv;
 
   const handleCloseInvoice = (open: boolean) => {
     setInvoiceOpen(open);
-    if (!open) {
-      setActivePage('purchases');
-    }
+    if (!open) setActivePage('purchases');
   };
-
-  const handleFirstPurchase = () => {
-    if (navigationRecords.length > 0) {
-      setCurrentInvoiceIndex(0);
-      loadRecordData(navigationRecords[0]);
-    }
-  };
-
-  const handlePreviousPurchase = () => {
-    if (currentInvoiceIndex > 0) {
-      const newIndex = currentInvoiceIndex - 1;
-      setCurrentInvoiceIndex(newIndex);
-      loadRecordData(navigationRecords[newIndex]);
-    }
-  };
-
-  const handleNextPurchase = () => {
-    if (currentInvoiceIndex < navigationRecords.length - 1) {
-      const newIndex = currentInvoiceIndex + 1;
-      setCurrentInvoiceIndex(newIndex);
-      loadRecordData(navigationRecords[newIndex]);
-    }
-  };
-
-  const handleLastPurchase = () => {
-    if (navigationRecords.length > 0) {
-      const lastIndex = navigationRecords.length - 1;
-      setCurrentInvoiceIndex(lastIndex);
-      loadRecordData(navigationRecords[lastIndex]);
-    }
-  };
-
-  const loadRecordData = (record: any) => {
-    setIsViewingExisting(true);
-    setCurrentBatchId(record.id);
-    setCurrentInvoiceStatus(record.status || 'draft');
-    setIsEditing(false);
-
-    if (isCarDealership) {
-      // Load batch data for car dealerships
-      setInvoiceData({
-        invoice_number: String(currentInvoiceIndex + 1),
-        supplier_id: record.supplier_id || '',
-        purchase_date: record.purchase_date,
-        due_date: record.purchase_date,
-        payment_account_id: record.payment_account_id || '',
-        warehouse: 'main',
-        notes: record.notes || '',
-        price_includes_tax: false,
-        project_id: null,
-        cost_center_id: null,
-        payment_status: 'unpaid',
-        supplier_invoice_number: '',
-      });
-
-      const batchCars = record.cars || [];
-      if (batchCars.length > 0) {
-        setCars(batchCars.map((car: any) => ({
-          id: crypto.randomUUID(),
-          chassis_number: car.chassis_number,
-          plate_number: car.plate_number || '',
-          name: car.name,
-          model: car.model || '',
-          color: car.color || '',
-          purchase_price: String(car.purchase_price),
-          quantity: 1,
-          unit: t.inv_car_unit,
-          car_condition: ((car.car_condition || 'new') as 'new' | 'used'),
-        })));
-      } else {
-        setCars([createEmptyCar()]);
-      }
-    } else {
-      // Load invoice data for non-car companies
-      setInvoiceData({
-        invoice_number: String(record.invoice_number || ''),
-        supplier_id: record.supplier_id || '',
-        purchase_date: record.invoice_date || '',
-        due_date: record.due_date || record.invoice_date || '',
-        payment_account_id: record.payment_account_id || '',
-        warehouse: 'main',
-        notes: record.notes || '',
-        price_includes_tax: false,
-        project_id: record.project_id || null,
-        cost_center_id: null,
-        payment_status: record.payment_status || 'unpaid',
-        supplier_invoice_number: record.supplier_invoice_number || '',
-      });
-
-      const items = record.invoice_items || [];
-      if (items.length > 0) {
-        setPurchaseInventoryItems(items.map((item: any) => ({
-          id: crypto.randomUUID(),
-          item_id: item.inventory_item_id || null,
-          item_name: item.item_description || '',
-          barcode: item.item_code || '',
-          unit_name: item.unit || t.inv_unit,
-          unit_id: null,
-          purchase_price: String(item.unit_price || ''),
-          quantity: item.quantity || 1,
-        })));
-      } else {
-        setPurchaseInventoryItems([createEmptyInventoryItem()]);
-      }
-
-      if (record.discount_amount && record.discount_amount > 0) {
-        setDiscount(record.discount_amount);
-        setDiscountType('amount');
-      } else {
-        setDiscount(0);
-      }
-
-      // Store header totals from the database record
-      setStoredHeaderTotals({
-        subtotal: record.subtotal || 0,
-        vat_amount: record.vat_amount || 0,
-        total: record.total || 0,
-      });
-    }
-  };
-
-  const handleDeletePurchase = async () => {
-    if (!currentBatchId) return;
-    
-    const batch = purchaseBatches.find(b => b.id === currentBatchId);
-    if (!batch) return;
-    
-    const batchCars = batch.cars || [];
-    const hasSoldCars = batchCars.some((car: any) => car.status === 'sold');
-    
-    if (hasSoldCars) {
-      toast.error(t.inv_toast_cannot_delete_sold);
-      return;
-    }
-    
-    try {
-      for (const car of batchCars) {
-        await deleteCar.mutateAsync(car.id);
-      }
-      toast.success(t.inv_toast_purchase_delete_success);
-      setDeleteDialogOpen(false);
-      handleNewInvoice();
-    } catch (error) {
-      toast.error(t.inv_toast_delete_error);
-    }
-  };
-
-  const handleReversePurchase = async () => {
-    if (!currentBatchId) return;
-    
-    const batch = purchaseBatches.find(b => b.id === currentBatchId);
-    if (!batch) return;
-    
-    const batchCars = batch.cars || [];
-    const hasSoldCars = batchCars.some((car: any) => car.status === 'sold');
-    
-    if (hasSoldCars) {
-      toast.error(t.inv_toast_cannot_reverse_sold);
-      return;
-    }
-    
-    try {
-      for (const car of batchCars) {
-        await deleteCar.mutateAsync(car.id);
-      }
-      toast.success(t.inv_toast_purchase_reverse_success);
-      setReverseDialogOpen(false);
-      handleNewInvoice();
-    } catch (error) {
-      toast.error(t.inv_toast_reverse_error);
-    }
-  };
-
-  const handleUpdatePurchase = async () => {
-    if (!currentBatchId) return;
-
-    if (isCarDealership) {
-      const batch = purchaseBatches.find(b => b.id === currentBatchId);
-      if (!batch) return;
-
-      const batchCars = batch.cars || [];
-
-      if (cars.length === 0 || !cars[0].chassis_number || !cars[0].name) {
-        toast.error(t.inv_toast_fill_fields);
-        return;
-      }
-
-      try {
-        for (let i = 0; i < cars.length && i < batchCars.length; i++) {
-          const carData = cars[i];
-          const existingCar = batchCars[i];
-
-          await updateCar.mutateAsync({
-            id: existingCar.id,
-            car: {
-              name: carData.name,
-              model: carData.model || null,
-              chassis_number: carData.chassis_number,
-              plate_number: carData.plate_number || null,
-              color: carData.color || null,
-              purchase_price: parseFloat(carData.purchase_price),
-              purchase_date: invoiceData.purchase_date,
-              payment_account_id: invoiceData.payment_account_id || null,
-              supplier_id: invoiceData.supplier_id || null,
-              car_condition: carData.car_condition || 'new',
-            }
-          });
-        }
-
-        queryClient.invalidateQueries({ queryKey: ['purchase-batches', companyId] });
-        queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
-        setIsEditing(false);
-        toast.success(t.inv_toast_purchase_update_success);
-      } catch (error) {
-        console.error('Purchase batch update error:', error);
-        toast.error(t.inv_toast_purchase_update_error);
-      }
-
-      return;
-    }
-
-    // Non-car companies: update invoice + replace invoice items
-    if (!companyId) {
-      toast.error(t.inv_toast_company_not_found);
-      return;
-    }
-
-    if (!invoiceData.supplier_id) {
-      toast.error(t.inv_toast_select_supplier);
-      return;
-    }
-
-    if (purchaseInventoryItems.length === 0) {
-      toast.error(t.inv_toast_add_item);
-      return;
-    }
-
-    const emptyNameItem = purchaseInventoryItems.find(i => !i.item_name?.trim());
-    if (emptyNameItem) {
-      toast.error('الرجاء إدخال اسم الصنف لجميع العناصر');
-      return;
-    }
-
-    const invalidItem = purchaseInventoryItems.find(i => !i.purchase_price || parseFloat(i.purchase_price) <= 0);
-    if (invalidItem) {
-      toast.error(t.inv_toast_enter_item_price);
-      return;
-    }
-
-    const isProtected = ['issued', 'approved', 'posted'].includes(currentInvoiceStatus);
-
-    try {
-      // Build update payload - skip financial fields for protected invoices
-      const updatePayload: Record<string, any> = {
-        invoice_number: invoiceData.invoice_number || null,
-        supplier_id: invoiceData.supplier_id,
-        customer_name: selectedSupplier?.name || '',
-        invoice_date: invoiceData.purchase_date,
-        due_date: invoiceData.due_date,
-        notes: invoiceData.notes || null,
-        project_id: invoiceData.project_id || null,
-        payment_status: invoiceData.payment_status || 'unpaid',
-        amount_paid: invoiceData.payment_status === 'paid' ? calculations.finalTotal : 0,
-        supplier_invoice_number: invoiceData.supplier_invoice_number || null,
-        payment_account_id: invoiceData.payment_account_id || null,
-      };
-
-      if (!isProtected) {
-        updatePayload.subtotal = calculations.subtotal;
-        updatePayload.taxable_amount = calculations.subtotalAfterDiscount;
-        updatePayload.vat_rate = taxRate;
-        updatePayload.vat_amount = calculations.totalVAT;
-        updatePayload.total = calculations.finalTotal;
-        updatePayload.discount_amount = calculations.discountAmount;
-      }
-
-      const { error: invoiceUpdateError } = await supabase
-        .from('invoices')
-        .update(updatePayload)
-        .eq('id', currentBatchId)
-        .eq('company_id', companyId);
-
-      if (invoiceUpdateError) throw invoiceUpdateError;
-
-      // Only update items for non-protected invoices
-      if (!isProtected) {
-        const { error: deleteItemsError } = await supabase
-          .from('invoice_items')
-          .delete()
-          .eq('invoice_id', currentBatchId);
-
-        if (deleteItemsError) throw deleteItemsError;
-
-        const invoiceItems = purchaseInventoryItems.map((item, index) => ({
-          invoice_id: currentBatchId,
-          item_description: item.item_name,
-          item_code: item.barcode || '',
-          quantity: item.quantity,
-          unit: item.unit_name,
-          unit_price: calculations.inventoryItems[index].baseAmount / item.quantity,
-          taxable_amount: calculations.inventoryItems[index].baseAmount,
-          vat_rate: taxRate,
-          vat_amount: calculations.inventoryItems[index].vatAmount,
-          total: calculations.inventoryItems[index].total,
-          inventory_item_id: item.item_id,
-        }));
-
-        const { error: insertItemsError } = await supabase
-          .from('invoice_items')
-          .insert(invoiceItems);
-
-        if (insertItemsError) throw insertItemsError;
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['purchase-invoices-nav', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['invoices', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['purchases-report'] });
-      queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
-      queryClient.invalidateQueries({ queryKey: ['stats'] });
-      queryClient.invalidateQueries({ queryKey: ['advanced-analytics'] });
-      queryClient.invalidateQueries({ queryKey: ['monthly-chart-data'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-recent-invoices'] });
-
-      setSavedBatchData({ batch: { id: currentBatchId }, supplier: selectedSupplier, inventoryItems: purchaseInventoryItems });
-      setIsEditing(false);
-      toast.success(t.inv_toast_purchase_update_success);
-    } catch (error) {
-      console.error('Purchase invoice update error:', error);
-      toast.error(t.inv_toast_purchase_update_error);
-    }
-  };
-
-  const handlePrintExisting = () => {
-    if (!currentBatchId) return;
-    
-    const batch = purchaseBatches.find(b => b.id === currentBatchId);
-    if (!batch) return;
-
-    setSavedBatchData({
-      batch: { id: batch.id },
-      supplier: selectedSupplier,
-      cars: cars,
-    });
-    setInvoiceOpen(true);
-  };
-
-  const invoicePreviewData = useMemo(() => {
-    if (!savedBatchData) return null;
-
-    return {
-      invoiceNumber: savedBatchData.batch?.batch_number || invoiceData.invoice_number || String(nextInvoiceNumber),
-      invoiceDate: invoiceData.purchase_date,
-      supplierName: selectedSupplier?.name || '',
-      supplierTaxNumber: selectedSupplier?.registration_number || '',
-      supplierAddress: selectedSupplier?.address || '',
-      supplierPhone: selectedSupplier?.phone || '',
-      companyName: taxSettings?.company_name_ar || company?.name || '',
-      companyTaxNumber: taxSettings?.tax_number || '',
-      companyAddress: taxSettings?.national_address || company?.address || '',
-      items: calculations.items.map(car => ({
-        description: `${car.name} ${car.model || ''} - ${car.chassis_number}${cars.find(c => c.id === car.id)?.plate_number ? ` - لوحة: ${cars.find(c => c.id === car.id)?.plate_number}` : ''}`,
-        quantity: car.quantity,
-        unitPrice: car.baseAmount / car.quantity,
-        taxRate: taxRate,
-        taxAmount: car.vatAmount,
-        total: car.total,
-      })),
-      subtotal: displayTotals.subtotal,
-      taxAmount: displayTotals.totalVAT,
-      total: displayTotals.finalTotal,
-      taxSettings: taxSettings,
-      companyLogoUrl: (company as any)?.invoice_logo_url || company?.logo_url,
-    };
-  }, [savedBatchData, invoiceData, selectedSupplier, calculations, displayTotals, taxSettings, company, taxRate, nextInvoiceNumber]);
-
-  const handleAIImport = async (data: ParsedInvoiceData) => {
-    try {
-      // Check if supplier exists, if not create one
-      let supplierId = '';
-      const existingSupplier = suppliers.find(s => 
-        s.name === data.supplier_name || 
-        (data.supplier_tax_number && (s as any).id_number === data.supplier_tax_number)
-      );
-
-      if (existingSupplier) {
-        supplierId = existingSupplier.id;
-      } else if (companyId) {
-        // Create new supplier
-        const { data: newSupplier, error } = await supabase
-          .from('suppliers')
-          .insert({
-            name: data.supplier_name,
-            id_number: data.supplier_tax_number || null,
-            phone: data.supplier_phone || null,
-            address: data.supplier_address || null,
-            company_id: companyId,
-          })
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error creating supplier:', error);
-          toast.error('فشل إنشاء المورد');
-        } else if (newSupplier) {
-          supplierId = newSupplier.id;
-          queryClient.invalidateQueries({ queryKey: ['suppliers'] });
-          toast.success(`تم إنشاء المورد: ${data.supplier_name}`);
-        }
-      }
-
-      // Fill invoice data
-      setInvoiceData(prev => ({
-        ...prev,
-        supplier_id: supplierId,
-        invoice_number: data.invoice_number || prev.invoice_number,
-        purchase_date: data.invoice_date || prev.purchase_date,
-        due_date: data.due_date || prev.due_date,
-        notes: data.notes || prev.notes,
-        price_includes_tax: data.price_includes_tax ?? false,
-      }));
-
-      // Fill items
-      if (data.items && data.items.length > 0) {
-        if (isCarDealership) {
-          const carItems: CarItem[] = data.items.map(item => ({
-            id: crypto.randomUUID(),
-            chassis_number: '',
-            plate_number: '',
-            name: item.description,
-            model: '',
-            color: '',
-            purchase_price: String(item.unit_price),
-            quantity: item.quantity,
-            unit: t.inv_car_unit,
-            car_condition: 'new' as const,
-          }));
-          setCars(carItems);
-        } else {
-          const invItems: PurchaseInventoryItem[] = data.items.map(item => ({
-            id: crypto.randomUUID(),
-            item_id: null,
-            item_name: item.description,
-            barcode: '',
-            unit_name: t.inv_unit,
-            unit_id: null,
-            purchase_price: String(item.unit_price),
-            quantity: item.quantity,
-          }));
-          setPurchaseInventoryItems(invItems);
-        }
-      }
-
-      // Set discount if any
-      if (data.discount && data.discount > 0) {
-        setDiscount(data.discount);
-        setDiscountType('amount');
-      }
-
-      // Reset navigation state
-      setIsViewingExisting(false);
-      setCurrentBatchId(null);
-      setIsEditing(false);
-      setStoredHeaderTotals(null);
-
-      toast.success('تم تعبئة بيانات الفاتورة بنجاح');
-    } catch (error) {
-      console.error('Error processing AI import:', error);
-      toast.error('حدث خطأ أثناء معالجة البيانات');
-    }
-  };
-
-  const onBatchImport = async (results: BatchParsedResult[], costCenterId?: string | null) => {
-    await handleBatchImport({
-      results,
-      costCenterId,
-      companyId: companyId!,
-      suppliers,
-      taxSettings,
-      selectedFiscalYear,
-      invoiceProjectId: invoiceData.project_id,
-      queryClient,
-    });
-  };
-
-  const dir = language === 'ar' ? 'rtl' : 'ltr';
 
   return (
     <>
@@ -1062,19 +71,14 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             onNext={handleNextPurchase}
             onLast={handleLastPurchase}
             extraActions={
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-white hover:bg-white/20 gap-1.5 text-xs"
-                onClick={() => setAiImportOpen(true)}
-              >
+              <Button variant="ghost" size="sm" className="text-white hover:bg-white/20 gap-1.5 text-xs" onClick={() => setAiImportOpen(true)}>
                 <Sparkles className="w-4 h-4" />
                 استيراد ذكي (PDF)
               </Button>
             }
           />
 
-          {/* ===== Search Bar ===== */}
+          {/* Search Bar */}
           <div className="p-3 border-b bg-muted/30" ref={searchBarRef}>
             <InvoiceSearchBar
               mode="purchases"
@@ -1083,23 +87,13 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               onSelectResult={(result) => {
                 if (result.type === 'invoice' || result.type === 'car') {
                   const car = result.data;
-                  const batchIndex = navigationRecords.findIndex((b: any) => 
-                    b.cars?.some((c: any) => c.id === car.id)
-                  );
-                  if (batchIndex >= 0) {
-                    setCurrentInvoiceIndex(batchIndex);
-                    loadRecordData(navigationRecords[batchIndex]);
-                  }
+                  const batchIndex = navigationRecords.findIndex((b: any) => b.cars?.some((c: any) => c.id === car.id));
+                  if (batchIndex >= 0) loadRecordData(navigationRecords[batchIndex]);
                 } else if (result.type === 'supplier') {
-                  const supplierRecords = navigationRecords.filter((b: any) => 
-                    b.supplier_id === result.id
-                  );
+                  const supplierRecords = navigationRecords.filter((b: any) => b.supplier_id === result.id);
                   if (supplierRecords.length > 0) {
                     const idx = navigationRecords.findIndex((b: any) => b.id === supplierRecords[0].id);
-                    if (idx >= 0) {
-                      setCurrentInvoiceIndex(idx);
-                      loadRecordData(navigationRecords[idx]);
-                    }
+                    if (idx >= 0) loadRecordData(navigationRecords[idx]);
                   } else {
                     setInvoiceData(prev => ({ ...prev, supplier_id: result.id }));
                   }
@@ -1108,9 +102,8 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             />
           </div>
 
-          {/* ===== Invoice Header Form - Modern Sections ===== */}
+          {/* Invoice Header Form */}
           <div className="p-4 border-b space-y-4 bg-card">
-            {/* Section: Basic Info */}
             <div className="flex items-center gap-2 mb-1">
               <div className="w-1 h-5 bg-blue-500 rounded-full"></div>
               <span className="text-xs font-bold text-foreground tracking-wide">بيانات الفاتورة</span>
@@ -1119,70 +112,35 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_supplier} *</Label>
                 <Select value={invoiceData.supplier_id} onValueChange={(v) => setInvoiceData({ ...invoiceData, supplier_id: v })}>
-                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none transition-colors">
-                    <SelectValue placeholder={t.inv_select_supplier} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map((supplier) => (
-                      <SelectItem key={supplier.id} value={supplier.id}>{supplier.name}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none transition-colors"><SelectValue placeholder={t.inv_select_supplier} /></SelectTrigger>
+                  <SelectContent>{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_invoice_number}</Label>
-                <Input
-                  value={invoiceData.invoice_number || nextInvoiceNumber}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, invoice_number: e.target.value })}
-                  className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none font-mono"
-                  placeholder={String(nextInvoiceNumber)}
-                />
+                <Input value={invoiceData.invoice_number || nextInvoiceNumber} onChange={(e) => setInvoiceData({ ...invoiceData, invoice_number: e.target.value })} className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none font-mono" placeholder={String(nextInvoiceNumber)} />
               </div>
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_warehouse}</Label>
                 <Select value={invoiceData.warehouse} onValueChange={(v) => setInvoiceData({ ...invoiceData, warehouse: v })}>
-                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none transition-colors">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="main">{t.inv_main_warehouse}</SelectItem>
-                  </SelectContent>
+                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none transition-colors"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="main">{t.inv_main_warehouse}</SelectItem></SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_cash_account}</Label>
-                <PaymentAccountSelector
-                  value={invoiceData.payment_account_id}
-                  onChange={(v) => setInvoiceData({ ...invoiceData, payment_account_id: v })}
-                  type="payment"
-                  className="h-9 border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none text-xs"
-                />
+                <PaymentAccountSelector value={invoiceData.payment_account_id} onChange={(v) => setInvoiceData({ ...invoiceData, payment_account_id: v })} type="payment" className="h-9 border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none text-xs" />
               </div>
-              <ProjectSelector
-                value={invoiceData.project_id}
-                onChange={(v) => setInvoiceData({ ...invoiceData, project_id: v })}
-                className="h-9 border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none text-xs"
-              />
+              <ProjectSelector value={invoiceData.project_id} onChange={(v) => setInvoiceData({ ...invoiceData, project_id: v })} className="h-9 border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none text-xs" />
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                   {language === 'ar' ? 'الحساب الدائن (طريقة السداد)' : 'Credit Account (Payment)'}
                 </Label>
-                <Select 
-                  value={invoiceData.payment_account_id || 'supplier'} 
-                  onValueChange={(v) => setInvoiceData({ ...invoiceData, payment_account_id: v === 'supplier' ? '' : v })}
-                >
-                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none transition-colors">
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={invoiceData.payment_account_id || 'supplier'} onValueChange={(v) => setInvoiceData({ ...invoiceData, payment_account_id: v === 'supplier' ? '' : v })}>
+                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none transition-colors"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="supplier">{language === 'ar' ? '📋 آجل (على المورد)' : 'On Credit (Supplier)'}</SelectItem>
-                    {accounts.filter(a => 
-                      a.code?.startsWith('110') || // نقد وبنوك
-                      a.code?.startsWith('1102') || // بنك
-                      a.code?.startsWith('1103') || // نقاط بيع
-                      a.code?.startsWith('2108') || // جاري الشريك
-                      a.code?.startsWith('2107')    // دائنون آخرون
-                    ).map(acc => (
+                    {accounts.filter(a => a.code?.startsWith('110') || a.code?.startsWith('1102') || a.code?.startsWith('1103') || a.code?.startsWith('2108') || a.code?.startsWith('2107')).map(acc => (
                       <SelectItem key={acc.id} value={acc.id}>{acc.code} - {acc.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -1196,7 +154,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               )}
             </div>
 
-            {/* Section: Dates & Details */}
+            {/* Dates & Details */}
             <div className="flex items-center gap-2 mt-4 mb-1">
               <div className="w-1 h-5 bg-indigo-500 rounded-full"></div>
               <span className="text-xs font-bold text-foreground tracking-wide">تفاصيل إضافية</span>
@@ -1217,23 +175,17 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">مركز التكلفة</Label>
                 <Select value={invoiceData.cost_center_id || 'none'} onValueChange={(v) => setInvoiceData({ ...invoiceData, cost_center_id: v === 'none' ? null : v })}>
-                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-indigo-500 shadow-none transition-colors">
-                    <SelectValue placeholder="اختر مركز التكلفة" />
-                  </SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-indigo-500 shadow-none transition-colors"><SelectValue placeholder="اختر مركز التكلفة" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">بدون</SelectItem>
-                    {costCenters.filter(cc => cc.is_active).map((cc) => (
-                      <SelectItem key={cc.id} value={cc.id}>{cc.code} - {cc.name}</SelectItem>
-                    ))}
+                    {costCenters.filter(cc => cc.is_active).map(cc => <SelectItem key={cc.id} value={cc.id}>{cc.code} - {cc.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">حالة الدفع</Label>
                 <Select value={invoiceData.payment_status} onValueChange={(v) => setInvoiceData({ ...invoiceData, payment_status: v })}>
-                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-indigo-500 shadow-none transition-colors">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-indigo-500 shadow-none transition-colors"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="unpaid">غير مدفوع</SelectItem>
                     <SelectItem value="paid">مدفوع</SelectItem>
@@ -1252,7 +204,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             </div>
           </div>
 
-          {/* ===== Items Table - Modern Design ===== */}
+          {/* Items Table */}
           <div className="overflow-x-auto">
             {isCarDealership ? (
               <>
@@ -1287,10 +239,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                           <TableCell className="py-2">
                             <Select value={car.car_condition} onValueChange={(v) => handleCarChange(car.id, 'car_condition', v)}>
                               <SelectTrigger className="h-7 text-[10px] border-0 border-b border-border rounded-none bg-transparent shadow-none w-20"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="new">جديدة</SelectItem>
-                                <SelectItem value="used">مستعملة</SelectItem>
-                              </SelectContent>
+                              <SelectContent><SelectItem value="new">جديدة</SelectItem><SelectItem value="used">مستعملة</SelectItem></SelectContent>
                             </Select>
                           </TableCell>
                           <TableCell className="text-center text-xs py-2">{car.quantity}</TableCell>
@@ -1298,9 +247,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                           <TableCell className="text-center text-xs py-2 font-semibold">{formatCurrency(calcItem?.baseAmount || 0)}</TableCell>
                           <TableCell className="text-center text-xs py-2 font-semibold">{formatCurrency(calcItem?.total || 0)}</TableCell>
                           <TableCell className="py-2">
-                            {cars.length > 1 && (
-                              <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveCar(car.id)} className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10 rounded-full"><X className="w-3 h-3" /></Button>
-                            )}
+                            {cars.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveCar(car.id)} className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10 rounded-full"><X className="w-3 h-3" /></Button>}
                           </TableCell>
                         </TableRow>
                       );
@@ -1314,10 +261,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   </TableBody>
                 </Table>
                 <div className="p-3 border-t bg-muted/20">
-                  <Button type="button" variant="outline" size="sm" onClick={handleAddCar} className="gap-1.5 text-xs h-9 rounded-lg">
-                    <Plus className="w-3.5 h-3.5" />
-                    {t.inv_add_car}
-                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={handleAddCar} className="gap-1.5 text-xs h-9 rounded-lg"><Plus className="w-3.5 h-3.5" />{t.inv_add_car}</Button>
                 </div>
               </>
             ) : (
@@ -1340,14 +284,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                     {calculations.inventoryItems.map((item, index) => (
                       <TableRow key={item.id} className="hover:bg-blue-50/50 dark:hover:bg-blue-950/20 border-b transition-colors">
                         <TableCell className="text-center text-xs py-2 font-mono text-muted-foreground">{index + 1}</TableCell>
-                        <TableCell className="py-2">
-                          <Input 
-                            value={purchaseInventoryItems[index]?.item_name || ''} 
-                            onChange={(e) => handleInventoryItemChange(item.id, 'item_name', e.target.value)} 
-                            placeholder={t.inv_item_name_placeholder || 'اسم الصنف / الخدمة'} 
-                            className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" 
-                          />
-                        </TableCell>
+                        <TableCell className="py-2"><Input value={purchaseInventoryItems[index]?.item_name || ''} onChange={(e) => handleInventoryItemChange(item.id, 'item_name', e.target.value)} placeholder={t.inv_item_name_placeholder || 'اسم الصنف / الخدمة'} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" /></TableCell>
                         <TableCell className="py-2"><Input value={purchaseInventoryItems[index]?.barcode || ''} onChange={(e) => handleInventoryItemChange(item.id, 'barcode', e.target.value)} placeholder={t.inv_barcode} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" dir="ltr" /></TableCell>
                         <TableCell className="py-2"><Input type="number" min={1} value={purchaseInventoryItems[index]?.quantity || 1} onChange={(e) => handleInventoryItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)} className="h-7 text-xs text-center border-0 border-b border-border rounded-none bg-transparent w-16" /></TableCell>
                         <TableCell className="text-center text-xs py-2">{item.unit_name}</TableCell>
@@ -1355,9 +292,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                         <TableCell className="text-center text-xs py-2 font-semibold">{formatCurrency(item.baseAmount)}</TableCell>
                         <TableCell className="text-center text-xs py-2 font-semibold">{formatCurrency(item.total)}</TableCell>
                         <TableCell className="py-2">
-                          {purchaseInventoryItems.length > 1 && (
-                            <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveInventoryItem(item.id)} className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10 rounded-full"><X className="w-3 h-3" /></Button>
-                          )}
+                          {purchaseInventoryItems.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveInventoryItem(item.id)} className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10 rounded-full"><X className="w-3 h-3" /></Button>}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1370,22 +305,14 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
                   </TableBody>
                 </Table>
                 <div className="p-3 border-t flex gap-2 bg-muted/20">
-                  <Button type="button" variant="outline" size="sm" onClick={handleAddInventoryItem} className="gap-1.5 text-xs h-9 rounded-lg">
-                    <Plus className="w-3.5 h-3.5" />
-                    {t.inv_add_item || 'إضافة صنف'}
-                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={handleAddInventoryItem} className="gap-1.5 text-xs h-9 rounded-lg"><Plus className="w-3.5 h-3.5" />{t.inv_add_item || 'إضافة صنف'}</Button>
                   {(inventoryItems || []).length > 0 && (
                     <Select onValueChange={handleSelectExistingItem}>
-                      <SelectTrigger className="h-9 text-xs w-[250px] rounded-lg">
-                        <SelectValue placeholder={t.inv_select_inventory_item || 'اختر من المخزون...'} />
-                      </SelectTrigger>
+                      <SelectTrigger className="h-9 text-xs w-[250px] rounded-lg"><SelectValue placeholder={t.inv_select_inventory_item || 'اختر من المخزون...'} /></SelectTrigger>
                       <SelectContent>
                         {(inventoryItems || []).map((item: any) => (
                           <SelectItem key={item.id} value={item.id}>
-                            <div className="flex items-center gap-2">
-                              <Package className="w-3 h-3" />
-                              {item.name} {item.barcode ? `(${item.barcode})` : ''}
-                            </div>
+                            <div className="flex items-center gap-2"><Package className="w-3 h-3" />{item.name} {item.barcode ? `(${item.barcode})` : ''}</div>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1396,7 +323,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             )}
           </div>
 
-          {/* ===== Invoice Summary Info ===== */}
+          {/* Invoice Summary */}
           <div className="p-4 border-t bg-gradient-to-b from-muted/40 to-muted/10">
             <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
               <div className="bg-card rounded-lg border p-2.5 text-center shadow-sm">
@@ -1409,11 +336,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               </div>
               <div className="bg-card rounded-lg border p-2.5 text-center shadow-sm">
                 <Label className="text-[9px] text-muted-foreground block mb-1">{t.inv_status_label || 'الحالة'}</Label>
-                <div className={`text-[11px] font-bold rounded-full px-2 py-0.5 inline-block ${
-                  isViewingExisting 
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
-                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                }`}>
+                <div className={`text-[11px] font-bold rounded-full px-2 py-0.5 inline-block ${isViewingExisting ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
                   {isViewingExisting ? (t.inv_status_approved || 'معتمدة') : (t.inv_new || 'جديدة')}
                 </div>
               </div>
@@ -1432,9 +355,8 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             </div>
           </div>
 
-          {/* ===== Totals Section - Shared Component ===== */}
+          {/* Totals */}
           <div className="p-4 border-t bg-card">
-            {/* Net Total Hero */}
             <div className="mb-3">
               <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-4 text-center text-white shadow-lg max-w-xs mx-auto">
                 <div className="text-3xl font-black">{formatCurrency(displayTotals.finalTotal)}</div>
@@ -1442,26 +364,12 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               </div>
             </div>
             <InvoiceTotalsSection
-              subtotal={displayTotals.subtotal}
-              discountAmount={displayTotals.discountAmount}
-              totalVAT={displayTotals.totalVAT}
-              finalTotal={displayTotals.finalTotal}
-              taxRate={taxRate}
-              currency={currency}
-              discount={discount}
-              discountType={discountType}
-              onDiscountChange={setDiscount}
-              onDiscountTypeChange={setDiscountType}
-              formatCurrency={formatCurrency}
-              labels={{
-                subtotal: t.inv_total,
-                discount: t.inv_discount,
-                tax: t.inv_tax_label,
-                roundedNet: t.inv_rounded_net,
-              }}
+              subtotal={displayTotals.subtotal} discountAmount={displayTotals.discountAmount}
+              totalVAT={displayTotals.totalVAT} finalTotal={displayTotals.finalTotal}
+              taxRate={taxRate} currency={currency} discount={discount} discountType={discountType}
+              onDiscountChange={setDiscount} onDiscountTypeChange={setDiscountType} formatCurrency={formatCurrency}
+              labels={{ subtotal: t.inv_total, discount: t.inv_discount, tax: t.inv_tax_label, roundedNet: t.inv_rounded_net }}
             />
-
-            {/* Terms */}
             <div className="mt-4 pt-3 border-t border-border/40">
               <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_terms || 'شروط البيع والدفع'}</Label>
@@ -1470,126 +378,71 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             </div>
           </div>
 
-          {/* ===== Shared Action Bar ===== */}
+          {/* Action Bar */}
           <InvoiceActionBar
-            theme="purchase"
-            isViewingExisting={isViewingExisting}
-            isEditing={isEditing}
-            isApproved={false}
-            isPending={addPurchaseBatch.isPending}
-            setActivePage={setActivePage}
-            searchBarRef={searchBarRef}
-            onSubmit={handleSubmit}
-            onNewInvoice={handleNewInvoice}
+            theme="purchase" isViewingExisting={isViewingExisting} isEditing={isEditing}
+            isApproved={false} isPending={addPurchaseBatch.isPending}
+            setActivePage={setActivePage} searchBarRef={searchBarRef}
+            onSubmit={handleSubmit} onNewInvoice={handleNewInvoice}
             onToggleEdit={() => { setIsEditing(!isEditing); if (!isEditing) toast.info('تم تفعيل وضع التعديل'); }}
-            onDelete={() => setDeleteDialogOpen(true)}
-            onApprove={() => setActivePage('journal-entries')}
-            onPrint={handlePrintExisting}
-            onUpdate={handleUpdatePurchase}
-            onClose={() => setActivePage('purchases')}
-            closePage="purchases"
+            onDelete={() => setDeleteDialogOpen(true)} onApprove={() => setActivePage('journal-entries')}
+            onPrint={handlePrintExisting} onUpdate={handleUpdatePurchase}
+            onClose={() => setActivePage('purchases')} closePage="purchases"
             updatePending={updateCar.isPending}
             quickMenus={[
-              {
-                label: 'عمليات الضرائب',
-                items: [
-                  { label: 'إنشاء إقرار ضريبي', icon: <FileText className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('vat-return-report') },
-                  { label: 'إعدادات الضريبة', icon: <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('tax-settings') },
-                ],
-              },
-              {
-                label: 'تقارير',
-                items: [
-                  { label: 'تقرير المشتريات', icon: <FileText className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('purchases-report') },
-                  { label: 'كشف حساب', icon: <FileText className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('account-statement') },
-                ],
-              },
-              {
-                label: t.inv_operations || 'عمليات',
-                items: [
-                  { label: t.inv_import_data || 'استيراد بيانات', icon: <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('medad-import') },
-                  { label: t.inv_return, icon: <RotateCcw className="w-3.5 h-3.5 ml-2" />, onClick: () => setReverseDialogOpen(true), disabled: !isViewingExisting, className: 'text-amber-600' },
-                  { label: 'إرسال SMS', icon: <MessageSquare className="w-3.5 h-3.5 ml-2" />, onClick: () => toast.info('سيتم إضافة خاصية إرسال SMS قريباً') },
-                ],
-              },
-              {
-                label: 'عرض',
-                items: [
-                  { label: 'معاينة قبل الطباعة', icon: <Printer className="w-3.5 h-3.5 ml-2" />, onClick: handlePrintExisting, disabled: !isViewingExisting },
-                  { label: 'عرض القيد المحاسبي', icon: <FileText className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('journal-entries'), disabled: !isViewingExisting },
-                ],
-              },
+              { label: 'عمليات الضرائب', items: [
+                { label: 'إنشاء إقرار ضريبي', icon: <FileText className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('vat-return-report') },
+                { label: 'إعدادات الضريبة', icon: <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('tax-settings') },
+              ]},
+              { label: 'تقارير', items: [
+                { label: 'تقرير المشتريات', icon: <FileText className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('purchases-report') },
+                { label: 'كشف حساب', icon: <FileText className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('account-statement') },
+              ]},
+              { label: t.inv_operations || 'عمليات', items: [
+                { label: t.inv_import_data || 'استيراد بيانات', icon: <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('medad-import') },
+                { label: t.inv_return, icon: <RotateCcw className="w-3.5 h-3.5 ml-2" />, onClick: () => setReverseDialogOpen(true), disabled: !isViewingExisting, className: 'text-amber-600' },
+                { label: 'إرسال SMS', icon: <MessageSquare className="w-3.5 h-3.5 ml-2" />, onClick: () => toast.info('سيتم إضافة خاصية إرسال SMS قريباً') },
+              ]},
+              { label: 'عرض', items: [
+                { label: 'معاينة قبل الطباعة', icon: <Printer className="w-3.5 h-3.5 ml-2" />, onClick: handlePrintExisting, disabled: !isViewingExisting },
+                { label: 'عرض القيد المحاسبي', icon: <FileText className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('journal-entries'), disabled: !isViewingExisting },
+              ]},
             ]}
             moreItems={[
               { label: t.inv_import_data || 'استيراد بيانات', icon: <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('medad-import') },
               { label: t.inv_return, icon: <RotateCcw className="w-3.5 h-3.5 ml-2" />, onClick: () => setReverseDialogOpen(true), disabled: !isViewingExisting, className: 'text-amber-600' },
             ]}
             labels={{
-              add: 'إضافة',
-              saving: t.inv_saving,
-              new: 'جديد',
-              edit: 'تعديل',
-              cancelEdit: 'إلغاء التعديل',
-              delete: 'حذف',
-              accounting: 'محاسبة',
-              search: 'بحث',
-              print: 'طباعة',
-              more: 'مزيد..',
-              close: 'إغلاق',
-              saveChanges: t.inv_save_changes,
-              approved: 'معتمدة',
+              add: 'إضافة', saving: t.inv_saving, new: 'جديد', edit: 'تعديل',
+              cancelEdit: 'إلغاء التعديل', delete: 'حذف', accounting: 'محاسبة',
+              search: 'بحث', print: 'طباعة', more: 'مزيد..', close: 'إغلاق',
+              saveChanges: t.inv_save_changes, approved: 'معتمدة',
             }}
           />
         </div>
       </div>
 
-      {/* Invoice Preview Dialog */}
+      {/* Dialogs */}
       {invoicePreviewData && (
         <PurchaseInvoiceDialog
           open={invoiceOpen}
           onOpenChange={handleCloseInvoice}
-          data={invoicePreviewData}
+          invoiceData={invoicePreviewData}
         />
       )}
+      <InvoiceDeleteDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} onConfirm={handleDeletePurchase} />
+      <InvoiceReverseDialog open={reverseDialogOpen} onOpenChange={setReverseDialogOpen} onConfirm={handleReversePurchase} />
 
-      {/* Shared Dialogs */}
-      <InvoiceDeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDeletePurchase}
-        isPending={deleteCar.isPending}
-        dir={dir}
-        labels={{
-          title: t.inv_delete_purchase_confirm,
-          description: t.inv_delete_purchase_desc,
-          cancel: t.cancel,
-          delete: t.delete,
-          deleting: t.inv_deleting,
-        }}
-      />
-      <InvoiceReverseDialog
-        open={reverseDialogOpen}
-        onOpenChange={setReverseDialogOpen}
-        onConfirm={handleReversePurchase}
-        isPending={deleteCar.isPending}
-        dir={dir}
-        labels={{
-          title: t.inv_return_purchase_invoice,
-          description: t.inv_return_purchase_confirm,
-          bulletPoints: [t.inv_delete_car_from_inventory, t.inv_delete_journal_entry, t.inv_update_stats],
-          warning: t.inv_cannot_undo,
-          cancel: t.cancel,
-          confirm: t.inv_return_invoice_btn,
-          confirming: t.inv_returning,
-        }}
-      />
-      {/* AI Import Dialog */}
-      <PurchaseInvoiceAIImport
-        open={aiImportOpen}
-        onOpenChange={setAiImportOpen}
-        onImport={handleAIImport}
-        onBatchImport={onBatchImport}
-      />
+      {/* AI Import */}
+      {aiImportOpen && (
+        <PurchaseInvoiceAIImport
+          open={aiImportOpen}
+          onOpenChange={setAiImportOpen}
+          onImport={handleAIImport}
+          onBatchImport={onBatchImport}
+          companyId={companyId || undefined}
+        />
+      )}
     </>
   );
 }
