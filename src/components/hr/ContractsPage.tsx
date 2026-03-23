@@ -475,7 +475,7 @@ export function EmployeeContractsPage() {
                 {/* Submit */}
                 <Button
                   className="w-full"
-                  onClick={() => addMutation.mutate()}
+                  onClick={handleAdd}
                   disabled={addMutation.isPending || !form.employeeName || !form.startDate}
                 >
                   {t.save}
