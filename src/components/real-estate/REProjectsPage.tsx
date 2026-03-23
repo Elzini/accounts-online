@@ -127,7 +127,7 @@ export function REProjectsPage() {
 
       {/* Projects Grid */}
       {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground">جاري التحميل...</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{[1,2,3].map(i => <CardSkeleton key={i} />)}</div>
       ) : filtered.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">

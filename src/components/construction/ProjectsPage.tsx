@@ -300,11 +300,9 @@ export function ProjectsPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">جاري التحميل...</div>
+            <TableSkeleton columns={7} rows={5} />
           ) : filteredProjects.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              لا توجد مشاريع
-            </div>
+            <EmptyState title="لا توجد مشاريع" description="أضف مشروعاً جديداً للبدء" />
           ) : (
             <Table>
               <TableHeader>
