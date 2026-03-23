@@ -14,11 +14,13 @@ import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/hooks/modules/useReportsServices';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 const MONTH_NAMES = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
 export function CashFlowForecastPage() {
   const { companyId } = useCompany();
+  const { hasCarInventory } = useIndustryFeatures();
 
   // What-If parameters
   const [salesGrowth, setSalesGrowth] = useState(5);
@@ -26,13 +28,20 @@ export function CashFlowForecastPage() {
   const [newInvestment, setNewInvestment] = useState(0);
   const [expectedCollection, setExpectedCollection] = useState(85);
 
-  // Fetch historical sales
+  // Fetch historical sales - industry-aware
   const { data: sales = [], isLoading: loadingSales } = useQuery({
-    queryKey: ['cf-sales', companyId],
+    queryKey: ['cf-sales', companyId, hasCarInventory],
     queryFn: async () => {
-      const { data } = await supabase.from('sales').select('sale_date, sale_price, purchase_price')
-        .eq('company_id', companyId!).order('sale_date', { ascending: true });
-      return data || [];
+      if (hasCarInventory) {
+        const { data } = await supabase.from('sales').select('sale_date, sale_price, purchase_price')
+          .eq('company_id', companyId!).order('sale_date', { ascending: true });
+        return (data || []).map((s: any) => ({ sale_date: s.sale_date, sale_price: s.sale_price, purchase_price: s.purchase_price }));
+      } else {
+        const { data } = await supabase.from('invoices').select('invoice_date, subtotal, total')
+          .eq('company_id', companyId!).eq('invoice_type', 'sales').neq('status', 'draft')
+          .order('invoice_date', { ascending: true });
+        return (data || []).map((inv: any) => ({ sale_date: inv.invoice_date, sale_price: Number(inv.total) || 0, purchase_price: 0 }));
+      }
     },
     enabled: !!companyId,
   });
