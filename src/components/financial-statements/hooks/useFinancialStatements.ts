@@ -13,7 +13,7 @@ import { usePrintReport } from '@/hooks/usePrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
 import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { getIndustryFeatures } from '@/core/engine/industryFeatures';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useReportsServices';
 import { readExcelFile } from '@/lib/excelUtils';
 import { getSystemFinancialStatements } from '@/services/systemFinancialData';
 import { ComprehensiveFinancialData, emptyFinancialData } from '../types';

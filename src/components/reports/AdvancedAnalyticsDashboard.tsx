@@ -12,7 +12,7 @@ import {
   TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Package,
   Download, FileText, Calendar, ArrowUpRight, ArrowDownRight, BarChart3
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useReportsServices';
 import { useQuery } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
