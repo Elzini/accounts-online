@@ -18,8 +18,8 @@ import type { CardConfig } from './customizer/types';
 import { DEFAULT_STAT_CARDS } from './customizer/types';
 
 // Re-export for backward compatibility
-export type { CardConfig, FormulaAccountItem } from './customizer/constants';
-export { DEFAULT_STAT_CARDS } from './customizer/constants';
+export type { CardConfig, FormulaAccountItem } from './customizer/types';
+export { DEFAULT_STAT_CARDS } from './customizer/types';
 
 interface DashboardCustomizerProps {
   open: boolean;
