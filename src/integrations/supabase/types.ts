@@ -1978,42 +1978,6 @@ export type Database = {
         }
         Relationships: []
       }
-      code_integrity_hashes: {
-        Row: {
-          created_at: string
-          file_hash: string
-          file_path: string
-          hash_algorithm: string
-          id: string
-          status: string
-          updated_at: string
-          verified_at: string | null
-          verified_by: string | null
-        }
-        Insert: {
-          created_at?: string
-          file_hash: string
-          file_path: string
-          hash_algorithm?: string
-          id?: string
-          status?: string
-          updated_at?: string
-          verified_at?: string | null
-          verified_by?: string | null
-        }
-        Update: {
-          created_at?: string
-          file_hash?: string
-          file_path?: string
-          hash_algorithm?: string
-          id?: string
-          status?: string
-          updated_at?: string
-          verified_at?: string | null
-          verified_by?: string | null
-        }
-        Relationships: []
-      }
       collection_reminder_rules: {
         Row: {
           company_id: string
@@ -2664,62 +2628,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "credit_debit_notes_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      critical_operation_otps: {
-        Row: {
-          admin_email: string
-          company_id: string
-          created_at: string | null
-          entity_id: string | null
-          entity_type: string | null
-          expires_at: string
-          id: string
-          is_used: boolean | null
-          operation_description: string | null
-          operation_type: string
-          otp_hash: string | null
-          requested_by: string
-          used_at: string | null
-        }
-        Insert: {
-          admin_email: string
-          company_id: string
-          created_at?: string | null
-          entity_id?: string | null
-          entity_type?: string | null
-          expires_at: string
-          id?: string
-          is_used?: boolean | null
-          operation_description?: string | null
-          operation_type: string
-          otp_hash?: string | null
-          requested_by: string
-          used_at?: string | null
-        }
-        Update: {
-          admin_email?: string
-          company_id?: string
-          created_at?: string | null
-          entity_id?: string | null
-          entity_type?: string | null
-          expires_at?: string
-          id?: string
-          is_used?: boolean | null
-          operation_description?: string | null
-          operation_type?: string
-          otp_hash?: string | null
-          requested_by?: string
-          used_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "critical_operation_otps_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -3973,94 +3881,6 @@ export type Database = {
           },
         ]
       }
-      encryption_key_registry: {
-        Row: {
-          algorithm: string
-          company_id: string
-          created_at: string
-          created_by: string | null
-          expires_at: string | null
-          id: string
-          key_hash: string
-          key_version: number
-          rotated_at: string | null
-          rotation_reason: string | null
-          status: string
-        }
-        Insert: {
-          algorithm?: string
-          company_id: string
-          created_at?: string
-          created_by?: string | null
-          expires_at?: string | null
-          id?: string
-          key_hash: string
-          key_version?: number
-          rotated_at?: string | null
-          rotation_reason?: string | null
-          status?: string
-        }
-        Update: {
-          algorithm?: string
-          company_id?: string
-          created_at?: string
-          created_by?: string | null
-          expires_at?: string | null
-          id?: string
-          key_hash?: string
-          key_version?: number
-          rotated_at?: string | null
-          rotation_reason?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "encryption_key_registry_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      encryption_keys: {
-        Row: {
-          company_id: string
-          created_at: string
-          id: string
-          is_active: boolean | null
-          key_hash: string
-          key_name: string
-          rotated_at: string | null
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          key_hash: string
-          key_name: string
-          rotated_at?: string | null
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          key_hash?: string
-          key_name?: string
-          rotated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "encryption_keys_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       exchange_rates: {
         Row: {
           company_id: string
@@ -4240,50 +4060,6 @@ export type Database = {
             columns: ["fiscal_year_id"]
             isOneToOne: false
             referencedRelation: "fiscal_years"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      field_permissions: {
-        Row: {
-          can_edit: boolean
-          can_view: boolean
-          company_id: string
-          created_at: string
-          field_name: string
-          id: string
-          role_name: string
-          table_name: string
-          updated_at: string
-        }
-        Insert: {
-          can_edit?: boolean
-          can_view?: boolean
-          company_id: string
-          created_at?: string
-          field_name: string
-          id?: string
-          role_name: string
-          table_name: string
-          updated_at?: string
-        }
-        Update: {
-          can_edit?: boolean
-          can_view?: boolean
-          company_id?: string
-          created_at?: string
-          field_name?: string
-          id?: string
-          role_name?: string
-          table_name?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "field_permissions_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -5659,33 +5435,6 @@ export type Database = {
           start_time?: string
           updated_at?: string
           work_days?: string[] | null
-        }
-        Relationships: []
-      }
-      immutable_baselines: {
-        Row: {
-          baseline_key: string
-          baseline_type: string
-          baseline_value: Json
-          created_at: string | null
-          description: string | null
-          id: string
-        }
-        Insert: {
-          baseline_key: string
-          baseline_type: string
-          baseline_value: Json
-          created_at?: string | null
-          description?: string | null
-          id?: string
-        }
-        Update: {
-          baseline_key?: string
-          baseline_type?: string
-          baseline_value?: Json
-          created_at?: string | null
-          description?: string | null
-          id?: string
         }
         Relationships: []
       }
@@ -8733,85 +8482,6 @@ export type Database = {
           },
         ]
       }
-      rate_limit_config: {
-        Row: {
-          block_duration_seconds: number | null
-          company_id: string
-          created_at: string
-          endpoint: string
-          id: string
-          is_active: boolean | null
-          max_requests: number
-          updated_at: string
-          window_seconds: number
-        }
-        Insert: {
-          block_duration_seconds?: number | null
-          company_id: string
-          created_at?: string
-          endpoint: string
-          id?: string
-          is_active?: boolean | null
-          max_requests?: number
-          updated_at?: string
-          window_seconds?: number
-        }
-        Update: {
-          block_duration_seconds?: number | null
-          company_id?: string
-          created_at?: string
-          endpoint?: string
-          id?: string
-          is_active?: boolean | null
-          max_requests?: number
-          updated_at?: string
-          window_seconds?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rate_limit_config_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      rate_limit_log: {
-        Row: {
-          company_id: string
-          created_at: string
-          endpoint: string
-          id: string
-          request_count: number
-          window_start: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          endpoint: string
-          id?: string
-          request_count?: number
-          window_start?: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          endpoint?: string
-          id?: string
-          request_count?: number
-          window_start?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rate_limit_log_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       re_contractors: {
         Row: {
           address: string | null
@@ -10996,60 +10666,6 @@ export type Database = {
           },
         ]
       }
-      system_change_alerts: {
-        Row: {
-          affected_module: string
-          affected_tables: string[] | null
-          change_type: string
-          created_at: string
-          description: string
-          id: string
-          impact_analysis: Json | null
-          new_value: Json | null
-          previous_value: Json | null
-          request_source: string
-          review_notes: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          affected_module: string
-          affected_tables?: string[] | null
-          change_type: string
-          created_at?: string
-          description: string
-          id?: string
-          impact_analysis?: Json | null
-          new_value?: Json | null
-          previous_value?: Json | null
-          request_source?: string
-          review_notes?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          affected_module?: string
-          affected_tables?: string[] | null
-          change_type?: string
-          created_at?: string
-          description?: string
-          id?: string
-          impact_analysis?: Json | null
-          new_value?: Json | null
-          previous_value?: Json | null
-          request_source?: string
-          review_notes?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       system_change_log: {
         Row: {
           applied_at: string | null
@@ -11519,50 +11135,6 @@ export type Database = {
           },
         ]
       }
-      tenant_ip_whitelist: {
-        Row: {
-          cidr_range: string | null
-          created_at: string | null
-          created_by: string | null
-          description: string | null
-          id: string
-          ip_address: string
-          is_active: boolean | null
-          tenant_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          cidr_range?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          ip_address: string
-          is_active?: boolean | null
-          tenant_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          cidr_range?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          ip_address?: string
-          is_active?: boolean | null
-          tenant_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tenant_ip_whitelist_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       tenant_network_config: {
         Row: {
           allowed_countries: string[] | null
@@ -11722,59 +11294,6 @@ export type Database = {
             foreignKeyName: "tenant_storage_config_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: true
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tenant_storage_snapshots: {
-        Row: {
-          bucket_name: string
-          checksum: string | null
-          created_at: string | null
-          created_by: string | null
-          file_count: number | null
-          file_paths: string[]
-          id: string
-          is_immutable: boolean | null
-          locked_at: string | null
-          snapshot_name: string
-          tenant_id: string
-          total_size_bytes: number | null
-        }
-        Insert: {
-          bucket_name: string
-          checksum?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          file_count?: number | null
-          file_paths?: string[]
-          id?: string
-          is_immutable?: boolean | null
-          locked_at?: string | null
-          snapshot_name: string
-          tenant_id: string
-          total_size_bytes?: number | null
-        }
-        Update: {
-          bucket_name?: string
-          checksum?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          file_count?: number | null
-          file_paths?: string[]
-          id?: string
-          is_immutable?: boolean | null
-          locked_at?: string | null
-          snapshot_name?: string
-          tenant_id?: string
-          total_size_bytes?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tenant_storage_snapshots_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
