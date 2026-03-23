@@ -315,7 +315,8 @@ function parseSheetByName(sheetName: string, rows: any[][], result: FinancialDat
  * Parse an Excel workbook into structured FinancialData.
  */
 export function parseFinancialStatements(workbook: ExcelWorkbook): FinancialData {
-  const result: FinancialData = JSON.parse(JSON.stringify((await import('./types')).emptyFinancialData));
+  const { emptyFinancialData } = await import('./types');
+  const result: FinancialData = JSON.parse(JSON.stringify(emptyFinancialData));
 
   workbook.SheetNames.forEach((sheetName) => {
     const worksheet = workbook.Sheets[sheetName];
