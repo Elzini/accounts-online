@@ -14,8 +14,8 @@ import { useAccounts } from '@/hooks/useAccounting';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { CardListPanel } from './customizer/CardListPanel';
 import { CardSettingsPanel } from './customizer/CardSettingsPanel';
-import type { CardConfig } from './customizer/constants';
-import { DEFAULT_STAT_CARDS } from './customizer/constants';
+import type { CardConfig } from './customizer/types';
+import { DEFAULT_STAT_CARDS } from './customizer/types';
 
 // Re-export for backward compatibility
 export type { CardConfig, FormulaAccountItem } from './customizer/constants';
