@@ -64,7 +64,7 @@ export async function createJournalEntry(
 
   const result = await engine.createEntry({
     company_id: entry.company_id,
-    fiscal_year_id: entry.fiscal_year_id || '',
+    fiscal_year_id: (entry as any).fiscal_year_id || '',
     entry_date: entry.entry_date,
     description: entry.description,
     reference_type: (entry as any).reference_type || 'manual',
