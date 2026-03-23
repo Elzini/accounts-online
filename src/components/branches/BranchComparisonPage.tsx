@@ -16,52 +16,28 @@ export function BranchComparisonPage() {
 
   const { data: branches = [], isLoading: loadingBranches } = useQuery({
     queryKey: ['branch-compare-branches', companyId],
-    queryFn: async () => {
-      const { data } = await supabase.from('branches').select('*').eq('company_id', companyId!).eq('is_active', true);
-      return data || [];
-    },
+    queryFn: () => fetchActiveBranches(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: sales = [] } = useQuery({
     queryKey: ['branch-compare-sales', companyId],
-    queryFn: async () => {
-      const now = new Date();
-      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-      const { data } = await supabase.from('sales')
-        .select('sale_price, purchase_price, customer_id')
-        .eq('company_id', companyId!)
-        .gte('sale_date', monthStart);
-      return data || [];
-    },
+    queryFn: () => fetchBranchSales(companyId!),
     enabled: !!companyId && hasCarInventory,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: invoiceSales = [] } = useQuery({
     queryKey: ['branch-compare-invoice-sales', companyId],
-    queryFn: async () => {
-      const now = new Date();
-      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-      const { data } = await supabase.from('invoices')
-        .select('subtotal, customer_name')
-        .eq('company_id', companyId!)
-        .eq('invoice_type', 'sales')
-        .gte('invoice_date', monthStart);
-      return data || [];
-    },
+    queryFn: () => fetchBranchInvoiceSales(companyId!),
     enabled: !!companyId && !hasCarInventory,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: cars = [] } = useQuery({
     queryKey: ['branch-compare-cars', companyId],
-    queryFn: async () => {
-      const { data } = await supabase.from('cars').select('id, status, purchase_price')
-        .eq('company_id', companyId!).eq('status', 'available');
-      return data || [];
-    },
+    queryFn: () => fetchAvailableCars(companyId!),
     enabled: !!companyId && hasCarInventory,
     staleTime: 5 * 60 * 1000,
   });

@@ -92,31 +92,32 @@ export function CustomerPortalPage() {
 
   const addPortalAccess = async () => {
     if (!companyId || !selectedCustomerId) return;
-    const { error } = await supabase.from('customer_portal_tokens').insert({
-      company_id: companyId,
-      customer_id: selectedCustomerId,
-    });
-    if (error) {
-      if (error.code === '23505') toast.error('هذا العميل لديه وصول بالفعل');
-      else toast.error('خطأ في إضافة الوصول');
-    } else {
+    try {
+      await addPortalAccessSvc(companyId, selectedCustomerId);
       toast.success('تم إنشاء رابط البوابة للعميل');
       setShowAddDialog(false);
       setSelectedCustomerId('');
       fetchData();
+    } catch (error: any) {
+      if (error.message?.includes('23505')) toast.error('هذا العميل لديه وصول بالفعل');
+      else toast.error('خطأ في إضافة الوصول');
     }
   };
 
   const toggleAccess = async (id: string, isActive: boolean) => {
-    const { error } = await supabase.from('customer_portal_tokens').update({ is_active: !isActive }).eq('id', id);
-    if (error) toast.error('خطأ في التحديث');
-    else { toast.success(isActive ? 'تم تعطيل الوصول' : 'تم تفعيل الوصول'); fetchData(); }
+    try {
+      await togglePortalAccessSvc(id, isActive);
+      toast.success(isActive ? 'تم تعطيل الوصول' : 'تم تفعيل الوصول');
+      fetchData();
+    } catch { toast.error('خطأ في التحديث'); }
   };
 
   const deleteAccess = async (id: string) => {
-    const { error } = await supabase.from('customer_portal_tokens').delete().eq('id', id);
-    if (error) toast.error('خطأ في الحذف');
-    else { toast.success('تم حذف وصول العميل'); fetchData(); }
+    try {
+      await deletePortalAccessSvc(id);
+      toast.success('تم حذف وصول العميل');
+      fetchData();
+    } catch { toast.error('خطأ في الحذف'); }
   };
 
   const copyLink = (token: string) => {
