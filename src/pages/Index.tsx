@@ -167,6 +167,7 @@ import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
