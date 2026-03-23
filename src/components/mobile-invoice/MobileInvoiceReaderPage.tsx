@@ -257,15 +257,16 @@ export function MobileInvoiceReaderPage() {
             </Button>
             <Separator />
             <div className="text-center">
+              <div id="qr-file-scanner-temp" style={{ display: 'none' }}></div>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".txt,.csv"
+                accept="image/*,.txt,.csv"
                 className="hidden"
                 onChange={handleFileUpload}
               />
               <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
-                <Upload className="w-4 h-4" />رفع ملف QR
+                <Upload className="w-4 h-4" />رفع صورة أو ملف QR
               </Button>
             </div>
           </CardContent>
