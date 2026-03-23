@@ -23,7 +23,7 @@ export function SalesTargetsPage() {
 
   const { data: targets = [], isLoading } = useQuery({
     queryKey: ['sales-targets', companyId],
-    queryFn: async () => { const { data, error } = await supabase.from('sales_targets').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
+    queryFn: fetchSalesTargets,
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
