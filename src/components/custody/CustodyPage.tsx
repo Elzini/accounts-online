@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, FileText, Download, Wallet, CheckCircle, Clock, AlertCircle, Banknote, History } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useCustodyAmountChanges } from '@/hooks/modules/useBusinessServices';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,19 +30,7 @@ export function CustodyPage() {
 
   // Fetch all amount changes for all custodies
   const custodyIds = custodies.map(c => c.id);
-  const { data: allAmountChanges = [] } = useQuery({
-    queryKey: ['all-custody-amount-changes', custodyIds],
-    queryFn: async () => {
-      if (custodyIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from('custody_amount_changes')
-        .select('custody_id, change_amount')
-        .in('custody_id', custodyIds);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: custodyIds.length > 0,
-  });
+  const { data: allAmountChanges = [] } = useCustodyAmountChanges(custodyIds);
 
   // Pre-compute net changes per custody
   const netChangesByCustody = useMemo(() => {

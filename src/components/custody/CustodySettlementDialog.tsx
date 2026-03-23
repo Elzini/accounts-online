@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useCustodyAmountChangesList } from '@/hooks/modules/useBusinessServices';
 import { Plus, Trash2, FileDown, Eye, CheckCircle, Pencil, History, ArrowUp, ArrowDown } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -74,19 +73,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
   const [editingTransaction, setEditingTransaction] = useState<CustodyTransaction | null>(null);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
 
-  const { data: amountChanges = [] } = useQuery({
-    queryKey: ['custody-amount-changes', custodyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('custody_amount_changes')
-        .select('id, old_amount, new_amount, change_amount, changed_at, notes')
-        .eq('custody_id', custodyId)
-        .order('changed_at', { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: open && !!custodyId,
-  });
+  const { data: amountChanges = [] } = useCustodyAmountChangesList(custodyId, open);
 
   const accountsList = accounts.map((a: any) => ({ id: a.id, code: a.code, name: a.name }));
 

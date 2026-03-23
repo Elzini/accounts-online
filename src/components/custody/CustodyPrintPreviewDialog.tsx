@@ -1,6 +1,5 @@
 import { useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useCustodyAmountChangesPrint } from '@/hooks/modules/useBusinessServices';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Printer, Download, X, ArrowUp, ArrowDown } from 'lucide-react';
@@ -36,19 +35,7 @@ export function CustodyPrintPreviewDialog({
   const transactions = custody.transactions || [];
   const currentDate = new Date().toLocaleDateString('ar-SA');
 
-  const { data: amountChanges = [] } = useQuery({
-    queryKey: ['custody-amount-changes-print', custody.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('custody_amount_changes')
-        .select('id, old_amount, new_amount, change_amount, changed_at, notes')
-        .eq('custody_id', custody.id)
-        .order('changed_at', { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: open && !!custody.id,
-  });
+  const { data: amountChanges = [] } = useCustodyAmountChangesPrint(custody.id, open);
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
