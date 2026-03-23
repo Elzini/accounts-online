@@ -74,7 +74,13 @@ export class InvoicePostingEngine {
     return this.fiscalYearRepo;
   }
 
-  /** Post an invoice as a journal entry */
+  private async getSettingsRepo(): Promise<ICompanySettingsRepository> {
+    if (this.settingsRepo) return this.settingsRepo;
+    const { defaultRepos } = await import('./supabaseRepositories');
+    this.settingsRepo = defaultRepos.companySettings;
+    return this.settingsRepo;
+  }
+
   async postInvoice(invoiceId: string): Promise<void> {
     const invoiceRepo = await this.getInvoiceRepo();
 
