@@ -6,7 +6,7 @@ import {
   Brain, TrendingUp, Loader2, Sparkles, AlertTriangle, ArrowUpRight, CalendarDays, RefreshCw
 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useCompany } from '@/contexts/CompanyContext';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { toast } from 'sonner';

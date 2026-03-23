@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MessagesSquare, Send, Hash, Users, Plus, Paperclip, Smile } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useChatChannels, useAddChatChannel, useChatMessages, useAddChatMessage } from '@/hooks/useModuleData';
 
 export function InternalChatPage() {

@@ -13,7 +13,7 @@ import {
   CheckCircle2, Clock, XCircle, Shield, GitBranch, Users, 
   ArrowRight, Eye, MessageSquare, Calendar, UserCheck 
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { toast } from 'sonner';

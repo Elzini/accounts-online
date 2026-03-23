@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Upload, FileText, Loader2, CheckCircle, Sparkles, AlertCircle, X, Files, ArrowLeftRight, Eye } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useCostCenters } from '@/hooks/useCostCenters';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { InvoiceReconciliation, matchInvoices, ReconciliationResult, ExistingInvoice } from './InvoiceReconciliation';

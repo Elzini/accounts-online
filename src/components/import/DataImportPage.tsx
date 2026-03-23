@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Upload, FileSpreadsheet, Users, Truck, Package, Download, CheckCircle2, AlertCircle, Loader2, Trash2 } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { readExcelFile, utils } from '@/lib/excelUtils';
 
 type ImportType = 'customers' | 'suppliers' | 'items';

@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { GitBranch, Plus, CheckCircle2, XCircle, Clock, ArrowLeft, User, Loader2, Trash2 } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface ApprovalStep {
