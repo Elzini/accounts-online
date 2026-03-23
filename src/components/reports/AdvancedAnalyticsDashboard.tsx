@@ -94,17 +94,8 @@ export function AdvancedAnalyticsDashboard() {
       months[key].profit += Number(s.profit) || 0;
     });
 
-    // Invoice revenue
-    invoicesData.forEach((inv: any) => {
-      if (inv.invoice_type === 'sale' || inv.invoice_type === 'income') {
-        const d = new Date(inv.issue_date);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        if (!months[key]) months[key] = { month: `${monthNames[d.getMonth()]} ${d.getFullYear()}`, revenue: 0, expenses: 0, profit: 0, invoices: 0 };
-        months[key].revenue += Number(inv.total_amount) || 0;
-        months[key].invoices++;
-      }
-    });
-
+    // Note: salesData now already contains unified data from either sales or invoices table
+    // based on the industry type, so no separate invoicesData processing needed
     // Expenses
     expensesData.forEach((e: any) => {
       const d = new Date(e.expense_date);
