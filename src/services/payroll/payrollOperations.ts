@@ -185,25 +185,25 @@ export async function approvePayroll(payrollId: string, userId: string, companyI
   const advancesAccount = accounts?.find(a => a.code === '1204');
   if (!salaryAccount || !cashAccount) throw new Error('Salary or cash account not found');
 
-  const { data: journalEntry, error: journalError } = await supabase.from('journal_entries').insert({
-    company_id: companyId, description: entryDescription, entry_date: new Date().toISOString().split('T')[0],
-    reference_type: 'payroll', reference_id: payrollId,
-    total_debit: updatedPayroll.total_net_salaries + updatedPayroll.total_advances,
-    total_credit: updatedPayroll.total_net_salaries + updatedPayroll.total_advances,
-    is_posted: true, fiscal_year_id: fiscalYearId || null,
-  }).select().single();
-  if (journalError) throw journalError;
-
-  const lines = [
-    { journal_entry_id: journalEntry.id, account_id: salaryAccount.id, description: 'مصروف الرواتب', debit: updatedPayroll.total_net_salaries + updatedPayroll.total_advances, credit: 0 },
-    { journal_entry_id: journalEntry.id, account_id: cashAccount.id, description: 'صرف الرواتب نقداً', debit: 0, credit: updatedPayroll.total_net_salaries },
+  const lines: Array<{ account_id: string; description: string; debit: number; credit: number }> = [
+    { account_id: salaryAccount.id, description: 'مصروف الرواتب', debit: updatedPayroll.total_net_salaries + updatedPayroll.total_advances, credit: 0 },
+    { account_id: cashAccount.id, description: 'صرف الرواتب نقداً', debit: 0, credit: updatedPayroll.total_net_salaries },
   ];
   if (updatedPayroll.total_advances > 0 && advancesAccount) {
-    lines.push({ journal_entry_id: journalEntry.id, account_id: advancesAccount.id, description: 'تسوية سلف الموظفين', debit: 0, credit: updatedPayroll.total_advances });
+    lines.push({ account_id: advancesAccount.id, description: 'تسوية سلف الموظفين', debit: 0, credit: updatedPayroll.total_advances });
   }
 
-  const { error: linesError } = await supabase.from('journal_entry_lines').insert(lines);
-  if (linesError) throw linesError;
+  const journal = new JournalEngine(companyId);
+  const journalEntry = await journal.createEntry({
+    company_id: companyId,
+    fiscal_year_id: fiscalYearId || '',
+    entry_date: new Date().toISOString().split('T')[0],
+    description: entryDescription,
+    reference_type: 'manual',
+    reference_id: payrollId,
+    is_posted: true,
+    lines,
+  });
 
   if (updatedPayroll.items) {
     for (const item of updatedPayroll.items) {
