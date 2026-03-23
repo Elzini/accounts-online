@@ -102,13 +102,9 @@ export class InvoicePostingEngine {
       return;
     }
 
-    // Check auto-entry settings
-    const { supabase } = await import('@/integrations/supabase/client');
-    const { data: settings } = await supabase
-      .from('company_accounting_settings')
-      .select('auto_journal_entries_enabled, auto_purchase_entries, auto_sales_entries')
-      .eq('company_id', this.companyId)
-      .maybeSingle();
+    // Check auto-entry settings via repository
+    const settingsRepo = await this.getSettingsRepo();
+    const settings = await settingsRepo.getAccountingSettings(this.companyId);
 
     const isPurchase = inv.invoice_type === 'purchase';
     const isSales = inv.invoice_type === 'sales';
