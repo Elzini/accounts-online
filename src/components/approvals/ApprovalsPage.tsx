@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Plus, GitBranch, CheckCircle2, Clock, Shield } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { toast } from 'sonner';

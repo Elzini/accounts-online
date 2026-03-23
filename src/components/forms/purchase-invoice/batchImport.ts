@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { BatchParsedResult } from '../PurchaseInvoiceAIImport';
 import { getNextInvoiceNumber } from '@/utils/invoiceNumberGenerator';
 import { toast } from 'sonner';

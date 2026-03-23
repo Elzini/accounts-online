@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Camera, Upload, Loader2, FileText, Trash2, CheckCircle2, Eye, Receipt, ScanLine } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ScannedExpense {

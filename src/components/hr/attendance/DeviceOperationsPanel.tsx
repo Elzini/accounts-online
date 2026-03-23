@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { Loader2, Wifi, WifiOff, RefreshCw, Download, Upload, Monitor, Fingerprint, Calendar } from 'lucide-react';
 import { useFingerprintDevices, useDeviceLogs } from '@/hooks/hr/useHRService';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';

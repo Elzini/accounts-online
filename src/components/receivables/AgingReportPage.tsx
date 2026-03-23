@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, Download, Users, Truck, Clock } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useReportsServices';
 import { useQuery } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';

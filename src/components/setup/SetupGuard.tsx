@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ActivePage } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useCompany } from '@/contexts/CompanyContext';
 
 interface SetupGuardProps {

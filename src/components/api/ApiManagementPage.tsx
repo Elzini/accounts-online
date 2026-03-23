@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Copy, Key, Plus, Trash2, Eye, EyeOff, Globe, Code2, BookOpen, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 

@@ -1,6 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
-import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useCompanySmartAlerts } from '@/hooks/modules/useControlCenterServices';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,24 +11,7 @@ const priorityConfig: Record<string, { icon: any; color: string; bg: string; lab
 };
 
 export function CompanySmartAlerts() {
-  const { companyId } = useCompany();
-
-  const { data: alerts = [], isLoading } = useQuery({
-    queryKey: ['company-smart-alerts', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('company_id', companyId)
-        .eq('is_read', false)
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
+  const { data: alerts = [], isLoading } = useCompanySmartAlerts();
 
   const highCount = alerts.filter((a: any) => a.priority === 'high').length;
   const mediumCount = alerts.filter((a: any) => a.priority === 'medium').length;

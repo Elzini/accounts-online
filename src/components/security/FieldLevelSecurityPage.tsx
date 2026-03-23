@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Shield, Eye, Pencil, Save, Loader2 } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const ROLES = ['admin', 'accountant', 'sales', 'purchases', 'hr', 'warehouse', 'viewer'];

@@ -5,7 +5,7 @@
 
 import { useState, useRef } from 'react';
 import { format } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useReportsServices';
 import { useCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 import { readExcelFile } from '@/lib/excelUtils';

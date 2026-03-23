@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { ShoppingCart, Link2, RefreshCw, CheckCircle2, Settings, Loader2, Package, Users, FileText } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface IntegrationConfig {

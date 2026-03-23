@@ -15,7 +15,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useRecalculateCompanyProfits } from '@/hooks/useProfitRecalculation';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface SalesTableProps {

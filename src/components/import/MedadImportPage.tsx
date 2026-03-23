@@ -26,7 +26,7 @@ import { readExcelFile, sheetToJson, ExcelWorkbook } from '@/lib/excelUtils';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 

@@ -13,7 +13,7 @@ import { useTaxSettings } from '@/hooks/useAccounting';
 import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { approveInvoiceWithJournal } from '@/services/invoiceJournal';
 import { toast } from 'sonner';
 

@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useReportSettings, ReportSettings, defaultReportSettings } from '@/hooks/useUnifiedPrintReport';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useControlCenterServices';
 import { toast } from 'sonner';
 import { Loader2, FileText, Palette, Settings2, Ruler } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';

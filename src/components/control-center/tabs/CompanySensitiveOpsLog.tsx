@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useSensitiveOpsLog } from '@/hooks/modules/useControlCenterServices';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -14,21 +13,7 @@ export function CompanySensitiveOpsLog() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const { data: operations = [], isLoading } = useQuery({
-    queryKey: ['company-sensitive-ops', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase
-        .from('sensitive_operations_log')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
+  const { data: operations = [], isLoading } = useSensitiveOpsLog();
 
   const filtered = operations.filter((op: any) => {
     const matchSearch = !search || op.operation_type?.includes(search) || op.description?.includes(search);
