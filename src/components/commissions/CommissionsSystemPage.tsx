@@ -10,8 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   DollarSign, Users, TrendingUp, Plus, Calculator, Loader2, Award, Crown, Medal, Edit2, Trash2
 } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCommissionRules, useCommissionSales, useSaveCommissionRules } from '@/hooks/modules/useBusinessServices';
 import { useCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
