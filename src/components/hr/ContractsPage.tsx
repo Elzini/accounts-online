@@ -54,7 +54,6 @@ const initialForm = {
 export function EmployeeContractsPage() {
   const { t } = useLanguage();
   const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [otherAllowances, setOtherAllowances] = useState<AllowanceItem[]>([]);
