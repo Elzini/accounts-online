@@ -59,6 +59,7 @@ export function createServiceContainer(
     fiscalYears: deps?.fiscalYears || defaultRepos.fiscalYears,
     invoices: deps?.invoices || defaultRepos.invoices,
     suppliers: deps?.suppliers || defaultRepos.suppliers,
+    companySettings: deps?.companySettings || defaultRepos.companySettings,
   };
 
   const resolver = new AccountResolver(companyId, repos.accounts, repos.accountMappings);
