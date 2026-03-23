@@ -229,14 +229,13 @@ export function useSecurityIncidents(limit = 100) {
   });
 }
 
-// ─── Tamper Detector ───
+// ─── Tamper Detector (redirected to audit_logs) ───
 export function useTamperScanRuns() {
   return useQuery({
     queryKey: ['tamper-scan-runs'],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('tamper_scan_runs').select('*').order('created_at', { ascending: false }).limit(50);
-      if (error) throw error;
-      return data || [];
+      // Scan runs no longer stored - return empty
+      return [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -246,7 +245,7 @@ export function useTamperEvents() {
   return useQuery({
     queryKey: ['tamper-events'],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('tamper_events').select('*').order('detected_at', { ascending: false }).limit(200);
+      const { data, error } = await supabase.from('audit_logs').select('*').in('action', ['update', 'delete']).order('created_at', { ascending: false }).limit(200);
       if (error) throw error;
       return data || [];
     },
