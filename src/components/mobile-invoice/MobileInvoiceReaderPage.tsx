@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Smartphone, Camera, FileText, CheckCircle, QrCode, Upload, Eye, Building2, Trash2, AlertTriangle, CameraOff, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { decodeZatcaQRData, type ZatcaQRData } from '@/lib/zatcaQR';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
 interface ScannedInvoice {
   id: string;
