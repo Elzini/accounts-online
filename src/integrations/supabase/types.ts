@@ -9503,6 +9503,82 @@ export type Database = {
           },
         ]
       }
+      tenant_encryption_config: {
+        Row: {
+          algorithm: string | null
+          company_id: string
+          created_at: string | null
+          encryption_enabled: boolean | null
+          id: string
+          key_rotation_days: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          algorithm?: string | null
+          company_id: string
+          created_at?: string | null
+          encryption_enabled?: boolean | null
+          id?: string
+          key_rotation_days?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          algorithm?: string | null
+          company_id?: string
+          created_at?: string | null
+          encryption_enabled?: boolean | null
+          id?: string
+          key_rotation_days?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_encryption_config_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_encryption_keys: {
+        Row: {
+          algorithm: string | null
+          company_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          key_hash: string
+          key_version: number | null
+        }
+        Insert: {
+          algorithm?: string | null
+          company_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash: string
+          key_version?: number | null
+        }
+        Update: {
+          algorithm?: string | null
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash?: string
+          key_version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_encryption_keys_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_rate_limits: {
         Row: {
           company_id: string
