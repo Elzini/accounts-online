@@ -4,6 +4,7 @@
  */
 import { IndustryModule, DashboardStats, MenuItem } from '@/core/engine/types';
 import { supabase } from '@/hooks/modules/useMiscServices';
+import { CAR_DEALERSHIP_TAX_RULES } from '@/core/engine/taxRules';
 
 export const CarDealershipModule: IndustryModule = {
   id: 'car_dealership',
@@ -122,4 +123,6 @@ export const CarDealershipModule: IndustryModule = {
     'rpt_status_available': 'متاحة',
     'rpt_status_sold': 'مباعة',
   },
+
+  taxRules: CAR_DEALERSHIP_TAX_RULES,
 };

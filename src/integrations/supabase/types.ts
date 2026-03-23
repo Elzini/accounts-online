@@ -10239,6 +10239,62 @@ export type Database = {
         }
         Relationships: []
       }
+      tax_rules: {
+        Row: {
+          applies_to_condition: string | null
+          applies_to_transaction: string | null
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          margin_inclusive: boolean | null
+          method: string
+          priority: number
+          rate: number
+          rule_key: string
+          updated_at: string
+        }
+        Insert: {
+          applies_to_condition?: string | null
+          applies_to_transaction?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          margin_inclusive?: boolean | null
+          method?: string
+          priority?: number
+          rate?: number
+          rule_key: string
+          updated_at?: string
+        }
+        Update: {
+          applies_to_condition?: string | null
+          applies_to_transaction?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          margin_inclusive?: boolean | null
+          method?: string
+          priority?: number
+          rate?: number
+          rule_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_rules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tax_settings: {
         Row: {
           apply_to_purchases: boolean

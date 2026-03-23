@@ -215,7 +215,10 @@ export interface IndustryModule {
   /** Custom dashboard card definitions */
   dashboardCards?: { id: string; title: string; icon: string; valueKey: string; format?: 'number' | 'currency' }[];
   /** Labels overrides for shared components */
+  /** Labels overrides for shared components */
   labelOverrides?: Record<string, string>;
+  /** Configurable tax rules (replaces hardcoded VAT logic) */
+  taxRules?: import('@/core/engine/taxRules').TaxRulesConfig;
 }
 
 export interface MenuItem {
