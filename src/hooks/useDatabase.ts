@@ -117,13 +117,25 @@ export function useDeleteSupplier() {
   });
 }
 
-// Stats hook (works for all company types - auto-detects company type)
+// Stats hook - uses new unified StatsEngine
 export function useStats() {
   const { companyId } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
   return useQuery({
     queryKey: ['stats', companyId, selectedFiscalYear?.id],
-    queryFn: () => db.fetchStats(selectedFiscalYear?.id),
+    queryFn: async () => {
+      const { fetchDashboardStats } = await import('@/services/statsEngine');
+      const stats = await fetchDashboardStats(selectedFiscalYear?.id);
+      // Backward compatibility: map to legacy shape
+      return {
+        ...stats,
+        availableNewCars: Number(stats.industryMetrics.availableNewCars ?? 0),
+        availableUsedCars: Number(stats.industryMetrics.availableUsedCars ?? 0),
+        availableCars: Number(stats.industryMetrics.availableCars ?? stats.industryMetrics.activeProjects ?? 0),
+        activeProjectNames: stats.industryMetrics.activeProjectNames ?? [],
+        totalCarExpenses: Number(stats.industryMetrics.carExpenses ?? 0),
+      };
+    },
     enabled: !!companyId,
     staleTime: 1000 * 60 * 2,
   });
@@ -134,13 +146,20 @@ export function useAllTimeStats() {
   const { companyId } = useCompany();
   return useQuery({
     queryKey: ['all-time-stats', companyId],
-    queryFn: () => db.fetchAllTimeStats(),
+    queryFn: async () => {
+      const { fetchAllTimeDashboardStats } = await import('@/services/statsEngine');
+      const stats = await fetchAllTimeDashboardStats();
+      return {
+        ...stats,
+        totalCarsCount: Number((stats as any).industryMetrics?.totalCarsCount ?? 0),
+      };
+    },
     enabled: !!companyId,
     staleTime: 1000 * 60 * 5,
   });
 }
 
-// Monthly chart data hook
+// Monthly chart data hook (kept in database.ts for now)
 export function useMonthlyChartData() {
   const { companyId } = useCompany();
   const { selectedFiscalYear } = useFiscalYear();
