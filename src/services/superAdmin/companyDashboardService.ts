@@ -3,6 +3,7 @@
  * Replaces N+1 loop pattern (9 queries × N companies → 1 RPC + 2 queries).
  */
 import { supabase } from '@/hooks/modules/useSuperAdminServices';
+import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 
 export interface CompanyStats {
   company_id: string;
