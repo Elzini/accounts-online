@@ -5,6 +5,7 @@
 
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { JournalEngine } from '@/core/engine/journalEngine';
+import { AccountResolver } from '@/core/engine/accountResolver';
 
 export async function createPurchaseReturnJournal(noteId: string): Promise<void> {
   // 0. Check for existing journal entry via engine
@@ -28,18 +29,16 @@ export async function createPurchaseReturnJournal(noteId: string): Promise<void>
     .from('company_accounting_settings').select('*').eq('company_id', companyId).maybeSingle();
   if (settings?.auto_journal_entries_enabled === false || settings?.auto_purchase_entries === false) return;
 
-  // 3. Find accounts
-  const { data: accounts } = await supabase
-    .from('account_categories').select('id, code, name').eq('company_id', companyId);
+  // 3. Resolve accounts via Core Engine's AccountResolver
+  const resolver = new AccountResolver(companyId);
+  await resolver.load();
 
-  const findAccount = (id: string | null, ...fallbackCodes: string[]) => {
-    if (id) { const acc = accounts?.find(a => a.id === id); if (acc) return acc; }
-    for (const code of fallbackCodes) { const acc = accounts?.find(a => a.code === code); if (acc) return acc; }
-    return null;
-  };
-
-  const expenseAccount = findAccount(settings?.purchase_inventory_account_id || null, '1301', '5101');
-  const vatInputAccount = findAccount(settings?.vat_recoverable_account_id || null, '1108', '210402', '21042');
+  const expenseAccount = resolver.resolveFlexible(
+    settings?.purchase_inventory_account_id || null, 'purchase_expense', '1301', '5101'
+  );
+  const vatInputAccount = resolver.resolveFlexible(
+    settings?.vat_recoverable_account_id || null, 'vat_input', '1108', '210402', '21042'
+  );
 
   let debitAccount: { id: string; code: string; name: string } | null = null;
   if (noteData.related_invoice_id) {
