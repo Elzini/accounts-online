@@ -30,10 +30,10 @@ export async function getAccountBalances(
 
   if (fiscalYearId) {
     query = query.eq('journal_entry.fiscal_year_id', fiscalYearId);
-  } else {
-    if (startDate) query = query.gte('journal_entry.entry_date', startDate);
-    if (endDate) query = query.lte('journal_entry.entry_date', endDate);
   }
+  // Date range filters within the fiscal year
+  if (startDate) query = query.gte('journal_entry.entry_date', startDate);
+  if (endDate) query = query.lte('journal_entry.entry_date', endDate);
 
   const { data: lines, error } = await query;
   if (error) throw error;
