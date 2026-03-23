@@ -34,7 +34,6 @@ interface FingerprintDevice {
 export function FingerprintDevicesPage() {
   const companyId = useCompanyId();
   const { t, language } = useLanguage();
-  const { t, language } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDevice, setEditingDevice] = useState<FingerprintDevice | null>(null);
   const deviceDefaults: Record<string, { port: number; protocol: string; sdk: string; features: string; notes: string; software: string; softwareUrl: string; models: string; capacity: string; communication: string }> = {
