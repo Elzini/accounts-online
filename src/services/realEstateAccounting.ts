@@ -280,18 +280,13 @@ export async function completeUnitSale(params: {
     });
   }
 
-  const revenueEntry = await createJournalEntry(
-    {
-      company_id: companyId,
-      entry_date: new Date().toISOString().split('T')[0],
-      description: `اعتراف بإيراد بيع وحدة ${unitNumber} - ${projectName} - ${customerName}`,
-      status: 'posted',
-      reference_type: 'unit_sale_revenue',
-      reference_id: unitId,
-      fiscal_year_id: fiscalYearId || null,
-    } as any,
-    revenueLines
-  );
+  const revenueEntry = await createEngineEntry(companyId, {
+    entry_date: new Date().toISOString().split('T')[0],
+    description: `اعتراف بإيراد بيع وحدة ${unitNumber} - ${projectName} - ${customerName}`,
+    reference_type: 'unit_sale_revenue',
+    reference_id: unitId,
+    fiscal_year_id: fiscalYearId,
+  }, revenueLines);
 
   // --- Entry 2: COGS Transfer ---
   let cogsEntryId = '';
