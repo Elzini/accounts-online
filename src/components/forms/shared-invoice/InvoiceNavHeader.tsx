@@ -24,6 +24,8 @@ interface InvoiceNavHeaderProps {
   onPrevious: () => void;
   onNext: () => void;
   onLast: () => void;
+  /** Extra actions rendered between nav controls and title */
+  extraActions?: React.ReactNode;
 }
 
 export function InvoiceNavHeader({
