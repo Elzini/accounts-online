@@ -1,6 +1,5 @@
 import { useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useCustodyAmountChangesPrint } from '@/hooks/modules/useBusinessServices';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Printer, Download, X, ArrowUp, ArrowDown } from 'lucide-react';
