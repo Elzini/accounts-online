@@ -21,6 +21,7 @@ import {
   IFiscalYearRepository,
   IInvoiceRepository,
   ISupplierRepository,
+  ICompanySettingsRepository,
 } from './repositories';
 
 export interface ServiceContainer {
