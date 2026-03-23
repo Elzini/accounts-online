@@ -27,34 +27,9 @@ import {
   Crown,
 } from './sidebar/sidebarIconMap';
 
-// Section icon mapping
-const SECTION_ICONS: Record<string, LucideIcon> = {
-  main: LayoutDashboard,
-  sales: DollarSign,
-  purchases: ShoppingCart,
-  accounting: Calculator,
-  inventory: Warehouse,
-  hr: Users,
-  operations: Wrench,
-  integrations: Plug,
-  system: Settings2,
-  more: MoreHorizontal,
-};
-
-interface MenuItem {
-  id: ActivePage;
-  label: string;
-  icon: LucideIcon;
-  permission?: 'sales' | 'purchases' | 'reports' | 'admin' | 'users';
-}
-
-interface Section {
-  id: string;
-  label: string;
-  icon: LucideIcon;
-  items: MenuItem[];
-  showCondition: boolean;
-  isMore?: boolean;
+interface SidebarProps {
+  activePage: ActivePage;
+  setActivePage: (page: ActivePage) => void;
 }
 
 /** Collapsible section component */
