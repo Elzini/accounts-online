@@ -6,9 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2, Upload, FileText, CheckCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useFingerprintDevices, useImportDeviceLogs } from '@/hooks/hr/useHRService';
 import { useCompanyId } from '@/hooks/useCompanyId';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ParsedLog {
