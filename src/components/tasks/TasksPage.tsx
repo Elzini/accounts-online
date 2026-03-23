@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from '@/hooks/modules/useModuleServices';
 
 interface Task {
   id: string;
@@ -44,8 +45,6 @@ export function TasksPage() {
     urgent: { label: t.tasks_priority_urgent, color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
   };
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
@@ -55,21 +54,16 @@ export function TasksPage() {
   const { user } = useAuth();
   const { company } = useCompany();
 
-  const fetchTasks = async () => {
-    if (!user) return;
-    setIsLoading(true);
-    const { data, error } = await supabase.from('tasks').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-    if (error) { toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: language === 'ar' ? 'فشل في تحميل المهام' : 'Failed to load tasks', variant: 'destructive' }); }
-    else { setTasks((data || []) as Task[]); }
-    setIsLoading(false);
-  };
+  const { data: tasks = [], refetch } = useTasks(user?.id);
+  const createTask = useCreateTask();
+  const updateTask = useUpdateTask();
+  const deleteTask = useDeleteTask();
 
-  useEffect(() => { fetchTasks(); }, [user]);
   useEffect(() => {
     if (!user) return;
-    const channel = supabase.channel('tasks-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `user_id=eq.${user.id}` }, () => { fetchTasks(); }).subscribe();
+    const channel = supabase.channel('tasks-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `user_id=eq.${user.id}` }, () => { refetch(); }).subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [user, refetch]);
 
   const openNew = () => { setEditingTask(null); setForm({ title: '', description: '', priority: 'medium', status: 'todo', due_date: '', category: '', assigned_to: '' }); setShowDialog(true); };
   const openEdit = (task: Task) => { setEditingTask(task); setForm({ title: task.title, description: task.description || '', priority: task.priority, status: task.status, due_date: task.due_date || '', category: task.category || '', assigned_to: task.assigned_to || '' }); setShowDialog(true); };
@@ -79,27 +73,29 @@ export function TasksPage() {
     if (!user || !company) return;
     const taskData = { title: form.title.trim(), description: form.description.trim() || null, priority: form.priority, status: form.status, due_date: form.due_date || null, category: form.category.trim() || null, assigned_to: form.assigned_to.trim() || null };
     if (editingTask) {
-      const { error } = await supabase.from('tasks').update(taskData).eq('id', editingTask.id);
-      if (error) { toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: language === 'ar' ? 'فشل في تحديث المهمة' : 'Failed to update task', variant: 'destructive' }); return; }
-      toast({ title: language === 'ar' ? 'تم' : 'Done', description: language === 'ar' ? 'تم تحديث المهمة بنجاح' : 'Task updated successfully' });
+      updateTask.mutate({ id: editingTask.id, data: taskData }, {
+        onSuccess: () => { toast({ title: language === 'ar' ? 'تم' : 'Done', description: language === 'ar' ? 'تم تحديث المهمة بنجاح' : 'Task updated successfully' }); setShowDialog(false); },
+        onError: () => { toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: language === 'ar' ? 'فشل في تحديث المهمة' : 'Failed to update task', variant: 'destructive' }); },
+      });
     } else {
-      const { error } = await supabase.from('tasks').insert({ ...taskData, user_id: user.id, company_id: company.id });
-      if (error) { toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: language === 'ar' ? 'فشل في إضافة المهمة' : 'Failed to add task', variant: 'destructive' }); return; }
-      toast({ title: language === 'ar' ? 'تم' : 'Done', description: language === 'ar' ? 'تم إضافة المهمة بنجاح' : 'Task added successfully' });
+      createTask.mutate({ ...taskData, user_id: user.id, company_id: company.id }, {
+        onSuccess: () => { toast({ title: language === 'ar' ? 'تم' : 'Done', description: language === 'ar' ? 'تم إضافة المهمة بنجاح' : 'Task added successfully' }); setShowDialog(false); },
+        onError: () => { toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: language === 'ar' ? 'فشل في إضافة المهمة' : 'Failed to add task', variant: 'destructive' }); },
+      });
     }
-    setShowDialog(false); fetchTasks();
   };
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from('tasks').delete().eq('id', id);
-    if (error) { toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: language === 'ar' ? 'فشل في حذف المهمة' : 'Failed to delete task', variant: 'destructive' }); return; }
-    toast({ title: language === 'ar' ? 'تم' : 'Done', description: language === 'ar' ? 'تم حذف المهمة' : 'Task deleted' }); fetchTasks();
+  const handleDelete = (id: string) => {
+    deleteTask.mutate(id, {
+      onSuccess: () => toast({ title: language === 'ar' ? 'تم' : 'Done', description: language === 'ar' ? 'تم حذف المهمة' : 'Task deleted' }),
+      onError: () => toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: language === 'ar' ? 'فشل في حذف المهمة' : 'Failed to delete task', variant: 'destructive' }),
+    });
   };
 
-  const updateStatus = async (taskId: string, newStatus: Task['status']) => {
-    const { error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', taskId);
-    if (error) { toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: language === 'ar' ? 'فشل في تحديث الحالة' : 'Failed to update status', variant: 'destructive' }); return; }
-    fetchTasks();
+  const updateStatus = (taskId: string, newStatus: Task['status']) => {
+    updateTask.mutate({ id: taskId, data: { status: newStatus } }, {
+      onError: () => toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: language === 'ar' ? 'فشل في تحديث الحالة' : 'Failed to update status', variant: 'destructive' }),
+    });
   };
 
   const handleDragStart = (taskId: string) => setDraggedTask(taskId);
@@ -108,7 +104,8 @@ export function TasksPage() {
   const handleDrop = (e: React.DragEvent, status: Task['status']) => { e.preventDefault(); if (draggedTask) { updateStatus(draggedTask, status); } setDraggedTask(null); setDragOverColumn(null); };
 
   const columns: Task['status'][] = ['todo', 'in_progress', 'done'];
-  const getTasksByStatus = (status: Task['status']) => tasks.filter(t => t.status === status);
+  const typedTasks = tasks as Task[];
+  const getTasksByStatus = (status: Task['status']) => typedTasks.filter(t => t.status === status);
   const isOverdue = (task: Task) => task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
 
   return (
@@ -122,10 +119,10 @@ export function TasksPage() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="border"><CardContent className="p-3 text-center"><p className="text-2xl font-bold text-foreground">{tasks.length}</p><p className="text-xs text-muted-foreground">{t.tasks_total}</p></CardContent></Card>
+        <Card className="border"><CardContent className="p-3 text-center"><p className="text-2xl font-bold text-foreground">{typedTasks.length}</p><p className="text-xs text-muted-foreground">{t.tasks_total}</p></CardContent></Card>
         <Card className="border"><CardContent className="p-3 text-center"><p className="text-2xl font-bold text-primary">{getTasksByStatus('in_progress').length}</p><p className="text-xs text-muted-foreground">{t.tasks_in_progress}</p></CardContent></Card>
         <Card className="border"><CardContent className="p-3 text-center"><p className="text-2xl font-bold text-green-600">{getTasksByStatus('done').length}</p><p className="text-xs text-muted-foreground">{t.tasks_completed}</p></CardContent></Card>
-        <Card className="border"><CardContent className="p-3 text-center"><p className="text-2xl font-bold text-red-600">{tasks.filter(t => isOverdue(t)).length}</p><p className="text-xs text-muted-foreground">{t.tasks_overdue}</p></CardContent></Card>
+        <Card className="border"><CardContent className="p-3 text-center"><p className="text-2xl font-bold text-red-600">{typedTasks.filter(t => isOverdue(t)).length}</p><p className="text-xs text-muted-foreground">{t.tasks_overdue}</p></CardContent></Card>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
