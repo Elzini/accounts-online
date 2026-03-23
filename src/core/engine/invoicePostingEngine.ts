@@ -1,20 +1,21 @@
 /**
- * Core Accounting Engine - Invoice Posting Engine
- * Handles automatic journal entry creation when invoices are approved
+ * Core Accounting Engine - Invoice Posting Engine (v2)
  * 
- * This replaces the old invoiceJournal.ts with a clean, config-driven approach
+ * Uses repository interfaces + EventBus for decoupled posting.
+ * Replaces direct Supabase access with injected repositories.
  */
 
-import { supabase } from '@/integrations/supabase/client';
 import { AccountResolver } from './accountResolver';
 import { JournalEngine } from './journalEngine';
 import { JournalEntryLine } from './types';
+import { IInvoiceRepository, ISupplierRepository, IFiscalYearRepository } from './repositories';
+import { EventBus, Events, InvoicePostedEvent } from './eventBus';
 
 interface InvoiceData {
   id: string;
   company_id: string;
   fiscal_year_id: string | null;
-  invoice_type: 'purchase' | 'sales' | 'service';
+  invoice_type: string;
   invoice_number: string;
   customer_name: string | null;
   supplier_id: string | null;
@@ -27,34 +28,65 @@ interface InvoiceData {
 export class InvoicePostingEngine {
   private resolver: AccountResolver;
   private journal: JournalEngine;
+  private invoiceRepo: IInvoiceRepository | null;
+  private supplierRepo: ISupplierRepository | null;
+  private fiscalYearRepo: IFiscalYearRepository | null;
 
-  constructor(private companyId: string) {
-    this.resolver = new AccountResolver(companyId);
-    this.journal = new JournalEngine(companyId);
+  constructor(
+    private companyId: string,
+    deps?: {
+      resolver?: AccountResolver;
+      journal?: JournalEngine;
+      invoiceRepo?: IInvoiceRepository;
+      supplierRepo?: ISupplierRepository;
+      fiscalYearRepo?: IFiscalYearRepository;
+    },
+  ) {
+    this.resolver = deps?.resolver || new AccountResolver(companyId);
+    this.journal = deps?.journal || new JournalEngine(companyId);
+    this.invoiceRepo = deps?.invoiceRepo || null;
+    this.supplierRepo = deps?.supplierRepo || null;
+    this.fiscalYearRepo = deps?.fiscalYearRepo || null;
+  }
+
+  private async getInvoiceRepo(): Promise<IInvoiceRepository> {
+    if (this.invoiceRepo) return this.invoiceRepo;
+    const { defaultRepos } = await import('./supabaseRepositories');
+    this.invoiceRepo = defaultRepos.invoices;
+    return this.invoiceRepo;
+  }
+
+  private async getSupplierRepo(): Promise<ISupplierRepository> {
+    if (this.supplierRepo) return this.supplierRepo;
+    const { defaultRepos } = await import('./supabaseRepositories');
+    this.supplierRepo = defaultRepos.suppliers;
+    return this.supplierRepo;
+  }
+
+  private async getFiscalYearRepo(): Promise<IFiscalYearRepository> {
+    if (this.fiscalYearRepo) return this.fiscalYearRepo;
+    const { defaultRepos } = await import('./supabaseRepositories');
+    this.fiscalYearRepo = defaultRepos.fiscalYears;
+    return this.fiscalYearRepo;
   }
 
   /** Post an invoice as a journal entry */
   async postInvoice(invoiceId: string): Promise<void> {
+    const invoiceRepo = await this.getInvoiceRepo();
+
     // Check for duplicates
     const existingId = await this.journal.existsForReference(
       invoiceId,
       ['invoice_purchase', 'invoice_sale']
     );
     if (existingId) {
-      await supabase.from('invoices')
-        .update({ status: 'issued', journal_entry_id: existingId })
-        .eq('id', invoiceId);
+      await invoiceRepo.updateStatus(invoiceId, 'issued', existingId);
       return;
     }
 
     // Fetch invoice
-    const { data: invoice, error } = await supabase
-      .from('invoices')
-      .select('id, company_id, fiscal_year_id, invoice_type, invoice_number, customer_name, supplier_id, subtotal, vat_amount, total, payment_account_id')
-      .eq('id', invoiceId)
-      .single();
-
-    if (error || !invoice) throw error || new Error('Invoice not found');
+    const invoice = await invoiceRepo.findById(invoiceId);
+    if (!invoice) throw new Error('Invoice not found');
 
     const inv = invoice as InvoiceData;
     const subtotal = Number(inv.subtotal) || 0;
@@ -62,11 +94,12 @@ export class InvoicePostingEngine {
     const total = Number(inv.total) || subtotal + vatAmount;
 
     if (total <= 0) {
-      await supabase.from('invoices').update({ status: 'issued' }).eq('id', invoiceId);
+      await invoiceRepo.updateStatus(invoiceId, 'issued');
       return;
     }
 
     // Check auto-entry settings
+    const { supabase } = await import('@/integrations/supabase/client');
     const { data: settings } = await supabase
       .from('company_accounting_settings')
       .select('auto_journal_entries_enabled, auto_purchase_entries, auto_sales_entries')
@@ -79,28 +112,28 @@ export class InvoicePostingEngine {
     if (settings?.auto_journal_entries_enabled === false ||
         (isPurchase && settings?.auto_purchase_entries === false) ||
         (isSales && settings?.auto_sales_entries === false)) {
-      await supabase.from('invoices').update({ status: 'issued' }).eq('id', invoiceId);
+      await invoiceRepo.updateStatus(invoiceId, 'issued');
       return;
     }
 
     // Load account resolver
     await this.resolver.load();
 
-    // Build journal lines based on invoice type
+    // Build journal lines
     const lines = isPurchase
       ? await this.buildPurchaseLines(inv, subtotal, vatAmount)
       : this.buildSalesLines(inv, subtotal, vatAmount, total);
 
     if (!lines || lines.length === 0) {
       console.error('Could not build journal lines - missing accounts');
-      await supabase.from('invoices').update({ status: 'issued' }).eq('id', invoiceId);
+      await invoiceRepo.updateStatus(invoiceId, 'issued');
       return;
     }
 
     // Get fiscal year
     const fiscalYearId = inv.fiscal_year_id || await this.getCurrentFiscalYear();
 
-    // Create journal entry
+    // Create journal entry (goes through middleware + events automatically)
     const entry = await this.journal.createEntry({
       company_id: this.companyId,
       fiscal_year_id: fiscalYearId,
@@ -112,31 +145,34 @@ export class InvoicePostingEngine {
       lines,
     });
 
-    // Update invoice
-    await supabase.from('invoices')
-      .update({ status: 'issued', journal_entry_id: entry.id })
-      .eq('id', invoiceId);
+    // Update invoice status
+    await invoiceRepo.updateStatus(invoiceId, 'issued', entry.id);
+
+    // Emit invoice-specific event
+    await EventBus.emit<InvoicePostedEvent>(this.companyId, Events.INVOICE_POSTED, {
+      invoiceId,
+      journalEntryId: entry.id,
+      invoiceType: inv.invoice_type,
+      total,
+    });
   }
 
   private async buildPurchaseLines(
     inv: InvoiceData, subtotal: number, vatAmount: number
   ): Promise<JournalEntryLine[]> {
     const lines: JournalEntryLine[] = [];
-
     const expenseAccount = this.resolver.resolve('purchase_expense');
     const vatInputAccount = this.resolver.resolve('vat_input');
 
-    // Determine credit account
     let creditAccount = inv.payment_account_id
       ? this.resolver.resolveFlexible(inv.payment_account_id, null)
       : null;
 
     if (!creditAccount && inv.supplier_id) {
-      // Try to find supplier sub-account
-      const { data: supplier } = await supabase
-        .from('suppliers').select('name').eq('id', inv.supplier_id).maybeSingle();
-      if (supplier?.name) {
-        creditAccount = this.resolver.findByNameUnderCode(supplier.name, '2101');
+      const supplierRepo = await this.getSupplierRepo();
+      const supplierName = await supplierRepo.findNameById(inv.supplier_id);
+      if (supplierName) {
+        creditAccount = this.resolver.findByNameUnderCode(supplierName, '2101');
       }
     }
     if (!creditAccount) {
@@ -148,16 +184,14 @@ export class InvoicePostingEngine {
     lines.push({
       account_id: expenseAccount.id,
       description: `مشتريات - ${inv.customer_name || inv.invoice_number}`,
-      debit: subtotal,
-      credit: 0,
+      debit: subtotal, credit: 0,
     });
 
     if (vatAmount > 0 && vatInputAccount) {
       lines.push({
         account_id: vatInputAccount.id,
         description: `ضريبة مشتريات - ${inv.invoice_number}`,
-        debit: vatAmount,
-        credit: 0,
+        debit: vatAmount, credit: 0,
       });
     }
 
@@ -175,7 +209,6 @@ export class InvoicePostingEngine {
     inv: InvoiceData, subtotal: number, vatAmount: number, total: number
   ): JournalEntryLine[] {
     const lines: JournalEntryLine[] = [];
-
     const cashAccount = inv.payment_account_id
       ? this.resolver.resolveFlexible(inv.payment_account_id, 'sales_cash')
       : this.resolver.resolve('sales_cash');
@@ -184,40 +217,18 @@ export class InvoicePostingEngine {
 
     if (!cashAccount || !revenueAccount) return [];
 
-    lines.push({
-      account_id: cashAccount.id,
-      description: `مبيعات - ${inv.customer_name || inv.invoice_number}`,
-      debit: total,
-      credit: 0,
-    });
-
-    lines.push({
-      account_id: revenueAccount.id,
-      description: `إيرادات - ${inv.invoice_number}`,
-      debit: 0,
-      credit: subtotal,
-    });
-
+    lines.push({ account_id: cashAccount.id, description: `مبيعات - ${inv.customer_name || inv.invoice_number}`, debit: total, credit: 0 });
+    lines.push({ account_id: revenueAccount.id, description: `إيرادات - ${inv.invoice_number}`, debit: 0, credit: subtotal });
     if (vatAmount > 0 && vatOutputAccount) {
-      lines.push({
-        account_id: vatOutputAccount.id,
-        description: `ضريبة مبيعات - ${inv.invoice_number}`,
-        debit: 0,
-        credit: vatAmount,
-      });
+      lines.push({ account_id: vatOutputAccount.id, description: `ضريبة مبيعات - ${inv.invoice_number}`, debit: 0, credit: vatAmount });
     }
 
     return lines;
   }
 
   private async getCurrentFiscalYear(): Promise<string> {
-    const { data } = await supabase
-      .from('fiscal_years')
-      .select('id')
-      .eq('company_id', this.companyId)
-      .eq('is_current', true)
-      .limit(1)
-      .single();
-    return data?.id || '';
+    const repo = await this.getFiscalYearRepo();
+    const fy = await repo.findCurrent(this.companyId);
+    return fy?.id || '';
   }
 }
