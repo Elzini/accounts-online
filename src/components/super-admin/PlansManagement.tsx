@@ -35,6 +35,7 @@ export function PlansManagement() {
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ['plans'],
     queryFn: fetchPlans,
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMut = useMutation({

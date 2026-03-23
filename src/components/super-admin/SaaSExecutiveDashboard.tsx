@@ -62,6 +62,7 @@ export function SaaSExecutiveDashboard() {
         };
       }).sort((a, b) => a.daysLeft - b.daysLeft);
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Country distribution
@@ -89,6 +90,7 @@ export function SaaSExecutiveDashboard() {
         .map(([code, value]) => ({ name: countryNames[code] || code, value }))
         .sort((a, b) => b.value - a.value);
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   if (kpisLoading) {

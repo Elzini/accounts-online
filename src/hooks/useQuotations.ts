@@ -14,6 +14,7 @@ export function useQuotations() {
   return useQuery({
     queryKey: ['quotations'],
     queryFn: fetchQuotations,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

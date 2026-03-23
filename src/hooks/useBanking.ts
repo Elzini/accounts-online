@@ -23,6 +23,7 @@ export function useBankAccounts() {
   return useQuery({
     queryKey: ['bankAccounts'],
     queryFn: fetchBankAccounts,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -62,6 +63,7 @@ export function useBankStatements(bankAccountId?: string) {
   return useQuery({
     queryKey: ['bankStatements', bankAccountId],
     queryFn: () => fetchBankStatements(bankAccountId),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -155,6 +157,7 @@ export function useBankReconciliations(bankAccountId?: string) {
   return useQuery({
     queryKey: ['bankReconciliations', bankAccountId],
     queryFn: () => fetchBankReconciliations(bankAccountId),
+    staleTime: 5 * 60 * 1000,
   });
 }
 

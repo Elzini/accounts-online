@@ -9,6 +9,7 @@ export function useFormulaVariables() {
   return useQuery({
     queryKey: ['formula-variables', companyId],
     queryFn: () => formulaService.fetchFormulaVariables(companyId),
+    staleTime: 5 * 60 * 1000,
   });
 }
 

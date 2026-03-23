@@ -45,6 +45,7 @@ export function useHRInsurance() {
     queryKey: ['hr-insurance', companyId],
     queryFn: () => hrService.fetchHRInsurance(companyId!),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -64,6 +65,7 @@ export function useHREvaluations() {
     queryKey: ['hr-evaluations', companyId],
     queryFn: () => hrService.fetchHREvaluations(companyId!),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -83,6 +85,7 @@ export function useHRTrainingCourses() {
     queryKey: ['hr-training', companyId],
     queryFn: () => hrService.fetchHRTrainingCourses(companyId!),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

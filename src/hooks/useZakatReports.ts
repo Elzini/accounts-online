@@ -22,6 +22,7 @@ export function useCashFlowStatement(startDate?: string, endDate?: string) {
       return getCashFlowStatement(companyId, startDate, endDate);
     },
     enabled: !!companyId && !!startDate && !!endDate,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -36,6 +37,7 @@ export function useChangesInEquityStatement(startDate?: string, endDate?: string
       return getChangesInEquityStatement(companyId, startDate, endDate);
     },
     enabled: !!companyId && !!startDate && !!endDate,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -50,6 +52,7 @@ export function useZakatBaseStatement(fiscalYear?: string) {
       return getZakatBaseStatement(companyId, fiscalYear);
     },
     enabled: !!companyId && !!fiscalYear,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -64,5 +67,6 @@ export function useDetailedIncomeStatement(startDate?: string, endDate?: string)
       return getDetailedIncomeStatement(companyId, startDate, endDate);
     },
     enabled: !!companyId && !!startDate && !!endDate,
+    staleTime: 5 * 60 * 1000,
   });
 }

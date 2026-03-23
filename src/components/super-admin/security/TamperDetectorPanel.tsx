@@ -45,6 +45,7 @@ export function TamperDetectorPanel() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch tamper events
@@ -59,6 +60,7 @@ export function TamperDetectorPanel() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch integrity stats
@@ -82,6 +84,7 @@ export function TamperDetectorPanel() {
         invalid: invalidHashes || 0,
       };
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Run scan mutation

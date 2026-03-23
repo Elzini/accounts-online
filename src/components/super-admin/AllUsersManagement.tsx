@@ -70,6 +70,7 @@ export function AllUsersManagement() {
       if (error) throw error;
       return data as Company[];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch all users with their companies and permissions
@@ -117,6 +118,7 @@ export function AllUsersManagement() {
 
       return usersWithPermissions;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Delete user mutation

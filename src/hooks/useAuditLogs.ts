@@ -9,5 +9,6 @@ export function useAuditLogs() {
     queryKey: ['audit-logs', companyId, isSuperAdmin],
     queryFn: () => fetchAuditLogs(isSuperAdmin ? null : companyId),
     enabled: !!companyId || isSuperAdmin,
+    staleTime: 5 * 60 * 1000,
   });
 }

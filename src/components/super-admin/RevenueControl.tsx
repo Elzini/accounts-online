@@ -11,6 +11,7 @@ export function RevenueControl() {
   const { data: payments = [], isLoading } = useQuery({
     queryKey: ['saas-payments'],
     queryFn: fetchPayments,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: subscriptions = [] } = useRevenueSubscriptions();

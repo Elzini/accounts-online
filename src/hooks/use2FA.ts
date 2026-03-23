@@ -25,6 +25,7 @@ export function use2FAStatus() {
         isEnabled: result.isEnabled || false,
       };
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 

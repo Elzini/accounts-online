@@ -83,6 +83,7 @@ export function useCompaniesData() {
       if (error) throw error;
       return data as Company[];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: companyStats = [] } = useQuery({

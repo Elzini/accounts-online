@@ -74,5 +74,6 @@ export function useOverduePayments() {
   return useQuery({
     queryKey: ['overduePayments'],
     queryFn: getOverduePayments,
+    staleTime: 5 * 60 * 1000,
   });
 }

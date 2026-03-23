@@ -12,6 +12,7 @@ export function useSystemLabels(companyType: string) {
       const { data } = await supabase.from('app_settings').select('key, value').is('company_id', null).like('key', 'label_%');
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -59,6 +60,7 @@ export function useDefaultSettings() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -108,6 +110,7 @@ export function useLoginSettings() {
       const { data } = await supabase.from('app_settings').select('key, value').in('key', keys).is('company_id', null);
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -168,6 +168,7 @@ export function useAppSetting(key: string) {
         .maybeSingle();
       return data?.value || null;
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 

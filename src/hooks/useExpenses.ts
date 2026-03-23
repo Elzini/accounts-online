@@ -87,6 +87,7 @@ export function useCarExpenses(carId: string | null) {
     queryKey: ['car-expenses', carId],
     queryFn: () => carId ? fetchCarExpenses(carId) : [],
     enabled: !!carId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -96,6 +97,7 @@ export function useGeneralExpenses(companyId: string | null) {
     queryKey: ['general-expenses', companyId],
     queryFn: () => companyId ? fetchGeneralExpenses(companyId) : [],
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -105,6 +107,7 @@ export function useCarExpensesTotal(carId: string | null) {
     queryKey: ['car-expenses-total', carId],
     queryFn: () => carId ? getCarExpensesTotal(carId) : 0,
     enabled: !!carId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

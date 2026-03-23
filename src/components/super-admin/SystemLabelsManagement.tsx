@@ -105,6 +105,7 @@ export function SystemLabelsManagement() {
       if (error) throw error;
       return data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch current labels for selected company

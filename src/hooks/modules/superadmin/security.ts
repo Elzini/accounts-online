@@ -20,6 +20,7 @@ export function useFinancialProtectionStats() {
         totalItems: items.count || 0,
       };
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -32,6 +33,7 @@ export function useSystemChangeLog(limit = 100) {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -43,6 +45,7 @@ export function useSystemFreezeMode() {
       const { data } = await supabase.from('app_settings').select('value').eq('key', 'system_freeze_mode').is('company_id', null).maybeSingle();
       return data?.value === 'true';
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -88,6 +91,7 @@ export function useCodeIntegrityHashes(limit = 100) {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -100,6 +104,7 @@ export function useEngineVersions() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -135,6 +140,7 @@ export function useFinancialPeriodLocks() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -222,6 +228,7 @@ export function useSecurityIncidents(limit = 100) {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -234,6 +241,7 @@ export function useTamperScanRuns() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -245,6 +253,7 @@ export function useTamperEvents() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -282,6 +291,7 @@ export function useTwoPersonApprovals(limit = 50) {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -32,11 +32,13 @@ export function useNumberFormat() {
   const { data: mode = 'integer' } = useQuery({
     queryKey: ['number-display-mode', companyId],
     queryFn: () => fetchSetting('number_display_mode', companyId, 'integer'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: rounding = 'rounded' } = useQuery({
     queryKey: ['number-rounding-mode', companyId],
     queryFn: () => fetchSetting('number_rounding_mode', companyId, 'rounded'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const decimals = mode === 'decimal' ? 2 : 0;

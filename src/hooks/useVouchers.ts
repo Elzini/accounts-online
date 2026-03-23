@@ -15,6 +15,7 @@ export function useVouchers() {
   return useQuery({
     queryKey: ['vouchers', fyId],
     queryFn: () => fetchVouchers(fyId),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -24,6 +25,7 @@ export function useReceiptVouchers() {
   return useQuery({
     queryKey: ['vouchers', 'receipt', fyId],
     queryFn: () => fetchVouchersByType('receipt', fyId),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -33,6 +35,7 @@ export function usePaymentVouchers() {
   return useQuery({
     queryKey: ['vouchers', 'payment', fyId],
     queryFn: () => fetchVouchersByType('payment', fyId),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
