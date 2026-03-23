@@ -330,8 +330,8 @@ export function FingerprintDevicesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => syncDevice.mutate(device.id)} title={language === 'ar' ? 'مزامنة' : 'Sync'}>
-                          <RefreshCw className={`w-4 h-4 ${syncDevice.isPending ? 'animate-spin' : ''}`} />
+                         <Button size="icon" variant="ghost" onClick={() => syncMutation.mutate(device.id)} title={language === 'ar' ? 'مزامنة' : 'Sync'}>
+                          <RefreshCw className={`w-4 h-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
                         </Button>
                         <Button size="icon" variant="ghost" onClick={() => openEdit(device)}>
                           <Edit className="w-4 h-4" />
