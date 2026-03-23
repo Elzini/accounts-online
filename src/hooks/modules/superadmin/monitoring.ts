@@ -62,12 +62,12 @@ export function useRecentSystemErrors() {
   });
 }
 
-// ─── Sensitive Operations Log ───
+// ─── Sensitive Operations Log (redirected to audit_logs) ───
 export function useSensitiveOperationsLog(limit = 200) {
   return useQuery({
     queryKey: ['all-sensitive-operations', limit],
     queryFn: async () => {
-      const { data, error } = await supabase.from('sensitive_operations_log').select('*').order('created_at', { ascending: false }).limit(limit);
+      const { data, error } = await supabase.from('audit_logs').select('*').in('action', ['delete', 'update']).order('created_at', { ascending: false }).limit(limit);
       if (error) throw error;
       return data || [];
     },
