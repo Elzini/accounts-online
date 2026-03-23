@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useSystemMonitoringStats } from '@/hooks/modules/useSuperAdminServices';
+import { useSystemMonitoringStats, useRecentSystemErrors, useCompanyUsageBreakdown } from '@/hooks/modules/useSuperAdminServices';
 
 export function SystemMonitoring() {
   const { data: stats } = useSystemMonitoringStats();
