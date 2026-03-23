@@ -25,7 +25,7 @@ export function useZatcaPhase2QR(params: UseZatcaPhase2QRParams): string {
       invoiceDateTime: formatDateTimeForZatca(params.invoiceDateTime),
       invoiceTotal: params.invoiceTotal,
       vatAmount: params.vatAmount,
-      invoiceNumber: params.invoiceNumber,
+      invoiceNumber: String(params.invoiceNumber || ''),
     }).then(data => {
       if (!cancelled) setQrData(data);
     }).catch(() => {
