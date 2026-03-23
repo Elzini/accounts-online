@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { AccountCategory, JournalEntryLine, VATSettlementReport } from './types';
 import { fetchAccounts } from './accounts';
+import { isAccountType, isCreditNormal } from '@/utils/accountTypes';
 
 // Account Balances
 export async function getAccountBalances(
