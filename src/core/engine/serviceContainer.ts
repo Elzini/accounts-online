@@ -48,6 +48,11 @@ export interface ServiceContainerDeps {
  * 
  * Pass custom repos for testing; defaults to Supabase implementations.
  */
+/**
+ * Create a fully-wired service container for a company.
+ * 
+ * Pass custom repos for testing; defaults to Supabase implementations.
+ */
 export function createServiceContainer(
   companyId: string,
   deps?: ServiceContainerDeps,
@@ -82,4 +87,42 @@ export function createServiceContainer(
       await resolver.load();
     },
   };
+}
+
+// ── Singleton cache for service-layer usage (non-React) ──
+const containerCache = new Map<string, ServiceContainer>();
+
+/**
+ * Get or create a ServiceContainer for a company (non-React).
+ * Services call this instead of `new JournalEngine(...)` directly.
+ * 
+ * Usage:
+ *   const { journal, resolver } = getServiceContainer(companyId);
+ *   await journal.createEntry({...});
+ */
+export function getServiceContainer(companyId: string): ServiceContainer {
+  let container = containerCache.get(companyId);
+  if (!container) {
+    container = createServiceContainer(companyId);
+    containerCache.set(companyId, container);
+  }
+  return container;
+}
+
+/**
+ * Get container with resolver pre-loaded (for services needing account resolution).
+ */
+export async function getInitializedContainer(companyId: string): Promise<ServiceContainer> {
+  const container = getServiceContainer(companyId);
+  await container.initialize();
+  return container;
+}
+
+/** Clear cached container (e.g. on logout or company switch) */
+export function clearContainerCache(companyId?: string): void {
+  if (companyId) {
+    containerCache.delete(companyId);
+  } else {
+    containerCache.clear();
+  }
 }
