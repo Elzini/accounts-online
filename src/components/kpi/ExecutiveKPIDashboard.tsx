@@ -28,15 +28,18 @@ interface KPITarget {
   icon: string;
 }
 
-const METRIC_OPTIONS = [
+const COMMON_METRIC_OPTIONS = [
   { value: 'total_sales', label: 'إجمالي المبيعات', icon: DollarSign, unit: 'ر.س' },
   { value: 'total_profit', label: 'إجمالي الأرباح', icon: TrendingUp, unit: 'ر.س' },
   { value: 'sales_count', label: 'عدد الصفقات', icon: ShoppingCart, unit: 'صفقة' },
   { value: 'new_customers', label: 'عملاء جدد', icon: Users, unit: 'عميل' },
-  { value: 'available_cars', label: 'مخزون متاح', icon: Car, unit: 'سيارة' },
   { value: 'profit_margin', label: 'هامش الربح', icon: Percent, unit: '%' },
-  { value: 'avg_days_to_sell', label: 'متوسط أيام البيع', icon: Clock, unit: 'يوم' },
   { value: 'total_expenses', label: 'إجمالي المصروفات', icon: BarChart3, unit: 'ر.س' },
+];
+
+const CAR_METRIC_OPTIONS = [
+  { value: 'available_cars', label: 'مخزون متاح', icon: Car, unit: 'سيارة' },
+  { value: 'avg_days_to_sell', label: 'متوسط أيام البيع', icon: Clock, unit: 'يوم' },
 ];
 
 const DEFAULT_TARGETS: Omit<KPITarget, 'current_value'>[] = [
