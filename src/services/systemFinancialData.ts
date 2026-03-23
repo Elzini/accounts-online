@@ -1,5 +1,6 @@
 // خدمة حساب القوائم المالية من بيانات النظام
 import { supabase } from '@/integrations/supabase/client';
+import { isBalanceSheetType } from '@/utils/accountTypes';
 import { 
   ComprehensiveFinancialData, 
   BalanceSheetData, 
