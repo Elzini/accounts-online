@@ -7,34 +7,30 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Plus, Building2, Users, GitFork, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
+import { useDepartments, useCreateDepartment, useDeleteDepartment } from '@/hooks/hr/useHRService';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function OrgStructurePage() {
   const { t } = useLanguage();
   const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: '', managerName: '', description: '' });
 
-  const { data: departments = [], isLoading } = useQuery({
-    queryKey: ['departments', companyId],
-    queryFn: async () => { const { data, error } = await supabase.from('departments').select('*').eq('company_id', companyId!).order('name'); if (error) throw error; return data; },
-    enabled: !!companyId,
-  });
+  const { data: departments = [], isLoading } = useDepartments(companyId);
+  const addMutation = useCreateDepartment(companyId);
+  const deleteMutation = useDeleteDepartment();
 
-  const addMutation = useMutation({
-    mutationFn: async () => { const { error } = await supabase.from('departments').insert({ company_id: companyId!, name: form.name, manager_name: form.managerName || null, description: form.description || null, is_active: true }); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); toast.success(t.org_added); setShowAdd(false); setForm({ name: '', managerName: '', description: '' }); },
-    onError: () => toast.error(t.mod_error),
-  });
+  const handleAdd = () => {
+    addMutation.mutate(
+      { name: form.name, manager_name: form.managerName || null, description: form.description || null, is_active: true },
+      { onSuccess: () => { toast.success(t.org_added); setShowAdd(false); setForm({ name: '', managerName: '', description: '' }); }, onError: () => toast.error(t.mod_error) },
+    );
+  };
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('departments').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); toast.success(t.mod_deleted); },
-  });
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, { onSuccess: () => toast.success(t.mod_deleted) });
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -48,7 +44,7 @@ export function OrgStructurePage() {
               <div><Label>{t.org_dept_name}</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
               <div><Label>{t.org_manager}</Label><Input value={form.managerName} onChange={e => setForm(p => ({ ...p, managerName: e.target.value }))} /></div>
               <div><Label>{t.description}</Label><Input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} /></div>
-              <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending || !form.name}>{t.save}</Button>
+              <Button className="w-full" onClick={handleAdd} disabled={addMutation.isPending || !form.name}>{t.save}</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -69,7 +65,7 @@ export function OrgStructurePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={d.is_active ? 'default' : 'secondary'}>{d.is_active ? t.active : t.inactive}</Badge>
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(d.id)}><Trash2 className="w-3 h-3" /></Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(d.id)}><Trash2 className="w-3 h-3" /></Button>
                 </div>
               </CardContent>
             </Card>

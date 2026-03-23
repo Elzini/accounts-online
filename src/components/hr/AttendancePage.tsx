@@ -9,17 +9,15 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2, Plus, Clock, Calendar, UserCheck, UserX, AlertTriangle, Fingerprint } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useCompanyId } from '@/hooks/useCompanyId';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEmployees } from '@/hooks/usePayroll';
+import { useAttendance, useCreateAttendance } from '@/hooks/hr/useHRService';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function AttendancePage() {
   const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const { data: employees = [] } = useEmployees();
   const { t, language } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -29,31 +27,15 @@ export function AttendancePage() {
     check_in: '08:00', check_out: '17:00', status: 'present', overtime_hours: 0, notes: '',
   });
 
-  const { data: attendance = [], isLoading } = useQuery({
-    queryKey: ['attendance', companyId, selectedDate],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase.from('employee_attendance').select('*, employees(name, job_title), hr_fingerprint_devices(device_name)')
-        .eq('company_id', companyId).eq('date', selectedDate).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
+  const { data: attendance = [], isLoading } = useAttendance(companyId, selectedDate);
+  const addAttendance = useCreateAttendance(companyId);
 
-  const addAttendance = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      if (!companyId) throw new Error('No company');
-      const { error } = await supabase.from('employee_attendance').insert({
-        company_id: companyId, employee_id: data.employee_id, date: data.date,
-        check_in: data.check_in || null, check_out: data.check_out || null,
-        status: data.status, overtime_hours: data.overtime_hours, notes: data.notes || null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['attendance'] }); toast.success(t.attendance_recorded); setIsDialogOpen(false); },
-    onError: () => toast.error(t.error_occurred),
-  });
+  const handleAdd = (data: typeof formData) => {
+    addAttendance.mutate(
+      { employee_id: data.employee_id, date: data.date, check_in: data.check_in || null, check_out: data.check_out || null, status: data.status, overtime_hours: data.overtime_hours, notes: data.notes || null },
+      { onSuccess: () => { toast.success(t.attendance_recorded); setIsDialogOpen(false); }, onError: () => toast.error(t.error_occurred) },
+    );
+  };
 
   const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
     present: { label: t.present, variant: 'default' },
@@ -87,7 +69,7 @@ export function AttendancePage() {
             <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />{t.record_attendance}</Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>{t.record_employee_attendance}</DialogTitle></DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); addAttendance.mutate(formData); }} className="space-y-4">
+              <form onSubmit={(e) => { e.preventDefault(); handleAdd(formData); }} className="space-y-4">
                 <div className="space-y-2">
                   <Label>{t.select_employee}</Label>
                   <Select value={formData.employee_id} onValueChange={(v) => setFormData({ ...formData, employee_id: v })}>
