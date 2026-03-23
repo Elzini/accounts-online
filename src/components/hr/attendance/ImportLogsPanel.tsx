@@ -27,15 +27,8 @@ export function ImportLogsPanel() {
   const [fileFormat, setFileFormat] = useState('zk_dat');
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
 
-  const { data: devices = [] } = useQuery({
-    queryKey: ['fingerprint-devices', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase.from('hr_fingerprint_devices').select('*').eq('company_id', companyId);
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
+  const { data: devices = [] } = useFingerprintDevices(companyId);
+  const importLogs = useImportDeviceLogs(companyId);
 
   const parseFile = (content: string) => {
     const lines = content.trim().split('\n');
