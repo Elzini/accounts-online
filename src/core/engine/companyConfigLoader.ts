@@ -1,17 +1,32 @@
 /**
  * Core Engine - Company Configuration Loader
- * Loads all company settings into a unified CompanyConfig object
- * Single source of truth for company configuration
+ * Loads all company settings into a unified CompanyConfig object.
+ * Uses repository interfaces — NO direct Supabase imports.
  */
 
-import { supabase } from '@/integrations/supabase/client';
 import { CompanyConfig, FiscalYear } from './types';
+import { ICompanyConfigRepository, IFiscalYearRepository } from './repositories';
+
+/** Lazy-load default repos when none are injected */
+async function getDefaultRepos() {
+  const { defaultRepos } = await import('./supabaseRepositories');
+  return defaultRepos;
+}
 
 /**
- * Load complete company configuration from database
+ * Load complete company configuration from database.
  * Merges: companies + company_accounting_settings + tax_settings + account_mappings
  */
-export async function loadCompanyConfig(companyId: string): Promise<CompanyConfig> {
+export async function loadCompanyConfig(
+  companyId: string,
+  deps?: { configRepo?: ICompanyConfigRepository },
+): Promise<CompanyConfig> {
+  if (deps?.configRepo) {
+    return deps.configRepo.load(companyId);
+  }
+  // Fallback: use Supabase directly for backward compat
+  const { supabase } = await import('@/integrations/supabase/client');
+
   const [companyRes, accountingRes, taxRes, mappingsRes] = await Promise.all([
     supabase.from('companies').select('id, name, company_type, is_active').eq('id', companyId).single(),
     supabase.from('company_accounting_settings').select('*').eq('company_id', companyId).maybeSingle(),
@@ -25,13 +40,11 @@ export async function loadCompanyConfig(companyId: string): Promise<CompanyConfi
   const tax = taxRes.data as any;
   const mappings = mappingsRes.data || [];
 
-  // Build account mappings map
   const accountMappings = new Map<string, string>();
   for (const m of mappings) {
     if (m.account_id) accountMappings.set(m.mapping_key, m.account_id);
   }
 
-  // Also add settings-based mappings (higher priority)
   if (acctSettings) {
     const settingsMap: Record<string, string | null> = {
       cash: acctSettings.purchase_cash_account_id,
@@ -57,7 +70,7 @@ export async function loadCompanyConfig(companyId: string): Promise<CompanyConfi
       auto_journal_entries: acctSettings?.auto_journal_entries_enabled ?? true,
       auto_purchase_entries: acctSettings?.auto_purchase_entries ?? true,
       auto_sales_entries: acctSettings?.auto_sales_entries ?? true,
-      valuation_method: 'average', // Default; extend later
+      valuation_method: 'average',
     },
     tax: {
       tax_rate: tax?.tax_rate ?? 15,
@@ -74,14 +87,13 @@ export async function loadCompanyConfig(companyId: string): Promise<CompanyConfi
 /**
  * Load current fiscal year for a company
  */
-export async function loadCurrentFiscalYear(companyId: string): Promise<FiscalYear | null> {
-  const { data, error } = await supabase
-    .from('fiscal_years')
-    .select('id, company_id, name, start_date, end_date, is_current, status')
-    .eq('company_id', companyId)
-    .eq('is_current', true)
-    .maybeSingle();
-  
-  if (error || !data) return null;
-  return data as FiscalYear;
+export async function loadCurrentFiscalYear(
+  companyId: string,
+  deps?: { fiscalYearRepo?: IFiscalYearRepository },
+): Promise<FiscalYear | null> {
+  if (deps?.fiscalYearRepo) {
+    return deps.fiscalYearRepo.findCurrent(companyId);
+  }
+  const { defaultRepos } = await import('./supabaseRepositories');
+  return defaultRepos.fiscalYears.findCurrent(companyId);
 }
