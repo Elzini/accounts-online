@@ -290,12 +290,12 @@ export function AdvancedAnalyticsDashboard() {
               </CardContent>
             </Card>
             <Card>
-              <CardHeader><CardTitle>{isRtl ? 'حالة الفواتير' : 'Invoice Status'}</CardTitle></CardHeader>
+              <CardHeader><CardTitle>{isRtl ? 'توزيع المصروفات' : 'Expense Distribution'}</CardTitle></CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
-                    <Pie data={invoiceStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, value }) => `${name}: ${value}`}>
-                      {invoiceStatus.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    <Pie data={expenseBreakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, value }) => `${name}: ${value}`}>
+                      {expenseBreakdown.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                     </Pie>
                     <Tooltip />
                   </PieChart>
