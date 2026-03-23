@@ -134,7 +134,7 @@ export function EmployeePermissionsManager() {
 
         <ScrollArea className="h-[400px]">
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">جاري التحميل...</div>
+            <div className="text-center py-8"><TableSkeleton columns={3} rows={4} /></div>
           ) : (
             <Table>
               <TableHeader>
