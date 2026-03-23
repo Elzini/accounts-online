@@ -3,7 +3,8 @@ import { isAccountType } from '@/utils/accountTypes';
 import { AuditCheckResult } from '../types';
 import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 
-export async function checkFinancialReports(companyId: string): Promise<AuditCheckResult[]> {
+export async function checkFinancialReports(companyId: string, companyType?: string): Promise<AuditCheckResult[]> {
+  const features = getIndustryFeatures(companyType || 'general_trading');
   const results: AuditCheckResult[] = [];
 
   // Trial Balance
