@@ -59,59 +59,31 @@ export function CustomerPortalPage() {
     if (!companyId) return;
     setLoading(true);
 
-    const salesQuery = hasCarInventory
-      ? supabase
-          .from('sales')
-          .select('id, sale_number, customer_id, sale_price, sale_date, due_date, payment_status')
-          .eq('company_id', companyId)
-          .order('sale_date', { ascending: false })
-          .limit(50)
-      : supabase
-          .from('invoices')
-          .select('id, invoice_number, customer_id, total, invoice_date, due_date, payment_status')
-          .eq('company_id', companyId)
-          .eq('invoice_type', 'sales')
-          .neq('status', 'draft')
-          .order('invoice_date', { ascending: false })
-          .limit(50);
-
     const [tokensRes, salesRes, customersRes] = await Promise.all([
-      supabase
-        .from('customer_portal_tokens')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false }),
-      salesQuery,
-      supabase
-        .from('customers')
-        .select('id, name')
-        .eq('company_id', companyId)
-        .order('name'),
+      fetchPortalTokens(companyId),
+      fetchPortalSales(companyId, hasCarInventory),
+      fetchPortalCustomers(companyId),
     ]);
 
     const customerMap = new Map<string, string>();
-    (customersRes.data || []).forEach(c => customerMap.set(c.id, c.name));
-    setCustomers(customersRes.data || []);
+    customersRes.forEach((c: any) => customerMap.set(c.id, c.name));
+    setCustomers(customersRes);
 
-    if (tokensRes.data) {
-      setPortalCustomers(tokensRes.data.map(t => ({
-        ...t,
-        customer_name: customerMap.get(t.customer_id) || 'غير معروف',
-      })));
-    }
+    setPortalCustomers(tokensRes.map((t: any) => ({
+      ...t,
+      customer_name: customerMap.get(t.customer_id) || 'غير معروف',
+    })));
 
-    if (salesRes.data) {
-      setSales((salesRes.data as any[]).map(s => ({
-        id: s.id,
-        sale_number: s.sale_number || s.invoice_number || 0,
-        customer_id: s.customer_id || '',
-        sale_price: s.sale_price || Number(s.total) || 0,
-        sale_date: s.sale_date || s.invoice_date || '',
-        due_date: s.due_date || null,
-        payment_status: s.payment_status || null,
-        customer_name: customerMap.get(s.customer_id || '') || 'غير معروف',
-      })));
-    }
+    setSales(salesRes.map((s: any) => ({
+      id: s.id,
+      sale_number: s.sale_number || s.invoice_number || 0,
+      customer_id: s.customer_id || '',
+      sale_price: s.sale_price || Number(s.total) || 0,
+      sale_date: s.sale_date || s.invoice_date || '',
+      due_date: s.due_date || null,
+      payment_status: s.payment_status || null,
+      customer_name: customerMap.get(s.customer_id || '') || 'غير معروف',
+    })));
 
     setLoading(false);
   }, [companyId, hasCarInventory]);
