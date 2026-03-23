@@ -271,26 +271,16 @@ export function Sidebar({
     ? `${rawLogoUrl}?v=${encodeURIComponent(rawLogoUrl.slice(-10))}` 
     : rawLogoUrl;
 
+  const displayMeta = getIndustryDisplayMeta(companyType);
+
   const getAppName = () => {
     if (settings?.app_name && language === 'ar') return settings.app_name;
-    switch (companyType) {
-      case 'construction': return t.sidebar_construction_system;
-      case 'general_trading': return t.sidebar_trading_system;
-      case 'restaurant': return t.sidebar_restaurant_system;
-      case 'export_import': return t.sidebar_export_import_system;
-      default: return 'Elzini SaaS';
-    }
+    return language === 'ar' ? displayMeta.appName : displayMeta.appNameEn;
   };
 
   const getAppSubtitle = () => {
     if (settings?.app_subtitle && language === 'ar') return settings.app_subtitle;
-    switch (companyType) {
-      case 'construction': return t.sidebar_construction_subtitle;
-      case 'general_trading': return t.sidebar_trading_subtitle;
-      case 'restaurant': return t.sidebar_restaurant_subtitle;
-      case 'export_import': return t.sidebar_export_import_subtitle;
-      default: return t.sidebar_car_subtitle;
-    }
+    return language === 'ar' ? displayMeta.appSubtitle : displayMeta.appSubtitleEn;
   };
 
   const appName = getAppName();
