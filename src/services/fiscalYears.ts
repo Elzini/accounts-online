@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { isAccountType } from '@/utils/accountTypes';
+import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 
 export interface FiscalYear {
   id: string;

@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ActivePage } from '@/types';
 import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
+import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TranslationKeys } from '@/i18n/types';

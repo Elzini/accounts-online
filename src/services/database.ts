@@ -7,6 +7,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { requireCompanyId, toDateOnly } from '@/services/companyContext';
+import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 
 // ── Re-exports from modular services ──
 // Car dealership
