@@ -1,6 +1,6 @@
 /**
  * HR Service Hooks
- * Centralized data access for HR modules: Leaves, Attendance, OrgStructure, Contracts, Holidays, WorkSchedules.
+ * Centralized data access for HR modules: Leaves, Attendance, OrgStructure, Checks.
  */
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -103,12 +103,12 @@ export function useUpdateCheckStatus() {
   });
 }
 
-// ── Org Structure ──
-export function useOrgDepartments(companyId: string | null) {
+// ── Org Structure (departments table) ──
+export function useDepartments(companyId: string | null) {
   return useQuery({
-    queryKey: ['org-departments', companyId],
+    queryKey: ['departments', companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('hr_departments').select('*')
+      const { data, error } = await supabase.from('departments').select('*')
         .eq('company_id', companyId!).order('name');
       if (error) throw error;
       return data || [];
@@ -120,11 +120,11 @@ export function useOrgDepartments(companyId: string | null) {
 export function useCreateDepartment(companyId: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (row: { name: string; code?: string; parent_id?: string | null; manager_name?: string }) => {
-      const { error } = await supabase.from('hr_departments').insert({ company_id: companyId!, ...row });
+    mutationFn: async (row: { name: string; manager_name?: string | null; description?: string | null; is_active?: boolean }) => {
+      const { error } = await supabase.from('departments').insert({ company_id: companyId!, ...row });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['org-departments'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['departments'] }),
   });
 }
 
@@ -132,20 +132,20 @@ export function useDeleteDepartment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('hr_departments').delete().eq('id', id);
+      const { error } = await supabase.from('departments').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['org-departments'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['departments'] }),
   });
 }
 
-// ── Holidays ──
+// ── Holidays (hr_holidays table) ──
 export function useHolidays(companyId: string | null) {
   return useQuery({
     queryKey: ['holidays', companyId],
     queryFn: async () => {
       const { data, error } = await supabase.from('hr_holidays').select('*')
-        .eq('company_id', companyId!).order('date', { ascending: true });
+        .eq('company_id', companyId!).order('holiday_date');
       if (error) throw error;
       return data || [];
     },
@@ -156,7 +156,7 @@ export function useHolidays(companyId: string | null) {
 export function useCreateHoliday(companyId: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (row: { name: string; date: string; holiday_type?: string }) => {
+    mutationFn: async (row: { name: string; holiday_date: string; end_date?: string | null; is_recurring?: boolean }) => {
       const { error } = await supabase.from('hr_holidays').insert({ company_id: companyId!, ...row });
       if (error) throw error;
     },
@@ -181,7 +181,7 @@ export function useWorkSchedules(companyId: string | null) {
     queryKey: ['work-schedules', companyId],
     queryFn: async () => {
       const { data, error } = await supabase.from('hr_work_schedules').select('*')
-        .eq('company_id', companyId!).order('name');
+        .eq('company_id', companyId!).order('created_at');
       if (error) throw error;
       return data || [];
     },
@@ -189,12 +189,17 @@ export function useWorkSchedules(companyId: string | null) {
   });
 }
 
-export function useCreateWorkSchedule(companyId: string | null) {
+export function useSaveWorkSchedule(companyId: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (row: { name: string; work_days?: any; start_time?: string; end_time?: string; is_default?: boolean }) => {
-      const { error } = await supabase.from('hr_work_schedules').insert({ company_id: companyId!, ...row });
-      if (error) throw error;
+    mutationFn: async ({ id, ...row }: { id?: string; name: string; start_time: string; end_time: string; work_days: string[]; break_duration_minutes: number; late_tolerance_minutes: number; early_leave_tolerance_minutes: number; overtime_after_minutes: number; is_default: boolean }) => {
+      if (id) {
+        const { error } = await supabase.from('hr_work_schedules').update(row).eq('id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('hr_work_schedules').insert({ company_id: companyId!, ...row });
+        if (error) throw error;
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['work-schedules'] }),
   });
