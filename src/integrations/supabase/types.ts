@@ -10157,6 +10157,7 @@ export type Database = {
       }
       tamper_scan_runs: {
         Row: {
+          company_id: string | null
           completed_at: string | null
           error_message: string | null
           id: string
@@ -10169,6 +10170,7 @@ export type Database = {
           triggered_by: string | null
         }
         Insert: {
+          company_id?: string | null
           completed_at?: string | null
           error_message?: string | null
           id?: string
@@ -10181,6 +10183,7 @@ export type Database = {
           triggered_by?: string | null
         }
         Update: {
+          company_id?: string | null
           completed_at?: string | null
           error_message?: string | null
           id?: string
@@ -10192,7 +10195,15 @@ export type Database = {
           total_records_checked?: number | null
           triggered_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tamper_scan_runs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {
