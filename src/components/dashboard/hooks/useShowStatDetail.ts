@@ -73,11 +73,11 @@ export function useShowStatDetail(opts: UseShowStatDetailOptions) {
 
     // Formula source
     if (resolvedSource === 'formula' && cardCfg.formulaAccounts?.length) {
-      const formulaBreakdown = cardCfg.formulaAccounts.map(item => {
+      const formulaBreakdown: { label: string; value: number; type?: 'add' | 'subtract' | 'total'; description?: string }[] = cardCfg.formulaAccounts.map(item => {
         const account = accountsList.find(a => a.id === item.accountId);
         const balance = accountBalances[item.accountId] || 0;
         const label = [account?.code || item.accountCode, account?.name || item.accountName].filter(Boolean).join(' - ');
-        return { label, value: Math.abs(balance), type: item.operator === '+' ? 'add' as const : 'subtract' as const, description: 'رصيد الحساب المختار في المعادلة' };
+        return { label, value: Math.abs(balance), type: (item.operator === '+' ? 'add' : 'subtract') as 'add' | 'subtract', description: 'رصيد الحساب المختار في المعادلة' };
       });
       formulaBreakdown.push({ label: t.net_profit, value: resolvedValue, type: 'total' as const, description: '' });
       const formulaText = cardCfg.formulaAccounts.map((item, idx) => {
