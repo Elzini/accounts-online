@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { secp256k1 } from "npm:@noble/curves@1.4.0/secp256k1";
 import { sha256 } from "npm:@noble/hashes@1.4.0/sha256";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
