@@ -6834,6 +6834,7 @@ export type Database = {
         Row: {
           account_id: string | null
           car_id: string | null
+          company_id: string | null
           created_at: string
           discount_amount: number | null
           discount_percent: number | null
@@ -6853,6 +6854,7 @@ export type Database = {
         Insert: {
           account_id?: string | null
           car_id?: string | null
+          company_id?: string | null
           created_at?: string
           discount_amount?: number | null
           discount_percent?: number | null
@@ -6872,6 +6874,7 @@ export type Database = {
         Update: {
           account_id?: string | null
           car_id?: string | null
+          company_id?: string | null
           created_at?: string
           discount_amount?: number | null
           discount_percent?: number | null
@@ -6901,6 +6904,13 @@ export type Database = {
             columns: ["car_id"]
             isOneToOne: false
             referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
