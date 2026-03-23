@@ -3,6 +3,7 @@
  * Extracted from systemFinancialData.ts
  */
 import { AccountCategory } from '../accounting';
+import { ZakatNote } from '@/components/financial-statements/types';
 import { ClassifiedAccounts, getBalance, getPositiveCreditBalance } from './accountClassifier';
 import { IncomeComponents } from './incomeStatementBuilder';
 
