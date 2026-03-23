@@ -115,7 +115,7 @@ export function useCompanyMembers() {
     queryKey: ['company-members-perms', companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('company_members')
         .select('user_id, role, profiles(full_name, email)')
         .eq('company_id', companyId);
