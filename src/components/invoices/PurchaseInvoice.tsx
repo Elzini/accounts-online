@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { QRCodeSVG } from 'qrcode.react';
 import { TaxSettings } from '@/services/accounting';
-import { generateZatcaQRData, formatDateTimeForZatca } from '@/lib/zatcaQR';
+import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import logoImage from '@/assets/logo.png';
 import { getGlobalDecimals } from '@/components/financial-statements/utils/numberFormatting';
 
