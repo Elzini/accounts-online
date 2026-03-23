@@ -7,10 +7,12 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 
 export function BranchComparisonPage() {
   const { companyId } = useCompany();
+  const { hasCarInventory } = useIndustryFeatures();
 
   const { data: branches = [], isLoading: loadingBranches } = useQuery({
     queryKey: ['branch-compare-branches', companyId],
@@ -32,7 +34,22 @@ export function BranchComparisonPage() {
         .gte('sale_date', monthStart);
       return data || [];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && hasCarInventory,
+  });
+
+  const { data: invoiceSales = [] } = useQuery({
+    queryKey: ['branch-compare-invoice-sales', companyId],
+    queryFn: async () => {
+      const now = new Date();
+      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      const { data } = await supabase.from('invoices')
+        .select('subtotal, customer_name')
+        .eq('company_id', companyId!)
+        .eq('invoice_type', 'sales')
+        .gte('invoice_date', monthStart);
+      return data || [];
+    },
+    enabled: !!companyId && !hasCarInventory,
   });
 
   const { data: cars = [] } = useQuery({
@@ -42,7 +59,7 @@ export function BranchComparisonPage() {
         .eq('company_id', companyId!).eq('status', 'available');
       return data || [];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && hasCarInventory,
   });
 
   const branchStats = useMemo(() => {

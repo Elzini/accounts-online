@@ -65,10 +65,12 @@ export function useCompanyAdminDashboard() {
 
       const results: CompanyDashboardData[] = [];
       for (const company of companies || []) {
+        const isCarCompany = (company as any).company_type === 'car_dealership';
+
         const [usersRes, carsRes, salesRes, customersRes, suppliersRes, expensesRes, journalRes, quotaRes, rateLimitRes] = await Promise.all([
           supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-          supabase.from('cars').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-          supabase.from('sales').select('sale_price, profit').eq('company_id', company.id),
+          isCarCompany ? supabase.from('cars').select('id', { count: 'exact', head: true }).eq('company_id', company.id) : Promise.resolve({ count: 0, data: null }),
+          isCarCompany ? supabase.from('sales').select('sale_price, profit').eq('company_id', company.id) : supabase.from('invoices').select('subtotal').eq('company_id', company.id).eq('invoice_type', 'sales'),
           supabase.from('customers').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
           supabase.from('suppliers').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
           supabase.from('expenses').select('amount').eq('company_id', company.id),
@@ -77,27 +79,27 @@ export function useCompanyAdminDashboard() {
           supabase.from('tenant_rate_limits').select('request_count').eq('company_id', company.id),
         ]);
 
-        const salesData = salesRes.data || [];
-        const expensesData = expensesRes.data || [];
-        const quota = quotaRes.data;
+        const salesData = (salesRes as any).data || [];
+        const expensesData = (expensesRes as any).data || [];
+        const quota = (quotaRes as any).data;
 
         let hasSchema = false, hasEncryption = false;
         try { const { data: sc } = await supabase.rpc('check_tenant_schema_exists', { p_company_id: company.id }); hasSchema = !!sc; } catch {}
         try { const { data: ec } = await supabase.rpc('check_tenant_encryption_exists', { p_company_id: company.id }); hasEncryption = !!ec; } catch {}
 
-        const recentRequests = (rateLimitRes.data || []).reduce((sum, r) => sum + (r.request_count || 0), 0);
+        const recentRequests = ((rateLimitRes as any).data || []).reduce((sum: number, r: any) => sum + (r.request_count || 0), 0);
 
         results.push({
           company_id: company.id, company_name: company.name,
           subdomain: (company as any).subdomain || null, is_active: company.is_active,
           company_type: company.company_type || 'general_trading', created_at: company.created_at,
-          users_count: usersRes.count || 0, cars_count: carsRes.count || 0,
+          users_count: (usersRes as any).count || 0, cars_count: (carsRes as any).count || 0,
           sales_count: salesData.length,
-          total_sales: salesData.reduce((s, r) => s + (r.sale_price || 0), 0),
-          total_profit: salesData.reduce((s, r) => s + (r.profit || 0), 0),
-          customers_count: customersRes.count || 0, suppliers_count: suppliersRes.count || 0,
-          expenses_total: expensesData.reduce((s, r) => s + (r.amount || 0), 0),
-          journal_entries_count: journalRes.count || 0,
+          total_sales: salesData.reduce((s: number, r: any) => s + (r.sale_price || r.subtotal || 0), 0),
+          total_profit: isCarCompany ? salesData.reduce((s: number, r: any) => s + (r.profit || 0), 0) : 0,
+          customers_count: (customersRes as any).count || 0, suppliers_count: (suppliersRes as any).count || 0,
+          expenses_total: expensesData.reduce((s: number, r: any) => s + (r.amount || 0), 0),
+          journal_entries_count: (journalRes as any).count || 0,
           max_users: quota?.max_users || 50, max_requests_per_minute: quota?.max_requests_per_minute || 100,
           max_storage_mb: quota?.max_storage_mb || 500, max_records_per_table: quota?.max_records_per_table || 100000,
           quota_active: quota?.is_active ?? true, has_schema: hasSchema, has_encryption: hasEncryption,

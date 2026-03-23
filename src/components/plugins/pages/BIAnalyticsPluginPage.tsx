@@ -11,20 +11,29 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
 export function BIAnalyticsPluginPage() {
   const { companyId } = useCompany();
+  const { hasCarInventory } = useIndustryFeatures();
   const [period, setPeriod] = useState<'6' | '12'>('6');
 
   // Fetch sales data
   const { data: sales = [], isLoading: loadingSales } = useQuery({
-    queryKey: ['bi-sales', companyId],
+    queryKey: ['bi-sales', companyId, hasCarInventory],
     queryFn: async () => {
-      const { data } = await supabase.from('sales').select('sale_date, sale_price, purchase_price, status, customer_id')
-        .eq('company_id', companyId!);
-      return data || [];
+      if (hasCarInventory) {
+        const { data } = await supabase.from('sales').select('sale_date, sale_price, purchase_price, status, customer_id')
+          .eq('company_id', companyId!);
+        return data || [];
+      }
+      const { data } = await supabase.from('invoices').select('invoice_date, subtotal, customer_name, status')
+        .eq('company_id', companyId!).eq('invoice_type', 'sales');
+      return (data || []).map((inv: any) => ({
+        sale_date: inv.invoice_date, sale_price: inv.subtotal, purchase_price: 0, status: inv.status, customer_id: inv.customer_name,
+      }));
     },
     enabled: !!companyId,
   });
@@ -40,7 +49,7 @@ export function BIAnalyticsPluginPage() {
     enabled: !!companyId,
   });
 
-  // Fetch cars
+  // Fetch inventory (cars only for car dealerships)
   const { data: cars = [] } = useQuery({
     queryKey: ['bi-cars', companyId],
     queryFn: async () => {
@@ -48,7 +57,7 @@ export function BIAnalyticsPluginPage() {
         .eq('company_id', companyId!);
       return data || [];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && hasCarInventory,
   });
 
   // Fetch expenses
