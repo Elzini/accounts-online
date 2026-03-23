@@ -108,6 +108,17 @@ export class SupabaseJournalEntryRepository implements IJournalEntryRepository {
     if (error) throw error;
   }
 
+  async deleteByReference(companyId: string, referenceId: string, referenceType: string): Promise<void> {
+    const { error } = await supabase.from('journal_entries').delete()
+      .eq('company_id', companyId).eq('reference_id', referenceId).eq('reference_type', referenceType);
+    if (error) throw error;
+  }
+
+  async updateEntry(entryId: string, updates: Record<string, any>): Promise<void> {
+    const { error } = await supabase.from('journal_entries').update(updates).eq('id', entryId);
+    if (error) throw error;
+  }
+
   async fetchAllLines(companyId: string, fiscalYearId: string) {
     const allLines: Array<{
       journal_entry_id: string; account_id: string;
@@ -194,6 +205,21 @@ export class SupabaseFiscalYearRepository implements IFiscalYearRepository {
       .maybeSingle();
     if (error) return null;
     return data as FiscalYear | null;
+  }
+
+  async create(input: {
+    company_id: string; name: string; start_date: string; end_date: string;
+    status: string; is_current: boolean;
+  }): Promise<FiscalYear> {
+    const { data, error } = await supabase
+      .from('fiscal_years').insert(input).select('id, company_id, name, start_date, end_date, is_current, status').single();
+    if (error) throw error;
+    return data as FiscalYear;
+  }
+
+  async update(id: string, updates: Record<string, any>): Promise<void> {
+    const { error } = await supabase.from('fiscal_years').update(updates).eq('id', id);
+    if (error) throw error;
   }
 }
 

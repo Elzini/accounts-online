@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/hooks/modules/useMiscServices';
+import { JournalEngine } from '@/core/engine/journalEngine';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -93,19 +94,13 @@ export function InvoiceJournalEntry({ invoiceId, invoiceNumber }: InvoiceJournal
 
     setIsSaving(true);
     try {
-      // Delete old lines and re-insert
-      await supabase.from('journal_entry_lines').delete().eq('journal_entry_id', journalData.id);
-
-      const newLines = editLines.map(line => ({
-        journal_entry_id: journalData.id,
+      const journal = new JournalEngine(companyId || '');
+      await journal.replaceLines(journalData.id, editLines.map(line => ({
         account_id: line.account_id,
+        description: line.description || '',
         debit: line.debit,
         credit: line.credit,
-        description: line.description,
-      }));
-
-      const { error } = await supabase.from('journal_entry_lines').insert(newLines);
-      if (error) throw error;
+      })));
 
       toast.success('تم تحديث القيد المحاسبي بنجاح');
       setIsEditing(false);

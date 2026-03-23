@@ -47,6 +47,20 @@ export interface IJournalEntryRepository {
   
   deleteEntry(entryId: string): Promise<void>;
 
+  /** Delete journal entries by reference_type + reference_id */
+  deleteByReference(companyId: string, referenceId: string, referenceType: string): Promise<void>;
+
+  /** Update entry header fields */
+  updateEntry(entryId: string, updates: Partial<{
+    description: string;
+    entry_date: string;
+    total_debit: number;
+    total_credit: number;
+    is_posted: boolean;
+    reference_type: string;
+    fiscal_year_id: string;
+  }>): Promise<void>;
+
   /** Fetch all posted lines for a fiscal year (paginated internally) */
   fetchAllLines(companyId: string, fiscalYearId: string): Promise<Array<{
     journal_entry_id: string;
@@ -75,6 +89,16 @@ export interface ICompanyConfigRepository {
 export interface IFiscalYearRepository {
   findCurrent(companyId: string): Promise<FiscalYear | null>;
   findById(id: string): Promise<FiscalYear | null>;
+  create(data: {
+    company_id: string; name: string; start_date: string; end_date: string;
+    status: string; is_current: boolean;
+  }): Promise<FiscalYear>;
+  update(id: string, updates: Partial<{
+    status: string; is_current: boolean;
+    opening_balance_entry_id: string | null;
+    closing_balance_entry_id: string | null;
+    closed_at: string; closed_by: string;
+  }>): Promise<void>;
 }
 
 // ============ Invoice Repository (for posting engine) ============
