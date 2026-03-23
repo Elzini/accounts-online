@@ -4,7 +4,7 @@
  */
 
 import { ExcelWorkbook } from '@/lib/excelUtils';
-import { FinancialData } from './types';
+import { FinancialData, emptyFinancialData } from './types';
 
 // ===== Helper Functions =====
 function extractAccountName(row: any[]): string {
