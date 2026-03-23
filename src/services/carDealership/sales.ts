@@ -195,15 +195,8 @@ export async function addMultiCarSale(saleData: MultiCarSaleData) {
 }
 
 export async function approveSale(saleId: string) {
-  const { requireUserId } = await import('@/services/companyContext');
-  const userId = await requireUserId();
+  const { data: { user } } = await supabase.auth.getUser();
   const { data, error } = await supabase
-    .from('sales')
-    .update({
-      status: 'approved',
-      approved_at: new Date().toISOString(),
-      approved_by: userId,
-    })
     .from('sales')
     .update({
       status: 'approved',
