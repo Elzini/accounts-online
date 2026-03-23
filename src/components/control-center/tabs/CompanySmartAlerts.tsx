@@ -1,6 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
-import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useCompanySmartAlerts } from '@/hooks/modules/useControlCenterServices';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
