@@ -1,9 +1,10 @@
 /**
  * Real Estate Module
- * Registered as an industry module in the Core Engine
+ * Provides real estate-specific dashboard stats and menu items
  */
 
 import { IndustryModule, DashboardStats, MenuItem } from '@/core/engine/types';
+import { supabase } from '@/integrations/supabase/client';
 
 export const RealEstateModule: IndustryModule = {
   id: 'real_estate',
@@ -11,22 +12,30 @@ export const RealEstateModule: IndustryModule = {
   supportedTypes: ['real_estate'],
 
   async getDashboardStats(companyId: string, fiscalYearId?: string): Promise<Partial<DashboardStats>> {
-    // Extend core stats with real estate specifics
-    const { supabase } = await import('@/integrations/supabase/client');
-    const { data: projects } = await supabase
-      .from('re_projects')
-      .select('id, name, status')
-      .eq('company_id', companyId);
+    const [projectsRes, unitsRes] = await Promise.all([
+      supabase.from('re_projects').select('id, name, status, total_budget, total_spent').eq('company_id', companyId),
+      supabase.from('re_units').select('id, status, sale_price').eq('company_id', companyId),
+    ]);
 
-    const activeProjects = (projects || []).filter(
+    const projects = projectsRes.data || [];
+    const units = unitsRes.data || [];
+
+    const activeProjects = projects.filter(
       p => !['completed', 'cancelled', 'canceled'].includes((p.status || '').toLowerCase())
     );
+    const soldUnits = units.filter(u => u.status === 'sold').length;
+    const availableUnits = units.filter(u => u.status === 'available').length;
 
     return {
       extra: {
         activeProjects: activeProjects.length,
+        totalProjects: projects.length,
         activeProjectNames: activeProjects.map(p => p.name),
-        totalProjects: (projects || []).length,
+        soldUnits,
+        availableUnits,
+        totalUnits: units.length,
+        totalBudget: projects.reduce((s, p) => s + (Number(p.total_budget) || 0), 0),
+        totalSpent: projects.reduce((s, p) => s + (Number(p.total_spent) || 0), 0),
       },
     };
   },
@@ -37,6 +46,7 @@ export const RealEstateModule: IndustryModule = {
       { id: 're-units', label: 'الوحدات', icon: 'Home', path: '/real-estate/units' },
       { id: 're-contractors', label: 'المقاولين', icon: 'HardHat', path: '/real-estate/contractors' },
       { id: 're-crm', label: 'إدارة العملاء', icon: 'Users', path: '/real-estate/crm' },
+      { id: 're-after-sales', label: 'خدمات ما بعد البيع', icon: 'Wrench', path: '/real-estate/after-sales' },
     ];
   },
 

@@ -23,3 +23,5 @@ export { loadCompanyConfig, loadCurrentFiscalYear } from './companyConfigLoader'
 export { computeTrialBalance, getAccountStatement } from './ledgerEngine';
 export type { AccountBalance, TrialBalanceParams } from './ledgerEngine';
 export { generateOpeningBalances } from './fiscalYearEngine';
+export { getIndustryFeatures } from './industryFeatures';
+export type { IndustryFeatures } from './industryFeatures';
