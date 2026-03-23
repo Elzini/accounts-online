@@ -15,10 +15,11 @@ import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 export function SuppliersReport() {
   const { companyId, company } = useCompany();
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const isCarDealership = useIndustryFeatures().hasCarInventory;
   const { data: suppliers, isLoading: suppliersLoading } = useSuppliers();
   const { data: cars, isLoading: carsLoading } = useCars();
   const [startDate, setStartDate] = useState('');

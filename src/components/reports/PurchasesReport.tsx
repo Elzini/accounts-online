@@ -16,6 +16,7 @@ import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 type InvoiceStatusFilter = 'all' | 'draft' | 'issued';
 type CarStatusFilter = 'all' | 'available' | 'sold';
@@ -37,7 +38,7 @@ type ReportRow = {
 
 export function PurchasesReport() {
   const { companyId, company } = useCompany();
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const isCarDealership = useIndustryFeatures().hasCarInventory;
 
   const { data: cars = [], isLoading: carsLoading, refetch } = useCars();
   const { data: suppliers = [] } = useSuppliers();
