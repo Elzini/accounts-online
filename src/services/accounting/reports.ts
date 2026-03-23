@@ -243,7 +243,47 @@ export async function getGeneralLedger(
   const targetAccountIds = isParentAccount ? [accountId, ...childIds] : [accountId];
 
   let openingBalance = 0;
-  if (startDate && !fiscalYearId) {
+  if (startDate && fiscalYearId) {
+    // When fiscal year is set, get opening from 'opening' entries in this fiscal year
+    const { data: openingEntryLines } = await supabase
+      .from('journal_entry_lines')
+      .select(`
+        account_id, debit, credit,
+        journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type, fiscal_year_id)
+      `)
+      .in('account_id', targetAccountIds)
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .eq('journal_entry.fiscal_year_id', fiscalYearId)
+      .eq('journal_entry.reference_type', 'opening');
+
+    const { data: priorLines, error: priorError } = await supabase
+      .from('journal_entry_lines')
+      .select(`
+        account_id, debit, credit,
+        journal_entry:journal_entries!inner(company_id, is_posted, entry_date, fiscal_year_id)
+      `)
+      .in('account_id', targetAccountIds)
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .eq('journal_entry.fiscal_year_id', fiscalYearId)
+      .lt('journal_entry.entry_date', startDate);
+
+    if (priorError) throw priorError;
+
+    const isDebitNormal = ['asset', 'assets', 'expense', 'expenses'].includes(account.type);
+    const openingLinesInPeriod = openingEntryLines || [];
+    const allPriorLines = openingLinesInPeriod.length > 0 ? openingLinesInPeriod : (priorLines || []);
+    allPriorLines.forEach((line: any) => {
+      const d = Number(line.debit) || 0;
+      const c = Number(line.credit) || 0;
+      if (isDebitNormal) {
+        openingBalance += d - c;
+      } else {
+        openingBalance += c - d;
+      }
+    });
+  } else if (startDate && !fiscalYearId) {
     const { data: priorLines, error: priorError } = await supabase
       .from('journal_entry_lines')
       .select(`
