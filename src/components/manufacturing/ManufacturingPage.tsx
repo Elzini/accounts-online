@@ -13,7 +13,6 @@ import { toast } from 'sonner';
 import { Loader2, Plus, Factory, Package, ClipboardList } from 'lucide-react';
 import { useManufacturingProducts, useProductionOrders, useCreateManufacturingProduct, useCreateProductionOrder, useUpdateProductionOrderStatus } from '@/hooks/modules/useBusinessServices';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 export function ManufacturingPage() {
   const { t, language } = useLanguage();
