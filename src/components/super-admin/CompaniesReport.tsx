@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/hooks/modules/useSuperAdminServices';
+import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 import {
   Building2,
   Users,
