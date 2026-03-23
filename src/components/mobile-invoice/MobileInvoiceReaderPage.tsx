@@ -39,13 +39,31 @@ export function MobileInvoiceReaderPage() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = 'qr-camera-reader';
 
-  const processQRData = useCallback((base64Data: string) => {
-    const trimmed = base64Data.trim();
-    const decoded = decodeZatcaQRData(trimmed);
+  const processQRData = useCallback((rawData: string) => {
+    const trimmed = rawData.trim();
+    console.log('[QR Reader] Raw scanned data length:', trimmed.length);
+    console.log('[QR Reader] Raw scanned data (first 100):', trimmed.substring(0, 100));
+    
+    // Try decoding as-is first (Base64 TLV)
+    let decoded = decodeZatcaQRData(trimmed);
+    
+    // If that fails, check if it's a URL or other format containing Base64
     if (!decoded) {
+      // Sometimes QR scanners may add extra whitespace or newlines
+      const cleaned = trimmed.replace(/[\s\n\r]/g, '');
+      decoded = decodeZatcaQRData(cleaned);
+      if (decoded) {
+        console.log('[QR Reader] Decoded after whitespace cleanup');
+      }
+    }
+    
+    if (!decoded) {
+      console.error('[QR Reader] Failed to decode. Data starts with:', trimmed.substring(0, 50));
       toast.error('لا يمكن قراءة بيانات QR - تأكد أنها فاتورة ZATCA صالحة');
       return;
     }
+
+    console.log('[QR Reader] Decoded successfully:', decoded.sellerName, decoded.vatNumber, decoded.invoiceTotal);
 
     const isValidVat = decoded.vatNumber?.length === 15 && decoded.vatNumber.startsWith('3');
     const phase2 = !!(decoded.invoiceHash || decoded.ecdsaSignature);
