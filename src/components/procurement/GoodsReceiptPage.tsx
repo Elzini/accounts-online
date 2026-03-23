@@ -9,38 +9,30 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Search, PackageCheck, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useGoodsReceipts, useCreateGoodsReceipt } from '@/hooks/procurement/useProcurementService';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function GoodsReceiptPage() {
   const { t } = useLanguage();
   const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ notes: '' });
 
-  const { data: receipts = [], isLoading } = useQuery({
-    queryKey: ['goods-receipts', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('goods_receipts').select('*').eq('company_id', companyId!).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
+  const { data: receipts = [], isLoading } = useGoodsReceipts(companyId);
+  const addMutation = useCreateGoodsReceipt(companyId);
 
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const num = `GR-${String(receipts.length + 1).padStart(3, '0')}`;
-      const { error } = await supabase.from('goods_receipts').insert({ company_id: companyId!, receipt_number: num, receipt_date: new Date().toISOString().split('T')[0], status: 'pending', notes: form.notes || null });
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['goods-receipts'] }); toast.success(t.gr_created); setShowAdd(false); setForm({ notes: '' }); },
-    onError: () => toast.error(t.mod_error),
-  });
+  const handleAdd = () => {
+    const num = `GR-${String(receipts.length + 1).padStart(3, '0')}`;
+    addMutation.mutate(
+      { receipt_number: num, receipt_date: new Date().toISOString().split('T')[0], status: 'pending', notes: form.notes || null },
+      {
+        onSuccess: () => { toast.success(t.gr_created); setShowAdd(false); setForm({ notes: '' }); },
+        onError: () => toast.error(t.mod_error),
+      }
+    );
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -52,7 +44,7 @@ export function GoodsReceiptPage() {
             <DialogHeader><DialogTitle>{t.gr_new_title}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div><Label>{t.notes}</Label><Textarea value={form.notes} onChange={e => setForm({ notes: e.target.value })} /></div>
-              <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending}>{t.save}</Button>
+              <Button className="w-full" onClick={handleAdd} disabled={addMutation.isPending}>{t.save}</Button>
             </div>
           </DialogContent>
         </Dialog>

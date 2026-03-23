@@ -8,10 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Eye, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { usePurchaseOrders, useCreatePurchaseOrder, useUpdatePurchaseOrderStatus } from '@/hooks/procurement/useProcurementService';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -26,53 +25,35 @@ const statusColors: Record<string, string> = {
 export function PurchaseOrdersPage() {
   const { t } = useLanguage();
   const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ supplier: '', deliveryDate: '', notes: '', items: '' });
 
   const statusLabels: Record<string, string> = { draft: t.po_status_draft, sent: t.po_status_sent, confirmed: t.po_status_confirmed, received: t.po_status_received, cancelled: t.po_status_cancelled };
 
-  const { data: orders = [], isLoading } = useQuery({
-    queryKey: ['purchase-orders', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('purchase_orders').select('*').eq('company_id', companyId!).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
+  const { data: orders = [], isLoading } = usePurchaseOrders(companyId);
+  const addMutation = useCreatePurchaseOrder(companyId);
+  const updateStatus = useUpdatePurchaseOrderStatus(companyId);
 
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const num = `PO-${String(orders.length + 1).padStart(3, '0')}`;
-      const { error } = await supabase.from('purchase_orders').insert({
-        company_id: companyId!, order_number: num, supplier_id: null, order_date: new Date().toISOString().split('T')[0],
-        expected_delivery: form.deliveryDate || null, status: 'draft', notes: form.notes || null, total_amount: 0,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['purchase-orders'] }); toast.success(t.po_created); setShowAdd(false); setForm({ supplier: '', deliveryDate: '', notes: '', items: '' }); },
-    onError: () => toast.error(t.mod_error),
-  });
+  const handleAdd = () => {
+    const num = `PO-${String(orders.length + 1).padStart(3, '0')}`;
+    addMutation.mutate(
+      { order_number: num, order_date: new Date().toISOString().split('T')[0], status: 'draft', total_amount: 0, notes: form.notes || null, expected_delivery: form.deliveryDate || null },
+      {
+        onSuccess: () => { toast.success(t.po_created); setShowAdd(false); setForm({ supplier: '', deliveryDate: '', notes: '', items: '' }); },
+        onError: () => toast.error(t.mod_error),
+      }
+    );
+  };
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('purchase_orders').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['purchase-orders'] }); toast.success(t.mod_deleted); },
-  });
+  const handleStatusChange = (id: string, status: string) => {
+    updateStatus.mutate({ id, status }, {
+      onSuccess: () => toast.success(t.po_updated),
+      onError: () => toast.error(t.mod_error),
+    });
+  };
 
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from('purchase_orders').update({ status }).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['purchase-orders'] }); toast.success(t.po_status_updated); },
-  });
-
-  const filtered = orders.filter((o: any) => o.order_number?.includes(search) || o.notes?.includes(search));
+  const filtered = orders.filter((o: any) => !search || (o.order_number || '').toLowerCase().includes(search.toLowerCase()) || (o.notes || '').toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -80,47 +61,45 @@ export function PurchaseOrdersPage() {
         <div><h1 className="text-3xl font-bold text-foreground">{t.po_title}</h1><p className="text-muted-foreground">{t.po_subtitle}</p></div>
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
           <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />{t.po_new}</Button></DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent>
             <DialogHeader><DialogTitle>{t.po_new_title}</DialogTitle></DialogHeader>
             <div className="space-y-4">
-              <div><Label>{t.po_expected_delivery}</Label><Input type="date" value={form.deliveryDate} onChange={e => setForm(p => ({ ...p, deliveryDate: e.target.value }))} /></div>
-              <div><Label>{t.po_notes}</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder={t.po_notes_placeholder} /></div>
-              <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending}>{addMutation.isPending ? t.po_saving : t.save}</Button>
+              <div><Label>{t.po_supplier}</Label><Input value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} /></div>
+              <div><Label>{t.po_delivery_date}</Label><Input type="date" value={form.deliveryDate} onChange={e => setForm({ ...form, deliveryDate: e.target.value })} /></div>
+              <div><Label>{t.po_items}</Label><Textarea value={form.items} onChange={e => setForm({ ...form, items: e.target.value })} rows={3} /></div>
+              <div><Label>{t.notes}</Label><Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
+              <Button className="w-full" onClick={handleAdd} disabled={addMutation.isPending}>{t.save}</Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
-
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card><CardContent className="pt-4 text-center"><div className="text-2xl font-bold">{orders.length}</div><p className="text-sm text-muted-foreground">{t.po_total_orders}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 text-center"><div className="text-2xl font-bold text-blue-600">{orders.filter((o: any) => o.status === 'sent').length}</div><p className="text-sm text-muted-foreground">{t.po_sent}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 text-center"><div className="text-2xl font-bold text-green-600">{orders.filter((o: any) => o.status === 'confirmed').length}</div><p className="text-sm text-muted-foreground">{t.po_confirmed}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 text-center"><div className="text-2xl font-bold text-primary">{orders.reduce((s: number, o: any) => s + Number(o.total_amount || 0), 0).toLocaleString()} {t.mod_currency}</div><p className="text-sm text-muted-foreground">{t.po_total_value}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 text-center"><div className="text-2xl font-bold">{orders.length}</div><p className="text-sm text-muted-foreground">{t.po_total}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 text-center"><div className="text-2xl font-bold text-blue-600">{orders.filter((o: any) => o.status === 'sent').length}</div><p className="text-sm text-muted-foreground">{t.po_status_sent}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 text-center"><div className="text-2xl font-bold text-green-600">{orders.filter((o: any) => o.status === 'confirmed').length}</div><p className="text-sm text-muted-foreground">{t.po_status_confirmed}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 text-center"><div className="text-2xl font-bold text-orange-600">{orders.filter((o: any) => o.status === 'draft').length}</div><p className="text-sm text-muted-foreground">{t.po_status_draft}</p></CardContent></Card>
       </div>
-
       <Card>
-        <div className="p-4"><div className="flex items-center gap-2"><Search className="w-4 h-4 text-muted-foreground" /><Input placeholder={t.mod_search} value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" /></div></div>
+        <div className="p-4"><div className="flex items-center gap-2"><Search className="w-4 h-4" /><Input placeholder={t.mod_search} value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" /></div></div>
         <CardContent>
           {isLoading ? <p className="text-center py-8 text-muted-foreground">{t.loading}</p> : filtered.length === 0 ? <p className="text-center py-8 text-muted-foreground">{t.po_no_orders}</p> : (
             <Table>
-              <TableHeader><TableRow><TableHead>{t.po_number}</TableHead><TableHead>{t.po_date}</TableHead><TableHead>{t.po_delivery}</TableHead><TableHead>{t.po_status}</TableHead><TableHead>{t.po_amount}</TableHead><TableHead>{t.actions}</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>{t.po_order_number}</TableHead><TableHead>{t.date}</TableHead><TableHead>{t.status}</TableHead><TableHead>{t.po_delivery_date}</TableHead><TableHead>{t.notes}</TableHead><TableHead>{t.actions}</TableHead></TableRow></TableHeader>
               <TableBody>
                 {filtered.map((o: any) => (
                   <TableRow key={o.id}>
                     <TableCell className="font-mono">{o.order_number}</TableCell>
                     <TableCell>{o.order_date}</TableCell>
+                    <TableCell><Badge className={statusColors[o.status] || ''}>{statusLabels[o.status] || o.status}</Badge></TableCell>
                     <TableCell>{o.expected_delivery || '-'}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">{o.notes || '-'}</TableCell>
                     <TableCell>
-                      <Select value={o.status} onValueChange={v => updateStatus.mutate({ id: o.id, status: v })}>
-                        <SelectTrigger className="h-7 w-24"><Badge className={statusColors[o.status]}>{statusLabels[o.status]}</Badge></SelectTrigger>
-                        <SelectContent>{Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                      <Select value={o.status} onValueChange={(v) => handleStatusChange(o.id, v)}>
+                        <SelectTrigger className="w-28 h-8"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                        </SelectContent>
                       </Select>
-                    </TableCell>
-                    <TableCell>{Number(o.total_amount || 0).toLocaleString()} {t.mod_currency}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        {o.status === 'draft' && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(o.id)}><Trash2 className="w-3 h-3" /></Button>}
-                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
