@@ -9008,6 +9008,56 @@ export type Database = {
           },
         ]
       }
+      security_events: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          details: Json
+          event_type: string
+          id: string
+          operation: string | null
+          severity: string
+          source_schema: string | null
+          table_name: string | null
+          target_schema: string | null
+          user_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          details?: Json
+          event_type: string
+          id?: string
+          operation?: string | null
+          severity?: string
+          source_schema?: string | null
+          table_name?: string | null
+          target_schema?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          details?: Json
+          event_type?: string
+          id?: string
+          operation?: string | null
+          severity?: string
+          source_schema?: string | null
+          table_name?: string | null
+          target_schema?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sms_provider_configs: {
         Row: {
           company_id: string
