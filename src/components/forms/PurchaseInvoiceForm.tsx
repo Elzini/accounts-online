@@ -1,48 +1,16 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { 
-  Save, 
-  Plus, 
-  X, 
-  Printer, 
-  FileText, 
-  Trash2,
-  ChevronRight,
-  ChevronLeft,
-  Car,
-  ArrowRight,
-  RotateCcw,
-  Package,
-  FileSpreadsheet,
-  MessageSquare,
-  ChevronDown,
-  CheckCircle,
-  FileEdit,
-  Search,
-  Sparkles
+  Save, Plus, X, Printer, FileText, Trash2,
+  Car, ArrowRight, RotateCcw, Package,
+  FileSpreadsheet, MessageSquare, ChevronDown,
+  CheckCircle, FileEdit, Search, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
@@ -65,6 +33,11 @@ import { CarItem, PurchaseInventoryItem } from './purchase-invoice/types';
 import { handleBatchImport } from './purchase-invoice/batchImport';
 import { getNextInvoiceNumber } from '@/utils/invoiceNumberGenerator';
 import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
+import {
+  InvoiceNavHeader, InvoiceTotalsSection, InvoiceActionBar,
+  InvoiceDeleteDialog, InvoiceReverseDialog,
+  formatInvoiceCurrency,
+} from './shared-invoice';
 
 interface PurchaseInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
