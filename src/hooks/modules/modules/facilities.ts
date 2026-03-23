@@ -16,6 +16,7 @@ export function useRentalUnits() {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -57,6 +58,7 @@ export function useBranches() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

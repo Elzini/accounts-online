@@ -63,6 +63,7 @@ export function EcommerceIntegrationPage() {
       return [] as Array<{ platform: string; is_active: boolean; last_sync_at: string | null }>;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const saveMutation = useMutation({

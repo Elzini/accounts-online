@@ -99,6 +99,7 @@ export function useCompaniesData() {
       })) as CompanyStats[];
     },
     enabled: companies.length > 0,
+    staleTime: 5 * 60 * 1000,
   });
 
   const addCompany = useMutation({

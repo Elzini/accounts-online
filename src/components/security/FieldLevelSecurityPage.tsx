@@ -107,6 +107,7 @@ export function FieldLevelSecurityPage() {
       return [] as any[];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const saveMutation = useMutation({

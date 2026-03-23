@@ -246,6 +246,7 @@ export function SmsProvidersSettings() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const saveMutation = useMutation({

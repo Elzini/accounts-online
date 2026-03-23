@@ -74,6 +74,7 @@ export function MenuConfigurationTab() {
     queryKey: ['menu-configuration', selectedCompanyId],
     queryFn: () => fetchMenuConfiguration(selectedCompanyId),
     enabled: !!selectedCompanyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {

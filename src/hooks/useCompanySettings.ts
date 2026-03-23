@@ -11,6 +11,7 @@ export function useCompanySettings(companyId: string | null) {
     queryKey: ['company-settings', companyId],
     queryFn: () => companyId ? fetchCompanySettings(companyId) : null,
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

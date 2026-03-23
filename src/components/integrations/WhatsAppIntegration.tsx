@@ -56,6 +56,7 @@ export function WhatsAppIntegration() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: suppliers = [] } = useQuery({
@@ -71,6 +72,7 @@ export function WhatsAppIntegration() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const formatPhone = (phone: string) => {

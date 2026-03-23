@@ -47,6 +47,7 @@ export function ProfitReport() {
       return data || [];
     },
     enabled: !!companyId && !isCarDealership,
+    staleTime: 5 * 60 * 1000,
   });
 
   // === Car Dealership Logic ===

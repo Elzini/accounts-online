@@ -30,6 +30,7 @@ export function useMonthlyExpenses(companyId: string | null, fiscalBounds: { sta
       return { custodyExpenses, payrollExpenses, rentExpenses, otherExpenses, total };
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
     refetchInterval: 60000,
   });
 }
@@ -52,6 +53,7 @@ export function useRecentInvoices(companyId: string | null, fiscalYearId?: strin
       return data || [];
     },
     enabled: !!companyId && enabled,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -65,6 +67,7 @@ export function useSmartAlertChecks(companyId: string | null, enabled: boolean) 
       return count || 0;
     },
     enabled: !!companyId && enabled,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -77,6 +80,7 @@ export function useSmartAlertCustodies(companyId: string | null, enabled: boolea
       return count || 0;
     },
     enabled: !!companyId && enabled,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -90,6 +94,7 @@ export function useSmartAlertInstallments(companyId: string | null, enabled: boo
       return count || 0;
     },
     enabled: !!companyId && enabled,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -102,6 +107,7 @@ export function useSmartAlertDraftInvoices(companyId: string | null, enabled: bo
       return count || 0;
     },
     enabled: !!companyId && enabled,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -115,6 +121,7 @@ export function useSmartAlertLowStock(companyId: string | null, enabled: boolean
       return data.filter(item => (item.quantity_on_hand || 0) <= (item.reorder_level || 0)).length;
     },
     enabled: !!companyId && enabled,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -127,6 +134,7 @@ export function useSmartAlertApprovals(companyId: string | null, enabled: boolea
       return count || 0;
     },
     enabled: !!companyId && enabled,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

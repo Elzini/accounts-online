@@ -36,6 +36,7 @@ export function useTaxSettings() {
     queryKey: ['tax-settings', companyId],
     queryFn: () => companyId ? fetchTaxSettings(companyId) : null,
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -63,6 +64,7 @@ export function useAccounts() {
     queryKey: ['accounts', companyId],
     queryFn: () => companyId ? fetchAccounts(companyId) : [],
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -132,6 +134,7 @@ export function useJournalEntries() {
     queryKey: ['journal-entries', companyId, fyId],
     queryFn: () => companyId ? fetchJournalEntries(companyId, fyId) : [],
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -140,6 +143,7 @@ export function useJournalEntry(entryId: string | null) {
     queryKey: ['journal-entry', entryId],
     queryFn: () => entryId ? fetchJournalEntryWithLines(entryId) : null,
     enabled: !!entryId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -228,6 +232,7 @@ export function useAccountBalances() {
     queryKey: ['account-balances', companyId, fyId],
     queryFn: () => companyId ? getAccountBalances(companyId, undefined, undefined, fyId) : [],
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -240,6 +245,7 @@ export function useAccountBalancesByDate(startDate?: string, endDate?: string) {
     queryKey: ['account-balances', companyId, startDate, endDate, fyId],
     queryFn: () => companyId ? getAccountBalances(companyId, startDate, endDate, fyId) : [],
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -252,6 +258,7 @@ export function useTrialBalance(startDate?: string, endDate?: string) {
     queryKey: ['trial-balance', companyId, startDate, endDate, fyId],
     queryFn: () => companyId ? getTrialBalance(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -264,6 +271,7 @@ export function useIncomeStatement(startDate?: string, endDate?: string) {
     queryKey: ['income-statement', companyId, startDate, endDate, fyId],
     queryFn: () => companyId ? getIncomeStatement(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -277,6 +285,7 @@ export function useGeneralLedger(accountId: string | null, startDate?: string, e
     queryKey: ['general-ledger', companyId, accountId, startDate, endDate, fyId],
     queryFn: () => companyId && accountId ? getGeneralLedger(companyId, accountId, startDate, endDate, fyId) : null,
     enabled: !!companyId && !!accountId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -290,6 +299,7 @@ export function useBalanceSheet(startDate?: string, endDate?: string) {
     queryKey: ['balance-sheet', companyId, startDate, endDate, fyId],
     queryFn: () => companyId ? getBalanceSheet(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -303,6 +313,7 @@ export function useVouchersReport(startDate?: string, endDate?: string, voucherT
     queryKey: ['vouchers-report', companyId, startDate, endDate, voucherType, fyId],
     queryFn: () => companyId ? getVouchersReport(companyId, startDate, endDate, voucherType, fyId) : [],
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -316,6 +327,7 @@ export function useJournalEntriesReport(startDate?: string, endDate?: string, re
     queryKey: ['journal-entries-report', companyId, startDate, endDate, referenceType, fyId],
     queryFn: () => companyId ? getJournalEntriesReport(companyId, startDate, endDate, referenceType, fyId) : [],
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -329,6 +341,7 @@ export function useComprehensiveTrialBalance(startDate?: string, endDate?: strin
     queryKey: ['comprehensive-trial-balance', companyId, startDate, endDate, fyId],
     queryFn: () => companyId ? getComprehensiveTrialBalance(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -342,5 +355,6 @@ export function useVATSettlementReport(startDate?: string, endDate?: string) {
     queryKey: ['vat-settlement-report', companyId, startDate, endDate, fyId],
     queryFn: () => companyId ? getVATSettlementReport(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }

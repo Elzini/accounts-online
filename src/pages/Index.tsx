@@ -76,6 +76,7 @@ const Index = () => {
       return data;
     },
     enabled: isSuperAdmin,
+    staleTime: 5 * 60 * 1000,
   });
 
   const mobileSidebarRef = useRef<MobileSidebarRef>(null);

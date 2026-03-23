@@ -52,6 +52,7 @@ export function CustodyAmountChangesDialog({ open, onOpenChange, custodyId, cust
       return (data || []) as AmountChange[];
     },
     enabled: open && !!custodyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const addChangeMutation = useMutation({

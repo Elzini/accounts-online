@@ -25,6 +25,7 @@ export function SalesTargetsPage() {
     queryKey: ['sales-targets', companyId],
     queryFn: async () => { const { data, error } = await supabase.from('sales_targets').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const addMutation = useMutation({

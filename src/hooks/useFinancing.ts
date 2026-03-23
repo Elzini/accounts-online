@@ -66,6 +66,7 @@ export function useFinancingContract(id: string | null) {
     queryKey: ['financingContract', id],
     queryFn: () => fetchFinancingContract(id!),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

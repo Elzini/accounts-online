@@ -23,6 +23,7 @@ export function useInstallmentSales() {
       selectedFiscalYear?.end_date
     ),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -31,6 +32,7 @@ export function useInstallmentSale(id: string | null) {
     queryKey: ['installmentSale', id],
     queryFn: () => fetchInstallmentSale(id!),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

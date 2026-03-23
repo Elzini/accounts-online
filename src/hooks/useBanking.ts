@@ -116,6 +116,7 @@ export function useBankTransactions(statementId: string) {
     queryKey: ['bankTransactions', statementId],
     queryFn: () => fetchBankTransactions(statementId),
     enabled: !!statementId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

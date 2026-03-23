@@ -26,6 +26,7 @@ export function useTrips() {
     queryKey: ['trips', companyId, selectedFiscalYear?.id],
     queryFn: () => getTrips(companyId!, selectedFiscalYear?.id),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -34,6 +35,7 @@ export function useTrip(tripId: string | undefined) {
     queryKey: ['trip', tripId],
     queryFn: () => getTrip(tripId!),
     enabled: !!tripId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -100,6 +102,7 @@ export function useTripPassengers(tripId: string | undefined) {
     queryKey: ['trip-passengers', tripId],
     queryFn: () => getTripPassengers(tripId!),
     enabled: !!tripId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

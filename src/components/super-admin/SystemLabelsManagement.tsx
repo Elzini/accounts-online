@@ -123,6 +123,7 @@ export function SystemLabelsManagement() {
       return map;
     },
     enabled: !!selectedCompanyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Initialize labels when company changes

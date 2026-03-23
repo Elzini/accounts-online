@@ -9,6 +9,7 @@ export function useCostCenters() {
     queryKey: ['cost-centers', companyId],
     queryFn: () => companyId ? fetchCostCenters(companyId) : [],
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -73,6 +73,7 @@ export function InvoiceApprovalWorkflow() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: requests = [] } = useQuery({
@@ -88,6 +89,7 @@ export function InvoiceApprovalWorkflow() {
       return (data || []) as ApprovalRequest[];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const createWorkflowMutation = useMutation({

@@ -32,6 +32,7 @@ export function useBuiltInReportsConfig() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -66,6 +67,7 @@ export function useSensitiveOpsLog() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -87,6 +89,7 @@ export function useCompanySmartAlerts() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -106,6 +109,7 @@ export function useEmployeePermissions(table: string) {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -123,6 +127,7 @@ export function useCompanyMembers() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -197,6 +202,7 @@ export function useUserActivityLog() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -216,6 +222,7 @@ export function useCompanyAccountingSettings() {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -234,6 +241,7 @@ export function useAccountCategories() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -267,6 +275,7 @@ export function useInvoiceSettings() {
       return data?.value ? JSON.parse(data.value) : null;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -300,6 +309,7 @@ export function useReportSettingsData() {
       return data?.value ? JSON.parse(data.value) : null;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -348,6 +358,7 @@ export function useMenuCompanyType() {
       return data?.company_type || null;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -62,12 +62,14 @@ export function useCompanyAccountingSettings(companyId: string, open: boolean, o
     queryKey: ['company-accounts', companyId],
     queryFn: async () => { const { data, error } = await supabase.from('account_categories').select('id, code, name, type').eq('company_id', companyId).order('code'); if (error) throw error; return data as AccountCategory[]; },
     enabled: open && !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: existingSettings, isLoading } = useQuery({
     queryKey: ['company-accounting-settings', companyId],
     queryFn: async () => { const { data, error } = await supabase.from('company_accounting_settings').select('*').eq('company_id', companyId).maybeSingle(); if (error) throw error; return data as AccountingSettings | null; },
     enabled: open && !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {

@@ -40,6 +40,7 @@ export function ApprovalsPage() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: requests = [], isLoading: loadingRequests } = useQuery({
@@ -54,6 +55,7 @@ export function ApprovalsPage() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const addWorkflow = useMutation({

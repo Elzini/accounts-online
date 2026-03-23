@@ -17,6 +17,7 @@ export function useCurrencies() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -31,6 +32,7 @@ export function useExchangeRates() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -83,6 +85,7 @@ export function useBudgets() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -110,6 +113,7 @@ export function useLoyaltyPrograms() {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -123,6 +127,7 @@ export function useLoyaltyPoints() {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -157,6 +162,7 @@ export function useSubscriptions() {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -191,6 +197,7 @@ export function useTimeEntries() {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -225,6 +232,7 @@ export function useWorkOrders() {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

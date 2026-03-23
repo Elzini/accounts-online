@@ -15,6 +15,7 @@ export function useImportedInvoiceData() {
     queryKey: ['importedInvoiceData', companyId],
     queryFn: () => getImportedInvoiceData(companyId!),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -73,6 +73,7 @@ export function ExecutiveKPIDashboard() {
     queryKey: ['kpi-targets', companyId],
     queryFn: () => fetchKPITargets(companyId!),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { hasCarInventory } = useIndustryFeatures();
@@ -115,6 +116,7 @@ export function ExecutiveKPIDashboard() {
       return { total_sales: totalSales, total_profit: totalSales - totalExpenses, sales_count: invoices.length, new_customers: customers.length, available_cars: 0, profit_margin: totalSales > 0 ? Math.round(((totalSales - totalExpenses) / totalSales) * 1000) / 10 : 0, avg_days_to_sell: 0, total_expenses: totalExpenses } as Record<string, number>;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const targets: KPITarget[] = useMemo(() => {

@@ -22,6 +22,7 @@ export function useQuotation(id: string | null) {
     queryKey: ['quotation', id],
     queryFn: () => fetchQuotation(id!),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

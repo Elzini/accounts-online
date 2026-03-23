@@ -38,6 +38,7 @@ export function useWorkflowTemplates() {
     queryKey: ['workflow-templates', companyId],
     queryFn: () => companyId ? fetchWorkflowTemplates(companyId) : [],
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -46,6 +47,7 @@ export function useWorkflowTemplate(id: string | null) {
     queryKey: ['workflow-template', id],
     queryFn: () => id ? fetchWorkflowTemplate(id) : null,
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -82,6 +84,7 @@ export function useWorkflowStages(workflowId: string | null) {
     queryKey: ['workflow-stages', workflowId],
     queryFn: () => workflowId ? fetchWorkflowStages(workflowId) : [],
     enabled: !!workflowId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -116,6 +119,7 @@ export function useStageFields(stageId: string | null) {
     queryKey: ['stage-fields', stageId],
     queryFn: () => stageId ? fetchStageFields(stageId) : [],
     enabled: !!stageId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -150,6 +154,7 @@ export function useAccountingRules(stageId: string | null) {
     queryKey: ['accounting-rules', stageId],
     queryFn: () => stageId ? fetchAccountingRules(stageId) : [],
     enabled: !!stageId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -176,6 +181,7 @@ export function useWorkflowInstances(workflowId?: string) {
     queryKey: ['workflow-instances', companyId, workflowId],
     queryFn: () => companyId ? fetchWorkflowInstances(companyId, workflowId) : [],
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -202,6 +208,7 @@ export function useInstanceStages(instanceId: string | null) {
     queryKey: ['instance-stages', instanceId],
     queryFn: () => instanceId ? fetchInstanceStages(instanceId) : [],
     enabled: !!instanceId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

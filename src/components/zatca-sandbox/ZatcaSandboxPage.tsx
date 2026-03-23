@@ -56,6 +56,7 @@ export function ZatcaSandboxPage() {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Generate a sample invoice XML for testing

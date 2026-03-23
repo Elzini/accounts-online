@@ -30,6 +30,7 @@ export function useAssetById(id: string | undefined) {
     queryKey: ['fixed-assets', id],
     queryFn: () => id ? fetchAssetById(id) : null,
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

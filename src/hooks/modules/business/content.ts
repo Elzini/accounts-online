@@ -17,6 +17,7 @@ export function useCMSPages() {
     queryKey: ['cms-pages', companyId],
     queryFn: async () => { const { data, error } = await supabase.from('cms_pages').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useCreateCMSPage() {
@@ -55,6 +56,7 @@ export function useBookkeepingClients() {
     queryKey: ['bookkeeping-clients', companyId],
     queryFn: async () => { const { data, error } = await supabase.from('bookkeeping_clients').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useBookkeepingTasks() {
@@ -63,6 +65,7 @@ export function useBookkeepingTasks() {
     queryKey: ['bookkeeping-tasks', companyId],
     queryFn: async () => { const { data, error } = await supabase.from('bookkeeping_tasks').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useCreateBookkeepingClient() {
@@ -90,6 +93,7 @@ export function useSupportTickets() {
     queryKey: ['support-tickets', companyId],
     queryFn: async () => { const { data, error } = await supabase.from('support_tickets').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useCreateSupportTicket() {

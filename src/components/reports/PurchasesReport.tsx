@@ -63,6 +63,7 @@ export function PurchasesReport() {
       return data || [];
     },
     enabled: !!companyId && !isCarDealership,
+    staleTime: 5 * 60 * 1000,
   });
 
   const [startDate, setStartDate] = useState('');

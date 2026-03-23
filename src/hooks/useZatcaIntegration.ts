@@ -8,6 +8,7 @@ export function useZatcaConfig() {
     queryKey: ['zatca-config', companyId],
     queryFn: () => zatcaService.fetchZatcaConfig(companyId!),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -27,6 +28,7 @@ export function useZatcaInvoices() {
     queryKey: ['zatca-invoices', companyId],
     queryFn: () => zatcaService.fetchZatcaInvoices(companyId!),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

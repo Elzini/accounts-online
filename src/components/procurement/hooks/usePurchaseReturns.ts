@@ -94,6 +94,7 @@ export function usePurchaseReturns() {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const processFoundInvoice = useCallback((invoice: any) => {

@@ -73,6 +73,7 @@ export function InvoiceJournalEntry({ invoiceId, invoiceNumber }: InvoiceJournal
       return { ...je, lines: enrichedLines };
     },
     enabled: !!companyId && accounts.length > 0,
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {

@@ -60,6 +60,7 @@ export function useEmployees() {
       return hrEmployees.map(mapHRToPayrollEmployee);
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -112,6 +113,7 @@ export function useEmployeeAdvances(employeeId?: string) {
     queryKey: ['employee-advances', companyId, employeeId],
     queryFn: () => (companyId ? fetchEmployeeAdvances(companyId, employeeId) : []),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -122,6 +124,7 @@ export function usePendingAdvances() {
     queryKey: ['pending-advances', companyId],
     queryFn: () => (companyId ? fetchPendingAdvances(companyId) : []),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -153,6 +156,7 @@ export function usePayrollRecords() {
       return fetchPayrollRecords(companyId, selectedFiscalYear);
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -161,6 +165,7 @@ export function usePayrollWithItems(payrollId: string | null) {
     queryKey: ['payroll', payrollId],
     queryFn: () => (payrollId ? fetchPayrollWithItems(payrollId) : null),
     enabled: !!payrollId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

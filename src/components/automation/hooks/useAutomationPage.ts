@@ -27,6 +27,7 @@ export function useAutomationPage() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: reminders = [], isLoading: loadingReminders } = useQuery({
@@ -38,6 +39,7 @@ export function useAutomationPage() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: reminderRules = [], isLoading: loadingRules } = useQuery({
@@ -49,6 +51,7 @@ export function useAutomationPage() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const toggleRecurring = useMutation({

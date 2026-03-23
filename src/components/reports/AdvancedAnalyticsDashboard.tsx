@@ -61,6 +61,7 @@ export function AdvancedAnalyticsDashboard() {
       }
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch expenses
@@ -76,6 +77,7 @@ export function AdvancedAnalyticsDashboard() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Process monthly trends

@@ -34,6 +34,7 @@ export function CurrenciesPage() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: rates = [] } = useQuery({
@@ -45,6 +46,7 @@ export function CurrenciesPage() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const addCurrency = useMutation({

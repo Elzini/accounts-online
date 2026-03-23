@@ -22,6 +22,7 @@ export function useFormulaDefinitions(category?: string) {
       return formulaService.fetchFormulaDefinitions(companyId, category);
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

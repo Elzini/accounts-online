@@ -44,6 +44,7 @@ export function SalesReport() {
       return data || [];
     },
     enabled: !!companyId && !isCarDealership,
+    staleTime: 5 * 60 * 1000,
   });
 
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
