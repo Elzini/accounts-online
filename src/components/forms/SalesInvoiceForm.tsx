@@ -62,6 +62,7 @@ import { approveInvoiceWithJournal } from '@/services/invoiceJournal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface SalesInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
