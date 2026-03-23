@@ -124,7 +124,7 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
           <div className="flex justify-between py-1 font-bold text-base border-t mt-1 pt-2"><span>الاجمالي مع الضريبة</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
         </div>
         <div className="p-3 border-r flex items-center">
-          <QRCodeSVG value={qrData} size={80} level="M" />
+          <QRCodeSVG value={qrData} size={120} level="L" includeMargin={true} />
         </div>
       </div>
 

@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Smartphone, Camera, FileText, CheckCircle, QrCode, Upload, Eye, Building2, Trash2, AlertTriangle, CameraOff, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { decodeZatcaQRData, type ZatcaQRData } from '@/lib/zatcaQR';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 
 interface ScannedInvoice {
   id: string;
@@ -104,12 +104,30 @@ export function MobileInvoiceReaderPage() {
       const html5Qrcode = new Html5Qrcode(scannerContainerId);
       scannerRef.current = html5Qrcode;
 
+      let cameraSource: string | MediaTrackConstraints = { facingMode: 'environment' };
+      try {
+        const cameras = await Html5Qrcode.getCameras();
+        const rearCamera = cameras.find((cam) => /back|rear|environment|خلف/i.test(cam.label));
+        if (rearCamera?.id) {
+          cameraSource = rearCamera.id;
+        } else if (cameras[0]?.id) {
+          cameraSource = cameras[0].id;
+        }
+      } catch (cameraListError) {
+        console.warn('Could not list cameras, falling back to facingMode:', cameraListError);
+      }
+
       await html5Qrcode.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        cameraSource,
+        {
+          fps: 15,
+          qrbox: { width: 320, height: 320 },
+          aspectRatio: 1,
+          rememberLastUsedCamera: true,
+          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+        },
         (decodedText) => {
           processQRData(decodedText);
-          // Don't stop camera - allow continuous scanning
         },
         () => {
           // Ignore scan failures (no QR in frame)
@@ -118,7 +136,7 @@ export function MobileInvoiceReaderPage() {
       setCameraActive(true);
     } catch (err: any) {
       console.error('Camera error:', err);
-      setCameraError(err?.message || 'تعذر الوصول إلى الكاميرا. تأكد من منح إذن الكاميرا.');
+      setCameraError(err?.message || 'تعذر الوصول إلى الكاميرا أو قراءة QR. قرّب الكاميرا من الرمز وتأكد من وضوحه.');
       setCameraActive(false);
     }
   }, [processQRData]);

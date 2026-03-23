@@ -113,10 +113,10 @@ export const PurchaseInvoice = forwardRef<HTMLDivElement, PurchaseInvoiceProps>(
               <div className="bg-white p-2 rounded-lg shadow-lg">
                 <QRCodeSVG
                   value={qrData}
-                  size={90}
-                  level="M"
-                  includeMargin={false}
-                  fgColor="#2563eb"
+                  size={140}
+                  level="L"
+                  includeMargin={true}
+                  fgColor="#000000"
                 />
               </div>
               <div className="flex gap-4 mt-2 text-sm">
