@@ -19,7 +19,7 @@ interface ParsedLog {
 
 export function ImportLogsPanel() {
   const companyId = useCompanyId();
-  const queryClient = useQueryClient();
+  const { language } = useLanguage();
   const { language } = useLanguage();
   const fileRef = useRef<HTMLInputElement>(null);
   const [parsedData, setParsedData] = useState<ParsedLog[]>([]);
