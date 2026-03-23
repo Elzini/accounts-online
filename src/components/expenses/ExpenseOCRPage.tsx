@@ -57,11 +57,7 @@ export function ExpenseOCRPage() {
       });
 
       // Call AI to extract data
-      const { data, error } = await supabase.functions.invoke('expense-ocr', {
-        body: { image: base64 },
-      });
-
-      if (error) throw error;
+      const data = await invokeExpenseOcr(base64);
 
       setExpenses(prev =>
         prev.map(e =>
