@@ -8967,6 +8967,47 @@ export type Database = {
           },
         ]
       }
+      security_audit_trail: {
+        Row: {
+          created_at: string | null
+          details: Json | null
+          event_type: string
+          id: string
+          schema_name: string | null
+          severity: string | null
+          tenant_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          details?: Json | null
+          event_type: string
+          id?: string
+          schema_name?: string | null
+          severity?: string | null
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          details?: Json | null
+          event_type?: string
+          id?: string
+          schema_name?: string | null
+          severity?: string | null
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_audit_trail_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sms_provider_configs: {
         Row: {
           company_id: string
@@ -9462,6 +9503,44 @@ export type Database = {
           },
         ]
       }
+      tenant_backups: {
+        Row: {
+          backup_type: string | null
+          created_at: string | null
+          id: string
+          schema_name: string | null
+          status: string | null
+          tables_included: string[] | null
+          tenant_id: string | null
+        }
+        Insert: {
+          backup_type?: string | null
+          created_at?: string | null
+          id?: string
+          schema_name?: string | null
+          status?: string | null
+          tables_included?: string[] | null
+          tenant_id?: string | null
+        }
+        Update: {
+          backup_type?: string | null
+          created_at?: string | null
+          id?: string
+          schema_name?: string | null
+          status?: string | null
+          tables_included?: string[] | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_backups_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_db_roles: {
         Row: {
           company_id: string | null
@@ -9508,27 +9587,33 @@ export type Database = {
           algorithm: string | null
           company_id: string
           created_at: string | null
+          encrypted_tables: string[] | null
           encryption_enabled: boolean | null
           id: string
           key_rotation_days: number | null
+          tenant_id: string | null
           updated_at: string | null
         }
         Insert: {
           algorithm?: string | null
           company_id: string
           created_at?: string | null
+          encrypted_tables?: string[] | null
           encryption_enabled?: boolean | null
           id?: string
           key_rotation_days?: number | null
+          tenant_id?: string | null
           updated_at?: string | null
         }
         Update: {
           algorithm?: string | null
           company_id?: string
           created_at?: string | null
+          encrypted_tables?: string[] | null
           encryption_enabled?: boolean | null
           id?: string
           key_rotation_days?: number | null
+          tenant_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -9536,6 +9621,13 @@ export type Database = {
             foreignKeyName: "tenant_encryption_config_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_encryption_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
