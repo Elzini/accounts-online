@@ -6,7 +6,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { fetchSaaSKPIs } from '@/services/saasAdmin';
-import { supabase } from '@/integrations/supabase/client';
+import { useSaaSMonthlyGrowth, useSaaSPlanDistribution, supabase } from '@/hooks/modules/useSuperAdminServices';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend
@@ -21,50 +21,8 @@ export function SaaSExecutiveDashboard() {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Monthly growth data
-  const { data: monthlyData = [] } = useQuery({
-    queryKey: ['saas-monthly-growth'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('companies')
-        .select('created_at')
-        .order('created_at');
-      
-      if (!data) return [];
-      
-      const monthMap: Record<string, number> = {};
-      data.forEach(c => {
-        const month = c.created_at.substring(0, 7); // YYYY-MM
-        monthMap[month] = (monthMap[month] || 0) + 1;
-      });
-
-      let cumulative = 0;
-      return Object.entries(monthMap).map(([month, count]) => {
-        cumulative += count;
-        return { month: month.substring(5), companies: cumulative, newCompanies: count };
-      });
-    },
-  });
-
-  // Plan distribution
-  const { data: planDistribution = [] } = useQuery({
-    queryKey: ['saas-plan-distribution'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('subscriptions')
-        .select('plan_name, status');
-      
-      if (!data) return [];
-      
-      const planMap: Record<string, number> = {};
-      data.forEach(s => {
-        const name = s.plan_name || 'بدون باقة';
-        planMap[name] = (planMap[name] || 0) + 1;
-      });
-
-      return Object.entries(planMap).map(([name, value]) => ({ name, value }));
-    },
-  });
+  const { data: monthlyData = [] } = useSaaSMonthlyGrowth();
+  const { data: planDistribution = [] } = useSaaSPlanDistribution();
 
   // Expiring subscriptions (within 7 days)
   const { data: expiringSubs = [] } = useQuery({

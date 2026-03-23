@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,34 +13,15 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle
 } from '@/components/ui/dialog';
+import { useActiveCompanies, useFinancialSnapshots, supabase } from '@/hooks/modules/useSuperAdminServices';
 
 export function FinancialTimeMachine() {
   const queryClient = useQueryClient();
   const [selectedCompany, setSelectedCompany] = useState('');
   const [selectedSnapshot, setSelectedSnapshot] = useState<any>(null);
 
-  const { data: companies = [] } = useQuery({
-    queryKey: ['companies-list-tm'],
-    queryFn: async () => {
-      const { data } = await supabase.from('companies').select('id, name').eq('is_active', true);
-      return data || [];
-    },
-  });
-
-  const { data: snapshots = [], isLoading } = useQuery({
-    queryKey: ['financial-snapshots', selectedCompany],
-    queryFn: async () => {
-      if (!selectedCompany) return [];
-      const { data, error } = await (supabase.from as any)('financial_snapshots')
-        .select('*')
-        .eq('company_id', selectedCompany)
-        .order('snapshot_date', { ascending: false })
-        .limit(90);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!selectedCompany,
-  });
+  const { data: companies = [] } = useActiveCompanies();
+  const { data: snapshots = [], isLoading } = useFinancialSnapshots(selectedCompany);
 
   const takeSnapshot = useMutation({
     mutationFn: async () => {

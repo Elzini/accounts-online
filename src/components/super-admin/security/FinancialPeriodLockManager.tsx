@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,56 +13,17 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
+import { useActiveCompanies, useFinancialPeriodLocks, useCreateFinancialPeriodLock, supabase } from '@/hooks/modules/useSuperAdminServices';
 
 export function FinancialPeriodLockManager() {
   const queryClient = useQueryClient();
   const [showLockDialog, setShowLockDialog] = useState(false);
   const [lockData, setLockData] = useState({ companyId: '', periodStart: '', periodEnd: '', reason: '' });
 
-  const { data: companies = [] } = useQuery({
-    queryKey: ['companies-list-for-lock'],
-    queryFn: async () => {
-      const { data } = await supabase.from('companies').select('id, name').eq('is_active', true);
-      return data || [];
-    },
-  });
+  const { data: companies = [] } = useActiveCompanies();
+  const { data: locks = [], isLoading } = useFinancialPeriodLocks();
 
-  const { data: locks = [], isLoading } = useQuery({
-    queryKey: ['financial-period-locks'],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('financial_period_locks')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  const createLock = useMutation({
-    mutationFn: async () => {
-      if (!lockData.companyId || !lockData.periodStart || !lockData.periodEnd) {
-        throw new Error('جميع الحقول مطلوبة');
-      }
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await (supabase.from as any)('financial_period_locks')
-        .insert({
-          company_id: lockData.companyId,
-          period_start: lockData.periodStart,
-          period_end: lockData.periodEnd,
-          locked_by: user?.id,
-          lock_reason: lockData.reason,
-          is_locked: true,
-        });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['financial-period-locks'] });
-      setShowLockDialog(false);
-      setLockData({ companyId: '', periodStart: '', periodEnd: '', reason: '' });
-      toast.success('تم قفل الفترة المالية');
-    },
-    onError: (err: any) => toast.error(err.message),
-  });
+  const createLock = useCreateFinancialPeriodLock();
 
   const unlockPeriod = useMutation({
     mutationFn: async (lockId: string) => {
