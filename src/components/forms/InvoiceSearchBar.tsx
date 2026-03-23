@@ -43,7 +43,8 @@ export function InvoiceSearchBar({
 }: InvoiceSearchBarProps) {
   const { company } = useCompany();
   const industryLabels = useIndustryLabels();
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const features = useIndustryFeatures();
+  const isCarDealership = features.hasCarInventory;
   const [searchType, setSearchType] = useState<SearchType>(mode === 'sales' ? 'customer' : 'supplier');
   const [searchQuery, setSearchQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
