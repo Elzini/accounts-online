@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { fetchMenuConfiguration, saveMenuConfiguration, MenuItem } from '@/services/systemControl';
 import { supabase } from '@/integrations/supabase/client';
+import { getCompanyTypeLabel } from '@/core/engine/industryFeatures';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -205,11 +206,7 @@ export function MenuConfigurationTab() {
             {selectedCompany && (
               <div className="text-sm text-muted-foreground mt-5">
                 نوع النشاط: <span className="font-medium text-foreground">
-                  {selectedCompany.company_type === 'car_dealership' ? 'معرض سيارات' :
-                   selectedCompany.company_type === 'construction' ? 'مقاولات' :
-                   selectedCompany.company_type === 'general_trading' ? 'تجارة عامة' :
-                   selectedCompany.company_type === 'restaurant' ? 'مطاعم' :
-                   selectedCompany.company_type === 'export_import' ? 'استيراد وتصدير' : ''}
+                  {getCompanyTypeLabel(selectedCompany.company_type || 'general_trading')}
                 </span>
               </div>
             )}

@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Save, LayoutDashboard, FileText, Menu, Settings2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getCompanyTypeLabel } from '@/core/engine/industryFeatures';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface LabelGroup {
@@ -214,11 +215,7 @@ export function SystemLabelsManagement() {
             {selectedCompany && (
               <div className="text-sm text-muted-foreground mt-5">
                 نوع النشاط: <span className="font-medium text-foreground">
-                  {selectedCompany.company_type === 'car_dealership' ? 'معرض سيارات' :
-                   selectedCompany.company_type === 'construction' ? 'مقاولات' :
-                   selectedCompany.company_type === 'general_trading' ? 'تجارة عامة' :
-                   selectedCompany.company_type === 'restaurant' ? 'مطاعم' :
-                   selectedCompany.company_type === 'export_import' ? 'استيراد وتصدير' : ''}
+                  {getCompanyTypeLabel(selectedCompany.company_type || 'general_trading')}
                 </span>
               </div>
             )}

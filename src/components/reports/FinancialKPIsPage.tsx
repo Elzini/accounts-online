@@ -8,6 +8,7 @@ import { useCompanyId } from '@/hooks/useCompanyId';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface KPIs {
   grossProfitMargin: number;
@@ -31,7 +32,7 @@ export function FinancialKPIsPage() {
   const companyId = useCompanyId();
   const { selectedFiscalYear } = useFiscalYear();
   const { company } = useCompany();
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const isCarDealership = useIndustryFeatures().hasCarInventory;
 
   const { data: kpis, isLoading } = useQuery({
     queryKey: ['financial-kpis', companyId, selectedFiscalYear?.id, isCarDealership],

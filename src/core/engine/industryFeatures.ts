@@ -99,11 +99,30 @@ const FEATURE_MAP: Record<string, Partial<IndustryFeatures>> = {
   },
 };
 
+/** Human-readable labels for company types (Arabic) */
+const COMPANY_TYPE_LABELS: Record<string, string> = {
+  car_dealership: 'معرض سيارات',
+  construction: 'مقاولات',
+  general_trading: 'تجارة عامة',
+  restaurant: 'مطاعم',
+  export_import: 'استيراد وتصدير',
+  real_estate: 'تطوير عقاري',
+  medical: 'طبي',
+  bookkeeping: 'مكتب محاسبة',
+  manufacturing: 'تصنيع',
+};
+
 /**
  * Get feature flags for a company type
- * No if/else — pure configuration lookup
  */
 export function getIndustryFeatures(companyType: string): IndustryFeatures {
   const overrides = FEATURE_MAP[companyType] || {};
   return { ...DEFAULT_FEATURES, ...overrides };
+}
+
+/**
+ * Get display label for a company type
+ */
+export function getCompanyTypeLabel(companyType: string): string {
+  return COMPANY_TYPE_LABELS[companyType] || companyType;
 }

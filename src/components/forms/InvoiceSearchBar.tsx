@@ -12,6 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 type SearchType = 'invoice' | 'customer' | 'supplier' | 'car' | 'item';
 
@@ -42,7 +43,8 @@ export function InvoiceSearchBar({
 }: InvoiceSearchBarProps) {
   const { company } = useCompany();
   const industryLabels = useIndustryLabels();
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const features = useIndustryFeatures();
+  const isCarDealership = features.hasCarInventory;
   const [searchType, setSearchType] = useState<SearchType>(mode === 'sales' ? 'customer' : 'supplier');
   const [searchQuery, setSearchQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);

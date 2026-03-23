@@ -14,6 +14,7 @@ import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 export function ProfitReport() {
   const { data: sales = [], isLoading: salesLoading } = useSales();
@@ -26,7 +27,7 @@ export function ProfitReport() {
   const labels = useIndustryLabels();
   const { t, language } = useLanguage();
   const { companyId, company } = useCompany();
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const isCarDealership = useIndustryFeatures().hasCarInventory;
 
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
   const { decimals } = useNumberFormat();

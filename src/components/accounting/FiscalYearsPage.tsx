@@ -39,6 +39,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 export function FiscalYearsPage() {
   const { t, direction } = useLanguage();
@@ -46,7 +47,7 @@ export function FiscalYearsPage() {
   const { permissions } = useAuth();
   const { company } = useCompany();
   const isAdmin = permissions.admin || permissions.super_admin;
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const isCarDealership = useIndustryFeatures().hasCarInventory;
   
   const createFiscalYear = useCreateFiscalYear();
   const closeFiscalYear = useCloseFiscalYear();

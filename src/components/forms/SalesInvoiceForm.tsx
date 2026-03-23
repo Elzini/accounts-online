@@ -62,6 +62,7 @@ import { approveInvoiceWithJournal } from '@/services/invoiceJournal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface SalesInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
@@ -121,7 +122,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
   // Inventory hooks
   const { data: inventoryItems = [] } = useItems();
   const { data: units = [] } = useUnits();
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const isCarDealership = useIndustryFeatures().hasCarInventory;
 
   // Available cars for sale
   const availableCars = useMemo(() => 

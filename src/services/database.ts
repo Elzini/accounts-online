@@ -1,8 +1,15 @@
+/**
+ * Database Service - Facade
+ * 
+ * This file re-exports from modular services for backward compatibility.
+ * New code should import directly from the specific service modules.
+ */
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { getCompanyOverride } from '@/lib/companyOverride';
 
-// Re-export car dealership module for backward compatibility
+// ── Re-exports from modular services ──
+// Car dealership
 export {
   fetchCars, addCar, updateCar, deleteCar, updateCarStatus,
   fetchSales, addSale, updateSale, updateSaleWithItems, deleteSale, reverseSale,
@@ -12,14 +19,13 @@ export {
 } from '@/services/carDealership';
 export type { CarWithSaleInfo, MultiCarSaleData } from '@/services/carDealership';
 
-type Customer = Database['public']['Tables']['customers']['Row'];
-type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
-type CustomerUpdate = Database['public']['Tables']['customers']['Update'];
-type Supplier = Database['public']['Tables']['suppliers']['Row'];
-type SupplierInsert = Database['public']['Tables']['suppliers']['Insert'];
-type SupplierUpdate = Database['public']['Tables']['suppliers']['Update'];
+// Customers (delegated to dedicated module)
+export { fetchCustomers, addCustomer, updateCustomer, deleteCustomer } from '@/services/customers';
 
-// Helper function to get current user's company_id
+// Suppliers (delegated to dedicated module)
+export { fetchSuppliers, addSupplier, updateSupplier, deleteSupplier } from '@/services/suppliers';
+
+// ── Internal helpers (still used by stats functions below) ──
 async function getCurrentCompanyId(): Promise<string | null> {
   const override = getCompanyOverride();
   if (override) return override;
@@ -46,120 +52,9 @@ function toDateOnly(date: Date) {
   return `${y}-${m}-${d}`;
 }
 
-// Customers
-// Use customers_safe view for read operations to mask sensitive PII (id_number, registration_number)
-// The view shows only last 4 digits of identity documents for non-admin users
-export async function fetchCustomers() {
-  const companyId = await requireCompanyId();
-  const { data, error } = await supabase
-    .from('customers_safe')
-    .select('*')
-    .eq('company_id', companyId)
-    .order('created_at', { ascending: false });
-  
-  if (error) throw error;
-  return data?.map(customer => ({
-    ...customer,
-    id_number_encrypted: null as string | null,
-  })) || [];
-}
-
-export async function addCustomer(customer: CustomerInsert) {
-  const companyId = await getCurrentCompanyId();
-  if (!companyId) throw new Error('No company found for user');
-  
-  const { data, error } = await supabase
-    .from('customers')
-    .insert({ ...customer, company_id: companyId })
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
-}
-
-export async function updateCustomer(id: string, customer: CustomerUpdate) {
-  const { data, error } = await supabase
-    .from('customers')
-    .update(customer)
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
-}
-
-export async function deleteCustomer(id: string) {
-  const { error } = await supabase
-    .from('customers')
-    .delete()
-    .eq('id', id);
-  
-  if (error) throw error;
-}
-
-// Suppliers
-// Use suppliers_safe view for read operations to mask sensitive data (phone, id_number, registration_number)
-// The view shows only last 4 digits for non-admin users
-export async function fetchSuppliers() {
-  const companyId = await requireCompanyId();
-  const { data, error } = await supabase
-    .from('suppliers_safe')
-    .select('*')
-    .eq('company_id', companyId)
-    .order('created_at', { ascending: false });
-  
-  if (error) throw error;
-  return data?.map(supplier => ({
-    id: supplier.id,
-    company_id: supplier.company_id,
-    name: supplier.name,
-    phone: supplier.phone_masked,
-    address: supplier.address,
-    notes: supplier.notes,
-    id_number: supplier.id_number_masked,
-    registration_number: supplier.registration_number_masked,
-    created_at: supplier.created_at,
-    updated_at: supplier.updated_at,
-    registration_number_encrypted: null as string | null,
-  })) || [];
-}
-
-export async function addSupplier(supplier: SupplierInsert) {
-  const companyId = await getCurrentCompanyId();
-  if (!companyId) throw new Error('No company found for user');
-  
-  const { data, error } = await supabase
-    .from('suppliers')
-    .insert({ ...supplier, company_id: companyId })
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
-}
-
-export async function updateSupplier(id: string, supplier: SupplierUpdate) {
-  const { data, error } = await supabase
-    .from('suppliers')
-    .update(supplier)
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
-}
-
-export async function deleteSupplier(id: string) {
-  const { error } = await supabase
-    .from('suppliers')
-    .delete()
-    .eq('id', id);
-  
-  if (error) throw error;
-}
+// ============================================
+// GENERAL FUNCTIONS (work for ALL company types)
+// ============================================
 
 // ============================================
 // GENERAL FUNCTIONS (work for ALL company types)

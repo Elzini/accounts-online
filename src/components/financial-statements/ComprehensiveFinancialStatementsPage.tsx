@@ -121,7 +121,7 @@ export function ComprehensiveFinancialStatementsPage() {
   const { printReport } = usePrintReport();
   const { exportToExcel } = useExcelExport();
   
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const isCarDealership = false; // TODO: migrate to useIndustryFeatures once outside render guard
 
   // لا يوجد تحميل تلقائي - يختار المستخدم مصدر البيانات أولاً
   

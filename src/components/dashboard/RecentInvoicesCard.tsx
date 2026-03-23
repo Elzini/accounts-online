@@ -10,6 +10,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ActivePage } from '@/types';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface RecentInvoicesCardProps {
   setActivePage: (page: ActivePage) => void;
@@ -27,7 +28,7 @@ type DashboardInvoiceRow = {
 
 export const RecentInvoicesCard = forwardRef<HTMLDivElement, RecentInvoicesCardProps>(function RecentInvoicesCard({ setActivePage }, ref) {
   const { companyId, company } = useCompany();
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const isCarDealership = useIndustryFeatures().hasCarInventory;
   const { selectedFiscalYear } = useFiscalYear();
   const { data: sales = [] } = useSales();
   // For non-car companies, sales hook returns data but we ignore it

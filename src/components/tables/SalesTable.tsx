@@ -16,6 +16,7 @@ import { useRecalculateCompanyProfits } from '@/hooks/useProfitRecalculation';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface SalesTableProps {
   setActivePage: (page: ActivePage) => void;
@@ -24,7 +25,7 @@ interface SalesTableProps {
 export function SalesTable({ setActivePage }: SalesTableProps) {
   const queryClient = useQueryClient();
   const { companyId, company } = useCompany();
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const isCarDealership = useIndustryFeatures().hasCarInventory;
   const { data: sales = [], isLoading, refetch } = useSales();
   const { data: taxSettings } = useTaxSettings();
   const { selectedFiscalYear } = useFiscalYear();

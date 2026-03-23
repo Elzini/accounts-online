@@ -30,6 +30,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface ReturnItem {
   id: string;
@@ -69,7 +70,7 @@ export function SalesReturnsPage() {
   const companyId = useCompanyId();
   const { company } = useCompany();
   const companyType: CompanyActivityType = company?.company_type || 'general_trading';
-  const isCarDealership = companyType === 'car_dealership';
+  const isCarDealership = useIndustryFeatures().hasCarInventory;
   const queryClient = useQueryClient();
   const [searchList, setSearchList] = useState('');
   const [activeTab, setActiveTab] = useState('form');

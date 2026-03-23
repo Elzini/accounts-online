@@ -1,0 +1,74 @@
+/**
+ * Supplier Service - Isolated CRUD operations for suppliers
+ */
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+import { getCompanyOverride } from '@/lib/companyOverride';
+
+type SupplierInsert = Database['public']['Tables']['suppliers']['Insert'];
+type SupplierUpdate = Database['public']['Tables']['suppliers']['Update'];
+
+async function requireCompanyId(): Promise<string> {
+  const override = getCompanyOverride();
+  if (override) return override;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('COMPANY_REQUIRED');
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_id')
+    .eq('user_id', user.id)
+    .single();
+  if (!profile?.company_id) throw new Error('COMPANY_REQUIRED');
+  return profile.company_id;
+}
+
+export async function fetchSuppliers() {
+  const companyId = await requireCompanyId();
+  const { data, error } = await supabase
+    .from('suppliers_safe')
+    .select('*')
+    .eq('company_id', companyId)
+    .order('created_at', { ascending: false });
+  
+  if (error) throw error;
+  return data?.map(supplier => ({
+    id: supplier.id,
+    company_id: supplier.company_id,
+    name: supplier.name,
+    phone: supplier.phone_masked,
+    address: supplier.address,
+    notes: supplier.notes,
+    id_number: supplier.id_number_masked,
+    registration_number: supplier.registration_number_masked,
+    created_at: supplier.created_at,
+    updated_at: supplier.updated_at,
+    registration_number_encrypted: null as string | null,
+  })) || [];
+}
+
+export async function addSupplier(supplier: SupplierInsert) {
+  const companyId = await requireCompanyId();
+  const { data, error } = await supabase
+    .from('suppliers')
+    .insert({ ...supplier, company_id: companyId })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateSupplier(id: string, supplier: SupplierUpdate) {
+  const { data, error } = await supabase
+    .from('suppliers')
+    .update(supplier)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteSupplier(id: string) {
+  const { error } = await supabase.from('suppliers').delete().eq('id', id);
+  if (error) throw error;
+}

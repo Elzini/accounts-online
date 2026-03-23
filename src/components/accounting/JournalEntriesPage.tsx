@@ -32,6 +32,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useUnifiedPrintReport } from '@/hooks/useUnifiedPrintReport';
 import { RealEstateJournalTemplates, JournalTemplate } from './RealEstateJournalTemplates';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface JournalLine {
   account_id: string;
@@ -55,7 +56,7 @@ export function JournalEntriesPage() {
   const { filterByFiscalYear } = useFiscalYearFilter();
   const { printReport } = useUnifiedPrintReport();
   const { printDetailedJournal } = useDetailedJournalPrint();
-  const isRealEstate = company?.company_type === 'real_estate';
+  const isRealEstate = useIndustryFeatures().hasRealEstateProjects;
   const createJournalEntry = useCreateJournalEntry();
   const deleteJournalEntry = useDeleteJournalEntry();
   
