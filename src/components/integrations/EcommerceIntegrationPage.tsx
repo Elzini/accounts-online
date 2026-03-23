@@ -59,55 +59,18 @@ export function EcommerceIntegrationPage() {
   const { data: integrations = [], isLoading } = useQuery({
     queryKey: ['ecommerce-integrations', companyId],
     queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('ecommerce_integrations')
-        .select('*')
-        .eq('company_id', companyId);
-      
-      if (data) {
-        const newConfig = { ...config };
-        data.forEach((int: any) => {
-          if (newConfig[int.platform]) {
-            newConfig[int.platform] = {
-              store_url: int.store_url || '',
-              api_key: int.api_key_encrypted ? '••••••••' : '',
-              webhook_secret: int.webhook_secret_encrypted ? '••••••••' : '',
-              sync_products: int.sync_products ?? true,
-              sync_orders: int.sync_orders ?? true,
-              sync_customers: int.sync_customers ?? true,
-            };
-          }
-        });
-        setConfig(newConfig);
-      }
-      return data || [];
+      // ecommerce_integrations table removed during schema cleanup
+      return [] as Array<{ platform: string; is_active: boolean; last_sync_at: string | null }>;
     },
     enabled: !!companyId,
   });
 
   const saveMutation = useMutation({
-    mutationFn: async (platform: string) => {
-      if (!companyId) throw new Error('No company');
-      const cfg = config[platform];
-      const { error } = await supabase
-        .from('ecommerce_integrations')
-        .upsert({
-          company_id: companyId,
-          platform,
-          store_url: cfg.store_url,
-          api_key_encrypted: cfg.api_key !== '••••••••' ? cfg.api_key : undefined,
-          webhook_secret_encrypted: cfg.webhook_secret !== '••••••••' ? cfg.webhook_secret : undefined,
-          sync_products: cfg.sync_products,
-          sync_orders: cfg.sync_orders,
-          sync_customers: cfg.sync_customers,
-          is_active: true,
-        }, { onConflict: 'company_id,platform' });
-      if (error) throw error;
+    mutationFn: async (_platform: string) => {
+      toast.info('ميزة التكامل مع المتاجر الإلكترونية قيد التطوير');
     },
     onSuccess: () => {
-      toast.success('تم حفظ إعدادات التكامل');
-      queryClient.invalidateQueries({ queryKey: ['ecommerce-integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['ecommerce-integrations', companyId] });
     },
     onError: () => toast.error('خطأ في حفظ الإعدادات'),
   });

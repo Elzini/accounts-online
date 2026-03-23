@@ -90,52 +90,30 @@ export function FieldLevelSecurityPage() {
   const { data: permissions = [], isLoading } = useQuery({
     queryKey: ['field-permissions', companyId, selectedRole, selectedTable],
     queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('field_permissions')
-        .select('*')
-        .eq('company_id', companyId)
-        .eq('role_name', selectedRole)
-        .eq('table_name', selectedTable);
-      
+      // field_permissions table removed during schema cleanup
       const permsMap: Record<string, FieldPermission> = {};
       const tableConfig = TABLES_CONFIG[selectedTable];
       tableConfig.fields.forEach(f => {
-        const existing = (data || []).find((p: any) => p.field_name === f.key);
         permsMap[f.key] = {
-          id: existing?.id,
+          id: undefined,
           table_name: selectedTable,
           field_name: f.key,
-          can_view: existing ? existing.can_view : true,
-          can_edit: existing ? existing.can_edit : true,
+          can_view: true,
+          can_edit: true,
         };
       });
       setLocalPerms(permsMap);
       setHasChanges(false);
-      return data || [];
+      return [] as any[];
     },
     enabled: !!companyId,
   });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!companyId) throw new Error('No company');
-      const upserts = Object.values(localPerms).map(p => ({
-        company_id: companyId,
-        role_name: selectedRole,
-        table_name: selectedTable,
-        field_name: p.field_name,
-        can_view: p.can_view,
-        can_edit: p.can_edit,
-      }));
-      
-      const { error } = await supabase
-        .from('field_permissions')
-        .upsert(upserts, { onConflict: 'company_id,role_name,table_name,field_name' });
-      if (error) throw error;
+      toast.info('ميزة صلاحيات الحقول قيد التطوير');
     },
     onSuccess: () => {
-      toast.success('تم حفظ الصلاحيات بنجاح');
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ['field-permissions'] });
     },

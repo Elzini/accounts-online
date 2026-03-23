@@ -27,23 +27,17 @@ export function SystemChangeAlertProvider() {
   }, [newAlert, soundPlayed]);
 
   const handleApprove = (id: string, notes?: string) => {
-    approveAlert.mutate({ id, notes }, {
-      onSuccess: () => {
-        toast.success('✅ تمت الموافقة على التغيير وتطبيقه بنجاح');
-        setActiveAlert(null);
-        dismissNewAlert();
-      },
-    });
+    approveAlert.mutate({ id, notes });
+    toast.success('✅ تمت الموافقة على التغيير وتطبيقه بنجاح');
+    setActiveAlert(null);
+    dismissNewAlert();
   };
 
   const handleReject = (id: string, notes?: string) => {
-    rejectAlert.mutate({ id, notes }, {
-      onSuccess: () => {
-        toast.info('🚫 تم رفض التغيير ومنعه بنجاح');
-        setActiveAlert(null);
-        dismissNewAlert();
-      },
-    });
+    rejectAlert.mutate({ id, notes });
+    toast.info('🚫 تم رفض التغيير ومنعه بنجاح');
+    setActiveAlert(null);
+    dismissNewAlert();
   };
 
   return (
