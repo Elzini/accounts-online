@@ -1,6 +1,6 @@
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { getCurrentCompanyId } from '@/services/companyContext';
-import { createJournalEntry } from './accounting';
+import { JournalEngine } from '@/core/engine/journalEngine';
 
 export interface Voucher {
   id: string;
