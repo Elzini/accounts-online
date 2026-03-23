@@ -176,10 +176,10 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                 <div className="bg-white p-2 rounded-lg shadow-lg">
                   <QRCodeSVG
                     value={qrData}
-                    size={90}
-                    level="M"
-                    includeMargin={false}
-                    fgColor={settings.primary_color}
+                    size={140}
+                    level="L"
+                    includeMargin={true}
+                    fgColor="#000000"
                   />
                 </div>
                 {!isVatValid && (

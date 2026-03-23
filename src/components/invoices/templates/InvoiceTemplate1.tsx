@@ -50,7 +50,7 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
             <p className="text-xs" dir="ltr">Vat : {vatNumber}</p>
           </div>
           <div className="text-left text-xs">
-            <QRCodeSVG value={qrData} size={60} level="M" />
+            <QRCodeSVG value={qrData} size={90} level="L" includeMargin={true} />
           </div>
         </div>
       </div>
@@ -124,7 +124,7 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
           <div className="flex justify-between py-1 font-bold text-base border-t mt-1 pt-2"><span>الاجمالي مع الضريبة</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
         </div>
         <div className="p-3 border-r flex items-center">
-          <QRCodeSVG value={qrData} size={80} level="M" />
+          <QRCodeSVG value={qrData} size={120} level="L" includeMargin={true} />
         </div>
       </div>
 

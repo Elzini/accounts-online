@@ -68,7 +68,7 @@ export const InvoiceTemplate2 = forwardRef<HTMLDivElement, Props>(({ data }, ref
           <div className="flex gap-2"><span className="text-gray-500 w-24">طريقة الدفع:</span><span>{paymentMethod === 'credit' ? 'آجل / Credit' : paymentMethod === 'bank' ? 'تحويل بنكي / Bank' : 'نقدي / Cash'}</span></div>
         </div>
         <div className="p-2 flex justify-end">
-          <QRCodeSVG value={qrData} size={65} level="M" />
+          <QRCodeSVG value={qrData} size={95} level="L" includeMargin={true} />
         </div>
       </div>
 
