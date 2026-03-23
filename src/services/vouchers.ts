@@ -196,11 +196,13 @@ export async function deleteVoucher(id: string): Promise<void> {
   
   if (error) throw error;
 
-  // Delete linked journal entry if exists
+  // Delete linked journal entry if exists via engine
   if (voucher?.journal_entry_id) {
-    await supabase
-      .from('journal_entries')
-      .delete()
-      .eq('id', voucher.journal_entry_id);
+    const { getCurrentCompanyId: getCompId } = await import('@/services/companyContext');
+    const compId = await getCompId();
+    if (compId) {
+      const engine = new JournalEngine(compId);
+      await engine.deleteEntry(voucher.journal_entry_id);
+    }
   }
 }

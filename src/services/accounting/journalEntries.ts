@@ -1,5 +1,15 @@
+/**
+ * Journal Entries Service
+ * 
+ * READ operations remain as direct queries (no engine needed).
+ * WRITE operations delegate to Core Engine's JournalEngine.
+ */
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { JournalEntry, JournalEntryLine } from './types';
+import { JournalEngine } from '@/core/engine/journalEngine';
+import { defaultRepos } from '@/core/engine/supabaseRepositories';
+
+// ── READ operations (no engine needed) ──
 
 export async function fetchJournalEntries(companyId: string, fiscalYearId?: string): Promise<JournalEntry[]> {
   let query = supabase
@@ -44,50 +54,39 @@ export async function fetchJournalEntryWithLines(entryId: string): Promise<Journ
   };
 }
 
+// ── WRITE operations → Core Engine ──
+
 export async function createJournalEntry(
   entry: Omit<JournalEntry, 'id' | 'entry_number' | 'created_at' | 'updated_at' | 'lines'>,
   lines: Array<{ account_id: string; description?: string; debit: number; credit: number; cost_center_id?: string | null }>
 ): Promise<JournalEntry> {
-  const totalDebit = lines.reduce((sum, line) => sum + (line.debit || 0), 0);
-  const totalCredit = lines.reduce((sum, line) => sum + (line.credit || 0), 0);
+  const engine = new JournalEngine(entry.company_id);
 
-  const { data: newEntry, error: entryError } = await supabase
-    .from('journal_entries')
-    .insert({
-      ...entry,
-      total_debit: totalDebit,
-      total_credit: totalCredit,
-    })
-    .select()
-    .single();
-  
-  if (entryError) throw entryError;
+  const result = await engine.createEntry({
+    company_id: entry.company_id,
+    fiscal_year_id: entry.fiscal_year_id || '',
+    entry_date: entry.entry_date,
+    description: entry.description,
+    reference_type: (entry as any).reference_type || 'manual',
+    reference_id: (entry as any).reference_id || null,
+    is_posted: entry.is_posted ?? true,
+    lines: lines.map(l => ({
+      account_id: l.account_id,
+      description: l.description || null,
+      debit: l.debit || 0,
+      credit: l.credit || 0,
+      cost_center_id: l.cost_center_id || null,
+    })),
+  });
 
-  const linesWithEntryId = lines.map(line => ({
-    journal_entry_id: newEntry.id,
-    account_id: line.account_id,
-    description: line.description || null,
-    debit: line.debit || 0,
-    credit: line.credit || 0,
-    cost_center_id: line.cost_center_id || null,
-  }));
-
-  const { error: linesError } = await supabase
-    .from('journal_entry_lines')
-    .insert(linesWithEntryId);
-  
-  if (linesError) throw linesError;
-
-  return newEntry as JournalEntry;
+  return result as unknown as JournalEntry;
 }
 
 export async function deleteJournalEntry(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('journal_entries')
-    .delete()
-    .eq('id', id);
-  
-  if (error) throw error;
+  // Use repo directly for delete (engine delete also works)
+  const repo = defaultRepos.journalEntries;
+  await repo.deleteLines(id);
+  await repo.deleteEntry(id);
 }
 
 export async function updateJournalEntry(
@@ -95,41 +94,36 @@ export async function updateJournalEntry(
   entry: Partial<Omit<JournalEntry, 'id' | 'entry_number' | 'created_at' | 'updated_at' | 'lines'>>,
   lines: Array<{ id?: string; account_id: string; description?: string; debit: number; credit: number; cost_center_id?: string | null }>
 ): Promise<JournalEntry> {
-  const { data: updatedEntry, error: entryError } = await supabase
-    .from('journal_entries')
-    .update({
-      entry_date: entry.entry_date,
-      description: entry.description,
-      total_debit: entry.total_debit,
-      total_credit: entry.total_credit,
-    })
-    .eq('id', entryId)
-    .select()
-    .single();
-  
-  if (entryError) throw entryError;
+  const totalDebit = lines.reduce((sum, l) => sum + (l.debit || 0), 0);
+  const totalCredit = lines.reduce((sum, l) => sum + (l.credit || 0), 0);
 
-  const { error: deleteError } = await supabase
-    .from('journal_entry_lines')
-    .delete()
-    .eq('journal_entry_id', entryId);
-  
-  if (deleteError) throw deleteError;
+  const repo = defaultRepos.journalEntries;
 
-  const linesWithEntryId = lines.map(line => ({
+  // Update header
+  await repo.updateEntry(entryId, {
+    entry_date: entry.entry_date,
+    description: entry.description,
+    total_debit: totalDebit,
+    total_credit: totalCredit,
+  });
+
+  // Replace lines via engine pattern
+  await repo.deleteLines(entryId);
+  await repo.createLines(lines.map(l => ({
     journal_entry_id: entryId,
-    account_id: line.account_id,
-    description: line.description || null,
-    debit: line.debit || 0,
-    credit: line.credit || 0,
-    cost_center_id: line.cost_center_id || null,
-  }));
+    account_id: l.account_id,
+    description: l.description || null,
+    debit: l.debit || 0,
+    credit: l.credit || 0,
+    cost_center_id: l.cost_center_id || null,
+  })));
 
-  const { error: linesError } = await supabase
-    .from('journal_entry_lines')
-    .insert(linesWithEntryId);
-  
-  if (linesError) throw linesError;
+  // Fetch updated entry
+  const { data } = await supabase
+    .from('journal_entries')
+    .select('*')
+    .eq('id', entryId)
+    .single();
 
-  return updatedEntry as JournalEntry;
+  return data as JournalEntry;
 }
