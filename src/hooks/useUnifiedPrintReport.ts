@@ -1,7 +1,7 @@
 import { useAppSettings } from '@/hooks/useSettings';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 
 export interface ReportSettings {
   show_logo: boolean;

@@ -3,7 +3,7 @@
  * Centralized data access for procurement modules.
  * Replaces direct supabase calls in procurement UI components.
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // ── Purchase Orders ──

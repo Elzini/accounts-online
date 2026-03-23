@@ -2,7 +2,7 @@
  * Returns Service Hooks
  * Centralized data access for credit/debit notes.
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useCreditDebitNotes(companyId: string | null) {

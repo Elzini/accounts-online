@@ -3,7 +3,7 @@
  * Centralized data access for HR modules: Leaves, Attendance, OrgStructure, Checks,
  * Contracts, Fingerprint Devices, Attendance Reports, Device Logs.
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // ── Leaves ──
