@@ -773,8 +773,8 @@ export async function refreshOpeningBalances(
     });
 
     // حساب صافي الربح للسنة السابقة
-    const revenueAccounts = accounts.filter(a => a.type === 'revenue');
-    const expenseAccounts = accounts.filter(a => ['expense', 'expenses'].includes(a.type));
+    const revenueAccounts = accounts.filter(a => isAccountType(a.type, 'revenue'));
+    const expenseAccounts = accounts.filter(a => isAccountType(a.type, 'expense'));
     let retainedEarningsAccount = accounts.find(a => a.code.startsWith('33'));
 
     const totalRevenue = revenueAccounts.reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);

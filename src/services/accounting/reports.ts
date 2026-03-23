@@ -403,17 +403,17 @@ export async function getBalanceSheet(
 
   const calculateBalance = (account: AccountCategory) => {
     const totals = balances.get(account.id) || { debit: 0, credit: 0 };
-    if (['liabilities', 'equity', 'revenue'].includes(account.type)) {
+    if (isCreditNormal(account.type)) {
       return totals.credit - totals.debit;
     }
     return totals.debit - totals.credit;
   };
 
-  const assetAccounts = accounts.filter(a => a.type === 'assets');
-  const liabilityAccounts = accounts.filter(a => a.type === 'liabilities');
-  const equityAccounts = accounts.filter(a => a.type === 'equity');
-  const revenueAccounts = accounts.filter(a => a.type === 'revenue');
-  const expenseAccounts = accounts.filter(a => a.type === 'expenses');
+  const assetAccounts = accounts.filter(a => isAccountType(a.type, 'asset'));
+  const liabilityAccounts = accounts.filter(a => isAccountType(a.type, 'liability'));
+  const equityAccounts = accounts.filter(a => isAccountType(a.type, 'equity'));
+  const revenueAccounts = accounts.filter(a => isAccountType(a.type, 'revenue'));
+  const expenseAccounts = accounts.filter(a => isAccountType(a.type, 'expense'));
 
   const currentAssetCodes = ['11', '12', '13'];
   const isCurrentAsset = (code: string) => currentAssetCodes.some(c => code.startsWith(c));

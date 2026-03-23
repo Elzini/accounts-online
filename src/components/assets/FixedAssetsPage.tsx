@@ -39,12 +39,12 @@ export function FixedAssetsPage() {
   const { data: accounts = [] } = useAccounts();
   
   const assetAccounts = useMemo(() => 
-    accounts.filter(acc => acc.type === 'assets' && acc.code.startsWith('13')),
+    accounts.filter(acc => isAccountType(acc.type, 'asset') && acc.code.startsWith('13')),
     [accounts]
   );
   
   const expenseAccounts = useMemo(() => 
-    accounts.filter(acc => acc.type === 'expenses'),
+    accounts.filter(acc => isAccountType(acc.type, 'expense')),
     [accounts]
   );
   
