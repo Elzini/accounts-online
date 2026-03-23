@@ -101,18 +101,13 @@ export function ExpenseOCRPage() {
   const saveExpense = async (expense: ScannedExpense) => {
     if (!companyId) return;
     try {
-      const { error } = await supabase.from('expenses').insert({
-        company_id: companyId,
-        vendor_name: expense.vendor,
+      await saveExpenseFromOcr({
+        vendor: expense.vendor,
         amount: expense.amount,
-        expense_date: expense.date,
+        date: expense.date,
         category: expense.category,
         description: expense.description || `فاتورة من ${expense.vendor}`,
-        payment_method: 'cash',
-        status: 'approved',
       });
-
-      if (error) throw error;
 
       setExpenses(prev => prev.map(e => (e.id === expense.id ? { ...e, status: 'saved' } : e)));
       toast.success('تم حفظ المصروف بنجاح');

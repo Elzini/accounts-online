@@ -45,32 +45,14 @@ export function WhatsAppIntegration() {
 
   const { data: customers = [] } = useQuery({
     queryKey: ['whatsapp-customers', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('customers')
-        .select('id, name, phone')
-        .eq('company_id', companyId)
-        .not('phone', 'is', null)
-        .order('name');
-      return data || [];
-    },
+    queryFn: () => fetchContactsWithPhone('customers'),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: suppliers = [] } = useQuery({
     queryKey: ['whatsapp-suppliers', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('suppliers')
-        .select('id, name, phone')
-        .eq('company_id', companyId)
-        .not('phone', 'is', null)
-        .order('name');
-      return data || [];
-    },
+    queryFn: () => fetchContactsWithPhone('suppliers'),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });

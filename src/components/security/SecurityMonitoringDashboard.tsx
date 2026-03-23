@@ -27,53 +27,23 @@ export function SecurityMonitoringDashboard() {
   const queryClient = useQueryClient();
   const [checkResults, setCheckResults] = useState<IntegrityCheckResult[]>([]);
 
-  // جلب آخر نتائج الفحص
   const { data: lastChecks, isLoading: loadingChecks } = useQuery({
     queryKey: ['integrity-checks', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('data_integrity_checks')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false })
-        .limit(20);
-      return data || [];
-    },
+    queryFn: fetchIntegrityChecks,
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
-  // جلب سجل العمليات الحساسة
   const { data: sensitiveOps, isLoading: loadingOps } = useQuery({
     queryKey: ['sensitive-operations', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('sensitive_operations_log')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false })
-        .limit(50);
-      return data || [];
-    },
+    queryFn: fetchSensitiveOperations,
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
-  // جلب سجلات التدقيق الأخيرة
   const { data: recentAudits } = useQuery({
     queryKey: ['recent-audits', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('audit_logs')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false })
-        .limit(20);
-      return data || [];
-    },
+    queryFn: fetchRecentAuditLogs,
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });

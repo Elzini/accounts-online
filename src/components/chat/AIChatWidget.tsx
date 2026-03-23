@@ -60,8 +60,7 @@ export function AIChatWidget() {
     let assistantSoFar = '';
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      const token = await getAuthToken();
       if (!token) {
         setMessages((prev) => [...prev, { role: 'assistant', content: '⚠️ يجب تسجيل الدخول أولاً لاستخدام المساعد الذكي.' }]);
         setIsLoading(false);

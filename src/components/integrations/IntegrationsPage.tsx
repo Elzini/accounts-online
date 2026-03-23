@@ -40,14 +40,7 @@ export function IntegrationsPage() {
   const toggleIntegration = useMutation({
     mutationFn: async ({ platform, is_active }: { platform: string; is_active: boolean }) => {
       if (!companyId) throw new Error('No company');
-      const existing = configs.find((c: any) => c.platform === platform);
-      if (existing) {
-        const { error } = await supabase.from('integration_configs').update({ is_active }).eq('id', existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('integration_configs').insert({ company_id: companyId, platform, is_active });
-        if (error) throw error;
-      }
+      await toggleIntegrationConfig(configs, platform, is_active);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['integrations'] });
