@@ -216,7 +216,7 @@ export function usePurchaseInvoiceCrud(deps: CrudDeps) {
           unit_price: calculations.inventoryItems[index].baseAmount / item.quantity,
           taxable_amount: calculations.inventoryItems[index].baseAmount,
           vat_rate: taxRate, vat_amount: calculations.inventoryItems[index].vatAmount,
-          total: calculations.inventoryItems[index].total, inventory_item_id: item.item_id,
+          total: calculations.inventoryItems[index].total, inventory_item_id: item.item_id || null,
         }));
         await supabase.from('invoice_items').insert(invoiceItems);
       }
