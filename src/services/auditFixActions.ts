@@ -185,7 +185,7 @@ export function createFixMissingCOA(companyId: string, companyType: string): Aud
       const { data: templates, error: tErr } = await supabase
         .from('coa_templates')
         .select('*')
-        .eq('company_type', companyType)
+        .eq('company_type', companyType as any)
         .order('sort_order');
 
       if (tErr || !templates || templates.length === 0) {
