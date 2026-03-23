@@ -72,18 +72,6 @@ export function useCompanyAdminDashboard() {
     onError: () => toast.error('حدث خطأ أثناء تحديث الحصص'),
   });
 
-  const updateQuota = useMutation({
-    mutationFn: async ({ companyId, form }: { companyId: string; form: QuotaForm }) => {
-      const { error } = await supabase.from('tenant_resource_quotas').update({
-        max_users: form.max_users, max_requests_per_minute: form.max_requests_per_minute,
-        max_storage_mb: form.max_storage_mb, max_records_per_table: form.max_records_per_table,
-        is_active: form.is_active, updated_at: new Date().toISOString(),
-      }).eq('company_id', companyId);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['company-admin-dashboard'] }); toast.success('تم تحديث الحصص بنجاح'); setQuotaDialogOpen(false); },
-    onError: () => toast.error('حدث خطأ أثناء تحديث الحصص'),
-  });
 
   const openQuotaDialog = (company: CompanyDashboardData) => {
     setSelectedCompanyId(company.company_id);
