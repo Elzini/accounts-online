@@ -543,33 +543,6 @@ export type Database = {
           },
         ]
       }
-      audit_hash_chain: {
-        Row: {
-          audit_log_id: string
-          created_at: string
-          id: number
-          integrity_hash: string
-          previous_hash: string | null
-          sequence_number: number
-        }
-        Insert: {
-          audit_log_id: string
-          created_at?: string
-          id?: never
-          integrity_hash: string
-          previous_hash?: string | null
-          sequence_number: number
-        }
-        Update: {
-          audit_log_id?: string
-          created_at?: string
-          id?: never
-          integrity_hash?: string
-          previous_hash?: string | null
-          sequence_number?: number
-        }
-        Relationships: []
-      }
       audit_logs: {
         Row: {
           action: string
@@ -2330,50 +2303,6 @@ export type Database = {
             columns: ["vat_settlement_account_id"]
             isOneToOne: false
             referencedRelation: "account_categories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      company_encryption_keys: {
-        Row: {
-          algorithm: string
-          company_id: string
-          created_at: string
-          created_by: string | null
-          id: string
-          is_active: boolean
-          key_hash: string
-          key_version: number
-          rotated_at: string | null
-        }
-        Insert: {
-          algorithm?: string
-          company_id: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_active?: boolean
-          key_hash: string
-          key_version?: number
-          rotated_at?: string | null
-        }
-        Update: {
-          algorithm?: string
-          company_id?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_active?: boolean
-          key_hash?: string
-          key_version?: number
-          rotated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "company_encryption_keys_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: true
-            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -4446,146 +4375,6 @@ export type Database = {
           },
         ]
       }
-      fleet_service_logs: {
-        Row: {
-          company_id: string
-          cost: number | null
-          created_at: string
-          description: string | null
-          id: string
-          next_service_date: string | null
-          next_service_odometer: number | null
-          odometer_at_service: number | null
-          service_date: string
-          service_type: string
-          vehicle_id: string
-          vendor: string | null
-        }
-        Insert: {
-          company_id: string
-          cost?: number | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          next_service_date?: string | null
-          next_service_odometer?: number | null
-          odometer_at_service?: number | null
-          service_date: string
-          service_type: string
-          vehicle_id: string
-          vendor?: string | null
-        }
-        Update: {
-          company_id?: string
-          cost?: number | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          next_service_date?: string | null
-          next_service_odometer?: number | null
-          odometer_at_service?: number | null
-          service_date?: string
-          service_type?: string
-          vehicle_id?: string
-          vendor?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fleet_service_logs_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fleet_service_logs_vehicle_id_fkey"
-            columns: ["vehicle_id"]
-            isOneToOne: false
-            referencedRelation: "fleet_vehicles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fleet_vehicles: {
-        Row: {
-          brand: string | null
-          color: string | null
-          company_id: string
-          created_at: string
-          driver_name: string | null
-          driver_phone: string | null
-          fuel_type: string | null
-          id: string
-          insurance_expiry: string | null
-          license_plate: string | null
-          model: string | null
-          name: string
-          notes: string | null
-          odometer: number | null
-          purchase_date: string | null
-          purchase_price: number | null
-          registration_expiry: string | null
-          status: string | null
-          updated_at: string
-          vin: string | null
-          year: number | null
-        }
-        Insert: {
-          brand?: string | null
-          color?: string | null
-          company_id: string
-          created_at?: string
-          driver_name?: string | null
-          driver_phone?: string | null
-          fuel_type?: string | null
-          id?: string
-          insurance_expiry?: string | null
-          license_plate?: string | null
-          model?: string | null
-          name: string
-          notes?: string | null
-          odometer?: number | null
-          purchase_date?: string | null
-          purchase_price?: number | null
-          registration_expiry?: string | null
-          status?: string | null
-          updated_at?: string
-          vin?: string | null
-          year?: number | null
-        }
-        Update: {
-          brand?: string | null
-          color?: string | null
-          company_id?: string
-          created_at?: string
-          driver_name?: string | null
-          driver_phone?: string | null
-          fuel_type?: string | null
-          id?: string
-          insurance_expiry?: string | null
-          license_plate?: string | null
-          model?: string | null
-          name?: string
-          notes?: string | null
-          odometer?: number | null
-          purchase_date?: string | null
-          purchase_price?: number | null
-          registration_expiry?: string | null
-          status?: string | null
-          updated_at?: string
-          vin?: string | null
-          year?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fleet_vehicles_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       formula_definitions: {
         Row: {
           company_id: string
@@ -4682,50 +4471,6 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      goods_receipt_lines: {
-        Row: {
-          company_id: string | null
-          created_at: string
-          goods_receipt_id: string
-          id: string
-          item_name: string
-          notes: string | null
-          ordered_qty: number | null
-          received_qty: number
-          unit: string | null
-        }
-        Insert: {
-          company_id?: string | null
-          created_at?: string
-          goods_receipt_id: string
-          id?: string
-          item_name: string
-          notes?: string | null
-          ordered_qty?: number | null
-          received_qty?: number
-          unit?: string | null
-        }
-        Update: {
-          company_id?: string | null
-          created_at?: string
-          goods_receipt_id?: string
-          id?: string
-          item_name?: string
-          notes?: string | null
-          ordered_qty?: number | null
-          received_qty?: number
-          unit?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "goods_receipt_lines_goods_receipt_id_fkey"
-            columns: ["goods_receipt_id"]
-            isOneToOne: false
-            referencedRelation: "goods_receipts"
             referencedColumns: ["id"]
           },
         ]
@@ -5354,87 +5099,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      industry_dashboard_config: {
-        Row: {
-          card_key: string
-          color: string | null
-          company_type: Database["public"]["Enums"]["company_activity_type"]
-          created_at: string
-          data_source: string | null
-          icon: string | null
-          id: string
-          label_ar: string
-          label_en: string | null
-          sort_order: number | null
-        }
-        Insert: {
-          card_key: string
-          color?: string | null
-          company_type: Database["public"]["Enums"]["company_activity_type"]
-          created_at?: string
-          data_source?: string | null
-          icon?: string | null
-          id?: string
-          label_ar: string
-          label_en?: string | null
-          sort_order?: number | null
-        }
-        Update: {
-          card_key?: string
-          color?: string | null
-          company_type?: Database["public"]["Enums"]["company_activity_type"]
-          created_at?: string
-          data_source?: string | null
-          icon?: string | null
-          id?: string
-          label_ar?: string
-          label_en?: string | null
-          sort_order?: number | null
-        }
-        Relationships: []
-      }
-      industry_menu_config: {
-        Row: {
-          company_type: Database["public"]["Enums"]["company_activity_type"]
-          created_at: string
-          icon: string | null
-          id: string
-          is_visible: boolean | null
-          label_ar: string
-          label_en: string | null
-          menu_key: string
-          parent_key: string | null
-          route: string | null
-          sort_order: number | null
-        }
-        Insert: {
-          company_type: Database["public"]["Enums"]["company_activity_type"]
-          created_at?: string
-          icon?: string | null
-          id?: string
-          is_visible?: boolean | null
-          label_ar: string
-          label_en?: string | null
-          menu_key: string
-          parent_key?: string | null
-          route?: string | null
-          sort_order?: number | null
-        }
-        Update: {
-          company_type?: Database["public"]["Enums"]["company_activity_type"]
-          created_at?: string
-          icon?: string | null
-          id?: string
-          is_visible?: boolean | null
-          label_ar?: string
-          label_en?: string | null
-          menu_key?: string
-          parent_key?: string | null
-          route?: string | null
-          sort_order?: number | null
-        }
-        Relationships: []
       }
       installment_payments: {
         Row: {
@@ -7963,53 +7627,6 @@ export type Database = {
           },
         ]
       }
-      purchase_order_lines: {
-        Row: {
-          company_id: string | null
-          created_at: string
-          id: string
-          item_name: string
-          notes: string | null
-          purchase_order_id: string
-          quantity: number
-          total_price: number | null
-          unit: string | null
-          unit_price: number
-        }
-        Insert: {
-          company_id?: string | null
-          created_at?: string
-          id?: string
-          item_name: string
-          notes?: string | null
-          purchase_order_id: string
-          quantity?: number
-          total_price?: number | null
-          unit?: string | null
-          unit_price?: number
-        }
-        Update: {
-          company_id?: string | null
-          created_at?: string
-          id?: string
-          item_name?: string
-          notes?: string | null
-          purchase_order_id?: string
-          quantity?: number
-          total_price?: number | null
-          unit?: string | null
-          unit_price?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "purchase_order_lines_purchase_order_id_fkey"
-            columns: ["purchase_order_id"]
-            isOneToOne: false
-            referencedRelation: "purchase_orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       purchase_orders: {
         Row: {
           approved_at: string | null
@@ -9485,71 +9102,6 @@ export type Database = {
           },
         ]
       }
-      security_events: {
-        Row: {
-          company_id: string | null
-          created_at: string | null
-          details: Json | null
-          event_type: string
-          id: string
-          ip_address: string | null
-          operation: string | null
-          resolved: boolean | null
-          resolved_at: string | null
-          resolved_by: string | null
-          severity: string
-          source_schema: string | null
-          table_name: string | null
-          target_schema: string | null
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          company_id?: string | null
-          created_at?: string | null
-          details?: Json | null
-          event_type: string
-          id?: string
-          ip_address?: string | null
-          operation?: string | null
-          resolved?: boolean | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          severity?: string
-          source_schema?: string | null
-          table_name?: string | null
-          target_schema?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          company_id?: string | null
-          created_at?: string | null
-          details?: Json | null
-          event_type?: string
-          id?: string
-          ip_address?: string | null
-          operation?: string | null
-          resolved?: boolean | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          severity?: string
-          source_schema?: string | null
-          table_name?: string | null
-          target_schema?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "security_events_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       sensitive_operations_log: {
         Row: {
           company_id: string
@@ -9636,50 +9188,6 @@ export type Database = {
         }
         Relationships: []
       }
-      stock_voucher_lines: {
-        Row: {
-          company_id: string | null
-          created_at: string
-          id: string
-          item_name: string
-          notes: string | null
-          quantity: number
-          stock_voucher_id: string
-          unit: string | null
-          unit_cost: number | null
-        }
-        Insert: {
-          company_id?: string | null
-          created_at?: string
-          id?: string
-          item_name: string
-          notes?: string | null
-          quantity?: number
-          stock_voucher_id: string
-          unit?: string | null
-          unit_cost?: number | null
-        }
-        Update: {
-          company_id?: string | null
-          created_at?: string
-          id?: string
-          item_name?: string
-          notes?: string | null
-          quantity?: number
-          stock_voucher_id?: string
-          unit?: string | null
-          unit_cost?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stock_voucher_lines_stock_voucher_id_fkey"
-            columns: ["stock_voucher_id"]
-            isOneToOne: false
-            referencedRelation: "stock_vouchers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       stock_vouchers: {
         Row: {
           approved_by: string | null
@@ -9732,53 +9240,6 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      stocktaking_lines: {
-        Row: {
-          actual_qty: number | null
-          company_id: string | null
-          created_at: string
-          difference: number | null
-          id: string
-          item_name: string
-          notes: string | null
-          session_id: string
-          system_qty: number | null
-          unit: string | null
-        }
-        Insert: {
-          actual_qty?: number | null
-          company_id?: string | null
-          created_at?: string
-          difference?: number | null
-          id?: string
-          item_name: string
-          notes?: string | null
-          session_id: string
-          system_qty?: number | null
-          unit?: string | null
-        }
-        Update: {
-          actual_qty?: number | null
-          company_id?: string | null
-          created_at?: string
-          difference?: number | null
-          id?: string
-          item_name?: string
-          notes?: string | null
-          session_id?: string
-          system_qty?: number | null
-          unit?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stocktaking_lines_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "stocktaking_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -10371,94 +9832,6 @@ export type Database = {
           },
         ]
       }
-      tenant_db_roles: {
-        Row: {
-          company_id: string
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          role_name: string
-          schema_name: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          role_name: string
-          schema_name: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          role_name?: string
-          schema_name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tenant_db_roles_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tenant_encryption_config: {
-        Row: {
-          company_id: string
-          created_at: string | null
-          encrypted_columns: string[]
-          encryption_algorithm: string | null
-          id: string
-          is_active: boolean | null
-          key_rotation_days: number | null
-          last_key_rotation: string | null
-          next_key_rotation: string | null
-          schema_name: string
-          table_name: string
-          updated_at: string | null
-        }
-        Insert: {
-          company_id: string
-          created_at?: string | null
-          encrypted_columns?: string[]
-          encryption_algorithm?: string | null
-          id?: string
-          is_active?: boolean | null
-          key_rotation_days?: number | null
-          last_key_rotation?: string | null
-          next_key_rotation?: string | null
-          schema_name: string
-          table_name: string
-          updated_at?: string | null
-        }
-        Update: {
-          company_id?: string
-          created_at?: string | null
-          encrypted_columns?: string[]
-          encryption_algorithm?: string | null
-          id?: string
-          is_active?: boolean | null
-          key_rotation_days?: number | null
-          last_key_rotation?: string | null
-          next_key_rotation?: string | null
-          schema_name?: string
-          table_name?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tenant_encryption_config_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       tenant_encryption_keys: {
         Row: {
           algorithm: string | null
@@ -10497,50 +9870,6 @@ export type Database = {
           {
             foreignKeyName: "tenant_encryption_keys_company_id_fkey"
             columns: ["company_id"]
-            isOneToOne: true
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tenant_network_config: {
-        Row: {
-          allowed_countries: string[] | null
-          block_foreign_ips: boolean | null
-          created_at: string | null
-          id: string
-          ip_whitelist_enabled: boolean | null
-          max_requests_per_ip_per_minute: number | null
-          tenant_id: string
-          updated_at: string | null
-          vpn_required: boolean | null
-        }
-        Insert: {
-          allowed_countries?: string[] | null
-          block_foreign_ips?: boolean | null
-          created_at?: string | null
-          id?: string
-          ip_whitelist_enabled?: boolean | null
-          max_requests_per_ip_per_minute?: number | null
-          tenant_id: string
-          updated_at?: string | null
-          vpn_required?: boolean | null
-        }
-        Update: {
-          allowed_countries?: string[] | null
-          block_foreign_ips?: boolean | null
-          created_at?: string | null
-          id?: string
-          ip_whitelist_enabled?: boolean | null
-          max_requests_per_ip_per_minute?: number | null
-          tenant_id?: string
-          updated_at?: string | null
-          vpn_required?: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tenant_network_config_tenant_id_fkey"
-            columns: ["tenant_id"]
             isOneToOne: true
             referencedRelation: "companies"
             referencedColumns: ["id"]
@@ -10617,50 +9946,6 @@ export type Database = {
           {
             foreignKeyName: "tenant_resource_quotas_company_id_fkey"
             columns: ["company_id"]
-            isOneToOne: true
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tenant_storage_config: {
-        Row: {
-          bucket_name: string
-          created_at: string | null
-          encryption_enabled: boolean | null
-          id: string
-          immutable_snapshots_enabled: boolean | null
-          storage_quota_mb: number | null
-          tenant_id: string
-          updated_at: string | null
-          used_storage_mb: number | null
-        }
-        Insert: {
-          bucket_name: string
-          created_at?: string | null
-          encryption_enabled?: boolean | null
-          id?: string
-          immutable_snapshots_enabled?: boolean | null
-          storage_quota_mb?: number | null
-          tenant_id: string
-          updated_at?: string | null
-          used_storage_mb?: number | null
-        }
-        Update: {
-          bucket_name?: string
-          created_at?: string | null
-          encryption_enabled?: boolean | null
-          id?: string
-          immutable_snapshots_enabled?: boolean | null
-          storage_quota_mb?: number | null
-          tenant_id?: string
-          updated_at?: string | null
-          used_storage_mb?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tenant_storage_config_tenant_id_fkey"
-            columns: ["tenant_id"]
             isOneToOne: true
             referencedRelation: "companies"
             referencedColumns: ["id"]
