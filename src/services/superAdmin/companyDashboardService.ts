@@ -30,7 +30,7 @@ export async function fetchCompaniesWithStats() {
     const { data: stats } = await supabase.rpc('get_all_company_stats');
     if (stats && Array.isArray(stats)) {
       for (const s of stats) {
-        statsMap.set(s.company_id, s);
+        statsMap.set(s.company_id, s as CompanyStats);
       }
     }
   } catch {
