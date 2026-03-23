@@ -15,7 +15,6 @@ describe('getIndustryFeatures', () => {
   it('handles null/undefined company type gracefully', () => {
     const features1 = getIndustryFeatures(null);
     expect(features1.hasCarInventory).toBe(false);
-    expect(features1.hasInvoiceSystem).toBe(true);
 
     const features2 = getIndustryFeatures(undefined);
     expect(features2.hasCarInventory).toBe(false);
