@@ -5,6 +5,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+// Re-export supabase for components that still need auth calls
+export { supabase } from '@/integrations/supabase/client';
+
 // ─── Companies ───
 export function useAllCompanies(select = 'id, name, is_active') {
   return useQuery({

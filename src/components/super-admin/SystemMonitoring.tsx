@@ -6,112 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useSystemMonitoringStats } from '@/hooks/modules/useSuperAdminServices';
 
 export function SystemMonitoring() {
-  // Fetch real system stats from database
-  const { data: stats } = useQuery({
-    queryKey: ['system-monitoring-real'],
-    queryFn: async () => {
-      const [
-        companiesRes, profilesRes, journalsRes, salesRes,
-        invoicesRes, checksRes, expensesRes, customersRes,
-        suppliersRes, carsRes,
-      ] = await Promise.all([
-        supabase.from('companies').select('id, database_size_mb, api_calls_count, is_active, last_activity_at', { count: 'exact' }),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('journal_entries').select('id', { count: 'exact', head: true }),
-        supabase.from('sales').select('id', { count: 'exact', head: true }),
-        supabase.from('invoices').select('id', { count: 'exact', head: true }),
-        supabase.from('checks').select('id', { count: 'exact', head: true }),
-        supabase.from('expenses').select('id', { count: 'exact', head: true }),
-        supabase.from('customers').select('id', { count: 'exact', head: true }),
-        supabase.from('suppliers').select('id', { count: 'exact', head: true }),
-        supabase.from('cars').select('id', { count: 'exact', head: true }),
-      ]);
+  const { data: stats } = useSystemMonitoringStats();
 
-      const companies = companiesRes.data || [];
-      const totalDbSize = companies.reduce((s, c) => s + Number((c as any).database_size_mb || 0), 0);
-      const totalApiCalls = companies.reduce((s, c) => s + Number((c as any).api_calls_count || 0), 0);
-      const activeCompanies = companies.filter(c => c.is_active).length;
+  const { data: recentErrors = [] } = useRecentSystemErrors();
 
-      // Calculate activity in last 24h
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const activeRecently = companies.filter(c => 
-        (c as any).last_activity_at && (c as any).last_activity_at > oneDayAgo
-      ).length;
-
-      return {
-        totalCompanies: companiesRes.count || 0,
-        activeCompanies,
-        activeRecently,
-        totalUsers: profilesRes.count || 0,
-        totalJournals: journalsRes.count || 0,
-        totalSales: salesRes.count || 0,
-        totalInvoices: invoicesRes.count || 0,
-        totalChecks: checksRes.count || 0,
-        totalExpenses: expensesRes.count || 0,
-        totalCustomers: customersRes.count || 0,
-        totalSuppliers: suppliersRes.count || 0,
-        totalCars: carsRes.count || 0,
-        totalDbSize,
-        totalApiCalls,
-      };
-    },
-    refetchInterval: 30000,
-  });
-
-  // Fetch recent activity logs for error monitoring
-  const { data: recentErrors = [] } = useQuery({
-    queryKey: ['system-recent-errors'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('system_activity_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
-      return data || [];
-    },
-    refetchInterval: 60000,
-  });
-
-  // Fetch per-company usage breakdown
-  const { data: companyUsage = [] } = useQuery({
-    queryKey: ['system-company-usage'],
-    queryFn: async () => {
-      const { data: companies } = await supabase
-        .from('companies')
-        .select('id, name, database_size_mb, api_calls_count, last_activity_at, is_active')
-        .order('api_calls_count', { ascending: false })
-        .limit(20);
-
-      if (!companies) return [];
-
-      // For each top company, get user count
-      const enriched = await Promise.all(
-        companies.map(async (c) => {
-          const { count: userCount } = await supabase
-            .from('profiles')
-            .select('id', { count: 'exact', head: true })
-            .eq('company_id', c.id);
-
-          const { count: journalCount } = await supabase
-            .from('journal_entries')
-            .select('id', { count: 'exact', head: true })
-            .eq('company_id', c.id);
-
-          return {
-            ...c,
-            users: userCount || 0,
-            journals: journalCount || 0,
-            dbSize: Number((c as any).database_size_mb || 0),
-            apiCalls: Number((c as any).api_calls_count || 0),
-            lastActivity: (c as any).last_activity_at,
-          };
-        })
-      );
-
-      return enriched;
-    },
-    staleTime: 1000 * 60 * 5,
-  });
+  const { data: companyUsage = [] } = useCompanyUsageBreakdown();
 
   // Calculate real resource usage based on data
   const totalRecords = (stats?.totalJournals || 0) + (stats?.totalSales || 0) + (stats?.totalInvoices || 0) + (stats?.totalChecks || 0) + (stats?.totalExpenses || 0);
