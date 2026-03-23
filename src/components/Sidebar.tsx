@@ -30,8 +30,7 @@ import {
 interface SidebarProps {
   activePage: ActivePage;
   setActivePage: (page: ActivePage) => void;
-
-interface MenuItem {
+}
   id: ActivePage;
   label: string;
   icon: LucideIcon;
