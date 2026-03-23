@@ -220,3 +220,10 @@ export function getIndustryFeatures(companyType: string): IndustryFeatures {
 export function getCompanyTypeLabel(companyType: string): string {
   return COMPANY_TYPE_LABELS[companyType] || companyType;
 }
+
+/**
+ * Get display metadata for a company type (app name, subtitle, footer)
+ */
+export function getIndustryDisplayMeta(companyType: string): IndustryDisplayMeta {
+  return DISPLAY_META[companyType] || DEFAULT_DISPLAY_META;
+}
