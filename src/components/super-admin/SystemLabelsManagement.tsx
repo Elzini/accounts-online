@@ -215,11 +215,7 @@ export function SystemLabelsManagement() {
             {selectedCompany && (
               <div className="text-sm text-muted-foreground mt-5">
                 نوع النشاط: <span className="font-medium text-foreground">
-                  {selectedCompany.company_type === 'car_dealership' ? 'معرض سيارات' :
-                   selectedCompany.company_type === 'construction' ? 'مقاولات' :
-                   selectedCompany.company_type === 'general_trading' ? 'تجارة عامة' :
-                   selectedCompany.company_type === 'restaurant' ? 'مطاعم' :
-                   selectedCompany.company_type === 'export_import' ? 'استيراد وتصدير' : ''}
+                  {getCompanyTypeLabel(selectedCompany.company_type || 'general_trading')}
                 </span>
               </div>
             )}
