@@ -308,6 +308,52 @@ export function useSystemMonitoringStats() {
   });
 }
 
+// ─── System Recent Errors ───
+export function useRecentSystemErrors() {
+  return useQuery({
+    queryKey: ['system-recent-errors'],
+    queryFn: async () => {
+      const { data } = await (supabase.from as any)('system_activity_logs').select('*').order('created_at', { ascending: false }).limit(20);
+      return data || [];
+    },
+    refetchInterval: 60000,
+  });
+}
+
+// ─── Company Usage Breakdown ───
+export function useCompanyUsageBreakdown() {
+  return useQuery({
+    queryKey: ['system-company-usage'],
+    queryFn: async () => {
+      const { data: companies } = await supabase
+        .from('companies')
+        .select('id, name, database_size_mb, api_calls_count, last_activity_at, is_active')
+        .order('api_calls_count', { ascending: false })
+        .limit(20);
+
+      if (!companies) return [];
+
+      const enriched = await Promise.all(
+        companies.map(async (c) => {
+          const { count: userCount } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('company_id', c.id);
+          const { count: journalCount } = await supabase.from('journal_entries').select('id', { count: 'exact', head: true }).eq('company_id', c.id);
+
+          return {
+            ...c,
+            users: userCount || 0,
+            journals: journalCount || 0,
+            dbSize: Number((c as any).database_size_mb || 0),
+            apiCalls: Number((c as any).api_calls_count || 0),
+            lastActivity: (c as any).last_activity_at,
+          };
+        })
+      );
+      return enriched;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 // ─── System Labels ───
 export function useSystemLabels(companyType: string) {
   return useQuery({
