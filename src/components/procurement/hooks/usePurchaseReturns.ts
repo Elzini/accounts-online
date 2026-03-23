@@ -89,15 +89,7 @@ export function usePurchaseReturns() {
 
   const { data: returns = [], isLoading } = useQuery({
     queryKey: ['purchase-returns', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('credit_debit_notes')
-        .select('*')
-        .eq('company_id', companyId!)
-        .eq('note_type', 'debit')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchPurchaseReturns(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
