@@ -21,6 +21,7 @@ import {
   IFiscalYearRepository,
   IInvoiceRepository,
   ISupplierRepository,
+  ICompanySettingsRepository,
 } from './repositories';
 
 export interface ServiceContainer {
@@ -39,6 +40,7 @@ export interface ServiceContainerDeps {
   fiscalYears?: IFiscalYearRepository;
   invoices?: IInvoiceRepository;
   suppliers?: ISupplierRepository;
+  companySettings?: ICompanySettingsRepository;
 }
 
 /**
@@ -57,6 +59,7 @@ export function createServiceContainer(
     fiscalYears: deps?.fiscalYears || defaultRepos.fiscalYears,
     invoices: deps?.invoices || defaultRepos.invoices,
     suppliers: deps?.suppliers || defaultRepos.suppliers,
+    companySettings: deps?.companySettings || defaultRepos.companySettings,
   };
 
   const resolver = new AccountResolver(companyId, repos.accounts, repos.accountMappings);
@@ -67,6 +70,7 @@ export function createServiceContainer(
     invoiceRepo: repos.invoices,
     supplierRepo: repos.suppliers,
     fiscalYearRepo: repos.fiscalYears,
+    settingsRepo: repos.companySettings,
   });
 
   return {

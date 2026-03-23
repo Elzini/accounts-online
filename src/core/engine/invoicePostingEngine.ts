@@ -8,7 +8,7 @@
 import { AccountResolver } from './accountResolver';
 import { JournalEngine } from './journalEngine';
 import { JournalEntryLine } from './types';
-import { IInvoiceRepository, ISupplierRepository, IFiscalYearRepository } from './repositories';
+import { IInvoiceRepository, ISupplierRepository, IFiscalYearRepository, ICompanySettingsRepository } from './repositories';
 import { EventBus, Events, InvoicePostedEvent } from './eventBus';
 
 interface InvoiceData {
@@ -32,6 +32,7 @@ export class InvoicePostingEngine {
   private invoiceRepo: IInvoiceRepository | null;
   private supplierRepo: ISupplierRepository | null;
   private fiscalYearRepo: IFiscalYearRepository | null;
+  private settingsRepo: ICompanySettingsRepository | null;
 
   constructor(
     private companyId: string,
@@ -41,6 +42,7 @@ export class InvoicePostingEngine {
       invoiceRepo?: IInvoiceRepository;
       supplierRepo?: ISupplierRepository;
       fiscalYearRepo?: IFiscalYearRepository;
+      settingsRepo?: ICompanySettingsRepository;
     },
   ) {
     this.resolver = deps?.resolver || new AccountResolver(companyId);
@@ -48,6 +50,7 @@ export class InvoicePostingEngine {
     this.invoiceRepo = deps?.invoiceRepo || null;
     this.supplierRepo = deps?.supplierRepo || null;
     this.fiscalYearRepo = deps?.fiscalYearRepo || null;
+    this.settingsRepo = deps?.settingsRepo || null;
   }
 
   private async getInvoiceRepo(): Promise<IInvoiceRepository> {
@@ -71,7 +74,13 @@ export class InvoicePostingEngine {
     return this.fiscalYearRepo;
   }
 
-  /** Post an invoice as a journal entry */
+  private async getSettingsRepo(): Promise<ICompanySettingsRepository> {
+    if (this.settingsRepo) return this.settingsRepo;
+    const { defaultRepos } = await import('./supabaseRepositories');
+    this.settingsRepo = defaultRepos.companySettings;
+    return this.settingsRepo;
+  }
+
   async postInvoice(invoiceId: string): Promise<void> {
     const invoiceRepo = await this.getInvoiceRepo();
 
@@ -99,13 +108,9 @@ export class InvoicePostingEngine {
       return;
     }
 
-    // Check auto-entry settings
-    const { supabase } = await import('@/integrations/supabase/client');
-    const { data: settings } = await supabase
-      .from('company_accounting_settings')
-      .select('auto_journal_entries_enabled, auto_purchase_entries, auto_sales_entries')
-      .eq('company_id', this.companyId)
-      .maybeSingle();
+    // Check auto-entry settings via repository
+    const settingsRepo = await this.getSettingsRepo();
+    const settings = await settingsRepo.getAccountingSettings(this.companyId);
 
     const isPurchase = inv.invoice_type === 'purchase';
     const isSales = inv.invoice_type === 'sales';
