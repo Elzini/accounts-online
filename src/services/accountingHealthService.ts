@@ -41,28 +41,42 @@ export async function checkJournalBalance(companyId: string): Promise<Accounting
 
   const imbalanced: any[] = [];
 
-  if (entries) {
-    for (const entry of entries) {
+  if (entries && entries.length > 0) {
+    // Batch fetch all lines for these entries in one query (fixes N+1)
+    const entryIds = entries.map(e => e.id);
+    const allLines: any[] = [];
+    for (let i = 0; i < entryIds.length; i += 100) {
+      const batch = entryIds.slice(i, i + 100);
       const { data: lines } = await supabase
         .from('journal_entry_lines')
-        .select('debit, credit')
-        .eq('journal_entry_id', entry.id);
+        .select('journal_entry_id, debit, credit')
+        .in('journal_entry_id', batch);
+      if (lines) allLines.push(...lines);
+    }
 
-      if (lines) {
-        const totalDebit = lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
-        const totalCredit = lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
-        const diff = Math.round((totalDebit - totalCredit) * 100) / 100;
+    // Group lines by entry
+    const linesByEntry = new Map<string, typeof allLines>();
+    for (const line of allLines) {
+      const arr = linesByEntry.get(line.journal_entry_id) || [];
+      arr.push(line);
+      linesByEntry.set(line.journal_entry_id, arr);
+    }
 
-        if (Math.abs(diff) > 0.01) {
-          imbalanced.push({
-            entryNumber: entry.entry_number,
-            date: entry.entry_date,
-            description: entry.description,
-            totalDebit: Math.round(totalDebit * 100) / 100,
-            totalCredit: Math.round(totalCredit * 100) / 100,
-            difference: diff,
-          });
-        }
+    for (const entry of entries) {
+      const lines = linesByEntry.get(entry.id) || [];
+      const totalDebit = lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
+      const totalCredit = lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
+      const diff = Math.round((totalDebit - totalCredit) * 100) / 100;
+
+      if (Math.abs(diff) > 0.01) {
+        imbalanced.push({
+          entryNumber: entry.entry_number,
+          date: entry.entry_date,
+          description: entry.description,
+          totalDebit: Math.round(totalDebit * 100) / 100,
+          totalCredit: Math.round(totalCredit * 100) / 100,
+          difference: diff,
+        });
       }
     }
   }
