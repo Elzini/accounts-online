@@ -1,16 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Wallet, Users, Home, Briefcase, Receipt, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useFiscalYearBounds } from '@/hooks/useFiscalYearBounds';
 import { getDashboardDateWindow } from '@/lib/dashboardDateWindow';
+import { useMonthlyExpenses } from '@/hooks/modules/useModuleServices';
 
 interface MonthlyExpenseBreakdown {
   custodyExpenses: number;
