@@ -783,7 +783,7 @@ export function useRunTamperScan() {
   return useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase.from('tamper_scan_runs').insert({
+      const { error } = await (supabase.from as any)('tamper_scan_runs').insert({
         initiated_by: user?.id,
         status: 'completed',
         tables_scanned: Object.keys({
