@@ -73,19 +73,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
   const [editingTransaction, setEditingTransaction] = useState<CustodyTransaction | null>(null);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
 
-  const { data: amountChanges = [] } = useQuery({
-    queryKey: ['custody-amount-changes', custodyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('custody_amount_changes')
-        .select('id, old_amount, new_amount, change_amount, changed_at, notes')
-        .eq('custody_id', custodyId)
-        .order('changed_at', { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: open && !!custodyId,
-  });
+  const { data: amountChanges = [] } = useCustodyAmountChangesList(custodyId, open);
 
   const accountsList = accounts.map((a: any) => ({ id: a.id, code: a.code, name: a.name }));
 
