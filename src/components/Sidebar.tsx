@@ -503,7 +503,7 @@ export function Sidebar({
   const coreSections: Section[] = [
     { id: 'sales', label: getSectionLabel('sales', language === 'ar' ? 'المبيعات' : 'Sales'), icon: DollarSign, items: salesMenuItems, showCondition: permissions.admin || permissions.sales },
     { id: 'purchases', label: getSectionLabel('purchases', language === 'ar' ? 'المشتريات' : 'Purchases'), icon: ShoppingCart, items: purchasesMenuItems, showCondition: permissions.admin || permissions.purchases },
-    ...(companyType === 'real_estate' ? [{ id: 'real-estate', label: language === 'ar' ? 'التطوير العقاري' : 'Real Estate', icon: Building2, items: realEstateItems, showCondition: true }] : []),
+    ...(getIndustryFeatures(companyType).hasRealEstateProjects ? [{ id: 'real-estate', label: language === 'ar' ? 'التطوير العقاري' : 'Real Estate', icon: Building2, items: realEstateItems, showCondition: true }] : []),
     { id: 'accounting', label: getSectionLabel('accounting', language === 'ar' ? 'الحسابات' : 'Accounts'), icon: Calculator, items: accountsMenuItems, showCondition: permissions.admin || permissions.reports || permissions.financial_accounting },
     { id: 'expenses-section', label: getSectionLabel('expenses-section', language === 'ar' ? 'المصروفات' : 'Expenses'), icon: Wallet, items: expensesItems, showCondition: permissions.admin || permissions.purchases || permissions.expenses },
     { id: 'inventory', label: getSectionLabel('inventory', language === 'ar' ? 'المستودعات' : 'Warehouses'), icon: Warehouse, items: warehouseMenuItems, showCondition: permissions.admin || permissions.purchases || permissions.warehouses },
