@@ -142,16 +142,11 @@ export function usePurchaseReturns() {
     if (!searchQuery.trim() || !companyId) return;
     setIsSearching(true);
     try {
-      const { data: car, error: cErr } = await supabase
-        .from('cars')
-        .select('id, inventory_number, name, model, color, chassis_number, purchase_price, purchase_date, status, batch_id, supplier_id')
-        .eq('company_id', companyId)
-        .eq('inventory_number', parseInt(searchQuery))
-        .single();
-      if (cErr || !car) { toast.error(language === 'ar' ? 'لم يتم العثور على السيارة بهذا الرقم' : 'Car not found'); setFoundCar(null); setItems([]); return; }
+      const car = await searchCarByInventoryNumber(companyId, parseInt(searchQuery));
+      if (!car) { toast.error(language === 'ar' ? 'لم يتم العثور على السيارة بهذا الرقم' : 'Car not found'); setFoundCar(null); setItems([]); return; }
       if (car.status !== 'available') { toast.error(language === 'ar' ? 'السيارة غير متاحة للإرجاع' : 'Car not available'); setFoundCar(null); setItems([]); return; }
       let supplierName = '-';
-      if (car.supplier_id) { const { data: sup } = await supabase.from('suppliers').select('name').eq('id', car.supplier_id).single(); if (sup) supplierName = sup.name; }
+      if (car.supplier_id) { supplierName = await fetchSupplierName(car.supplier_id); }
       setFoundCar({ ...car, supplier: { name: supplierName } });
       setFoundInvoice(null);
       const cost = Number(car.purchase_price);
