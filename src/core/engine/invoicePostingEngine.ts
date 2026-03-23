@@ -32,6 +32,7 @@ export class InvoicePostingEngine {
   private invoiceRepo: IInvoiceRepository | null;
   private supplierRepo: ISupplierRepository | null;
   private fiscalYearRepo: IFiscalYearRepository | null;
+  private settingsRepo: ICompanySettingsRepository | null;
 
   constructor(
     private companyId: string,
@@ -41,6 +42,7 @@ export class InvoicePostingEngine {
       invoiceRepo?: IInvoiceRepository;
       supplierRepo?: ISupplierRepository;
       fiscalYearRepo?: IFiscalYearRepository;
+      settingsRepo?: ICompanySettingsRepository;
     },
   ) {
     this.resolver = deps?.resolver || new AccountResolver(companyId);
@@ -48,6 +50,7 @@ export class InvoicePostingEngine {
     this.invoiceRepo = deps?.invoiceRepo || null;
     this.supplierRepo = deps?.supplierRepo || null;
     this.fiscalYearRepo = deps?.fiscalYearRepo || null;
+    this.settingsRepo = deps?.settingsRepo || null;
   }
 
   private async getInvoiceRepo(): Promise<IInvoiceRepository> {
