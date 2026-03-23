@@ -1,6 +1,7 @@
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { isAccountType } from '@/utils/accountTypes';
 import { AuditCheckResult } from '../types';
+import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 
 export async function checkFinancialReports(companyId: string): Promise<AuditCheckResult[]> {
   const results: AuditCheckResult[] = [];
