@@ -9,8 +9,7 @@ import html2canvas from 'html2canvas';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useCompanyId } from '@/hooks/useCompanyId';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useTaxSettingsForPrint } from '@/hooks/hr/useHRService';
 import { formatNumber } from '@/components/financial-statements/utils/numberFormatting';
 
 interface ContractPrintDialogProps {
