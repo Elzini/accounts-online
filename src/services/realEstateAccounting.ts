@@ -9,7 +9,7 @@
  */
 
 import { supabase } from '@/hooks/modules/useMiscServices';
-import { createJournalEntry } from './accounting';
+import { JournalEngine } from '@/core/engine/journalEngine';
 
 // ============================================================
 // Account code resolution helper (supports new + legacy codes)
