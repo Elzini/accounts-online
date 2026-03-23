@@ -1033,85 +1033,29 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       <div className="max-w-full mx-auto animate-fade-in p-2 sm:p-4">
         <div className="bg-card rounded-xl border shadow-lg overflow-hidden">
           
-          {/* ===== Modern Header with Gradient ===== */}
-          <div className="bg-gradient-to-l from-emerald-600 via-emerald-500 to-teal-500 text-white px-4 py-3">
-            <div className="flex items-center justify-between">
-              {/* Navigation Controls */}
-              <div className="flex items-center gap-1 bg-white/15 backdrop-blur-sm rounded-lg p-1">
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleLastSale} disabled={fiscalYearFilteredSales.length === 0}>
-                  <ChevronRight className="w-4 h-4" /><ChevronRight className="w-4 h-4 -mr-2.5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleNextSale} disabled={currentInvoiceIndex >= fiscalYearFilteredSales.length - 1}>
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-                <span className="px-3 py-1 text-xs bg-white/20 rounded-md min-w-[70px] text-center font-mono font-bold">
-                  {fiscalYearFilteredSales.length > 0 ? currentInvoiceIndex + 1 : 0} / {fiscalYearFilteredSales.length}
-                </span>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handlePreviousSale} disabled={currentInvoiceIndex <= 0}>
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20 rounded-md" onClick={handleFirstSale} disabled={fiscalYearFilteredSales.length === 0}>
-                  <ChevronLeft className="w-4 h-4" /><ChevronLeft className="w-4 h-4 -ml-2.5" />
-                </Button>
-              </div>
+          {/* ===== Shared Navigation Header ===== */}
+          <InvoiceNavHeader
+            title={t.inv_sales_invoice}
+            theme="sales"
+            currentIndex={currentInvoiceIndex}
+            totalRecords={fiscalYearFilteredSales.length}
+            isViewingExisting={isViewingExisting}
+            status={currentSaleStatus}
+            statusLabels={{ approved: t.inv_status_approved, draft: t.inv_status_draft }}
+            onFirst={handleFirstSale}
+            onPrevious={handlePreviousSale}
+            onNext={handleNextSale}
+            onLast={handleLastSale}
+          />
 
-              {/* Title & Status */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 opacity-80" />
-                  <h1 className="text-lg font-bold tracking-wide">{t.inv_sales_invoice}</h1>
-                </div>
-                {isViewingExisting && (
-                  <span className={`text-[11px] px-3 py-1 rounded-full font-bold shadow-sm ${
-                    currentSaleStatus === 'approved' 
-                      ? 'bg-white text-emerald-700' 
-                      : 'bg-yellow-400 text-yellow-900 animate-pulse'
-                  }`}>
-                    {currentSaleStatus === 'approved' ? '✓ ' + t.inv_status_approved : '⏳ ' + t.inv_status_draft}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* ===== Draft Status Banner ===== */}
-          {isViewingExisting && currentSaleStatus === 'draft' && (
-            <div className="bg-amber-50 dark:bg-amber-900/20 border-b-2 border-amber-300 dark:border-amber-700 px-5 py-2.5 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center">
-                  <span className="text-lg">📋</span>
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-amber-800 dark:text-amber-200 block">
-                    هذه الفاتورة محفوظة كمسودة
-                  </span>
-                  <span className="text-[10px] text-amber-600 dark:text-amber-400">
-                    يمكنك تعديلها أو اعتمادها محاسبياً
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-1.5 text-xs h-8 rounded-lg bg-white dark:bg-card border-amber-300 text-amber-700 dark:text-amber-300 hover:bg-amber-50 shadow-sm"
-                  onClick={() => { setIsEditing(true); toast.info('تم تفعيل وضع التعديل'); }}
-                >
-                  <FileEdit className="w-3.5 h-3.5" />
-                  تعديل
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-1.5 text-xs h-8 rounded-lg bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100 shadow-sm"
-                  onClick={() => setApproveDialogOpen(true)}
-                >
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  اعتماد محاسبة
-                </Button>
-              </div>
-            </div>
-          )}
+          {/* ===== Shared Draft Status Banner ===== */}
+          <InvoiceStatusBanner
+            isViewingExisting={isViewingExisting}
+            isDraft={currentSaleStatus === 'draft'}
+            isApproved={isApproved}
+            onEdit={() => setIsEditing(true)}
+            onApprove={() => setApproveDialogOpen(true)}
+          />
 
           {/* ===== Search Bar ===== */}
           <div className="p-3 border-b bg-muted/30" ref={searchBarRef}>
