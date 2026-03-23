@@ -15,6 +15,7 @@ export type {
   IFiscalYearRepository,
   IInvoiceRepository,
   ISupplierRepository,
+  ICompanySettingsRepository,
 } from './repositories';
 
 // Validation

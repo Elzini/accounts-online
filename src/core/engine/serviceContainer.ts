@@ -70,6 +70,7 @@ export function createServiceContainer(
     invoiceRepo: repos.invoices,
     supplierRepo: repos.suppliers,
     fiscalYearRepo: repos.fiscalYears,
+    settingsRepo: repos.companySettings,
   });
 
   return {
