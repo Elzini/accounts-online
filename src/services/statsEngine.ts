@@ -294,3 +294,96 @@ export async function fetchAllTimeDashboardStats() {
     industryMetrics: { totalCarsCount: carsRes.data?.length || 0 },
   };
 }
+
+// ── Monthly Chart Data ──
+export async function fetchMonthlyChartData(fiscalYearId?: string) {
+  const { start: fyStart, end: fyEnd } = await getFiscalYearDates(fiscalYearId);
+  const companyId = await requireCompanyId();
+
+  const { data: companyRecord } = await supabase
+    .from('companies')
+    .select('company_type')
+    .eq('id', companyId)
+    .maybeSingle();
+
+  const companyType = companyRecord?.company_type;
+
+  let startDate: string;
+  let endDate: string;
+
+  if (fyStart && fyEnd) {
+    startDate = fyStart;
+    endDate = fyEnd;
+  } else {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    startDate = toDateOnly(sixMonthsAgo);
+    endDate = toDateOnly(new Date());
+  }
+
+  let rawData: Array<{ date: string; amount: number; profit: number }> = [];
+
+  if (companyType && !getIndustryFeatures(companyType).hasCarInventory) {
+    const { data: invoices, error } = await supabase
+      .from('invoices')
+      .select('invoice_date, subtotal')
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'sales')
+      .gte('invoice_date', startDate)
+      .lte('invoice_date', endDate)
+      .order('invoice_date', { ascending: true });
+    if (error) throw error;
+    rawData = (invoices || []).map((inv: any) => ({
+      date: inv.invoice_date,
+      amount: Number(inv.subtotal) || 0,
+      profit: Number(inv.subtotal) || 0,
+    }));
+  } else {
+    const { data, error } = await supabase
+      .from('sales')
+      .select('sale_date, sale_price, profit')
+      .eq('company_id', companyId)
+      .gte('sale_date', startDate)
+      .lte('sale_date', endDate)
+      .order('sale_date', { ascending: true });
+    if (error) throw error;
+    rawData = (data || []).map(sale => ({
+      date: sale.sale_date,
+      amount: Number(sale.sale_price) || 0,
+      profit: Number(sale.profit) || 0,
+    }));
+  }
+
+  const monthlyData: Record<string, { sales: number; profit: number }> = {};
+  rawData.forEach(item => {
+    const date = new Date(item.date);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    if (!monthlyData[monthKey]) monthlyData[monthKey] = { sales: 0, profit: 0 };
+    monthlyData[monthKey].sales += item.amount;
+    monthlyData[monthKey].profit += item.profit;
+  });
+
+  const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+  const result = [];
+
+  if (fyStart && fyEnd) {
+    const start = new Date(fyStart);
+    const end = new Date(fyEnd);
+    let current = new Date(start.getFullYear(), start.getMonth(), 1);
+    while (current <= end) {
+      const monthKey = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
+      result.push({ month: arabicMonths[current.getMonth()], sales: monthlyData[monthKey]?.sales || 0, profit: monthlyData[monthKey]?.profit || 0 });
+      current.setMonth(current.getMonth() + 1);
+    }
+  } else {
+    for (let i = 0; i < 6; i++) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - (5 - i));
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      result.push({ month: arabicMonths[date.getMonth()], sales: monthlyData[monthKey]?.sales || 0, profit: monthlyData[monthKey]?.profit || 0 });
+    }
+  }
+
+  return result;
+}
