@@ -126,33 +126,45 @@ export function MobileInvoiceReaderPage() {
     processQRData(manualQR);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Read as text (for Base64 QR data files)
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      if (text) {
-        // Try to extract Base64 from the text
-        const lines = text.split('\n').filter(l => l.trim());
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed.length > 20) {
-            try {
-              atob(trimmed); // Validate it's Base64
-              processQRData(trimmed);
-              return;
-            } catch {
-              // Not valid Base64, continue
+    // Check if it's an image file - scan QR from image
+    if (file.type.startsWith('image/')) {
+      try {
+        const html5Qrcode = new Html5Qrcode('qr-file-scanner-temp');
+        const decodedText = await html5Qrcode.scanFile(file, true);
+        html5Qrcode.clear();
+        processQRData(decodedText);
+      } catch (err) {
+        console.error('QR scan from image failed:', err);
+        toast.error('لم يتم العثور على رمز QR في الصورة - تأكد من وضوح الصورة');
+      }
+    } else {
+      // Read as text (for Base64 QR data files)
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const text = ev.target?.result as string;
+        if (text) {
+          const lines = text.split('\n').filter(l => l.trim());
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.length > 20) {
+              try {
+                atob(trimmed);
+                processQRData(trimmed);
+                return;
+              } catch {
+                // Not valid Base64, continue
+              }
             }
           }
+          toast.error('لم يتم العثور على بيانات QR صالحة في الملف');
         }
-        toast.error('لم يتم العثور على بيانات QR صالحة في الملف');
-      }
-    };
-    reader.readAsText(file);
+      };
+      reader.readAsText(file);
+    }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -245,15 +257,16 @@ export function MobileInvoiceReaderPage() {
             </Button>
             <Separator />
             <div className="text-center">
+              <div id="qr-file-scanner-temp" style={{ display: 'none' }}></div>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".txt,.csv"
+                accept="image/*,.txt,.csv"
                 className="hidden"
                 onChange={handleFileUpload}
               />
               <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
-                <Upload className="w-4 h-4" />رفع ملف QR
+                <Upload className="w-4 h-4" />رفع صورة أو ملف QR
               </Button>
             </div>
           </CardContent>
