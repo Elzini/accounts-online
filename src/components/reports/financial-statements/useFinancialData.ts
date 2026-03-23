@@ -15,6 +15,7 @@ import { parseFinancialStatements } from './excelParser';
 
 export function useFinancialData() {
   const { companyId, company } = useCompany();
+  const { hasCarInventory } = useIndustryFeatures();
   const [data, setData] = useState<FinancialData>(emptyFinancialData);
   const [isLoading, setIsLoading] = useState(false);
   const [dataSource, setDataSource] = useState<'none' | 'excel' | 'system'>('none');
