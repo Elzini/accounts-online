@@ -5,6 +5,7 @@
 
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { JournalEngine } from './journalEngine';
+import { defaultRepos } from './supabaseRepositories';
 import { computeTrialBalance } from './ledgerEngine';
 
 /**
