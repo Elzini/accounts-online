@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Building2, MapPin, Calendar, TrendingUp, Edit, Trash2, Eye, Search, FileText, BookOpen } from 'lucide-react';
 import { useREProjects, useSaveREProject, useDeleteREProject, useREDashboardStats, useREProjectInvoices, useREProjectJournalEntries } from '@/hooks/useRealEstate';
+import { CardSkeleton } from '@/components/ui/page-loading';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   planning: { label: 'تخطيط', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },

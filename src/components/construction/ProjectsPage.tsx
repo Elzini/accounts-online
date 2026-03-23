@@ -32,6 +32,8 @@ import {
 } from '@/components/ui/select';
 import { Plus, Pencil, Trash2, Building2, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
 import { format } from 'date-fns';
 
 interface Project {
