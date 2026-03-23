@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { getCompanyOverride } from '@/lib/companyOverride';
+import { getCurrentCompanyId } from '@/services/companyContext';
 
 export interface AppSettings {
   app_name: string;
