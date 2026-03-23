@@ -13,6 +13,7 @@ import {
   IFiscalYearRepository,
   IInvoiceRepository,
   ISupplierRepository,
+  ICompanySettingsRepository,
 } from './repositories';
 import { Account, JournalEntryRecord, FiscalYear, AccountMapping } from './types';
 
