@@ -727,10 +727,9 @@ export async function getComprehensiveTrialBalance(
 
   if (fiscalYearId) {
     periodQuery = periodQuery.eq('journal_entry.fiscal_year_id', fiscalYearId);
-  } else {
-    if (effectiveStartDate) periodQuery = periodQuery.gte('journal_entry.entry_date', effectiveStartDate);
-    if (effectiveEndDate) periodQuery = periodQuery.lte('journal_entry.entry_date', effectiveEndDate);
   }
+  if (effectiveStartDate) periodQuery = periodQuery.gte('journal_entry.entry_date', effectiveStartDate);
+  if (effectiveEndDate) periodQuery = periodQuery.lte('journal_entry.entry_date', effectiveEndDate);
 
   const { data: periodLines, error } = await periodQuery;
   if (error) throw error;
