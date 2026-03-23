@@ -96,126 +96,32 @@ export function ProgressBillingsPage() {
     notes: '',
   });
 
-  const { data: billings = [], isLoading } = useQuery({
-    queryKey: ['progress-billings', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('progress_billings')
-        .select('*, project:projects(project_name), contract:contracts(title)')
-        .eq('company_id', companyId)
-        .order('billing_number', { ascending: false });
+  const { data: billings = [], isLoading } = useProgressBillings(companyId);
+  const { data: projects = [] } = useProjectsList(companyId);
+  const { data: contracts = [] } = useContractsList(companyId);
 
-      if (error) throw error;
-      return data as ProgressBilling[];
-    },
-    enabled: !!companyId,
-  });
+  const createBillingBase = useCreateProgressBilling(companyId);
+  const createBilling = { ...createBillingBase, mutate: (data: typeof formData) => createBillingBase.mutate({
+    project_id: data.project_id || null, contract_id: data.contract_id || null, billing_date: data.billing_date,
+    period_start: data.period_start || null, period_end: data.period_end || null,
+    work_completed_value: parseFloat(data.work_completed_value) || 0, previous_billings: parseFloat(data.previous_billings) || 0,
+    retention_amount: parseFloat(data.retention_amount) || 0, advance_deduction: parseFloat(data.advance_deduction) || 0,
+    other_deductions: parseFloat(data.other_deductions) || 0, vat_amount: parseFloat(data.vat_amount) || 0,
+    status: data.status, notes: data.notes || null,
+  }, { onSuccess: () => { toast.success('تم إنشاء المستخلص بنجاح'); handleCloseDialog(); }, onError: () => toast.error('حدث خطأ أثناء إنشاء المستخلص') }) };
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ['projects-list', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('id, project_name')
-        .eq('company_id', companyId)
-        .order('project_name');
+  const updateBillingBase = useUpdateProgressBilling();
+  const updateBilling = { ...updateBillingBase, mutate: ({ id, data }: { id: string; data: typeof formData }) => updateBillingBase.mutate({
+    id, project_id: data.project_id || null, contract_id: data.contract_id || null, billing_date: data.billing_date,
+    period_start: data.period_start || null, period_end: data.period_end || null,
+    work_completed_value: parseFloat(data.work_completed_value) || 0, previous_billings: parseFloat(data.previous_billings) || 0,
+    retention_amount: parseFloat(data.retention_amount) || 0, advance_deduction: parseFloat(data.advance_deduction) || 0,
+    other_deductions: parseFloat(data.other_deductions) || 0, vat_amount: parseFloat(data.vat_amount) || 0,
+    status: data.status, notes: data.notes || null,
+  }, { onSuccess: () => { toast.success('تم تحديث المستخلص بنجاح'); handleCloseDialog(); }, onError: () => toast.error('حدث خطأ أثناء تحديث المستخلص') }) };
 
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
-
-  const { data: contracts = [] } = useQuery({
-    queryKey: ['contracts-list', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contracts')
-        .select('id, title, project_id')
-        .eq('company_id', companyId)
-        .order('title');
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
-
-  const createBilling = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      const { error } = await supabase.from('progress_billings').insert({
-        company_id: companyId,
-        project_id: data.project_id || null,
-        contract_id: data.contract_id || null,
-        billing_date: data.billing_date,
-        period_start: data.period_start || null,
-        period_end: data.period_end || null,
-        work_completed_value: parseFloat(data.work_completed_value) || 0,
-        previous_billings: parseFloat(data.previous_billings) || 0,
-        retention_amount: parseFloat(data.retention_amount) || 0,
-        advance_deduction: parseFloat(data.advance_deduction) || 0,
-        other_deductions: parseFloat(data.other_deductions) || 0,
-        vat_amount: parseFloat(data.vat_amount) || 0,
-        status: data.status,
-        notes: data.notes || null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['progress-billings'] });
-      toast.success('تم إنشاء المستخلص بنجاح');
-      handleCloseDialog();
-    },
-    onError: () => {
-      toast.error('حدث خطأ أثناء إنشاء المستخلص');
-    },
-  });
-
-  const updateBilling = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: typeof formData }) => {
-      const { error } = await supabase
-        .from('progress_billings')
-        .update({
-          project_id: data.project_id || null,
-          contract_id: data.contract_id || null,
-          billing_date: data.billing_date,
-          period_start: data.period_start || null,
-          period_end: data.period_end || null,
-          work_completed_value: parseFloat(data.work_completed_value) || 0,
-          previous_billings: parseFloat(data.previous_billings) || 0,
-          retention_amount: parseFloat(data.retention_amount) || 0,
-          advance_deduction: parseFloat(data.advance_deduction) || 0,
-          other_deductions: parseFloat(data.other_deductions) || 0,
-          vat_amount: parseFloat(data.vat_amount) || 0,
-          status: data.status,
-          notes: data.notes || null,
-        })
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['progress-billings'] });
-      toast.success('تم تحديث المستخلص بنجاح');
-      handleCloseDialog();
-    },
-    onError: () => {
-      toast.error('حدث خطأ أثناء تحديث المستخلص');
-    },
-  });
-
-  const deleteBilling = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('progress_billings').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['progress-billings'] });
-      toast.success('تم حذف المستخلص بنجاح');
-    },
-    onError: () => {
-      toast.error('حدث خطأ أثناء حذف المستخلص');
-    },
-  });
+  const deleteBillingBase = useDeleteProgressBilling();
+  const deleteBilling = { ...deleteBillingBase, mutate: (id: string) => deleteBillingBase.mutate(id, { onSuccess: () => toast.success('تم حذف المستخلص بنجاح'), onError: () => toast.error('حدث خطأ أثناء حذف المستخلص') }) };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);

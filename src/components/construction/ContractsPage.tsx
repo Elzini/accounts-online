@@ -104,117 +104,29 @@ export function ContractsPage() {
     notes: '',
   });
 
-  const { data: contracts = [], isLoading } = useQuery({
-    queryKey: ['contracts', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contracts')
-        .select('*, project:projects(project_name)')
-        .eq('company_id', companyId)
-        .order('contract_number', { ascending: false });
+  const { data: contracts = [], isLoading } = useConstructionContracts(companyId);
+  const { data: projects = [] } = useProjectsList(companyId);
 
-      if (error) throw error;
-      return data as Contract[];
-    },
-    enabled: !!companyId,
-  });
+  const createContractBase = useCreateConstructionContract(companyId);
+  const createContract = { ...createContractBase, mutate: (data: typeof formData) => createContractBase.mutate({
+    project_id: data.project_id || null, contract_type: data.contract_type, title: data.title, description: data.description || null,
+    contractor_name: data.contractor_name || null, contractor_phone: data.contractor_phone || null, contractor_address: data.contractor_address || null,
+    contract_value: parseFloat(data.contract_value) || 0, advance_payment: parseFloat(data.advance_payment) || 0,
+    advance_percentage: parseFloat(data.advance_percentage) || 0, retention_percentage: parseFloat(data.retention_percentage) || 10,
+    start_date: data.start_date || null, end_date: data.end_date || null, status: data.status, payment_terms: data.payment_terms || null, notes: data.notes || null,
+  }, { onSuccess: () => { toast.success('تم إنشاء العقد بنجاح'); handleCloseDialog(); }, onError: () => toast.error('حدث خطأ أثناء إنشاء العقد') }) };
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ['projects-list', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('id, project_name, project_code')
-        .eq('company_id', companyId)
-        .order('project_name');
+  const updateContractBase = useUpdateConstructionContract();
+  const updateContract = { ...updateContractBase, mutate: ({ id, data }: { id: string; data: typeof formData }) => updateContractBase.mutate({
+    id, project_id: data.project_id || null, contract_type: data.contract_type, title: data.title, description: data.description || null,
+    contractor_name: data.contractor_name || null, contractor_phone: data.contractor_phone || null, contractor_address: data.contractor_address || null,
+    contract_value: parseFloat(data.contract_value) || 0, advance_payment: parseFloat(data.advance_payment) || 0,
+    advance_percentage: parseFloat(data.advance_percentage) || 0, retention_percentage: parseFloat(data.retention_percentage) || 10,
+    start_date: data.start_date || null, end_date: data.end_date || null, status: data.status, payment_terms: data.payment_terms || null, notes: data.notes || null,
+  }, { onSuccess: () => { toast.success('تم تحديث العقد بنجاح'); handleCloseDialog(); }, onError: () => toast.error('حدث خطأ أثناء تحديث العقد') }) };
 
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
-
-  const createContract = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      const { error } = await supabase.from('contracts').insert({
-        company_id: companyId,
-        project_id: data.project_id || null,
-        contract_type: data.contract_type,
-        title: data.title,
-        description: data.description || null,
-        contractor_name: data.contractor_name || null,
-        contractor_phone: data.contractor_phone || null,
-        contractor_address: data.contractor_address || null,
-        contract_value: parseFloat(data.contract_value) || 0,
-        advance_payment: parseFloat(data.advance_payment) || 0,
-        advance_percentage: parseFloat(data.advance_percentage) || 0,
-        retention_percentage: parseFloat(data.retention_percentage) || 10,
-        start_date: data.start_date || null,
-        end_date: data.end_date || null,
-        status: data.status,
-        payment_terms: data.payment_terms || null,
-        notes: data.notes || null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contracts'] });
-      toast.success('تم إنشاء العقد بنجاح');
-      handleCloseDialog();
-    },
-    onError: () => {
-      toast.error('حدث خطأ أثناء إنشاء العقد');
-    },
-  });
-
-  const updateContract = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: typeof formData }) => {
-      const { error } = await supabase
-        .from('contracts')
-        .update({
-          project_id: data.project_id || null,
-          contract_type: data.contract_type,
-          title: data.title,
-          description: data.description || null,
-          contractor_name: data.contractor_name || null,
-          contractor_phone: data.contractor_phone || null,
-          contractor_address: data.contractor_address || null,
-          contract_value: parseFloat(data.contract_value) || 0,
-          advance_payment: parseFloat(data.advance_payment) || 0,
-          advance_percentage: parseFloat(data.advance_percentage) || 0,
-          retention_percentage: parseFloat(data.retention_percentage) || 10,
-          start_date: data.start_date || null,
-          end_date: data.end_date || null,
-          status: data.status,
-          payment_terms: data.payment_terms || null,
-          notes: data.notes || null,
-        })
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contracts'] });
-      toast.success('تم تحديث العقد بنجاح');
-      handleCloseDialog();
-    },
-    onError: () => {
-      toast.error('حدث خطأ أثناء تحديث العقد');
-    },
-  });
-
-  const deleteContract = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('contracts').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contracts'] });
-      toast.success('تم حذف العقد بنجاح');
-    },
-    onError: () => {
-      toast.error('حدث خطأ أثناء حذف العقد');
-    },
-  });
+  const deleteContractBase = useDeleteConstructionContract();
+  const deleteContract = { ...deleteContractBase, mutate: (id: string) => deleteContractBase.mutate(id, { onSuccess: () => toast.success('تم حذف العقد بنجاح'), onError: () => toast.error('حدث خطأ أثناء حذف العقد') }) };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);

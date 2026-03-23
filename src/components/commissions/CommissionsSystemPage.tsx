@@ -42,42 +42,16 @@ export function CommissionsSystemPage() {
   const [formBonusThreshold, setFormBonusThreshold] = useState(200000);
 
   // Load commission rules
-  const { data: rules = [] } = useQuery({
-    queryKey: ['commission-rules', companyId],
-    queryFn: async () => {
-      const { data } = await supabase.from('app_settings')
-        .select('value').eq('company_id', companyId!).eq('key', 'commission_rules').maybeSingle();
-      return data?.value ? JSON.parse(data.value) as CommissionRule[] : [];
-    },
-    enabled: !!companyId,
-  });
+  const { data: rules = [] } = useCommissionRules(companyId);
 
   // Fetch sales data with salesperson info
-  const { data: sales = [], isLoading } = useQuery({
-    queryKey: ['commission-sales', companyId, period],
-    queryFn: async () => {
-      const now = new Date();
-      let start: string;
-      if (period === 'month') {
-        start = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-      } else {
-        const qMonth = Math.floor(now.getMonth() / 3) * 3;
-        start = `${now.getFullYear()}-${String(qMonth + 1).padStart(2, '0')}-01`;
-      }
-      const { data } = await supabase.from('sales')
-        .select('sale_price, purchase_price, sale_date, salesperson_name')
-        .eq('company_id', companyId!)
-        .gte('sale_date', start);
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
+  const { data: sales = [], isLoading } = useCommissionSales(companyId, period);
 
   // Calculate commissions
   const commissions = useMemo(() => {
     const byEmployee: Record<string, { sales_total: number; sales_count: number; profit: number }> = {};
 
-    sales.forEach((s: any) => {
+    (sales as any[]).forEach((s: any) => {
       const emp = s.salesperson_name || 'غير محدد';
       if (!byEmployee[emp]) byEmployee[emp] = { sales_total: 0, sales_count: 0, profit: 0 };
       byEmployee[emp].sales_total += s.sale_price || 0;
@@ -86,7 +60,7 @@ export function CommissionsSystemPage() {
     });
 
     return Object.entries(byEmployee).map(([name, data]) => {
-      const rule = rules.find(r => r.employee_name === name);
+      const rule = (rules as CommissionRule[]).find(r => r.employee_name === name);
       let commission = 0;
       let bonus = 0;
 
@@ -100,7 +74,6 @@ export function CommissionsSystemPage() {
           bonus = data.profit * (rule.bonus_rate / 100);
         }
       } else {
-        // Default 2% commission
         commission = data.profit * 0.02;
       }
 
@@ -117,21 +90,8 @@ export function CommissionsSystemPage() {
 
   const totalCommissions = commissions.reduce((s, c) => s + c.total, 0);
 
-  const saveRules = useMutation({
-    mutationFn: async (newRules: CommissionRule[]) => {
-      const { data: existing } = await supabase.from('app_settings')
-        .select('id').eq('company_id', companyId!).eq('key', 'commission_rules').maybeSingle();
-      if (existing) {
-        await supabase.from('app_settings').update({ value: JSON.stringify(newRules) }).eq('id', existing.id);
-      } else {
-        await supabase.from('app_settings').insert({ company_id: companyId!, key: 'commission_rules', value: JSON.stringify(newRules) });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commission-rules'] });
-      toast.success('تم حفظ قواعد العمولات');
-    },
-  });
+  const saveRulesBase = useSaveCommissionRules(companyId);
+  const saveRules = { ...saveRulesBase, mutate: (newRules: CommissionRule[]) => saveRulesBase.mutate(newRules, { onSuccess: () => toast.success('تم حفظ قواعد العمولات') }) };
 
   const handleSave = () => {
     const newRule: CommissionRule = {

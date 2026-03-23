@@ -105,101 +105,26 @@ export function ProjectsPage() {
     notes: '',
   });
 
-  const { data: projects = [], isLoading } = useQuery({
-    queryKey: ['projects', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('project_number', { ascending: false });
+  const { data: projects = [], isLoading } = useConstructionProjects(companyId);
 
-      if (error) throw error;
-      return data as Project[];
-    },
-    enabled: !!companyId,
-  });
+  const createProjectBase = useCreateConstructionProject(companyId);
+  const createProject = { ...createProjectBase, mutate: (data: typeof formData) => createProjectBase.mutate({
+    project_name: data.project_name, project_code: data.project_code || null, client_name: data.client_name || null, client_contact: data.client_contact || null,
+    contract_number: data.contract_number || null, contract_date: data.contract_date || null, contract_value: parseFloat(data.contract_value) || 0,
+    location: data.location || null, site_address: data.site_address || null, start_date: data.start_date || null, expected_end_date: data.expected_end_date || null,
+    retention_percentage: parseFloat(data.retention_percentage) || 10, status: data.status, description: data.description || null, notes: data.notes || null,
+  }, { onSuccess: () => { toast.success('تم إنشاء المشروع بنجاح'); handleCloseDialog(); }, onError: () => toast.error('حدث خطأ أثناء إنشاء المشروع') }) };
 
-  const createProject = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      const insertData = {
-        company_id: companyId!,
-        project_name: data.project_name,
-        project_code: data.project_code || null,
-        client_name: data.client_name || null,
-        client_contact: data.client_contact || null,
-        contract_number: data.contract_number || null,
-        contract_date: data.contract_date || null,
-        contract_value: parseFloat(data.contract_value) || 0,
-        location: data.location || null,
-        site_address: data.site_address || null,
-        start_date: data.start_date || null,
-        expected_end_date: data.expected_end_date || null,
-        retention_percentage: parseFloat(data.retention_percentage) || 10,
-        status: data.status,
-        description: data.description || null,
-        notes: data.notes || null,
-      };
-      const { error } = await supabase.from('projects').insert([insertData]);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      toast.success('تم إنشاء المشروع بنجاح');
-      handleCloseDialog();
-    },
-    onError: () => {
-      toast.error('حدث خطأ أثناء إنشاء المشروع');
-    },
-  });
+  const updateProjectBase = useUpdateConstructionProject();
+  const updateProject = { ...updateProjectBase, mutate: ({ id, data }: { id: string; data: typeof formData }) => updateProjectBase.mutate({
+    id, project_name: data.project_name, project_code: data.project_code || null, client_name: data.client_name || null, client_contact: data.client_contact || null,
+    contract_number: data.contract_number || null, contract_date: data.contract_date || null, contract_value: parseFloat(data.contract_value) || 0,
+    location: data.location || null, site_address: data.site_address || null, start_date: data.start_date || null, expected_end_date: data.expected_end_date || null,
+    retention_percentage: parseFloat(data.retention_percentage) || 10, status: data.status, description: data.description || null, notes: data.notes || null,
+  }, { onSuccess: () => { toast.success('تم تحديث المشروع بنجاح'); handleCloseDialog(); }, onError: () => toast.error('حدث خطأ أثناء تحديث المشروع') }) };
 
-  const updateProject = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: typeof formData }) => {
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          project_name: data.project_name,
-          project_code: data.project_code || null,
-          client_name: data.client_name || null,
-          client_contact: data.client_contact || null,
-          contract_number: data.contract_number || null,
-          contract_date: data.contract_date || null,
-          contract_value: parseFloat(data.contract_value) || 0,
-          location: data.location || null,
-          site_address: data.site_address || null,
-          start_date: data.start_date || null,
-          expected_end_date: data.expected_end_date || null,
-          retention_percentage: parseFloat(data.retention_percentage) || 10,
-          status: data.status,
-          description: data.description || null,
-          notes: data.notes || null,
-        })
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      toast.success('تم تحديث المشروع بنجاح');
-      handleCloseDialog();
-    },
-    onError: () => {
-      toast.error('حدث خطأ أثناء تحديث المشروع');
-    },
-  });
-
-  const deleteProject = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('projects').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      toast.success('تم حذف المشروع بنجاح');
-    },
-    onError: () => {
-      toast.error('حدث خطأ أثناء حذف المشروع');
-    },
-  });
+  const deleteProjectBase = useDeleteConstructionProject();
+  const deleteProject = { ...deleteProjectBase, mutate: (id: string) => deleteProjectBase.mutate(id, { onSuccess: () => toast.success('تم حذف المشروع بنجاح'), onError: () => toast.error('حدث خطأ أثناء حذف المشروع') }) };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
