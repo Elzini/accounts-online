@@ -131,7 +131,7 @@ export function useUpsertFieldPermission() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (perm: { table_name: string; field_name: string; user_id: string; can_view: boolean; can_edit: boolean }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('field_level_permissions')
         .upsert({ ...perm, company_id: companyId! }, { onConflict: 'company_id,table_name,field_name,user_id' });
       if (error) throw error;
