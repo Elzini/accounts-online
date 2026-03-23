@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { getAuthToken } from '@/services/aiChat';
 import { useDraggable } from '@/hooks/useDraggable';
 
 type Message = {role: 'user' | 'assistant';content: string;};
