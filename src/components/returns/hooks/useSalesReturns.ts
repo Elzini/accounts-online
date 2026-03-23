@@ -70,8 +70,8 @@ export function useSalesReturns() {
     setIsSearching(true);
     try {
       if (isCarDealership) {
-        const { data: sale, error } = await supabase.from('sales').select(`*, car:cars(*), customer:customers(name, phone), sale_items:sale_items(*, car:cars(*))`).eq('company_id', companyId).eq('sale_number', parseInt(invoiceSearch)).single();
-        if (error || !sale) { toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found'); setFoundSale(null); setFoundInvoice(null); setItems([]); return; }
+        const sale = await searchSaleByNumber(companyId, parseInt(invoiceSearch));
+        if (!sale) { toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found'); setFoundSale(null); setFoundInvoice(null); setItems([]); return; }
         setFoundSale(sale); setFoundInvoice(null);
         const saleItems = (sale as any).sale_items || [];
         if (saleItems.length > 0) {
@@ -81,8 +81,8 @@ export function useSalesReturns() {
           setItems([{ id: '1', car_id: sale.car_id, description: `${car?.name || ''} ${car?.model || ''} - ${car?.color || ''} - شاسيه: ${car?.chassis_number || ''}`, quantity: 1, returnedQty: 1, unit: 'سيارة', price, total: price, discountPercent: 0, discount: 0, net: price, vat, grandTotal: price + vat }]);
         }
       } else {
-        const { data: invoice, error } = await supabase.from('invoices').select('*').eq('company_id', companyId).eq('invoice_type', 'sales').eq('invoice_number', invoiceSearch.trim()).single();
-        if (error || !invoice) { toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found'); setFoundSale(null); setFoundInvoice(null); setItems([]); return; }
+        const invoice = await searchInvoiceByNumber(companyId, invoiceSearch);
+        if (!invoice) { toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found'); setFoundSale(null); setFoundInvoice(null); setItems([]); return; }
         setFoundInvoice(invoice); setFoundSale(null);
         const invoiceItems = Array.isArray((invoice as any).items) ? (invoice as any).items : [];
         if (invoiceItems.length > 0) {
