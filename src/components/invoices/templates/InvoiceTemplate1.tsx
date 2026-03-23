@@ -21,12 +21,13 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
   const taxRate = taxSettings?.tax_rate || 15;
   const vatNumber = invoiceType === 'sale' ? (taxSettings?.tax_number || '') : (sellerTaxNumber || '');
 
-  const qrData = useMemo(() => generateZatcaQRData({
+  const qrData = useZatcaPhase2QR({
     sellerName: invoiceType === 'sale' ? (taxSettings?.company_name_ar || sellerName) : sellerName,
     vatNumber: vatNumber || '300000000000003',
-    invoiceDateTime: formatDateTimeForZatca(invoiceDate),
+    invoiceDateTime: invoiceDate,
     invoiceTotal: total, vatAmount: taxAmount,
-  }), [sellerName, vatNumber, invoiceDate, total, taxAmount]);
+    invoiceNumber,
+  });
 
   const itemsWithTax = items.map(item => ({
     ...item,
