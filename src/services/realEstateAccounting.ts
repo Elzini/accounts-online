@@ -142,21 +142,16 @@ export async function recordAdvancePayment(params: {
   if (!bankAccountId) throw new Error('حساب البنك غير موجود');
   if (!advancePaymentAccountId) throw new Error('حساب الدفعات المقدمة غير موجود');
 
-  const entry = await createJournalEntry(
-    {
-      company_id: companyId,
-      entry_date: new Date().toISOString().split('T')[0],
-      description: `دفعة مقدمة من ${customerName} - وحدة ${unitNumber} - ${projectName}`,
-      status: 'posted',
-      reference_type: 'advance_payment',
-      reference_id: unitId,
-      fiscal_year_id: fiscalYearId || null,
-    } as any,
-    [
-      { account_id: bankAccountId, description: `تحصيل دفعة مقدمة - ${customerName}`, debit: amount, credit: 0 },
-      { account_id: advancePaymentAccountId, description: `دفعة مقدمة - وحدة ${unitNumber}`, debit: 0, credit: amount },
-    ]
-  );
+  const entry = await createEngineEntry(companyId, {
+    entry_date: new Date().toISOString().split('T')[0],
+    description: `دفعة مقدمة من ${customerName} - وحدة ${unitNumber} - ${projectName}`,
+    reference_type: 'advance_payment',
+    reference_id: unitId,
+    fiscal_year_id: fiscalYearId,
+  }, [
+    { account_id: bankAccountId, description: `تحصيل دفعة مقدمة - ${customerName}`, debit: amount, credit: 0 },
+    { account_id: advancePaymentAccountId, description: `دفعة مقدمة - وحدة ${unitNumber}`, debit: 0, credit: amount },
+  ]);
 
   return entry.id;
 }
