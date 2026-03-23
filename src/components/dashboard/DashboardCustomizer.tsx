@@ -178,12 +178,12 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
           />
           <CardSettingsPanel
             selected={selected}
-            accounts={accounts}
+            updateCard={updateCard}
+            toggleVisibility={toggleVisibility}
+            applyStyleToAll={applyStyleToAll}
             industryLabels={industryLabels}
-            onUpdateCard={updateCard}
-            onToggleVisibility={toggleVisibility}
-            onApplyStyleToAll={applyStyleToAll}
-            t={t}
+            accountSearch={accountSearch}
+            setAccountSearch={setAccountSearch}
           />
         </div>
 
