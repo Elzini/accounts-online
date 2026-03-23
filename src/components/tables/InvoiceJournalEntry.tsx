@@ -95,7 +95,8 @@ export function InvoiceJournalEntry({ invoiceId, invoiceNumber }: InvoiceJournal
 
     setIsSaving(true);
     try {
-      const journal = new JournalEngine(companyId || '');
+      const { getServiceContainer } = await import('@/core/engine/serviceContainer');
+      const { journal } = getServiceContainer(companyId || '');
       await journal.replaceLines(journalData.id, editLines.map(line => ({
         account_id: line.account_id,
         description: line.description || '',

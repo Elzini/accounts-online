@@ -178,10 +178,10 @@ export async function approvePayroll(payrollId: string, userId: string, companyI
   if (!updatedPayroll) throw new Error('Payroll not found');
 
   const entryDescription = `مسير رواتب شهر ${updatedPayroll.month}/${updatedPayroll.year}`;
-  // Use AccountResolver from Core Engine
-  const { AccountResolver } = await import('@/core/engine/accountResolver');
-  const resolver = new AccountResolver(companyId);
-  await resolver.load();
+  // Use ServiceContainer for account resolution and journal creation
+  const { getInitializedContainer } = await import('@/core/engine/serviceContainer');
+  const container = await getInitializedContainer(companyId);
+  const { resolver, journal } = container;
 
   const cashRef = resolver.resolve('cash');
   const salaryAccount = resolver.resolveFlexible(null, null, '5201');
@@ -197,7 +197,6 @@ export async function approvePayroll(payrollId: string, userId: string, companyI
     lines.push({ account_id: advancesAccount.id, description: 'تسوية سلف الموظفين', debit: 0, credit: updatedPayroll.total_advances });
   }
 
-  const journal = new JournalEngine(companyId);
   const journalEntry = await journal.createEntry({
     company_id: companyId,
     fiscal_year_id: fiscalYearId || '',

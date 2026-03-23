@@ -60,7 +60,7 @@ export async function createJournalEntry(
   entry: Omit<JournalEntry, 'id' | 'entry_number' | 'created_at' | 'updated_at' | 'lines'>,
   lines: Array<{ account_id: string; description?: string; debit: number; credit: number; cost_center_id?: string | null }>
 ): Promise<JournalEntry> {
-  const engine = new JournalEngine(entry.company_id);
+  const { journal: engine } = getServiceContainer(entry.company_id);
 
   const result = await engine.createEntry({
     company_id: entry.company_id,
