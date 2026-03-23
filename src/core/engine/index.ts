@@ -35,7 +35,7 @@ export type { AccountBalance, TrialBalanceParams } from './ledgerEngine';
 export { generateOpeningBalances } from './fiscalYearEngine';
 
 // Industry Features
-export { getIndustryFeatures } from './industryFeatures';
+export { getIndustryFeatures, getCompanyTypeLabel } from './industryFeatures';
 export type { IndustryFeatures } from './industryFeatures';
 
 // Event Bus
