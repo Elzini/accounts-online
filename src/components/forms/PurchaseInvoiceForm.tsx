@@ -427,11 +427,25 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         <PurchaseInvoiceDialog
           open={invoiceOpen}
           onOpenChange={handleCloseInvoice}
-          invoiceData={invoicePreviewData}
+          data={invoicePreviewData}
         />
       )}
-      <InvoiceDeleteDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} onConfirm={handleDeletePurchase} />
-      <InvoiceReverseDialog open={reverseDialogOpen} onOpenChange={setReverseDialogOpen} onConfirm={handleReversePurchase} />
+      <InvoiceDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeletePurchase}
+        isPending={false}
+        dir="rtl"
+        labels={{ title: 'حذف الفاتورة', description: 'هل أنت متأكد من حذف هذه الفاتورة؟ لا يمكن التراجع عن هذا الإجراء.', cancel: 'إلغاء', delete: 'حذف', deleting: 'جاري الحذف...' }}
+      />
+      <InvoiceReverseDialog
+        open={reverseDialogOpen}
+        onOpenChange={setReverseDialogOpen}
+        onConfirm={handleReversePurchase}
+        isPending={false}
+        dir="rtl"
+        labels={{ title: 'عكس الفاتورة', description: 'سيتم عكس جميع القيود المحاسبية المرتبطة بهذه الفاتورة.', bulletPoints: ['عكس قيد الشراء', 'عكس قيد الضريبة', 'تحديث أرصدة الحسابات'], warning: 'هذا الإجراء لا يمكن التراجع عنه.', cancel: 'إلغاء', confirm: 'عكس', confirming: 'جاري العكس...' }}
+      />
 
       {/* AI Import */}
       {aiImportOpen && (
@@ -440,7 +454,6 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
           onOpenChange={setAiImportOpen}
           onImport={handleAIImport}
           onBatchImport={onBatchImport}
-          companyId={companyId || undefined}
         />
       )}
     </>
