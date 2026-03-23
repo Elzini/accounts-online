@@ -206,6 +206,21 @@ export class SupabaseFiscalYearRepository implements IFiscalYearRepository {
     if (error) return null;
     return data as FiscalYear | null;
   }
+
+  async create(input: {
+    company_id: string; name: string; start_date: string; end_date: string;
+    status: string; is_current: boolean;
+  }): Promise<FiscalYear> {
+    const { data, error } = await supabase
+      .from('fiscal_years').insert(input).select('id, company_id, name, start_date, end_date, is_current, status').single();
+    if (error) throw error;
+    return data as FiscalYear;
+  }
+
+  async update(id: string, updates: Record<string, any>): Promise<void> {
+    const { error } = await supabase.from('fiscal_years').update(updates).eq('id', id);
+    if (error) throw error;
+  }
 }
 
 // ============ Invoice Repository ============
