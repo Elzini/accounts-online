@@ -329,7 +329,7 @@ export function useCommissionSales(companyId: string | null, period: 'month' | '
       let start: string;
       if (period === 'month') { start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]; }
       else { const q = Math.floor(now.getMonth() / 3) * 3; start = new Date(now.getFullYear(), q, 1).toISOString().split('T')[0]; }
-      const { data, error } = await supabase.from('invoices').select('id, total_amount, salesperson_name, created_at').eq('company_id', companyId!).eq('type', 'sale').gte('created_at', start).order('created_at', { ascending: false });
+      const { data, error } = await (supabase as any).from('invoices').select('id, total_amount, salesperson_name, created_at').eq('company_id', companyId!).eq('type', 'sale').gte('created_at', start).order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
