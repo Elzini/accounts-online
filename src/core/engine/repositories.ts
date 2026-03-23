@@ -89,6 +89,16 @@ export interface ICompanyConfigRepository {
 export interface IFiscalYearRepository {
   findCurrent(companyId: string): Promise<FiscalYear | null>;
   findById(id: string): Promise<FiscalYear | null>;
+  create(data: {
+    company_id: string; name: string; start_date: string; end_date: string;
+    status: string; is_current: boolean;
+  }): Promise<FiscalYear>;
+  update(id: string, updates: Partial<{
+    status: string; is_current: boolean;
+    opening_balance_entry_id: string | null;
+    closing_balance_entry_id: string | null;
+    closed_at: string; closed_by: string;
+  }>): Promise<void>;
 }
 
 // ============ Invoice Repository (for posting engine) ============
