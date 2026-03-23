@@ -24,12 +24,12 @@ export function useFinancialProtectionStats() {
   });
 }
 
-// ─── System Change Log ───
+// ─── System Change Log (redirected to audit_logs) ───
 export function useSystemChangeLog(limit = 100) {
   return useQuery({
     queryKey: ['system-change-log', limit],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('system_change_log').select('*').order('created_at', { ascending: false }).limit(limit);
+      const { data, error } = await supabase.from('audit_logs').select('*').eq('entity_type', 'system_config').order('created_at', { ascending: false }).limit(limit);
       if (error) throw error;
       return data || [];
     },
