@@ -178,11 +178,15 @@ export async function approvePayroll(payrollId: string, userId: string, companyI
   if (!updatedPayroll) throw new Error('Payroll not found');
 
   const entryDescription = `مسير رواتب شهر ${updatedPayroll.month}/${updatedPayroll.year}`;
-  const { data: accounts } = await supabase.from('account_categories').select('id, code').eq('company_id', companyId).in('code', ['5201', '1101', '1204']);
+  // Use AccountResolver from Core Engine
+  const { AccountResolver } = await import('@/core/engine/accountResolver');
+  const resolver = new AccountResolver(companyId);
+  await resolver.load();
 
-  const salaryAccount = accounts?.find(a => a.code === '5201');
-  const cashAccount = accounts?.find(a => a.code === '1101');
-  const advancesAccount = accounts?.find(a => a.code === '1204');
+  const cashRef = resolver.resolve('cash');
+  const salaryAccount = resolver.resolveFlexible(null, null, '5201');
+  const cashAccount = cashRef;
+  const advancesAccount = resolver.resolveFlexible(null, null, '1204');
   if (!salaryAccount || !cashAccount) throw new Error('Salary or cash account not found');
 
   const lines: Array<{ account_id: string; description: string; debit: number; credit: number }> = [

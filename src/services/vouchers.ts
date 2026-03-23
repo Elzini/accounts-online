@@ -61,30 +61,19 @@ export async function fetchVouchersByType(type: 'receipt' | 'payment', fiscalYea
 }
 
 
-// Helper to get default account IDs
+// Helper to get default account IDs — uses Core Engine's AccountResolver
 async function getDefaultAccounts(companyId: string) {
-  // Get company accounting settings
-  const { data: settings } = await supabase
-    .from('company_accounting_settings')
-    .select('*')
-    .eq('company_id', companyId)
-    .maybeSingle();
-
-  // Get accounts by code
-  const { data: accounts } = await supabase
-    .from('account_categories')
-    .select('id, code, name')
-    .eq('company_id', companyId);
-
-  const getAccountByCode = (code: string) => accounts?.find(a => a.code === code)?.id;
+  const { AccountResolver } = await import('@/core/engine/accountResolver');
+  const resolver = new AccountResolver(companyId);
+  await resolver.load();
 
   return {
-    cashAccountId: settings?.sales_cash_account_id || getAccountByCode('1101'),
-    bankAccountId: getAccountByCode('1102'),
-    customersAccountId: getAccountByCode('1201'),
-    suppliersAccountId: settings?.suppliers_account_id || getAccountByCode('2101'),
-    revenueAccountId: settings?.sales_revenue_account_id || getAccountByCode('4101'),
-    expenseAccountId: settings?.expense_account_id || getAccountByCode('5101'),
+    cashAccountId: resolver.resolve('cash')?.id,
+    bankAccountId: resolver.resolveFlexible(null, null, '1102')?.id,
+    customersAccountId: resolver.resolve('customers')?.id,
+    suppliersAccountId: resolver.resolve('suppliers')?.id,
+    revenueAccountId: resolver.resolve('sales_revenue')?.id,
+    expenseAccountId: resolver.resolve('purchase_expense')?.id,
   };
 }
 
