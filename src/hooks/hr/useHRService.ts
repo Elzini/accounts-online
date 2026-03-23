@@ -216,3 +216,176 @@ export function useDeleteWorkSchedule() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['work-schedules'] }),
   });
 }
+
+// ── Employee Contracts ──
+export function useEmployeeContracts(companyId: string | null) {
+  return useQuery({
+    queryKey: ['employee-contracts', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('employee_contracts').select('*')
+        .eq('company_id', companyId!).order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useCreateEmployeeContract(companyId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (row: any) => {
+      const { error } = await supabase.from('employee_contracts').insert({ company_id: companyId!, ...row } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['employee-contracts'] }),
+  });
+}
+
+export function useDeleteEmployeeContract() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('employee_contracts').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['employee-contracts'] }),
+  });
+}
+
+// ── Fingerprint Devices ──
+export function useFingerprintDevices(companyId: string | null, activeOnly = false) {
+  return useQuery({
+    queryKey: ['fingerprint-devices', companyId, activeOnly],
+    queryFn: async () => {
+      let query = supabase.from('hr_fingerprint_devices').select('*').eq('company_id', companyId!);
+      if (activeOnly) query = query.eq('status', 'active');
+      const { data, error } = await query.order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useSaveFingerprintDevice(companyId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...row }: { id?: string; device_name: string; device_model: string; serial_number?: string | null; ip_address?: string | null; port: number; location?: string | null; notes?: string | null }) => {
+      if (id) {
+        const { error } = await supabase.from('hr_fingerprint_devices').update(row).eq('id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('hr_fingerprint_devices').insert({ company_id: companyId!, ...row });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['fingerprint-devices'] }),
+  });
+}
+
+export function useDeleteFingerprintDevice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('hr_fingerprint_devices').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['fingerprint-devices'] }),
+  });
+}
+
+export function useSyncFingerprintDevice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('hr_fingerprint_devices').update({ last_sync_at: new Date().toISOString() }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['fingerprint-devices'] }),
+  });
+}
+
+export function useToggleFingerprintDeviceStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, currentStatus }: { id: string; currentStatus: string }) => {
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      const { error } = await supabase.from('hr_fingerprint_devices').update({ status: newStatus }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['fingerprint-devices'] }),
+  });
+}
+
+// ── Attendance Reports ──
+export function useAttendanceReport(companyId: string | null, dateFrom: string, dateTo: string, employeeId: string) {
+  return useQuery({
+    queryKey: ['attendance-report', companyId, dateFrom, dateTo, employeeId],
+    queryFn: async () => {
+      let query = supabase.from('employee_attendance').select('*, employees(name, employee_number, job_title, department)')
+        .eq('company_id', companyId!).gte('date', dateFrom).lte('date', dateTo).order('date', { ascending: true });
+      if (employeeId !== 'all') query = query.eq('employee_id', employeeId);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useEmployeesList(companyId: string | null) {
+  return useQuery({
+    queryKey: ['employees-list', companyId],
+    queryFn: async () => {
+      const { data } = await supabase.from('employees').select('id, name, employee_number, job_title, department')
+        .eq('company_id', companyId!).eq('is_active', true).order('name');
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+}
+
+// ── Device Logs ──
+export function useDeviceLogs(companyId: string | null, deviceId: string, dateFrom: string, dateTo: string) {
+  return useQuery({
+    queryKey: ['device-logs', companyId, deviceId, dateFrom, dateTo],
+    queryFn: async () => {
+      let query = supabase.from('hr_device_logs').select('*, hr_fingerprint_devices(device_name)')
+        .eq('company_id', companyId!).gte('punch_time', `${dateFrom}T00:00:00`).lte('punch_time', `${dateTo}T23:59:59`)
+        .order('punch_time', { ascending: false }).limit(500);
+      if (deviceId && deviceId !== 'all' && deviceId !== '') query = query.eq('device_id', deviceId);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useImportDeviceLogs(companyId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (logs: any[]) => {
+      const { error } = await supabase.from('hr_device_logs').insert(logs);
+      if (error) throw error;
+      return logs.length;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['device-logs'] }),
+  });
+}
+
+// ── Tax Settings (for contract print) ──
+export function useTaxSettingsForPrint(companyId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: ['tax-settings-print', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('tax_settings')
+        .select('tax_number, company_name_ar, national_address, commercial_register, city, postal_code, building_number')
+        .eq('company_id', companyId!).limit(1).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: enabled && !!companyId,
+  });
+}
