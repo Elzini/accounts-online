@@ -1,9 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bell, AlertTriangle, Info, AlertCircle, Building2 } from 'lucide-react';
+import { useCentralAlerts, useAllCompanies } from '@/hooks/modules/useSuperAdminServices';
 
 const priorityConfig: Record<string, { icon: any; color: string; bg: string; label: string }> = {
   high: { icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-500/10', label: 'عاجل' },
@@ -12,27 +11,8 @@ const priorityConfig: Record<string, { icon: any; color: string; bg: string; lab
 };
 
 export function CentralSmartAlerts() {
-  const { data: alerts = [], isLoading } = useQuery({
-    queryKey: ['central-smart-alerts'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('is_read', false)
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  const { data: companies = [] } = useQuery({
-    queryKey: ['companies-for-alerts'],
-    queryFn: async () => {
-      const { data } = await supabase.from('companies').select('id, name');
-      return data || [];
-    },
-  });
+  const { data: alerts = [], isLoading } = useCentralAlerts();
+  const { data: companies = [] } = useAllCompanies('id, name');
 
   const companyMap = Object.fromEntries(companies.map((c: any) => [c.id, c.name]));
 

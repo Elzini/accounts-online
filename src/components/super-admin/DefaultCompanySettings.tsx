@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Save, Settings, FileText, Calculator, Building2, RefreshCw, Receipt, Zap } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useSuperAdminServices';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {

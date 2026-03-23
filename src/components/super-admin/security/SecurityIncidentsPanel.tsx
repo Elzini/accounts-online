@@ -1,27 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { useState } from 'react';
 import { ShieldAlert, Search, AlertTriangle, Activity, Snowflake } from 'lucide-react';
+import { useSecurityIncidents } from '@/hooks/modules/useSuperAdminServices';
 
 export function SecurityIncidentsPanel() {
   const [search, setSearch] = useState('');
 
-  const { data: incidents = [], isLoading } = useQuery({
-    queryKey: ['security-incidents'],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('security_incidents')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
+  const { data: incidents = [], isLoading } = useSecurityIncidents();
   const filtered = incidents.filter((i: any) =>
     !search ||
     i.description?.includes(search) ||

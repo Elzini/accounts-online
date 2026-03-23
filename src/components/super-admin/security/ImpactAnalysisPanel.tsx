@@ -1,23 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, AlertTriangle } from 'lucide-react';
+import { useFinancialProtectionStats } from '@/hooks/modules/useSuperAdminServices';
 
 export function ImpactAnalysisPanel() {
-  const { data: stats } = useQuery({
-    queryKey: ['financial-protection-stats'],
-    queryFn: async () => {
-      const invoices = await supabase.from('invoices').select('id', { count: 'exact', head: true }).in('status', ['issued', 'approved', 'posted']);
-      const entries = await (supabase.from as any)('journal_entries').select('id', { count: 'exact', head: true }).in('status', ['posted', 'approved']);
-      const items = await supabase.from('invoice_items').select('id', { count: 'exact', head: true });
-      return {
-        protectedInvoices: invoices.count || 0,
-        protectedEntries: entries.count || 0,
-        totalItems: items.count || 0,
-      };
-    },
-  });
-
+  const { data: stats } = useFinancialProtectionStats();
   return (
     <Card>
       <CardHeader>

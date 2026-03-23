@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,52 +10,15 @@ import { Cpu, Plus, CheckCircle2, Clock, History } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from '@/components/ui/dialog';
+import { useEngineVersions, useCreateEngineVersion } from '@/hooks/modules/useSuperAdminServices';
 
 export function EngineVersionManager() {
-  const queryClient = useQueryClient();
   const [showNewVersion, setShowNewVersion] = useState(false);
   const [newVersion, setNewVersion] = useState({ version: '', description: '' });
 
-  const { data: versions = [], isLoading } = useQuery({
-    queryKey: ['accounting-engine-versions'],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('accounting_engine_versions')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-  });
+  const { data: versions = [], isLoading } = useEngineVersions();
 
-  const createVersion = useMutation({
-    mutationFn: async () => {
-      if (!newVersion.version) throw new Error('رقم النسخة مطلوب');
-      const { data: { user } } = await supabase.auth.getUser();
-
-      // Deactivate current version
-      await (supabase.from as any)('accounting_engine_versions')
-        .update({ is_current: false })
-        .eq('is_current', true);
-
-      const { error } = await (supabase.from as any)('accounting_engine_versions')
-        .insert({
-          version_number: newVersion.version,
-          description: newVersion.description,
-          is_active: true,
-          is_current: true,
-          activated_at: new Date().toISOString(),
-          activated_by: user?.id,
-        });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounting-engine-versions'] });
-      setShowNewVersion(false);
-      setNewVersion({ version: '', description: '' });
-      toast.success('تم إنشاء نسخة جديدة للمحرك المحاسبي');
-    },
-    onError: (err: any) => toast.error(err.message),
-  });
+  const createVersion = useCreateEngineVersion();
 
   const currentVersion = versions.find((v: any) => v.is_current);
 
@@ -173,7 +134,7 @@ export function EngineVersionManager() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNewVersion(false)}>إلغاء</Button>
-            <Button onClick={() => createVersion.mutate()} disabled={createVersion.isPending}>
+            <Button onClick={() => createVersion.mutate({ version: newVersion.version, description: newVersion.description })} disabled={createVersion.isPending}>
               إنشاء النسخة
             </Button>
           </DialogFooter>

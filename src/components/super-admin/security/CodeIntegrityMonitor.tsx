@@ -1,23 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileCode, CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { useCodeIntegrityHashes } from '@/hooks/modules/useSuperAdminServices';
 
 export function CodeIntegrityMonitor() {
-  const { data: hashes = [], isLoading } = useQuery({
-    queryKey: ['code-integrity-hashes'],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('code_integrity_hashes')
-        .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
+  const { data: hashes = [], isLoading } = useCodeIntegrityHashes();
   const criticalFiles = [
     { path: 'src/services/invoiceJournal.ts', category: 'المنطق المحاسبي' },
     { path: 'src/services/taxCalculations.ts', category: 'حسابات الضرائب' },

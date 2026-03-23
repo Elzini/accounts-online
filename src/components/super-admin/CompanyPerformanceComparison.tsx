@@ -1,10 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BarChart3, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { useCompanyPerformanceMetrics } from '@/hooks/modules/useSuperAdminServices';
 
 interface CompanyMetrics {
   id: string;
@@ -17,41 +16,7 @@ interface CompanyMetrics {
 }
 
 export function CompanyPerformanceComparison() {
-  const { data: metrics = [], isLoading } = useQuery({
-    queryKey: ['company-performance-comparison'],
-    queryFn: async () => {
-      // Fetch all companies
-      const { data: companies } = await supabase.from('companies').select('id, name, is_active');
-      if (!companies) return [];
-
-      // Fetch aggregated metrics for all companies in parallel
-      const results = await Promise.all(
-        companies.map(async (company) => {
-          const [entries, sales, invoices, customers] = await Promise.all([
-            supabase.from('journal_entries').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-            supabase.from('sales').select('sale_price').eq('company_id', company.id),
-            supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-            supabase.from('customers').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-          ]);
-
-          const salesTotal = (sales.data || []).reduce((sum: number, s: any) => sum + (s.sale_price || 0), 0);
-
-          return {
-            id: company.id,
-            name: company.name,
-            entriesCount: entries.count || 0,
-            salesTotal,
-            invoicesCount: invoices.count || 0,
-            customersCount: customers.count || 0,
-            isActive: company.is_active,
-          } as CompanyMetrics;
-        })
-      );
-
-      return results.sort((a, b) => b.salesTotal - a.salesTotal);
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: metrics = [], isLoading } = useCompanyPerformanceMetrics();
 
   const maxSales = Math.max(...metrics.map((m) => m.salesTotal), 1);
 
