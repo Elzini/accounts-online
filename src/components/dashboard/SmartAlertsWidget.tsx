@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { AlertTriangle, Clock, HandCoins, CreditCard, FileText, ChevronLeft, Settings2, Check, Bell, BellOff, Package, FileCheck, ClipboardCheck } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ActivePage } from '@/types';
@@ -9,22 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  useSmartAlertChecks, useSmartAlertCustodies, useSmartAlertInstallments,
+  useSmartAlertDraftInvoices, useSmartAlertLowStock, useSmartAlertApprovals,
+} from '@/hooks/modules/useModuleServices';
 
 const ALERTS_CONFIG_KEY = 'dashboard_smart_alerts_config';
 
-interface AlertTypeConfig {
-  id: string;
-  enabled: boolean;
-  threshold: number; // minimum count to trigger alert
-}
+interface AlertTypeConfig { id: string; enabled: boolean; threshold: number; }
 
 const DEFAULT_ALERT_CONFIGS: AlertTypeConfig[] = [
   { id: 'overdue_check', enabled: true, threshold: 1 },
@@ -37,10 +31,7 @@ const DEFAULT_ALERT_CONFIGS: AlertTypeConfig[] = [
 ];
 
 function loadAlertConfig(): AlertTypeConfig[] {
-  try {
-    const saved = localStorage.getItem(ALERTS_CONFIG_KEY);
-    if (saved) return JSON.parse(saved);
-  } catch {}
+  try { const saved = localStorage.getItem(ALERTS_CONFIG_KEY); if (saved) return JSON.parse(saved); } catch {}
   return DEFAULT_ALERT_CONFIGS;
 }
 
@@ -48,19 +39,9 @@ function saveAlertConfig(configs: AlertTypeConfig[]) {
   localStorage.setItem(ALERTS_CONFIG_KEY, JSON.stringify(configs));
 }
 
-interface SmartAlertsWidgetProps {
-  setActivePage: (page: ActivePage) => void;
-}
+interface SmartAlertsWidgetProps { setActivePage: (page: ActivePage) => void; }
 
-interface AlertItem {
-  id: string;
-  type: string;
-  title: string;
-  description: string;
-  severity: 'critical' | 'warning' | 'info';
-  action: ActivePage;
-  count?: number;
-}
+interface AlertItem { id: string; type: string; title: string; description: string; severity: 'critical' | 'warning' | 'info'; action: ActivePage; count?: number; }
 
 const ALERT_TYPE_LABELS: Record<string, { ar: string; en: string }> = {
   overdue_check: { ar: 'شيكات مستحقة', en: 'Overdue Checks' },
@@ -81,171 +62,46 @@ export function SmartAlertsWidget({ setActivePage }: SmartAlertsWidgetProps) {
 
   const getConfig = (id: string) => alertConfigs.find(c => c.id === id) || { id, enabled: true, threshold: 1 };
 
-  const { data: overdueChecks = 0 } = useQuery({
-    queryKey: ['smart-alerts-checks', companyId],
-    queryFn: async () => {
-      if (!companyId) return 0;
-      const today = new Date().toISOString().split('T')[0];
-      const { count } = await supabase
-        .from('checks')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', companyId)
-        .in('status', ['pending', 'active'])
-        .lte('due_date', today);
-      return count || 0;
-    },
-    enabled: !!companyId && getConfig('overdue_check').enabled,
-  });
-
-  const { data: openCustodies = 0 } = useQuery({
-    queryKey: ['smart-alerts-custodies', companyId],
-    queryFn: async () => {
-      if (!companyId) return 0;
-      const { count } = await supabase
-        .from('custodies')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', companyId)
-        .eq('status', 'active');
-      return count || 0;
-    },
-    enabled: !!companyId && getConfig('open_custody').enabled,
-  });
-
-  const { data: overdueInstallments = 0 } = useQuery({
-    queryKey: ['smart-alerts-installments', companyId],
-    queryFn: async () => {
-      if (!companyId) return 0;
-      const today = new Date().toISOString().split('T')[0];
-      const { count } = await supabase
-        .from('installment_payments')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending')
-        .lte('due_date', today);
-      return count || 0;
-    },
-    enabled: !!companyId && getConfig('overdue_installment').enabled,
-  });
-
-  const { data: draftInvoices = 0 } = useQuery({
-    queryKey: ['smart-alerts-drafts', companyId],
-    queryFn: async () => {
-      if (!companyId) return 0;
-      const { count } = await supabase
-        .from('invoices')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', companyId)
-        .eq('status', 'draft');
-      return count || 0;
-    },
-    enabled: !!companyId && getConfig('pending_invoice').enabled,
-  });
-
-  // Low stock items (below reorder level)
-  const { data: lowStockItems = 0 } = useQuery({
-    queryKey: ['smart-alerts-low-stock', companyId],
-    queryFn: async () => {
-      if (!companyId) return 0;
-      // Get items where quantity_on_hand <= reorder_level
-      const { data } = await supabase
-        .from('inventory_items')
-        .select('id, quantity_on_hand, reorder_level')
-        .eq('company_id', companyId)
-        .eq('is_active', true)
-        .not('reorder_level', 'is', null);
-      if (!data) return 0;
-      return data.filter(item => 
-        (item.quantity_on_hand || 0) <= (item.reorder_level || 0)
-      ).length;
-    },
-    enabled: !!companyId && getConfig('low_stock').enabled,
-  });
-
-  // Pending approvals
-  const { data: pendingApprovals = 0 } = useQuery({
-    queryKey: ['smart-alerts-approvals', companyId],
-    queryFn: async () => {
-      if (!companyId) return 0;
-      const { count } = await supabase
-        .from('approval_requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', companyId)
-        .eq('status', 'pending');
-      return count || 0;
-    },
-    enabled: !!companyId && getConfig('pending_approvals').enabled,
-  });
+  const { data: overdueChecks = 0 } = useSmartAlertChecks(companyId, getConfig('overdue_check').enabled);
+  const { data: openCustodies = 0 } = useSmartAlertCustodies(companyId, getConfig('open_custody').enabled);
+  const { data: overdueInstallments = 0 } = useSmartAlertInstallments(companyId, getConfig('overdue_installment').enabled);
+  const { data: draftInvoices = 0 } = useSmartAlertDraftInvoices(companyId, getConfig('pending_invoice').enabled);
+  const { data: lowStockItems = 0 } = useSmartAlertLowStock(companyId, getConfig('low_stock').enabled);
+  const { data: pendingApprovals = 0 } = useSmartAlertApprovals(companyId, getConfig('pending_approvals').enabled);
 
   const toggleAlert = (id: string) => {
     const updated = alertConfigs.map(c => c.id === id ? { ...c, enabled: !c.enabled } : c);
-    setAlertConfigs(updated);
-    saveAlertConfig(updated);
+    setAlertConfigs(updated); saveAlertConfig(updated);
   };
-
   const updateThreshold = (id: string, threshold: number) => {
     const updated = alertConfigs.map(c => c.id === id ? { ...c, threshold: Math.max(1, threshold) } : c);
-    setAlertConfigs(updated);
-    saveAlertConfig(updated);
+    setAlertConfigs(updated); saveAlertConfig(updated);
   };
 
   const alerts: AlertItem[] = [];
   const checkCfg = getConfig('overdue_check');
   if (checkCfg.enabled && overdueChecks >= checkCfg.threshold) {
-    alerts.push({
-      id: 'overdue-checks', type: 'overdue_check',
-      title: isRtl ? 'شيكات مستحقة' : 'Overdue Checks',
-      description: isRtl ? `${overdueChecks} شيك مستحق الدفع اليوم أو متأخر` : `${overdueChecks} checks due today or overdue`,
-      severity: 'critical', action: 'checks', count: overdueChecks,
-    });
+    alerts.push({ id: 'overdue-checks', type: 'overdue_check', title: isRtl ? 'شيكات مستحقة' : 'Overdue Checks', description: isRtl ? `${overdueChecks} شيك مستحق الدفع اليوم أو متأخر` : `${overdueChecks} checks due today or overdue`, severity: 'critical', action: 'checks', count: overdueChecks });
   }
-
   const custodyCfg = getConfig('open_custody');
   if (custodyCfg.enabled && openCustodies >= custodyCfg.threshold) {
-    alerts.push({
-      id: 'open-custodies', type: 'open_custody',
-      title: isRtl ? 'عهد مفتوحة' : 'Open Custodies',
-      description: isRtl ? `${openCustodies} عهدة لم تُسوَّ بعد` : `${openCustodies} custodies not yet settled`,
-      severity: openCustodies > 5 ? 'warning' : 'info', action: 'custody', count: openCustodies,
-    });
+    alerts.push({ id: 'open-custodies', type: 'open_custody', title: isRtl ? 'عهد مفتوحة' : 'Open Custodies', description: isRtl ? `${openCustodies} عهدة لم تُسوَّ بعد` : `${openCustodies} custodies not yet settled`, severity: openCustodies > 5 ? 'warning' : 'info', action: 'custody', count: openCustodies });
   }
-
   const installmentCfg = getConfig('overdue_installment');
   if (installmentCfg.enabled && overdueInstallments >= installmentCfg.threshold) {
-    alerts.push({
-      id: 'overdue-installments', type: 'overdue_installment',
-      title: isRtl ? 'أقساط متأخرة' : 'Overdue Installments',
-      description: isRtl ? `${overdueInstallments} قسط متأخر عن موعده` : `${overdueInstallments} installments past due`,
-      severity: 'critical', action: 'installments', count: overdueInstallments,
-    });
+    alerts.push({ id: 'overdue-installments', type: 'overdue_installment', title: isRtl ? 'أقساط متأخرة' : 'Overdue Installments', description: isRtl ? `${overdueInstallments} قسط متأخر عن موعده` : `${overdueInstallments} installments past due`, severity: 'critical', action: 'installments', count: overdueInstallments });
   }
-
   const invoiceCfg = getConfig('pending_invoice');
   if (invoiceCfg.enabled && draftInvoices >= invoiceCfg.threshold) {
-    alerts.push({
-      id: 'draft-invoices', type: 'pending_invoice',
-      title: isRtl ? 'فواتير مسودة' : 'Draft Invoices',
-      description: isRtl ? `${draftInvoices} فاتورة بحاجة للاعتماد` : `${draftInvoices} invoices need approval`,
-      severity: 'info', action: 'sales', count: draftInvoices,
-    });
+    alerts.push({ id: 'draft-invoices', type: 'pending_invoice', title: isRtl ? 'فواتير مسودة' : 'Draft Invoices', description: isRtl ? `${draftInvoices} فاتورة بحاجة للاعتماد` : `${draftInvoices} invoices need approval`, severity: 'info', action: 'sales', count: draftInvoices });
   }
-
   const lowStockCfg = getConfig('low_stock');
   if (lowStockCfg.enabled && lowStockItems >= lowStockCfg.threshold) {
-    alerts.push({
-      id: 'low-stock', type: 'low_stock',
-      title: isRtl ? 'مخزون منخفض' : 'Low Stock',
-      description: isRtl ? `${lowStockItems} صنف وصل لحد إعادة الطلب` : `${lowStockItems} items at or below reorder level`,
-      severity: 'warning', action: 'items-catalog' as any, count: lowStockItems,
-    });
+    alerts.push({ id: 'low-stock', type: 'low_stock', title: isRtl ? 'مخزون منخفض' : 'Low Stock', description: isRtl ? `${lowStockItems} صنف وصل لحد إعادة الطلب` : `${lowStockItems} items at or below reorder level`, severity: 'warning', action: 'items-catalog' as any, count: lowStockItems });
   }
-
   const approvalsCfg = getConfig('pending_approvals');
   if (approvalsCfg.enabled && pendingApprovals >= approvalsCfg.threshold) {
-    alerts.push({
-      id: 'pending-approvals', type: 'pending_approvals',
-      title: isRtl ? 'موافقات معلقة' : 'Pending Approvals',
-      description: isRtl ? `${pendingApprovals} طلب بانتظار الموافقة` : `${pendingApprovals} requests awaiting approval`,
-      severity: 'warning', action: 'approvals' as any, count: pendingApprovals,
-    });
+    alerts.push({ id: 'pending-approvals', type: 'pending_approvals', title: isRtl ? 'موافقات معلقة' : 'Pending Approvals', description: isRtl ? `${pendingApprovals} طلب بانتظار الموافقة` : `${pendingApprovals} requests awaiting approval`, severity: 'warning', action: 'approvals' as any, count: pendingApprovals });
   }
 
   const getAlertIcon = (type: string) => {
@@ -286,50 +142,27 @@ export function SmartAlertsWidget({ setActivePage }: SmartAlertsWidgetProps) {
         </h2>
         <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
           <DialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-7 w-7">
-              <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
-            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7"><Settings2 className="w-3.5 h-3.5 text-muted-foreground" /></Button>
           </DialogTrigger>
           <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle>{isRtl ? 'إعدادات التنبيهات' : 'Alert Settings'}</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>{isRtl ? 'إعدادات التنبيهات' : 'Alert Settings'}</DialogTitle></DialogHeader>
             <div className="space-y-3">
               {alertConfigs.map(cfg => {
                 const labels = ALERT_TYPE_LABELS[cfg.id];
                 const Icon = getAlertIcon(cfg.id);
                 return (
-                  <div key={cfg.id} className={cn(
-                    'p-3 rounded-lg border transition-colors',
-                    cfg.enabled ? 'border-primary/30 bg-primary/5' : 'border-border bg-muted/30'
-                  )}>
+                  <div key={cfg.id} className={cn('p-3 rounded-lg border transition-colors', cfg.enabled ? 'border-primary/30 bg-primary/5' : 'border-border bg-muted/30')}>
                     <div className="flex items-center gap-2 mb-2">
                       <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <span className="text-sm font-medium flex-1">
-                        {isRtl ? labels?.ar : labels?.en}
-                      </span>
-                      <button
-                        onClick={() => toggleAlert(cfg.id)}
-                        className={cn(
-                          'p-1 rounded transition-colors',
-                          cfg.enabled ? 'text-primary' : 'text-muted-foreground'
-                        )}
-                      >
+                      <span className="text-sm font-medium flex-1">{isRtl ? labels?.ar : labels?.en}</span>
+                      <button onClick={() => toggleAlert(cfg.id)} className={cn('p-1 rounded transition-colors', cfg.enabled ? 'text-primary' : 'text-muted-foreground')}>
                         {cfg.enabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
                       </button>
                     </div>
                     {cfg.enabled && (
                       <div className="flex items-center gap-2">
-                        <Label className="text-[11px] text-muted-foreground shrink-0">
-                          {isRtl ? 'نبهني عند:' : 'Alert when ≥'}
-                        </Label>
-                        <Input
-                          type="number"
-                          min={1}
-                          value={cfg.threshold}
-                          onChange={e => updateThreshold(cfg.id, parseInt(e.target.value) || 1)}
-                          className="h-7 w-16 text-xs"
-                        />
+                        <Label className="text-[11px] text-muted-foreground shrink-0">{isRtl ? 'نبهني عند:' : 'Alert when ≥'}</Label>
+                        <Input type="number" min={1} value={cfg.threshold} onChange={e => updateThreshold(cfg.id, parseInt(e.target.value) || 1)} className="h-7 w-16 text-xs" />
                       </div>
                     )}
                   </div>
@@ -350,25 +183,12 @@ export function SmartAlertsWidget({ setActivePage }: SmartAlertsWidgetProps) {
           {alerts.map(alert => {
             const Icon = getAlertIcon(alert.type);
             return (
-              <button
-                key={alert.id}
-                onClick={() => setActivePage(alert.action)}
-                className={cn(
-                  'w-full flex items-center gap-3 p-3 rounded-lg border transition-all hover:shadow-sm text-start',
-                  getSeverityStyles(alert.severity)
-                )}
-              >
-                <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', getSeverityBadge(alert.severity))}>
-                  <Icon className="w-4 h-4" />
-                </div>
+              <button key={alert.id} onClick={() => setActivePage(alert.action)} className={cn('w-full flex items-center gap-3 p-3 rounded-lg border transition-all hover:shadow-sm text-start', getSeverityStyles(alert.severity))}>
+                <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', getSeverityBadge(alert.severity))}><Icon className="w-4 h-4" /></div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-xs sm:text-sm">{alert.title}</span>
-                    {alert.count && (
-                      <Badge className={cn('text-[10px] px-1.5 py-0', getSeverityBadge(alert.severity))}>
-                        {alert.count}
-                      </Badge>
-                    )}
+                    {alert.count && <Badge className={cn('text-[10px] px-1.5 py-0', getSeverityBadge(alert.severity))}>{alert.count}</Badge>}
                   </div>
                   <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{alert.description}</p>
                 </div>

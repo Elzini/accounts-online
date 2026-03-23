@@ -3,7 +3,7 @@
  * Extracted from Dashboard.tsx to reduce component size.
  */
 import { useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchProjectCostBreakdown } from '@/hooks/modules/useModuleServices';
 import { StatDetailData, CarDetailItem } from '@/components/dashboard/StatCardDetailDialog';
 import { CardConfig } from '@/components/dashboard/DashboardCustomizer';
 
@@ -105,31 +105,7 @@ export function useShowStatDetail(opts: UseShowStatDetailOptions) {
       case 'totalPurchases': {
         if (!isCarDealership && companyId) {
           try {
-            const { data: projectAccounts } = await supabase.from('account_categories').select('id, code, name, parent_id').eq('company_id', companyId).in('code', ['1301', '130', '13']);
-            const projectParentIds = (projectAccounts || []).map(a => a.id);
-            const { data: subAccounts } = await supabase.from('account_categories').select('id, code, name, parent_id').eq('company_id', companyId);
-            const allAccounts = subAccounts || [];
-            const findDescendants = (parentIds: string[]): typeof allAccounts => {
-              const children = allAccounts.filter(a => a.parent_id && parentIds.includes(a.parent_id));
-              if (children.length === 0) return [];
-              return [...children, ...findDescendants(children.map(c => c.id))];
-            };
-            const projectSubAccounts = findDescendants(projectParentIds);
-            const allProjectAccountIds = [...projectParentIds, ...projectSubAccounts.map(a => a.id)];
-            const parentIdSet = new Set(allAccounts.filter(a => a.parent_id).map(a => a.parent_id!));
-            const leafProjectAccounts = allAccounts.filter(a => allProjectAccountIds.includes(a.id) && !parentIdSet.has(a.id));
-
-            let query = supabase.from('journal_entry_lines').select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, fiscal_year_id)').eq('journal_entry.company_id', companyId).eq('journal_entry.is_posted', true);
-            if (selectedFiscalYear) query = query.eq('journal_entry.fiscal_year_id', selectedFiscalYear.id);
-            if (leafProjectAccounts.length > 0) query = query.in('account_id', leafProjectAccounts.map(a => a.id));
-
-            const { data: lines } = await query;
-            const balanceMap = new Map<string, number>();
-            (lines || []).forEach((line: any) => {
-              const current = balanceMap.get(line.account_id) || 0;
-              balanceMap.set(line.account_id, current + (Number(line.debit) || 0) - (Number(line.credit) || 0));
-            });
-
+            const { leafProjectAccounts, balanceMap } = await fetchProjectCostBreakdown(companyId, selectedFiscalYear?.id);
             const breakdownItems: { label: string; value: number; type?: 'add' | 'subtract' | 'total'; description?: string }[] = leafProjectAccounts.map(a => ({ label: a.name, value: balanceMap.get(a.id) || 0, type: 'add' as const, description: `حساب ${a.code}` })).filter(b => b.value !== 0).sort((a, b) => b.value - a.value);
             const totalCosts = breakdownItems.reduce((sum, b) => sum + b.value, 0);
             breakdownItems.push({ label: 'إجمالي تكاليف المشاريع', value: totalCosts, type: 'total', description: 'من حساب مشاريع تحت التنفيذ' });
