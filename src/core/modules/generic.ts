@@ -8,7 +8,7 @@ import { IndustryModule, DashboardStats, MenuItem } from '@/core/engine/types';
 export const GenericModule: IndustryModule = {
   id: 'generic',
   name: 'تجارة عامة',
-  supportedTypes: ['general_trading', 'construction', 'restaurant', 'export_import', 'medical'],
+  supportedTypes: ['general_trading', 'restaurant', 'export_import', 'medical'],
 
   async getDashboardStats(): Promise<Partial<DashboardStats>> {
     // Generic companies use core stats only — no extra data needed

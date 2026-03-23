@@ -47,8 +47,8 @@ export function useIndustryModule(): UseIndustryModuleReturn {
     return {
       module,
       features,
-      isCarDealership: companyType === 'car_dealership',
-      isRealEstate: companyType === 'real_estate',
+      isCarDealership: features.hasCarInventory,
+      isRealEstate: features.hasRealEstateProjects,
       companyType,
       getLabel,
       purchaseItemTypes: module?.purchaseItemTypes,

@@ -3,6 +3,7 @@ import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
 import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 
 interface BottomNavigationProps {
   activePage: ActivePage;
@@ -18,43 +19,32 @@ interface NavItem {
 }
 
 function getNavItems(companyType: CompanyActivityType): NavItem[] {
-  switch (companyType) {
-    case 'construction':
-      return [
-        { id: 'dashboard', label: 'الرئيسية', label_en: 'Home', icon: LayoutDashboard },
-        { id: 'projects', label: 'المشاريع', label_en: 'Projects', icon: HardHat },
-        { id: 'contracts', label: 'العقود', label_en: 'Contracts', icon: DollarSign },
-        { id: 'customers', label: 'العملاء', label_en: 'Customers', icon: Users },
-      ];
-    case 'export_import':
-      return [
-        { id: 'dashboard', label: 'الرئيسية', label_en: 'Home', icon: LayoutDashboard },
-        { id: 'shipments', label: 'الشحنات', label_en: 'Shipments', icon: Ship },
-        { id: 'sales', label: 'الصادرات', label_en: 'Exports', icon: DollarSign },
-        { id: 'customers', label: 'العملاء', label_en: 'Customers', icon: Users },
-      ];
-    case 'restaurant':
-      return [
-        { id: 'dashboard', label: 'الرئيسية', label_en: 'Home', icon: LayoutDashboard },
-        { id: 'restaurant-orders', label: 'الطلبات', label_en: 'Orders', icon: UtensilsCrossed },
-        { id: 'sales', label: 'المبيعات', label_en: 'Sales', icon: DollarSign },
-        { id: 'customers', label: 'العملاء', label_en: 'Customers', icon: Users },
-      ];
-    case 'real_estate':
-      return [
-        { id: 'dashboard', label: 'الرئيسية', label_en: 'Home', icon: LayoutDashboard },
-        { id: 'purchases', label: 'المشاريع', label_en: 'Projects', icon: Building2 },
-        { id: 'sales', label: 'المبيعات', label_en: 'Sales', icon: DollarSign },
-        { id: 'customers', label: 'العملاء', label_en: 'Customers', icon: Users },
-      ];
-    default:
-      return [
-        { id: 'dashboard', label: 'الرئيسية', label_en: 'Home', icon: LayoutDashboard },
-        { id: 'purchases', label: 'المشتريات', label_en: 'Purchases', icon: ShoppingCart },
-        { id: 'sales', label: 'المبيعات', label_en: 'Sales', icon: DollarSign },
-        { id: 'customers', label: 'العملاء', label_en: 'Customers', icon: Users },
-      ];
+  const features = getIndustryFeatures(companyType);
+
+  const baseNav: NavItem[] = [
+    { id: 'dashboard', label: 'الرئيسية', label_en: 'Home', icon: LayoutDashboard },
+  ];
+
+  if (features.hasConstructionProjects) {
+    baseNav.push(
+      { id: 'projects', label: 'المشاريع', label_en: 'Projects', icon: HardHat },
+      { id: 'contracts', label: 'العقود', label_en: 'Contracts', icon: DollarSign },
+    );
+  } else if (features.hasRealEstateProjects) {
+    baseNav.push(
+      { id: 'purchases', label: 'المشاريع', label_en: 'Projects', icon: Building2 },
+      { id: 'sales', label: 'المبيعات', label_en: 'Sales', icon: DollarSign },
+    );
+  } else {
+    baseNav.push(
+      { id: 'purchases', label: 'المشتريات', label_en: 'Purchases', icon: ShoppingCart },
+      { id: 'sales', label: 'المبيعات', label_en: 'Sales', icon: DollarSign },
+    );
   }
+
+  baseNav.push({ id: 'customers', label: 'العملاء', label_en: 'Customers', icon: Users });
+
+  return baseNav;
 }
 
 export function BottomNavigation({ activePage, setActivePage, onMenuClick }: BottomNavigationProps) {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getIndustryFeatures } from '@/core/engine/industryFeatures';
+import { getIndustryFeatures, getIndustryDisplayMeta } from '@/core/engine/industryFeatures';
 
 import { LayoutDashboard, Users, Truck, ShoppingCart, DollarSign, FileText, TrendingUp, Package, UserCog, Settings, Building2, ArrowLeftRight, Crown, Calculator, BookOpen, Percent, PieChart, Receipt, CreditCard, FileCheck, Wallet, ClipboardList, Database, Landmark, Scale, Clock, Calendar, FileSpreadsheet, Settings2, ChevronDown, ChevronRight, LucideIcon, Boxes, FileUp, HardHat, Wrench, HandCoins, MapPin, Palette, UtensilsCrossed, ChefHat, Coffee, Ship, FileBox, Globe, ShieldCheck, ListTodo, Warehouse, Ruler, FolderTree, Target, ClipboardCheck, BadgeDollarSign, BarChart3, Activity, GitBranch, CalendarDays, Shield, Factory, Plug, Coins, GitFork, Puzzle, Monitor, MessageCircle, MessageSquare, Workflow, ArrowDownToLine, ArrowUpFromLine, RotateCcw, RotateCw, Star, RefreshCw, CalendarCheck, Play, FileSignature, Home, Award, Link2, BookMarked, TestTube, LayoutGrid, Smartphone, QrCode, Code, Banknote, Fingerprint, MoreHorizontal, AlertCircle, Sparkles, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -271,26 +271,16 @@ export function Sidebar({
     ? `${rawLogoUrl}?v=${encodeURIComponent(rawLogoUrl.slice(-10))}` 
     : rawLogoUrl;
 
+  const displayMeta = getIndustryDisplayMeta(companyType);
+
   const getAppName = () => {
     if (settings?.app_name && language === 'ar') return settings.app_name;
-    switch (companyType) {
-      case 'construction': return t.sidebar_construction_system;
-      case 'general_trading': return t.sidebar_trading_system;
-      case 'restaurant': return t.sidebar_restaurant_system;
-      case 'export_import': return t.sidebar_export_import_system;
-      default: return 'Elzini SaaS';
-    }
+    return language === 'ar' ? displayMeta.appName : displayMeta.appNameEn;
   };
 
   const getAppSubtitle = () => {
     if (settings?.app_subtitle && language === 'ar') return settings.app_subtitle;
-    switch (companyType) {
-      case 'construction': return t.sidebar_construction_subtitle;
-      case 'general_trading': return t.sidebar_trading_subtitle;
-      case 'restaurant': return t.sidebar_restaurant_subtitle;
-      case 'export_import': return t.sidebar_export_import_subtitle;
-      default: return t.sidebar_car_subtitle;
-    }
+    return language === 'ar' ? displayMeta.appSubtitle : displayMeta.appSubtitleEn;
   };
 
   const appName = getAppName();
@@ -513,7 +503,7 @@ export function Sidebar({
   const coreSections: Section[] = [
     { id: 'sales', label: getSectionLabel('sales', language === 'ar' ? 'المبيعات' : 'Sales'), icon: DollarSign, items: salesMenuItems, showCondition: permissions.admin || permissions.sales },
     { id: 'purchases', label: getSectionLabel('purchases', language === 'ar' ? 'المشتريات' : 'Purchases'), icon: ShoppingCart, items: purchasesMenuItems, showCondition: permissions.admin || permissions.purchases },
-    ...(companyType === 'real_estate' ? [{ id: 'real-estate', label: language === 'ar' ? 'التطوير العقاري' : 'Real Estate', icon: Building2, items: realEstateItems, showCondition: true }] : []),
+    ...(getIndustryFeatures(companyType).hasRealEstateProjects ? [{ id: 'real-estate', label: language === 'ar' ? 'التطوير العقاري' : 'Real Estate', icon: Building2, items: realEstateItems, showCondition: true }] : []),
     { id: 'accounting', label: getSectionLabel('accounting', language === 'ar' ? 'الحسابات' : 'Accounts'), icon: Calculator, items: accountsMenuItems, showCondition: permissions.admin || permissions.reports || permissions.financial_accounting },
     { id: 'expenses-section', label: getSectionLabel('expenses-section', language === 'ar' ? 'المصروفات' : 'Expenses'), icon: Wallet, items: expensesItems, showCondition: permissions.admin || permissions.purchases || permissions.expenses },
     { id: 'inventory', label: getSectionLabel('inventory', language === 'ar' ? 'المستودعات' : 'Warehouses'), icon: Warehouse, items: warehouseMenuItems, showCondition: permissions.admin || permissions.purchases || permissions.warehouses },
@@ -629,11 +619,7 @@ export function Sidebar({
       <div className="p-3 border-t border-sidebar-border/50 space-y-2">
         <LanguageSwitcher variant="sidebar" />
         <p className="text-[10px] text-center text-sidebar-foreground/30 font-medium">
-          {companyType === 'construction' ? t.nav_system_footer_construction :
-            companyType === 'general_trading' ? t.nav_system_footer_trading :
-              companyType === 'restaurant' ? t.nav_system_footer_restaurant :
-                companyType === 'export_import' ? t.nav_system_footer_export_import :
-                  t.nav_system_footer_car} © 2026
+          {language === 'ar' ? displayMeta.footerText : displayMeta.footerTextEn} © 2026
         </p>
       </div>
     </aside>

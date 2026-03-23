@@ -75,93 +75,63 @@ function getQuickAccessCards(companyType: CompanyActivityType, labels: ReturnTyp
     },
   ];
 
-  switch (companyType) {
-    case 'construction':
-      return [
-        {
-          id: 'projects',
-          title: t.projects_label,
-          icon: HardHat,
-          ...CARD_THEMES.cyan,
-          actions: [
-            { label: t.projects_label, page: 'projects' },
-            { label: t.contracts_label, page: 'contracts' },
-            { label: t.billings_label, page: 'progress-billings' },
-          ],
-        },
-        ...baseCards,
-        {
-          id: 'suppliers',
-          title: t.nav_suppliers,
-          icon: Truck,
-          ...CARD_THEMES.orange,
-          actions: [
-            { label: t.add_supplier, page: 'add-supplier' },
-            { label: t.supplier_list, page: 'suppliers' },
-          ],
-        },
-      ];
+  const features = getIndustryFeatures(companyType);
+  const result: QuickAccessCard[] = [];
 
-    case 'export_import':
-      return [
-        {
-          id: 'shipments',
-          title: t.shipments_label,
-          icon: Ship,
-          ...CARD_THEMES.cyan,
-          actions: [
-            { label: t.shipments_label, page: 'shipments' },
-            { label: t.lc_label, page: 'letters-of-credit' },
-            { label: t.customs_label, page: 'customs-clearance' },
-          ],
-        },
-        ...baseCards,
-        {
-          id: 'purchases',
-          title: t.imports_label,
-          icon: Truck,
-          ...CARD_THEMES.orange,
-          actions: [
-            { label: t.import_invoice, page: 'add-purchase-invoice' },
-            { label: t.imports_label, page: 'purchases' },
-            { label: t.suppliers_label, page: 'suppliers' },
-          ],
-        },
-      ];
-
-    default:
-      return [
-        {
-          id: 'sales',
-          title: t.nav_sales,
-          icon: ShoppingCart,
-          ...CARD_THEMES.purple,
-          actions: [
-            { label: t.new_sale_invoice, page: 'add-sale-invoice' },
-            { label: t.nav_sales, page: 'sales' },
-          ],
-        },
-        ...baseCards,
-        {
-          id: 'purchases',
-          title: t.nav_purchases,
-          icon: Truck,
-          ...CARD_THEMES.orange,
-          actions: [
-            { label: t.purchase_invoice, page: 'add-purchase-invoice' },
-            { label: t.nav_purchases, page: 'purchases' },
-            { label: t.suppliers_label, page: 'suppliers' },
-          ],
-        },
-        ...(getIndustryFeatures(companyType).hasCarInventory ? [{
-          id: 'inventory',
-          title: labels.inventoryLabel,
-          icon: Package as LucideIcon,
-          ...CARD_THEMES.green,
-          actions: labels.inventoryActions.map(a => ({ label: a.label, page: a.page as ActivePage })),
-        }] : []),
-      ];
+  // Industry-specific lead card
+  if (features.hasConstructionProjects) {
+    result.push({
+      id: 'projects',
+      title: t.projects_label,
+      icon: HardHat,
+      ...CARD_THEMES.cyan,
+      actions: [
+        { label: t.projects_label, page: 'projects' },
+        { label: t.contracts_label, page: 'contracts' },
+        { label: t.billings_label, page: 'progress-billings' },
+      ],
+    });
+  } else {
+    result.push({
+      id: 'sales',
+      title: t.nav_sales,
+      icon: ShoppingCart,
+      ...CARD_THEMES.purple,
+      actions: [
+        { label: t.new_sale_invoice, page: 'add-sale-invoice' },
+        { label: t.nav_sales, page: 'sales' },
+      ],
+    });
   }
+
+  // Common cards
+  result.push(...baseCards);
+
+  // Purchases/suppliers card
+  result.push({
+    id: 'purchases',
+    title: t.nav_purchases,
+    icon: Truck,
+    ...CARD_THEMES.orange,
+    actions: [
+      { label: t.purchase_invoice, page: 'add-purchase-invoice' },
+      { label: t.nav_purchases, page: 'purchases' },
+      { label: t.suppliers_label, page: 'suppliers' },
+    ],
+  });
+
+  // Car inventory card (only for car dealerships)
+  if (features.hasCarInventory) {
+    result.push({
+      id: 'inventory',
+      title: labels.inventoryLabel,
+      icon: Package as LucideIcon,
+      ...CARD_THEMES.green,
+      actions: labels.inventoryActions.map(a => ({ label: a.label, page: a.page as ActivePage })),
+    });
+  }
+
+  return result;
 }
 
 interface QuickAccessSectionProps {

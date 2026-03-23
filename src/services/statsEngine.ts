@@ -252,9 +252,15 @@ export async function fetchDashboardStats(fiscalYearId?: string | null): Promise
   // All non-car industries use invoice-based stats
   let stats = await fetchInvoiceBasedStats(companyId, fiscalYearId, fyStart, fyEnd);
 
-  // Enrich with industry-specific metrics
-  if (companyType === 'real_estate') {
-    stats = await enrichRealEstateStats(stats, companyId, fiscalYearId);
+  // Enrich with industry-specific metrics via ModuleRegistry
+  const { ModuleRegistry } = await import('@/core/engine/moduleRegistry');
+  await import('@/core/modules');
+  const industryModule = ModuleRegistry.getForType(companyType || 'general_trading');
+  if (industryModule) {
+    const extraStats = await industryModule.getDashboardStats(companyId, fiscalYearId);
+    if (extraStats.extra) {
+      stats.industryMetrics = { ...stats.industryMetrics, ...extraStats.extra };
+    }
   }
 
   return stats;
