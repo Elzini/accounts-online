@@ -5,7 +5,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompanyId } from '@/hooks/useCompanyId';
-import { toast } from 'sonner';
+import { getDashboardDateWindow } from '@/lib/dashboardDateWindow';
 
 // ── Bookings ──
 export function useBookings() {
