@@ -32,15 +32,7 @@ export function IntegrationsPage() {
 
   const { data: configs = [], isLoading } = useQuery({
     queryKey: ['integrations', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase
-        .from('integration_configs')
-        .select('*')
-        .eq('company_id', companyId);
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: fetchIntegrationConfigs,
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
