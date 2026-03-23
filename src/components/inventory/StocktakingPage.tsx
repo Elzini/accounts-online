@@ -23,20 +23,13 @@ export function StocktakingPage() {
 
   const { data: sessions = [], isLoading } = useQuery({
     queryKey: ['stocktaking', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('stocktaking_sessions').select('*').eq('company_id', companyId!).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchStocktakingSessions(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const addMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from('stocktaking_sessions').insert({ company_id: companyId!, session_name: form.name, start_date: new Date().toISOString().split('T')[0], status: 'in_progress', notes: form.notes || null });
-      if (error) throw error;
-    },
+    mutationFn: () => createStocktakingSession(companyId!, { session_name: form.name, notes: form.notes || null }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stocktaking'] }); toast.success(t.st_created); setShowAdd(false); setForm({ name: '', notes: '' }); },
     onError: () => toast.error(t.mod_error),
   });

@@ -40,10 +40,9 @@ export function CurrenciesPage() {
   });
 
   const addCurrency = useMutation({
-    mutationFn: async (form: typeof currencyForm) => {
+    mutationFn: (form: typeof currencyForm) => {
       if (!companyId) throw new Error('No company');
-      const { error } = await supabase.from('currencies').insert({ company_id: companyId, ...form });
-      if (error) throw error;
+      return addCurrencySvc(companyId, form);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currencies'] });
@@ -55,10 +54,9 @@ export function CurrenciesPage() {
   });
 
   const addRate = useMutation({
-    mutationFn: async (form: typeof rateForm) => {
+    mutationFn: (form: typeof rateForm) => {
       if (!companyId) throw new Error('No company');
-      const { error } = await supabase.from('exchange_rates').insert({ company_id: companyId, ...form });
-      if (error) throw error;
+      return addExchangeRateSvc(companyId, form);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exchange-rates'] });
@@ -69,10 +67,7 @@ export function CurrenciesPage() {
   });
 
   const deleteCurrency = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('currencies').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteCurrencySvc(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currencies'] });
       toast.success(t.currency_toast_deleted);

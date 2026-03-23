@@ -4,10 +4,13 @@
  */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/hooks/modules/useMiscServices';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
+import {
+  fetchRecurringInvoices, fetchCollectionReminders, fetchCollectionReminderRules,
+  toggleRecurringInvoice, deleteRecurringInvoice as deleteRecurringInvoiceSvc, toggleReminderRule,
+} from '@/services/automation';
 
 export function useAutomationPage() {
   const { companyId } = useCompany();
@@ -20,58 +23,37 @@ export function useAutomationPage() {
 
   const { data: recurringInvoices = [], isLoading: loadingRecurring } = useQuery({
     queryKey: ['recurring-invoices', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase.from('recurring_invoices').select('*, customers(name), suppliers(name)').eq('company_id', companyId).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => fetchRecurringInvoices(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: reminders = [], isLoading: loadingReminders } = useQuery({
     queryKey: ['collection-reminders', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase.from('collection_reminders').select('*, customers(name)').eq('company_id', companyId).order('created_at', { ascending: false }).limit(100);
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => fetchCollectionReminders(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: reminderRules = [], isLoading: loadingRules } = useQuery({
     queryKey: ['collection-reminder-rules', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase.from('collection_reminder_rules').select('*').eq('company_id', companyId).order('escalation_level');
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => fetchCollectionReminderRules(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const toggleRecurring = useMutation({
-    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase.from('recurring_invoices').update({ is_active }).eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) => toggleRecurringInvoice(id, is_active),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['recurring-invoices'] }); toast.success(isAr ? 'تم التحديث' : 'Updated'); },
   });
 
   const deleteRecurring = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('recurring_invoices').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteRecurringInvoiceSvc(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['recurring-invoices'] }); toast.success(isAr ? 'تم الحذف' : 'Deleted'); },
   });
 
   const toggleRuleActive = async (ruleId: string, checked: boolean) => {
-    await supabase.from('collection_reminder_rules').update({ is_active: checked }).eq('id', ruleId);
+    await toggleReminderRule(ruleId, checked);
     queryClient.invalidateQueries({ queryKey: ['collection-reminder-rules'] });
   };
 

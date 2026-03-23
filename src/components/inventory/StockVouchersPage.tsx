@@ -28,11 +28,7 @@ export function StockVouchersPage() {
 
   const { data: vouchers = [], isLoading } = useQuery({
     queryKey: ['stock-vouchers', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('stock_vouchers').select('*').eq('company_id', companyId!).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchStockVouchers(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
@@ -40,15 +36,14 @@ export function StockVouchersPage() {
   const addMutation = useMutation({
     mutationFn: async () => {
       const num = `SV-${String(vouchers.length + 1).padStart(3, '0')}`;
-      const { error } = await supabase.from('stock_vouchers').insert({ company_id: companyId!, voucher_number: num, voucher_type: form.type, voucher_date: new Date().toISOString().split('T')[0], status: 'draft', notes: form.notes || null });
-      if (error) throw error;
+      await createStockVoucher(companyId!, { voucher_number: num, voucher_type: form.type, notes: form.notes || null });
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-vouchers'] }); toast.success(t.sv_created); setShowAdd(false); setForm({ type: 'issue', notes: '' }); },
     onError: () => toast.error(t.mod_error),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('stock_vouchers').delete().eq('id', id); if (error) throw error; },
+    mutationFn: (id: string) => deleteStockVoucher(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-vouchers'] }); toast.success(t.mod_deleted); },
   });
 
