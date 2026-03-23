@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Plus, GitBranch, CheckCircle2, Clock, Shield } from 'lucide-react';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { fetchApprovalWorkflowsSimple, fetchApprovalRequests, createApprovalWorkflow } from '@/services/approvals';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { toast } from 'sonner';
@@ -30,45 +30,26 @@ export function ApprovalsPage() {
 
   const { data: workflows = [], isLoading: loadingWorkflows } = useQuery({
     queryKey: ['approval-workflows', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('approval_workflows')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false });
-      return data || [];
-    },
+    queryFn: () => fetchApprovalWorkflowsSimple(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: requests = [], isLoading: loadingRequests } = useQuery({
     queryKey: ['approval-requests', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('approval_requests')
-        .select('*, approval_workflows(name)')
-        .eq('company_id', companyId)
-        .order('requested_at', { ascending: false });
-      return data || [];
-    },
+    queryFn: () => fetchApprovalRequests(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const addWorkflow = useMutation({
-    mutationFn: async () => {
+    mutationFn: () => {
       if (!companyId) throw new Error('No company');
-      const { error } = await supabase.from('approval_workflows').insert({
-        company_id: companyId,
-        name: form.name,
-        entity_type: form.entity_type,
+      return createApprovalWorkflow(companyId, {
+        name: form.name, entity_type: form.entity_type,
         min_amount: form.min_amount ? parseFloat(form.min_amount) : 0,
         max_amount: form.max_amount ? parseFloat(form.max_amount) : null,
       });
-      if (error) throw error;
     },
     onSuccess: () => {
       toast.success(t.approval_toast_created);

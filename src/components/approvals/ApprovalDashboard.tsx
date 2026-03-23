@@ -13,7 +13,7 @@ import {
   CheckCircle2, Clock, XCircle, Shield, GitBranch, Users, 
   ArrowRight, Eye, MessageSquare, Calendar, UserCheck 
 } from 'lucide-react';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { fetchApprovalWorkflows, fetchApprovalRequests, fetchApprovalActions, fetchApprovalDelegations, fetchCompanyUsers, processApprovalAction, addApprovalDelegation } from '@/services/approvals';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { toast } from 'sonner';
@@ -32,125 +32,44 @@ export function ApprovalDashboard() {
 
   const { data: requests = [] } = useQuery({
     queryKey: ['approval-requests-dashboard', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('approval_requests')
-        .select('*, approval_workflows(name, entity_type, min_amount, max_amount)')
-        .eq('company_id', companyId)
-        .order('requested_at', { ascending: false });
-      return data || [];
-    },
+    queryFn: () => fetchApprovalRequests(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: workflows = [] } = useQuery({
     queryKey: ['approval-workflows-dashboard', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('approval_workflows')
-        .select('*, approval_steps(*)')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false });
-      return data || [];
-    },
+    queryFn: () => fetchApprovalWorkflows(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: actions = [] } = useQuery({
     queryKey: ['approval-actions-dashboard', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const requestIds = requests.map((r: any) => r.id);
-      if (requestIds.length === 0) return [];
-      const { data } = await supabase
-        .from('approval_actions')
-        .select('*')
-        .in('request_id', requestIds)
-        .order('acted_at', { ascending: false });
-      return data || [];
-    },
+    queryFn: () => fetchApprovalActions(requests.map((r: any) => r.id)),
     enabled: !!companyId && requests.length > 0,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: delegations = [] } = useQuery({
     queryKey: ['approval-delegations', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('approval_delegations' as any)
-        .select('*')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false });
-      return (data || []) as any[];
-    },
+    queryFn: () => fetchApprovalDelegations(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['company-users', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data } = await supabase
-        .from('profiles')
-        .select('user_id, username')
-        .eq('company_id', companyId);
-      return data || [];
-    },
+    queryFn: () => fetchCompanyUsers(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
-  const processAction = useMutation({
-    mutationFn: async ({ requestId, action }: { requestId: string; action: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      
+  const processActionMut = useMutation({
+    mutationFn: ({ requestId, action }: { requestId: string; action: string }) => {
       const request = requests.find((r: any) => r.id === requestId);
       if (!request) throw new Error('Request not found');
-
-      // Get steps for the workflow
-      const { data: steps } = await supabase
-        .from('approval_steps')
-        .select('*')
-        .eq('workflow_id', request.workflow_id)
-        .order('step_order', { ascending: true });
-
-      const currentStep = steps?.find((s: any) => s.step_order === (request.current_step || 1));
-      if (!currentStep) throw new Error('Step not found');
-
-      // Record action
-      await supabase.from('approval_actions').insert({
-        request_id: requestId,
-        step_id: currentStep.id,
-        acted_by: user.id,
-        action,
-        comments: comments || null,
-      });
-
-      if (action === 'approve') {
-        const nextStep = steps?.find((s: any) => s.step_order === (request.current_step || 1) + 1);
-        if (nextStep) {
-          await supabase.from('approval_requests').update({
-            current_step: nextStep.step_order,
-          }).eq('id', requestId);
-        } else {
-          await supabase.from('approval_requests').update({
-            status: 'approved',
-            completed_at: new Date().toISOString(),
-          }).eq('id', requestId);
-        }
-      } else if (action === 'reject') {
-        await supabase.from('approval_requests').update({
-          status: 'rejected',
-          completed_at: new Date().toISOString(),
-        }).eq('id', requestId);
-      }
+      return processApprovalAction(requestId, action, request.workflow_id, request.current_step || 1, comments);
     },
     onSuccess: () => {
       toast.success(isRtl ? 'تم تنفيذ الإجراء بنجاح' : 'Action completed');
@@ -163,19 +82,9 @@ export function ApprovalDashboard() {
   });
 
   const addDelegation = useMutation({
-    mutationFn: async () => {
+    mutationFn: () => {
       if (!companyId) throw new Error('No company');
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      const { error } = await supabase.from('approval_delegations' as any).insert({
-        company_id: companyId,
-        delegator_user_id: user.id,
-        delegate_user_id: delegateForm.delegate_user_id,
-        start_date: delegateForm.start_date,
-        end_date: delegateForm.end_date,
-        reason: delegateForm.reason || null,
-      } as any);
-      if (error) throw error;
+      return addApprovalDelegation(companyId, delegateForm);
     },
     onSuccess: () => {
       toast.success(isRtl ? 'تم إضافة التفويض' : 'Delegation added');
@@ -460,7 +369,7 @@ export function ApprovalDashboard() {
             </Button>
             <Button
               variant={actionDialog.action === 'approve' ? 'default' : 'destructive'}
-              onClick={() => processAction.mutate({ requestId: actionDialog.requestId, action: actionDialog.action })}
+              onClick={() => processActionMut.mutate({ requestId: actionDialog.requestId, action: actionDialog.action })}
             >
               {actionDialog.action === 'approve' ? (isRtl ? 'موافقة' : 'Approve') : (isRtl ? 'رفض' : 'Reject')}
             </Button>

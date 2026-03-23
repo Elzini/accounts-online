@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Loader2, Plus, Coins, ArrowRightLeft, Trash2 } from 'lucide-react';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { fetchCurrencies, fetchExchangeRates, addCurrency as addCurrencySvc, addExchangeRate as addExchangeRateSvc, deleteCurrency as deleteCurrencySvc } from '@/services/currencies';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,33 +27,22 @@ export function CurrenciesPage() {
 
   const { data: currencies = [], isLoading } = useQuery({
     queryKey: ['currencies', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase.from('currencies').select('*').eq('company_id', companyId).order('is_base', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => fetchCurrencies(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: rates = [] } = useQuery({
     queryKey: ['exchange-rates', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase.from('exchange_rates').select('*, from_currency:currencies!exchange_rates_from_currency_id_fkey(code, name_ar), to_currency:currencies!exchange_rates_to_currency_id_fkey(code, name_ar)').eq('company_id', companyId).order('effective_date', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => fetchExchangeRates(companyId!),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 
   const addCurrency = useMutation({
-    mutationFn: async (form: typeof currencyForm) => {
+    mutationFn: (form: typeof currencyForm) => {
       if (!companyId) throw new Error('No company');
-      const { error } = await supabase.from('currencies').insert({ company_id: companyId, ...form });
-      if (error) throw error;
+      return addCurrencySvc(companyId, form);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currencies'] });
@@ -65,10 +54,9 @@ export function CurrenciesPage() {
   });
 
   const addRate = useMutation({
-    mutationFn: async (form: typeof rateForm) => {
+    mutationFn: (form: typeof rateForm) => {
       if (!companyId) throw new Error('No company');
-      const { error } = await supabase.from('exchange_rates').insert({ company_id: companyId, ...form });
-      if (error) throw error;
+      return addExchangeRateSvc(companyId, form);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exchange-rates'] });
@@ -79,10 +67,7 @@ export function CurrenciesPage() {
   });
 
   const deleteCurrency = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('currencies').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteCurrencySvc(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currencies'] });
       toast.success(t.currency_toast_deleted);
