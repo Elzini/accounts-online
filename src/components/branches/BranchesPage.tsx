@@ -10,68 +10,42 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Loader2, Plus, Building2, Pencil, Trash2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useCompanyId } from '@/hooks/useCompanyId';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBranches, useSaveBranch, useDeleteBranch } from '@/hooks/modules/useModuleServices';
 
 export function BranchesPage() {
   const { t, direction } = useLanguage();
-  const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', code: '', address: '', phone: '', manager_name: '', is_main: false });
 
-  const { data: branches = [], isLoading } = useQuery({
-    queryKey: ['branches', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase.from('branches').select('*').eq('company_id', companyId).order('is_main', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!companyId,
-  });
+  const { data: branches = [], isLoading } = useBranches();
+  const saveBranch = useSaveBranch();
+  const deleteBranch = useDeleteBranch();
 
   const resetForm = () => {
     setFormData({ name: '', code: '', address: '', phone: '', manager_name: '', is_main: false });
     setEditingBranch(null);
   };
 
-  const saveBranch = useMutation({
-    mutationFn: async (form: typeof formData) => {
-      if (!companyId) throw new Error('No company');
-      if (editingBranch) {
-        const { error } = await supabase.from('branches').update(form).eq('id', editingBranch.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('branches').insert({ company_id: companyId, ...form });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['branches'] });
-      toast.success(editingBranch ? t.branch_toast_updated : t.branch_toast_added);
-      setIsDialogOpen(false);
-      resetForm();
-    },
-    onError: (e: any) => toast.error(e.message?.includes('duplicate') ? t.branch_toast_exists : t.branch_toast_error),
-  });
+  const handleSave = () => {
+    saveBranch.mutate({ id: editingBranch?.id, form: formData }, {
+      onSuccess: () => {
+        toast.success(editingBranch ? t.branch_toast_updated : t.branch_toast_added);
+        setIsDialogOpen(false);
+        resetForm();
+      },
+      onError: (e: any) => toast.error(e.message?.includes('duplicate') ? t.branch_toast_exists : t.branch_toast_error),
+    });
+  };
 
-  const deleteBranch = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('branches').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['branches'] });
-      toast.success(t.branch_toast_deleted);
-      setDeleteId(null);
-    },
-  });
+  const handleDelete = (id: string) => {
+    deleteBranch.mutate(id, {
+      onSuccess: () => { toast.success(t.branch_toast_deleted); setDeleteId(null); },
+    });
+  };
 
   const openEdit = (branch: any) => {
     setEditingBranch(branch);
@@ -94,7 +68,7 @@ export function BranchesPage() {
           <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />{t.branch_add}</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>{editingBranch ? t.branch_edit : t.branch_add}</DialogTitle></DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); saveBranch.mutate(formData); }} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2"><Label>{t.branch_col_name} *</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required /></div>
                 <div className="space-y-2"><Label>{t.branch_col_code}</Label><Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} placeholder="BR-001" dir="ltr" /></div>
@@ -114,7 +88,6 @@ export function BranchesPage() {
         </Dialog>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{branches.length}</div><p className="text-sm text-muted-foreground">{t.branch_total}</p></CardContent></Card>
         <Card><CardContent className="pt-6 text-center"><div className="text-2xl font-bold">{branches.filter((b: any) => b.is_active).length}</div><p className="text-sm text-muted-foreground">{t.branch_active}</p></CardContent></Card>
@@ -162,7 +135,7 @@ export function BranchesPage() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>{t.branch_confirm_delete}</AlertDialogTitle><AlertDialogDescription>{t.branch_confirm_delete_desc}</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>{t.cancel}</AlertDialogCancel><AlertDialogAction onClick={() => deleteId && deleteBranch.mutate(deleteId)} className="bg-destructive text-destructive-foreground">{t.delete}</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel>{t.cancel}</AlertDialogCancel><AlertDialogAction onClick={() => deleteId && handleDelete(deleteId)} className="bg-destructive text-destructive-foreground">{t.delete}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

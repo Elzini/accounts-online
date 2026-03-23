@@ -4,7 +4,7 @@
  */
 import { useState, useCallback } from 'react';
 import { Package, BarChart3 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivePage } from '@/types';
 import { cn } from '@/lib/utils';
