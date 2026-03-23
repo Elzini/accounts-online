@@ -87,18 +87,17 @@ export function AISalesForecastPage() {
   const analyzeWithAI = useMutation({
     mutationFn: async () => {
       setIsAnalyzing(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('يجب تسجيل الدخول');
+      const { getAuthToken } = await import('@/services/aiChat');
+      const token = await getAuthToken();
+      if (!token) throw new Error('يجب تسجيل الدخول');
 
       const historicalSummary = historical.slice(-12).map(m => `${m.month}: إيرادات ${m.revenue.toLocaleString()}, ربح ${m.profit.toLocaleString()}, ${m.count} صفقة`).join('\n');
       const forecastSummary = forecast.map(m => `${m.month}: إيرادات متوقعة ${m.revenue.toLocaleString()}, ربح متوقع ${m.profit.toLocaleString()}`).join('\n');
 
-      const resp = await supabase.functions.invoke('ai-sales-forecast', {
-        body: { historicalSummary, forecastSummary, companyId },
-      });
+      const { invokeSalesForecastAI } = await import('@/services/salesForecast');
+      const resp = await invokeSalesForecastAI({ historicalSummary, forecastSummary, companyId });
 
-      if (resp.error) throw resp.error;
-      return resp.data?.analysis || 'لم يتم الحصول على تحليل';
+      return resp?.analysis || 'لم يتم الحصول على تحليل';
     },
     onSuccess: (data) => {
       setAiAnalysis(data);
