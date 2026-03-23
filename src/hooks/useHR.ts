@@ -8,8 +8,7 @@ export function useHREmployees() {
     queryKey: ['hr-employees', companyId],
     queryFn: () => hrService.fetchHREmployees(companyId!),
     enabled: !!companyId,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 1000 * 60 * 2,
   });
 }
 

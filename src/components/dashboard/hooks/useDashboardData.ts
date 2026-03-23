@@ -43,8 +43,9 @@ export function useDashboardData() {
   const { data: installmentSales = [] } = useInstallmentSales();
   const { data: rawSales = [] } = useSales();
   const { data: rawCars = [] } = useCars();
-  const allSales = isCarDealership ? rawSales : [];
-  const allCars = isCarDealership ? rawCars : [];
+  // Skip heavy array processing for non-car companies
+  const allSales = useMemo(() => isCarDealership ? rawSales : [], [isCarDealership, rawSales]);
+  const allCars = useMemo(() => isCarDealership ? rawCars : [], [isCarDealership, rawCars]);
   const { data: allTimeStats } = useAllTimeStats();
   const { selectedFiscalYear } = useFiscalYear();
   const { data: fiscalYears = [] } = useFiscalYears();
@@ -149,9 +150,11 @@ export function useDashboardData() {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: ['stats'] });
-      await queryClient.invalidateQueries({ queryKey: ['analytics'] });
-      await queryClient.invalidateQueries({ queryKey: ['monthlyChartData'] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['analytics'] }),
+        queryClient.invalidateQueries({ queryKey: ['monthlyChartData'] }),
+      ]);
       toast.success(t.data_updated);
     } catch {
       toast.error(t.data_update_failed);

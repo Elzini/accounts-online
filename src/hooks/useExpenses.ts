@@ -24,6 +24,7 @@ export function useExpenseCategories() {
   return useQuery({
     queryKey: ['expenseCategories', companyId],
     queryFn: fetchExpenseCategories,
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -76,6 +77,7 @@ export function useExpenses() {
   return useQuery({
     queryKey: ['expenses', companyId, fyId],
     queryFn: () => fetchExpenses(fyId),
+    staleTime: 1000 * 60 * 2,
   });
 }
 
