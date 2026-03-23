@@ -528,7 +528,7 @@ export function useCreateCustodyAmountChange() {
       const { error } = await supabase.from('custody_amount_changes').insert(entry);
       if (error) throw error;
       // Also update the custody amount
-      const { error: updateError } = await supabase.from('custodies').update({ amount: entry.new_amount }).eq('id', entry.custody_id);
+      const { error: updateError } = await supabase.from('custodies').update({ custody_amount: entry.new_amount } as any).eq('id', entry.custody_id);
       if (updateError) throw updateError;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['custody-amount-changes'] }); qc.invalidateQueries({ queryKey: ['all-custody-amount-changes'] }); qc.invalidateQueries({ queryKey: ['custodies'] }); },
