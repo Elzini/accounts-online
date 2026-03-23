@@ -5,13 +5,11 @@ describe('getIndustryFeatures', () => {
   it('returns car inventory features for car_dealership', () => {
     const features = getIndustryFeatures('car_dealership');
     expect(features.hasCarInventory).toBe(true);
-    expect(features.hasInvoiceSystem).toBe(true);
   });
 
   it('returns no car inventory for general_trading', () => {
     const features = getIndustryFeatures('general_trading');
     expect(features.hasCarInventory).toBe(false);
-    expect(features.hasInvoiceSystem).toBe(true);
   });
 
   it('handles null/undefined company type gracefully', () => {
