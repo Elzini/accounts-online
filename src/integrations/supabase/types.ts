@@ -1032,6 +1032,7 @@ export type Database = {
         Row: {
           balance: number | null
           bank_account_id: string
+          company_id: string | null
           created_at: string
           credit: number | null
           debit: number | null
@@ -1051,6 +1052,7 @@ export type Database = {
         Insert: {
           balance?: number | null
           bank_account_id: string
+          company_id?: string | null
           created_at?: string
           credit?: number | null
           debit?: number | null
@@ -1070,6 +1072,7 @@ export type Database = {
         Update: {
           balance?: number | null
           bank_account_id?: string
+          company_id?: string | null
           created_at?: string
           credit?: number | null
           debit?: number | null
@@ -2670,6 +2673,7 @@ export type Database = {
       }
       credit_debit_note_lines: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           item_name: string
@@ -2680,6 +2684,7 @@ export type Database = {
           unit_price: number | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           item_name: string
@@ -2690,6 +2695,7 @@ export type Database = {
           unit_price?: number | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           item_name?: string
@@ -5194,6 +5200,7 @@ export type Database = {
         Row: {
           amount: number
           bank_reference: string | null
+          company_id: string | null
           contract_id: string
           created_at: string
           due_date: string
@@ -5209,6 +5216,7 @@ export type Database = {
         Insert: {
           amount: number
           bank_reference?: string | null
+          company_id?: string | null
           contract_id: string
           created_at?: string
           due_date: string
@@ -5224,6 +5232,7 @@ export type Database = {
         Update: {
           amount?: number
           bank_reference?: string | null
+          company_id?: string | null
           contract_id?: string
           created_at?: string
           due_date?: string
@@ -5677,6 +5686,7 @@ export type Database = {
       }
       goods_receipt_lines: {
         Row: {
+          company_id: string | null
           created_at: string
           goods_receipt_id: string
           id: string
@@ -5687,6 +5697,7 @@ export type Database = {
           unit: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           goods_receipt_id: string
           id?: string
@@ -5697,6 +5708,7 @@ export type Database = {
           unit?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           goods_receipt_id?: string
           id?: string
@@ -6452,6 +6464,7 @@ export type Database = {
       installment_payments: {
         Row: {
           amount: number
+          company_id: string | null
           created_at: string
           due_date: string
           id: string
@@ -6466,6 +6479,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          company_id?: string | null
           created_at?: string
           due_date: string
           id?: string
@@ -6480,6 +6494,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          company_id?: string | null
           created_at?: string
           due_date?: string
           id?: string
@@ -8241,6 +8256,7 @@ export type Database = {
           advances_deducted: number
           base_salary: number
           bonus: number
+          company_id: string | null
           created_at: string
           deduction_notes: string | null
           employee_id: string
@@ -8263,6 +8279,7 @@ export type Database = {
           advances_deducted?: number
           base_salary?: number
           bonus?: number
+          company_id?: string | null
           created_at?: string
           deduction_notes?: string | null
           employee_id: string
@@ -8285,6 +8302,7 @@ export type Database = {
           advances_deducted?: number
           base_salary?: number
           bonus?: number
+          company_id?: string | null
           created_at?: string
           deduction_notes?: string | null
           employee_id?: string
@@ -8677,6 +8695,7 @@ export type Database = {
       }
       pos_order_lines: {
         Row: {
+          company_id: string | null
           discount: number | null
           id: string
           item_id: string | null
@@ -8687,6 +8706,7 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          company_id?: string | null
           discount?: number | null
           id?: string
           item_id?: string | null
@@ -8697,6 +8717,7 @@ export type Database = {
           unit_price?: number
         }
         Update: {
+          company_id?: string | null
           discount?: number | null
           id?: string
           item_id?: string | null
@@ -8882,6 +8903,7 @@ export type Database = {
         Row: {
           amortization_date: string
           amount: number
+          company_id: string | null
           created_at: string
           expense_id: string | null
           id: string
@@ -8894,6 +8916,7 @@ export type Database = {
         Insert: {
           amortization_date: string
           amount: number
+          company_id?: string | null
           created_at?: string
           expense_id?: string | null
           id?: string
@@ -8906,6 +8929,7 @@ export type Database = {
         Update: {
           amortization_date?: string
           amount?: number
+          company_id?: string | null
           created_at?: string
           expense_id?: string | null
           id?: string
@@ -9766,6 +9790,7 @@ export type Database = {
       }
       purchase_order_lines: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           item_name: string
@@ -9777,6 +9802,7 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           item_name: string
@@ -9788,6 +9814,7 @@ export type Database = {
           unit_price?: number
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           item_name?: string
@@ -9952,6 +9979,7 @@ export type Database = {
       quotation_items: {
         Row: {
           car_id: string | null
+          company_id: string | null
           created_at: string
           description: string
           id: string
@@ -9962,6 +9990,7 @@ export type Database = {
         }
         Insert: {
           car_id?: string | null
+          company_id?: string | null
           created_at?: string
           description: string
           id?: string
@@ -9972,6 +10001,7 @@ export type Database = {
         }
         Update: {
           car_id?: string | null
+          company_id?: string | null
           created_at?: string
           description?: string
           id?: string
@@ -11511,6 +11541,7 @@ export type Database = {
       }
       restaurant_order_items: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           menu_item_id: string
@@ -11521,6 +11552,7 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           menu_item_id: string
@@ -11531,6 +11563,7 @@ export type Database = {
           unit_price?: number
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           menu_item_id?: string
@@ -11651,6 +11684,7 @@ export type Database = {
       sale_items: {
         Row: {
           car_id: string
+          company_id: string | null
           created_at: string
           id: string
           profit: number
@@ -11659,6 +11693,7 @@ export type Database = {
         }
         Insert: {
           car_id: string
+          company_id?: string | null
           created_at?: string
           id?: string
           profit: number
@@ -11667,6 +11702,7 @@ export type Database = {
         }
         Update: {
           car_id?: string
+          company_id?: string | null
           created_at?: string
           id?: string
           profit?: number
@@ -12666,6 +12702,7 @@ export type Database = {
       }
       stock_voucher_lines: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           item_name: string
@@ -12676,6 +12713,7 @@ export type Database = {
           unit_cost: number | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           item_name: string
@@ -12686,6 +12724,7 @@ export type Database = {
           unit_cost?: number | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           item_name?: string
@@ -12764,6 +12803,7 @@ export type Database = {
       stocktaking_lines: {
         Row: {
           actual_qty: number | null
+          company_id: string | null
           created_at: string
           difference: number | null
           id: string
@@ -12775,6 +12815,7 @@ export type Database = {
         }
         Insert: {
           actual_qty?: number | null
+          company_id?: string | null
           created_at?: string
           difference?: number | null
           id?: string
@@ -12786,6 +12827,7 @@ export type Database = {
         }
         Update: {
           actual_qty?: number | null
+          company_id?: string | null
           created_at?: string
           difference?: number | null
           id?: string
