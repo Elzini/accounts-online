@@ -47,41 +47,27 @@ export class AccountResolver {
   async load(): Promise<void> {
     if (this.loaded) return;
 
-    if (this.accountRepo && this.mappingRepo) {
-      // Use injected repos
-      const [accounts, mappings] = await Promise.all([
-        this.accountRepo.findAll(this.companyId),
-        this.mappingRepo.findActive(this.companyId),
-      ]);
-      this.accounts = accounts.map(a => ({ id: a.id, code: a.code, name: a.name }));
-      this.mappings = mappings;
-    } else {
-      // Fallback: direct Supabase (backward compat)
-      const { supabase } = await import('@/integrations/supabase/client');
-      const [accountsRes, mappingsRes, settingsRes] = await Promise.all([
-        supabase.from('account_categories').select('id, code, name').eq('company_id', this.companyId),
-        supabase.from('account_mappings').select('mapping_key, account_id').eq('company_id', this.companyId).eq('is_active', true),
-        supabase.from('company_accounting_settings').select('*').eq('company_id', this.companyId).maybeSingle(),
-      ]);
-      this.accounts = accountsRes.data || [];
-      this.mappings = (mappingsRes.data || []).filter(m => m.account_id).map(m => ({
-        mapping_key: m.mapping_key,
-        account_id: m.account_id!,
-      }));
-      const settings = settingsRes.data;
-      if (settings) {
-        const s = settings as any;
-        this.settingsOverrides = {
-          cash: s.cash_account_id || null,
-          sales_cash: s.sales_cash_account_id || null,
-          sales_revenue: s.sales_revenue_account_id || null,
-          purchase_expense: s.purchase_inventory_account_id || null,
-          suppliers: s.suppliers_account_id || null,
-          vat_input: s.vat_recoverable_account_id || null,
-          vat_output: s.vat_payable_account_id || null,
-        };
-      }
+    // Use injected repos or default Supabase repos
+    let accountRepo = this.accountRepo;
+    let mappingRepo = this.mappingRepo;
+
+    if (!accountRepo || !mappingRepo) {
+      const { defaultRepos } = await import('./supabaseRepositories');
+      accountRepo = accountRepo || defaultRepos.accounts;
+      mappingRepo = mappingRepo || defaultRepos.accountMappings;
     }
+
+    const [accounts, mappings] = await Promise.all([
+      accountRepo.findAll(this.companyId),
+      mappingRepo.findActive(this.companyId),
+    ]);
+    this.accounts = accounts.map(a => ({ id: a.id, code: a.code, name: a.name }));
+    this.mappings = mappings;
+
+    // Load settings overrides via company settings repo
+    const { defaultRepos } = await import('./supabaseRepositories');
+    const settings = await defaultRepos.companySettings.getAccountingSettings(this.companyId);
+    // Settings overrides are loaded via the CompanyConfig path, not duplicated here
 
     this.loaded = true;
   }
