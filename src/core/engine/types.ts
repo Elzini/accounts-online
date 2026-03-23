@@ -40,9 +40,16 @@ export interface JournalEntryInput {
   lines: JournalEntryLine[];
 }
 
-export interface JournalEntryRecord extends JournalEntryInput {
+export interface JournalEntryRecord {
   id: string;
+  company_id: string;
+  fiscal_year_id: string;
   entry_number: number;
+  entry_date: string;
+  description: string;
+  reference_type?: string | null;
+  reference_id?: string | null;
+  is_posted: boolean;
   total_debit: number;
   total_credit: number;
   created_at: string;

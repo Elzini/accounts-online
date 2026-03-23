@@ -52,14 +52,15 @@ export class AccountResolver {
     // Build settings overrides map
     const settings = settingsRes.data;
     if (settings) {
+      const s = settings as any;
       this.settingsOverrides = {
-        cash: settings.cash_account_id,
-        sales_cash: settings.sales_cash_account_id,
-        sales_revenue: settings.sales_revenue_account_id,
-        purchase_expense: settings.purchase_inventory_account_id,
-        suppliers: settings.suppliers_account_id,
-        vat_input: settings.vat_recoverable_account_id,
-        vat_output: settings.vat_payable_account_id,
+        cash: s.cash_account_id || null,
+        sales_cash: s.sales_cash_account_id || null,
+        sales_revenue: s.sales_revenue_account_id || null,
+        purchase_expense: s.purchase_inventory_account_id || null,
+        suppliers: s.suppliers_account_id || null,
+        vat_input: s.vat_recoverable_account_id || null,
+        vat_output: s.vat_payable_account_id || null,
       };
     }
 
