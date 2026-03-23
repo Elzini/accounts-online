@@ -36,6 +36,7 @@ export function DashboardCustomizer({ open, onOpenChange, onConfigChange }: Dash
   const [cards, setCards] = useState<CardConfig[]>(DEFAULT_STAT_CARDS);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [accountSearch, setAccountSearch] = useState('');
 
   const { data: accounts = [] } = useAccounts();
 
