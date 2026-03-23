@@ -125,4 +125,17 @@ export class JournalEngine {
 
     await EventBus.emit(this.companyId, Events.JOURNAL_UPDATED, { entryId, totalDebit, totalCredit });
   }
+
+  /** Delete a journal entry and its lines */
+  async deleteEntry(entryId: string): Promise<void> {
+    const repo = await this.getRepo();
+    await repo.deleteLines(entryId);
+    await repo.deleteEntry(entryId);
+  }
+
+  /** Delete journal entries by reference */
+  async deleteByReference(referenceId: string, referenceType: string): Promise<void> {
+    const repo = await this.getRepo();
+    await repo.deleteByReference(this.companyId, referenceId, referenceType);
+  }
 }
