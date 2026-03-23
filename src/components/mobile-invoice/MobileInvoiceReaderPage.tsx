@@ -123,7 +123,6 @@ export function MobileInvoiceReaderPage() {
           fps: 15,
           qrbox: { width: 320, height: 320 },
           aspectRatio: 1,
-          rememberLastUsedCamera: true,
           formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
         },
         (decodedText) => {
