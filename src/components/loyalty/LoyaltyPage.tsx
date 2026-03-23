@@ -8,51 +8,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Star, Gift, Users, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLoyaltyPrograms, useLoyaltyPoints, useCreateLoyaltyProgram, useDeleteLoyaltyProgram } from '@/hooks/modules/useBusinessServices';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function LoyaltyPage() {
   const { t } = useLanguage();
-  const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: '', pointsPerUnit: '1', unitValue: '1' });
 
-  const { data: programs = [], isLoading } = useQuery({
-    queryKey: ['loyalty-programs', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('loyalty_programs').select('*').eq('company_id', companyId!).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
-
-  const { data: points = [] } = useQuery({
-    queryKey: ['loyalty-points', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('loyalty_points').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }).limit(50);
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
-
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from('loyalty_programs').insert({ company_id: companyId!, name: form.name, points_per_unit: Number(form.pointsPerUnit), unit_value: Number(form.unitValue), is_active: true });
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['loyalty-programs'] }); toast.success(t.loyalty_created); setShowAdd(false); setForm({ name: '', pointsPerUnit: '1', unitValue: '1' }); },
-    onError: () => toast.error(t.mod_error),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('loyalty_programs').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['loyalty-programs'] }); toast.success(t.mod_deleted); },
-  });
+  const { data: programs = [], isLoading } = useLoyaltyPrograms();
+  const { data: points = [] } = useLoyaltyPoints();
+  const addMutationBase = useCreateLoyaltyProgram();
+  const addMutation = { ...addMutationBase, mutate: () => addMutationBase.mutate({ name: form.name, points_per_unit: Number(form.pointsPerUnit), unit_value: Number(form.unitValue) }, { onSuccess: () => { toast.success(t.loyalty_created); setShowAdd(false); setForm({ name: '', pointsPerUnit: '1', unitValue: '1' }); }, onError: () => toast.error(t.mod_error) }) };
+  const deleteMutationBase = useDeleteLoyaltyProgram();
+  const deleteMutation = { ...deleteMutationBase, mutate: (id: string) => deleteMutationBase.mutate(id, { onSuccess: () => toast.success(t.mod_deleted) }) };
 
   const totalPoints = points.reduce((s: number, p: any) => s + Number(p.points || 0), 0);
 

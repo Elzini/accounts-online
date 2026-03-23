@@ -3,36 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
-
-interface KitchenOrder {
-  id: string;
-  order_number: number;
-  status: string;
-  table_number: string | null;
-  customer_name: string | null;
-  notes: string | null;
-}
+import { useKitchenOrders } from '@/hooks/modules/useRestaurantServices';
 
 export function KitchenPage() {
   const { companyId } = useCompany();
-
-  const { data: orders = [], isLoading } = useQuery({
-    queryKey: ['kitchen-orders', companyId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('restaurant_orders')
-        .select('*')
-        .eq('company_id', companyId!)
-        .in('status', ['new', 'preparing'])
-        .order('created_at', { ascending: true });
-      if (error) throw error;
-      return data as KitchenOrder[];
-    },
-    enabled: !!companyId,
-    refetchInterval: 10000,
-  });
+  const { data: orders = [], isLoading } = useKitchenOrders(companyId);
 
   if (isLoading) return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
@@ -47,7 +22,7 @@ export function KitchenPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {orders.map(order => (
+        {orders.map((order: any) => (
           <Card key={order.id} className={order.status === 'preparing' ? 'border-yellow-500' : 'border-primary'}>
             <CardHeader className="pb-2">
               <div className="flex justify-between items-center">

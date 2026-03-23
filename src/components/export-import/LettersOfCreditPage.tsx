@@ -8,8 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useLettersOfCredit } from '@/hooks/modules/useBusinessServices';
 
 interface LetterOfCredit {
   id: string;
@@ -28,20 +27,7 @@ interface LetterOfCredit {
 export function LettersOfCreditPage() {
   const { companyId } = useCompany();
   const [search, setSearch] = useState('');
-
-  const { data: lcs = [], isLoading } = useQuery({
-    queryKey: ['letters-of-credit', companyId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('letters_of_credit')
-        .select('*')
-        .eq('company_id', companyId!)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as LetterOfCredit[];
-    },
-    enabled: !!companyId,
-  });
+  const { data: lcs = [], isLoading } = useLettersOfCredit(companyId);
 
   const getStatusBadge = (status: string) => {
     switch (status) {

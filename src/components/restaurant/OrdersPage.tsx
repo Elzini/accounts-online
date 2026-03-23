@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, ClipboardList, Loader2, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Plus, Search, ClipboardList, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,41 +8,14 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useRestaurantOrders } from '@/hooks/modules/useRestaurantServices';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-
-interface Order {
-  id: string;
-  order_number: number;
-  order_type: string;
-  status: string;
-  total_amount: number;
-  customer_name: string | null;
-  table_number: string | null;
-  notes: string | null;
-  company_id: string;
-  created_at: string;
-}
 
 export function OrdersPage() {
   const { companyId } = useCompany();
   const [search, setSearch] = useState('');
-
-  const { data: orders = [], isLoading } = useQuery({
-    queryKey: ['restaurant-orders', companyId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('restaurant_orders')
-        .select('*')
-        .eq('company_id', companyId!)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as Order[];
-    },
-    enabled: !!companyId,
-  });
+  const { data: orders = [], isLoading } = useRestaurantOrders(companyId);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -62,7 +35,7 @@ export function OrdersPage() {
     }
   };
 
-  const filtered = orders.filter(o => 
+  const filtered = orders.filter((o: any) => 
     String(o.order_number).includes(search) || 
     (o.customer_name || '').includes(search)
   );
@@ -101,12 +74,12 @@ export function OrdersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map(order => (
+              {filtered.map((order: any) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-medium">#{order.order_number}</TableCell>
                   <TableCell>{getOrderTypeBadge(order.order_type)}</TableCell>
                   <TableCell>{order.customer_name || (order.table_number ? `طاولة ${order.table_number}` : '-')}</TableCell>
-                  <TableCell className="font-medium">{order.total_amount.toLocaleString()} ر.س</TableCell>
+                  <TableCell className="font-medium">{order.total_amount?.toLocaleString()} ر.س</TableCell>
                   <TableCell>{getStatusBadge(order.status)}</TableCell>
                   <TableCell>{format(new Date(order.created_at), 'dd/MM HH:mm', { locale: ar })}</TableCell>
                 </TableRow>

@@ -10,8 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Trash2, Headphones, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSupportTickets, useCreateSupportTicket, useDeleteSupportTicket, useUpdateSupportTicketStatus } from '@/hooks/modules/useBusinessServices';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -31,49 +30,17 @@ const priorityColors: Record<string, string> = {
 
 export function HelpdeskPage() {
   const { t } = useLanguage();
-  const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ subject: '', description: '', customer_name: '', customer_email: '', priority: 'medium', category: '' });
 
-  const { data: tickets = [], isLoading } = useQuery({
-    queryKey: ['support-tickets', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('support_tickets').select('*').eq('company_id', companyId!).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
-
-  const addTicket = useMutation({
-    mutationFn: async () => {
-      const num = `TK-${String(tickets.length + 1).padStart(4, '0')}`;
-      const { error } = await supabase.from('support_tickets').insert({
-        company_id: companyId!, ticket_number: num, subject: form.subject, description: form.description,
-        customer_name: form.customer_name, customer_email: form.customer_email, priority: form.priority, category: form.category || null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['support-tickets'] }); toast.success(t.hd_ticket_created); setShowAdd(false); setForm({ subject: '', description: '', customer_name: '', customer_email: '', priority: 'medium', category: '' }); },
-    onError: () => toast.error(t.mod_error),
-  });
-
-  const deleteTicket = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('support_tickets').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['support-tickets'] }); toast.success(t.mod_deleted); },
-  });
-
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const updates: any = { status };
-      if (status === 'resolved') updates.resolved_at = new Date().toISOString();
-      const { error } = await supabase.from('support_tickets').update(updates).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['support-tickets'] }); toast.success(t.hd_status_updated); },
-  });
+  const { data: tickets = [], isLoading } = useSupportTickets();
+  const addTicketBase = useCreateSupportTicket();
+  const addTicket = { ...addTicketBase, mutate: () => { const num = `TK-${String((tickets as any[]).length + 1).padStart(4, '0')}`; addTicketBase.mutate({ ticket_number: num, subject: form.subject, description: form.description, customer_name: form.customer_name, customer_email: form.customer_email, priority: form.priority, category: form.category || null }, { onSuccess: () => { toast.success(t.hd_ticket_created); setShowAdd(false); setForm({ subject: '', description: '', customer_name: '', customer_email: '', priority: 'medium', category: '' }); }, onError: () => toast.error(t.mod_error) }); } };
+  const deleteTicketBase = useDeleteSupportTicket();
+  const deleteTicket = { ...deleteTicketBase, mutate: (id: string) => deleteTicketBase.mutate(id, { onSuccess: () => toast.success(t.mod_deleted) }) };
+  const updateStatusBase = useUpdateSupportTicketStatus();
+  const updateStatus = { ...updateStatusBase, mutate: (args: { id: string; status: string }) => updateStatusBase.mutate(args, { onSuccess: () => toast.success(t.hd_status_updated) }) };
 
   const statusLabels: Record<string, string> = { open: t.hd_open, in_progress: t.hd_in_progress, resolved: t.hd_resolved, closed: t.hd_closed };
   const priorityLabels: Record<string, string> = { low: t.hd_low, medium: t.hd_medium, high: t.hd_high, urgent: t.hd_urgent };

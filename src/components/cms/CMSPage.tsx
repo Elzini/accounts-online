@@ -10,8 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Trash2, FileText, Globe, Eye, Edit } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCMSPages, useCreateCMSPage, useDeleteCMSPage, useUpdateCMSPageStatus } from '@/hooks/modules/useBusinessServices';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -23,49 +22,17 @@ const statusColors: Record<string, string> = {
 
 export function CMSPage() {
   const { t } = useLanguage();
-  const companyId = useCompanyId();
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ title: '', slug: '', content: '', excerpt: '', page_type: 'page', meta_title: '', meta_description: '' });
 
-  const { data: pages = [], isLoading } = useQuery({
-    queryKey: ['cms-pages', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('cms_pages').select('*').eq('company_id', companyId!).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
-
-  const addPage = useMutation({
-    mutationFn: async () => {
-      const slug = form.slug || form.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      const { error } = await supabase.from('cms_pages').insert({
-        company_id: companyId!, title: form.title, slug, content: form.content, excerpt: form.excerpt,
-        page_type: form.page_type, meta_title: form.meta_title, meta_description: form.meta_description, status: 'draft',
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['cms-pages'] }); toast.success(t.cms_page_created); setShowAdd(false); setForm({ title: '', slug: '', content: '', excerpt: '', page_type: 'page', meta_title: '', meta_description: '' }); },
-    onError: () => toast.error(t.mod_error),
-  });
-
-  const deletePage = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('cms_pages').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['cms-pages'] }); toast.success(t.mod_deleted); },
-  });
-
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const updates: any = { status };
-      if (status === 'published') updates.published_at = new Date().toISOString();
-      const { error } = await supabase.from('cms_pages').update(updates).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['cms-pages'] }); toast.success(t.cms_status_updated); },
-  });
+  const { data: pages = [], isLoading } = useCMSPages();
+  const addPageBase = useCreateCMSPage();
+  const addPage = { ...addPageBase, mutate: () => addPageBase.mutate(form, { onSuccess: () => { toast.success(t.cms_page_created); setShowAdd(false); setForm({ title: '', slug: '', content: '', excerpt: '', page_type: 'page', meta_title: '', meta_description: '' }); }, onError: () => toast.error(t.mod_error) }) };
+  const deletePageBase = useDeleteCMSPage();
+  const deletePage = { ...deletePageBase, mutate: (id: string) => deletePageBase.mutate(id, { onSuccess: () => toast.success(t.mod_deleted) }) };
+  const updateStatusBase = useUpdateCMSPageStatus();
+  const updateStatus = { ...updateStatusBase, mutate: (args: { id: string; status: string }) => updateStatusBase.mutate(args, { onSuccess: () => toast.success(t.cms_status_updated) }) };
 
   const statusLabels: Record<string, string> = { draft: t.cms_draft, published: t.cms_published, archived: t.cms_archived };
   const typeLabels: Record<string, string> = { page: t.cms_type_page, post: t.cms_type_post, landing: t.cms_type_landing };

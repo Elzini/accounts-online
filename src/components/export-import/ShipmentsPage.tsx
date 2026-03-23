@@ -8,8 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useShipments } from '@/hooks/modules/useBusinessServices';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -36,20 +35,7 @@ interface Shipment {
 export function ShipmentsPage() {
   const { companyId } = useCompany();
   const [search, setSearch] = useState('');
-
-  const { data: shipments = [], isLoading } = useQuery({
-    queryKey: ['shipments', companyId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('shipments')
-        .select('*')
-        .eq('company_id', companyId!)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as Shipment[];
-    },
-    enabled: !!companyId,
-  });
+  const { data: shipments = [], isLoading } = useShipments(companyId);
 
   const getStatusBadge = (status: string) => {
     switch (status) {

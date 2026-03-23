@@ -11,50 +11,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Loader2, Plus, Factory, Package, ClipboardList } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useCompanyId } from '@/hooks/useCompanyId';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useManufacturingProducts, useProductionOrders, useCreateManufacturingProduct, useCreateProductionOrder, useUpdateProductionOrderStatus } from '@/hooks/modules/useBusinessServices';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function ManufacturingPage() {
   const { t, language } = useLanguage();
-  const companyId = useCompanyId();
-  const queryClient = useQueryClient();
 
-  const { data: products = [], isLoading: loadingProducts } = useQuery({
-    queryKey: ['mfg-products', companyId],
-    queryFn: async () => { if (!companyId) return []; const { data, error } = await supabase.from('manufacturing_products').select('*').eq('company_id', companyId).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
-    enabled: !!companyId,
-  });
-
-  const { data: orders = [], isLoading: loadingOrders } = useQuery({
-    queryKey: ['production-orders', companyId],
-    queryFn: async () => { if (!companyId) return []; const { data, error } = await supabase.from('production_orders').select('*, manufacturing_products(name)').eq('company_id', companyId).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
-    enabled: !!companyId,
-  });
+  const { data: products = [], isLoading: loadingProducts } = useManufacturingProducts();
+  const { data: orders = [], isLoading: loadingOrders } = useProductionOrders();
 
   const [isProductDialog, setIsProductDialog] = useState(false);
   const [productForm, setProductForm] = useState({ name: '', code: '', unit: language === 'ar' ? 'وحدة' : 'Unit', estimated_cost: 0, selling_price: 0, description: '' });
 
-  const addProduct = useMutation({
-    mutationFn: async (form: typeof productForm) => { if (!companyId) throw new Error('No company'); const { error } = await supabase.from('manufacturing_products').insert({ company_id: companyId, ...form }); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['mfg-products'] }); toast.success(language === 'ar' ? 'تم إضافة المنتج' : 'Product added'); setIsProductDialog(false); setProductForm({ name: '', code: '', unit: language === 'ar' ? 'وحدة' : 'Unit', estimated_cost: 0, selling_price: 0, description: '' }); },
-    onError: () => toast.error(language === 'ar' ? 'خطأ في الإضافة' : 'Error adding'),
-  });
+  const addProductBase = useCreateManufacturingProduct();
+  const addProduct = { ...addProductBase, mutate: (form: typeof productForm) => addProductBase.mutate(form, { onSuccess: () => { toast.success(language === 'ar' ? 'تم إضافة المنتج' : 'Product added'); setIsProductDialog(false); setProductForm({ name: '', code: '', unit: language === 'ar' ? 'وحدة' : 'Unit', estimated_cost: 0, selling_price: 0, description: '' }); }, onError: () => toast.error(language === 'ar' ? 'خطأ في الإضافة' : 'Error adding') }) };
 
   const [isOrderDialog, setIsOrderDialog] = useState(false);
   const [orderForm, setOrderForm] = useState({ product_id: '', quantity: 1, start_date: '', notes: '' });
 
-  const addOrder = useMutation({
-    mutationFn: async (form: typeof orderForm) => { if (!companyId) throw new Error('No company'); const { error } = await supabase.from('production_orders').insert({ company_id: companyId, product_id: form.product_id, quantity: form.quantity, start_date: form.start_date || null, notes: form.notes || null }); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['production-orders'] }); toast.success(language === 'ar' ? 'تم إنشاء أمر الإنتاج' : 'Production order created'); setIsOrderDialog(false); },
-    onError: () => toast.error(language === 'ar' ? 'خطأ في الإنشاء' : 'Error creating'),
-  });
+  const addOrderBase = useCreateProductionOrder();
+  const addOrder = { ...addOrderBase, mutate: (form: typeof orderForm) => addOrderBase.mutate({ product_id: form.product_id, quantity: form.quantity, start_date: form.start_date || null, notes: form.notes || null }, { onSuccess: () => { toast.success(language === 'ar' ? 'تم إنشاء أمر الإنتاج' : 'Production order created'); setIsOrderDialog(false); }, onError: () => toast.error(language === 'ar' ? 'خطأ في الإنشاء' : 'Error creating') }) };
 
-  const updateOrderStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => { const updates: any = { status }; if (status === 'completed') updates.end_date = new Date().toISOString().split('T')[0]; const { error } = await supabase.from('production_orders').update(updates).eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['production-orders'] }); toast.success(language === 'ar' ? 'تم تحديث الحالة' : 'Status updated'); },
-  });
+  const updateOrderStatusBase = useUpdateProductionOrderStatus();
+  const updateOrderStatus = { ...updateOrderStatusBase, mutate: (args: { id: string; status: string }) => updateOrderStatusBase.mutate(args, { onSuccess: () => toast.success(language === 'ar' ? 'تم تحديث الحالة' : 'Status updated') }) };
 
   const formatCurrency = (n: number) => new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-SA', { minimumFractionDigits: 2 }).format(n);
 
