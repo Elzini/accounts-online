@@ -97,7 +97,7 @@ export function useEmployeePermissions(table: string) {
     queryKey: ['field-permissions', companyId, table],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('field_level_permissions')
         .select('*')
         .eq('company_id', companyId)
