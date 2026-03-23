@@ -101,3 +101,12 @@ export interface IInvoiceRepository {
 export interface ISupplierRepository {
   findNameById(supplierId: string): Promise<string | null>;
 }
+
+// ============ Company Settings Repository ============
+export interface ICompanySettingsRepository {
+  getAccountingSettings(companyId: string): Promise<{
+    auto_journal_entries_enabled: boolean;
+    auto_purchase_entries: boolean;
+    auto_sales_entries: boolean;
+  } | null>;
+}
