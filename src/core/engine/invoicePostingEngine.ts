@@ -168,7 +168,8 @@ export class InvoicePostingEngine {
   ): Promise<JournalEntryLine[]> {
     const lines: JournalEntryLine[] = [];
     const expenseAccount = this.resolver.resolve('purchase_expense');
-    const vatInputAccount = this.resolver.resolve('vat_input');
+    // Fallback to shared VAT account (vat_output) when dedicated vat_input is missing
+    const vatInputAccount = this.resolver.resolve('vat_input') || this.resolver.resolve('vat_output');
 
     let creditAccount = inv.payment_account_id
       ? this.resolver.resolveFlexible(inv.payment_account_id, null)
@@ -187,17 +188,23 @@ export class InvoicePostingEngine {
 
     if (!expenseAccount || !creditAccount) return [];
 
+    const debitOnExpense = vatAmount > 0 && !vatInputAccount
+      ? subtotal + vatAmount
+      : subtotal;
+
     lines.push({
       account_id: expenseAccount.id,
       description: `مشتريات - ${inv.customer_name || inv.invoice_number}`,
-      debit: subtotal, credit: 0,
+      debit: debitOnExpense,
+      credit: 0,
     });
 
     if (vatAmount > 0 && vatInputAccount) {
       lines.push({
         account_id: vatInputAccount.id,
         description: `ضريبة مشتريات - ${inv.invoice_number}`,
-        debit: vatAmount, credit: 0,
+        debit: vatAmount,
+        credit: 0,
       });
     }
 
@@ -205,7 +212,7 @@ export class InvoicePostingEngine {
       account_id: creditAccount.id,
       description: `${creditAccount.name} - ${inv.customer_name || inv.invoice_number}`,
       debit: 0,
-      credit: vatAmount > 0 && vatInputAccount ? subtotal + vatAmount : subtotal,
+      credit: subtotal + vatAmount,
     });
 
     return lines;
@@ -223,16 +230,34 @@ export class InvoicePostingEngine {
 
     if (!cashAccount || !revenueAccount) return [];
 
-    // Debit: cash/receivable for total (including VAT)
-    lines.push({ account_id: cashAccount.id, description: `مبيعات - ${inv.customer_name || inv.invoice_number}`, debit: total, credit: 0 });
+    lines.push({
+      account_id: cashAccount.id,
+      description: `مبيعات - ${inv.customer_name || inv.invoice_number}`,
+      debit: total,
+      credit: 0,
+    });
 
     if (vatAmount > 0 && vatOutputAccount) {
-      // VAT account exists: split revenue and VAT
-      lines.push({ account_id: revenueAccount.id, description: `إيرادات - ${inv.invoice_number}`, debit: 0, credit: subtotal });
-      lines.push({ account_id: vatOutputAccount.id, description: `ضريبة مبيعات - ${inv.invoice_number}`, debit: 0, credit: vatAmount });
+      lines.push({
+        account_id: revenueAccount.id,
+        description: `إيرادات - ${inv.invoice_number}`,
+        debit: 0,
+        credit: subtotal,
+      });
+      lines.push({
+        account_id: vatOutputAccount.id,
+        description: `ضريبة مبيعات - ${inv.invoice_number}`,
+        debit: 0,
+        credit: vatAmount,
+      });
     } else {
-      // No VAT account: credit full total to revenue to keep entry balanced
-      lines.push({ account_id: revenueAccount.id, description: `إيرادات - ${inv.invoice_number}`, debit: 0, credit: total });
+      // Last fallback to keep entry balanced when no VAT account exists
+      lines.push({
+        account_id: revenueAccount.id,
+        description: `إيرادات - ${inv.invoice_number}`,
+        debit: 0,
+        credit: total,
+      });
     }
 
     return lines;
