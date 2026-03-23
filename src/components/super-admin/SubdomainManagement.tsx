@@ -59,6 +59,7 @@ export function SubdomainManagement() {
       if (error) throw error;
       return data as CompanySubdomain[];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const updateSubdomain = useMutation({

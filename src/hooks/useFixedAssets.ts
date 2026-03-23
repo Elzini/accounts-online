@@ -22,6 +22,7 @@ export function useFixedAssets() {
   return useQuery({
     queryKey: ['fixed-assets'],
     queryFn: fetchFixedAssets,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -30,6 +31,7 @@ export function useAssetById(id: string | undefined) {
     queryKey: ['fixed-assets', id],
     queryFn: () => id ? fetchAssetById(id) : null,
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -103,6 +105,7 @@ export function useDepreciationEntries(assetId?: string) {
   return useQuery({
     queryKey: ['depreciation-entries', assetId],
     queryFn: () => fetchDepreciationEntries(assetId),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -130,6 +133,7 @@ export function useAssetCategories() {
   return useQuery({
     queryKey: ['asset-categories'],
     queryFn: fetchAssetCategories,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -158,6 +162,7 @@ export function useAssetsSummary() {
   return useQuery({
     queryKey: ['assets-summary'],
     queryFn: getAssetsSummary,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -25,6 +25,7 @@ export function PaymentGatewayPage() {
     queryKey: ['payment-transactions', companyId],
     queryFn: async () => { const { data, error } = await supabase.from('payment_transactions').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const addMutation = useMutation({

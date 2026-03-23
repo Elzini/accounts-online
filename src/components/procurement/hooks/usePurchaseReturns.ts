@@ -4,6 +4,11 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/hooks/modules/useMiscServices';
+import {
+  fetchPurchaseReturns, searchCarByInventoryNumber, fetchSupplierName,
+  searchPurchaseInvoice, markCarReturned, deleteJournalByBatch,
+  insertDebitNote, fetchInsertedNote, insertNoteLines, deleteDebitNote, updateDebitNote,
+} from '@/services/returns/purchaseReturnsService';
 import { createPurchaseReturnJournal } from '@/services/purchaseReturnJournal';
 import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -84,16 +89,9 @@ export function usePurchaseReturns() {
 
   const { data: returns = [], isLoading } = useQuery({
     queryKey: ['purchase-returns', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('credit_debit_notes')
-        .select('*')
-        .eq('company_id', companyId!)
-        .eq('note_type', 'debit')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchPurchaseReturns(companyId!),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const processFoundInvoice = useCallback((invoice: any) => {
@@ -144,16 +142,11 @@ export function usePurchaseReturns() {
     if (!searchQuery.trim() || !companyId) return;
     setIsSearching(true);
     try {
-      const { data: car, error: cErr } = await supabase
-        .from('cars')
-        .select('id, inventory_number, name, model, color, chassis_number, purchase_price, purchase_date, status, batch_id, supplier_id')
-        .eq('company_id', companyId)
-        .eq('inventory_number', parseInt(searchQuery))
-        .single();
-      if (cErr || !car) { toast.error(language === 'ar' ? 'لم يتم العثور على السيارة بهذا الرقم' : 'Car not found'); setFoundCar(null); setItems([]); return; }
+      const car = await searchCarByInventoryNumber(companyId, parseInt(searchQuery));
+      if (!car) { toast.error(language === 'ar' ? 'لم يتم العثور على السيارة بهذا الرقم' : 'Car not found'); setFoundCar(null); setItems([]); return; }
       if (car.status !== 'available') { toast.error(language === 'ar' ? 'السيارة غير متاحة للإرجاع' : 'Car not available'); setFoundCar(null); setItems([]); return; }
       let supplierName = '-';
-      if (car.supplier_id) { const { data: sup } = await supabase.from('suppliers').select('name').eq('id', car.supplier_id).single(); if (sup) supplierName = sup.name; }
+      if (car.supplier_id) { supplierName = await fetchSupplierName(car.supplier_id); }
       setFoundCar({ ...car, supplier: { name: supplierName } });
       setFoundInvoice(null);
       const cost = Number(car.purchase_price);
@@ -168,19 +161,8 @@ export function usePurchaseReturns() {
     if (!searchQuery.trim() || !companyId) return;
     setIsSearching(true);
     try {
-      const { data: invoice, error: iErr } = await (supabase as any)
-        .from('invoices').select('*, invoice_items(*), supplier:suppliers!invoices_supplier_id_fkey(name)')
-        .eq('company_id', companyId).eq('invoice_type', 'purchase')
-        .or(`invoice_number.eq.${searchQuery},invoice_number.ilike.%${searchQuery}%`)
-        .limit(1).single();
-      if (iErr || !invoice) {
-        const { data: inv2, error: iErr2 } = await (supabase as any)
-          .from('invoices').select('*, invoice_items(*), supplier:suppliers!invoices_supplier_id_fkey(name)')
-          .eq('company_id', companyId).eq('invoice_type', 'purchase')
-          .ilike('invoice_number', `%${searchQuery}%`).limit(1).single();
-        if (iErr2 || !inv2) { toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found'); setFoundInvoice(null); setItems([]); setIsSearching(false); return; }
-        processFoundInvoice(inv2); return;
-      }
+      const invoice = await searchPurchaseInvoice(companyId, searchQuery);
+      if (!invoice) { toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found'); setFoundInvoice(null); setItems([]); setIsSearching(false); return; }
       processFoundInvoice(invoice);
     } catch { toast.error(language === 'ar' ? 'خطأ في البحث' : 'Search error'); }
     finally { setIsSearching(false); }
@@ -217,21 +199,26 @@ export function usePurchaseReturns() {
       if (!foundCar && !foundInvoice) throw new Error('No item found');
       const returnedItems = items.filter(i => i.selected && i.returnedQty > 0);
       if (isCarDealership && foundCar) {
-        for (const item of returnedItems) { if (item.car_id) { const { error: carErr } = await supabase.from('cars').update({ status: 'returned' }).eq('id', item.car_id); if (carErr) throw carErr; } }
-        if (form.fullInvoice && foundCar.batch_id) { await supabase.from('journal_entries').delete().eq('reference_type', 'purchase').eq('reference_id', foundCar.batch_id); }
+        for (const item of returnedItems) { if (item.car_id) await markCarReturned(item.car_id); }
+        if (form.fullInvoice && foundCar.batch_id) { await deleteJournalByBatch(foundCar.batch_id); }
       }
       const num = `PR-${String(returns.length + 1).padStart(4, '0')}`;
       const isPartial = !form.fullInvoice;
       const reason = isCarDealership && foundCar
         ? `مرتجع شراء سيارة رقم مخزون ${foundCar.inventory_number}${isPartial ? ` (إرجاع جزئي: ${formatCurrency(totals.total)} ريال)` : ''}${form.notes ? ' - ' + form.notes : ''}`
         : `مرتجع فاتورة مشتريات رقم ${foundInvoice?.invoice_number || ''}${isPartial ? ` (إرجاع جزئي: ${formatCurrency(totals.total)} ريال)` : ''}${form.notes ? ' - ' + form.notes : ''}`;
-      const { error } = await supabase.from('credit_debit_notes').insert({ company_id: companyId!, note_number: num, note_type: 'debit', note_date: form.returnDate, total_amount: totals.grandTotal, tax_amount: totals.vat, supplier_id: foundInvoice?.supplier_id || null, related_invoice_id: foundInvoice?.id || null, reason, status: 'approved' });
-      if (error) throw error;
-      const { data: insertedNote } = await supabase.from('credit_debit_notes').select('id').eq('company_id', companyId!).eq('note_number', num).single();
+      await insertDebitNote(companyId!, {
+        note_number: num, note_date: form.returnDate, total_amount: totals.grandTotal,
+        tax_amount: totals.vat, supplier_id: foundInvoice?.supplier_id || null,
+        related_invoice_id: foundInvoice?.id || null, reason,
+      });
+      const insertedNote = await fetchInsertedNote(companyId!, num);
       if (insertedNote) {
         if (returnedItems.length > 0) {
-          const linesWithId = returnedItems.map(item => ({ note_id: insertedNote.id, item_name: item.item_name || item.description, quantity: item.returnedQty, unit_price: item.cost, notes: item.description }));
-          await supabase.from('credit_debit_note_lines').insert(linesWithId);
+          await insertNoteLines(insertedNote.id, returnedItems.map(item => ({
+            item_name: item.item_name || item.description, quantity: item.returnedQty,
+            unit_price: item.cost, notes: item.description,
+          })));
         }
         await createPurchaseReturnJournal(insertedNote.id);
       }
@@ -245,15 +232,14 @@ export function usePurchaseReturns() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('credit_debit_notes').delete().eq('id', id); if (error) throw error; },
+    mutationFn: (id: string) => deleteDebitNote(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['purchase-returns'] }); toast.success(language === 'ar' ? 'تم الحذف' : 'Deleted'); },
   });
 
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!editingReturn) return;
-      const { error } = await supabase.from('credit_debit_notes').update({ note_date: editForm.note_date, total_amount: editForm.total_amount, tax_amount: editForm.tax_amount, reason: editForm.reason }).eq('id', editingReturn.id);
-      if (error) throw error;
+      await updateDebitNote(editingReturn.id, editForm);
     },
     onSuccess: () => {
       ['purchase-returns', 'vat-return-report', 'credit-debit-notes'].forEach(k => queryClient.invalidateQueries({ queryKey: [k] }));

@@ -12,6 +12,7 @@ export function useAllUsers() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -45,6 +46,7 @@ export function useAdminUsers() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 

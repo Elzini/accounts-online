@@ -21,6 +21,7 @@ export function usePartnerDealerships() {
   return useQuery({
     queryKey: ['partnerDealerships'],
     queryFn: fetchPartnerDealerships,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -60,6 +61,7 @@ export function useCarTransfers() {
   return useQuery({
     queryKey: ['carTransfers'],
     queryFn: fetchCarTransfers,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

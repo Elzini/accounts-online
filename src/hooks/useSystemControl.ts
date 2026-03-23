@@ -33,6 +33,7 @@ export function useCustomReports() {
     queryKey: ['custom-reports', companyId],
     queryFn: () => companyId ? fetchCustomReports(companyId) : [],
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -82,6 +83,7 @@ export function useMenuConfiguration() {
     queryKey: ['menu-configuration', companyId],
     queryFn: () => companyId ? fetchMenuConfiguration(companyId) : null,
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -106,6 +108,7 @@ export function useAccountMappings() {
     queryKey: ['account-mappings', companyId],
     queryFn: () => companyId ? fetchAccountMappings(companyId) : [],
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -130,6 +133,7 @@ export function useFinancialStatementConfig(statementType: string) {
     queryKey: ['financial-statement-config', companyId, statementType],
     queryFn: () => companyId ? fetchFinancialStatementConfig(companyId, statementType) : null,
     enabled: !!companyId && !!statementType,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -154,6 +158,7 @@ export function useJournalEntryRules() {
     queryKey: ['journal-entry-rules', companyId],
     queryFn: () => companyId ? fetchJournalEntryRules(companyId) : [],
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

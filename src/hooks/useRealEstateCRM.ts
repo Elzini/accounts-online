@@ -18,6 +18,7 @@ export function useRELeads() {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -78,6 +79,7 @@ export function useREFollowUps(leadId?: string | null) {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -121,6 +123,7 @@ export function useREMaintenanceRequests() {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -183,5 +186,6 @@ export function useRECRMStats() {
       };
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }

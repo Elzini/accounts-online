@@ -36,6 +36,7 @@ export function BIAnalyticsPluginPage() {
       }));
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch customers
@@ -47,6 +48,7 @@ export function BIAnalyticsPluginPage() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch inventory (cars only for car dealerships)
@@ -58,6 +60,7 @@ export function BIAnalyticsPluginPage() {
       return data || [];
     },
     enabled: !!companyId && hasCarInventory,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch expenses
@@ -69,6 +72,7 @@ export function BIAnalyticsPluginPage() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const isLoading = loadingSales;

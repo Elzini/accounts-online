@@ -44,6 +44,7 @@ export function AISalesForecastPage() {
       }
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Historical monthly

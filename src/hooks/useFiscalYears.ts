@@ -31,6 +31,7 @@ export function useFiscalYears() {
       return fetchFiscalYears(companyId);
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -44,6 +45,7 @@ export function useCurrentFiscalYear() {
       return getCurrentFiscalYear(companyId);
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -57,6 +59,7 @@ export function useUserFiscalYear() {
       return getUserFiscalYear(user.id);
     },
     enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

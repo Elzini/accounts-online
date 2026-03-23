@@ -81,6 +81,7 @@ export function AgingReportPage() {
       return Object.values(grouped);
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: supplierAging = [], isLoading: loadingSuppliers } = useQuery({
@@ -91,6 +92,7 @@ export function AgingReportPage() {
       return [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const data = tab === 'customers' ? customerAging : supplierAging;

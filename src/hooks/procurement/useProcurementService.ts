@@ -18,6 +18,7 @@ export function usePurchaseOrders(companyId: string | null, prefix?: string) {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -83,6 +84,7 @@ export function useGoodsReceipts(companyId: string | null) {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

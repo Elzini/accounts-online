@@ -17,6 +17,7 @@ export function useLoyaltyPrograms() {
     queryKey: ['loyalty-programs', companyId],
     queryFn: async () => { const { data, error } = await supabase.from('loyalty_programs').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useLoyaltyPoints() {
@@ -25,6 +26,7 @@ export function useLoyaltyPoints() {
     queryKey: ['loyalty-points', companyId],
     queryFn: async () => { const { data, error } = await supabase.from('loyalty_points').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }).limit(50); if (error) throw error; return data; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useCreateLoyaltyProgram() {
@@ -52,6 +54,7 @@ export function useSubscriptions() {
     queryKey: ['subscriptions', companyId],
     queryFn: async () => { const { data, error } = await supabase.from('subscriptions').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useCreateSubscription() {
@@ -79,6 +82,7 @@ export function useTimeEntries() {
     queryKey: ['time-entries', companyId],
     queryFn: async () => { const { data, error } = await supabase.from('time_entries').select('*').eq('company_id', companyId!).order('entry_date', { ascending: false }); if (error) throw error; return data; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useCreateTimeEntry() {
@@ -106,6 +110,7 @@ export function useManufacturingProducts() {
     queryKey: ['mfg-products', companyId],
     queryFn: async () => { if (!companyId) return []; const { data, error } = await supabase.from('manufacturing_products').select('*').eq('company_id', companyId).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useProductionOrders() {
@@ -114,6 +119,7 @@ export function useProductionOrders() {
     queryKey: ['production-orders', companyId],
     queryFn: async () => { if (!companyId) return []; const { data, error } = await supabase.from('production_orders').select('*, manufacturing_products(name)').eq('company_id', companyId).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useCreateManufacturingProduct() {

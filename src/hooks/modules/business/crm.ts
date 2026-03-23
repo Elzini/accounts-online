@@ -16,6 +16,7 @@ export function useCRMLeads() {
     queryKey: ['crm-leads', companyId],
     queryFn: async () => { const { data, error } = await supabase.from('crm_leads').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

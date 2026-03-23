@@ -83,6 +83,7 @@ export function useCompaniesData() {
       if (error) throw error;
       return data as Company[];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: companyStats = [] } = useQuery({
@@ -99,6 +100,7 @@ export function useCompaniesData() {
       })) as CompanyStats[];
     },
     enabled: companies.length > 0,
+    staleTime: 5 * 60 * 1000,
   });
 
   const addCompany = useMutation({

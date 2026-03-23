@@ -15,6 +15,7 @@ export function useJournalAttachmentsList(journalEntryId: string | null) {
       return data || [];
     },
     enabled: !!journalEntryId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

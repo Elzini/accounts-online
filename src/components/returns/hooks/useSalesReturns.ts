@@ -57,12 +57,14 @@ export function useSalesReturns() {
     queryKey: ['available-invoices-for-return', companyId, isCarDealership],
     queryFn: () => fetchAvailableInvoicesForReturn(companyId!, isCarDealership),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: returns = [], isLoading } = useQuery({
     queryKey: ['sales-returns', companyId],
     queryFn: () => fetchSalesReturns(companyId!),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const searchInvoice = useCallback(async () => {

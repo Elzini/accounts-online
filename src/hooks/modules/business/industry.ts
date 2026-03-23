@@ -10,6 +10,7 @@ export function useLettersOfCredit(companyId: string | null) {
     queryKey: ['letters-of-credit', companyId],
     queryFn: async () => { const { data, error } = await (supabase as any).from('letters_of_credit').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useShipments(companyId: string | null) {
@@ -17,6 +18,7 @@ export function useShipments(companyId: string | null) {
     queryKey: ['shipments', companyId],
     queryFn: async () => { const { data, error } = await (supabase as any).from('shipments').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -29,6 +31,7 @@ export function useCommissionRules(companyId: string | null) {
       return data?.value ? JSON.parse(data.value) : [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useCommissionSales(companyId: string | null, period: 'month' | 'quarter') {
@@ -44,6 +47,7 @@ export function useCommissionSales(companyId: string | null, period: 'month' | '
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useSaveCommissionRules(companyId: string | null) {
@@ -72,6 +76,7 @@ export function useConstructionProjects(companyId: string | null) {
       if (error) throw error; return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useCreateConstructionProject(companyId: string | null) {
@@ -112,6 +117,7 @@ export function useConstructionContracts(companyId: string | null) {
       if (error) throw error; return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useProjectsList(companyId: string | null) {
@@ -122,6 +128,7 @@ export function useProjectsList(companyId: string | null) {
       if (error) throw error; return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useContractsList(companyId: string | null) {
@@ -132,6 +139,7 @@ export function useContractsList(companyId: string | null) {
       if (error) throw error; return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useCreateConstructionContract(companyId: string | null) {
@@ -172,6 +180,7 @@ export function useProgressBillings(companyId: string | null) {
       if (error) throw error; return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useCreateProgressBilling(companyId: string | null) {
@@ -216,6 +225,7 @@ export function useCustodyAmountChanges(custodyIds: string[]) {
       return data || [];
     },
     enabled: custodyIds.length > 0,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useCustodyAmountChangesList(custodyId: string, enabled: boolean) {
@@ -227,6 +237,7 @@ export function useCustodyAmountChangesList(custodyId: string, enabled: boolean)
       return data || [];
     },
     enabled: enabled && !!custodyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useCreateCustodyAmountChange() {
@@ -260,6 +271,7 @@ export function useCustodyAmountChangesPrint(custodyId: string, enabled: boolean
       return data || [];
     },
     enabled: enabled && !!custodyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 export function useCustodyTransactionsForSettlement(custodyId: string, enabled: boolean) {
@@ -271,5 +283,6 @@ export function useCustodyTransactionsForSettlement(custodyId: string, enabled: 
       return data || [];
     },
     enabled: enabled && !!custodyId,
+    staleTime: 5 * 60 * 1000,
   });
 }

@@ -103,6 +103,7 @@ export function RBACManagement() {
 
       return Array.from(userMap.values());
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch all users for the add dialog
@@ -115,6 +116,7 @@ export function RBACManagement() {
         .order('username');
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Add role mutation

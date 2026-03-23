@@ -13,6 +13,7 @@ export function useRestaurantTables(companyId: string | null) {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -25,6 +26,7 @@ export function useRestaurantOrders(companyId: string | null) {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -37,6 +39,7 @@ export function useKitchenOrders(companyId: string | null) {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
     refetchInterval: 10000,
   });
 }
@@ -50,6 +53,7 @@ export function useMenuItems(companyId: string | null) {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

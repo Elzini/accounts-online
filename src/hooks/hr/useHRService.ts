@@ -17,6 +17,7 @@ export function useLeaves(companyId: string | null) {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -54,6 +55,7 @@ export function useAttendance(companyId: string | null, date: string) {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -79,6 +81,7 @@ export function useChecks(companyId: string | null, checkType: 'received' | 'iss
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -115,6 +118,7 @@ export function useDepartments(companyId: string | null) {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -151,6 +155,7 @@ export function useHolidays(companyId: string | null) {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -187,6 +192,7 @@ export function useWorkSchedules(companyId: string | null) {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -228,6 +234,7 @@ export function useEmployeeContracts(companyId: string | null) {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -265,6 +272,7 @@ export function useFingerprintDevices(companyId: string | null, activeOnly = fal
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -331,6 +339,7 @@ export function useAttendanceReport(companyId: string | null, dateFrom: string, 
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -343,6 +352,7 @@ export function useEmployeesList(companyId: string | null) {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -360,6 +370,7 @@ export function useDeviceLogs(companyId: string | null, deviceId: string, dateFr
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -387,5 +398,6 @@ export function useTaxSettingsForPrint(companyId: string | null, enabled: boolea
       return data;
     },
     enabled: enabled && !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }

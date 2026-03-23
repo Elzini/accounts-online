@@ -36,6 +36,7 @@ export function useCustody() {
       return await fetchCustodies(companyId);
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Apply strict date filtering client-side (outside queryFn to avoid closure issues)
@@ -278,6 +279,7 @@ export function useCustodyDetails(custodyId: string | null) {
     queryKey: ['custody', custodyId],
     queryFn: () => (custodyId ? fetchCustodyWithTransactions(custodyId) : null),
     enabled: !!custodyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Add transaction mutation - auto-creates journal entry if account_id is provided

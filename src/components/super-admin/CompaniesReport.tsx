@@ -110,6 +110,7 @@ export function CompaniesReport() {
 
       return stats;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const formatNumber = (num: number) => {

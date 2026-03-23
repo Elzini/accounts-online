@@ -43,6 +43,7 @@ export function ApiManagementPage() {
       return (data || []) as ApiKey[];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const generateKey = useMutation({

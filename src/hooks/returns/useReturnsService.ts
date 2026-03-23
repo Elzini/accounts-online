@@ -15,6 +15,7 @@ export function useCreditDebitNotes(companyId: string | null) {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

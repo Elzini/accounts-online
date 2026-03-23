@@ -11,6 +11,7 @@ export function useAllCompanies(select = 'id, name, is_active') {
       const { data } = await supabase.from('companies').select(select);
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -21,6 +22,7 @@ export function useActiveCompanies() {
       const { data } = await supabase.from('companies').select('id, name').eq('is_active', true);
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -73,6 +75,7 @@ export function useCompaniesFullStats() {
       );
       return results;
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -105,6 +108,7 @@ export function useCompanyPerformanceMetrics() {
       );
       return results;
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -142,6 +146,7 @@ export function useCompanyDashboardData(companyId: string) {
       };
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -153,6 +158,7 @@ export function useCompanySubdomains() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -197,6 +203,7 @@ export function useCompanyAccounts(companyId: string) {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -208,5 +215,6 @@ export function useCompanyAccountingSettings(companyId: string) {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }

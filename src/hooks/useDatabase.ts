@@ -80,6 +80,7 @@ export function useSuppliers() {
     queryKey: ['suppliers', companyId],
     queryFn: db.fetchSuppliers,
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

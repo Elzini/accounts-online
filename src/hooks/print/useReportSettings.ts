@@ -38,5 +38,6 @@ export function useReportSettings() {
       return settings;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }

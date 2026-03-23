@@ -34,6 +34,7 @@ export function GeneralSettingsTab() {
         .maybeSingle();
       return data?.value || 'integer';
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // ── Rounding setting ──
@@ -57,6 +58,7 @@ export function GeneralSettingsTab() {
         .maybeSingle();
       return data?.value || 'rounded';
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const [editMode, setEditMode] = useState<string>(numberMode);

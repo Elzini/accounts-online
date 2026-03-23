@@ -64,6 +64,7 @@ export function EmployeePermissionsManager() {
       return [] as Array<{ id: string; field_name: string; can_view: boolean; can_edit: boolean }>;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const togglePermission = useMutation({

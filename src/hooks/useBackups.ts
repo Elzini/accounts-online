@@ -20,7 +20,8 @@ export function useBackups() {
   return useQuery({
     queryKey: ['backups', companyId],
     queryFn: () => getBackups(companyId!),
-    enabled: !!companyId
+    enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -30,7 +31,8 @@ export function useBackupSchedule() {
   return useQuery({
     queryKey: ['backup-schedule', companyId],
     queryFn: () => getBackupSchedule(companyId!),
-    enabled: !!companyId
+    enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -190,6 +190,7 @@ export function useSalesWithItems() {
     queryKey: ['sales-with-items', companyId],
     queryFn: carDb.fetchSalesWithItems,
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -256,6 +257,7 @@ export function usePurchaseBatches() {
     queryKey: ['purchase-batches', companyId],
     queryFn: carDb.fetchPurchaseBatches,
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

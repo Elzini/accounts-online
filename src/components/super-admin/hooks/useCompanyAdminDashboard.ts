@@ -1,11 +1,12 @@
 /**
  * Company Admin Dashboard - Logic Hook
  * Extracted from CompanyAdminDashboard.tsx (617 lines)
+ * Uses service layer (no direct DB queries).
  */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/hooks/modules/useSuperAdminServices';
 import { toast } from 'sonner';
+import { fetchCompaniesWithStats, updateCompanyQuota } from '@/services/superAdmin/companyDashboardService';
 
 export interface CompanyDashboardData {
   company_id: string;
@@ -59,69 +60,18 @@ export function useCompanyAdminDashboard() {
 
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['company-admin-dashboard'],
-    queryFn: async (): Promise<CompanyDashboardData[]> => {
-      const { data: companies, error } = await supabase.from('companies').select('*').order('created_at', { ascending: true });
-      if (error) throw error;
-
-      const results: CompanyDashboardData[] = [];
-      for (const company of companies || []) {
-        const isCarCompany = (company as any).company_type === 'car_dealership';
-
-        const [usersRes, carsRes, salesRes, customersRes, suppliersRes, expensesRes, journalRes, quotaRes, rateLimitRes] = await Promise.all([
-          supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-          isCarCompany ? supabase.from('cars').select('id', { count: 'exact', head: true }).eq('company_id', company.id) : Promise.resolve({ count: 0, data: null }),
-          isCarCompany ? supabase.from('sales').select('sale_price, profit').eq('company_id', company.id) : supabase.from('invoices').select('subtotal').eq('company_id', company.id).eq('invoice_type', 'sales'),
-          supabase.from('customers').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-          supabase.from('suppliers').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-          supabase.from('expenses').select('amount').eq('company_id', company.id),
-          supabase.from('journal_entries').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-          supabase.from('tenant_resource_quotas').select('*').eq('company_id', company.id).maybeSingle(),
-          supabase.from('tenant_rate_limits').select('request_count').eq('company_id', company.id),
-        ]);
-
-        const salesData = (salesRes as any).data || [];
-        const expensesData = (expensesRes as any).data || [];
-        const quota = (quotaRes as any).data;
-
-        let hasSchema = false, hasEncryption = false;
-        try { const { data: sc } = await supabase.rpc('check_tenant_schema_exists', { p_company_id: company.id }); hasSchema = !!sc; } catch {}
-        try { const { data: ec } = await supabase.rpc('check_tenant_encryption_exists', { p_company_id: company.id }); hasEncryption = !!ec; } catch {}
-
-        const recentRequests = ((rateLimitRes as any).data || []).reduce((sum: number, r: any) => sum + (r.request_count || 0), 0);
-
-        results.push({
-          company_id: company.id, company_name: company.name,
-          subdomain: (company as any).subdomain || null, is_active: company.is_active,
-          company_type: company.company_type || 'general_trading', created_at: company.created_at,
-          users_count: (usersRes as any).count || 0, cars_count: (carsRes as any).count || 0,
-          sales_count: salesData.length,
-          total_sales: salesData.reduce((s: number, r: any) => s + (r.sale_price || r.subtotal || 0), 0),
-          total_profit: isCarCompany ? salesData.reduce((s: number, r: any) => s + (r.profit || 0), 0) : 0,
-          customers_count: (customersRes as any).count || 0, suppliers_count: (suppliersRes as any).count || 0,
-          expenses_total: expensesData.reduce((s: number, r: any) => s + (r.amount || 0), 0),
-          journal_entries_count: (journalRes as any).count || 0,
-          max_users: quota?.max_users || 50, max_requests_per_minute: quota?.max_requests_per_minute || 100,
-          max_storage_mb: quota?.max_storage_mb || 500, max_records_per_table: quota?.max_records_per_table || 100000,
-          quota_active: quota?.is_active ?? true, has_schema: hasSchema, has_encryption: hasEncryption,
-          recent_requests: recentRequests,
-        });
-      }
-      return results;
-    },
+    queryFn: fetchCompaniesWithStats,
+    staleTime: 5 * 60 * 1000,
   });
 
   const updateQuota = useMutation({
     mutationFn: async ({ companyId, form }: { companyId: string; form: QuotaForm }) => {
-      const { error } = await supabase.from('tenant_resource_quotas').update({
-        max_users: form.max_users, max_requests_per_minute: form.max_requests_per_minute,
-        max_storage_mb: form.max_storage_mb, max_records_per_table: form.max_records_per_table,
-        is_active: form.is_active, updated_at: new Date().toISOString(),
-      }).eq('company_id', companyId);
-      if (error) throw error;
+      await updateCompanyQuota(companyId, form);
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['company-admin-dashboard'] }); toast.success('تم تحديث الحصص بنجاح'); setQuotaDialogOpen(false); },
     onError: () => toast.error('حدث خطأ أثناء تحديث الحصص'),
   });
+
 
   const openQuotaDialog = (company: CompanyDashboardData) => {
     setSelectedCompanyId(company.company_id);

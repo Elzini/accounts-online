@@ -18,6 +18,7 @@ export function useREProjects() {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -36,6 +37,7 @@ export function useREProject(id: string | null) {
       return data;
     },
     enabled: !!id && !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -95,6 +97,7 @@ export function useREProjectPhases(projectId: string | null) {
       return data;
     },
     enabled: !!projectId && !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -140,6 +143,7 @@ export function useREUnits(projectId?: string | null) {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -183,6 +187,7 @@ export function useREContractors() {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -228,6 +233,7 @@ export function useREWorkOrders(projectId?: string | null) {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -273,6 +279,7 @@ export function useREProgressBillings(projectId?: string | null) {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -318,6 +325,7 @@ export function useREInstallments(unitId?: string | null) {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -355,6 +363,7 @@ export function useREDashboardStats() {
       };
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -374,6 +383,7 @@ export function useREProjectInvoices(projectId: string | null) {
       return data;
     },
     enabled: !!projectId && !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -392,5 +402,6 @@ export function useREProjectJournalEntries(projectId: string | null) {
       return data;
     },
     enabled: !!projectId && !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }

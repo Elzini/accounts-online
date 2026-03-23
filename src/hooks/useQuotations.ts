@@ -14,6 +14,7 @@ export function useQuotations() {
   return useQuery({
     queryKey: ['quotations'],
     queryFn: fetchQuotations,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -22,6 +23,7 @@ export function useQuotation(id: string | null) {
     queryKey: ['quotation', id],
     queryFn: () => fetchQuotation(id!),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -42,6 +42,7 @@ export function ApprovalDashboard() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: workflows = [] } = useQuery({
@@ -56,6 +57,7 @@ export function ApprovalDashboard() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: actions = [] } = useQuery({
@@ -72,6 +74,7 @@ export function ApprovalDashboard() {
       return data || [];
     },
     enabled: !!companyId && requests.length > 0,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: delegations = [] } = useQuery({
@@ -86,6 +89,7 @@ export function ApprovalDashboard() {
       return (data || []) as any[];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: users = [] } = useQuery({
@@ -99,6 +103,7 @@ export function ApprovalDashboard() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const processAction = useMutation({

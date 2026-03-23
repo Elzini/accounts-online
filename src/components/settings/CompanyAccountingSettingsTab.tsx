@@ -64,6 +64,7 @@ export function CompanyAccountingSettingsTab() {
       return data as AccountCategory[];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: existingSettings, isLoading } = useQuery({
@@ -74,6 +75,7 @@ export function CompanyAccountingSettingsTab() {
       return data as AccountingSettings | null;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {

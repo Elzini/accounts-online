@@ -41,6 +41,7 @@ export function SecurityMonitoringDashboard() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // جلب سجل العمليات الحساسة
@@ -57,6 +58,7 @@ export function SecurityMonitoringDashboard() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // جلب سجلات التدقيق الأخيرة
@@ -73,6 +75,7 @@ export function SecurityMonitoringDashboard() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // تشغيل الفحص الشامل

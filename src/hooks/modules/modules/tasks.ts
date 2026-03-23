@@ -13,6 +13,7 @@ export function useTasks(userId?: string) {
       return data || [];
     },
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

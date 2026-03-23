@@ -42,6 +42,7 @@ export function useAppSettings() {
       
       return globalSettings;
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -21,6 +21,7 @@ export function BranchComparisonPage() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: sales = [] } = useQuery({
@@ -35,6 +36,7 @@ export function BranchComparisonPage() {
       return data || [];
     },
     enabled: !!companyId && hasCarInventory,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: invoiceSales = [] } = useQuery({
@@ -50,6 +52,7 @@ export function BranchComparisonPage() {
       return data || [];
     },
     enabled: !!companyId && !hasCarInventory,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: cars = [] } = useQuery({
@@ -60,6 +63,7 @@ export function BranchComparisonPage() {
       return data || [];
     },
     enabled: !!companyId && hasCarInventory,
+    staleTime: 5 * 60 * 1000,
   });
 
   const branchStats = useMemo(() => {

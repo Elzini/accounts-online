@@ -46,6 +46,7 @@ export function useSystemMonitoringStats() {
         totalApiCalls,
       };
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -57,6 +58,7 @@ export function useRecentSystemErrors() {
       return data || [];
     },
     refetchInterval: 60000,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -69,6 +71,7 @@ export function useSensitiveOperationsLog(limit = 200) {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -81,6 +84,7 @@ export function useCentralAlerts(limit = 100) {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -93,6 +97,7 @@ export function useAllBackups(limit = 100) {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -104,6 +109,7 @@ export function useAllBackupSchedules() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -115,6 +121,7 @@ export function useRevenueSubscriptions() {
       const { data } = await supabase.from('subscriptions').select('*, companies(name)').order('end_date', { ascending: true });
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -137,6 +144,7 @@ export function useSaaSMonthlyGrowth() {
         return { month: month.substring(5), companies: cumulative, newCompanies: count };
       });
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -155,6 +163,7 @@ export function useSaaSPlanDistribution() {
 
       return Object.entries(planMap).map(([name, value]) => ({ name, value }));
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -166,6 +175,7 @@ export function useSupportTickets() {
       const { data } = await supabase.from('support_tickets').select('*, companies(name)').order('created_at', { ascending: false });
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -67,6 +67,7 @@ export function MenuConfigurationTab() {
       if (error) throw error;
       return data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch menu config for selected company
@@ -74,6 +75,7 @@ export function MenuConfigurationTab() {
     queryKey: ['menu-configuration', selectedCompanyId],
     queryFn: () => fetchMenuConfiguration(selectedCompanyId),
     enabled: !!selectedCompanyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {

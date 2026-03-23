@@ -59,6 +59,7 @@ export function useDefaultCompanySettings() {
       if (error) throw error;
       return data as DefaultSetting[];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // App settings

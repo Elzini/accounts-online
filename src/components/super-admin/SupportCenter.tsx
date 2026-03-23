@@ -43,6 +43,7 @@ export function SupportCenter() {
         .order('created_at', { ascending: false });
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const updateStatus = useMutation({

@@ -19,6 +19,7 @@ export function usePrepaidExpenses() {
     queryKey: ['prepaid-expenses', companyId],
     queryFn: () => (companyId ? fetchPrepaidExpenses(companyId) : []),
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -28,6 +29,7 @@ export function usePrepaidExpenseAmortizations(prepaidExpenseId: string | null) 
     queryFn: () =>
       prepaidExpenseId ? fetchPrepaidExpenseAmortizations(prepaidExpenseId) : [],
     enabled: !!prepaidExpenseId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

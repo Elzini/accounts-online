@@ -15,6 +15,7 @@ function useModuleQuery<T>(table: string, queryKey: string, orderBy = 'created_a
       return (data || []) as T[];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -116,6 +117,7 @@ export function useChatMessages(channelId: string | null) {
       return data || [];
     },
     enabled: !!channelId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

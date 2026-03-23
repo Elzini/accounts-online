@@ -44,6 +44,7 @@ export function CashFlowForecastPage() {
       }
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch expenses
@@ -55,6 +56,7 @@ export function CashFlowForecastPage() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch installments (future cash inflow)
@@ -66,6 +68,7 @@ export function CashFlowForecastPage() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch checks (future payments)
@@ -77,6 +80,7 @@ export function CashFlowForecastPage() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Historical monthly data

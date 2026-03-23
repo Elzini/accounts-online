@@ -19,6 +19,7 @@ export function useFinancingCompanies() {
   return useQuery({
     queryKey: ['financingCompanies'],
     queryFn: fetchFinancingCompanies,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -58,6 +59,7 @@ export function useFinancingContracts() {
   return useQuery({
     queryKey: ['financingContracts'],
     queryFn: fetchFinancingContracts,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -66,6 +68,7 @@ export function useFinancingContract(id: string | null) {
     queryKey: ['financingContract', id],
     queryFn: () => fetchFinancingContract(id!),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -119,5 +122,6 @@ export function useOverdueFinancingPayments() {
   return useQuery({
     queryKey: ['overdueFinancingPayments'],
     queryFn: getOverdueFinancingPayments,
+    staleTime: 5 * 60 * 1000,
   });
 }

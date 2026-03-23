@@ -70,6 +70,7 @@ export function SystemControlCenter() {
       const val = await fetchSetting('supported_currencies');
       return val ? JSON.parse(val) : DEFAULT_CURRENCIES;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: countries = DEFAULT_COUNTRIES } = useQuery({
@@ -78,6 +79,7 @@ export function SystemControlCenter() {
       const val = await fetchSetting('supported_countries');
       return val ? JSON.parse(val) : DEFAULT_COUNTRIES;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: trialSettings = { days: 14, autoActivate: true } } = useQuery({
@@ -86,6 +88,7 @@ export function SystemControlCenter() {
       const val = await fetchSetting('trial_settings');
       return val ? JSON.parse(val) : { days: 14, autoActivate: true };
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: securitySettings = { twoFactorRequired: false, apiRateLimit: 1000, ipRestrictions: [] as string[] } } = useQuery({
@@ -94,6 +97,7 @@ export function SystemControlCenter() {
       const val = await fetchSetting('security_settings');
       return val ? JSON.parse(val) : { twoFactorRequired: false, apiRateLimit: 1000, ipRestrictions: [] };
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: numberDisplayMode = 'integer' } = useQuery({
@@ -102,6 +106,7 @@ export function SystemControlCenter() {
       const val = await fetchSetting('number_display_mode');
       return val || 'integer';
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // State for editing
@@ -147,6 +152,7 @@ export function SystemControlCenter() {
         .limit(100);
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch backup info
@@ -160,6 +166,7 @@ export function SystemControlCenter() {
         .limit(20);
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch API keys count
@@ -169,6 +176,7 @@ export function SystemControlCenter() {
       const { count } = await supabase.from('api_keys').select('id', { count: 'exact', head: true });
       return count || 0;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const addCurrency = () => {

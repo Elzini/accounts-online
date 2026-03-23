@@ -12,5 +12,6 @@ export function useVATReturnReport(startDate?: string, endDate?: string) {
       return getVATReturnReport(companyId, startDate, endDate);
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
