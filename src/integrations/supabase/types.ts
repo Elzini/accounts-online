@@ -9671,6 +9671,44 @@ export type Database = {
           },
         ]
       }
+      tenant_network_config: {
+        Row: {
+          allowed_ips: string[] | null
+          blocked_ips: string[] | null
+          created_at: string | null
+          id: string
+          rate_limit_per_minute: number | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          allowed_ips?: string[] | null
+          blocked_ips?: string[] | null
+          created_at?: string | null
+          id?: string
+          rate_limit_per_minute?: number | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          allowed_ips?: string[] | null
+          blocked_ips?: string[] | null
+          created_at?: string | null
+          id?: string
+          rate_limit_per_minute?: number | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_network_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_rate_limits: {
         Row: {
           company_id: string
