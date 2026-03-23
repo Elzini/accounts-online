@@ -6,7 +6,7 @@
  * This is a non-breaking facade — existing code can migrate incrementally.
  */
 import { supabase } from '@/hooks/modules/useMiscServices';
-import { getIndustryFeatures } from '@/utils/industryFeatures';
+import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 
 export interface UnifiedSaleRecord {
   id: string;
