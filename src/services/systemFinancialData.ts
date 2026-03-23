@@ -1,5 +1,6 @@
 // خدمة حساب القوائم المالية من بيانات النظام
 import { supabase } from '@/integrations/supabase/client';
+import { isBalanceSheetType } from '@/utils/accountTypes';
 import { 
   ComprehensiveFinancialData, 
   BalanceSheetData, 
@@ -116,7 +117,7 @@ export async function getSystemTrialBalance(
 
   // تجميع الأرصدة الافتتاحية (ما قبل الفترة + قيود الافتتاح المرحّلة)
   // استبعاد حسابات الإيرادات والمصروفات لأنها حسابات فترة تبدأ من صفر كل سنة
-  const balanceSheetTypes = new Set(['asset', 'assets', 'liability', 'liabilities', 'equity']);
+  const checkBalanceSheet = (type: string) => isBalanceSheetType(type);
   const accountTypeMap = new Map<string, string>();
   leafAccounts.forEach(a => accountTypeMap.set(a.id, a.type));
   // تضمين الحسابات الأب أيضاً لأنها قد تظهر في القيود
@@ -132,7 +133,7 @@ export async function getSystemTrialBalance(
   openingSourceLines.forEach((line: any) => {
     const accType = accountTypeMap.get(line.account_id);
     // فقط حسابات المركز المالي (أصول، خصوم، حقوق ملكية)
-    if (!accType || !balanceSheetTypes.has(accType)) return;
+    if (!accType || !checkBalanceSheet(accType)) return;
     const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
     current.debit += Number(line.debit) || 0;
     current.credit += Number(line.credit) || 0;

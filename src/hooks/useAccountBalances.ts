@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { isCreditNormal } from '@/utils/accountTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
@@ -81,8 +82,8 @@ async function fetchAccountBalances(
     leaves.forEach(leafId => {
       const totals = leafTotals.get(leafId) || { debit: 0, credit: 0 };
       const type = accountTypeMap.get(leafId) || accountTypeMap.get(id);
-      // Credit-normal accounts: liability/liabilities, equity, revenue
-      if (['liability', 'liabilities', 'equity', 'revenue'].includes(type || '')) {
+      // Credit-normal accounts: liability, equity, revenue
+      if (isCreditNormal(type || '')) {
         balance += totals.credit - totals.debit;
       } else {
         balance += totals.debit - totals.credit;

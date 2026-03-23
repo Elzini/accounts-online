@@ -220,6 +220,11 @@ export function createFixMissingCOA(companyId: string, companyType: 'car_dealers
         }
       }
 
+      // Auto-populate account_mappings after creating accounts
+      if (insertedCount > 0) {
+        await supabase.rpc('populate_account_mappings', { p_company_id: companyId });
+      }
+
       return {
         success: insertedCount > 0,
         message: `تم إنشاء ${insertedCount} حساب من القالب`,

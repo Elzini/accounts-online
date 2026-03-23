@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { isAccountType } from '@/utils/accountTypes';
 import { Plus, Pencil, Trash2, Calculator, TrendingDown, Building2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,12 +40,12 @@ export function FixedAssetsPage() {
   const { data: accounts = [] } = useAccounts();
   
   const assetAccounts = useMemo(() => 
-    accounts.filter(acc => acc.type === 'assets' && acc.code.startsWith('13')),
+    accounts.filter(acc => isAccountType(acc.type, 'asset') && acc.code.startsWith('13')),
     [accounts]
   );
   
   const expenseAccounts = useMemo(() => 
-    accounts.filter(acc => acc.type === 'expenses'),
+    accounts.filter(acc => isAccountType(acc.type, 'expense')),
     [accounts]
   );
   

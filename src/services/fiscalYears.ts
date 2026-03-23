@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { isAccountType } from '@/utils/accountTypes';
 
 export interface FiscalYear {
   id: string;
@@ -150,8 +151,8 @@ export async function closeFiscalYear(
 
     if (!accounts) throw new Error('لا توجد حسابات');
 
-    const revenueAccounts = accounts.filter(a => a.type === 'revenue');
-    const expenseAccounts = accounts.filter(a => a.type === 'expense' || a.type === 'expenses');
+    const revenueAccounts = accounts.filter(a => isAccountType(a.type, 'revenue'));
+    const expenseAccounts = accounts.filter(a => isAccountType(a.type, 'expense'));
     const retainedEarningsAccount = accounts.find(a => a.code.startsWith('33'));
 
     // حساب الأرصدة
@@ -342,8 +343,8 @@ export async function openNewFiscalYear(
           });
 
           // حساب صافي الربح
-          const revenueAccs = accounts.filter(a => a.type === 'revenue');
-          const expenseAccs = accounts.filter(a => ['expense', 'expenses'].includes(a.type));
+          const revenueAccs = accounts.filter(a => isAccountType(a.type, 'revenue'));
+          const expenseAccs = accounts.filter(a => isAccountType(a.type, 'expense'));
           let retainedEarningsAcc = accounts.find(a => a.code.startsWith('33'));
 
           const totalRev = revenueAccs.reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);
@@ -559,8 +560,8 @@ export async function refreshClosingEntry(
 
     if (!accounts) throw new Error('لا توجد حسابات');
 
-    const revenueAccounts = accounts.filter(a => a.type === 'revenue');
-    const expenseAccounts = accounts.filter(a => a.type === 'expense' || a.type === 'expenses');
+    const revenueAccounts = accounts.filter(a => isAccountType(a.type, 'revenue'));
+    const expenseAccounts = accounts.filter(a => isAccountType(a.type, 'expense'));
     const retainedEarningsAccount = accounts.find(a => a.code.startsWith('33'));
 
     // حساب الأرصدة (استبعاد قيود الإقفال)
@@ -772,8 +773,8 @@ export async function refreshOpeningBalances(
     });
 
     // حساب صافي الربح للسنة السابقة
-    const revenueAccounts = accounts.filter(a => a.type === 'revenue');
-    const expenseAccounts = accounts.filter(a => ['expense', 'expenses'].includes(a.type));
+    const revenueAccounts = accounts.filter(a => isAccountType(a.type, 'revenue'));
+    const expenseAccounts = accounts.filter(a => isAccountType(a.type, 'expense'));
     let retainedEarningsAccount = accounts.find(a => a.code.startsWith('33'));
 
     const totalRevenue = revenueAccounts.reduce((sum, a) => sum + (balances.get(a.id) || 0), 0);

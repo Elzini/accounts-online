@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { isAccountType } from '@/utils/accountTypes';
 import {
   AuditFixAction,
   createFixUnbalancedEntries,
@@ -328,11 +329,11 @@ export async function checkFinancialReports(companyId: string): Promise<AuditChe
     .eq('company_id', companyId);
 
   if (accounts) {
-    const hasRevenue = accounts.some(a => a.type === 'revenue');
-    const hasExpenses = accounts.some(a => a.type === 'expenses');
-    const hasAssets = accounts.some(a => a.type === 'assets');
-    const hasLiabilities = accounts.some(a => a.type === 'liabilities');
-    const hasEquity = accounts.some(a => a.type === 'equity');
+    const hasRevenue = accounts.some(a => isAccountType(a.type, 'revenue'));
+    const hasExpenses = accounts.some(a => isAccountType(a.type, 'expense'));
+    const hasAssets = accounts.some(a => isAccountType(a.type, 'asset'));
+    const hasLiabilities = accounts.some(a => isAccountType(a.type, 'liability'));
+    const hasEquity = accounts.some(a => isAccountType(a.type, 'equity'));
 
     results.push({
       id: 'reports-income-accounts',
