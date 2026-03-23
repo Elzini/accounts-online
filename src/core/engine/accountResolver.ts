@@ -1,6 +1,6 @@
 /**
  * Core Accounting Engine - Account Resolver (v2)
- * 
+ *
  * Uses repository interfaces instead of direct Supabase access.
  * Resolution priority:
  *   1. Explicit account ID from company settings
@@ -19,16 +19,19 @@ const STANDARD_FALLBACKS: Record<StandardMappingKey, string[]> = {
   purchase_expense: ['1301', '5101'],
   suppliers: ['2101'],
   customers: ['1201'],
-  vat_input: ['1108', '1181', '210402', '21042'],
-  vat_output: ['210401', '21041', '2104'],
+  vat_input: ['1108', '1181', '1183', '210402', '21042'],
+  vat_output: ['210401', '21041', '2103'],
   retained_earnings: ['3103', '3102'],
   cost_of_sales: ['5101', '51011'],
 };
+
+const VAT_NAME_REGEX = /(ضريب|vat)/i;
 
 export interface AccountRef {
   id: string;
   code: string;
   name: string;
+  type?: string;
 }
 
 export class AccountResolver {
@@ -47,7 +50,6 @@ export class AccountResolver {
   async load(): Promise<void> {
     if (this.loaded) return;
 
-    // Use injected repos or default Supabase repos
     let accountRepo = this.accountRepo;
     let mappingRepo = this.mappingRepo;
 
@@ -61,14 +63,14 @@ export class AccountResolver {
       accountRepo.findAll(this.companyId),
       mappingRepo.findActive(this.companyId),
     ]);
-    this.accounts = accounts.map(a => ({ id: a.id, code: a.code, name: a.name }));
+
+    this.accounts = accounts.map(a => ({
+      id: a.id,
+      code: a.code,
+      name: a.name,
+      type: (a as any).type,
+    }));
     this.mappings = mappings;
-
-    // Load settings overrides via company settings repo
-    const { defaultRepos } = await import('./supabaseRepositories');
-    const settings = await defaultRepos.companySettings.getAccountingSettings(this.companyId);
-    // Settings overrides are loaded via the CompanyConfig path, not duplicated here
-
     this.loaded = true;
   }
 
@@ -81,21 +83,30 @@ export class AccountResolver {
 
   /** Resolve an account by mapping key */
   resolve(key: StandardMappingKey): AccountRef | null {
+    const direction = key === 'vat_input' ? 'input' : key === 'vat_output' ? 'output' : null;
+
     const settingsId = this.settingsOverrides[key];
     if (settingsId) {
       const acc = this.accounts.find(a => a.id === settingsId);
-      if (acc) return acc;
+      if (acc && (!direction || this.isValidVatAccount(acc, direction))) return acc;
     }
+
     const mapping = this.mappings.find(m => m.mapping_key === key);
     if (mapping) {
       const acc = this.accounts.find(a => a.id === mapping.account_id);
-      if (acc) return acc;
+      if (acc && (!direction || this.isValidVatAccount(acc, direction))) return acc;
     }
+
     const fallbacks = STANDARD_FALLBACKS[key] || [];
     for (const code of fallbacks) {
       const acc = this.accounts.find(a => a.code === code);
-      if (acc) return acc;
+      if (acc && (!direction || this.isValidVatAccount(acc, direction))) return acc;
     }
+
+    if (direction) {
+      return this.findSemanticVatAccount(direction);
+    }
+
     return null;
   }
 
@@ -128,5 +139,39 @@ export class AccountResolver {
   /** Get all loaded accounts */
   getAllAccounts(): AccountRef[] {
     return this.accounts;
+  }
+
+  private isValidVatAccount(account: AccountRef, direction: 'input' | 'output'): boolean {
+    const code = account.code || '';
+    const name = (account.name || '').toLowerCase();
+    const type = (account.type || '').toLowerCase();
+    const hasVatName = VAT_NAME_REGEX.test(name);
+
+    if (direction === 'output') {
+      if (/^(210401|21041|2103)/.test(code)) return true;
+      if (!hasVatName) return false;
+      return /(مخرج|مبيعات)/.test(name) || /(liab|خصوم|دائن)/.test(type);
+    }
+
+    if (/^(1108|118|210402|21042)/.test(code)) return true;
+    if (!hasVatName) return false;
+    if (/(مدخل|مشتريات|مسترد)/.test(name)) return true;
+    if (/(asset|أصول|مدين)/.test(type)) return true;
+
+    // Shared VAT account fallback when separate input VAT account does not exist
+    return /^2103/.test(code);
+  }
+
+  private findSemanticVatAccount(direction: 'input' | 'output'): AccountRef | null {
+    const vatAccounts = this.accounts.filter(acc => {
+      const code = acc.code || '';
+      return VAT_NAME_REGEX.test(acc.name || '') || /^2103/.test(code);
+    });
+
+    for (const acc of vatAccounts) {
+      if (this.isValidVatAccount(acc, direction)) return acc;
+    }
+
+    return null;
   }
 }
