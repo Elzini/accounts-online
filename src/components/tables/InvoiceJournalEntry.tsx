@@ -94,7 +94,6 @@ export function InvoiceJournalEntry({ invoiceId, invoiceNumber }: InvoiceJournal
 
     setIsSaving(true);
     try {
-      const { companyId: cId } = require('@/contexts/CompanyContext');
       const journal = new JournalEngine(companyId || '');
       await journal.replaceLines(journalData.id, editLines.map(line => ({
         account_id: line.account_id,
