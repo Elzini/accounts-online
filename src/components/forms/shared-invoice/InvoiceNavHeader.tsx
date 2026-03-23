@@ -31,7 +31,7 @@ interface InvoiceNavHeaderProps {
 export function InvoiceNavHeader({
   title, theme, currentIndex, totalRecords,
   isViewingExisting, status, statusLabels,
-  onFirst, onPrevious, onNext, onLast,
+  onFirst, onPrevious, onNext, onLast, extraActions,
 }: InvoiceNavHeaderProps) {
   return (
     <div className={`${THEME_CLASSES[theme]} text-white px-4 py-3`}>
