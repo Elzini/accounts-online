@@ -140,20 +140,17 @@ export async function addVoucher(voucher: VoucherInsert): Promise<Voucher> {
             { account_id: paymentAccountId, debit: 0, credit: voucher.amount, description: voucher.description },
           ];
 
-      const journalEntry = await createJournalEntry(
-        {
-          company_id: voucher.company_id,
-          entry_date: voucher.voucher_date,
-          description: `${voucher.voucher_type === 'receipt' ? 'سند قبض' : 'سند صرف'} - ${voucher.description}`,
-          reference_type: 'voucher' as any,
-          reference_id: data.id,
-          is_posted: true,
-          total_debit: voucher.amount,
-          total_credit: voucher.amount,
-          created_by: voucher.created_by,
-        },
-        lines
-      );
+      const engine = new JournalEngine(voucher.company_id);
+      const journalEntry = await engine.createEntry({
+        company_id: voucher.company_id,
+        fiscal_year_id: '',
+        entry_date: voucher.voucher_date,
+        description: `${voucher.voucher_type === 'receipt' ? 'سند قبض' : 'سند صرف'} - ${voucher.description}`,
+        reference_type: 'voucher',
+        reference_id: data.id,
+        is_posted: true,
+        lines,
+      });
 
       // Update voucher with journal entry ID
       await supabase
