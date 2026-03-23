@@ -1,8 +1,6 @@
 /**
  * Core Accounting Engine - Public API
- * 
- * This is the single entry point for all accounting operations.
- * Industry modules extend this core without modifying it.
+ * Single entry point for all accounting operations.
  */
 
 // Types
@@ -24,6 +22,7 @@ export { validateJournalEntry, validateDateInFiscalYear, validateLeafAccount } f
 
 // Core Engines
 export { AccountResolver } from './accountResolver';
+export type { AccountRef } from './accountResolver';
 export { JournalEngine } from './journalEngine';
 export { InvoicePostingEngine } from './invoicePostingEngine';
 export { getCoreDashboardStats } from './dashboardEngine';
@@ -46,6 +45,10 @@ export type { AccountingEvent, JournalCreatedEvent, InvoicePostedEvent, FiscalYe
 // Posting Middleware
 export { PostingMiddleware } from './postingMiddleware';
 export type { PrePostHook, PostHook, PostingContext } from './postingMiddleware';
+
+// Service Container (DI)
+export { createServiceContainer } from './serviceContainer';
+export type { ServiceContainer, ServiceContainerDeps } from './serviceContainer';
 
 // Supabase Repositories (default implementations)
 export { defaultRepos } from './supabaseRepositories';
