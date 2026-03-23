@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { fetchMenuConfiguration, saveMenuConfiguration, MenuItem } from '@/services/systemControl';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useControlCenterServices';
 import { getCompanyTypeLabel } from '@/core/engine/industryFeatures';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';

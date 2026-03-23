@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useControlCenterServices';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import logoImage from '@/assets/logo.png';

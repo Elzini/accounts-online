@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useControlCenterServices';
 import { toast } from 'sonner';
 import { readExcelFile, utils, writeFile } from '@/lib/excelUtils';
 import { parseExcelToInvoiceItems, ImportedInvoiceItem } from '@/services/importedInvoiceData';

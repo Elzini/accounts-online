@@ -17,7 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useControlCenterServices';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 

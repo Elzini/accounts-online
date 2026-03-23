@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useControlCenterServices';
 import { toast } from 'sonner';
 import { 
   Loader2, 
