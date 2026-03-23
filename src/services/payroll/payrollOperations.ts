@@ -1,4 +1,5 @@
 import { supabase } from '@/hooks/modules/useMiscServices';
+import { JournalEngine } from '@/core/engine/journalEngine';
 import { PayrollRecord, PayrollItem } from './types';
 import { fetchEmployees, fetchPendingAdvances, updateAdvanceDeducted, mapPayrollItemWithSafeEmployee } from './employees';
 
