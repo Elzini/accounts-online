@@ -4,6 +4,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { AccountCategory } from '../accounting';
+import { ZakatNote } from '@/components/financial-statements/types';
 import { ClassifiedAccounts, getBalance, getPositiveCreditBalance, getPositiveDebitBalance } from './accountClassifier';
 
 const ZAKAT_RATE_GREGORIAN = 0.025775; // 365/354 × 2.5%
