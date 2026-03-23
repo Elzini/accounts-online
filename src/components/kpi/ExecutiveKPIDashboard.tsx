@@ -28,24 +28,31 @@ interface KPITarget {
   icon: string;
 }
 
-const METRIC_OPTIONS = [
+const COMMON_METRIC_OPTIONS = [
   { value: 'total_sales', label: 'إجمالي المبيعات', icon: DollarSign, unit: 'ر.س' },
   { value: 'total_profit', label: 'إجمالي الأرباح', icon: TrendingUp, unit: 'ر.س' },
   { value: 'sales_count', label: 'عدد الصفقات', icon: ShoppingCart, unit: 'صفقة' },
   { value: 'new_customers', label: 'عملاء جدد', icon: Users, unit: 'عميل' },
-  { value: 'available_cars', label: 'مخزون متاح', icon: Car, unit: 'سيارة' },
   { value: 'profit_margin', label: 'هامش الربح', icon: Percent, unit: '%' },
-  { value: 'avg_days_to_sell', label: 'متوسط أيام البيع', icon: Clock, unit: 'يوم' },
   { value: 'total_expenses', label: 'إجمالي المصروفات', icon: BarChart3, unit: 'ر.س' },
 ];
 
-const DEFAULT_TARGETS: Omit<KPITarget, 'current_value'>[] = [
+const CAR_METRIC_OPTIONS = [
+  { value: 'available_cars', label: 'مخزون متاح', icon: Car, unit: 'سيارة' },
+  { value: 'avg_days_to_sell', label: 'متوسط أيام البيع', icon: Clock, unit: 'يوم' },
+];
+
+const COMMON_DEFAULT_TARGETS: Omit<KPITarget, 'current_value'>[] = [
   { id: '1', name: 'هدف المبيعات الشهري', metric: 'total_sales', target_value: 500000, unit: 'ر.س', alert_threshold: 70, icon: 'DollarSign' },
   { id: '2', name: 'هدف الأرباح', metric: 'total_profit', target_value: 100000, unit: 'ر.س', alert_threshold: 60, icon: 'TrendingUp' },
   { id: '3', name: 'عدد الصفقات', metric: 'sales_count', target_value: 20, unit: 'صفقة', alert_threshold: 50, icon: 'ShoppingCart' },
   { id: '4', name: 'عملاء جدد', metric: 'new_customers', target_value: 10, unit: 'عميل', alert_threshold: 40, icon: 'Users' },
   { id: '5', name: 'هامش الربح', metric: 'profit_margin', target_value: 15, unit: '%', alert_threshold: 80, icon: 'Percent' },
+];
+
+const CAR_DEFAULT_TARGETS: Omit<KPITarget, 'current_value'>[] = [
   { id: '6', name: 'متوسط أيام البيع', metric: 'avg_days_to_sell', target_value: 30, unit: 'يوم', alert_threshold: 120, icon: 'Clock' },
+  { id: '7', name: 'مخزون متاح', metric: 'available_cars', target_value: 50, unit: 'سيارة', alert_threshold: 60, icon: 'Car' },
 ];
 
 export function ExecutiveKPIDashboard() {
@@ -75,6 +82,15 @@ export function ExecutiveKPIDashboard() {
   });
 
   const { hasCarInventory } = useIndustryFeatures();
+
+  const METRIC_OPTIONS = useMemo(() => 
+    hasCarInventory ? [...COMMON_METRIC_OPTIONS, ...CAR_METRIC_OPTIONS] : COMMON_METRIC_OPTIONS,
+    [hasCarInventory]
+  );
+  const DEFAULT_TARGETS = useMemo(() => 
+    hasCarInventory ? [...COMMON_DEFAULT_TARGETS, ...CAR_DEFAULT_TARGETS] : COMMON_DEFAULT_TARGETS,
+    [hasCarInventory]
+  );
 
   // Fetch actual metrics
   const { data: metrics, isLoading } = useQuery({
