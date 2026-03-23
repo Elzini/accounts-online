@@ -1,14 +1,19 @@
 /**
  * Sales Returns Hook - Extracted from SalesReturnsPage.tsx
+ * Uses service layer instead of direct DB access.
  */
 import { useState, useCallback } from 'react';
-import { supabase } from '@/hooks/modules/useMiscServices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useCompany, CompanyActivityType } from '@/contexts/CompanyContext';
 import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
+import {
+  fetchAvailableInvoicesForReturn, fetchSalesReturns, searchSaleByNumber,
+  searchInvoiceByNumber, processCarReturn, deleteSaleWithJournal,
+  deleteInvoiceWithJournal, insertCreditNote, deleteCreditNote,
+} from '@/services/returns/salesReturnsService';
 
 export interface ReturnItem {
   id: string;
