@@ -3,24 +3,10 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import { getCompanyOverride } from '@/lib/companyOverride';
+import { requireCompanyId } from '@/services/companyContext';
 
 type SupplierInsert = Database['public']['Tables']['suppliers']['Insert'];
 type SupplierUpdate = Database['public']['Tables']['suppliers']['Update'];
-
-async function requireCompanyId(): Promise<string> {
-  const override = getCompanyOverride();
-  if (override) return override;
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('COMPANY_REQUIRED');
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('user_id', user.id)
-    .single();
-  if (!profile?.company_id) throw new Error('COMPANY_REQUIRED');
-  return profile.company_id;
-}
 
 export async function fetchSuppliers() {
   const companyId = await requireCompanyId();

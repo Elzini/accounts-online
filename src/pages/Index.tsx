@@ -167,6 +167,7 @@ import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useStats } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -192,6 +193,7 @@ const Index = () => {
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const { isFocusMode, toggleFocusMode, exitFocusMode } = useFocusMode();
+  const industryFeatures = useIndustryFeatures();
 
 
   // Show setup wizard if no fiscal years exist
@@ -602,7 +604,7 @@ const Index = () => {
                   <div className="hidden sm:flex items-center gap-1">
                     <PushNotificationManager />
                     <OfflineDataIndicator />
-                    {currentCompany?.company_type === 'car_dealership' && <CarSearch />}
+                    {industryFeatures.hasCarInventory && <CarSearch />}
                   </div>
                   <Button 
                     variant="ghost" 

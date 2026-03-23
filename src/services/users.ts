@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
+import { getCurrentCompanyId } from '@/services/companyContext';
 
 type UserPermission = Database['public']['Enums']['user_permission'];
 
@@ -9,20 +10,6 @@ export interface UserWithPermissions {
   username: string;
   created_at: string;
   permissions: UserPermission[];
-}
-
-// Helper function to get current user's company_id
-async function getCurrentCompanyId(): Promise<string | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('user_id', user.id)
-    .single();
-  
-  return profile?.company_id || null;
 }
 
 export async function fetchUsers(): Promise<UserWithPermissions[]> {

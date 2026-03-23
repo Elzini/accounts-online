@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { getCompanyOverride } from '@/lib/companyOverride';
+import { getCurrentCompanyId } from '@/services/companyContext';
 
 export interface FixedAsset {
   id: string;
@@ -74,23 +74,6 @@ export interface CreateAssetInput {
   depreciation_account_id?: string;
   accumulated_depreciation_account_id?: string;
   notes?: string;
-}
-
-// Helper function to get current user's company_id
-async function getCurrentCompanyId(): Promise<string | null> {
-  const override = getCompanyOverride();
-  if (override) return override;
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('user_id', user.id)
-    .single();
-  
-  return profile?.company_id || null;
 }
 
 // Fixed Assets CRUD

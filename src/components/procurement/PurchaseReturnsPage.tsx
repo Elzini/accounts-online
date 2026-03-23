@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -79,9 +80,8 @@ interface FoundInvoiceData {
 export function PurchaseReturnsPage() {
   const { t, language } = useLanguage();
   const companyId = useCompanyId();
-  const { company } = useCompany();
   const queryClient = useQueryClient();
-  const isCarDealership = company?.company_type === 'car_dealership';
+  const { hasCarInventory: isCarDealership } = useIndustryFeatures();
 
   const [searchList, setSearchList] = useState('');
   const [activeTab, setActiveTab] = useState('form');
