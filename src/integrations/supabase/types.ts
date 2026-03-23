@@ -11327,6 +11327,7 @@ export type Database = {
         Returns: string
       }
       request_tenant_backup: { Args: { p_company_id: string }; Returns: string }
+      reset_company_data: { Args: { p_company_id?: string }; Returns: Json }
       resolve_company_by_subdomain: {
         Args: { p_subdomain: string }
         Returns: {
