@@ -161,30 +161,23 @@ export async function calculateZakat(
   const zakatBase = zakatSources - totalDeductions;
   const zakat = zakatBase > 0 ? zakatBase * ZAKAT_RATE_GREGORIAN : 0;
 
-  const zakatNote = {
+  const zakatNote: ZakatNote = {
     profitBeforeZakat,
     adjustmentsOnNetIncome: 0,
     adjustedNetProfit: profitBeforeZakat,
     zakatOnAdjustedProfit: profitBeforeZakat > 0 ? profitBeforeZakat * ZAKAT_RATE_GREGORIAN : 0,
     capital: capitalValue,
-    reserves: reservesTotal,
-    retainedEarnings: Math.max(0, retainedEarnings),
     partnersCurrentAccount: partnersCurrentTotal,
     partnersCurrentFullBalance,
     partnersHawlMonths,
-    employeeBenefitsLiabilities: provisionsTotal,
-    longTermLoans: longTermLoansTotal,
     statutoryReserve: reservesTotal,
+    employeeBenefitsLiabilities: provisionsTotal,
     zakatBaseSubtotal: zakatSources,
     fixedAssetsNet: totalNonCurrentAssets,
     intangibleAssetsNet: longTermInvestmentsTotal,
-    accumulatedLosses,
-    prepaidRentLongTerm,
-    deferredExpenses: deferredExpensesTotal,
     other: 0,
     totalDeductions,
     zakatBase: Math.max(0, zakatBase),
-    zakatRate: ZAKAT_RATE_GREGORIAN * 100,
     zakatOnBase: zakat,
     totalZakatProvision: zakat,
     openingBalance: 0,
