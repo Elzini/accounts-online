@@ -61,11 +61,7 @@ export function useSalesReturns() {
 
   const { data: returns = [], isLoading } = useQuery({
     queryKey: ['sales-returns', companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('credit_debit_notes').select('*').eq('company_id', companyId!).eq('note_type', 'credit').order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchSalesReturns(companyId!),
     enabled: !!companyId,
   });
 
