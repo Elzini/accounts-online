@@ -1,18 +1,18 @@
 /**
  * Invoice Journal Entry Service
  * 
- * Thin facade that delegates to the Core Engine's InvoicePostingEngine.
+ * Thin facade that delegates to the ServiceContainer's InvoicePostingEngine.
  * Kept for backward compatibility with existing imports.
  */
 
-import { InvoicePostingEngine } from '@/core/engine/invoicePostingEngine';
+import { getServiceContainer } from '@/core/engine/serviceContainer';
 
 /**
  * Approve a purchase/sales invoice and auto-create journal entry with proper VAT posting.
  * This is the single entry point used by SalesInvoiceForm and PurchasesTable.
  */
 export async function approveInvoiceWithJournal(invoiceId: string): Promise<void> {
-  // We need companyId to construct engine — fetch it from the invoice
+  // We need companyId to construct container — fetch it from the invoice
   const { supabase } = await import('@/integrations/supabase/client');
   const { data: invoice, error } = await supabase
     .from('invoices')
@@ -22,6 +22,6 @@ export async function approveInvoiceWithJournal(invoiceId: string): Promise<void
 
   if (error || !invoice) throw error || new Error('Invoice not found');
 
-  const engine = new InvoicePostingEngine(invoice.company_id);
-  await engine.postInvoice(invoiceId);
+  const { invoicePosting } = getServiceContainer(invoice.company_id);
+  await invoicePosting.postInvoice(invoiceId);
 }

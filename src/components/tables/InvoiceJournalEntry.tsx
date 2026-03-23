@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/hooks/modules/useMiscServices';
-import { JournalEngine } from '@/core/engine/journalEngine';
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -95,7 +95,8 @@ export function InvoiceJournalEntry({ invoiceId, invoiceNumber }: InvoiceJournal
 
     setIsSaving(true);
     try {
-      const journal = new JournalEngine(companyId || '');
+      const { getServiceContainer } = await import('@/core/engine/serviceContainer');
+      const { journal } = getServiceContainer(companyId || '');
       await journal.replaceLines(journalData.id, editLines.map(line => ({
         account_id: line.account_id,
         description: line.description || '',

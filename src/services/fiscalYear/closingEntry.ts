@@ -1,8 +1,8 @@
 /**
  * Fiscal Year - Closing Entry Operations
- * Uses Core Engine for all journal entry and fiscal year operations.
+ * Uses ServiceContainer for all journal entry and fiscal year operations.
  */
-import { JournalEngine } from '@/core/engine/journalEngine';
+import { getServiceContainer } from '@/core/engine/serviceContainer';
 import { defaultRepos } from '@/core/engine/supabaseRepositories';
 import { computeBalances, buildClosingLines } from './balanceCalculator';
 
@@ -13,7 +13,7 @@ export async function closeFiscalYear(
     const fiscalYear = await defaultRepos.fiscalYears.findById(fiscalYearId);
     if (!fiscalYear) throw new Error('السنة المالية غير موجودة');
 
-    const journal = new JournalEngine(companyId);
+    const { journal } = getServiceContainer(companyId);
     const bal = await computeBalances(companyId, fiscalYear.start_date, fiscalYear.end_date);
 
     if (bal.retainedEarningsAccount && bal.netIncome !== 0) {
@@ -58,7 +58,7 @@ export async function refreshClosingEntry(
     if (!fiscalYear) throw new Error('السنة المالية غير موجودة');
     if (fiscalYear.status !== 'closed') throw new Error('السنة المالية غير مقفلة');
 
-    const journal = new JournalEngine(companyId);
+    const { journal } = getServiceContainer(companyId);
 
     // Delete old closing entry
     if ((fiscalYear as any).closing_balance_entry_id) {

@@ -6,10 +6,12 @@
  * 2. Unit sale → Cost transfer from Project Cost → COGS
  * 3. Revenue recognized only on confirmed sale
  * 4. Advance payments recorded as liabilities
+ * 
+ * All journal operations go through the unified ServiceContainer.
  */
 
 import { supabase } from '@/hooks/modules/useMiscServices';
-import { JournalEngine } from '@/core/engine/journalEngine';
+import { getServiceContainer } from '@/core/engine/serviceContainer';
 
 // ============================================================
 // Account code resolution helper (supports new + legacy codes)
@@ -30,14 +32,14 @@ async function resolveAccountFlex(companyId: string, ...codes: string[]): Promis
   return data[0].id;
 }
 
-/** Helper: create journal entry via Core Engine */
+/** Helper: create journal entry via ServiceContainer */
 async function createEngineEntry(
   companyId: string,
   params: { entry_date: string; description: string; reference_type: string; reference_id: string; fiscal_year_id?: string | null },
   lines: Array<{ account_id: string; description: string; debit: number; credit: number }>
 ) {
-  const engine = new JournalEngine(companyId);
-  return engine.createEntry({
+  const { journal } = getServiceContainer(companyId);
+  return journal.createEntry({
     company_id: companyId,
     fiscal_year_id: params.fiscal_year_id || '',
     entry_date: params.entry_date,

@@ -1,20 +1,19 @@
 /**
  * Purchase Return Journal Entry Service
- * Uses Core Engine for journal entries and account resolution.
+ * Uses ServiceContainer for journal entries and account resolution.
  */
 
 import { supabase } from '@/hooks/modules/useMiscServices';
-import { JournalEngine } from '@/core/engine/journalEngine';
-import { AccountResolver } from '@/core/engine/accountResolver';
+import { getInitializedContainer } from '@/core/engine/serviceContainer';
 
 export async function createPurchaseReturnJournal(noteId: string): Promise<void> {
-  // 0. Check for existing journal entry via engine
   const { data: noteData, error: noteError } = await supabase
     .from('credit_debit_notes').select('*').eq('id', noteId).single();
   if (noteError || !noteData) throw noteError || new Error('Return note not found');
 
   const companyId = noteData.company_id;
-  const journal = new JournalEngine(companyId);
+  const container = await getInitializedContainer(companyId);
+  const { journal, resolver } = container;
 
   const existing = await journal.existsForReference(noteId, ['purchase_return']);
   if (existing) return;
@@ -29,10 +28,7 @@ export async function createPurchaseReturnJournal(noteId: string): Promise<void>
     .from('company_accounting_settings').select('*').eq('company_id', companyId).maybeSingle();
   if (settings?.auto_journal_entries_enabled === false || settings?.auto_purchase_entries === false) return;
 
-  // 3. Resolve accounts via Core Engine's AccountResolver
-  const resolver = new AccountResolver(companyId);
-  await resolver.load();
-
+  // 3. Resolve accounts via ServiceContainer's resolver
   const expenseAccount = resolver.resolveFlexible(
     settings?.purchase_inventory_account_id || null, 'purchase_expense', '1301', '5101'
   );
@@ -66,7 +62,7 @@ export async function createPurchaseReturnJournal(noteId: string): Promise<void>
     lines.push({ account_id: vatInputAccount.id, description: `ضريبة مرتجع مشتريات - ${noteData.note_number}`, debit: 0, credit: vatAmount });
   }
 
-  // 5. Create via engine
+  // 5. Create via ServiceContainer
   await journal.createEntry({
     company_id: companyId,
     fiscal_year_id: noteData.fiscal_year_id || '',

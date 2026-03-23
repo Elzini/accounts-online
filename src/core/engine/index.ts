@@ -48,7 +48,7 @@ export { PostingMiddleware } from './postingMiddleware';
 export type { PrePostHook, PostHook, PostingContext } from './postingMiddleware';
 
 // Service Container (DI)
-export { createServiceContainer } from './serviceContainer';
+export { createServiceContainer, getServiceContainer, getInitializedContainer, clearContainerCache } from './serviceContainer';
 export type { ServiceContainer, ServiceContainerDeps } from './serviceContainer';
 
 // Supabase Repositories (default implementations)
