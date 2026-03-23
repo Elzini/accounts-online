@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { fetchPayments } from '@/services/saasAdmin';
-import { supabase } from '@/integrations/supabase/client';
+import { useRevenueSubscriptions } from '@/hooks/modules/useSuperAdminServices';
 
 export function RevenueControl() {
   const { data: payments = [], isLoading } = useQuery({
@@ -13,16 +13,7 @@ export function RevenueControl() {
     queryFn: fetchPayments,
   });
 
-  const { data: subscriptions = [] } = useQuery({
-    queryKey: ['saas-subscriptions-revenue'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('subscriptions')
-        .select('*, companies(name)')
-        .order('end_date', { ascending: true });
-      return data || [];
-    },
-  });
+  const { data: subscriptions = [] } = useRevenueSubscriptions();
 
   const totalRevenue = payments.filter(p => p.status === 'paid').reduce((s, p) => s + Number(p.amount), 0);
   const pendingRevenue = payments.filter(p => p.status === 'pending').reduce((s, p) => s + Number(p.amount), 0);

@@ -1,10 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
 import { Monitor, Cpu, HardDrive, Database, Wifi, Server, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { supabase } from '@/integrations/supabase/client';
+import { useSystemMonitoringStats } from '@/hooks/modules/useSuperAdminServices';
 
 export function SystemMonitoring() {
   // Fetch real system stats from database

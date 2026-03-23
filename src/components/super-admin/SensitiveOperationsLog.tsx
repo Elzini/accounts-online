@@ -1,37 +1,18 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ShieldAlert, Search, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { useSensitiveOperationsLog, useAllCompanies } from '@/hooks/modules/useSuperAdminServices';
 
 export function SensitiveOperationsLog() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const { data: operations = [], isLoading } = useQuery({
-    queryKey: ['all-sensitive-operations'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sensitive_operations_log')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  const { data: companies = [] } = useQuery({
-    queryKey: ['companies-list-for-ops'],
-    queryFn: async () => {
-      const { data } = await supabase.from('companies').select('id, name');
-      return data || [];
-    },
-  });
+  const { data: operations = [], isLoading } = useSensitiveOperationsLog();
+  const { data: companies = [] } = useAllCompanies('id, name');
 
   const companyMap = Object.fromEntries(companies.map((c: any) => [c.id, c.name]));
 
