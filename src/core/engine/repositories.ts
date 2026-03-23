@@ -47,6 +47,20 @@ export interface IJournalEntryRepository {
   
   deleteEntry(entryId: string): Promise<void>;
 
+  /** Delete journal entries by reference_type + reference_id */
+  deleteByReference(companyId: string, referenceId: string, referenceType: string): Promise<void>;
+
+  /** Update entry header fields */
+  updateEntry(entryId: string, updates: Partial<{
+    description: string;
+    entry_date: string;
+    total_debit: number;
+    total_credit: number;
+    is_posted: boolean;
+    reference_type: string;
+    fiscal_year_id: string;
+  }>): Promise<void>;
+
   /** Fetch all posted lines for a fiscal year (paginated internally) */
   fetchAllLines(companyId: string, fiscalYearId: string): Promise<Array<{
     journal_entry_id: string;
