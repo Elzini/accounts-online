@@ -1,10 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BarChart3, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { useCompanyPerformanceMetrics } from '@/hooks/modules/useSuperAdminServices';
 
 interface CompanyMetrics {
   id: string;
@@ -17,7 +16,7 @@ interface CompanyMetrics {
 }
 
 export function CompanyPerformanceComparison() {
-  const { data: metrics = [], isLoading } = useQuery({
+  const { data: metrics = [], isLoading } = useCompanyPerformanceMetrics();
     queryKey: ['company-performance-comparison'],
     queryFn: async () => {
       // Fetch all companies

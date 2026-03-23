@@ -1,41 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { HardDrive, CheckCircle2, XCircle, Clock, Shield, Building2 } from 'lucide-react';
+import { useAllBackups, useAllBackupSchedules, useAllCompanies } from '@/hooks/modules/useSuperAdminServices';
 
 export function BackupManagementPanel() {
-  const { data: backups = [], isLoading: loadingBackups } = useQuery({
-    queryKey: ['all-backups'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('backups')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  const { data: schedules = [] } = useQuery({
-    queryKey: ['all-backup-schedules'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('backup_schedules').select('*');
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  const { data: companies = [] } = useQuery({
-    queryKey: ['companies-for-backups'],
-    queryFn: async () => {
-      const { data } = await supabase.from('companies').select('id, name');
-      return data || [];
-    },
-  });
+  const { data: backups = [], isLoading: loadingBackups } = useAllBackups();
+  const { data: schedules = [] } = useAllBackupSchedules();
+  const { data: companies = [] } = useAllCompanies('id, name');
 
   const companyMap = Object.fromEntries(companies.map((c: any) => [c.id, c.name]));
 

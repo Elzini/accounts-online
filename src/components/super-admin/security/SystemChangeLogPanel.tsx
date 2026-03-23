@@ -1,27 +1,15 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Activity, Search, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { useSystemChangeLog } from '@/hooks/modules/useSuperAdminServices';
 
 export function SystemChangeLogPanel() {
   const [search, setSearch] = useState('');
 
-  const { data: logs = [], isLoading } = useQuery({
-    queryKey: ['system-change-log'],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('system_change_log')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
+  const { data: logs = [], isLoading } = useSystemChangeLog();
   const filtered = logs.filter((log: any) =>
     !search ||
     log.module?.includes(search) ||
