@@ -12,6 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 type SearchType = 'invoice' | 'customer' | 'supplier' | 'car' | 'item';
 
