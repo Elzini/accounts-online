@@ -76,6 +76,7 @@ export function useExpenses() {
   return useQuery({
     queryKey: ['expenses', companyId, fyId],
     queryFn: () => fetchExpenses(fyId),
+    staleTime: 1000 * 60 * 2,
   });
 }
 

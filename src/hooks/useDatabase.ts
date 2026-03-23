@@ -125,7 +125,7 @@ export function useStats() {
     queryKey: ['stats', companyId, selectedFiscalYear?.id],
     queryFn: () => db.fetchStats(selectedFiscalYear?.id),
     enabled: !!companyId,
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 60 * 2,
   });
 }
 
