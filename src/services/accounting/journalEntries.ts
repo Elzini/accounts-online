@@ -1,15 +1,17 @@
 /**
  * Journal Entries Service
  * 
- * READ operations remain as direct queries (no engine needed).
- * WRITE operations delegate to Core Engine's JournalEngine.
+ * READ operations: direct queries (no engine needed).
+ * WRITE operations: ALL routed through ServiceContainer's JournalEngine.
+ * 
+ * This is the ONLY service-layer entry point for journal CRUD.
+ * Components use hooks from useAccounting.ts which delegate here.
  */
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { JournalEntry, JournalEntryLine } from './types';
 import { getServiceContainer } from '@/core/engine/serviceContainer';
-import { defaultRepos } from '@/core/engine/supabaseRepositories';
 
-// ── READ operations (no engine needed) ──
+// ── READ operations (direct queries, no engine needed) ──
 
 export async function fetchJournalEntries(companyId: string, fiscalYearId?: string): Promise<JournalEntry[]> {
   let query = supabase
@@ -54,15 +56,15 @@ export async function fetchJournalEntryWithLines(entryId: string): Promise<Journ
   };
 }
 
-// ── WRITE operations → Core Engine ──
+// ── WRITE operations → ServiceContainer's JournalEngine ──
 
 export async function createJournalEntry(
   entry: Omit<JournalEntry, 'id' | 'entry_number' | 'created_at' | 'updated_at' | 'lines'>,
   lines: Array<{ account_id: string; description?: string; debit: number; credit: number; cost_center_id?: string | null }>
 ): Promise<JournalEntry> {
-  const { journal: engine } = getServiceContainer(entry.company_id);
+  const { journal } = getServiceContainer(entry.company_id);
 
-  const result = await engine.createEntry({
+  const result = await journal.createEntry({
     company_id: entry.company_id,
     fiscal_year_id: (entry as any).fiscal_year_id || '',
     entry_date: entry.entry_date,
@@ -83,10 +85,17 @@ export async function createJournalEntry(
 }
 
 export async function deleteJournalEntry(id: string): Promise<void> {
-  // Use repo directly for delete (engine delete also works)
-  const repo = defaultRepos.journalEntries;
-  await repo.deleteLines(id);
-  await repo.deleteEntry(id);
+  // Fetch company_id to get the right container
+  const { data: entry } = await supabase
+    .from('journal_entries')
+    .select('company_id')
+    .eq('id', id)
+    .single();
+
+  if (entry?.company_id) {
+    const { journal } = getServiceContainer(entry.company_id);
+    await journal.deleteEntry(id);
+  }
 }
 
 export async function updateJournalEntry(
@@ -94,29 +103,38 @@ export async function updateJournalEntry(
   entry: Partial<Omit<JournalEntry, 'id' | 'entry_number' | 'created_at' | 'updated_at' | 'lines'>>,
   lines: Array<{ id?: string; account_id: string; description?: string; debit: number; credit: number; cost_center_id?: string | null }>
 ): Promise<JournalEntry> {
+  // Fetch company_id to get the right container
+  const { data: existing } = await supabase
+    .from('journal_entries')
+    .select('company_id')
+    .eq('id', entryId)
+    .single();
+
+  if (!existing) throw new Error('Journal entry not found');
+
+  const { journal } = getServiceContainer(existing.company_id);
+
+  // Update header fields via engine's repo
   const totalDebit = lines.reduce((sum, l) => sum + (l.debit || 0), 0);
   const totalCredit = lines.reduce((sum, l) => sum + (l.credit || 0), 0);
 
-  const repo = defaultRepos.journalEntries;
-
-  // Update header
-  await repo.updateEntry(entryId, {
-    entry_date: entry.entry_date,
-    description: entry.description,
-    total_debit: totalDebit,
-    total_credit: totalCredit,
-  });
-
-  // Replace lines via engine pattern
-  await repo.deleteLines(entryId);
-  await repo.createLines(lines.map(l => ({
-    journal_entry_id: entryId,
+  // Use replaceLines which handles totals + line replacement atomically
+  await journal.replaceLines(entryId, lines.map(l => ({
     account_id: l.account_id,
     description: l.description || null,
     debit: l.debit || 0,
     credit: l.credit || 0,
     cost_center_id: l.cost_center_id || null,
   })));
+
+  // Update header metadata (date, description) if provided
+  if (entry.entry_date || entry.description) {
+    const { supabase: sb } = await import('@/integrations/supabase/client');
+    const updateData: Record<string, any> = {};
+    if (entry.entry_date) updateData.entry_date = entry.entry_date;
+    if (entry.description) updateData.description = entry.description;
+    await sb.from('journal_entries').update(updateData).eq('id', entryId);
+  }
 
   // Fetch updated entry
   const { data } = await supabase
