@@ -1736,7 +1736,7 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string | null
-          currency: string | null
+          currency: string
           customer_id: string | null
           drawer_name: string | null
           due_date: string
@@ -1761,7 +1761,7 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by?: string | null
-          currency?: string | null
+          currency?: string
           customer_id?: string | null
           drawer_name?: string | null
           due_date: string
@@ -1786,7 +1786,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string | null
-          currency?: string | null
+          currency?: string
           customer_id?: string | null
           drawer_name?: string | null
           due_date?: string
@@ -9485,54 +9485,6 @@ export type Database = {
           },
         ]
       }
-      security_audit_trail: {
-        Row: {
-          blocked: boolean | null
-          created_at: string | null
-          db_user: string | null
-          details: Json | null
-          event_type: string
-          id: string
-          ip_address: string | null
-          operation: string | null
-          schema_name: string | null
-          severity: string
-          table_name: string | null
-          tenant_id: string | null
-          user_id: string | null
-        }
-        Insert: {
-          blocked?: boolean | null
-          created_at?: string | null
-          db_user?: string | null
-          details?: Json | null
-          event_type: string
-          id?: string
-          ip_address?: string | null
-          operation?: string | null
-          schema_name?: string | null
-          severity?: string
-          table_name?: string | null
-          tenant_id?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          blocked?: boolean | null
-          created_at?: string | null
-          db_user?: string | null
-          details?: Json | null
-          event_type?: string
-          id?: string
-          ip_address?: string | null
-          operation?: string | null
-          schema_name?: string | null
-          severity?: string
-          table_name?: string | null
-          tenant_id?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       security_events: {
         Row: {
           company_id: string | null
@@ -10347,62 +10299,6 @@ export type Database = {
             foreignKeyName: "tax_settings_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: true
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tenant_backups: {
-        Row: {
-          backup_type: string
-          completed_at: string | null
-          created_at: string | null
-          error_message: string | null
-          file_path: string | null
-          file_size_bytes: number | null
-          id: string
-          initiated_by: string | null
-          schema_name: string
-          started_at: string | null
-          status: string
-          tables_included: string[] | null
-          tenant_id: string
-        }
-        Insert: {
-          backup_type?: string
-          completed_at?: string | null
-          created_at?: string | null
-          error_message?: string | null
-          file_path?: string | null
-          file_size_bytes?: number | null
-          id?: string
-          initiated_by?: string | null
-          schema_name: string
-          started_at?: string | null
-          status?: string
-          tables_included?: string[] | null
-          tenant_id: string
-        }
-        Update: {
-          backup_type?: string
-          completed_at?: string | null
-          created_at?: string | null
-          error_message?: string | null
-          file_path?: string | null
-          file_size_bytes?: number | null
-          id?: string
-          initiated_by?: string | null
-          schema_name?: string
-          started_at?: string | null
-          status?: string
-          tables_included?: string[] | null
-          tenant_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tenant_backups_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
