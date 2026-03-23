@@ -16035,6 +16035,16 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      get_all_company_stats: {
+        Args: never
+        Returns: {
+          cars_count: number
+          company_id: string
+          customers_count: number
+          sales_count: number
+          users_count: number
+        }[]
+      }
       get_bank_account_full_details: {
         Args: { p_account_id: string }
         Returns: {

@@ -88,17 +88,15 @@ export function useCompaniesData() {
   const { data: companyStats = [] } = useQuery({
     queryKey: ['company-stats'],
     queryFn: async () => {
-      const stats: CompanyStats[] = [];
-      for (const company of companies) {
-        const [usersRes, carsRes, salesRes, customersRes] = await Promise.all([
-          supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-          supabase.from('cars').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-          supabase.from('sales').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-          supabase.from('customers').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
-        ]);
-        stats.push({ company_id: company.id, users_count: usersRes.count || 0, cars_count: carsRes.count || 0, sales_count: salesRes.count || 0, customers_count: customersRes.count || 0 });
-      }
-      return stats;
+      const { data, error } = await supabase.rpc('get_all_company_stats');
+      if (error) throw error;
+      return (data || []).map((s: any) => ({
+        company_id: s.company_id,
+        users_count: Number(s.users_count) || 0,
+        cars_count: Number(s.cars_count) || 0,
+        sales_count: Number(s.sales_count) || 0,
+        customers_count: Number(s.customers_count) || 0,
+      })) as CompanyStats[];
     },
     enabled: companies.length > 0,
   });
