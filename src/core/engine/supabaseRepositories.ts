@@ -225,6 +225,23 @@ export class SupabaseSupplierRepository implements ISupplierRepository {
   }
 }
 
+// ============ Company Settings Repository ============
+export class SupabaseCompanySettingsRepository implements ICompanySettingsRepository {
+  async getAccountingSettings(companyId: string) {
+    const { data } = await supabase
+      .from('company_accounting_settings')
+      .select('auto_journal_entries_enabled, auto_purchase_entries, auto_sales_entries')
+      .eq('company_id', companyId)
+      .maybeSingle();
+    if (!data) return null;
+    return {
+      auto_journal_entries_enabled: data.auto_journal_entries_enabled ?? true,
+      auto_purchase_entries: data.auto_purchase_entries ?? true,
+      auto_sales_entries: data.auto_sales_entries ?? true,
+    };
+  }
+}
+
 // ============ Default instances ============
 export const defaultRepos = {
   accounts: new SupabaseAccountRepository(),
@@ -233,4 +250,5 @@ export const defaultRepos = {
   fiscalYears: new SupabaseFiscalYearRepository(),
   invoices: new SupabaseInvoiceRepository(),
   suppliers: new SupabaseSupplierRepository(),
+  companySettings: new SupabaseCompanySettingsRepository(),
 };
