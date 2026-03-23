@@ -51,7 +51,7 @@ export function FreezeModePanel() {
           />
           <Button
             variant={isFrozen ? 'default' : 'destructive'}
-            onClick={() => toggleFreeze.mutate(!isFrozen)}
+            onClick={() => toggleFreeze.mutate({ freeze: !isFrozen, masterCode })}
             disabled={isLoading || toggleFreeze.isPending}
           >
             {isFrozen ? '🔓 إلغاء التجميد' : '🔒 تفعيل التجميد الشامل'}
