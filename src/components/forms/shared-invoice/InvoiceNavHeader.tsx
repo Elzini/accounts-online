@@ -24,12 +24,14 @@ interface InvoiceNavHeaderProps {
   onPrevious: () => void;
   onNext: () => void;
   onLast: () => void;
+  /** Extra actions rendered between nav controls and title */
+  extraActions?: React.ReactNode;
 }
 
 export function InvoiceNavHeader({
   title, theme, currentIndex, totalRecords,
   isViewingExisting, status, statusLabels,
-  onFirst, onPrevious, onNext, onLast,
+  onFirst, onPrevious, onNext, onLast, extraActions,
 }: InvoiceNavHeaderProps) {
   return (
     <div className={`${THEME_CLASSES[theme]} text-white px-4 py-3`}>
@@ -55,6 +57,7 @@ export function InvoiceNavHeader({
 
         {/* Title & Status */}
         <div className="flex items-center gap-3">
+          {extraActions}
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 opacity-80" />
             <h1 className="text-lg font-bold tracking-wide">{title}</h1>
