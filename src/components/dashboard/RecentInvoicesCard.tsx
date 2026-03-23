@@ -10,6 +10,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ActivePage } from '@/types';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface RecentInvoicesCardProps {
   setActivePage: (page: ActivePage) => void;
