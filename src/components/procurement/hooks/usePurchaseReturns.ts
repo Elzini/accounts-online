@@ -199,21 +199,26 @@ export function usePurchaseReturns() {
       if (!foundCar && !foundInvoice) throw new Error('No item found');
       const returnedItems = items.filter(i => i.selected && i.returnedQty > 0);
       if (isCarDealership && foundCar) {
-        for (const item of returnedItems) { if (item.car_id) { const { error: carErr } = await supabase.from('cars').update({ status: 'returned' }).eq('id', item.car_id); if (carErr) throw carErr; } }
-        if (form.fullInvoice && foundCar.batch_id) { await supabase.from('journal_entries').delete().eq('reference_type', 'purchase').eq('reference_id', foundCar.batch_id); }
+        for (const item of returnedItems) { if (item.car_id) await markCarReturned(item.car_id); }
+        if (form.fullInvoice && foundCar.batch_id) { await deleteJournalByBatch(foundCar.batch_id); }
       }
       const num = `PR-${String(returns.length + 1).padStart(4, '0')}`;
       const isPartial = !form.fullInvoice;
       const reason = isCarDealership && foundCar
         ? `مرتجع شراء سيارة رقم مخزون ${foundCar.inventory_number}${isPartial ? ` (إرجاع جزئي: ${formatCurrency(totals.total)} ريال)` : ''}${form.notes ? ' - ' + form.notes : ''}`
         : `مرتجع فاتورة مشتريات رقم ${foundInvoice?.invoice_number || ''}${isPartial ? ` (إرجاع جزئي: ${formatCurrency(totals.total)} ريال)` : ''}${form.notes ? ' - ' + form.notes : ''}`;
-      const { error } = await supabase.from('credit_debit_notes').insert({ company_id: companyId!, note_number: num, note_type: 'debit', note_date: form.returnDate, total_amount: totals.grandTotal, tax_amount: totals.vat, supplier_id: foundInvoice?.supplier_id || null, related_invoice_id: foundInvoice?.id || null, reason, status: 'approved' });
-      if (error) throw error;
-      const { data: insertedNote } = await supabase.from('credit_debit_notes').select('id').eq('company_id', companyId!).eq('note_number', num).single();
+      await insertDebitNote(companyId!, {
+        note_number: num, note_date: form.returnDate, total_amount: totals.grandTotal,
+        tax_amount: totals.vat, supplier_id: foundInvoice?.supplier_id || null,
+        related_invoice_id: foundInvoice?.id || null, reason,
+      });
+      const insertedNote = await fetchInsertedNote(companyId!, num);
       if (insertedNote) {
         if (returnedItems.length > 0) {
-          const linesWithId = returnedItems.map(item => ({ note_id: insertedNote.id, item_name: item.item_name || item.description, quantity: item.returnedQty, unit_price: item.cost, notes: item.description }));
-          await supabase.from('credit_debit_note_lines').insert(linesWithId);
+          await insertNoteLines(insertedNote.id, returnedItems.map(item => ({
+            item_name: item.item_name || item.description, quantity: item.returnedQty,
+            unit_price: item.cost, notes: item.description,
+          })));
         }
         await createPurchaseReturnJournal(insertedNote.id);
       }
@@ -227,15 +232,14 @@ export function usePurchaseReturns() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('credit_debit_notes').delete().eq('id', id); if (error) throw error; },
+    mutationFn: (id: string) => deleteDebitNote(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['purchase-returns'] }); toast.success(language === 'ar' ? 'تم الحذف' : 'Deleted'); },
   });
 
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!editingReturn) return;
-      const { error } = await supabase.from('credit_debit_notes').update({ note_date: editForm.note_date, total_amount: editForm.total_amount, tax_amount: editForm.tax_amount, reason: editForm.reason }).eq('id', editingReturn.id);
-      if (error) throw error;
+      await updateDebitNote(editingReturn.id, editForm);
     },
     onSuccess: () => {
       ['purchase-returns', 'vat-return-report', 'credit-debit-notes'].forEach(k => queryClient.invalidateQueries({ queryKey: [k] }));
