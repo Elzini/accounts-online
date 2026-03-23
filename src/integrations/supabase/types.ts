@@ -2208,6 +2208,50 @@ export type Database = {
           },
         ]
       }
+      company_encryption_keys: {
+        Row: {
+          algorithm: string | null
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          key_hash: string
+          key_version: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          algorithm?: string | null
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash: string
+          key_version?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          algorithm?: string | null
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash?: string
+          key_version?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_encryption_keys_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           advance_payment: number | null
