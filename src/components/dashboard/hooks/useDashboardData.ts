@@ -43,8 +43,9 @@ export function useDashboardData() {
   const { data: installmentSales = [] } = useInstallmentSales();
   const { data: rawSales = [] } = useSales();
   const { data: rawCars = [] } = useCars();
-  const allSales = isCarDealership ? rawSales : [];
-  const allCars = isCarDealership ? rawCars : [];
+  // Skip heavy array processing for non-car companies
+  const allSales = useMemo(() => isCarDealership ? rawSales : [], [isCarDealership, rawSales]);
+  const allCars = useMemo(() => isCarDealership ? rawCars : [], [isCarDealership, rawCars]);
   const { data: allTimeStats } = useAllTimeStats();
   const { selectedFiscalYear } = useFiscalYear();
   const { data: fiscalYears = [] } = useFiscalYears();
