@@ -30,6 +30,25 @@ async function resolveAccountFlex(companyId: string, ...codes: string[]): Promis
   return data[0].id;
 }
 
+/** Helper: create journal entry via Core Engine */
+async function createEngineEntry(
+  companyId: string,
+  params: { entry_date: string; description: string; reference_type: string; reference_id: string; fiscal_year_id?: string | null },
+  lines: Array<{ account_id: string; description: string; debit: number; credit: number }>
+) {
+  const engine = new JournalEngine(companyId);
+  return engine.createEntry({
+    company_id: companyId,
+    fiscal_year_id: params.fiscal_year_id || '',
+    entry_date: params.entry_date,
+    description: params.description,
+    reference_type: params.reference_type as any,
+    reference_id: params.reference_id,
+    is_posted: true,
+    lines: lines.map(l => ({ ...l, description: l.description || null, cost_center_id: null })),
+  });
+}
+
 async function resolveAccountId(companyId: string, code: string): Promise<string | null> {
   const { data } = await supabase
     .from('account_categories')
