@@ -292,71 +292,6 @@ export type Database = {
           },
         ]
       }
-      appraisals: {
-        Row: {
-          company_id: string
-          created_at: string
-          department: string | null
-          employee_feedback: string | null
-          employee_name: string
-          feedback: string | null
-          goals_score: number | null
-          id: string
-          next_review_date: string | null
-          overall_rating: number | null
-          period: string | null
-          review_date: string | null
-          reviewer_name: string | null
-          skills_score: number | null
-          status: string | null
-          updated_at: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          department?: string | null
-          employee_feedback?: string | null
-          employee_name: string
-          feedback?: string | null
-          goals_score?: number | null
-          id?: string
-          next_review_date?: string | null
-          overall_rating?: number | null
-          period?: string | null
-          review_date?: string | null
-          reviewer_name?: string | null
-          skills_score?: number | null
-          status?: string | null
-          updated_at?: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          department?: string | null
-          employee_feedback?: string | null
-          employee_name?: string
-          feedback?: string | null
-          goals_score?: number | null
-          id?: string
-          next_review_date?: string | null
-          overall_rating?: number | null
-          period?: string | null
-          review_date?: string | null
-          reviewer_name?: string | null
-          skills_score?: number | null
-          status?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "appraisals_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       approval_actions: {
         Row: {
           acted_at: string
@@ -411,42 +346,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      approval_delegations: {
-        Row: {
-          company_id: string
-          created_at: string | null
-          delegate_user_id: string
-          delegator_user_id: string
-          end_date: string
-          id: string
-          is_active: boolean | null
-          reason: string | null
-          start_date: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string | null
-          delegate_user_id: string
-          delegator_user_id: string
-          end_date: string
-          id?: string
-          is_active?: boolean | null
-          reason?: string | null
-          start_date: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string | null
-          delegate_user_id?: string
-          delegator_user_id?: string
-          end_date?: string
-          id?: string
-          is_active?: boolean | null
-          reason?: string | null
-          start_date?: string
-        }
-        Relationships: []
       }
       approval_requests: {
         Row: {
@@ -1971,54 +1870,6 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers_safe"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      cms_categories: {
-        Row: {
-          company_id: string
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          parent_id: string | null
-          slug: string
-          sort_order: number | null
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          parent_id?: string | null
-          slug: string
-          sort_order?: number | null
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          parent_id?: string | null
-          slug?: string
-          sort_order?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cms_categories_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cms_categories_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "cms_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -3653,53 +3504,6 @@ export type Database = {
           },
         ]
       }
-      document_attachments: {
-        Row: {
-          company_id: string
-          created_at: string
-          entity_id: string
-          entity_type: string
-          file_name: string
-          file_path: string
-          file_size: number | null
-          id: string
-          mime_type: string | null
-          uploaded_by: string | null
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          entity_id: string
-          entity_type: string
-          file_name: string
-          file_path: string
-          file_size?: number | null
-          id?: string
-          mime_type?: string | null
-          uploaded_by?: string | null
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          entity_id?: string
-          entity_type?: string
-          file_name?: string
-          file_path?: string
-          file_size?: number | null
-          id?: string
-          mime_type?: string | null
-          uploaded_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "document_attachments_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       ecommerce_integrations: {
         Row: {
           api_key_encrypted: string | null
@@ -4032,69 +3836,6 @@ export type Database = {
           },
         ]
       }
-      employee_insurance: {
-        Row: {
-          company_contribution: number | null
-          company_id: string
-          created_at: string
-          employee_contribution: number | null
-          employee_id: string
-          end_date: string | null
-          id: string
-          insurance_number: string | null
-          insurance_type: string
-          is_active: boolean | null
-          notes: string | null
-          start_date: string | null
-          updated_at: string
-        }
-        Insert: {
-          company_contribution?: number | null
-          company_id: string
-          created_at?: string
-          employee_contribution?: number | null
-          employee_id: string
-          end_date?: string | null
-          id?: string
-          insurance_number?: string | null
-          insurance_type?: string
-          is_active?: boolean | null
-          notes?: string | null
-          start_date?: string | null
-          updated_at?: string
-        }
-        Update: {
-          company_contribution?: number | null
-          company_id?: string
-          created_at?: string
-          employee_contribution?: number | null
-          employee_id?: string
-          end_date?: string | null
-          id?: string
-          insurance_number?: string | null
-          insurance_type?: string
-          is_active?: boolean | null
-          notes?: string | null
-          start_date?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "employee_insurance_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_insurance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       employee_leaves: {
         Row: {
           approved_by: string | null
@@ -4151,57 +3892,6 @@ export type Database = {
           },
           {
             foreignKeyName: "employee_leaves_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      employee_rewards: {
-        Row: {
-          amount: number
-          company_id: string
-          created_at: string
-          created_by: string | null
-          date: string
-          employee_id: string
-          id: string
-          reason: string | null
-          type: string
-        }
-        Insert: {
-          amount: number
-          company_id: string
-          created_at?: string
-          created_by?: string | null
-          date?: string
-          employee_id: string
-          id?: string
-          reason?: string | null
-          type: string
-        }
-        Update: {
-          amount?: number
-          company_id?: string
-          created_at?: string
-          created_by?: string | null
-          date?: string
-          employee_id?: string
-          id?: string
-          reason?: string | null
-          type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "employee_rewards_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_rewards_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
@@ -4364,68 +4054,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "encryption_keys_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      events: {
-        Row: {
-          company_id: string
-          created_at: string
-          current_attendees: number | null
-          description: string | null
-          end_date: string | null
-          event_type: string | null
-          id: string
-          location: string | null
-          max_attendees: number | null
-          name: string
-          organizer_name: string | null
-          start_date: string
-          status: string | null
-          ticket_price: number | null
-          updated_at: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          current_attendees?: number | null
-          description?: string | null
-          end_date?: string | null
-          event_type?: string | null
-          id?: string
-          location?: string | null
-          max_attendees?: number | null
-          name: string
-          organizer_name?: string | null
-          start_date: string
-          status?: string | null
-          ticket_price?: number | null
-          updated_at?: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          current_attendees?: number | null
-          description?: string | null
-          end_date?: string | null
-          event_type?: string | null
-          id?: string
-          location?: string | null
-          max_attendees?: number | null
-          name?: string
-          organizer_name?: string | null
-          start_date?: string
-          status?: string | null
-          ticket_price?: number | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "events_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -4653,53 +4281,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "field_permissions_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      financial_period_locks: {
-        Row: {
-          company_id: string
-          created_at: string
-          id: string
-          is_locked: boolean
-          lock_reason: string | null
-          locked_by: string
-          period_end: string
-          period_start: string
-          unlocked_at: string | null
-          unlocked_by: string | null
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          id?: string
-          is_locked?: boolean
-          lock_reason?: string | null
-          locked_by: string
-          period_end: string
-          period_start: string
-          unlocked_at?: string | null
-          unlocked_by?: string | null
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          id?: string
-          is_locked?: boolean
-          lock_reason?: string | null
-          locked_by?: string
-          period_end?: string
-          period_start?: string
-          unlocked_at?: string | null
-          unlocked_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "financial_period_locks_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -8226,108 +7807,6 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "pos_orders_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "pos_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      pos_sessions: {
-        Row: {
-          cashier_name: string
-          closed_at: string | null
-          closing_balance: number | null
-          company_id: string
-          id: string
-          notes: string | null
-          opened_at: string
-          opening_balance: number | null
-          status: string | null
-          total_sales: number | null
-          total_transactions: number | null
-        }
-        Insert: {
-          cashier_name: string
-          closed_at?: string | null
-          closing_balance?: number | null
-          company_id: string
-          id?: string
-          notes?: string | null
-          opened_at?: string
-          opening_balance?: number | null
-          status?: string | null
-          total_sales?: number | null
-          total_transactions?: number | null
-        }
-        Update: {
-          cashier_name?: string
-          closed_at?: string | null
-          closing_balance?: number | null
-          company_id?: string
-          id?: string
-          notes?: string | null
-          opened_at?: string
-          opening_balance?: number | null
-          status?: string | null
-          total_sales?: number | null
-          total_transactions?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pos_sessions_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      positions: {
-        Row: {
-          company_id: string
-          created_at: string
-          department_id: string | null
-          id: string
-          is_active: boolean | null
-          level: string | null
-          title: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          department_id?: string | null
-          id?: string
-          is_active?: boolean | null
-          level?: string | null
-          title: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          department_id?: string | null
-          id?: string
-          is_active?: boolean | null
-          level?: string | null
-          title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "positions_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "positions_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments"
-            referencedColumns: ["id"]
-          },
         ]
       }
       prepaid_expense_amortizations: {
@@ -8555,66 +8034,6 @@ export type Database = {
           },
         ]
       }
-      production_stages: {
-        Row: {
-          company_id: string | null
-          created_at: string
-          end_time: string | null
-          id: string
-          labor_cost: number | null
-          material_cost: number | null
-          notes: string | null
-          production_order_id: string
-          stage_name: string
-          stage_order: number
-          start_time: string | null
-          status: string
-        }
-        Insert: {
-          company_id?: string | null
-          created_at?: string
-          end_time?: string | null
-          id?: string
-          labor_cost?: number | null
-          material_cost?: number | null
-          notes?: string | null
-          production_order_id: string
-          stage_name: string
-          stage_order?: number
-          start_time?: string | null
-          status?: string
-        }
-        Update: {
-          company_id?: string | null
-          created_at?: string
-          end_time?: string | null
-          id?: string
-          labor_cost?: number | null
-          material_cost?: number | null
-          notes?: string | null
-          production_order_id?: string
-          stage_name?: string
-          stage_order?: number
-          start_time?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "production_stages_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "production_stages_production_order_id_fkey"
-            columns: ["production_order_id"]
-            isOneToOne: false
-            referencedRelation: "production_orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           company_id: string | null
@@ -8757,105 +8176,6 @@ export type Database = {
           },
           {
             foreignKeyName: "progress_billings_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      project_billings: {
-        Row: {
-          amount_received: number | null
-          billing_date: string
-          billing_number: number
-          billing_type: string
-          company_id: string
-          created_at: string
-          deductions: number | null
-          gross_amount: number
-          id: string
-          invoice_id: string | null
-          journal_entry_id: string | null
-          net_amount: number
-          notes: string | null
-          payment_date: string | null
-          project_id: string
-          retention_held: number | null
-          status: string | null
-          vat_amount: number | null
-        }
-        Insert: {
-          amount_received?: number | null
-          billing_date?: string
-          billing_number: number
-          billing_type?: string
-          company_id: string
-          created_at?: string
-          deductions?: number | null
-          gross_amount: number
-          id?: string
-          invoice_id?: string | null
-          journal_entry_id?: string | null
-          net_amount: number
-          notes?: string | null
-          payment_date?: string | null
-          project_id: string
-          retention_held?: number | null
-          status?: string | null
-          vat_amount?: number | null
-        }
-        Update: {
-          amount_received?: number | null
-          billing_date?: string
-          billing_number?: number
-          billing_type?: string
-          company_id?: string
-          created_at?: string
-          deductions?: number | null
-          gross_amount?: number
-          id?: string
-          invoice_id?: string | null
-          journal_entry_id?: string | null
-          net_amount?: number
-          notes?: string | null
-          payment_date?: string | null
-          project_id?: string
-          retention_held?: number | null
-          status?: string | null
-          vat_amount?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "project_billings_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_billings_invoice_id_fkey"
-            columns: ["invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_billings_invoice_id_fkey"
-            columns: ["invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices_safe"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_billings_journal_entry_id_fkey"
-            columns: ["journal_entry_id"]
-            isOneToOne: false
-            referencedRelation: "journal_entries"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_billings_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -12949,51 +12269,6 @@ export type Database = {
           },
         ]
       }
-      ticket_replies: {
-        Row: {
-          company_id: string | null
-          created_at: string
-          id: string
-          is_internal: boolean | null
-          message: string
-          replied_by: string | null
-          ticket_id: string
-        }
-        Insert: {
-          company_id?: string | null
-          created_at?: string
-          id?: string
-          is_internal?: boolean | null
-          message: string
-          replied_by?: string | null
-          ticket_id: string
-        }
-        Update: {
-          company_id?: string | null
-          created_at?: string
-          id?: string
-          is_internal?: boolean | null
-          message?: string
-          replied_by?: string | null
-          ticket_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ticket_replies_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ticket_replies_ticket_id_fkey"
-            columns: ["ticket_id"]
-            isOneToOne: false
-            referencedRelation: "support_tickets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       time_entries: {
         Row: {
           billable: boolean | null
@@ -13040,56 +12315,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "time_entries_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      trial_balance_imports: {
-        Row: {
-          company_id: string
-          created_at: string
-          created_by: string | null
-          data: Json
-          file_name: string | null
-          id: string
-          name: string
-          period_from: string | null
-          period_to: string | null
-          updated_at: string
-          vat_number: string | null
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          created_by?: string | null
-          data: Json
-          file_name?: string | null
-          id?: string
-          name: string
-          period_from?: string | null
-          period_to?: string | null
-          updated_at?: string
-          vat_number?: string | null
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          created_by?: string | null
-          data?: Json
-          file_name?: string | null
-          id?: string
-          name?: string
-          period_from?: string | null
-          period_to?: string | null
-          updated_at?: string
-          vat_number?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "trial_balance_imports_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -13362,80 +12587,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      user_sessions: {
-        Row: {
-          browser: string | null
-          city: string | null
-          company_id: string | null
-          country: string | null
-          device_type: string | null
-          ended_at: string | null
-          expires_at: string | null
-          id: string
-          ip_address: string | null
-          is_active: boolean | null
-          is_suspicious: boolean | null
-          last_activity: string
-          os: string | null
-          risk_score: number | null
-          session_token: string | null
-          started_at: string
-          termination_reason: string | null
-          user_agent: string | null
-          user_id: string
-        }
-        Insert: {
-          browser?: string | null
-          city?: string | null
-          company_id?: string | null
-          country?: string | null
-          device_type?: string | null
-          ended_at?: string | null
-          expires_at?: string | null
-          id?: string
-          ip_address?: string | null
-          is_active?: boolean | null
-          is_suspicious?: boolean | null
-          last_activity?: string
-          os?: string | null
-          risk_score?: number | null
-          session_token?: string | null
-          started_at?: string
-          termination_reason?: string | null
-          user_agent?: string | null
-          user_id: string
-        }
-        Update: {
-          browser?: string | null
-          city?: string | null
-          company_id?: string | null
-          country?: string | null
-          device_type?: string | null
-          ended_at?: string | null
-          expires_at?: string | null
-          id?: string
-          ip_address?: string | null
-          is_active?: boolean | null
-          is_suspicious?: boolean | null
-          last_activity?: string
-          os?: string | null
-          risk_score?: number | null
-          session_token?: string | null
-          started_at?: string
-          termination_reason?: string | null
-          user_agent?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_sessions_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       vouchers: {
         Row: {
