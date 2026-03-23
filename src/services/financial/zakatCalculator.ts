@@ -2,7 +2,7 @@
  * Zakat Calculator - ZATCA-compliant Net Assets Method
  * Extracted from systemFinancialData.ts (200+ lines → isolated module)
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { AccountCategory } from '../accounting';
 import { ZakatNote } from '@/components/financial-statements/types';
 import { ClassifiedAccounts, getBalance, getPositiveCreditBalance, getPositiveDebitBalance } from './accountClassifier';

@@ -2,7 +2,7 @@
  * Comprehensive Trial Balance Report
  * Extracted from reports.ts (~240 lines → isolated module)
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { AccountCategory } from './types';
 import { fetchAccounts } from './accounts';
 import { isBalanceSheetType } from '@/utils/accountTypes';

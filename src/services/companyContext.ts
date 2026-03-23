@@ -4,7 +4,7 @@
  * Single source of truth for getting the current company ID.
  * All services should import from here instead of duplicating this logic.
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { getCompanyOverride } from '@/lib/companyOverride';
 
 /** Get current company ID (nullable) */

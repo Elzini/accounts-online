@@ -4,7 +4,7 @@
  * This file re-exports from modular services for backward compatibility.
  * New code should import directly from the specific service modules.
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import type { Database } from '@/integrations/supabase/types';
 import { requireCompanyId, toDateOnly } from '@/services/companyContext';
 import { getIndustryFeatures } from '@/core/engine/industryFeatures';

@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { Employee, EmployeeAdvance } from './types';
 
 // Helper mappers for safe views

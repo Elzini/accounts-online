@@ -2,7 +2,7 @@
  * Fiscal Year - Closing Entry Operations
  * Handles closing a fiscal year and refreshing closing entries
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { computeBalances, buildClosingLines } from './balanceCalculator';
 
 export async function closeFiscalYear(

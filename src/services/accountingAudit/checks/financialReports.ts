@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { isAccountType } from '@/utils/accountTypes';
 import { AuditCheckResult } from '../types';
 

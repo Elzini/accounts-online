@@ -1,7 +1,7 @@
 /**
  * Car Dealership - Profit Recalculation Logic
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { getCurrentCompanyId } from '@/services/companyContext';
 
 export async function recalculateSalesProfitForCar(carId: string, newPurchasePrice: number) {

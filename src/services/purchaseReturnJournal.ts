@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 
 /**
  * Create a reverse journal entry for an approved purchase return (debit note).

@@ -2,7 +2,7 @@
  * Journal Attachments Service Hook
  * Centralized data access for journal entry attachments.
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useJournalAttachmentsList(journalEntryId: string | null) {

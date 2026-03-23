@@ -3,7 +3,7 @@
  * Encapsulates construction-specific logic
  */
 import { IndustryModule, DashboardStats, MenuItem } from '@/core/engine/types';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 
 export const ConstructionModule: IndustryModule = {
   id: 'construction',

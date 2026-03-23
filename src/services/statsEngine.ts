@@ -4,7 +4,7 @@
  * Replaces the 3 duplicated fetchStats branches (car/real-estate/general)
  * with a single, industry-agnostic engine that uses Strategy Pattern.
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { requireCompanyId, toDateOnly } from '@/services/companyContext';
 import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 

@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 
 // ==================== EMPLOYEES ====================
 export interface HREmployee {

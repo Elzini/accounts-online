@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { DetailedIncomeStatement } from './types';
 import { fetchAccounts } from './helpers';
 

@@ -1,7 +1,7 @@
 /**
  * Car Dealership - Purchase Batches
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { requireCompanyId, getCurrentCompanyId } from '@/services/companyContext';
 import type { CarInsert, PurchaseBatchInsert } from './types';
 

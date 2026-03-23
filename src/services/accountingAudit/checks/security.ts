@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { AuditCheckResult } from '../types';
 
 export async function checkSecurityPermissions(companyId: string): Promise<AuditCheckResult[]> {

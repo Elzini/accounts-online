@@ -2,7 +2,7 @@
  * Car dealership expense functions - isolated from general expenses service.
  * Only used when company_type === 'car_dealership'.
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import type { Expense } from './expenses';
 
 // Fetch expenses for a specific car

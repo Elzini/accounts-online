@@ -1,7 +1,7 @@
 /**
  * Supplier Service - Isolated CRUD operations for suppliers
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import type { Database } from '@/integrations/supabase/types';
 import { requireCompanyId } from '@/services/companyContext';
 

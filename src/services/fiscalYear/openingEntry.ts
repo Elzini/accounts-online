@@ -1,7 +1,7 @@
 /**
  * Fiscal Year - Opening Entry & Carry Forward Operations
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { computeBalances, buildOpeningLines, ensureRetainedEarningsAccount } from './balanceCalculator';
 
 async function createOpeningEntry(

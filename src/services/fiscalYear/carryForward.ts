@@ -1,7 +1,7 @@
 /**
  * Fiscal Year - Carry Forward & Refresh Operations
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { getIndustryFeatures } from '@/core/engine/industryFeatures';
 import { refreshClosingEntry } from './closingEntry';
 import { refreshOpeningBalances } from './openingEntry';

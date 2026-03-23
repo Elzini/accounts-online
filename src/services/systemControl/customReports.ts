@@ -1,7 +1,7 @@
 /**
  * System Control - Custom Reports CRUD
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import type { CustomReport, ReportColumn, ReportFilter, ReportGrouping, ReportSorting, ReportStyling } from './types';
 
 export async function fetchCustomReports(companyId: string): Promise<CustomReport[]> {

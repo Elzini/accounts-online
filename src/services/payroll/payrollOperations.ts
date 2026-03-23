@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { PayrollRecord, PayrollItem } from './types';
 import { fetchEmployees, fetchPendingAdvances, updateAdvanceDeducted, mapPayrollItemWithSafeEmployee } from './employees';
 

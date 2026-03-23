@@ -3,7 +3,7 @@
  * Delegates to server-side edge function for proper secp256k1 support
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 
 export interface CSRConfig {
   commonName: string;

@@ -4,7 +4,7 @@ export { checkJournalBalance, checkAccountLinks, checkTrialBalanceZero, checkEnt
 export { checkVATAccuracy } from './vatChecks';
 export { checkCustomerReconciliation, checkSupplierReconciliation } from './reconciliationChecks';
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import type { SystemHealthReport } from './types';
 import { checkJournalBalance, checkAccountLinks, checkTrialBalanceZero, checkEntrySequence } from './journalChecks';
 import { checkVATAccuracy } from './vatChecks';

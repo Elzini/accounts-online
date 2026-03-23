@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import logo from '@/assets/logo.png';
 import { usePublicAuthSettings } from '@/hooks/usePublicAuthSettings';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';

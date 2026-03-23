@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { TaxSettings } from './types';
 
 export async function fetchTaxSettings(companyId: string): Promise<TaxSettings | null> {

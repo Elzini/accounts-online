@@ -3,7 +3,7 @@
  * Handles year-end closing and opening balance generation
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { JournalEngine } from './journalEngine';
 import { computeTrialBalance } from './ledgerEngine';
 

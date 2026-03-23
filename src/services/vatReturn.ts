@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { fetchAccounts } from './accounting';
 
 export interface VATReturnSales {

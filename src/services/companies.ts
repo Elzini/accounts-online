@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import type { Database } from '@/integrations/supabase/types';
 
 type Company = Database['public']['Tables']['companies']['Row'];

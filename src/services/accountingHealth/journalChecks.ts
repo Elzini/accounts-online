@@ -1,5 +1,5 @@
 // حارس القيود المحاسبية
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { AccountingCheckResult } from './types';
 
 export async function checkJournalBalance(companyId: string): Promise<AccountingCheckResult> {

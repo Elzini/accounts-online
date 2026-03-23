@@ -4,7 +4,7 @@
  * Industry modules can extend with their own stats
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { DashboardStats } from './types';
 
 interface DateRange {

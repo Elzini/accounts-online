@@ -1,7 +1,7 @@
 /**
  * System Control - Dashboard Configuration
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import type { DashboardConfig, StatCardConfig, AnalyticsSettings, LayoutSettings } from './types';
 
 export async function fetchDashboardConfig(companyId: string): Promise<DashboardConfig | null> {

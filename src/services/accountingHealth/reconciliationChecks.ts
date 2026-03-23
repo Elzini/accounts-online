@@ -1,5 +1,5 @@
 // محرك التسوية التلقائي
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useMiscServices';
 import { AccountingCheckResult } from './types';
 
 export async function checkCustomerReconciliation(companyId: string): Promise<AccountingCheckResult> {
