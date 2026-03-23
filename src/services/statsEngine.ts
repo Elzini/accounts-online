@@ -231,28 +231,27 @@ async function fetchCarDealershipStats(
   };
 }
 
+// ── Shared company type resolver (single query, reused) ──
+async function resolveCompanyType(companyId: string): Promise<string | null> {
+  const { data } = await supabase.from('companies').select('company_type').eq('id', companyId).maybeSingle();
+  return data?.company_type || null;
+}
+
 // ── Main Entry Point ──
 export async function fetchDashboardStats(fiscalYearId?: string | null): Promise<DashboardStats> {
   const companyId = await requireCompanyId();
-  const { start: fyStart, end: fyEnd } = await getFiscalYearDates(fiscalYearId);
-
-  const { data: companyRecord } = await supabase
-    .from('companies')
-    .select('company_type')
-    .eq('id', companyId)
-    .maybeSingle();
-
-  const companyType = companyRecord?.company_type;
+  const [{ start: fyStart, end: fyEnd }, companyType] = await Promise.all([
+    getFiscalYearDates(fiscalYearId),
+    resolveCompanyType(companyId),
+  ]);
   const features = getIndustryFeatures(companyType);
 
   if (features.hasCarInventory) {
     return fetchCarDealershipStats(companyId, fiscalYearId, fyStart, fyEnd);
   }
 
-  // All non-car industries use invoice-based stats
   let stats = await fetchInvoiceBasedStats(companyId, fiscalYearId, fyStart, fyEnd);
 
-  // Enrich with industry-specific metrics via ModuleRegistry
   const { ModuleRegistry } = await import('@/core/engine/moduleRegistry');
   await import('@/core/modules');
   const industryModule = ModuleRegistry.getForType(companyType || 'general_trading');
@@ -269,13 +268,7 @@ export async function fetchDashboardStats(fiscalYearId?: string | null): Promise
 // ── All-time stats ──
 export async function fetchAllTimeDashboardStats() {
   const companyId = await requireCompanyId();
-  const { data: companyRecord } = await supabase
-    .from('companies')
-    .select('company_type')
-    .eq('id', companyId)
-    .maybeSingle();
-
-  const companyType = companyRecord?.company_type;
+  const companyType = await resolveCompanyType(companyId);
 
   if (companyType && !getIndustryFeatures(companyType).hasCarInventory) {
     const [pRes, sRes] = await Promise.all([
@@ -303,16 +296,11 @@ export async function fetchAllTimeDashboardStats() {
 
 // ── Monthly Chart Data ──
 export async function fetchMonthlyChartData(fiscalYearId?: string) {
-  const { start: fyStart, end: fyEnd } = await getFiscalYearDates(fiscalYearId);
   const companyId = await requireCompanyId();
-
-  const { data: companyRecord } = await supabase
-    .from('companies')
-    .select('company_type')
-    .eq('id', companyId)
-    .maybeSingle();
-
-  const companyType = companyRecord?.company_type;
+  const [{ start: fyStart, end: fyEnd }, companyType] = await Promise.all([
+    getFiscalYearDates(fiscalYearId),
+    resolveCompanyType(companyId),
+  ]);
 
   let startDate: string;
   let endDate: string;
