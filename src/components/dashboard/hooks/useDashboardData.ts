@@ -150,9 +150,11 @@ export function useDashboardData() {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: ['stats'] });
-      await queryClient.invalidateQueries({ queryKey: ['analytics'] });
-      await queryClient.invalidateQueries({ queryKey: ['monthlyChartData'] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['analytics'] }),
+        queryClient.invalidateQueries({ queryKey: ['monthlyChartData'] }),
+      ]);
       toast.success(t.data_updated);
     } catch {
       toast.error(t.data_update_failed);
