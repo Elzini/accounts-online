@@ -108,11 +108,16 @@ export function FingerprintDevicesPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingDevice) {
-      updateDevice.mutate({ ...formData, id: editingDevice.id });
-    } else {
-      addDevice.mutate(formData);
-    }
+    saveMutation.mutate(
+      { id: editingDevice?.id, ...formData },
+      {
+        onSuccess: () => {
+          toast.success(editingDevice ? (language === 'ar' ? 'تم تحديث الجهاز بنجاح' : 'Device updated successfully') : (language === 'ar' ? 'تم إضافة الجهاز بنجاح' : 'Device added successfully'));
+          resetForm();
+        },
+        onError: () => toast.error(t.error_occurred),
+      },
+    );
   };
 
   const activeCount = devices.filter(d => d.status === 'active').length;
