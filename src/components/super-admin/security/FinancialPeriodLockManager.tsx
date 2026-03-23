@@ -160,7 +160,7 @@ export function FinancialPeriodLockManager() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLockDialog(false)}>إلغاء</Button>
-            <Button variant="destructive" onClick={() => createLock.mutate()} disabled={createLock.isPending}>
+            <Button variant="destructive" onClick={() => createLock.mutate(lockData)} disabled={createLock.isPending}>
               <Lock className="h-4 w-4 ml-1" />
               قفل الفترة
             </Button>
