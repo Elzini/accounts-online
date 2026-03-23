@@ -529,7 +529,7 @@ export function EmployeeContractsPage() {
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPrintContract(c)} title="طباعة العقد">
                         <Printer className="w-3 h-3" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(c.id)}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(c.id)}>
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
