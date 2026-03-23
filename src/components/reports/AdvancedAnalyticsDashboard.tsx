@@ -108,7 +108,7 @@ export function AdvancedAnalyticsDashboard() {
       .sort(([a], [b]) => a.localeCompare(b))
       .slice(-12)
       .map(([, v]) => ({ ...v, net: v.revenue - v.expenses }));
-  }, [salesData, invoicesData, expensesData, isRtl]);
+  }, [salesData, expensesData, isRtl]);
 
   // Period comparison
   const periodComparison = useMemo(() => {
