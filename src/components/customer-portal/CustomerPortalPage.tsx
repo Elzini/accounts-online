@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Globe, FileText, DollarSign, MessageSquare, User, Link2, Copy, Trash2, Plus, CheckCircle, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { fetchPortalTokens, fetchPortalSales, fetchPortalCustomers, addPortalAccess as addPortalAccessSvc, togglePortalAccess as togglePortalAccessSvc, deletePortalAccess as deletePortalAccessSvc } from '@/services/customerPortal';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
