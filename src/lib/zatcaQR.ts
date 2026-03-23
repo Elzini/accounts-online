@@ -259,6 +259,18 @@ export function decodeZatcaQRData(base64Data: string): ZatcaQRData | null {
         case 5:
           result.vatAmount = parseFloat(value);
           break;
+        case 6:
+          result.invoiceHash = value;
+          break;
+        case 7:
+          result.ecdsaSignature = value;
+          break;
+        case 8:
+          result.ecdsaPublicKey = value;
+          break;
+        case 9:
+          result.certificateSignature = value;
+          break;
       }
       
       offset += 2 + length;
