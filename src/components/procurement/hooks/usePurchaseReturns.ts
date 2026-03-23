@@ -161,19 +161,8 @@ export function usePurchaseReturns() {
     if (!searchQuery.trim() || !companyId) return;
     setIsSearching(true);
     try {
-      const { data: invoice, error: iErr } = await (supabase as any)
-        .from('invoices').select('*, invoice_items(*), supplier:suppliers!invoices_supplier_id_fkey(name)')
-        .eq('company_id', companyId).eq('invoice_type', 'purchase')
-        .or(`invoice_number.eq.${searchQuery},invoice_number.ilike.%${searchQuery}%`)
-        .limit(1).single();
-      if (iErr || !invoice) {
-        const { data: inv2, error: iErr2 } = await (supabase as any)
-          .from('invoices').select('*, invoice_items(*), supplier:suppliers!invoices_supplier_id_fkey(name)')
-          .eq('company_id', companyId).eq('invoice_type', 'purchase')
-          .ilike('invoice_number', `%${searchQuery}%`).limit(1).single();
-        if (iErr2 || !inv2) { toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found'); setFoundInvoice(null); setItems([]); setIsSearching(false); return; }
-        processFoundInvoice(inv2); return;
-      }
+      const invoice = await searchPurchaseInvoice(companyId, searchQuery);
+      if (!invoice) { toast.error(language === 'ar' ? 'لم يتم العثور على الفاتورة' : 'Invoice not found'); setFoundInvoice(null); setItems([]); setIsSearching(false); return; }
       processFoundInvoice(invoice);
     } catch { toast.error(language === 'ar' ? 'خطأ في البحث' : 'Search error'); }
     finally { setIsSearching(false); }
