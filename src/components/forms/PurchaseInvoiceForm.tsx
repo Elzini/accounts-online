@@ -1432,44 +1432,34 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             </div>
           </div>
 
-          {/* ===== Totals Section - Modern Cards ===== */}
+          {/* ===== Totals Section - Shared Component ===== */}
           <div className="p-4 border-t bg-card">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {/* الإجمالي الصافي */}
-              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-4 text-center text-white shadow-lg">
+            {/* Net Total Hero */}
+            <div className="mb-3">
+              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-4 text-center text-white shadow-lg max-w-xs mx-auto">
                 <div className="text-3xl font-black">{formatCurrency(displayTotals.finalTotal)}</div>
                 <div className="text-[11px] font-medium mt-1 opacity-90">{t.inv_net}</div>
               </div>
-              {/* المجموع */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4 text-center">
-                <div className="text-2xl font-black text-blue-700 dark:text-blue-400">{formatCurrency(displayTotals.subtotal)}</div>
-                <div className="text-[10px] text-blue-600 dark:text-blue-500 font-semibold mt-1">{t.inv_total}</div>
-              </div>
-              {/* الخصم */}
-              <div className="bg-muted/60 border-2 border-border rounded-xl p-4 text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Input type="number" value={discount} onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)} className="h-8 text-lg font-black text-center w-20 border-0 border-b-2 border-border rounded-none bg-transparent" dir="ltr" />
-                  <Select value={discountType} onValueChange={(v: 'percentage' | 'amount') => setDiscountType(v)}>
-                    <SelectTrigger className="h-7 text-xs w-14 border-0 shadow-none"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="amount">{currency}</SelectItem>
-                      <SelectItem value="percentage">%</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="text-[10px] text-muted-foreground font-semibold mt-1">{t.inv_discount}</div>
-              </div>
-              {/* الضريبة */}
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 text-center">
-                <div className="text-2xl font-black text-amber-700 dark:text-amber-400">{formatCurrency(displayTotals.totalVAT)}</div>
-                <div className="text-[10px] text-amber-600 dark:text-amber-500 font-semibold mt-1">{t.inv_tax_label} {taxRate}%</div>
-              </div>
-              {/* الإجمالي بعد التقريب */}
-              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border-2 border-indigo-200 dark:border-indigo-800 rounded-xl p-4 text-center">
-                <div className="text-2xl font-black text-indigo-700 dark:text-indigo-400">{formatCurrency(displayTotals.finalTotal)}</div>
-                <div className="text-[10px] text-indigo-600 dark:text-indigo-500 font-semibold mt-1">{t.inv_rounded_net}</div>
-              </div>
             </div>
+            <InvoiceTotalsSection
+              subtotal={displayTotals.subtotal}
+              discountAmount={displayTotals.discountAmount}
+              totalVAT={displayTotals.totalVAT}
+              finalTotal={displayTotals.finalTotal}
+              taxRate={taxRate}
+              currency={currency}
+              discount={discount}
+              discountType={discountType}
+              onDiscountChange={setDiscount}
+              onDiscountTypeChange={setDiscountType}
+              formatCurrency={formatCurrency}
+              labels={{
+                subtotal: t.inv_total,
+                discount: t.inv_discount,
+                tax: t.inv_tax_label,
+                roundedNet: t.inv_rounded_net,
+              }}
+            />
 
             {/* Terms */}
             <div className="mt-4 pt-3 border-t border-border/40">
