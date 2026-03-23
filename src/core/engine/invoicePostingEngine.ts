@@ -138,7 +138,7 @@ export class InvoicePostingEngine {
     const entry = await this.journal.createEntry({
       company_id: this.companyId,
       fiscal_year_id: fiscalYearId,
-      entry_date: new Date().toISOString().split('T')[0],
+      entry_date: inv.invoice_date || new Date().toISOString().split('T')[0],
       description: `${isPurchase ? 'فاتورة شراء' : 'فاتورة مبيعات'} رقم ${inv.invoice_number} - ${inv.customer_name || ''}`,
       reference_type: isPurchase ? 'invoice_purchase' : 'invoice_sale',
       reference_id: invoiceId,
