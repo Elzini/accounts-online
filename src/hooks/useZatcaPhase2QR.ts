@@ -11,7 +11,7 @@ interface UseZatcaPhase2QRParams {
   invoiceDateTime: string;
   invoiceTotal: number;
   vatAmount: number;
-  invoiceNumber?: string;
+  invoiceNumber?: string | number;
 }
 
 export function useZatcaPhase2QR(params: UseZatcaPhase2QRParams): string {
