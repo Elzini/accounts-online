@@ -193,7 +193,7 @@ export function AdvancedAnalyticsDashboard() {
           { label: isRtl ? 'الإيرادات' : 'Revenue', value: totalRevenue, change: periodComparison.salesChange, icon: DollarSign, color: 'text-green-600' },
           { label: isRtl ? 'المصروفات' : 'Expenses', value: totalExpenses, change: periodComparison.expenseChange, icon: ShoppingCart, color: 'text-red-600' },
           { label: isRtl ? 'صافي الربح' : 'Net Profit', value: totalProfit, change: periodComparison.thisMonthProfit && periodComparison.lastMonthProfit ? ((periodComparison.thisMonthProfit - periodComparison.lastMonthProfit) / Math.abs(periodComparison.lastMonthProfit || 1) * 100) : 0, icon: TrendingUp, color: 'text-blue-600' },
-          { label: isRtl ? 'الفواتير' : 'Invoices', value: invoicesData.length, change: 0, icon: FileText, color: 'text-purple-600' },
+          { label: isRtl ? 'المبيعات' : 'Sales', value: salesData.length, change: 0, icon: FileText, color: 'text-purple-600' },
         ].map((kpi, i) => (
           <Card key={i}>
             <CardContent className="p-4">
