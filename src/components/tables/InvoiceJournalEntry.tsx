@@ -94,19 +94,14 @@ export function InvoiceJournalEntry({ invoiceId, invoiceNumber }: InvoiceJournal
 
     setIsSaving(true);
     try {
-      // Delete old lines and re-insert
-      await supabase.from('journal_entry_lines').delete().eq('journal_entry_id', journalData.id);
-
-      const newLines = editLines.map(line => ({
-        journal_entry_id: journalData.id,
+      const { companyId: cId } = require('@/contexts/CompanyContext');
+      const journal = new JournalEngine(companyId || '');
+      await journal.replaceLines(journalData.id, editLines.map(line => ({
         account_id: line.account_id,
+        description: line.description || '',
         debit: line.debit,
         credit: line.credit,
-        description: line.description,
-      }));
-
-      const { error } = await supabase.from('journal_entry_lines').insert(newLines);
-      if (error) throw error;
+      })));
 
       toast.success('تم تحديث القيد المحاسبي بنجاح');
       setIsEditing(false);
