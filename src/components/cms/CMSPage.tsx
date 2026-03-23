@@ -10,8 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Trash2, FileText, Globe, Eye, Edit } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCMSPages, useCreateCMSPage, useDeleteCMSPage, useUpdateCMSPageStatus } from '@/hooks/modules/useBusinessServices';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
 
