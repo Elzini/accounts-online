@@ -19,7 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/hooks/modules/useSuperAdminServices';
 import { toast } from 'sonner';
 import { Loader2, Save, Settings2, Building2, ToggleLeft, BookOpen } from 'lucide-react';
 
