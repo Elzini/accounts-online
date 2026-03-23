@@ -13,7 +13,7 @@ const accounts: Account[] = [
   { id: 'revenue', company_id: 'c1', code: '4101', name: 'إيرادات', type: 'revenue', parent_id: null, is_system: true, description: null, created_at: '', updated_at: '' },
   { id: 'expense', company_id: 'c1', code: '5101', name: 'مشتريات', type: 'expenses', parent_id: null, is_system: true, description: null, created_at: '', updated_at: '' },
   { id: 'suppliers', company_id: 'c1', code: '2101', name: 'الموردون', type: 'liabilities', parent_id: null, is_system: true, description: null, created_at: '', updated_at: '' },
-  { id: 'vat_in', company_id: 'c1', code: '21042', name: 'ضريبة مدخلات', type: 'liabilities', parent_id: null, is_system: false, description: null, created_at: '', updated_at: '' },
+  { id: 'vat_in', company_id: 'c1', code: '21042', name: 'ضريبة مدخلات', type: 'assets', parent_id: null, is_system: false, description: null, created_at: '', updated_at: '' },
   { id: 'vat_out', company_id: 'c1', code: '210401', name: 'ضريبة مخرجات', type: 'liabilities', parent_id: null, is_system: false, description: null, created_at: '', updated_at: '' },
 ];
 
@@ -74,8 +74,12 @@ function buildEngine() {
   const journal = new JournalEngine('c1', journalRepo);
 
   const engine = new InvoicePostingEngine('c1', {
-    resolver, journal,
-    invoiceRepo, supplierRepo, fiscalYearRepo, settingsRepo,
+    resolver,
+    journal,
+    invoiceRepo,
+    supplierRepo,
+    fiscalYearRepo,
+    settingsRepo,
   });
 
   return { engine, invoiceRepo, journalRepo, settingsRepo };
@@ -109,6 +113,35 @@ describe('InvoicePostingEngine', () => {
     expect(invoiceRepo.updateStatus).toHaveBeenCalledWith('inv1', 'issued', expect.any(String));
   });
 
+  it('uses shared VAT account when vat_input mapping is missing', async () => {
+    const removedIndex = mappings.findIndex((m) => m.mapping_key === 'vat_input');
+    const removed = mappings.splice(removedIndex, 1)[0];
+
+    try {
+      const { engine, invoiceRepo, journalRepo } = buildEngine();
+      (invoiceRepo.findById as any).mockResolvedValue({
+        id: 'inv-vat-fallback', company_id: 'c1', fiscal_year_id: 'fy1',
+        invoice_type: 'purchase', invoice_number: 'P-002',
+        invoice_date: '2026-03-01', customer_name: 'مورد 2',
+        supplier_id: null, subtotal: 1000, vat_amount: 150, total: 1150,
+        payment_account_id: null,
+      });
+
+      await engine.postInvoice('inv-vat-fallback');
+
+      const lines = (journalRepo.createLines as any).mock.calls[0][0];
+      expect(lines).toHaveLength(3);
+      expect(lines.find((l: any) => l.account_id === 'vat_out')?.debit).toBe(150);
+
+      const totalDebit = lines.reduce((s: number, l: any) => s + l.debit, 0);
+      const totalCredit = lines.reduce((s: number, l: any) => s + l.credit, 0);
+      expect(totalDebit).toBe(1150);
+      expect(totalCredit).toBe(1150);
+    } finally {
+      mappings.splice(removedIndex, 0, removed);
+    }
+  });
+
   it('posts a sales invoice', async () => {
     const { engine, invoiceRepo, journalRepo } = buildEngine();
     (invoiceRepo.findById as any).mockResolvedValue({
@@ -134,7 +167,7 @@ describe('InvoicePostingEngine', () => {
     });
     (invoiceRepo.findById as any).mockResolvedValue({
       id: 'inv3', company_id: 'c1', fiscal_year_id: 'fy1',
-      invoice_type: 'purchase', invoice_number: 'P-002',
+      invoice_type: 'purchase', invoice_number: 'P-003',
       invoice_date: '2026-03-01', customer_name: null,
       supplier_id: null, subtotal: 500, vat_amount: 0, total: 500,
       payment_account_id: null,
@@ -147,7 +180,6 @@ describe('InvoicePostingEngine', () => {
 
   it('skips if duplicate reference exists', async () => {
     const { engine, invoiceRepo, journalRepo } = buildEngine();
-    // Make findByReference return existing entry
     (journalRepo.findByReference as any).mockResolvedValue('je-existing');
 
     await engine.postInvoice('inv4');
@@ -159,7 +191,7 @@ describe('InvoicePostingEngine', () => {
     const { engine, invoiceRepo, journalRepo } = buildEngine();
     (invoiceRepo.findById as any).mockResolvedValue({
       id: 'inv5', company_id: 'c1', fiscal_year_id: 'fy1',
-      invoice_type: 'purchase', invoice_number: 'P-003',
+      invoice_type: 'purchase', invoice_number: 'P-004',
       invoice_date: '2026-03-01', customer_name: null,
       supplier_id: null, subtotal: 0, vat_amount: 0, total: 0,
       payment_account_id: null,
