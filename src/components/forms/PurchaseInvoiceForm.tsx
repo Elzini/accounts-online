@@ -375,10 +375,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
     };
   }, [calculations, storedHeaderTotals, isViewingExisting, isEditing]);
 
-  const formatCurrency = (value: number) => {
-    const v = decimals === 0 ? Math.round(value) : value;
-    return decimals === 0 ? String(v) : v.toFixed(decimals);
-  };
+  const formatCurrency = (value: number) => formatInvoiceCurrency(value, decimals);
 
   const handleSubmit = async () => {
     if (!invoiceData.supplier_id) {
