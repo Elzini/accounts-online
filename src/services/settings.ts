@@ -201,9 +201,14 @@ export async function resetDatabase(targetCompanyId?: string) {
     throw new Error(error.message || 'Failed to reset company data');
   }
 
-  if (!data?.success) {
+  const result = data as unknown as { success?: boolean; company_id?: string; deleted_rows?: number } | null;
+  if (!result?.success) {
     throw new Error('Failed to reset company data');
   }
 
-  return data as { success: boolean; company_id: string; deleted_rows: number };
+  return {
+    success: true,
+    company_id: result.company_id || companyId,
+    deleted_rows: Number(result.deleted_rows || 0),
+  };
 }
