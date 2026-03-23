@@ -99,10 +99,13 @@ export function usePurchaseInvoiceCrud(deps: CrudDeps) {
         unit_price: calculations.inventoryItems[index].baseAmount / item.quantity,
         taxable_amount: calculations.inventoryItems[index].baseAmount,
         vat_rate: taxRate, vat_amount: calculations.inventoryItems[index].vatAmount,
-        total: calculations.inventoryItems[index].total, inventory_item_id: item.item_id,
+        total: calculations.inventoryItems[index].total, inventory_item_id: item.item_id || null,
       }));
       const { error: itemsError } = await supabase.from('invoice_items').insert(invoiceItems);
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        await supabase.from('invoices').delete().eq('id', invoice.id);
+        throw itemsError;
+      }
       invalidateAll();
       onSuccess({ batch: { id: invoice.id }, supplier: selectedSupplier, inventoryItems: items });
       toast.success(t.inv_toast_purchase_inv_success);

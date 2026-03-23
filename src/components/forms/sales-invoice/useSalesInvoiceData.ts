@@ -402,10 +402,13 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
           quantity: item.quantity, unit: item.unit_name, unit_price: calculations.inventoryItems[index].baseAmount / item.quantity,
           taxable_amount: calculations.inventoryItems[index].baseAmount, vat_rate: taxRate,
           vat_amount: calculations.inventoryItems[index].vatAmount, total: calculations.inventoryItems[index].total,
-          inventory_item_id: item.item_id,
+          inventory_item_id: item.item_id || null,
         }));
         const { error: itemsError } = await supabase.from('invoice_items').insert(invoiceItems);
-        if (itemsError) throw itemsError;
+        if (itemsError) {
+          await supabase.from('invoices').delete().eq('id', invoice.id);
+          throw itemsError;
+        }
 
         setSavedSaleData({ id: invoice.id, customer: selectedCustomer, inventoryItems: selectedInventoryItems });
         toast.success('✅ تم حفظ الفاتورة كمسودة - يمكنك تعديلها أو اعتمادها محاسبياً');
@@ -441,7 +444,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
           quantity: item.quantity, unit: item.unit_name, unit_price: calculations.inventoryItems[index].baseAmount / item.quantity,
           taxable_amount: calculations.inventoryItems[index].baseAmount, vat_rate: taxRate,
           vat_amount: calculations.inventoryItems[index].vatAmount, total: calculations.inventoryItems[index].total,
-          inventory_item_id: item.item_id,
+          inventory_item_id: item.item_id || null,
         }));
         const { error: itemsError } = await supabase.from('invoice_items').insert(invoiceItems);
         if (itemsError) throw itemsError;
