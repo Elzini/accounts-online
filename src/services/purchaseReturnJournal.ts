@@ -44,16 +44,16 @@ export async function createPurchaseReturnJournal(noteId: string): Promise<void>
   if (noteData.related_invoice_id) {
     const { data: originalInvoice } = await supabase
       .from('invoices').select('payment_account_id, supplier_id').eq('id', noteData.related_invoice_id).maybeSingle();
-    if (originalInvoice?.payment_account_id) debitAccount = findAccount(originalInvoice.payment_account_id);
+    if (originalInvoice?.payment_account_id) debitAccount = resolver.resolveFlexible(originalInvoice.payment_account_id, null);
     if (!debitAccount && originalInvoice?.supplier_id) {
       const { data: supplier } = await supabase.from('suppliers').select('name').eq('id', originalInvoice.supplier_id).maybeSingle();
       if (supplier?.name) {
-        const subAcc = accounts?.find(a => a.code?.startsWith('2101') && a.name === supplier.name);
+        const subAcc = resolver.findByNameUnderCode(supplier.name, '2101');
         if (subAcc) debitAccount = subAcc;
       }
     }
   }
-  if (!debitAccount) debitAccount = findAccount(settings?.suppliers_account_id || null, '2101');
+  if (!debitAccount) debitAccount = resolver.resolveFlexible(settings?.suppliers_account_id || null, 'suppliers', '2101');
   if (!expenseAccount || !debitAccount) { console.error('Missing accounts for purchase return journal entry'); return; }
 
   // 4. Build lines
