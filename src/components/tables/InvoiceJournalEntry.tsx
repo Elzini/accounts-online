@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -39,8 +39,7 @@ export function InvoiceJournalEntry({ invoiceId, invoiceNumber }: InvoiceJournal
     queryKey: ['invoice-journal-entry', invoiceId],
     queryFn: async () => {
       // Find journal entry by reference_id
-      const { data: je, error: jeError } = await (supabase as any)
-        .from('journal_entries')
+      const { data: je, error: jeError } = await untypedFrom('journal_entries')
         .select('id, entry_number, entry_date, description')
         .eq('company_id', companyId)
         .eq('reference_id', invoiceId)
