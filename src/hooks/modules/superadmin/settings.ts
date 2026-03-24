@@ -68,7 +68,7 @@ export function useSaveDefaultSetting() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ settingType, settingKey, settingValue }: { settingType: string; settingKey: string; settingValue: string }) => {
-      const { data: existing } = await (supabase.from as any)('default_company_settings')
+      const { data: existing } = await untypedFrom('default_company_settings')
         .select('id').eq('setting_type', settingType).eq('setting_key', settingKey).maybeSingle();
 
       if (existing) {
