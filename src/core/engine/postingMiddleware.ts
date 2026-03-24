@@ -80,7 +80,8 @@ class PostingMiddlewareClass {
       try {
         await hook(entry, input, context);
       } catch (err) {
-        console.error(`[PostingMiddleware] Post-hook "${id}" failed:`, err);
+        const { Logger: L } = await import('./logger');
+        L.error(`Post-hook "${id}" failed`, err, { module: 'PostingMiddleware', companyId: context.companyId });
         // Post-hooks are non-critical — log and continue
       }
     }

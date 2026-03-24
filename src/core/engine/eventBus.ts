@@ -79,7 +79,8 @@ class EventBusClass {
       try {
         await handler(event);
       } catch (err) {
-        console.error(`[EventBus] Error in handler for "${eventType}":`, err);
+        const { Logger: L } = await import('./logger');
+        L.error(`EventBus handler failed for "${eventType}"`, err, { module: 'EventBus', companyId });
       }
     });
 

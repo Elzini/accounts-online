@@ -166,6 +166,9 @@ export class InvoicePostingEngine {
       invoiceType: inv.invoice_type,
       total,
     });
+
+    log.info('Invoice posted successfully', { referenceType: inv.invoice_type, total });
+    }); // end trace
   }
 
   private async buildPurchaseLines(
