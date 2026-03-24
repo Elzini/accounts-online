@@ -85,7 +85,7 @@ export function useDashboardWidgets({ stats, projectCostAccountId, isCarDealersh
     if (!formulaConfig || !formulaConfig.isCustom) return defaultValue;
     const { result, error } = evaluateFormula(formulaConfig.formula, formulaVariables);
     if (error) return defaultValue;
-    return formulaConfig.includeVAT ? result * 1.15 : result;
+    return formulaConfig.includeVAT ? calcStandardVAT(result).totalWithVAT : result;
   }, [getFormula, formulaVariables, cardConfigs, accountBalances, isCarDealership, projectCostAccountId]);
 
   // Widget edit mode
