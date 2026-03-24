@@ -3,6 +3,7 @@
  * Manages widget visibility, ordering, drag-drop, card configs, and edit mode.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { calcStandardVAT } from '@/utils/vatCalculator';
 import { toast } from 'sonner';
 import { useDashboardConfig, useSaveDashboardConfig } from '@/hooks/useSystemControl';
 import { CardConfig, DEFAULT_STAT_CARDS } from '@/components/dashboard/DashboardCustomizer';
