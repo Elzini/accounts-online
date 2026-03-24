@@ -2,7 +2,7 @@
  * Super Admin - System Monitoring & SaaS Services
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
 
 // ─── System Monitoring ───
 export function useSystemMonitoringStats() {
@@ -54,7 +54,7 @@ export function useRecentSystemErrors() {
   return useQuery({
     queryKey: ['system-recent-errors'],
     queryFn: async () => {
-      const { data } = await (supabase.from as any)('system_activity_logs').select('*').order('created_at', { ascending: false }).limit(20);
+      const { data } = await untypedFrom('system_activity_logs').select('*').order('created_at', { ascending: false }).limit(20);
       return data || [];
     },
     refetchInterval: 60000,
@@ -152,7 +152,7 @@ export function useSaaSPlanDistribution() {
   return useQuery({
     queryKey: ['saas-plan-distribution'],
     queryFn: async () => {
-      const { data } = await (supabase.from as any)('subscriptions').select('plan_id, companies(name)').eq('is_active', true);
+      const { data } = await untypedFrom('subscriptions').select('plan_id, companies(name)').eq('is_active', true);
       if (!data) return [];
 
       const planMap: Record<string, number> = {};

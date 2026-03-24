@@ -2,7 +2,7 @@
  * Module Services - Dashboard widgets (expenses, invoices, alerts, project costs)
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
 import { getDashboardDateWindow } from '@/lib/dashboardDateWindow';
 
 export function useMonthlyExpenses(companyId: string | null, fiscalBounds: { start: Date; end: Date } | null, fiscalYearId?: string, startISO?: string, endISO?: string) {
@@ -39,8 +39,7 @@ export function useRecentInvoices(companyId: string | null, fiscalYearId?: strin
   return useQuery({
     queryKey: ['dashboard-recent-invoices', companyId, fiscalYearId],
     queryFn: async () => {
-      let query = (supabase as any)
-        .from('invoices')
+      let query = untypedFrom('invoices')
         .select('id, invoice_number, invoice_type, invoice_date, total, payment_status, customer_name, supplier:suppliers!invoices_supplier_id_fkey(name)')
         .eq('company_id', companyId!)
         .in('invoice_type', ['sales', 'purchase'])

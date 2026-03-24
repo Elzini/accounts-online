@@ -2,7 +2,7 @@
  * Super Admin - Settings & Configuration Services
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
 
 // ─── System Labels ───
 export function useSystemLabels(companyType: string) {
@@ -56,7 +56,7 @@ export function useDefaultSettings() {
   return useQuery({
     queryKey: ['default-company-settings'],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('default_company_settings').select('*');
+      const { data, error } = await untypedFrom('default_company_settings').select('*');
       if (error) throw error;
       return data || [];
     },
@@ -68,14 +68,14 @@ export function useSaveDefaultSetting() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ settingType, settingKey, settingValue }: { settingType: string; settingKey: string; settingValue: string }) => {
-      const { data: existing } = await (supabase.from as any)('default_company_settings')
+      const { data: existing } = await untypedFrom('default_company_settings')
         .select('id').eq('setting_type', settingType).eq('setting_key', settingKey).maybeSingle();
 
       if (existing) {
-        const { error } = await (supabase.from as any)('default_company_settings').update({ setting_value: settingValue }).eq('id', existing.id);
+        const { error } = await untypedFrom('default_company_settings').update({ setting_value: settingValue }).eq('id', existing.id);
         if (error) throw error;
       } else {
-        const { error } = await (supabase.from as any)('default_company_settings').insert({ setting_type: settingType, setting_key: settingKey, setting_value: settingValue });
+        const { error } = await untypedFrom('default_company_settings').insert({ setting_type: settingType, setting_key: settingKey, setting_value: settingValue });
         if (error) throw error;
       }
     },
@@ -88,12 +88,12 @@ export function useSaveCompanyAccountingSettings() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ companyId, settings }: { companyId: string; settings: any }) => {
-      const { data: existing } = await (supabase.from as any)('company_accounting_settings').select('id').eq('company_id', companyId).maybeSingle();
+      const { data: existing } = await untypedFrom('company_accounting_settings').select('id').eq('company_id', companyId).maybeSingle();
       if (existing) {
-        const { error } = await (supabase.from as any)('company_accounting_settings').update(settings).eq('id', existing.id);
+        const { error } = await untypedFrom('company_accounting_settings').update(settings).eq('id', existing.id);
         if (error) throw error;
       } else {
-        const { error } = await (supabase.from as any)('company_accounting_settings').insert({ company_id: companyId, ...settings });
+        const { error } = await untypedFrom('company_accounting_settings').insert({ company_id: companyId, ...settings });
         if (error) throw error;
       }
     },

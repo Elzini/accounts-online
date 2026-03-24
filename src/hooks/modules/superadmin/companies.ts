@@ -2,7 +2,7 @@
  * Super Admin - Company Management Services
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
 
 export function useAllCompanies(select = 'id, name, is_active') {
   return useQuery({
@@ -211,7 +211,7 @@ export function useCompanyAccountingSettings(companyId: string) {
   return useQuery({
     queryKey: ['company-accounting-settings', companyId],
     queryFn: async () => {
-      const { data } = await (supabase.from as any)('company_accounting_settings').select('*').eq('company_id', companyId).maybeSingle();
+      const { data } = await untypedFrom('company_accounting_settings').select('*').eq('company_id', companyId).maybeSingle();
       return data;
     },
     enabled: !!companyId,

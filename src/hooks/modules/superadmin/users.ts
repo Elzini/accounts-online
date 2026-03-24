@@ -2,7 +2,7 @@
  * Super Admin - User & RBAC Management Services
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
 
 export function useAllUsers() {
   return useQuery({
@@ -42,7 +42,7 @@ export function useAdminUsers() {
   return useQuery({
     queryKey: ['admin-users-rbac'],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('admin_users').select('*').order('created_at', { ascending: false });
+      const { data, error } = await untypedFrom('admin_users').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -54,7 +54,7 @@ export function useCreateAdminUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (user: { email: string; role: string; full_name: string }) => {
-      const { error } = await (supabase.from as any)('admin_users').insert({ ...user, is_active: true });
+      const { error } = await untypedFrom('admin_users').insert({ ...user, is_active: true });
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-users-rbac'] }),
@@ -65,7 +65,7 @@ export function useDeleteAdminUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase.from as any)('admin_users').delete().eq('id', id);
+      const { error } = await untypedFrom('admin_users').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-users-rbac'] }),

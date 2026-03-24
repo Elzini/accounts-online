@@ -5,11 +5,9 @@
  * Invoice Settings, Report Settings
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
+export { supabase } from '@/integrations/supabase/untypedFrom';
 import { useCompany } from '@/contexts/CompanyContext';
-
-// Re-export supabase for complex inline queries
-export { supabase } from '@/integrations/supabase/client';
 
 function useCompanyId() {
   const { companyId } = useCompany();
@@ -101,8 +99,7 @@ export function useEmployeePermissions(table: string) {
     queryKey: ['field-permissions', companyId, table],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data, error } = await (supabase as any)
-        .from('field_level_permissions')
+      const { data, error } = await untypedFrom('field_level_permissions')
         .select('*')
         .eq('company_id', companyId)
         .eq('table_name', table);
@@ -120,8 +117,7 @@ export function useCompanyMembers() {
     queryKey: ['company-members-perms', companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data, error } = await (supabase as any)
-        .from('company_members')
+      const { data, error } = await untypedFrom('company_members')
         .select('user_id, role, profiles(full_name, email)')
         .eq('company_id', companyId);
       if (error) throw error;
@@ -137,8 +133,7 @@ export function useUpsertFieldPermission() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (perm: { table_name: string; field_name: string; user_id: string; can_view: boolean; can_edit: boolean }) => {
-      const { error } = await (supabase as any)
-        .from('field_level_permissions')
+      const { error } = await untypedFrom('field_level_permissions')
         .upsert({ ...perm, company_id: companyId! }, { onConflict: 'company_id,table_name,field_name,user_id' });
       if (error) throw error;
     },

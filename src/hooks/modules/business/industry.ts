@@ -2,13 +2,13 @@
  * Business Services - Construction, Export/Import, Commissions, Custody
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
 
 // ── Export/Import ──
 export function useLettersOfCredit(companyId: string | null) {
   return useQuery({
     queryKey: ['letters-of-credit', companyId],
-    queryFn: async () => { const { data, error } = await (supabase as any).from('letters_of_credit').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
+    queryFn: async () => { const { data, error } = await untypedFrom('letters_of_credit').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
@@ -16,7 +16,7 @@ export function useLettersOfCredit(companyId: string | null) {
 export function useShipments(companyId: string | null) {
   return useQuery({
     queryKey: ['shipments', companyId],
-    queryFn: async () => { const { data, error } = await (supabase as any).from('shipments').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
+    queryFn: async () => { const { data, error } = await untypedFrom('shipments').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
@@ -42,7 +42,7 @@ export function useCommissionSales(companyId: string | null, period: 'month' | '
       let start: string;
       if (period === 'month') { start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]; }
       else { const q = Math.floor(now.getMonth() / 3) * 3; start = new Date(now.getFullYear(), q, 1).toISOString().split('T')[0]; }
-      const { data, error } = await (supabase as any).from('invoices').select('id, total_amount, salesperson_name, created_at').eq('company_id', companyId!).eq('type', 'sale').gte('created_at', start).order('created_at', { ascending: false });
+      const { data, error } = await untypedFrom('invoices').select('id, total_amount, salesperson_name, created_at').eq('company_id', companyId!).eq('type', 'sale').gte('created_at', start).order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },

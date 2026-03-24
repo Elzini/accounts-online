@@ -2,7 +2,7 @@
  * Module Services - Tasks
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/untypedFrom';
 
 export function useTasks(userId?: string) {
   return useQuery({
