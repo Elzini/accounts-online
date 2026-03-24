@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { untypedFrom } from '@/integrations/supabase/untypedFrom';
+import { useCompany } from '@/contexts/CompanyContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 
