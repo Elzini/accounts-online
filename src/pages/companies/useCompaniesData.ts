@@ -16,6 +16,8 @@ export const ACTIVITY_TYPE_LABELS: Record<CompanyActivityType, string> = {
   export_import: 'الاستيراد والتصدير',
   medical: 'تجارة أدوية وأدوات طبية',
   real_estate: 'تطوير عقاري',
+  bookkeeping: 'مكتب محاسبة',
+  manufacturing: 'تصنيع',
 };
 
 export interface Company {
