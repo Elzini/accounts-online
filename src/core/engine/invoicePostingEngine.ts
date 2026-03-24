@@ -10,6 +10,7 @@ import { JournalEngine } from './journalEngine';
 import { JournalEntryLine } from './types';
 import { IInvoiceRepository, ISupplierRepository, IFiscalYearRepository, ICompanySettingsRepository } from './repositories';
 import { EventBus, Events, InvoicePostedEvent } from './eventBus';
+import { Logger } from './logger';
 
 interface InvoiceData {
   id: string;
