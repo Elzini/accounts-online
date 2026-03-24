@@ -11,21 +11,16 @@ export const ManufacturingModule: IndustryModule = {
   supportedTypes: ['manufacturing'],
 
   async getDashboardStats(companyId: string): Promise<Partial<DashboardStats>> {
-    const [productsRes, ordersRes] = await Promise.all([
-      supabase.from('manufacturing_products').select('id, status').eq('company_id', companyId),
-      supabase.from('manufacturing_orders').select('id, status, quantity').eq('company_id', companyId),
-    ]);
+    const productsRes = await supabase
+      .from('manufacturing_products')
+      .select('id')
+      .eq('company_id', companyId);
 
     const products = productsRes.data || [];
-    const orders = ordersRes.data || [];
-    const activeOrders = orders.filter(o => o.status === 'in_progress').length;
 
     return {
       extra: {
         totalProducts: products.length,
-        activeOrders,
-        totalOrders: orders.length,
-        totalQuantity: orders.reduce((s, o) => s + (Number(o.quantity) || 0), 0),
       },
     };
   },
