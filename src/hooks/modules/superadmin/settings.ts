@@ -75,7 +75,7 @@ export function useSaveDefaultSetting() {
         const { error } = await untypedFrom('default_company_settings').update({ setting_value: settingValue }).eq('id', existing.id);
         if (error) throw error;
       } else {
-        const { error } = await (supabase.from as any)('default_company_settings').insert({ setting_type: settingType, setting_key: settingKey, setting_value: settingValue });
+        const { error } = await untypedFrom('default_company_settings').insert({ setting_type: settingType, setting_key: settingKey, setting_value: settingValue });
         if (error) throw error;
       }
     },
