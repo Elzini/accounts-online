@@ -64,7 +64,8 @@ class PostingMiddlewareClass {
       try {
         result = await hook(result, context);
       } catch (err) {
-        console.error(`[PostingMiddleware] Pre-hook "${id}" failed:`, err);
+        const { Logger: L } = await import('./logger');
+        L.error(`Pre-hook "${id}" failed`, err, { module: 'PostingMiddleware', companyId: context.companyId });
         throw err; // Pre-hooks are critical — fail the entry
       }
     }
