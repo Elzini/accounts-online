@@ -12,7 +12,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { AuthFeaturesSidebar } from '@/components/auth/AuthFeaturesSidebar';
 import { CheckCircle } from 'lucide-react';
 
-type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import' | 'medical' | 'real_estate';
+type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import' | 'medical' | 'real_estate' | 'bookkeeping' | 'manufacturing';
 
 const companyTypes: { value: CompanyActivityType; labelAr: string; labelEn: string; icon: React.ReactNode }[] = [
   { value: 'car_dealership', labelAr: 'معرض سيارات', labelEn: 'Car Dealership', icon: <Car className="w-4 h-4" /> },
