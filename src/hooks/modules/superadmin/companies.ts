@@ -211,7 +211,7 @@ export function useCompanyAccountingSettings(companyId: string) {
   return useQuery({
     queryKey: ['company-accounting-settings', companyId],
     queryFn: async () => {
-      const { data } = await (supabase.from as any)('company_accounting_settings').select('*').eq('company_id', companyId).maybeSingle();
+      const { data } = await untypedFrom('company_accounting_settings').select('*').eq('company_id', companyId).maybeSingle();
       return data;
     },
     enabled: !!companyId,

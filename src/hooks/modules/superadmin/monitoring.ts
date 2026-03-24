@@ -152,7 +152,7 @@ export function useSaaSPlanDistribution() {
   return useQuery({
     queryKey: ['saas-plan-distribution'],
     queryFn: async () => {
-      const { data } = await (supabase.from as any)('subscriptions').select('plan_id, companies(name)').eq('is_active', true);
+      const { data } = await untypedFrom('subscriptions').select('plan_id, companies(name)').eq('is_active', true);
       if (!data) return [];
 
       const planMap: Record<string, number> = {};

@@ -93,7 +93,7 @@ export function useSaveCompanyAccountingSettings() {
         const { error } = await untypedFrom('company_accounting_settings').update(settings).eq('id', existing.id);
         if (error) throw error;
       } else {
-        const { error } = await (supabase.from as any)('company_accounting_settings').insert({ company_id: companyId, ...settings });
+        const { error } = await untypedFrom('company_accounting_settings').insert({ company_id: companyId, ...settings });
         if (error) throw error;
       }
     },

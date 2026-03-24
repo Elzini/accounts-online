@@ -65,7 +65,7 @@ export function useDeleteAdminUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase.from as any)('admin_users').delete().eq('id', id);
+      const { error } = await untypedFrom('admin_users').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-users-rbac'] }),
