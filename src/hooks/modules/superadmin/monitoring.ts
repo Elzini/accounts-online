@@ -54,7 +54,7 @@ export function useRecentSystemErrors() {
   return useQuery({
     queryKey: ['system-recent-errors'],
     queryFn: async () => {
-      const { data } = await (supabase.from as any)('system_activity_logs').select('*').order('created_at', { ascending: false }).limit(20);
+      const { data } = await untypedFrom('system_activity_logs').select('*').order('created_at', { ascending: false }).limit(20);
       return data || [];
     },
     refetchInterval: 60000,
