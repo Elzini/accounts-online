@@ -26,7 +26,7 @@ function useModuleAdd(table: string, queryKey: string) {
   return useMutation({
     mutationFn: async (data: Record<string, any>) => {
       if (!companyId) throw new Error('No company');
-      const { data: result, error } = await (supabase as any).from(table).insert({ ...data, company_id: companyId }).select().single();
+      const { data: result, error } = await untypedFrom(table).insert({ ...data, company_id: companyId }).select().single();
       if (error) throw error;
       return result;
     },
