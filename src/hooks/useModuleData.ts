@@ -11,7 +11,7 @@ function useModuleQuery<T>(table: string, queryKey: string, orderBy = 'created_a
     queryKey: [queryKey, companyId],
     queryFn: async () => {
       if (!companyId) return [] as T[];
-      const { data, error } = await (supabase as any).from(table).select('*').eq('company_id', companyId).order(orderBy, { ascending: false });
+      const { data, error } = await untypedFrom(table).select('*').eq('company_id', companyId).order(orderBy, { ascending: false });
       if (error) throw error;
       return (data || []) as T[];
     },
