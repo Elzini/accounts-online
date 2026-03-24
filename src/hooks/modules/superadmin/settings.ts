@@ -90,7 +90,7 @@ export function useSaveCompanyAccountingSettings() {
     mutationFn: async ({ companyId, settings }: { companyId: string; settings: any }) => {
       const { data: existing } = await untypedFrom('company_accounting_settings').select('id').eq('company_id', companyId).maybeSingle();
       if (existing) {
-        const { error } = await (supabase.from as any)('company_accounting_settings').update(settings).eq('id', existing.id);
+        const { error } = await untypedFrom('company_accounting_settings').update(settings).eq('id', existing.id);
         if (error) throw error;
       } else {
         const { error } = await (supabase.from as any)('company_accounting_settings').insert({ company_id: companyId, ...settings });
