@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { toast } from 'sonner';
 
-export type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import' | 'medical' | 'real_estate';
+export type CompanyActivityType = 'car_dealership' | 'construction' | 'general_trading' | 'restaurant' | 'export_import' | 'medical' | 'real_estate' | 'bookkeeping' | 'manufacturing';
 
 export const ACTIVITY_TYPE_LABELS: Record<CompanyActivityType, string> = {
   car_dealership: 'معرض سيارات',
@@ -16,6 +16,8 @@ export const ACTIVITY_TYPE_LABELS: Record<CompanyActivityType, string> = {
   export_import: 'الاستيراد والتصدير',
   medical: 'تجارة أدوية وأدوات طبية',
   real_estate: 'تطوير عقاري',
+  bookkeeping: 'مكتب محاسبة',
+  manufacturing: 'تصنيع',
 };
 
 export interface Company {
