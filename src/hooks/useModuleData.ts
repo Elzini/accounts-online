@@ -59,7 +59,7 @@ function useModuleDelete(table: string, queryKey: string) {
   const { companyId } = useCompany();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from(table).delete().eq('id', id);
+      const { error } = await untypedFrom(table).delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
