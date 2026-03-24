@@ -89,12 +89,15 @@ export function createServiceContainer(
   };
 }
 
-// ── Singleton cache for service-layer usage (non-React) ──
-const containerCache = new Map<string, ServiceContainer>();
+// ── LRU-cached containers (scales to 1000+ companies) ──
+import { LRUCache } from './lruCache';
+
+/** Max 200 containers cached, TTL 30 minutes */
+const containerCache = new LRUCache<ServiceContainer>(200, 30);
 
 /**
  * Get or create a ServiceContainer for a company (non-React).
- * Services call this instead of `new JournalEngine(...)` directly.
+ * Uses LRU eviction to prevent unbounded memory growth.
  * 
  * Usage:
  *   const { journal, resolver } = getServiceContainer(companyId);
@@ -125,4 +128,13 @@ export function clearContainerCache(companyId?: string): void {
   } else {
     containerCache.clear();
   }
+}
+
+/** Get cache stats for monitoring */
+export function getContainerCacheStats() {
+  return {
+    size: containerCache.size,
+    maxSize: 200,
+    pruned: containerCache.prune(),
+  };
 }
