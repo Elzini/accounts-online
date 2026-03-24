@@ -68,7 +68,14 @@ export function useJournalEntryForm() {
   const { data: printingEntry } = useJournalEntry(printingEntryId);
 
   // Form state
-  const [entryDate, setEntryDate] = useState<Date>(new Date());
+  const [entryDate, setEntryDateRaw] = useState<Date>(new Date());
+
+  // When main date changes, sync all line dates
+  const setEntryDate = (date: Date) => {
+    setEntryDateRaw(date);
+    const formatted = format(date, 'yyyy-MM-dd');
+    setLines(prev => prev.map(line => ({ ...line, line_date: formatted })));
+  };
   const [description, setDescription] = useState('');
   const [notes1, setNotes1] = useState('');
   const [notes2, setNotes2] = useState('');

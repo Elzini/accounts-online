@@ -58,7 +58,13 @@ export function JournalEntryEditDialog({
   
   const [isEditMode, setIsEditMode] = useState(false);
   const [description, setDescription] = useState('');
-  const [entryDate, setEntryDate] = useState('');
+  const [entryDate, setEntryDateRaw] = useState('');
+  
+  // When main date changes, sync all line dates
+  const setEntryDate = (newDate: string) => {
+    setEntryDateRaw(newDate);
+    setLines(prev => prev.map(line => ({ ...line, line_date: newDate })));
+  };
   const [lines, setLines] = useState<JournalLine[]>([]);
 
   // Reset state when entry changes
