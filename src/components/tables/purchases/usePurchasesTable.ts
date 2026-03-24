@@ -123,7 +123,8 @@ export function usePurchasesTable() {
 
   const handleApproveInvoice = useCallback(async (invoiceId: string) => {
     try {
-      await approveInvoiceWithJournal(invoiceId);
+      const { invoicePosting } = getServiceContainer(companyId || '');
+      await invoicePosting.postInvoice(invoiceId);
       invalidateAll();
       toast.success(language === 'ar' ? 'تم اعتماد الفاتورة وإنشاء القيد المحاسبي بنجاح' : 'Invoice approved and journal entry created');
     } catch (err) {
