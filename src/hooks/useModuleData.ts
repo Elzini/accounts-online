@@ -125,7 +125,7 @@ export function useAddChatMessage() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: { channel_id: string; sender_name: string; content: string }) => {
-      const { data: result, error } = await (supabase as any).from('chat_messages').insert(data).select().single();
+      const { data: result, error } = await untypedFrom('chat_messages').insert(data).select().single();
       if (error) throw error;
       return result;
     },
