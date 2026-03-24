@@ -39,8 +39,8 @@ export function InvoiceJournalEntry({ invoiceId, invoiceNumber }: InvoiceJournal
     queryKey: ['invoice-journal-entry', invoiceId],
     queryFn: async () => {
       // Find journal entry by reference_id
-      const { data: je, error: jeError } = await supabase
-        .from('journal_entries' as any)
+      const { data: je, error: jeError } = await (supabase as any)
+        .from('journal_entries')
         .select('id, entry_number, entry_date, description')
         .eq('company_id', companyId)
         .eq('reference_id', invoiceId)
@@ -54,7 +54,7 @@ export function InvoiceJournalEntry({ invoiceId, invoiceNumber }: InvoiceJournal
       const { data: lines, error: linesError } = await supabase
         .from('journal_entry_lines')
         .select('id, account_id, debit, credit, description')
-        .eq('journal_entry_id', je.id);
+        .eq('journal_entry_id', (je as any).id);
 
       if (linesError) return null;
 
@@ -70,7 +70,7 @@ export function InvoiceJournalEntry({ invoiceId, invoiceNumber }: InvoiceJournal
         };
       });
 
-      return { ...je, lines: enrichedLines };
+      return { ...(je as any), lines: enrichedLines };
     },
     enabled: !!companyId && accounts.length > 0,
     staleTime: 5 * 60 * 1000,
