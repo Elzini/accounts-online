@@ -54,7 +54,7 @@ export function useCreateAdminUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (user: { email: string; role: string; full_name: string }) => {
-      const { error } = await (supabase.from as any)('admin_users').insert({ ...user, is_active: true });
+      const { error } = await untypedFrom('admin_users').insert({ ...user, is_active: true });
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-users-rbac'] }),
