@@ -136,7 +136,7 @@ export class InvoicePostingEngine {
       : this.buildSalesLines(inv, subtotal, vatAmount, total);
 
     if (!lines || lines.length === 0) {
-      console.error('Could not build journal lines - missing accounts');
+      log.error('Could not build journal lines - missing accounts', null, { invoiceType: inv.invoice_type });
       await invoiceRepo.updateStatus(invoiceId, 'issued');
       return;
     }
