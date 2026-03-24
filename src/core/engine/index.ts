@@ -52,8 +52,14 @@ export { PostingMiddleware } from './postingMiddleware';
 export type { PrePostHook, PostHook, PostingContext } from './postingMiddleware';
 
 // Service Container (DI)
-export { createServiceContainer, getServiceContainer, getInitializedContainer, clearContainerCache } from './serviceContainer';
+export { createServiceContainer, getServiceContainer, getInitializedContainer, clearContainerCache, getContainerCacheStats } from './serviceContainer';
 export type { ServiceContainer, ServiceContainerDeps } from './serviceContainer';
+
+// LRU Cache
+export { LRUCache } from './lruCache';
+
+// Query Optimizer
+export { fetchAllPaginated, batchInsert, batchDelete, countRows, LEAN_SELECTS } from './queryOptimizer';
 
 // Supabase Repositories (default implementations)
 export { defaultRepos } from './supabaseRepositories';

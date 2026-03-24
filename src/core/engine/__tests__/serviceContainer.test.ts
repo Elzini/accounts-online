@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createServiceContainer, clearContainerCache, getServiceContainer } from '@/core/engine/serviceContainer';
+import { createServiceContainer, clearContainerCache, getServiceContainer, getContainerCacheStats } from '@/core/engine/serviceContainer';
+import { LRUCache } from '@/core/engine/lruCache';
 import type { IAccountRepository, IAccountMappingRepository, IJournalEntryRepository, IFiscalYearRepository, IInvoiceRepository, ISupplierRepository, ICompanySettingsRepository } from '@/core/engine/repositories';
 import type { Account, JournalEntryRecord } from '@/core/engine/types';
 
@@ -59,7 +60,6 @@ describe('ServiceContainer', () => {
   });
 
   it('getServiceContainer caches by companyId', () => {
-    // Note: getServiceContainer uses default repos (Supabase), so we just test caching
     clearContainerCache();
     const c1 = getServiceContainer('test-cache-1');
     const c2 = getServiceContainer('test-cache-1');
@@ -72,5 +72,47 @@ describe('ServiceContainer', () => {
     clearContainerCache('test-clear');
     const c2 = getServiceContainer('test-clear');
     expect(c1).not.toBe(c2);
+  });
+
+  it('getContainerCacheStats returns stats', () => {
+    clearContainerCache();
+    getServiceContainer('s1');
+    getServiceContainer('s2');
+    const stats = getContainerCacheStats();
+    expect(stats.size).toBe(2);
+    expect(stats.maxSize).toBe(200);
+  });
+});
+
+describe('LRUCache', () => {
+  it('evicts oldest when at capacity', () => {
+    const cache = new LRUCache<string>(3, 60);
+    cache.set('a', '1');
+    cache.set('b', '2');
+    cache.set('c', '3');
+    cache.set('d', '4'); // should evict 'a'
+    expect(cache.get('a')).toBeUndefined();
+    expect(cache.get('d')).toBe('4');
+    expect(cache.size).toBe(3);
+  });
+
+  it('refreshes access on get', () => {
+    const cache = new LRUCache<string>(3, 60);
+    cache.set('a', '1');
+    cache.set('b', '2');
+    cache.set('c', '3');
+    cache.get('a'); // refresh 'a'
+    cache.set('d', '4'); // should evict 'b' (oldest untouched)
+    expect(cache.get('a')).toBe('1');
+    expect(cache.get('b')).toBeUndefined();
+  });
+
+  it('prune removes expired entries', async () => {
+    const cache = new LRUCache<string>(10, 0.0001); // ~6ms TTL
+    cache.set('x', 'val');
+    await new Promise(r => setTimeout(r, 10)); // wait for expiry
+    const pruned = cache.prune();
+    expect(pruned).toBe(1);
+    expect(cache.size).toBe(0);
   });
 });
