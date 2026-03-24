@@ -178,14 +178,7 @@ export function useDeleteJournalEntry() {
   return useMutation({
     mutationFn: deleteJournalEntry,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['journal-entry'] });
-      queryClient.invalidateQueries({ queryKey: ['account-balances', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['trial-balance', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['income-statement', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['balance-sheet', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['vat-settlement-report', companyId] });
+      invalidateFinancialReportQueries(queryClient, companyId);
     },
   });
 }
