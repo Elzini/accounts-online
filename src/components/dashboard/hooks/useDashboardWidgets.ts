@@ -156,9 +156,19 @@ export function useDashboardWidgets({ stats, projectCostAccountId, isCarDealersh
 
   const saveWidgetConfig = useCallback(async (widgets: WidgetConfig[]) => {
     try {
+      // Sync cardConfigs visibility with widget visibility before saving
+      const widgetVisibility = new Map(widgets.map(w => [w.id, w.visible]));
+      const syncedCards = cardConfigs.map(c => {
+        if (widgetVisibility.has(c.id)) {
+          return { ...c, visible: widgetVisibility.get(c.id) ?? c.visible };
+        }
+        return c;
+      });
+      setCardConfigs(syncedCards);
+
       await saveDashboardConfig.mutateAsync({
         layout_settings: { widgets } as any,
-        stat_cards: cardConfigs as any,
+        stat_cards: syncedCards as any,
       });
       setIsEditMode(false);
       toast.success(t.layout_saved);
