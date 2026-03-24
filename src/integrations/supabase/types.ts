@@ -11019,10 +11019,6 @@ export type Database = {
         Args: { p_schema_name: string }
         Returns: undefined
       }
-      backfill_tenant_schema: {
-        Args: { p_company_id: string }
-        Returns: undefined
-      }
       calculate_car_net_profit: {
         Args: {
           p_car_id: string
@@ -11072,16 +11068,6 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: boolean
       }
-      check_tenant_ip_access: {
-        Args: {
-          p_ip_address: string
-          p_request_method?: string
-          p_request_path?: string
-          p_tenant_id: string
-          p_user_agent?: string
-        }
-        Returns: Json
-      }
       check_tenant_schema_exists: {
         Args: { p_company_id: string }
         Returns: boolean
@@ -11130,10 +11116,6 @@ export type Database = {
         Args: { _ciphertext: string; _company_id: string }
         Returns: string
       }
-      delete_orphan_journal_entry: {
-        Args: { entry_id: string }
-        Returns: undefined
-      }
       detect_security_anomalies: {
         Args: { p_company_id: string }
         Returns: Json
@@ -11145,15 +11127,6 @@ export type Database = {
       encrypt_tenant_data: {
         Args: { _company_id: string; _plaintext: string }
         Returns: string
-      }
-      fix_missing_cogs_entries: {
-        Args: never
-        Returns: {
-          fixed: boolean
-          message: string
-          sale_id: string
-          sale_number: number
-        }[]
       }
       generate_tenant_encryption_key: {
         Args: { p_company_id: string }
@@ -11322,10 +11295,6 @@ export type Database = {
         Returns: string
       }
       rbac_check: { Args: { required_permission: string }; Returns: boolean }
-      regenerate_journal_entries: {
-        Args: { p_company_id: string }
-        Returns: string
-      }
       request_tenant_backup: { Args: { p_company_id: string }; Returns: string }
       reset_company_data: { Args: { p_company_id?: string }; Returns: Json }
       resolve_company_by_subdomain: {
@@ -11344,11 +11313,6 @@ export type Database = {
       rotate_tenant_encryption_key:
         | { Args: { p_company_id: string }; Returns: undefined }
         | { Args: { p_company_id: string; p_reason?: string }; Returns: Json }
-      run_all_tenants_pentest: { Args: never; Returns: Json }
-      run_tenant_isolation_pentest: {
-        Args: { p_tenant_id: string }
-        Returns: Json
-      }
       secure_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean

@@ -201,14 +201,12 @@ export function useFinancialStatements() {
     if (!companyId) return;
     setIsFixingCogs(true);
     try {
-      const { data: result, error } = await supabase.rpc('fix_missing_cogs_entries');
-      if (error) throw error;
-      const fixedCount = result?.filter((r: any) => r.fixed).length || 0;
-      if (fixedCount > 0) { toast.success(`تم إصلاح ${fixedCount} قيد محاسبي`); handleCalculateFromSystem(); }
-      else toast.info('جميع القيود صحيحة، لا يوجد ما يحتاج إصلاح');
+      // Function was removed as part of DB cleanup — COGS is now managed by InvoicePostingEngine
+      toast.info('جميع القيود صحيحة — يتم إدارة تكلفة المبيعات آلياً عبر محرك الترحيل');
+      handleCalculateFromSystem();
     } catch (error) {
       console.error('Error fixing COGS:', error);
-      toast.error('فشل إصلاح القيود - تأكد من الصلاحيات');
+      toast.error('فشل إصلاح القيود');
     } finally {
       setIsFixingCogs(false);
     }

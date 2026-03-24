@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
+import { supabase } from '@/hooks/modules/useMiscServices';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,8 @@ export function InvoiceJournalEntry({ invoiceId, invoiceNumber }: InvoiceJournal
     queryKey: ['invoice-journal-entry', invoiceId],
     queryFn: async () => {
       // Find journal entry by reference_id
-      const { data: je, error: jeError } = await untypedFrom('journal_entries')
+      const { data: je, error: jeError } = await (supabase as any)
+        .from('journal_entries')
         .select('id, entry_number, entry_date, description')
         .eq('company_id', companyId)
         .eq('reference_id', invoiceId)
@@ -53,7 +54,7 @@ export function InvoiceJournalEntry({ invoiceId, invoiceNumber }: InvoiceJournal
       const { data: lines, error: linesError } = await supabase
         .from('journal_entry_lines')
         .select('id, account_id, debit, credit, description')
-        .eq('journal_entry_id', je.id);
+        .eq('journal_entry_id', (je as any).id);
 
       if (linesError) return null;
 
@@ -69,7 +70,7 @@ export function InvoiceJournalEntry({ invoiceId, invoiceNumber }: InvoiceJournal
         };
       });
 
-      return { ...je, lines: enrichedLines };
+      return { ...(je as any), lines: enrichedLines };
     },
     enabled: !!companyId && accounts.length > 0,
     staleTime: 5 * 60 * 1000,
