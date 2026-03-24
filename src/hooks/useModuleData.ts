@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { untypedFrom } from '@/integrations/supabase/untypedFrom';
 import { useCompany } from '@/contexts/CompanyContext';
-import { useCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 
 // Generic hook factory for simple CRUD modules
