@@ -2,7 +2,7 @@
  * Module Services - Dashboard widgets (expenses, invoices, alerts, project costs)
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/untypedFrom';
+import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
 import { getDashboardDateWindow } from '@/lib/dashboardDateWindow';
 
 export function useMonthlyExpenses(companyId: string | null, fiscalBounds: { start: Date; end: Date } | null, fiscalYearId?: string, startISO?: string, endISO?: string) {
