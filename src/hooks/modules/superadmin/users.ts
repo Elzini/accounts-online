@@ -42,7 +42,7 @@ export function useAdminUsers() {
   return useQuery({
     queryKey: ['admin-users-rbac'],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('admin_users').select('*').order('created_at', { ascending: false });
+      const { data, error } = await untypedFrom('admin_users').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
