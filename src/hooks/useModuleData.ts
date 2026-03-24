@@ -112,7 +112,7 @@ export function useChatMessages(channelId: string | null) {
     queryKey: ['chat-messages', channelId],
     queryFn: async () => {
       if (!channelId) return [];
-      const { data, error } = await (supabase as any).from('chat_messages').select('*').eq('channel_id', channelId).order('created_at', { ascending: true });
+      const { data, error } = await untypedFrom('chat_messages').select('*').eq('channel_id', channelId).order('created_at', { ascending: true });
       if (error) throw error;
       return data || [];
     },
