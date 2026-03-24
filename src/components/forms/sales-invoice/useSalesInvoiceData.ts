@@ -1,6 +1,8 @@
 /**
  * Sales Invoice - Data & State Hook
  * Manages all state, data fetching, calculations, and actions.
+ * Calculations delegated to useSalesInvoiceCalculations.ts
+ * CRUD actions delegated to useSalesInvoiceActions.ts
  */
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
@@ -10,35 +12,25 @@ import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useImportedInvoiceData } from '@/hooks/useImportedInvoiceData';
-import { getPendingTransferForCar, linkTransferToSale } from '@/hooks/useTransfers';
+import { getPendingTransferForCar } from '@/hooks/useTransfers';
 import { CarTransfer } from '@/services/transfers';
 import { useAddInstallmentSale } from '@/hooks/useInstallments';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useItems, useUnits } from '@/hooks/useInventory';
-import { getServiceContainer } from '@/core/engine/serviceContainer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { SelectedCarItem, SelectedInventoryItem, InvoiceFormData, StoredHeaderTotals } from './types';
 import { ActivePage } from '@/types';
+import { useSalesInvoiceCalculations, useDisplayTotals } from './useSalesInvoiceCalculations';
+import { createSalesInvoiceActions } from './useSalesInvoiceActions';
 
 const defaultInvoiceData: InvoiceFormData = {
-  invoice_number: '',
-  customer_id: '',
-  sale_date: new Date().toISOString().split('T')[0],
-  issue_time: new Date().toTimeString().slice(0, 5),
-  payment_account_id: '',
-  warehouse: 'main',
-  seller_name: '',
-  notes: '',
-  price_includes_tax: true,
-  commission: '',
-  other_expenses: '',
-  is_installment: false,
-  down_payment: '',
-  number_of_installments: '12',
-  last_payment_date: '',
+  invoice_number: '', customer_id: '', sale_date: new Date().toISOString().split('T')[0],
+  issue_time: new Date().toTimeString().slice(0, 5), payment_account_id: '', warehouse: 'main',
+  seller_name: '', notes: '', price_includes_tax: true, commission: '', other_expenses: '',
+  is_installment: false, down_payment: '', number_of_installments: '12', last_payment_date: '',
   first_installment_date: new Date().toISOString().split('T')[0],
 };
 
@@ -98,20 +90,12 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
   // === Derived data ===
-  const availableCars = useMemo(() =>
-    allCars.filter(car => car.status === 'available' || car.status === 'transferred'),
-    [allCars]
-  );
+  const availableCars = useMemo(() => allCars.filter(car => car.status === 'available' || car.status === 'transferred'), [allCars]);
 
   useEffect(() => {
     if (!isCarDealership && companyId) {
       const fetchInvoices = async () => {
-        const { data } = await supabase
-          .from('invoices')
-          .select('*, invoice_items(*)')
-          .eq('company_id', companyId)
-          .eq('invoice_type', 'sales')
-          .order('created_at', { ascending: true });
+        const { data } = await supabase.from('invoices').select('*, invoice_items(*)').eq('company_id', companyId).eq('invoice_type', 'sales').order('created_at', { ascending: true });
         setExistingInvoices(data || []);
       };
       fetchInvoices();
@@ -147,10 +131,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
     [inventoryItems, selectedInventoryItems]
   );
 
-  const remainingCars = useMemo(() =>
-    availableCars.filter(car => !selectedCars.some(sc => sc.car_id === car.id)),
-    [availableCars, selectedCars]
-  );
+  const remainingCars = useMemo(() => availableCars.filter(car => !selectedCars.some(sc => sc.car_id === car.id)), [availableCars, selectedCars]);
 
   // === Item handlers ===
   const handleAddInventoryItem = (itemId: string) => {
@@ -178,9 +159,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   };
 
   const handleInventoryItemChange = (id: string, field: keyof SelectedInventoryItem, value: string | number) => {
-    setSelectedInventoryItems(selectedInventoryItems.map(item =>
-      item.id === id ? { ...item, [field]: value } : item
-    ));
+    setSelectedInventoryItems(selectedInventoryItems.map(item => item.id === id ? { ...item, [field]: value } : item));
   };
 
   const handleAddCar = async (carId: string) => {
@@ -203,71 +182,15 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   };
 
   const handleCarChange = (id: string, field: keyof SelectedCarItem, value: string | number) => {
-    setSelectedCars(selectedCars.map(car =>
-      car.id === id ? { ...car, [field]: value } : car
-    ));
+    setSelectedCars(selectedCars.map(car => car.id === id ? { ...car, [field]: value } : car));
   };
 
-  // === Calculations ===
-  const calculations = useMemo(() => {
-    let subtotal = 0, totalVAT = 0;
-    const commission = parseFloat(invoiceData.commission) || 0;
-    const otherExpenses = parseFloat(invoiceData.other_expenses) || 0;
+  // === Calculations (delegated) ===
+  const calculations = useSalesInvoiceCalculations({
+    selectedCars, selectedInventoryItems, invoiceData, taxRate, discount, discountType, isCarDealership,
+  });
 
-    const calcItem = (price: number, quantity: number, itemTaxRate?: number) => {
-      const effectiveTaxRate = itemTaxRate ?? taxRate;
-      let baseAmount: number, vatAmount: number, total: number;
-      if (invoiceData.price_includes_tax && effectiveTaxRate > 0) {
-        total = price * quantity; baseAmount = total / (1 + effectiveTaxRate / 100); vatAmount = total - baseAmount;
-      } else {
-        baseAmount = price * quantity; vatAmount = baseAmount * (effectiveTaxRate / 100); total = baseAmount + vatAmount;
-      }
-      subtotal += baseAmount; totalVAT += vatAmount;
-      return { baseAmount, vatAmount, total };
-    };
-
-    const itemsWithCalc = selectedCars.map(car => {
-      const price = parseFloat(car.sale_price) || 0;
-      if (car.car_condition === 'used' && taxRate > 0) {
-        const quantity = car.quantity || 1;
-        const { calcCarTax } = require('@/utils/carTaxHelper');
-        const result = calcCarTax(price * quantity, car.car_condition, 'sale', taxRate, car.purchase_price * quantity);
-        subtotal += result.subtotal; totalVAT += result.taxAmount;
-        return { ...car, baseAmount: result.subtotal, vatAmount: result.taxAmount, total: result.subtotal + result.taxAmount };
-      } else {
-        return { ...car, ...calcItem(price, car.quantity || 1) };
-      }
-    });
-
-    const inventoryItemsWithCalc = selectedInventoryItems.map(item => {
-      const price = parseFloat(item.sale_price) || 0;
-      return { ...item, ...calcItem(price, item.quantity || 1) };
-    });
-
-    let discountAmount = discountType === 'percentage' ? subtotal * (discount / 100) : discount;
-    const subtotalAfterDiscount = subtotal - discountAmount;
-    const finalTotal = subtotalAfterDiscount + totalVAT;
-    const totalPurchasePrice = isCarDealership
-      ? selectedCars.reduce((sum, car) => sum + car.purchase_price, 0)
-      : selectedInventoryItems.reduce((sum, item) => sum + (item.cost_price * item.quantity), 0);
-    const profit = subtotalAfterDiscount - totalPurchasePrice - commission - otherExpenses;
-    const totalQuantity = isCarDealership ? selectedCars.length : selectedInventoryItems.reduce((sum, i) => sum + i.quantity, 0);
-
-    return { items: itemsWithCalc, inventoryItems: inventoryItemsWithCalc, subtotal, discountAmount, subtotalAfterDiscount, totalVAT, finalTotal, roundedTotal: finalTotal, totalPurchasePrice, profit, quantity: totalQuantity };
-  }, [selectedCars, selectedInventoryItems, invoiceData.price_includes_tax, invoiceData.commission, invoiceData.other_expenses, taxRate, discount, discountType, isCarDealership]);
-
-  const displayTotals = useMemo(() => {
-    if (isViewingExisting && !isEditing && storedHeaderTotals && storedHeaderTotals.total > 0) {
-      return {
-        subtotal: storedHeaderTotals.subtotal, totalVAT: storedHeaderTotals.vat_amount,
-        finalTotal: storedHeaderTotals.total, discountAmount: storedHeaderTotals.discount_amount,
-        subtotalAfterDiscount: storedHeaderTotals.subtotal - storedHeaderTotals.discount_amount,
-        roundedTotal: storedHeaderTotals.total, totalPurchasePrice: calculations.totalPurchasePrice,
-        profit: calculations.profit, quantity: calculations.quantity,
-      };
-    }
-    return calculations;
-  }, [calculations, storedHeaderTotals, isViewingExisting, isEditing]);
+  const displayTotals = useDisplayTotals(calculations, storedHeaderTotals, isViewingExisting, isEditing);
 
   const formatCurrency = (value: number) => {
     const v = decimals === 0 ? Math.round(value) : value;
@@ -275,6 +198,13 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   };
 
   // === Navigation ===
+  const handleNewInvoice = () => {
+    setInvoiceData({ ...defaultInvoiceData, payment_account_id: accounts.find(a => a.code === '1101')?.id || '' });
+    setSelectedCars([]); setSelectedInventoryItems([]); setDiscount(0); setPaidAmount(0);
+    setSavedSaleData(null); setIsViewingExisting(false); setCurrentSaleId(null);
+    setCurrentSaleStatus('draft'); setIsEditing(false); setStoredHeaderTotals(null);
+  };
+
   const loadSaleData = async (sale: any) => {
     setIsViewingExisting(true);
     setCurrentSaleId(sale.id);
@@ -287,8 +217,8 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
       customer_id: sale.customer_id || '',
       sale_date: isInvoiceRecord ? (sale.invoice_date?.split('T')[0] || '') : (sale.sale_date || ''),
       issue_time: isInvoiceRecord && sale.invoice_date?.includes('T') ? sale.invoice_date.split('T')[1]?.slice(0, 5) || new Date(sale.created_at).toTimeString().slice(0, 5) : new Date(sale.created_at).toTimeString().slice(0, 5),
-      payment_account_id: sale.payment_account_id || '',
-      warehouse: 'main', seller_name: sale.seller_name || '', notes: sale.notes || '',
+      payment_account_id: sale.payment_account_id || '', warehouse: 'main',
+      seller_name: sale.seller_name || '', notes: sale.notes || '',
       price_includes_tax: true, commission: String(sale.commission || ''), other_expenses: String(sale.other_expenses || ''),
       is_installment: false, down_payment: '', number_of_installments: '12', last_payment_date: '',
       first_installment_date: new Date().toISOString().split('T')[0],
@@ -327,203 +257,16 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   const handleNextSale = () => { if (currentInvoiceIndex < fiscalYearFilteredSales.length - 1) { const i = currentInvoiceIndex + 1; setCurrentInvoiceIndex(i); loadSaleData(fiscalYearFilteredSales[i]); } };
   const handleLastSale = () => { if (fiscalYearFilteredSales.length > 0) { const i = fiscalYearFilteredSales.length - 1; setCurrentInvoiceIndex(i); loadSaleData(fiscalYearFilteredSales[i]); } };
 
-  const handleNewInvoice = () => {
-    setInvoiceData({ ...defaultInvoiceData, payment_account_id: accounts.find(a => a.code === '1101')?.id || '' });
-    setSelectedCars([]); setSelectedInventoryItems([]); setDiscount(0); setPaidAmount(0);
-    setSavedSaleData(null); setIsViewingExisting(false); setCurrentSaleId(null);
-    setCurrentSaleStatus('draft'); setIsEditing(false); setStoredHeaderTotals(null);
-  };
-
-  // === CRUD actions ===
-  const handleSubmit = async () => {
-    if (!invoiceData.customer_id) { toast.error(t.inv_toast_select_customer); return; }
-
-    if (isCarDealership) {
-      if (selectedCars.length === 0) { toast.error(t.inv_toast_add_car); return; }
-      const invalidCar = selectedCars.find(car => !car.sale_price || parseFloat(car.sale_price) <= 0);
-      if (invalidCar) { toast.error(t.inv_toast_enter_price); return; }
-
-      try {
-        const carsWithPrices = selectedCars.map((car, index) => ({ car_id: car.car_id, sale_price: calculations.items[index].total, purchase_price: car.purchase_price }));
-        const sale = await addMultiCarSale.mutateAsync({
-          customer_id: invoiceData.customer_id, seller_name: invoiceData.seller_name || undefined,
-          commission: parseFloat(invoiceData.commission) || 0, other_expenses: parseFloat(invoiceData.other_expenses) || 0,
-          sale_date: invoiceData.sale_date, payment_account_id: invoiceData.payment_account_id || undefined, cars: carsWithPrices,
-        });
-
-        for (const car of selectedCars) {
-          if (car.pendingTransfer) {
-            try { await linkTransferToSale(car.pendingTransfer.id, sale.id, parseFloat(car.sale_price), car.pendingTransfer.agreed_commission, car.pendingTransfer.commission_percentage); } catch (error) { console.error('Error linking transfer to sale:', error); }
-          }
-        }
-
-        if (invoiceData.is_installment && companyId) {
-          const downPayment = parseFloat(invoiceData.down_payment) || 0;
-          const numberOfInstallments = parseInt(invoiceData.number_of_installments) || 12;
-          const remainingAmount = calculations.finalTotal - downPayment;
-          try {
-            await addInstallmentSale.mutateAsync({ company_id: companyId, sale_id: sale.id, total_amount: calculations.finalTotal, down_payment: downPayment, remaining_amount: remainingAmount, number_of_installments: numberOfInstallments, installment_amount: remainingAmount / numberOfInstallments, start_date: invoiceData.sale_date, status: 'active', notes: invoiceData.notes || null });
-            toast.success(t.inv_toast_installment_success);
-          } catch (error) { toast.error(t.inv_toast_installment_error); }
-        }
-
-        setSavedSaleData({ ...sale, customer: selectedCustomer, cars: selectedCars });
-        toast.success(t.inv_draft_saved);
-        setIsViewingExisting(true); setCurrentSaleId(sale.id); setCurrentSaleStatus('draft');
-      } catch (error: any) { console.error('Sale error:', error); toast.error(t.inv_toast_sale_error); }
-    } else {
-      if (selectedInventoryItems.length === 0) { toast.error(t.inv_toast_add_item); return; }
-      const emptyNameItem = selectedInventoryItems.find(i => !i.item_name?.trim());
-      if (emptyNameItem) { toast.error('الرجاء إدخال اسم الصنف لجميع العناصر'); return; }
-      const invalidItem = selectedInventoryItems.find(i => !i.sale_price || parseFloat(i.sale_price) <= 0);
-      if (invalidItem) { toast.error(t.inv_toast_enter_item_price); return; }
-
-      try {
-        if (!companyId) throw new Error(t.inv_toast_company_not_found);
-        const finalInvoiceNumber = invoiceData.invoice_number || nextInvoiceNumber;
-
-        const { data: existing } = await supabase.from('invoices').select('id').eq('company_id', companyId).eq('invoice_number', finalInvoiceNumber).eq('invoice_type', 'sales').maybeSingle();
-        if (existing) { toast.error(language === 'ar' ? 'رقم الفاتورة موجود مسبقاً، الرجاء استخدام رقم آخر' : 'Invoice number already exists'); return; }
-
-        const { data: invoice, error: invoiceError } = await supabase.from('invoices').insert({
-          company_id: companyId, invoice_number: finalInvoiceNumber, invoice_type: 'sales',
-          customer_id: invoiceData.customer_id, customer_name: selectedCustomer?.name || '',
-          invoice_date: `${invoiceData.sale_date}T${invoiceData.issue_time || '00:00'}:00`,
-          subtotal: calculations.subtotal, taxable_amount: calculations.subtotalAfterDiscount,
-          vat_rate: taxRate, vat_amount: calculations.totalVAT, total: calculations.finalTotal,
-          discount_amount: calculations.discountAmount, amount_paid: paidAmount,
-          payment_status: paidAmount >= calculations.finalTotal ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid',
-          status: 'draft', fiscal_year_id: selectedFiscalYear?.id || null, notes: invoiceData.notes || null,
-        }).select().single();
-        if (invoiceError) throw invoiceError;
-
-        const invoiceItems = selectedInventoryItems.map((item, index) => ({
-          invoice_id: invoice.id, item_description: item.item_name, item_code: item.barcode || '',
-          quantity: item.quantity, unit: item.unit_name, unit_price: calculations.inventoryItems[index].baseAmount / item.quantity,
-          taxable_amount: calculations.inventoryItems[index].baseAmount, vat_rate: taxRate,
-          vat_amount: calculations.inventoryItems[index].vatAmount, total: calculations.inventoryItems[index].total,
-          inventory_item_id: item.item_id || null,
-        }));
-        const { error: itemsError } = await supabase.from('invoice_items').insert(invoiceItems);
-        if (itemsError) {
-          await supabase.from('invoices').delete().eq('id', invoice.id);
-          throw itemsError;
-        }
-
-        setSavedSaleData({ id: invoice.id, customer: selectedCustomer, inventoryItems: selectedInventoryItems });
-        toast.success('✅ تم حفظ الفاتورة كمسودة - يمكنك تعديلها أو اعتمادها محاسبياً');
-        setIsViewingExisting(true); setCurrentSaleId(invoice.id); setCurrentSaleStatus('draft');
-
-        const { data: updatedInvoices } = await supabase.from('invoices').select('*, invoice_items(*)').eq('company_id', companyId).eq('invoice_type', 'sales').order('created_at', { ascending: true });
-        setExistingInvoices(updatedInvoices || []);
-      } catch (error: any) { console.error('Invoice error:', error); toast.error(t.inv_toast_invoice_error); }
-    }
-  };
-
-  const handleUpdateSale = async () => {
-    if (!currentSaleId || !invoiceData.customer_id) { toast.error(t.inv_toast_select_customer); return; }
-    const isInvoiceRecord = existingInvoices.some(inv => inv.id === currentSaleId);
-
-    if (isInvoiceRecord) {
-      if (selectedInventoryItems.length === 0) { toast.error(t.inv_toast_add_item); return; }
-      try {
-        const { error: invoiceError } = await supabase.from('invoices').update({
-          customer_id: invoiceData.customer_id, customer_name: selectedCustomer?.name || '',
-          invoice_date: `${invoiceData.sale_date}T${invoiceData.issue_time || '00:00'}:00`,
-          subtotal: calculations.subtotal, taxable_amount: calculations.subtotalAfterDiscount,
-          vat_rate: taxRate, vat_amount: calculations.totalVAT, total: calculations.finalTotal,
-          discount_amount: calculations.discountAmount, amount_paid: paidAmount,
-          payment_status: paidAmount >= calculations.finalTotal ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid',
-          notes: invoiceData.notes || null,
-        }).eq('id', currentSaleId);
-        if (invoiceError) throw invoiceError;
-
-        await supabase.from('invoice_items').delete().eq('invoice_id', currentSaleId);
-        const invoiceItems = selectedInventoryItems.map((item, index) => ({
-          invoice_id: currentSaleId, item_description: item.item_name, item_code: item.barcode || '',
-          quantity: item.quantity, unit: item.unit_name, unit_price: calculations.inventoryItems[index].baseAmount / item.quantity,
-          taxable_amount: calculations.inventoryItems[index].baseAmount, vat_rate: taxRate,
-          vat_amount: calculations.inventoryItems[index].vatAmount, total: calculations.inventoryItems[index].total,
-          inventory_item_id: item.item_id || null,
-        }));
-        const { error: itemsError } = await supabase.from('invoice_items').insert(invoiceItems);
-        if (itemsError) throw itemsError;
-
-        const { data: updatedInvoices } = await supabase.from('invoices').select('*, invoice_items(*)').eq('company_id', companyId).eq('invoice_type', 'sales').order('created_at', { ascending: true });
-        setExistingInvoices(updatedInvoices || []);
-        toast.success(t.inv_toast_update_success); setIsEditing(false);
-      } catch (error) { console.error('Update invoice error:', error); toast.error(t.inv_toast_update_error); }
-    } else {
-      if (selectedCars.length === 0) { toast.error(t.inv_toast_add_car); return; }
-      const invalidCar = selectedCars.find(car => !car.sale_price || parseFloat(car.sale_price) <= 0);
-      if (invalidCar) { toast.error(t.inv_toast_enter_price); return; }
-      try {
-        const items = selectedCars.map((car, index) => ({ car_id: car.car_id, sale_price: calculations.items[index].total, purchase_price: car.purchase_price }));
-        await updateSaleWithItems.mutateAsync({
-          saleId: currentSaleId, saleData: { sale_price: calculations.finalTotal, seller_name: invoiceData.seller_name || null, commission: parseFloat(invoiceData.commission) || 0, other_expenses: parseFloat(invoiceData.other_expenses) || 0, sale_date: invoiceData.sale_date, profit: calculations.profit, payment_account_id: invoiceData.payment_account_id || null }, items,
-        });
-        toast.success(t.inv_toast_update_success);
-      } catch (error) { console.error('Update sale error:', error); toast.error(t.inv_toast_update_error); }
-    }
-  };
-
-  const handleDeleteSale = async () => {
-    if (!currentSaleId) return;
-    try {
-      const isInvoiceRecord = existingInvoices.some(inv => inv.id === currentSaleId);
-
-      if (isInvoiceRecord) {
-        const currentInvoice = existingInvoices.find(inv => inv.id === currentSaleId);
-        if (currentInvoice?.status && currentInvoice.status !== 'draft') {
-          toast.error(t.inv_cannot_edit_approved);
-          return;
-        }
-
-        await supabase.from('invoice_items').delete().eq('invoice_id', currentSaleId);
-        const { error: deleteInvoiceError } = await supabase.from('invoices').delete().eq('id', currentSaleId);
-        if (deleteInvoiceError) throw deleteInvoiceError;
-
-        const { data: updatedInvoices } = await supabase
-          .from('invoices')
-          .select('*, invoice_items(*)')
-          .eq('company_id', companyId)
-          .eq('invoice_type', 'sales')
-          .order('created_at', { ascending: true });
-        setExistingInvoices(updatedInvoices || []);
-      } else {
-        const sale = existingSales.find(s => s.id === currentSaleId);
-        if (!sale) return;
-        await deleteSale.mutateAsync({ saleId: currentSaleId, carId: sale.car_id });
-      }
-
-      toast.success(t.inv_toast_delete_success);
-      setDeleteDialogOpen(false);
-      handleNewInvoice();
-    } catch (error) {
-      console.error('Delete sale error:', error);
-      toast.error(t.inv_toast_delete_error);
-    }
-  };
-
-  const handleReverseSale = async () => {
-    if (!currentSaleId) return;
-    try { await reverseSale.mutateAsync(currentSaleId); toast.success(t.inv_toast_reverse_success); setReverseDialogOpen(false); handleNewInvoice(); }
-    catch (error) { toast.error(t.inv_toast_reverse_error); }
-  };
-
-  const handleApproveSale = async () => {
-    if (!currentSaleId) return;
-    try {
-      const isInvoiceRecord = existingInvoices.some(inv => inv.id === currentSaleId);
-      if (isInvoiceRecord) {
-        const { invoicePosting } = getServiceContainer(companyId || '');
-        await invoicePosting.postInvoice(currentSaleId);
-        const { data: updatedInvoices } = await supabase.from('invoices').select('*, invoice_items(*)').eq('company_id', companyId).eq('invoice_type', 'sales').order('created_at', { ascending: true });
-        setExistingInvoices(updatedInvoices || []);
-      } else { await approveSale.mutateAsync(currentSaleId); }
-      setCurrentSaleStatus('approved'); setIsEditing(false); toast.success(t.inv_approved_success); setApproveDialogOpen(false);
-    } catch (error) { console.error('Approve sale error:', error); toast.error(t.inv_approved_error); }
-  };
+  // === CRUD actions (delegated) ===
+  const actions = createSalesInvoiceActions({
+    invoiceData, selectedCars, selectedInventoryItems, calculations, displayTotals,
+    selectedCustomer, taxRate, companyId, selectedFiscalYear, nextInvoiceNumber,
+    isCarDealership, paidAmount, existingInvoices, existingSales, currentSaleId, accounts, allCars,
+    addMultiCarSale, deleteSale, reverseSale, updateSaleWithItems, addInstallmentSale, approveSale,
+    t, language,
+    setExistingInvoices, setSavedSaleData, setIsViewingExisting, setCurrentSaleId, setCurrentSaleStatus,
+    setIsEditing, setDeleteDialogOpen, setReverseDialogOpen, setApproveDialogOpen, handleNewInvoice,
+  });
 
   const handlePrintExisting = () => {
     if (!currentSaleId) return;
@@ -533,10 +276,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
     setInvoiceOpen(true);
   };
 
-  const handleCloseInvoice = (open: boolean) => {
-    setInvoiceOpen(open);
-    if (!open) setActivePage('sales');
-  };
+  const handleCloseInvoice = (open: boolean) => { setInvoiceOpen(open); if (!open) setActivePage('sales'); };
 
   // === Invoice preview data ===
   const invoicePreviewData = useMemo(() => {
@@ -565,26 +305,23 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   }, [savedSaleData, invoiceData, selectedCustomer, calculations, taxSettings, company, taxRate, nextInvoiceNumber, accounts]);
 
   return {
-    // Data & config
     customers, accounts, taxSettings, company, isCarDealership, t, language, dir, decimals, permissions, currency, locale,
     taxRate, nextInvoiceNumber, savedTemplates,
-    // State
     invoiceData, setInvoiceData, selectedCars, selectedInventoryItems,
     invoiceOpen, setInvoiceOpen, savedSaleData, discount, setDiscount, discountType, setDiscountType,
     paidAmount, setPaidAmount, currentInvoiceIndex, isViewingExisting, currentSaleId,
     deleteDialogOpen, setDeleteDialogOpen, reverseDialogOpen, setReverseDialogOpen,
     approveDialogOpen, setApproveDialogOpen, currentSaleStatus, isEditing, setIsEditing,
     isApproved, isReadOnly, selectedCustomer, searchBarRef,
-    // Derived
     fiscalYearFilteredSales, remainingCars, availableInventoryItems,
     calculations, displayTotals, invoicePreviewData,
-    // Actions
     formatCurrency, handleAddCar, handleRemoveCar, handleCarChange,
     handleAddInventoryItem, handleAddManualItem, handleRemoveInventoryItem, handleInventoryItemChange,
-    handleSubmit, handleUpdateSale, handleDeleteSale, handleReverseSale, handleApproveSale,
+    handleSubmit: actions.handleSubmit, handleUpdateSale: actions.handleUpdateSale,
+    handleDeleteSale: actions.handleDeleteSale, handleReverseSale: actions.handleReverseSale,
+    handleApproveSale: actions.handleApproveSale,
     handleNewInvoice, handlePrintExisting, handleCloseInvoice,
     handleFirstSale, handlePreviousSale, handleNextSale, handleLastSale, loadSaleData,
-    // Mutations (for pending states)
     addMultiCarSale, deleteSale, reverseSale, updateSale, approveSale,
   };
 }
