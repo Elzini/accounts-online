@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { invalidateFinancialReportQueries } from '@/hooks/utils/invalidateFinancialReports';
 import {
   fetchTaxSettings,
   upsertTaxSettings,
@@ -165,13 +166,7 @@ export function useCreateJournalEntry() {
       return createJournalEntry({ ...entry, company_id: companyId, fiscal_year_id: fiscalYearId } as any, lines);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['account-balances', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['trial-balance', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['income-statement', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['balance-sheet', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['vat-settlement-report', companyId] });
+      invalidateFinancialReportQueries(queryClient, companyId);
     },
   });
 }
@@ -183,14 +178,7 @@ export function useDeleteJournalEntry() {
   return useMutation({
     mutationFn: deleteJournalEntry,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['journal-entry'] });
-      queryClient.invalidateQueries({ queryKey: ['account-balances', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['trial-balance', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['income-statement', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['balance-sheet', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['vat-settlement-report', companyId] });
+      invalidateFinancialReportQueries(queryClient, companyId);
     },
   });
 }
@@ -212,14 +200,7 @@ export function useUpdateJournalEntry() {
       return updateJournalEntry(entryId, entry, lines);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['journal-entry'] });
-      queryClient.invalidateQueries({ queryKey: ['account-balances', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['trial-balance', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['comprehensive-trial-balance', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['income-statement', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['balance-sheet', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['vat-settlement-report', companyId] });
+      invalidateFinancialReportQueries(queryClient, companyId);
     },
   });
 }
