@@ -192,7 +192,7 @@ export function usePurchasesTable() {
     setIsApprovingAll(true);
     let successCount = 0, failCount = 0;
     for (const inv of draftInvoices) {
-      try { await approveInvoiceWithJournal(inv.id); successCount++; }
+      try { const { invoicePosting } = getServiceContainer(companyId || ''); await invoicePosting.postInvoice(inv.id); successCount++; }
       catch { failCount++; }
     }
     invalidateAll();
