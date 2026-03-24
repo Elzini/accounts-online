@@ -150,17 +150,19 @@ export function useJournalEntry(entryId: string | null) {
 export function useCreateJournalEntry() {
   const queryClient = useQueryClient();
   const { companyId } = useCompany();
+  const { selectedFiscalYear } = useFiscalYear();
   
   return useMutation({
     mutationFn: ({ 
       entry, 
       lines 
     }: { 
-      entry: Omit<JournalEntry, 'id' | 'entry_number' | 'created_at' | 'updated_at' | 'lines' | 'company_id'>;
-      lines: Array<{ account_id: string; description?: string; debit: number; credit: number }>;
+      entry: Omit<JournalEntry, 'id' | 'entry_number' | 'created_at' | 'updated_at' | 'lines' | 'company_id'> & { fiscal_year_id?: string };
+      lines: Array<{ account_id: string; description?: string; debit: number; credit: number; cost_center_id?: string | null }>;
     }) => {
       if (!companyId) throw new Error('Company ID required');
-      return createJournalEntry({ ...entry, company_id: companyId }, lines);
+      const fiscalYearId = entry.fiscal_year_id || selectedFiscalYear?.id || '';
+      return createJournalEntry({ ...entry, company_id: companyId, fiscal_year_id: fiscalYearId } as any, lines);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['journal-entries', companyId] });
