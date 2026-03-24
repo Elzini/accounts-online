@@ -26,7 +26,7 @@ export function POSPluginPage() {
   ];
 
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const vat = total * 0.15;
+  const { vatAmount: vat } = calcStandardVAT(total);
 
   return (
     <div className="space-y-6 animate-fade-in">
