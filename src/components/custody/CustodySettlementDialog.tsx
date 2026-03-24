@@ -1,51 +1,26 @@
 import { useState } from 'react';
 import { useCustodyAmountChangesList } from '@/hooks/modules/useBusinessServices';
-import { Plus, Trash2, FileDown, Eye, CheckCircle, Pencil, History, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Trash2, FileDown, Eye, CheckCircle, Pencil } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableFooter,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { useCustodyDetails, useCustody } from '@/hooks/useCustody';
 import { calculateCustodySummary, CustodyTransaction } from '@/services/custody';
 import { formatNumber } from '@/components/financial-statements/utils/numberFormatting';
-import { Badge } from '@/components/ui/badge';
 import { useCustodyExport } from './useCustodyExport';
 import { CustodyPrintPreviewDialog } from './CustodyPrintPreviewDialog';
 import { AccountSearchSelect } from '@/components/accounting/AccountSearchSelect';
 import { useAccounts } from '@/hooks/useAccounting';
 import { useEmployees } from '@/hooks/usePayroll';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CustodySummaryCards } from './settlement/CustodySummaryCards';
+import { AmountChangesTable } from './settlement/AmountChangesTable';
 
 const transactionSchema = z.object({
   transaction_date: z.string().min(1, 'التاريخ مطلوب'),
@@ -72,21 +47,12 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
   const { data: employees = [] } = useEmployees();
   const [editingTransaction, setEditingTransaction] = useState<CustodyTransaction | null>(null);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
-
   const { data: amountChanges = [] } = useCustodyAmountChangesList(custodyId, open);
-
   const accountsList = accounts.map((a: any) => ({ id: a.id, code: a.code, name: a.name }));
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
-    defaultValues: {
-      transaction_date: new Date().toISOString().split('T')[0],
-      description: '',
-      analysis_category: '',
-      amount: 0,
-      account_id: '',
-      employee_id: '',
-    },
+    defaultValues: { transaction_date: new Date().toISOString().split('T')[0], description: '', analysis_category: '', amount: 0, account_id: '', employee_id: '' },
   });
 
   const [showForm, setShowForm] = useState(false);
@@ -104,16 +70,18 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
   const summary = calculateCustodySummary(custody);
   const transactions = custody.transactions || [];
 
+  const resetForm = () => {
+    form.reset({ transaction_date: new Date().toISOString().split('T')[0], description: '', analysis_category: '', amount: 0, account_id: '', employee_id: '' });
+    setShowForm(false);
+  };
+
   const onSubmitTransaction = (values: TransactionFormValues) => {
     if (editingTransaction) {
-      // Update existing transaction
       updateTransaction({
         id: editingTransaction.id,
         updates: {
-          transaction_date: values.transaction_date,
-          description: values.description,
-          analysis_category: values.analysis_category || null,
-          amount: values.amount,
+          transaction_date: values.transaction_date, description: values.description,
+          analysis_category: values.analysis_category || null, amount: values.amount,
           account_id: values.account_id || null,
           employee_id: values.employee_id && values.employee_id !== '__none__' ? values.employee_id : null,
         },
@@ -121,60 +89,36 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
       setEditingTransaction(null);
     } else {
       addTransaction({
-        transaction_date: values.transaction_date,
-        description: values.description,
-        analysis_category: values.analysis_category || null,
-        amount: values.amount,
+        transaction_date: values.transaction_date, description: values.description,
+        analysis_category: values.analysis_category || null, amount: values.amount,
         account_id: values.account_id || null,
         employee_id: values.employee_id && values.employee_id !== '__none__' ? values.employee_id : null,
-        journal_entry_id: null,
-        notes: null,
-        created_by: null,
+        journal_entry_id: null, notes: null, created_by: null,
       });
     }
-    form.reset({
-      transaction_date: new Date().toISOString().split('T')[0],
-      description: '',
-      analysis_category: '',
-      amount: 0,
-      account_id: '',
-      employee_id: '',
-    });
-    setShowForm(false);
+    resetForm();
   };
 
   const handleEditTransaction = (tx: CustodyTransaction) => {
     setEditingTransaction(tx);
     form.reset({
-      transaction_date: tx.transaction_date,
-      description: tx.description,
-      analysis_category: tx.analysis_category || '',
-      amount: tx.amount,
-      account_id: tx.account_id || '',
-      employee_id: (tx as any).employee_id || '',
+      transaction_date: tx.transaction_date, description: tx.description,
+      analysis_category: tx.analysis_category || '', amount: tx.amount,
+      account_id: tx.account_id || '', employee_id: (tx as any).employee_id || '',
     });
     setShowForm(true);
   };
 
   const handleDeleteTransaction = (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا المصروف؟')) {
-      deleteTransaction(id);
-    }
+    if (confirm('هل أنت متأكد من حذف هذا المصروف؟')) deleteTransaction(id);
   };
 
   const handleSettle = () => {
     const confirmMsg = summary.carriedBalance > 0
       ? `هل أنت متأكد من تصفية هذه العهدة؟ سيتم ترحيل مبلغ ${formatNumber(summary.carriedBalance)} ر.س إلى عهدة جديدة باسم ${custody.employee?.name || custody.custody_name}.`
       : 'هل أنت متأكد من تصفية هذه العهدة؟';
-    
     if (confirm(confirmMsg)) {
-      settleCustody({
-        id: custodyId,
-        settlementDate: new Date().toISOString().split('T')[0],
-        carriedBalance: summary.carriedBalance,
-        employeeId: custody.employee_id,
-        employeeName: custody.employee?.name || custody.custody_name,
-      });
+      settleCustody({ id: custodyId, settlementDate: new Date().toISOString().split('T')[0], carriedBalance: summary.carriedBalance, employeeId: custody.employee_id, employeeName: custody.employee?.name || custody.custody_name });
     }
   };
 
@@ -187,80 +131,13 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
           <DialogTitle className="flex items-center justify-between">
             <span>تصفية العهدة - {custody.custody_name}</span>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowPrintPreview(true)}>
-                <Eye className="h-4 w-4 ml-1" />
-                معاينة PDF
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => exportToExcel(custody, summary)}>
-                <FileDown className="h-4 w-4 ml-1" />
-                Excel
-              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowPrintPreview(true)}><Eye className="h-4 w-4 ml-1" />معاينة PDF</Button>
+              <Button variant="outline" size="sm" onClick={() => exportToExcel(custody, summary)}><FileDown className="h-4 w-4 ml-1" />Excel</Button>
             </div>
           </DialogTitle>
         </DialogHeader>
 
-        {/* Custody Summary */}
-        {(() => {
-          const netChanges = amountChanges.reduce((s: number, c: any) => s + (c.change_amount || 0), 0);
-          const hasChanges = amountChanges.length > 0;
-          return (
-            <div className={`grid grid-cols-2 ${hasChanges ? 'md:grid-cols-6' : 'md:grid-cols-4'} gap-4`}>
-              {summary.isCarried ? (
-                <Card className="col-span-2 md:col-span-6">
-                  <CardContent className="pt-4 text-center">
-                    <div className="text-sm text-muted-foreground">رصيد مرحّل (مستحق للموظف)</div>
-                    <div className="text-2xl font-bold text-blue-600">{formatNumber(summary.carriedBalance)} ر.س</div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <>
-                  <Card>
-                    <CardContent className="pt-4">
-                      <div className="text-sm text-muted-foreground">مبلغ العهدة الأصلي</div>
-                      <div className="text-xl font-bold text-primary">{formatNumber(hasChanges ? (summary.custodyAmount - netChanges) : summary.custodyAmount)} ر.س</div>
-                    </CardContent>
-                  </Card>
-                  {hasChanges && (
-                    <>
-                      <Card className="border-blue-200 bg-blue-50/50">
-                        <CardContent className="pt-4">
-                          <div className="text-sm text-muted-foreground">مبلغ التعديل</div>
-                          <div className={`text-xl font-bold ${netChanges > 0 ? 'text-green-600' : 'text-destructive'}`}>
-                            {netChanges > 0 ? '+' : ''}{formatNumber(netChanges)} ر.س
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card className="border-primary/30 bg-primary/5">
-                        <CardContent className="pt-4">
-                          <div className="text-sm text-muted-foreground">الإجمالي بعد التعديل</div>
-                          <div className="text-xl font-bold text-primary">{formatNumber(summary.custodyAmount)} ر.س</div>
-                        </CardContent>
-                      </Card>
-                    </>
-                  )}
-                  <Card>
-                    <CardContent className="pt-4">
-                      <div className="text-sm text-muted-foreground">إجمالي المصروفات</div>
-                      <div className="text-xl font-bold text-red-600">{formatNumber(summary.totalSpent)} ر.س</div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-4">
-                      <div className="text-sm text-muted-foreground">رصيد الخزينة الآن</div>
-                      <div className="text-xl font-bold text-green-600">{formatNumber(summary.returnedAmount)} ر.س</div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-4">
-                      <div className="text-sm text-muted-foreground">الرصيد المرحل</div>
-                      <div className="text-xl font-bold text-orange-600">{formatNumber(summary.carriedBalance)} ر.س</div>
-                    </CardContent>
-                  </Card>
-                </>
-              )}
-            </div>
-          );
-        })()}
+        <CustodySummaryCards summary={summary} amountChanges={amountChanges} />
 
         {/* Transactions Table */}
         <Card>
@@ -278,56 +155,26 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
               </TableHeader>
               <TableBody>
                 {transactions.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={isSettled ? 5 : 6} className="text-center py-8 text-muted-foreground">
-                      لا توجد مصروفات مسجلة
+                  <TableRow><TableCell colSpan={isSettled ? 5 : 6} className="text-center py-8 text-muted-foreground">لا توجد مصروفات مسجلة</TableCell></TableRow>
+                ) : transactions.map((tx) => (
+                  <TableRow key={tx.id} className={!tx.account_id ? 'bg-orange-50/50' : ''}>
+                    <TableCell>{new Date(tx.transaction_date).toLocaleDateString('ar-SA')}</TableCell>
+                    <TableCell>{tx.analysis_category || '-'}</TableCell>
+                    <TableCell className="text-xs">
+                      {tx.account ? <span className="bg-primary/10 text-primary px-2 py-0.5 rounded">{tx.account.code} - {tx.account.name}</span> : <span className="text-muted-foreground">بدون حساب</span>}
                     </TableCell>
-                  </TableRow>
-                ) : (
-                  transactions.map((tx) => (
-                    <TableRow key={tx.id} className={!tx.account_id ? 'bg-orange-50/50' : ''}>
-                      <TableCell>{new Date(tx.transaction_date).toLocaleDateString('ar-SA')}</TableCell>
-                      <TableCell>{tx.analysis_category || '-'}</TableCell>
-                      <TableCell className="text-xs">
-                        {tx.account ? (
-                          <span className="bg-primary/10 text-primary px-2 py-0.5 rounded">
-                            {tx.account.code} - {tx.account.name}
-                          </span>
-                        ) : <span className="text-muted-foreground">بدون حساب</span>}
-                      </TableCell>
+                    <TableCell>{tx.description}{tx.employee && <span className="text-xs text-primary mr-1">({tx.employee.name})</span>}</TableCell>
+                    <TableCell className="font-medium">{formatNumber(tx.amount)}</TableCell>
+                    {!isSettled && (
                       <TableCell>
-                        {tx.description}
-                        {tx.employee && (
-                          <span className="text-xs text-primary mr-1">({tx.employee.name})</span>
-                        )}
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEditTransaction(tx)} title="تعديل"><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={() => handleDeleteTransaction(tx.id)}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
                       </TableCell>
-                      <TableCell className="font-medium">{formatNumber(tx.amount)}</TableCell>
-                      {!isSettled && (
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => handleEditTransaction(tx)}
-                              title="تعديل"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive h-8 w-8 p-0"
-                              onClick={() => handleDeleteTransaction(tx.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))
-                )}
+                    )}
+                  </TableRow>
+                ))}
               </TableBody>
               <TableFooter>
                 <TableRow className="bg-muted/50">
@@ -350,57 +197,7 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
           </CardContent>
         </Card>
 
-        {/* Amount Changes History */}
-        {amountChanges.length > 0 && (
-          <Card>
-            <CardContent className="p-0">
-              <div className="flex items-center gap-2 p-4 pb-2">
-                <History className="h-4 w-4 text-primary" />
-                <h3 className="font-semibold text-sm">سجل تعديلات مبلغ العهدة</h3>
-              </div>
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-primary/10">
-                    <TableHead className="text-right font-bold w-10">#</TableHead>
-                    <TableHead className="text-right font-bold">التاريخ</TableHead>
-                    <TableHead className="text-right font-bold">المبلغ القديم</TableHead>
-                    <TableHead className="text-right font-bold">المبلغ الجديد</TableHead>
-                    <TableHead className="text-right font-bold">المبلغ المضاف</TableHead>
-                    <TableHead className="text-right font-bold">ملاحظات</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {amountChanges.map((change: any, idx: number) => (
-                    <TableRow key={change.id}>
-                      <TableCell className="font-medium">{idx + 1}</TableCell>
-                      <TableCell>{new Date(change.changed_at).toLocaleDateString('ar-SA')}</TableCell>
-                      <TableCell>{formatNumber(change.old_amount)} ر.س</TableCell>
-                      <TableCell className="font-semibold">{formatNumber(change.new_amount)} ر.س</TableCell>
-                      <TableCell>
-                        <Badge variant={change.change_amount > 0 ? 'default' : 'destructive'} className="gap-1">
-                          {change.change_amount > 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                          {change.change_amount > 0 ? '+' : ''}{formatNumber(change.change_amount)} ر.س
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{change.notes || '-'}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-                <TableFooter>
-                  <TableRow className="bg-muted/50">
-                    <TableCell colSpan={4} className="text-right font-bold">صافي التعديلات</TableCell>
-                    <TableCell className="font-bold text-primary" colSpan={2}>
-                      {(() => {
-                        const net = amountChanges.reduce((s: number, c: any) => s + (c.change_amount || 0), 0);
-                        return `${net >= 0 ? '+' : ''}${formatNumber(net)} ر.س`;
-                      })()}
-                    </TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
+        <AmountChangesTable amountChanges={amountChanges} />
 
         {!isSettled && (
           <>
@@ -410,146 +207,50 @@ export function CustodySettlementDialog({ open, onOpenChange, custodyId }: Custo
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmitTransaction)} className="space-y-4">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="transaction_date"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>التاريخ</FormLabel>
-                              <FormControl>
-                                <Input type="date" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="analysis_category"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>التحليل</FormLabel>
-                              <FormControl>
-                                <Input placeholder="مثال: مصروف كهرباء" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="description"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>البيان</FormLabel>
-                              <FormControl>
-                                <Input placeholder="وصف المصروف" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="amount"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>القيمة</FormLabel>
-                              <FormControl>
-                                <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <FormField control={form.control} name="transaction_date" render={({ field }) => (<FormItem><FormLabel>التاريخ</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="analysis_category" render={({ field }) => (<FormItem><FormLabel>التحليل</FormLabel><FormControl><Input placeholder="مثال: مصروف كهرباء" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>البيان</FormLabel><FormControl><Input placeholder="وصف المصروف" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="amount" render={({ field }) => (<FormItem><FormLabel>القيمة</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
-                      <FormField
-                        control={form.control}
-                        name="account_id"
-                        render={({ field }) => (
+                      <FormField control={form.control} name="account_id" render={({ field }) => (<FormItem><FormLabel>حساب المصروف (لإنشاء قيد تلقائي)</FormLabel><FormControl><AccountSearchSelect accounts={accountsList} value={field.value || ''} onChange={field.onChange} placeholder="اختر الحساب المدين للمصروف..." /></FormControl><FormMessage /></FormItem>)} />
+                      {form.watch('analysis_category')?.includes('سلف') && (
+                        <FormField control={form.control} name="employee_id" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>حساب المصروف (لإنشاء قيد تلقائي)</FormLabel>
-                            <FormControl>
-                              <AccountSearchSelect
-                                accounts={accountsList}
-                                value={field.value || ''}
-                                onChange={field.onChange}
-                                placeholder="اختر الحساب المدين للمصروف..."
-                              />
-                            </FormControl>
+                            <FormLabel>الموظف (لترحيل السلفة على مسير الراتب)</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl><SelectTrigger><SelectValue placeholder="اختر الموظف..." /></SelectTrigger></FormControl>
+                              <SelectContent>
+                                <SelectItem value="__none__">بدون تحديد</SelectItem>
+                                {employees.map((emp) => <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
-                        )}
-                      />
-                      {/* Employee selector - shows when category is سلفة */}
-                      {form.watch('analysis_category')?.includes('سلف') && (
-                        <FormField
-                          control={form.control}
-                          name="employee_id"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>الموظف (لترحيل السلفة على مسير الراتب)</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="اختر الموظف..." />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="__none__">بدون تحديد</SelectItem>
-                                  {employees.map((emp) => (
-                                    <SelectItem key={emp.id} value={emp.id}>
-                                      {emp.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        )} />
                       )}
                       <div className="flex gap-2 justify-end">
-                        <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingTransaction(null); form.reset(); }}>
-                          إلغاء
-                        </Button>
-                        <Button type="submit" disabled={isAddingTransaction || isUpdatingTransaction}>
-                          {editingTransaction ? 'تحديث المصروف' : 'إضافة المصروف'}
-                        </Button>
+                        <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingTransaction(null); form.reset(); }}>إلغاء</Button>
+                        <Button type="submit" disabled={isAddingTransaction || isUpdatingTransaction}>{editingTransaction ? 'تحديث المصروف' : 'إضافة المصروف'}</Button>
                       </div>
                     </form>
                   </Form>
                 </CardContent>
               </Card>
             ) : (
-              <Button variant="outline" onClick={() => { setEditingTransaction(null); setShowForm(true); }} className="gap-2">
-                <Plus className="h-4 w-4" />
-                إضافة مصروف
-              </Button>
+              <Button variant="outline" onClick={() => { setEditingTransaction(null); setShowForm(true); }} className="gap-2"><Plus className="h-4 w-4" />إضافة مصروف</Button>
             )}
           </>
         )}
 
-        {/* Action Buttons */}
         <div className="flex gap-2 justify-end pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            إغلاق
-          </Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>إغلاق</Button>
           {!isSettled && (
-            <Button onClick={handleSettle} disabled={isSettling} className="gap-2 bg-green-600 hover:bg-green-700">
-              <CheckCircle className="h-4 w-4" />
-              تصفية العهدة
-            </Button>
+            <Button onClick={handleSettle} disabled={isSettling} className="gap-2 bg-green-600 hover:bg-green-700"><CheckCircle className="h-4 w-4" />تصفية العهدة</Button>
           )}
         </div>
       </DialogContent>
 
-      <CustodyPrintPreviewDialog
-        open={showPrintPreview}
-        onOpenChange={setShowPrintPreview}
-        custody={custody}
-        summary={summary}
-      />
+      <CustodyPrintPreviewDialog open={showPrintPreview} onOpenChange={setShowPrintPreview} custody={custody} summary={summary} />
     </Dialog>
   );
 }
