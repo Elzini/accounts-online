@@ -22,6 +22,8 @@ const companyTypes: { value: CompanyActivityType; labelAr: string; labelEn: stri
   { value: 'export_import', labelAr: 'تصدير واستيراد', labelEn: 'Export & Import', icon: <Package className="w-4 h-4" /> },
   { value: 'medical', labelAr: 'تجارة أدوية وأدوات طبية', labelEn: 'Medical & Pharma', icon: <Package className="w-4 h-4" /> },
   { value: 'real_estate', labelAr: 'تطوير عقاري', labelEn: 'Real Estate Developer', icon: <Building2 className="w-4 h-4" /> },
+  { value: 'bookkeeping', labelAr: 'مكتب محاسبة', labelEn: 'Bookkeeping Office', icon: <Package className="w-4 h-4" /> },
+  { value: 'manufacturing', labelAr: 'تصنيع', labelEn: 'Manufacturing', icon: <Package className="w-4 h-4" /> },
 ];
 
 export default function Register() {
