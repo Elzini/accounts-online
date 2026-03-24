@@ -629,6 +629,57 @@ export type Database = {
           },
         ]
       }
+      audit_logs_archive: {
+        Row: {
+          action: string
+          company_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          integrity_hash: string | null
+          ip_address: string | null
+          new_data: Json | null
+          old_data: Json | null
+          previous_hash: string | null
+          sequence_number: number | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          company_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          integrity_hash?: string | null
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          previous_hash?: string | null
+          sequence_number?: number | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          company_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          integrity_hash?: string | null
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          previous_hash?: string | null
+          sequence_number?: number | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       backup_schedules: {
         Row: {
           backup_hour: number
@@ -11019,6 +11070,10 @@ export type Database = {
         Args: { p_schema_name: string }
         Returns: undefined
       }
+      archive_old_audit_logs: {
+        Args: { days_to_keep?: number }
+        Returns: number
+      }
       calculate_car_net_profit: {
         Args: {
           p_car_id: string
@@ -11140,6 +11195,15 @@ export type Database = {
           customers_count: number
           sales_count: number
           users_count: number
+        }[]
+      }
+      get_audit_log_stats: {
+        Args: never
+        Returns: {
+          active_count: number
+          archive_count: number
+          newest_active: string
+          oldest_active: string
         }[]
       }
       get_bank_account_full_details: {
