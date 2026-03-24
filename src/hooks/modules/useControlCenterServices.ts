@@ -5,11 +5,8 @@
  * Invoice Settings, Report Settings
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/untypedFrom';
 import { useCompany } from '@/contexts/CompanyContext';
-
-// Re-export supabase for complex inline queries
-export { supabase } from '@/integrations/supabase/client';
 
 function useCompanyId() {
   const { companyId } = useCompany();

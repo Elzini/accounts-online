@@ -2,7 +2,7 @@
  * Super Admin - Company Management Services
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
 
 export function useAllCompanies(select = 'id, name, is_active') {
   return useQuery({

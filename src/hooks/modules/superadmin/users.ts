@@ -2,7 +2,7 @@
  * Super Admin - User & RBAC Management Services
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
 
 export function useAllUsers() {
   return useQuery({

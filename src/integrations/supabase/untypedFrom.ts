@@ -13,6 +13,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Re-export supabase for hooks that need typed table access, auth, or storage.
+// All hooks should import from this file instead of directly from client.ts.
+export { supabase } from '@/integrations/supabase/client';
+
 /**
  * Access a Supabase table that isn't in the generated types.
  * Returns a standard PostgREST query builder.

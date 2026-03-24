@@ -2,7 +2,7 @@
  * Restaurant Module - Service Hooks
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/integrations/supabase/untypedFrom';
 
 export function useRestaurantTables(companyId: string | null) {
   return useQuery({

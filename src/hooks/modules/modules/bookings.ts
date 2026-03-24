@@ -2,7 +2,7 @@
  * Module Services - Bookings
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/untypedFrom';
 import { useCompanyId } from '@/hooks/useCompanyId';
 
 export function useBookings() {
