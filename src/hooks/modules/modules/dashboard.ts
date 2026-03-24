@@ -39,8 +39,7 @@ export function useRecentInvoices(companyId: string | null, fiscalYearId?: strin
   return useQuery({
     queryKey: ['dashboard-recent-invoices', companyId, fiscalYearId],
     queryFn: async () => {
-      let query = (supabase as any)
-        .from('invoices')
+      let query = untypedFrom('invoices')
         .select('id, invoice_number, invoice_type, invoice_date, total, payment_status, customer_name, supplier:suppliers!invoices_supplier_id_fkey(name)')
         .eq('company_id', companyId!)
         .in('invoice_type', ['sales', 'purchase'])
