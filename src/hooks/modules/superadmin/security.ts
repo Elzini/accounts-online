@@ -13,7 +13,7 @@ export function useFinancialProtectionStats() {
     queryKey: ['financial-protection-stats'],
     queryFn: async () => {
       const invoices = await supabase.from('invoices').select('id', { count: 'exact', head: true }).in('status', ['issued', 'approved', 'posted']);
-      const entries = await (supabase.from as any)('journal_entries').select('id', { count: 'exact', head: true }).in('status', ['posted', 'approved']);
+      const entries = await untypedFrom('journal_entries').select('id', { count: 'exact', head: true }).in('status', ['posted', 'approved']);
       const items = await supabase.from('invoice_items').select('id', { count: 'exact', head: true });
       return {
         protectedInvoices: invoices.count || 0,
@@ -85,7 +85,7 @@ export function useCodeIntegrityHashes(limit = 100) {
   return useQuery({
     queryKey: ['code-integrity-hashes', limit],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('code_integrity_hashes').select('*').order('updated_at', { ascending: false }).limit(limit);
+      const { data, error } = await untypedFrom('code_integrity_hashes').select('*').order('updated_at', { ascending: false }).limit(limit);
       if (error) throw error;
       return data || [];
     },
@@ -98,7 +98,7 @@ export function useEngineVersions() {
   return useQuery({
     queryKey: ['accounting-engine-versions'],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('accounting_engine_versions').select('*').order('created_at', { ascending: false });
+      const { data, error } = await untypedFrom('accounting_engine_versions').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -113,9 +113,9 @@ export function useCreateEngineVersion() {
       if (!version) throw new Error('رقم النسخة مطلوب');
       const { data: { user } } = await supabase.auth.getUser();
 
-      await (supabase.from as any)('accounting_engine_versions').update({ is_current: false }).eq('is_current', true);
+      await untypedFrom('accounting_engine_versions').update({ is_current: false }).eq('is_current', true);
 
-      const { error } = await (supabase.from as any)('accounting_engine_versions').insert({
+      const { error } = await untypedFrom('accounting_engine_versions').insert({
         version_number: version,
         description,
         is_active: true,
@@ -134,7 +134,7 @@ export function useFinancialPeriodLocks() {
   return useQuery({
     queryKey: ['financial-period-locks'],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('financial_period_locks').select('*').order('created_at', { ascending: false });
+      const { data, error } = await untypedFrom('financial_period_locks').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -148,7 +148,7 @@ export function useCreateFinancialPeriodLock() {
     mutationFn: async (lockData: { companyId: string; periodStart: string; periodEnd: string; reason: string }) => {
       if (!lockData.companyId || !lockData.periodStart || !lockData.periodEnd) throw new Error('جميع الحقول مطلوبة');
       const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await (supabase.from as any)('financial_period_locks').insert({
+      const { error } = await untypedFrom('financial_period_locks').insert({
         company_id: lockData.companyId,
         period_start: lockData.periodStart,
         period_end: lockData.periodEnd,
@@ -168,7 +168,7 @@ export function useFinancialSnapshots(companyId: string) {
     queryKey: ['financial-snapshots', companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data, error } = await (supabase.from as any)('financial_snapshots').select('*').eq('company_id', companyId).order('snapshot_date', { ascending: false }).limit(90);
+      const { data, error } = await untypedFrom('financial_snapshots').select('*').eq('company_id', companyId).order('snapshot_date', { ascending: false }).limit(90);
       if (error) throw error;
       return data || [];
     },
@@ -196,7 +196,7 @@ export function useTakeFinancialSnapshot() {
 
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { error } = await (supabase.from as any)('financial_snapshots').insert({
+      const { error } = await untypedFrom('financial_snapshots').insert({
         company_id: companyId,
         snapshot_date: new Date().toISOString(),
         created_by: user?.id,
@@ -222,7 +222,7 @@ export function useSecurityIncidents(limit = 100) {
   return useQuery({
     queryKey: ['security-incidents', limit],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('security_incidents').select('*').order('created_at', { ascending: false }).limit(limit);
+      const { data, error } = await untypedFrom('security_incidents').select('*').order('created_at', { ascending: false }).limit(limit);
       if (error) throw error;
       return data || [];
     },
@@ -283,7 +283,7 @@ export function useTwoPersonApprovals(limit = 50) {
   return useQuery({
     queryKey: ['two-person-approvals', limit],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('two_person_approvals').select('*').order('created_at', { ascending: false }).limit(limit);
+      const { data, error } = await untypedFrom('two_person_approvals').select('*').order('created_at', { ascending: false }).limit(limit);
       if (error) throw error;
       return data || [];
     },
@@ -302,7 +302,7 @@ export function useApproveTwoPersonRequest() {
         ? { first_approver_id: user?.id, first_approved_at: new Date().toISOString(), status: 'first_approved' }
         : { second_approver_id: user?.id, second_approved_at: new Date().toISOString(), status: 'fully_approved' };
 
-      const { error } = await (supabase.from as any)('two_person_approvals').update(updateField).eq('id', requestId);
+      const { error } = await untypedFrom('two_person_approvals').update(updateField).eq('id', requestId);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['two-person-approvals'] }),
@@ -314,7 +314,7 @@ export function useRejectTwoPersonRequest() {
   return useMutation({
     mutationFn: async ({ requestId, reason }: { requestId: string; reason: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await (supabase.from as any)('two_person_approvals').update({
+      const { error } = await untypedFrom('two_person_approvals').update({
         status: 'rejected',
         rejection_reason: reason,
         rejected_by: user?.id,
