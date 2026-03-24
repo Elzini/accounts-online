@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { calcStandardVAT } from '@/utils/vatCalculator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,7 @@ export function POSPluginPage() {
   ];
 
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const vat = total * 0.15;
+  const { vatAmount: vat } = calcStandardVAT(total);
 
   return (
     <div className="space-y-6 animate-fade-in">
