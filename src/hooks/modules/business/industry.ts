@@ -16,7 +16,7 @@ export function useLettersOfCredit(companyId: string | null) {
 export function useShipments(companyId: string | null) {
   return useQuery({
     queryKey: ['shipments', companyId],
-    queryFn: async () => { const { data, error } = await (supabase as any).from('shipments').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
+    queryFn: async () => { const { data, error } = await untypedFrom('shipments').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
