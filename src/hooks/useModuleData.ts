@@ -168,7 +168,7 @@ export function useAddPOSOrder() {
       if (orderErr) throw orderErr;
       if (data.lines.length > 0) {
         const linesWithOrderId = data.lines.map(l => ({ ...l, order_id: order.id }));
-        const { error: linesErr } = await (supabase as any).from('pos_order_lines').insert(linesWithOrderId);
+        const { error: linesErr } = await untypedFrom('pos_order_lines').insert(linesWithOrderId);
         if (linesErr) throw linesErr;
       }
       return order;
