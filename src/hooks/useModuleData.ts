@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { untypedFrom } from '@/integrations/supabase/untypedFrom';
 import { useCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 
@@ -10,7 +10,7 @@ function useModuleQuery<T>(table: string, queryKey: string, orderBy = 'created_a
     queryKey: [queryKey, companyId],
     queryFn: async () => {
       if (!companyId) return [] as T[];
-      const { data, error } = await (supabase as any).from(table).select('*').eq('company_id', companyId).order(orderBy, { ascending: false });
+      const { data, error } = await untypedFrom(table).select('*').eq('company_id', companyId).order(orderBy, { ascending: false });
       if (error) throw error;
       return (data || []) as T[];
     },
@@ -25,7 +25,7 @@ function useModuleAdd(table: string, queryKey: string) {
   return useMutation({
     mutationFn: async (data: Record<string, any>) => {
       if (!companyId) throw new Error('No company');
-      const { data: result, error } = await (supabase as any).from(table).insert({ ...data, company_id: companyId }).select().single();
+      const { data: result, error } = await untypedFrom(table).insert({ ...data, company_id: companyId }).select().single();
       if (error) throw error;
       return result;
     },
@@ -42,7 +42,7 @@ function useModuleUpdate(table: string, queryKey: string) {
   const { companyId } = useCompany();
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string; [key: string]: any }) => {
-      const { error } = await (supabase as any).from(table).update(data).eq('id', id);
+      const { error } = await untypedFrom(table).update(data).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -58,7 +58,7 @@ function useModuleDelete(table: string, queryKey: string) {
   const { companyId } = useCompany();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from(table).delete().eq('id', id);
+      const { error } = await untypedFrom(table).delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -112,7 +112,7 @@ export function useChatMessages(channelId: string | null) {
     queryKey: ['chat-messages', channelId],
     queryFn: async () => {
       if (!channelId) return [];
-      const { data, error } = await (supabase as any).from('chat_messages').select('*').eq('channel_id', channelId).order('created_at', { ascending: true });
+      const { data, error } = await untypedFrom('chat_messages').select('*').eq('channel_id', channelId).order('created_at', { ascending: true });
       if (error) throw error;
       return data || [];
     },
@@ -125,7 +125,7 @@ export function useAddChatMessage() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: { channel_id: string; sender_name: string; content: string }) => {
-      const { data: result, error } = await (supabase as any).from('chat_messages').insert(data).select().single();
+      const { data: result, error } = await untypedFrom('chat_messages').insert(data).select().single();
       if (error) throw error;
       return result;
     },
@@ -164,11 +164,11 @@ export function useAddPOSOrder() {
   return useMutation({
     mutationFn: async (data: { order: Record<string, any>; lines: Array<Record<string, any>> }) => {
       if (!companyId) throw new Error('No company');
-      const { data: order, error: orderErr } = await (supabase as any).from('pos_orders').insert({ ...data.order, company_id: companyId }).select().single();
+      const { data: order, error: orderErr } = await untypedFrom('pos_orders').insert({ ...data.order, company_id: companyId }).select().single();
       if (orderErr) throw orderErr;
       if (data.lines.length > 0) {
         const linesWithOrderId = data.lines.map(l => ({ ...l, order_id: order.id }));
-        const { error: linesErr } = await (supabase as any).from('pos_order_lines').insert(linesWithOrderId);
+        const { error: linesErr } = await untypedFrom('pos_order_lines').insert(linesWithOrderId);
         if (linesErr) throw linesErr;
       }
       return order;
