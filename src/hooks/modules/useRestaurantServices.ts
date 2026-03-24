@@ -4,6 +4,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { untypedFrom } from '@/integrations/supabase/untypedFrom';
 
+// All restaurant tables are untyped - use untypedFrom
+const from = untypedFrom;
+
 export function useRestaurantTables(companyId: string | null) {
   return useQuery({
     queryKey: ['restaurant-tables', companyId],

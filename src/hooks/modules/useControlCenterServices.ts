@@ -6,6 +6,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/untypedFrom';
+export { supabase } from '@/integrations/supabase/untypedFrom';
 import { useCompany } from '@/contexts/CompanyContext';
 
 function useCompanyId() {
