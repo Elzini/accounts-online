@@ -14,7 +14,7 @@ import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { useIndustryLabels } from '@/hooks/useIndustryLabels';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/hooks/modules/useMiscServices';
-import { approveInvoiceWithJournal } from '@/services/invoiceJournal';
+import { getServiceContainer } from '@/core/engine/serviceContainer';
 import { toast } from 'sonner';
 
 export function usePurchasesTable() {
@@ -123,7 +123,8 @@ export function usePurchasesTable() {
 
   const handleApproveInvoice = useCallback(async (invoiceId: string) => {
     try {
-      await approveInvoiceWithJournal(invoiceId);
+      const { invoicePosting } = getServiceContainer(companyId || '');
+      await invoicePosting.postInvoice(invoiceId);
       invalidateAll();
       toast.success(language === 'ar' ? 'تم اعتماد الفاتورة وإنشاء القيد المحاسبي بنجاح' : 'Invoice approved and journal entry created');
     } catch (err) {
@@ -191,7 +192,7 @@ export function usePurchasesTable() {
     setIsApprovingAll(true);
     let successCount = 0, failCount = 0;
     for (const inv of draftInvoices) {
-      try { await approveInvoiceWithJournal(inv.id); successCount++; }
+      try { const { invoicePosting } = getServiceContainer(companyId || ''); await invoicePosting.postInvoice(inv.id); successCount++; }
       catch { failCount++; }
     }
     invalidateAll();

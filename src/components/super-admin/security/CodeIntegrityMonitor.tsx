@@ -7,7 +7,7 @@ import { useCodeIntegrityHashes } from '@/hooks/modules/useSuperAdminServices';
 export function CodeIntegrityMonitor() {
   const { data: hashes = [], isLoading } = useCodeIntegrityHashes();
   const criticalFiles = [
-    { path: 'src/services/invoiceJournal.ts', category: 'المنطق المحاسبي' },
+    { path: 'src/core/engine/invoicePostingEngine.ts', category: 'المنطق المحاسبي' },
     { path: 'src/services/taxCalculations.ts', category: 'حسابات الضرائب' },
     { path: 'src/services/trialBalance.ts', category: 'ميزان المراجعة' },
     { path: 'src/services/financialStatements.ts', category: 'القوائم المالية' },

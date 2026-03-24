@@ -15,7 +15,7 @@ import { CarTransfer } from '@/services/transfers';
 import { useAddInstallmentSale } from '@/hooks/useInstallments';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useItems, useUnits } from '@/hooks/useInventory';
-import { approveInvoiceWithJournal } from '@/services/invoiceJournal';
+import { getServiceContainer } from '@/core/engine/serviceContainer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { useAuth } from '@/contexts/AuthContext';
@@ -516,7 +516,8 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
     try {
       const isInvoiceRecord = existingInvoices.some(inv => inv.id === currentSaleId);
       if (isInvoiceRecord) {
-        await approveInvoiceWithJournal(currentSaleId);
+        const { invoicePosting } = getServiceContainer(companyId || '');
+        await invoicePosting.postInvoice(currentSaleId);
         const { data: updatedInvoices } = await supabase.from('invoices').select('*, invoice_items(*)').eq('company_id', companyId).eq('invoice_type', 'sales').order('created_at', { ascending: true });
         setExistingInvoices(updatedInvoices || []);
       } else { await approveSale.mutateAsync(currentSaleId); }
