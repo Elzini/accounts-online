@@ -15,7 +15,7 @@ import { CarTransfer } from '@/services/transfers';
 import { useAddInstallmentSale } from '@/hooks/useInstallments';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useItems, useUnits } from '@/hooks/useInventory';
-import { approveInvoiceWithJournal } from '@/services/invoiceJournal';
+import { getServiceContainer } from '@/core/engine/serviceContainer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { useAuth } from '@/contexts/AuthContext';
