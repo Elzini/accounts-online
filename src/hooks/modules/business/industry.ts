@@ -8,7 +8,7 @@ import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
 export function useLettersOfCredit(companyId: string | null) {
   return useQuery({
     queryKey: ['letters-of-credit', companyId],
-    queryFn: async () => { const { data, error } = await (supabase as any).from('letters_of_credit').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
+    queryFn: async () => { const { data, error } = await untypedFrom('letters_of_credit').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
