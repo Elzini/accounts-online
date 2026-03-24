@@ -83,6 +83,9 @@ export class InvoicePostingEngine {
   }
 
   async postInvoice(invoiceId: string): Promise<void> {
+    const log = Logger.scope({ module: 'InvoicePosting', companyId: this.companyId, referenceId: invoiceId });
+
+    return log.trace('postInvoice', async () => {
     const invoiceRepo = await this.getInvoiceRepo();
 
     // Check for duplicates
@@ -91,6 +94,7 @@ export class InvoicePostingEngine {
       ['invoice_purchase', 'invoice_sale']
     );
     if (existingId) {
+      log.warn('Duplicate posting detected, skipping', { referenceId: invoiceId });
       await invoiceRepo.updateStatus(invoiceId, 'issued', existingId);
       return;
     }
