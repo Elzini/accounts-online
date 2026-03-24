@@ -56,7 +56,7 @@ export function useDefaultSettings() {
   return useQuery({
     queryKey: ['default-company-settings'],
     queryFn: async () => {
-      const { data, error } = await (supabase.from as any)('default_company_settings').select('*');
+      const { data, error } = await untypedFrom('default_company_settings').select('*');
       if (error) throw error;
       return data || [];
     },
