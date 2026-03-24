@@ -234,35 +234,12 @@ export function SmsProvidersSettings() {
   const [selectedProvider, setSelectedProvider] = useState<SmsProvider | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
 
-  const { data: savedConfigs = [] } = useQuery({
-    queryKey: ['sms-provider-configs', companyId],
-    queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase
-        .from('sms_provider_configs')
-        .select('*')
-        .eq('company_id', companyId);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!companyId,
-    staleTime: 5 * 60 * 1000,
-  });
+  // STUBBED - sms_provider_configs table removed
+  const savedConfigs: any[] = [];
 
   const saveMutation = useMutation({
-    mutationFn: async (params: { provider: string; config: Record<string, string>; sender: string }) => {
-      if (!companyId) throw new Error('No company');
-      const existing = savedConfigs.find((c: any) => c.provider === params.provider);
-      if (existing) {
-        const { error } = await supabase.from('sms_provider_configs')
-          .update({ config: params.config, sender_name: params.sender, is_active: true, updated_at: new Date().toISOString() })
-          .eq('id', existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('sms_provider_configs')
-          .insert({ company_id: companyId, provider: params.provider, config: params.config, sender_name: params.sender, is_active: true });
-        if (error) throw error;
-      }
+    mutationFn: async (_params: { provider: string; config: Record<string, string>; sender: string }) => {
+      throw new Error('SMS provider feature is being redesigned');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sms-provider-configs'] });

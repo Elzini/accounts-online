@@ -25,6 +25,15 @@ export function useUpdateCMSPageStatus() {
 }
 
 // ── Bookkeeping ──
+export function useBookkeepingTasks() {
+  const companyId = useCompanyId();
+  return useQuery({
+    queryKey: ['bookkeeping-tasks', companyId],
+    queryFn: async () => { const { data, error } = await supabase.from('bookkeeping_tasks').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
+    enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
 export function useBookkeepingClients() {
   const companyId = useCompanyId();
   return useQuery({
