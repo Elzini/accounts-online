@@ -39,8 +39,7 @@ export function InvoiceJournalEntry({ invoiceId, invoiceNumber }: InvoiceJournal
     queryKey: ['invoice-journal-entry', invoiceId],
     queryFn: async () => {
       // Find journal entry by reference_id
-      const { data: je, error: jeError } = await (supabase as any)
-        .from('journal_entries')
+      const { data: je, error: jeError } = await untypedFrom('journal_entries')
         .select('id, entry_number, entry_date, description')
         .eq('company_id', companyId)
         .eq('reference_id', invoiceId)

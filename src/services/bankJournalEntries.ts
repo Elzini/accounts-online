@@ -4,7 +4,7 @@
  * Uses ServiceContainer for all journal writes.
  */
 
-import { supabase } from '@/hooks/modules/useMiscServices';
+import { supabase } from '@/integrations/supabase/untypedFrom';
 import { getServiceContainer } from '@/core/engine/serviceContainer';
 
 export interface TransactionClassification {
