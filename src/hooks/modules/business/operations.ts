@@ -1,5 +1,5 @@
 /**
- * Business Services - Loyalty, Subscriptions, Time Tracking, Manufacturing
+ * Business Services - Loyalty (stubbed - tables dropped), Subscriptions, Time Tracking, Manufacturing
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/untypedFrom';
@@ -10,41 +10,18 @@ function useCompanyId() {
   return companyId;
 }
 
-// ── Loyalty ──
+// ── Loyalty (STUBBED - loyalty_programs/loyalty_points tables removed) ──
 export function useLoyaltyPrograms() {
-  const companyId = useCompanyId();
-  return useQuery({
-    queryKey: ['loyalty-programs', companyId],
-    queryFn: async () => { const { data, error } = await supabase.from('loyalty_programs').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }); if (error) throw error; return data; },
-    enabled: !!companyId,
-    staleTime: 5 * 60 * 1000,
-  });
+  return useQuery({ queryKey: ['loyalty-programs'], queryFn: async () => [] as any[], enabled: false });
 }
 export function useLoyaltyPoints() {
-  const companyId = useCompanyId();
-  return useQuery({
-    queryKey: ['loyalty-points', companyId],
-    queryFn: async () => { const { data, error } = await supabase.from('loyalty_points').select('*').eq('company_id', companyId!).order('created_at', { ascending: false }).limit(50); if (error) throw error; return data; },
-    enabled: !!companyId,
-    staleTime: 5 * 60 * 1000,
-  });
+  return useQuery({ queryKey: ['loyalty-points'], queryFn: async () => [] as any[], enabled: false });
 }
 export function useCreateLoyaltyProgram() {
-  const companyId = useCompanyId(); const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (form: { name: string; points_per_unit: number; unit_value: number }) => {
-      const { error } = await supabase.from('loyalty_programs').insert({ company_id: companyId!, ...form, is_active: true });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['loyalty-programs'] }),
-  });
+  return useMutation({ mutationFn: async (_form: any) => { throw new Error('Loyalty feature is being redesigned'); } });
 }
 export function useDeleteLoyaltyProgram() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('loyalty_programs').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['loyalty-programs'] }),
-  });
+  return useMutation({ mutationFn: async (_id: string) => { throw new Error('Loyalty feature is being redesigned'); } });
 }
 
 // ── Subscriptions ──
