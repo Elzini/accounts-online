@@ -164,7 +164,7 @@ export function useAddPOSOrder() {
   return useMutation({
     mutationFn: async (data: { order: Record<string, any>; lines: Array<Record<string, any>> }) => {
       if (!companyId) throw new Error('No company');
-      const { data: order, error: orderErr } = await (supabase as any).from('pos_orders').insert({ ...data.order, company_id: companyId }).select().single();
+      const { data: order, error: orderErr } = await untypedFrom('pos_orders').insert({ ...data.order, company_id: companyId }).select().single();
       if (orderErr) throw orderErr;
       if (data.lines.length > 0) {
         const linesWithOrderId = data.lines.map(l => ({ ...l, order_id: order.id }));
