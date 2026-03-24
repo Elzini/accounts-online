@@ -9,8 +9,8 @@ interface ContractFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isEditing: boolean;
-  formData: Record<string, string>;
-  setFormData: (data: Record<string, string>) => void;
+  formData: any;
+  setFormData: (data: any) => void;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
   projects: any[];
