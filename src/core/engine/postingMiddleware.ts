@@ -64,7 +64,8 @@ class PostingMiddlewareClass {
       try {
         result = await hook(result, context);
       } catch (err) {
-        console.error(`[PostingMiddleware] Pre-hook "${id}" failed:`, err);
+        const { Logger: L } = await import('./logger');
+        L.error(`Pre-hook "${id}" failed`, err, { module: 'PostingMiddleware', companyId: context.companyId });
         throw err; // Pre-hooks are critical — fail the entry
       }
     }
@@ -79,7 +80,8 @@ class PostingMiddlewareClass {
       try {
         await hook(entry, input, context);
       } catch (err) {
-        console.error(`[PostingMiddleware] Post-hook "${id}" failed:`, err);
+        const { Logger: L } = await import('./logger');
+        L.error(`Post-hook "${id}" failed`, err, { module: 'PostingMiddleware', companyId: context.companyId });
         // Post-hooks are non-critical — log and continue
       }
     }

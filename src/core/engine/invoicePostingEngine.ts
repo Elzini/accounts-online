@@ -10,6 +10,7 @@ import { JournalEngine } from './journalEngine';
 import { JournalEntryLine } from './types';
 import { IInvoiceRepository, ISupplierRepository, IFiscalYearRepository, ICompanySettingsRepository } from './repositories';
 import { EventBus, Events, InvoicePostedEvent } from './eventBus';
+import { Logger } from './logger';
 
 interface InvoiceData {
   id: string;
@@ -82,6 +83,9 @@ export class InvoicePostingEngine {
   }
 
   async postInvoice(invoiceId: string): Promise<void> {
+    const log = Logger.scope({ module: 'InvoicePosting', companyId: this.companyId, referenceId: invoiceId });
+
+    return log.trace('postInvoice', async () => {
     const invoiceRepo = await this.getInvoiceRepo();
 
     // Check for duplicates
@@ -90,6 +94,7 @@ export class InvoicePostingEngine {
       ['invoice_purchase', 'invoice_sale']
     );
     if (existingId) {
+      log.warn('Duplicate posting detected, skipping', { referenceId: invoiceId });
       await invoiceRepo.updateStatus(invoiceId, 'issued', existingId);
       return;
     }
@@ -131,7 +136,7 @@ export class InvoicePostingEngine {
       : this.buildSalesLines(inv, subtotal, vatAmount, total);
 
     if (!lines || lines.length === 0) {
-      console.error('Could not build journal lines - missing accounts');
+      log.error('Could not build journal lines - missing accounts', null, { invoiceType: inv.invoice_type });
       await invoiceRepo.updateStatus(invoiceId, 'issued');
       return;
     }
@@ -161,6 +166,9 @@ export class InvoicePostingEngine {
       invoiceType: inv.invoice_type,
       total,
     });
+
+    log.info('Invoice posted successfully', { referenceType: inv.invoice_type, total });
+    }); // end trace
   }
 
   private async buildPurchaseLines(

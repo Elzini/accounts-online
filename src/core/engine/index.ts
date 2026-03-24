@@ -43,6 +43,10 @@ export type { IndustryFeatures, IndustryDisplayMeta } from './industryFeatures';
 export { EventBus, Events } from './eventBus';
 export type { AccountingEvent, JournalCreatedEvent, InvoicePostedEvent, FiscalYearClosedEvent } from './eventBus';
 
+// Structured Logger
+export { Logger } from './logger';
+export type { LogLevel, LogContext, ScopedLogger } from './logger';
+
 // Posting Middleware
 export { PostingMiddleware } from './postingMiddleware';
 export type { PrePostHook, PostHook, PostingContext } from './postingMiddleware';
