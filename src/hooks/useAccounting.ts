@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { invalidateFinancialReportQueries } from '@/hooks/utils/invalidateFinancialReports';
 import {
   fetchTaxSettings,
   upsertTaxSettings,
