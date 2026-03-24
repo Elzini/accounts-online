@@ -155,7 +155,7 @@ export function useJournalEntryForm() {
       toast.success(t.acc_added);
       setIsDialogOpen(false);
       resetForm();
-    } catch { toast.error(t.acc_error); }
+    } catch (err: any) { console.error('[JournalEntry] Create failed:', err); toast.error(err?.message || t.acc_error); }
   };
 
   const handleDelete = async (id: string) => {
