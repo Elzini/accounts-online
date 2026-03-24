@@ -115,7 +115,7 @@ export function ReturnFormTab({ hook }: { hook: Hook }) {
                   const maxAmount = foundInvoice ? foundInvoice.subtotal : (foundCar ? foundCar.purchase_price : 0);
                   const amount = Math.min(Math.max(0, val), maxAmount);
                   setForm(p => ({ ...p, partialAmount: amount }));
-                  if (items.length === 1) { setItems(prev => [{ ...prev[0], returnedQty: 1, cost: amount, total: amount, vat: amount * 0.15, grandTotal: amount + (amount * 0.15) }]); }
+                  if (items.length === 1) { const { vatAmount, totalWithVAT } = calcStandardVAT(amount); setItems(prev => [{ ...prev[0], returnedQty: 1, cost: amount, total: amount, vat: vatAmount, grandTotal: totalWithVAT }]); }
                 }}
                 max={foundInvoice ? foundInvoice.subtotal : (foundCar ? foundCar.purchase_price : 0)} min={0} />
               <span className="text-[10px] text-muted-foreground">{language === 'ar' ? `من أصل ${formatCurrency(foundInvoice?.subtotal || foundCar?.purchase_price || 0)} ريال` : `of ${formatCurrency(foundInvoice?.subtotal || foundCar?.purchase_price || 0)}`}</span>
