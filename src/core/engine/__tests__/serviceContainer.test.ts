@@ -107,9 +107,10 @@ describe('LRUCache', () => {
     expect(cache.get('b')).toBeUndefined();
   });
 
-  it('prune removes expired entries', () => {
-    const cache = new LRUCache<string>(10, 0); // 0 min TTL = instant expire
+  it('prune removes expired entries', async () => {
+    const cache = new LRUCache<string>(10, 0.0001); // ~6ms TTL
     cache.set('x', 'val');
+    await new Promise(r => setTimeout(r, 10)); // wait for expiry
     const pruned = cache.prune();
     expect(pruned).toBe(1);
     expect(cache.size).toBe(0);
