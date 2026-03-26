@@ -165,9 +165,13 @@ export async function getComprehensiveTrialBalance(
   let rawPeriodDebit = 0, rawPeriodCredit = 0;
   periodBalances.forEach(val => { rawPeriodDebit += val.debit; rawPeriodCredit += val.credit; });
 
-  // Compute opening totals from filtered balance sheet accounts only (consistent with per-account rows)
-  let rawOpeningDebit = 0, rawOpeningCredit = 0;
-  openingBalances.forEach(val => { rawOpeningDebit += val.debit; rawOpeningCredit += val.credit; });
+  // Compute opening totals using NET method (consistent with per-account rows)
+  let netOpeningDebit = 0, netOpeningCredit = 0;
+  openingBalances.forEach(val => {
+    const net = val.debit - val.credit;
+    if (net > 0) netOpeningDebit += net;
+    else if (net < 0) netOpeningCredit += Math.abs(net);
+  });
 
   const closingAccountIds = new Set([...openingBalances.keys(), ...periodBalances.keys()]);
   let netClosingDebit = 0, netClosingCredit = 0;
@@ -182,7 +186,7 @@ export async function getComprehensiveTrialBalance(
   return {
     accounts: trialAccounts,
     totals: {
-      openingDebit: rawOpeningDebit, openingCredit: rawOpeningCredit,
+      openingDebit: netOpeningDebit, openingCredit: netOpeningCredit,
       periodDebit: rawPeriodDebit, periodCredit: rawPeriodCredit,
       closingDebit: netClosingDebit, closingCredit: netClosingCredit,
     },
