@@ -106,8 +106,8 @@ export function TrialBalancePage() {
       { header: 'اسم الحساب', key: 'name' },
       { header: 'مدين', key: 'openingDebit' }, { header: 'دائن', key: 'openingCredit' },
       { header: 'مدين', key: 'periodDebit' }, { header: 'دائن', key: 'periodCredit' },
-      { header: 'الحالة', key: 'status' }, { header: 'الرصيد', key: 'netBalance' },
       { header: 'مدين', key: 'closingDebit' }, { header: 'دائن', key: 'closingCredit' },
+      { header: 'الرصيد', key: 'netBalance' },
     ];
     const data = filteredAccounts.map(item => {
       const closingNet = (item.openingDebit + item.periodDebit) - (item.openingCredit + item.periodCredit);
@@ -117,18 +117,17 @@ export function TrialBalancePage() {
         openingCredit: item.openingCredit > 0 ? fmt(item.openingCredit) : '-',
         periodDebit: item.periodDebit > 0 ? fmt(item.periodDebit) : '-',
         periodCredit: item.periodCredit > 0 ? fmt(item.periodCredit) : '-',
-        status: getStatusLabel(item.closingDebit, item.closingCredit),
-        netBalance: Math.abs(closingNet) > 0 ? fmt(Math.abs(closingNet)) : '-',
         closingDebit: item.closingDebit > 0 ? fmt(item.closingDebit) : '-',
         closingCredit: item.closingCredit > 0 ? fmt(item.closingCredit) : '-',
+        netBalance: Math.abs(closingNet) > 0 ? fmt(Math.abs(closingNet)) : '-',
       };
     });
     data.push({
       name: 'الإجمالي',
       openingDebit: fmt(totals.openingDebit), openingCredit: fmt(totals.openingCredit),
       periodDebit: fmt(totals.periodDebit), periodCredit: fmt(totals.periodCredit),
-      status: '', netBalance: '',
       closingDebit: fmt(totals.closingDebit), closingCredit: fmt(totals.closingCredit),
+      netBalance: '',
     });
     const title = `ميزان المراجعة - ${company?.name || ''}`;
     const subtitle = queryDates.start && queryDates.end ? `من ${queryDates.start} إلى ${queryDates.end}` : undefined;
@@ -142,8 +141,9 @@ export function TrialBalancePage() {
     ];
     const columnGroups = [
       { label: 'رصيد أول المدة', colSpan: 2 },
-      { label: 'الحركة', colSpan: 4 },
+      { label: 'الحركة', colSpan: 2 },
       { label: 'رصيد آخر المدة', colSpan: 2 },
+      { label: '', colSpan: 1 },
     ];
     if (type === 'print') printReport({ title, subtitle, columns, data, summaryCards, columnGroups });
     else if (type === 'excel') exportToExcel({ title, columns, data, fileName: 'trial-balance', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
