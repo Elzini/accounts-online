@@ -7,6 +7,7 @@ interface TableColumn {
 
 interface ExcelExportOptions {
   title: string;
+  subtitle?: string;
   columns: TableColumn[];
   data: Record<string, any>[];
   fileName: string;
