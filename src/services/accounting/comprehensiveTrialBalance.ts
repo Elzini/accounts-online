@@ -108,15 +108,13 @@ export async function getComprehensiveTrialBalance(
     }
   }
 
-  // 2) Period movement
+  // 2) Period movement = ALL posted entries within the date range
   let periodQuery = supabase
     .from('journal_entry_lines')
-    .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type, fiscal_year_id)')
+    .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date)')
     .eq('journal_entry.company_id', companyId).eq('journal_entry.is_posted', true)
-    .neq('journal_entry.reference_type', 'opening')
     .limit(10000);
 
-  if (fiscalYearId) periodQuery = periodQuery.eq('journal_entry.fiscal_year_id', fiscalYearId);
   if (effectiveStartDate) periodQuery = periodQuery.gte('journal_entry.entry_date', effectiveStartDate);
   if (effectiveEndDate) periodQuery = periodQuery.lte('journal_entry.entry_date', effectiveEndDate);
 
