@@ -44,35 +44,63 @@ export async function getComprehensiveTrialBalance(
     effectiveEndDate = endDate || fiscalYear?.end_date;
   }
 
-  // 1) Opening balances
+  // 1) Opening balances = ALL posted entries BEFORE the period start date
+  // For Balance Sheet accounts: all entries from beginning of time to day before start
+  // For Income/Expense accounts: entries from fiscal year start to day before period start
+  // This matches the standard used by Qoyod, Daftra, Wafeq, and SOCPA standards
   const openingBalances = new Map<string, { debit: number; credit: number }>();
 
   if (effectiveStartDate) {
-    let openingEntriesQuery = supabase
+    // Balance Sheet accounts: all entries before period start
+    let bsOpeningQuery = supabase
       .from('journal_entry_lines')
-      .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type, fiscal_year_id)')
-      .eq('journal_entry.company_id', companyId).eq('journal_entry.is_posted', true)
-      .eq('journal_entry.reference_type', 'opening')
+      .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date)')
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .lt('journal_entry.entry_date', effectiveStartDate)
       .limit(10000);
 
-    if (fiscalYearId) {
-      openingEntriesQuery = openingEntriesQuery.eq('journal_entry.fiscal_year_id', fiscalYearId);
-    } else {
-      openingEntriesQuery = openingEntriesQuery.gte('journal_entry.entry_date', effectiveStartDate);
-      if (effectiveEndDate) openingEntriesQuery = openingEntriesQuery.lte('journal_entry.entry_date', effectiveEndDate);
-    }
+    const { data: bsOpeningLines } = await bsOpeningQuery;
 
-    const { data: openingEntryLines } = await openingEntriesQuery;
-    const openingLinesInPeriod = openingEntryLines || [];
+    const accountTypeMap = new Map<string, string>();
+    accounts.forEach(a => accountTypeMap.set(a.id, a.type));
 
-    if (openingLinesInPeriod.length > 0) {
-      const accountTypeMap = new Map<string, string>();
-      accounts.forEach(a => accountTypeMap.set(a.id, a.type));
+    // Process all lines before period start
+    (bsOpeningLines || []).forEach((line: any) => {
+      const d = Number(line.debit) || 0, c = Number(line.credit) || 0;
+      const accType = accountTypeMap.get(line.account_id);
+      if (!accType) return;
 
-      openingLinesInPeriod.forEach((line: any) => {
+      if (isBalanceSheetType(accType)) {
+        // Balance sheet: include ALL historical entries
+        const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
+        current.debit += d; current.credit += c;
+        openingBalances.set(line.account_id, current);
+      }
+      // Income/Expense accounts: opening is entries from fiscal year start to period start
+      // If period starts at fiscal year start, opening for income/expense = 0 (correct)
+      // If period starts mid-year, we need entries from FY start to period start
+    });
+
+    // For income/expense accounts: if period starts AFTER fiscal year start, 
+    // include entries from FY start to period start as opening
+    if (fyStartDate && effectiveStartDate > fyStartDate) {
+      let ieOpeningQuery = supabase
+        .from('journal_entry_lines')
+        .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date)')
+        .eq('journal_entry.company_id', companyId)
+        .eq('journal_entry.is_posted', true)
+        .gte('journal_entry.entry_date', fyStartDate)
+        .lt('journal_entry.entry_date', effectiveStartDate)
+        .limit(10000);
+
+      const { data: ieOpeningLines } = await ieOpeningQuery;
+
+      (ieOpeningLines || []).forEach((line: any) => {
         const d = Number(line.debit) || 0, c = Number(line.credit) || 0;
         const accType = accountTypeMap.get(line.account_id);
-        if (!accType || !isBalanceSheetType(accType)) return;
+        if (!accType || isBalanceSheetType(accType)) return; // skip BS accounts (already handled)
+
         const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
         current.debit += d; current.credit += c;
         openingBalances.set(line.account_id, current);
@@ -80,15 +108,13 @@ export async function getComprehensiveTrialBalance(
     }
   }
 
-  // 2) Period movement
+  // 2) Period movement = ALL posted entries within the date range
   let periodQuery = supabase
     .from('journal_entry_lines')
-    .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type, fiscal_year_id)')
+    .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date)')
     .eq('journal_entry.company_id', companyId).eq('journal_entry.is_posted', true)
-    .neq('journal_entry.reference_type', 'opening')
     .limit(10000);
 
-  if (fiscalYearId) periodQuery = periodQuery.eq('journal_entry.fiscal_year_id', fiscalYearId);
   if (effectiveStartDate) periodQuery = periodQuery.gte('journal_entry.entry_date', effectiveStartDate);
   if (effectiveEndDate) periodQuery = periodQuery.lte('journal_entry.entry_date', effectiveEndDate);
 
