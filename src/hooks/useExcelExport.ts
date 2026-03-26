@@ -7,6 +7,7 @@ interface TableColumn {
 
 interface ExcelExportOptions {
   title: string;
+  subtitle?: string;
   columns: TableColumn[];
   data: Record<string, any>[];
   fileName: string;
@@ -17,6 +18,7 @@ interface ExcelExportOptions {
 export function useExcelExport() {
   const exportToExcel = async ({
     title,
+    subtitle,
     columns,
     data,
     fileName,
@@ -42,7 +44,19 @@ export function useExcelExport() {
     titleCell.value = title;
     titleCell.font = { bold: true, size: 16 };
     titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    currentRow += 2;
+    currentRow++;
+
+    // Add subtitle (e.g., date range)
+    if (subtitle) {
+      worksheet.mergeCells(currentRow, 1, currentRow, columns.length);
+      const subtitleCell = worksheet.getCell(currentRow, 1);
+      subtitleCell.value = subtitle;
+      subtitleCell.font = { bold: false, size: 12, color: { argb: 'FF555555' } };
+      subtitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      currentRow++;
+    }
+
+    currentRow++; // blank row
 
     // Add summary data if provided
     if (summaryData && summaryData.length > 0) {

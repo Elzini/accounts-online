@@ -130,7 +130,7 @@ export function TrialBalancePage() {
       netBalance: '',
     });
     const title = `ميزان المراجعة - ${company?.name || ''}`;
-    const subtitle = queryDates.start && queryDates.end ? `من ${queryDates.start} إلى ${queryDates.end}` : undefined;
+    const subtitle = queryDates.start && queryDates.end ? `عن الفترة من ${queryDates.start} إلى ${queryDates.end}` : undefined;
     const summaryCards = [
       { label: 'رصيد أول المدة - مدين', value: fmt(totals.openingDebit) },
       { label: 'رصيد أول المدة - دائن', value: fmt(totals.openingCredit) },
@@ -146,7 +146,7 @@ export function TrialBalancePage() {
       { label: 'الصافي', colSpan: 1 },
     ];
     if (type === 'print') printReport({ title, subtitle, columns, data, summaryCards, columnGroups });
-    else if (type === 'excel') exportToExcel({ title, columns, data, fileName: 'trial-balance', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })), columnGroups });
+    else if (type === 'excel') exportToExcel({ title, subtitle, columns, data, fileName: 'trial-balance', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })), columnGroups });
     else exportToPdf({ title, subtitle, columns, data, fileName: 'trial-balance', summaryCards });
   };
 
