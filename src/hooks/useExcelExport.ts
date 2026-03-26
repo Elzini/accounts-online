@@ -11,6 +11,7 @@ interface ExcelExportOptions {
   data: Record<string, any>[];
   fileName: string;
   summaryData?: { label: string; value: string | number }[];
+  columnGroups?: { label: string; colSpan: number }[];
 }
 
 export function useExcelExport() {
@@ -20,6 +21,7 @@ export function useExcelExport() {
     data,
     fileName,
     summaryData,
+    columnGroups,
   }: ExcelExportOptions) => {
     // Create workbook and worksheet
     const workbook = new ExcelJS.Workbook();
@@ -61,9 +63,42 @@ export function useExcelExport() {
     dateRow.getCell(1).font = { bold: true };
     currentRow += 2;
 
+    // Add column group headers if provided
+    if (columnGroups && columnGroups.length > 0) {
+      const groupRow = worksheet.getRow(currentRow);
+      // First column (account name) spans 2 rows
+      const nameCell = groupRow.getCell(1);
+      nameCell.value = columns[0].header;
+      nameCell.font = { bold: true };
+      nameCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
+      nameCell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      nameCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      nameCell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+
+      let colIndex = 2;
+      const groupColors = ['FF16A34A', 'FF3B82F6', 'FFD97706', 'FF8B5CF6'];
+      columnGroups.forEach((g, i) => {
+        if (g.colSpan > 1) {
+          worksheet.mergeCells(currentRow, colIndex, currentRow, colIndex + g.colSpan - 1);
+        }
+        const cell = groupRow.getCell(colIndex);
+        cell.value = g.label;
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: groupColors[i % groupColors.length] } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        colIndex += g.colSpan;
+      });
+      // Merge the name cell across 2 rows
+      worksheet.mergeCells(currentRow, 1, currentRow + 1, 1);
+      currentRow++;
+    }
+
     // Add headers
     const headerRow = worksheet.getRow(currentRow);
+    const startCol = (columnGroups && columnGroups.length > 0) ? 1 : 0;
     columns.forEach((col, index) => {
+      if (columnGroups && columnGroups.length > 0 && index === 0) return; // skip name col, already merged
       const cell = headerRow.getCell(index + 1);
       cell.value = col.header;
       cell.font = { bold: true };
