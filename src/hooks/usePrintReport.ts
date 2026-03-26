@@ -59,7 +59,7 @@ export function usePrintReport() {
             <th rowspan="2" style="text-align:center;vertical-align:middle">${escapeHtml(columns[0].header)}</th>
             <th rowspan="2" style="text-align:center;vertical-align:middle">${escapeHtml(columns[1].header)}</th>
             ${columnGroups.map((g, i) => {
-              const colors = ['#16a34a', '#3b82f6', '#d97706'];
+              const colors = ['#16a34a', '#3b82f6', '#d97706', '#8b5cf6'];
               return `<th colspan="${g.colSpan}" style="text-align:center;background:${colors[i % colors.length]}">${escapeHtml(g.label)}</th>`;
             }).join('')}
           </tr>

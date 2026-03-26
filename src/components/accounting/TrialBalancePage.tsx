@@ -146,7 +146,7 @@ export function TrialBalancePage() {
       { label: 'الصافي', colSpan: 1 },
     ];
     if (type === 'print') printReport({ title, subtitle, columns, data, summaryCards, columnGroups });
-    else if (type === 'excel') exportToExcel({ title, columns, data, fileName: 'trial-balance', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
+    else if (type === 'excel') exportToExcel({ title, columns, data, fileName: 'trial-balance', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })), columnGroups });
     else exportToPdf({ title, subtitle, columns, data, fileName: 'trial-balance', summaryCards });
   };
 
