@@ -106,8 +106,8 @@ export function TrialBalancePage() {
       { header: 'اسم الحساب', key: 'name' },
       { header: 'مدين', key: 'openingDebit' }, { header: 'دائن', key: 'openingCredit' },
       { header: 'مدين', key: 'periodDebit' }, { header: 'دائن', key: 'periodCredit' },
-      { header: 'الحالة', key: 'status' }, { header: 'الرصيد', key: 'netBalance' },
       { header: 'مدين', key: 'closingDebit' }, { header: 'دائن', key: 'closingCredit' },
+      { header: 'الرصيد', key: 'netBalance' },
     ];
     const data = filteredAccounts.map(item => {
       const closingNet = (item.openingDebit + item.periodDebit) - (item.openingCredit + item.periodCredit);
