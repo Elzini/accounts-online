@@ -46,14 +46,14 @@ export async function getComprehensiveTrialBalance(
 
   // 1) Opening balances
   const openingBalances = new Map<string, { debit: number; credit: number }>();
-  let rawOpeningDebitAll = 0, rawOpeningCreditAll = 0;
 
   if (effectiveStartDate) {
     let openingEntriesQuery = supabase
       .from('journal_entry_lines')
       .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type, fiscal_year_id)')
       .eq('journal_entry.company_id', companyId).eq('journal_entry.is_posted', true)
-      .eq('journal_entry.reference_type', 'opening');
+      .eq('journal_entry.reference_type', 'opening')
+      .limit(10000);
 
     if (fiscalYearId) {
       openingEntriesQuery = openingEntriesQuery.eq('journal_entry.fiscal_year_id', fiscalYearId);
@@ -71,7 +71,6 @@ export async function getComprehensiveTrialBalance(
 
       openingLinesInPeriod.forEach((line: any) => {
         const d = Number(line.debit) || 0, c = Number(line.credit) || 0;
-        rawOpeningDebitAll += d; rawOpeningCreditAll += c;
         const accType = accountTypeMap.get(line.account_id);
         if (!accType || !isBalanceSheetType(accType)) return;
         const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
