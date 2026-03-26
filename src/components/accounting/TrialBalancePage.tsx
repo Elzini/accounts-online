@@ -117,18 +117,17 @@ export function TrialBalancePage() {
         openingCredit: item.openingCredit > 0 ? fmt(item.openingCredit) : '-',
         periodDebit: item.periodDebit > 0 ? fmt(item.periodDebit) : '-',
         periodCredit: item.periodCredit > 0 ? fmt(item.periodCredit) : '-',
-        status: getStatusLabel(item.closingDebit, item.closingCredit),
-        netBalance: Math.abs(closingNet) > 0 ? fmt(Math.abs(closingNet)) : '-',
         closingDebit: item.closingDebit > 0 ? fmt(item.closingDebit) : '-',
         closingCredit: item.closingCredit > 0 ? fmt(item.closingCredit) : '-',
+        netBalance: Math.abs(closingNet) > 0 ? fmt(Math.abs(closingNet)) : '-',
       };
     });
     data.push({
       name: 'الإجمالي',
       openingDebit: fmt(totals.openingDebit), openingCredit: fmt(totals.openingCredit),
       periodDebit: fmt(totals.periodDebit), periodCredit: fmt(totals.periodCredit),
-      status: '', netBalance: '',
       closingDebit: fmt(totals.closingDebit), closingCredit: fmt(totals.closingCredit),
+      netBalance: '',
     });
     const title = `ميزان المراجعة - ${company?.name || ''}`;
     const subtitle = queryDates.start && queryDates.end ? `من ${queryDates.start} إلى ${queryDates.end}` : undefined;
