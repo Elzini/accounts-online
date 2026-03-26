@@ -143,7 +143,7 @@ export function TrialBalancePage() {
       { label: 'رصيد أول المدة', colSpan: 2 },
       { label: 'الحركة', colSpan: 2 },
       { label: 'رصيد آخر المدة', colSpan: 2 },
-      { label: '', colSpan: 1 },
+      { label: 'الصافي', colSpan: 1 },
     ];
     if (type === 'print') printReport({ title, subtitle, columns, data, summaryCards, columnGroups });
     else if (type === 'excel') exportToExcel({ title, columns, data, fileName: 'trial-balance', summaryData: summaryCards.map(c => ({ label: c.label, value: c.value })) });
