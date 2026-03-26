@@ -186,7 +186,7 @@ export async function getComprehensiveTrialBalance(
   return {
     accounts: trialAccounts,
     totals: {
-      openingDebit: rawOpeningDebit, openingCredit: rawOpeningCredit,
+      openingDebit: netOpeningDebit, openingCredit: netOpeningCredit,
       periodDebit: rawPeriodDebit, periodCredit: rawPeriodCredit,
       closingDebit: netClosingDebit, closingCredit: netClosingCredit,
     },
