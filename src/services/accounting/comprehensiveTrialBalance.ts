@@ -46,14 +46,14 @@ export async function getComprehensiveTrialBalance(
 
   // 1) Opening balances
   const openingBalances = new Map<string, { debit: number; credit: number }>();
-  let rawOpeningDebitAll = 0, rawOpeningCreditAll = 0;
 
   if (effectiveStartDate) {
     let openingEntriesQuery = supabase
       .from('journal_entry_lines')
       .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type, fiscal_year_id)')
       .eq('journal_entry.company_id', companyId).eq('journal_entry.is_posted', true)
-      .eq('journal_entry.reference_type', 'opening');
+      .eq('journal_entry.reference_type', 'opening')
+      .limit(10000);
 
     if (fiscalYearId) {
       openingEntriesQuery = openingEntriesQuery.eq('journal_entry.fiscal_year_id', fiscalYearId);
@@ -71,7 +71,6 @@ export async function getComprehensiveTrialBalance(
 
       openingLinesInPeriod.forEach((line: any) => {
         const d = Number(line.debit) || 0, c = Number(line.credit) || 0;
-        rawOpeningDebitAll += d; rawOpeningCreditAll += c;
         const accType = accountTypeMap.get(line.account_id);
         if (!accType || !isBalanceSheetType(accType)) return;
         const current = openingBalances.get(line.account_id) || { debit: 0, credit: 0 };
@@ -86,7 +85,8 @@ export async function getComprehensiveTrialBalance(
     .from('journal_entry_lines')
     .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date, reference_type, fiscal_year_id)')
     .eq('journal_entry.company_id', companyId).eq('journal_entry.is_posted', true)
-    .neq('journal_entry.reference_type', 'opening');
+    .neq('journal_entry.reference_type', 'opening')
+    .limit(10000);
 
   if (fiscalYearId) periodQuery = periodQuery.eq('journal_entry.fiscal_year_id', fiscalYearId);
   if (effectiveStartDate) periodQuery = periodQuery.gte('journal_entry.entry_date', effectiveStartDate);
@@ -165,6 +165,10 @@ export async function getComprehensiveTrialBalance(
   let rawPeriodDebit = 0, rawPeriodCredit = 0;
   periodBalances.forEach(val => { rawPeriodDebit += val.debit; rawPeriodCredit += val.credit; });
 
+  // Compute opening totals from filtered balance sheet accounts only (consistent with per-account rows)
+  let rawOpeningDebit = 0, rawOpeningCredit = 0;
+  openingBalances.forEach(val => { rawOpeningDebit += val.debit; rawOpeningCredit += val.credit; });
+
   const closingAccountIds = new Set([...openingBalances.keys(), ...periodBalances.keys()]);
   let netClosingDebit = 0, netClosingCredit = 0;
   closingAccountIds.forEach(accountId => {
@@ -178,7 +182,7 @@ export async function getComprehensiveTrialBalance(
   return {
     accounts: trialAccounts,
     totals: {
-      openingDebit: rawOpeningDebitAll, openingCredit: rawOpeningCreditAll,
+      openingDebit: rawOpeningDebit, openingCredit: rawOpeningCredit,
       periodDebit: rawPeriodDebit, periodCredit: rawPeriodCredit,
       closingDebit: netClosingDebit, closingCredit: netClosingCredit,
     },
