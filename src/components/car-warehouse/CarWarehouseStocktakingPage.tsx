@@ -47,6 +47,8 @@ export function CarWarehouseStocktakingPage() {
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
   const [bulkEntries, setBulkEntries] = useState<BulkEntry[]>([]);
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [bulkExtracting, setBulkExtracting] = useState<Set<string>>(new Set());
 
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['warehouse-car-inventory', companyId],
