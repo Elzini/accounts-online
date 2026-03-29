@@ -2,6 +2,7 @@
  * Shared Invoice Calculation Engine
  * Unified tax calculation logic used by both Sales and Purchase invoice forms.
  */
+import { findTaxRule, calculateTax, CAR_DEALERSHIP_TAX_RULES } from '@/core/engine/taxRules';
 
 export interface CalcItemResult {
   baseAmount: number;
