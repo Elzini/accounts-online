@@ -139,6 +139,13 @@ export function CarWarehouseStocktakingPage() {
         { label: 'داخل المستودع', value: String(inCount) },
         { label: 'خرجت', value: String(outCount) },
         { label: 'إجمالي القيمة', value: fmtCur(entries.reduce((s, e) => s + (e.price || 0), 0)) },
+        ...Object.entries(
+          entries.reduce<Record<string, number>>((acc, e) => {
+            const type = e.car_type?.trim() || 'غير محدد';
+            acc[type] = (acc[type] || 0) + 1;
+            return acc;
+          }, {})
+        ).map(([type, count]) => ({ label: type, value: `${count} سيارة` })),
       ],
     });
   }
