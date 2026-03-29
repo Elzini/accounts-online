@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer, GitCompare } from 'lucide-react';
+import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer, GitCompare, FileSpreadsheet } from 'lucide-react';
 import { WarehouseReconciliation } from './WarehouseReconciliation';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { supabase } from '@/integrations/supabase/client';
@@ -107,6 +107,22 @@ export function CarWarehouseStocktakingPage() {
     setImageFile(null);
     setImagePreview(null);
     setShowAdd(false);
+  }
+
+  async function handleExportExcel() {
+    const { createSimpleExcel, downloadExcelBuffer } = await import('@/lib/excelUtils');
+    const fmtCur = (v: number | null) => v ? new Intl.NumberFormat('en-SA').format(v) : '-';
+    const rows: any[][] = [
+      ['#', 'نوع السيارة', 'اللون', 'رقم الهيكل', 'تاريخ الدخول', 'تاريخ الخروج', 'السعر', 'الحالة'],
+      ...entries.map((e, i) => [
+        i + 1, e.car_type, e.car_color || '-', e.chassis_number,
+        e.entry_date, e.exit_date || '-', e.price || '-',
+        e.exit_date ? 'خرجت' : 'في المستودع',
+      ]),
+    ];
+    const buffer = await createSimpleExcel('جرد المستودع', rows, { rtl: true, columnWidths: [6, 20, 12, 25, 14, 14, 14, 14] });
+    downloadExcelBuffer(buffer, 'تقرير_جرد_المستودع.xlsx');
+    toast.success('تم تصدير التقرير بنجاح');
   }
 
   function handlePrintReport() {
@@ -303,6 +319,9 @@ export function CarWarehouseStocktakingPage() {
           <p className="text-muted-foreground">إدارة وجرد السيارات بالصور ومتابعة الدخول والخروج</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleExportExcel} disabled={entries.length === 0}>
+            <FileSpreadsheet className="w-4 h-4" />تصدير Excel
+          </Button>
           <Button variant="outline" className="gap-2" onClick={handlePrintReport} disabled={entries.length === 0}>
             <Printer className="w-4 h-4" />طباعة تقرير
           </Button>

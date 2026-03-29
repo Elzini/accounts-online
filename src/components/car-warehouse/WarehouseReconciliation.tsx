@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CheckCircle, XCircle, AlertTriangle, Printer, Search, Package } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle, Printer, Search, Package, FileSpreadsheet } from 'lucide-react';
+import { toast } from 'sonner';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { useCars } from '@/hooks/useCarDatabase';
 import { useQuery } from '@tanstack/react-query';
@@ -128,6 +129,20 @@ export function WarehouseReconciliation() {
 
   const fmtCur = (v?: number | null) => v ? new Intl.NumberFormat('en-SA').format(v) : '-';
 
+  async function handleExportExcel() {
+    const { createSimpleExcel, downloadExcelBuffer } = await import('@/lib/excelUtils');
+    const rows: any[][] = [
+      ['#', 'رقم الهيكل', 'اسم السيارة (المخزون)', 'نوع السيارة (المستودع)', 'سعر المخزون', 'سعر المستودع', 'الحالة'],
+      ...filtered.map((r, i) => [
+        i + 1, r.chassis_number, r.inv_name || '-', r.wh_car_type || '-',
+        r.inv_price || '-', r.wh_price || '-', statusLabel(r.status),
+      ]),
+    ];
+    const buffer = await createSimpleExcel('مطابقة المخزون', rows, { rtl: true, columnWidths: [6, 25, 20, 20, 14, 14, 20] });
+    downloadExcelBuffer(buffer, 'تقرير_مطابقة_المخزون.xlsx');
+    toast.success('تم تصدير التقرير بنجاح');
+  }
+
   function handlePrint() {
     printReport({
       title: 'تقرير مطابقة المخزون مع المستودع',
@@ -191,6 +206,7 @@ export function WarehouseReconciliation() {
             <option value="missing_from_warehouse">غير موجود بالمستودع</option>
             <option value="extra_in_warehouse">زائد بالمستودع</option>
           </select>
+          <Button variant="outline" onClick={handleExportExcel} className="gap-2"><FileSpreadsheet className="w-4 h-4" />تصدير Excel</Button>
           <Button onClick={handlePrint} className="gap-2"><Printer className="w-4 h-4" />طباعة التقرير</Button>
         </div>
       </div>
