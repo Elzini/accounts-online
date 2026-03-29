@@ -40,6 +40,7 @@ export const CarDealershipModule: IndustryModule = {
   getMenuItems(): MenuItem[] {
     return [
       { id: 'cars', label: 'المخزون', icon: 'Car', path: '/cars' },
+      { id: 'car-warehouse-stocktaking', label: 'جرد المستودع', icon: 'Warehouse', path: '/car-warehouse-stocktaking' },
       { id: 'partner-dealerships', label: 'المعارض الشريكة', icon: 'Building2', path: '/partner-dealerships' },
       { id: 'car-transfers', label: 'تحويلات السيارات', icon: 'ArrowLeftRight', path: '/car-transfers' },
     ];
