@@ -46,7 +46,7 @@ export function calcUsedCarVat(
   quantity: number,
   taxRate: number
 ): CalcItemResult {
-  const { findTaxRule, calculateTax, CAR_DEALERSHIP_TAX_RULES } = require('@/core/engine/taxRules');
+  
   const rule = findTaxRule(CAR_DEALERSHIP_TAX_RULES, 'used', 'sale');
   const baseAmount = salePrice * quantity;
   const totalPurchase = purchasePrice * quantity;
