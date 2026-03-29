@@ -229,6 +229,12 @@ export function Sidebar({
     { id: 'inventory-report' as ActivePage, label: s(settings?.inventory_report_title, t.nav_inventory_report), icon: Package, permission: 'reports' },
   ];
 
+  if (getIndustryFeatures(companyType).hasCarInventory) {
+    warehouseMenuItems.push(
+      { id: 'car-warehouse-stocktaking' as ActivePage, label: language === 'ar' ? 'جرد مستودع السيارات' : 'Car Warehouse Stocktaking', icon: Warehouse },
+    );
+  }
+
   const hrItems: MenuItem[] = [
     { id: 'employees' as ActivePage, label: t.nav_employees, icon: Users },
     { id: 'payroll' as ActivePage, label: t.nav_payroll, icon: CreditCard },
