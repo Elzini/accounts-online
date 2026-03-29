@@ -46,11 +46,15 @@ export function WarehouseReconciliation() {
     const warehouseMap = new Map<string, WarehouseCarEntry>();
     warehouseEntries.forEach(e => warehouseMap.set(e.chassis_number.trim().toUpperCase(), e));
 
-    const carsMap = new Map<string, typeof cars[0]>();
-    cars.forEach(c => carsMap.set(c.chassis_number.trim().toUpperCase(), c));
+    // Only compare available cars (exclude sold/transferred)
+    const availableCars = cars.filter(c => c.status === 'available');
 
-    const rows: ReconciliationRow[] = [];
-    const processed = new Set<string>();
+    const carsMap = new Map<string, typeof cars[0]>();
+    availableCars.forEach(c => carsMap.set(c.chassis_number.trim().toUpperCase(), c));
+
+    // Only compare warehouse cars still in stock (no exit_date)
+    const inStockWarehouse = warehouseEntries.filter(e => !e.exit_date);
+    inStockWarehouse.forEach(e => warehouseMap.set(e.chassis_number.trim().toUpperCase(), e));
 
     // Cars in inventory
     cars.forEach(car => {
