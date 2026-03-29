@@ -287,9 +287,16 @@ export function CarWarehouseStocktakingPage() {
                         <Card key={entry.id} className="p-3">
                           <div className="flex gap-3">
                             {/* Thumbnail */}
-                            <div className="flex-shrink-0">
+                            <div className="flex-shrink-0 relative">
                               <img src={entry.preview} alt="هيكل" className="w-20 h-20 rounded-lg object-cover border border-border" />
-                              <p className="text-[10px] text-muted-foreground text-center mt-1">سيارة {index + 1}</p>
+                              {bulkExtracting.has(entry.id) && (
+                                <div className="absolute inset-0 bg-background/70 rounded-lg flex items-center justify-center">
+                                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                                </div>
+                              )}
+                              <p className="text-[10px] text-muted-foreground text-center mt-1">
+                                {bulkExtracting.has(entry.id) ? 'جاري القراءة...' : `سيارة ${index + 1}`}
+                              </p>
                             </div>
 
                             {/* Fields */}
