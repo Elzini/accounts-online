@@ -67,6 +67,7 @@ import { MenuManagementPage, OrdersPage, KitchenPage, TablesPage } from '@/compo
 import { ShipmentsPage, LettersOfCreditPage, CustomsClearancePage } from '@/components/export-import';
 import { TasksPage } from '@/components/tasks/TasksPage';
 import { WarehousesPage, ItemsPage, UnitsPage, CategoriesPage } from '@/components/inventory';
+import { CarWarehouseStocktakingPage } from '@/components/car-warehouse/CarWarehouseStocktakingPage';
 import { AgingReportPage } from '@/components/receivables/AgingReportPage';
 import { ChecksPage } from '@/components/checks/ChecksPage';
 import { BudgetsPage } from '@/components/budgets/BudgetsPage';
@@ -228,6 +229,7 @@ export function renderPageContent({
     case 'cost-centers': return <CostCentersPage />;
     case 'tasks': return <TasksPage />;
     case 'warehouses': return <WarehousesPage />;
+    case 'car-warehouse-stocktaking': return <CarWarehouseStocktakingPage />;
     case 'items-catalog': return <ItemsPage />;
     case 'item-categories': return <CategoriesPage />;
     case 'units-of-measure': return <UnitsPage />;

@@ -134,7 +134,8 @@ export type ActivePage =
   // Tasks
   | 'tasks'
   // Inventory module
-  | 'warehouses'
+   | 'warehouses'
+   | 'car-warehouse-stocktaking'
   | 'items-catalog'
   | 'item-categories'
    | 'units-of-measure'
