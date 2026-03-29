@@ -77,7 +77,7 @@ export function WarehouseReconciliation() {
     });
 
     // Extra in warehouse (not in cars table)
-    warehouseEntries.forEach(wh => {
+    inStockWarehouse.forEach(wh => {
       const key = wh.chassis_number.trim().toUpperCase();
       if (processed.has(key)) return;
       processed.add(key);
