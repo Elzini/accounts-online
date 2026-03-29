@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Warehouse, Car, Image, Trash2, Eye, Upload, Calendar } from 'lucide-react';
+import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
@@ -19,10 +19,22 @@ import {
   updateWarehouseCarEntry,
 } from '@/services/carDealership/warehouseInventory';
 
+interface BulkEntry {
+  id: string;
+  file: File;
+  preview: string;
+  car_type: string;
+  car_color: string;
+  chassis_number: string;
+  entry_date: string;
+  notes: string;
+}
+
 export function CarWarehouseStocktakingPage() {
   const companyId = useCompanyId();
   const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [form, setForm] = useState({
     car_type: '', car_color: '', chassis_number: '', entry_date: new Date().toISOString().split('T')[0],
@@ -31,6 +43,9 @@ export function CarWarehouseStocktakingPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bulkFileInputRef = useRef<HTMLInputElement>(null);
+  const [bulkEntries, setBulkEntries] = useState<BulkEntry[]>([]);
+  const [bulkSaving, setBulkSaving] = useState(false);
 
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['warehouse-car-inventory', companyId],
@@ -94,6 +109,82 @@ export function CarWarehouseStocktakingPage() {
     }
   }
 
+  // ===== Bulk Import =====
+  function handleBulkFilesChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const newEntries: BulkEntry[] = Array.from(files).map((file, i) => ({
+      id: `bulk-${Date.now()}-${i}`,
+      file,
+      preview: URL.createObjectURL(file),
+      car_type: '',
+      car_color: '',
+      chassis_number: '',
+      entry_date: today,
+      notes: '',
+    }));
+
+    setBulkEntries(prev => [...prev, ...newEntries]);
+    // Reset input so same files can be selected again
+    if (bulkFileInputRef.current) bulkFileInputRef.current.value = '';
+  }
+
+  function updateBulkEntry(id: string, field: keyof BulkEntry, value: string) {
+    setBulkEntries(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
+  }
+
+  function removeBulkEntry(id: string) {
+    setBulkEntries(prev => {
+      const entry = prev.find(e => e.id === id);
+      if (entry) URL.revokeObjectURL(entry.preview);
+      return prev.filter(e => e.id !== id);
+    });
+  }
+
+  async function handleBulkSave() {
+    if (!companyId) return;
+
+    const incomplete = bulkEntries.filter(e => !e.car_type.trim() || !e.chassis_number.trim());
+    if (incomplete.length > 0) {
+      toast.error(`${incomplete.length} سيارة تحتاج نوع السيارة ورقم الهيكل`);
+      return;
+    }
+
+    setBulkSaving(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const entry of bulkEntries) {
+      try {
+        const imageUrl = await uploadChassisImage(companyId, entry.file);
+        await addWarehouseCarEntry(companyId, {
+          car_type: entry.car_type,
+          car_color: entry.car_color || undefined,
+          chassis_number: entry.chassis_number,
+          chassis_image_url: imageUrl,
+          entry_date: entry.entry_date,
+          notes: entry.notes || undefined,
+        });
+        successCount++;
+      } catch {
+        errorCount++;
+      }
+    }
+
+    setBulkSaving(false);
+    queryClient.invalidateQueries({ queryKey: ['warehouse-car-inventory'] });
+
+    if (errorCount === 0) {
+      toast.success(`تمت إضافة ${successCount} سيارة بنجاح`);
+      setBulkEntries([]);
+      setShowBulk(false);
+    } else {
+      toast.error(`تمت إضافة ${successCount} سيارة، فشل ${errorCount}`);
+    }
+  }
+
   const inCount = entries.filter(e => !e.exit_date).length;
   const outCount = entries.filter(e => !!e.exit_date).length;
 
@@ -104,46 +195,162 @@ export function CarWarehouseStocktakingPage() {
           <h1 className="text-3xl font-bold text-foreground">جرد مستودع السيارات</h1>
           <p className="text-muted-foreground">إدارة وجرد السيارات بالصور ومتابعة الدخول والخروج</p>
         </div>
-        <Dialog open={showAdd} onOpenChange={setShowAdd}>
-          <DialogTrigger asChild>
-            <Button className="gap-2"><Plus className="w-4 h-4" />إضافة سيارة</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>إضافة سيارة للمستودع</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>نوع السيارة *</Label><Input value={form.car_type} onChange={e => setForm(p => ({ ...p, car_type: e.target.value }))} placeholder="تويوتا كامري" /></div>
-                <div><Label>لون السيارة</Label><Input value={form.car_color} onChange={e => setForm(p => ({ ...p, car_color: e.target.value }))} placeholder="أبيض" /></div>
-              </div>
-              <div><Label>رقم الهيكل *</Label><Input value={form.chassis_number} onChange={e => setForm(p => ({ ...p, chassis_number: e.target.value }))} placeholder="JTDKN3DU5A..." className="font-mono" /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>تاريخ الدخول</Label><Input type="date" value={form.entry_date} onChange={e => setForm(p => ({ ...p, entry_date: e.target.value }))} /></div>
-                <div><Label>تاريخ الخروج</Label><Input type="date" value={form.exit_date} onChange={e => setForm(p => ({ ...p, exit_date: e.target.value }))} /></div>
-              </div>
-              <div>
-                <Label>صورة الهيكل</Label>
+        <div className="flex gap-2">
+          {/* Bulk Import Button */}
+          <Dialog open={showBulk} onOpenChange={v => { if (!v) { bulkEntries.forEach(e => URL.revokeObjectURL(e.preview)); setBulkEntries([]); } setShowBulk(v); }}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2"><Images className="w-4 h-4" />استيراد متعدد</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader><DialogTitle>استيراد سيارات متعددة من الصور</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                {/* Upload area */}
                 <div
-                  className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                  onClick={() => bulkFileInputRef.current?.click()}
                 >
-                  {imagePreview ? (
-                    <img src={imagePreview} alt="معاينة" className="max-h-32 mx-auto rounded" />
-                  ) : (
-                    <div className="space-y-2">
-                      <Upload className="w-8 h-8 mx-auto text-muted-foreground/50" />
-                      <p className="text-sm text-muted-foreground">اضغط لرفع صورة الهيكل</p>
-                    </div>
-                  )}
+                  <Upload className="w-10 h-10 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-sm text-muted-foreground">اضغط لاختيار صور هياكل السيارات (يمكنك اختيار عدة صور)</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">JPG, PNG, WEBP</p>
                 </div>
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                <input ref={bulkFileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleBulkFilesChange} />
+
+                {bulkEntries.length > 0 && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <Badge variant="secondary" className="text-sm">{bulkEntries.length} سيارة</Badge>
+                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => { bulkEntries.forEach(e => URL.revokeObjectURL(e.preview)); setBulkEntries([]); }}>
+                        <Trash2 className="w-4 h-4 ml-1" /> مسح الكل
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {bulkEntries.map((entry, index) => (
+                        <Card key={entry.id} className="p-3">
+                          <div className="flex gap-3">
+                            {/* Thumbnail */}
+                            <div className="flex-shrink-0">
+                              <img src={entry.preview} alt="هيكل" className="w-20 h-20 rounded-lg object-cover border border-border" />
+                              <p className="text-[10px] text-muted-foreground text-center mt-1">سيارة {index + 1}</p>
+                            </div>
+
+                            {/* Fields */}
+                            <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-2">
+                              <div>
+                                <Label className="text-xs">نوع السيارة *</Label>
+                                <Input
+                                  value={entry.car_type}
+                                  onChange={e => updateBulkEntry(entry.id, 'car_type', e.target.value)}
+                                  placeholder="تويوتا كامري"
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">اللون</Label>
+                                <Input
+                                  value={entry.car_color}
+                                  onChange={e => updateBulkEntry(entry.id, 'car_color', e.target.value)}
+                                  placeholder="أبيض"
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">رقم الهيكل *</Label>
+                                <Input
+                                  value={entry.chassis_number}
+                                  onChange={e => updateBulkEntry(entry.id, 'chassis_number', e.target.value)}
+                                  placeholder="JTDKN3DU5A..."
+                                  className="h-8 text-sm font-mono"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">تاريخ الدخول</Label>
+                                <Input
+                                  type="date"
+                                  value={entry.entry_date}
+                                  onChange={e => updateBulkEntry(entry.id, 'entry_date', e.target.value)}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div className="col-span-2 md:col-span-3">
+                                <Label className="text-xs">ملاحظات</Label>
+                                <Input
+                                  value={entry.notes}
+                                  onChange={e => updateBulkEntry(entry.id, 'notes', e.target.value)}
+                                  placeholder="ملاحظات اختيارية..."
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div className="flex items-end">
+                                <Button variant="ghost" size="sm" className="text-destructive h-8" onClick={() => removeBulkEntry(entry.id)}>
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+
+                    <Button
+                      className="w-full gap-2"
+                      onClick={handleBulkSave}
+                      disabled={bulkSaving || bulkEntries.length === 0}
+                    >
+                      {bulkSaving ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" />جاري حفظ {bulkEntries.length} سيارة...</>
+                      ) : (
+                        <>حفظ الكل ({bulkEntries.length} سيارة)</>
+                      )}
+                    </Button>
+                  </>
+                )}
               </div>
-              <div><Label>ملاحظات</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
-              <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending || !form.car_type || !form.chassis_number}>
-                {addMutation.isPending ? 'جاري الإضافة...' : 'إضافة'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+
+          {/* Single Add Button */}
+          <Dialog open={showAdd} onOpenChange={setShowAdd}>
+            <DialogTrigger asChild>
+              <Button className="gap-2"><Plus className="w-4 h-4" />إضافة سيارة</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader><DialogTitle>إضافة سيارة للمستودع</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>نوع السيارة *</Label><Input value={form.car_type} onChange={e => setForm(p => ({ ...p, car_type: e.target.value }))} placeholder="تويوتا كامري" /></div>
+                  <div><Label>لون السيارة</Label><Input value={form.car_color} onChange={e => setForm(p => ({ ...p, car_color: e.target.value }))} placeholder="أبيض" /></div>
+                </div>
+                <div><Label>رقم الهيكل *</Label><Input value={form.chassis_number} onChange={e => setForm(p => ({ ...p, chassis_number: e.target.value }))} placeholder="JTDKN3DU5A..." className="font-mono" /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>تاريخ الدخول</Label><Input type="date" value={form.entry_date} onChange={e => setForm(p => ({ ...p, entry_date: e.target.value }))} /></div>
+                  <div><Label>تاريخ الخروج</Label><Input type="date" value={form.exit_date} onChange={e => setForm(p => ({ ...p, exit_date: e.target.value }))} /></div>
+                </div>
+                <div>
+                  <Label>صورة الهيكل</Label>
+                  <div
+                    className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="معاينة" className="max-h-32 mx-auto rounded" />
+                    ) : (
+                      <div className="space-y-2">
+                        <Upload className="w-8 h-8 mx-auto text-muted-foreground/50" />
+                        <p className="text-sm text-muted-foreground">اضغط لرفع صورة الهيكل</p>
+                      </div>
+                    )}
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                </div>
+                <div><Label>ملاحظات</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
+                <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending || !form.car_type || !form.chassis_number}>
+                  {addMutation.isPending ? 'جاري الإضافة...' : 'إضافة'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats */}
