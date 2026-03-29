@@ -41,7 +41,6 @@ export function useSalesInvoiceCalculations({
       if (car.car_condition === 'used' && taxRate > 0) {
         const quantity = car.quantity || 1;
         const result = calcCarTax(price * quantity, car.car_condition, 'sale', taxRate, car.purchase_price * quantity);
-        const result = calcCarTax(price * quantity, car.car_condition, 'sale', taxRate, car.purchase_price * quantity);
         subtotal += result.subtotal; totalVAT += result.taxAmount;
         return { ...car, baseAmount: result.subtotal, vatAmount: result.taxAmount, total: result.subtotal + result.taxAmount };
       } else {
