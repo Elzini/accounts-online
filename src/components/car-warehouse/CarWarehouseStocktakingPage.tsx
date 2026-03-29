@@ -100,10 +100,44 @@ export function CarWarehouseStocktakingPage() {
   });
 
   function resetForm() {
-    setForm({ car_type: '', car_color: '', chassis_number: '', entry_date: new Date().toISOString().split('T')[0], exit_date: '', notes: '' });
+    setForm({ car_type: '', car_color: '', chassis_number: '', entry_date: new Date().toISOString().split('T')[0], exit_date: '', price: '', notes: '' });
     setImageFile(null);
     setImagePreview(null);
     setShowAdd(false);
+  }
+
+  function handlePrintReport() {
+    const fmtCur = (v: number | null) => v ? new Intl.NumberFormat('en-SA').format(v) : '-';
+    printReport({
+      title: 'تقرير جرد مستودع السيارات',
+      subtitle: `إجمالي: ${entries.length} سيارة | داخل المستودع: ${inCount} | خرجت: ${outCount}`,
+      columns: [
+        { header: '#', key: 'index' },
+        { header: 'نوع السيارة', key: 'car_type' },
+        { header: 'اللون', key: 'car_color' },
+        { header: 'رقم الهيكل', key: 'chassis_number' },
+        { header: 'تاريخ الدخول', key: 'entry_date' },
+        { header: 'تاريخ الخروج', key: 'exit_date' },
+        { header: 'السعر', key: 'price' },
+        { header: 'الحالة', key: 'status' },
+      ],
+      data: entries.map((e, i) => ({
+        index: i + 1,
+        car_type: e.car_type,
+        car_color: e.car_color || '-',
+        chassis_number: e.chassis_number,
+        entry_date: e.entry_date,
+        exit_date: e.exit_date || '-',
+        price: fmtCur(e.price),
+        status: e.exit_date ? 'خرجت' : 'في المستودع',
+      })),
+      summaryCards: [
+        { label: 'إجمالي السيارات', value: String(entries.length) },
+        { label: 'داخل المستودع', value: String(inCount) },
+        { label: 'خرجت', value: String(outCount) },
+        { label: 'إجمالي القيمة', value: fmtCur(entries.reduce((s, e) => s + (e.price || 0), 0)) },
+      ],
+    });
   }
 
   async function fileToBase64(file: File): Promise<string> {
