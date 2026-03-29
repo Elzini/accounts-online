@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { calcCarTax } from '@/utils/carTaxHelper';
 import { Pencil, Trash2, FileText, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -293,7 +294,7 @@ export function PurchaseActions({ car }: PurchaseActionsProps) {
   const isUsedCar = (car as any).car_condition === 'used';
   const taxRate = (!isUsedCar && taxSettings?.is_active) ? (taxSettings?.tax_rate || 0) : 0;
   const purchasePrice = Number(car.purchase_price);
-  const { calcCarTax } = require('@/utils/carTaxHelper');
+  
   const { taxAmount, subtotal } = calcCarTax(purchasePrice, (car as any).car_condition, 'purchase', taxRate);
 
   // Build address string

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { calcCarTax } from '@/utils/carTaxHelper';
 import { Pencil, Trash2, FileText, BookOpen, RotateCcw, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -325,7 +326,7 @@ export function SaleActions({ sale }: SaleActionsProps) {
   };
 
   const buildInvoiceData = () => {
-    const { calcCarTax } = require('@/utils/carTaxHelper');
+    
     
     if (sale.sale_items && sale.sale_items.length > 0) {
       const items = sale.sale_items.map(item => {
