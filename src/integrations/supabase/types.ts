@@ -10051,6 +10051,7 @@ export type Database = {
           exit_date: string | null
           id: string
           notes: string | null
+          price: number | null
           updated_at: string
         }
         Insert: {
@@ -10064,6 +10065,7 @@ export type Database = {
           exit_date?: string | null
           id?: string
           notes?: string | null
+          price?: number | null
           updated_at?: string
         }
         Update: {
@@ -10077,6 +10079,7 @@ export type Database = {
           exit_date?: string | null
           id?: string
           notes?: string | null
+          price?: number | null
           updated_at?: string
         }
         Relationships: [
