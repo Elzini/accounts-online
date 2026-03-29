@@ -288,7 +288,7 @@ export function CarWarehouseStocktakingPage() {
                           <div className="flex gap-3">
                             {/* Thumbnail */}
                             <div className="flex-shrink-0 relative">
-                              <img src={entry.preview} alt="هيكل" className="w-20 h-20 rounded-lg object-cover border border-border" />
+                              <img src={entry.preview} alt="هيكل" className="w-20 h-20 rounded-lg object-cover border border-border cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setPreviewImage(entry.preview)} />
                               {bulkExtracting.has(entry.id) && (
                                 <div className="absolute inset-0 bg-background/70 rounded-lg flex items-center justify-center">
                                   <Loader2 className="w-5 h-5 animate-spin text-primary" />
