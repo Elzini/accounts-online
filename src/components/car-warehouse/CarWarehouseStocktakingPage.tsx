@@ -7,7 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer, GitCompare } from 'lucide-react';
+import { WarehouseReconciliation } from './WarehouseReconciliation';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
