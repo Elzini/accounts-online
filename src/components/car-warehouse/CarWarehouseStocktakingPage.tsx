@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine } from 'lucide-react';
+import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer } from 'lucide-react';
+import { usePrintReport } from '@/hooks/usePrintReport';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -39,8 +40,9 @@ export function CarWarehouseStocktakingPage() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [form, setForm] = useState({
     car_type: '', car_color: '', chassis_number: '', entry_date: new Date().toISOString().split('T')[0],
-    exit_date: '', notes: '',
+    exit_date: '', price: '', notes: '',
   });
+  const { printReport } = usePrintReport();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -69,6 +71,7 @@ export function CarWarehouseStocktakingPage() {
         chassis_image_url: imageUrl,
         entry_date: form.entry_date,
         exit_date: form.exit_date || undefined,
+        price: form.price ? parseFloat(form.price) : undefined,
         notes: form.notes || undefined,
       });
     },
@@ -98,10 +101,44 @@ export function CarWarehouseStocktakingPage() {
   });
 
   function resetForm() {
-    setForm({ car_type: '', car_color: '', chassis_number: '', entry_date: new Date().toISOString().split('T')[0], exit_date: '', notes: '' });
+    setForm({ car_type: '', car_color: '', chassis_number: '', entry_date: new Date().toISOString().split('T')[0], exit_date: '', price: '', notes: '' });
     setImageFile(null);
     setImagePreview(null);
     setShowAdd(false);
+  }
+
+  function handlePrintReport() {
+    const fmtCur = (v: number | null) => v ? new Intl.NumberFormat('en-SA').format(v) : '-';
+    printReport({
+      title: 'تقرير جرد مستودع السيارات',
+      subtitle: `إجمالي: ${entries.length} سيارة | داخل المستودع: ${inCount} | خرجت: ${outCount}`,
+      columns: [
+        { header: '#', key: 'index' },
+        { header: 'نوع السيارة', key: 'car_type' },
+        { header: 'اللون', key: 'car_color' },
+        { header: 'رقم الهيكل', key: 'chassis_number' },
+        { header: 'تاريخ الدخول', key: 'entry_date' },
+        { header: 'تاريخ الخروج', key: 'exit_date' },
+        { header: 'السعر', key: 'price' },
+        { header: 'الحالة', key: 'status' },
+      ],
+      data: entries.map((e, i) => ({
+        index: i + 1,
+        car_type: e.car_type,
+        car_color: e.car_color || '-',
+        chassis_number: e.chassis_number,
+        entry_date: e.entry_date,
+        exit_date: e.exit_date || '-',
+        price: fmtCur(e.price),
+        status: e.exit_date ? 'خرجت' : 'في المستودع',
+      })),
+      summaryCards: [
+        { label: 'إجمالي السيارات', value: String(entries.length) },
+        { label: 'داخل المستودع', value: String(inCount) },
+        { label: 'خرجت', value: String(outCount) },
+        { label: 'إجمالي القيمة', value: fmtCur(entries.reduce((s, e) => s + (e.price || 0), 0)) },
+      ],
+    });
   }
 
   async function fileToBase64(file: File): Promise<string> {
@@ -257,6 +294,9 @@ export function CarWarehouseStocktakingPage() {
           <p className="text-muted-foreground">إدارة وجرد السيارات بالصور ومتابعة الدخول والخروج</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={handlePrintReport} disabled={entries.length === 0}>
+            <Printer className="w-4 h-4" />طباعة تقرير
+          </Button>
           {/* Bulk Import Button */}
           <Dialog open={showBulk} onOpenChange={v => { if (!v) { bulkEntries.forEach(e => URL.revokeObjectURL(e.preview)); setBulkEntries([]); } setShowBulk(v); }}>
             <DialogTrigger asChild>
@@ -414,6 +454,7 @@ export function CarWarehouseStocktakingPage() {
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                 </div>
+                <div><Label>السعر</Label><Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="0" /></div>
                 <div><Label>ملاحظات</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
                 <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending || !form.car_type || !form.chassis_number}>
                   {addMutation.isPending ? 'جاري الإضافة...' : 'إضافة'}
@@ -445,6 +486,7 @@ export function CarWarehouseStocktakingPage() {
                   <TableHead>رقم الهيكل</TableHead>
                   <TableHead>تاريخ الدخول</TableHead>
                   <TableHead>تاريخ الخروج</TableHead>
+                  <TableHead>السعر</TableHead>
                   <TableHead>الحالة</TableHead>
                   <TableHead>ملاحظات</TableHead>
                   <TableHead>إجراءات</TableHead>
@@ -472,6 +514,7 @@ export function CarWarehouseStocktakingPage() {
                     <TableCell className="font-mono text-xs">{entry.chassis_number}</TableCell>
                     <TableCell>{entry.entry_date}</TableCell>
                     <TableCell>{entry.exit_date || '-'}</TableCell>
+                    <TableCell>{entry.price ? new Intl.NumberFormat('en-SA').format(entry.price) : '-'}</TableCell>
                     <TableCell>
                       <Badge variant={entry.exit_date ? 'secondary' : 'default'}>
                         {entry.exit_date ? 'خرجت' : 'في المستودع'}

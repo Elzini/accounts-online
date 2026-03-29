@@ -1,0 +1,1 @@
+ALTER TABLE public.warehouse_car_inventory ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;

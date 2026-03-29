@@ -12,6 +12,7 @@ export interface WarehouseCarEntry {
   chassis_image_url: string | null;
   entry_date: string;
   exit_date: string | null;
+  price: number | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -34,6 +35,7 @@ export async function addWarehouseCarEntry(companyId: string, entry: {
   chassis_image_url?: string;
   entry_date: string;
   exit_date?: string;
+  price?: number;
   notes?: string;
 }) {
   const { error } = await (supabase as any)
@@ -52,6 +54,7 @@ export async function updateWarehouseCarEntry(id: string, updates: Partial<{
   chassis_image_url: string;
   entry_date: string;
   exit_date: string;
+  price: number;
   notes: string;
 }>) {
   const { error } = await (supabase as any)
