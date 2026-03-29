@@ -155,6 +155,13 @@ export function WarehouseReconciliation() {
         { label: 'مطابق', value: String(matched) },
         { label: 'غير موجود بالمستودع', value: String(missing) },
         { label: 'زائد بالمستودع', value: String(extra) },
+        ...Object.entries(
+          reconciliation.reduce<Record<string, number>>((acc, r) => {
+            const type = (r.inv_name || r.wh_car_type || 'غير محدد').trim();
+            acc[type] = (acc[type] || 0) + 1;
+            return acc;
+          }, {})
+        ).map(([type, count]) => ({ label: type, value: `${count} سيارة` })),
       ],
     });
   }
