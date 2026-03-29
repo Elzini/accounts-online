@@ -90,22 +90,42 @@ export function SalesItemsTable({ hook }: SalesItemsTableProps) {
           </TableBody>
         </Table>
         <div className="p-3 border-t flex gap-2 flex-wrap bg-muted/20">
-          <Select onValueChange={handleAddCar}>
-            <SelectTrigger className="w-[300px] h-9 text-xs rounded-lg">
-              <SelectValue placeholder={t.inv_select_car_placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {remainingCars.map((car) => (
-                <SelectItem key={car.id} value={car.id}>
-                  <div className="flex items-center gap-2">
-                    <Car className="w-3 h-3" />
-                    <span>{car.name} {car.model}</span>
-                    <span className="text-muted-foreground text-xs" dir="ltr">{car.chassis_number}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={carSearchOpen} onOpenChange={setCarSearchOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-[350px] h-9 text-xs rounded-lg justify-between">
+                <span className="flex items-center gap-2">
+                  <Search className="w-3 h-3" />
+                  {t.inv_select_car_placeholder || 'ابحث بالاسم أو رقم الهيكل...'}
+                </span>
+                <ChevronDown className="w-3 h-3 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[350px] p-0" align="start">
+              <Command dir="rtl">
+                <CommandInput placeholder="ابحث باسم السيارة أو رقم الهيكل..." className="text-xs" />
+                <CommandList>
+                  <CommandEmpty className="py-4 text-center text-xs text-muted-foreground">لا توجد سيارات مطابقة</CommandEmpty>
+                  <CommandGroup>
+                    {remainingCars.map((car) => (
+                      <CommandItem
+                        key={car.id}
+                        value={`${car.name} ${car.model} ${car.chassis_number}`}
+                        onSelect={() => {
+                          handleAddCar(car.id);
+                          setCarSearchOpen(false);
+                        }}
+                        className="text-xs cursor-pointer"
+                      >
+                        <Car className="w-3 h-3 ml-2 shrink-0" />
+                        <span className="font-medium">{car.name} {car.model}</span>
+                        <span className="text-muted-foreground mr-auto text-[10px]" dir="ltr">{car.chassis_number}</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
           {savedTemplates.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
