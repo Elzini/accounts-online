@@ -71,6 +71,7 @@ export function CarWarehouseStocktakingPage() {
         chassis_image_url: imageUrl,
         entry_date: form.entry_date,
         exit_date: form.exit_date || undefined,
+        price: form.price ? parseFloat(form.price) : undefined,
         notes: form.notes || undefined,
       });
     },
@@ -293,6 +294,9 @@ export function CarWarehouseStocktakingPage() {
           <p className="text-muted-foreground">إدارة وجرد السيارات بالصور ومتابعة الدخول والخروج</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={handlePrintReport} disabled={entries.length === 0}>
+            <Printer className="w-4 h-4" />طباعة تقرير
+          </Button>
           {/* Bulk Import Button */}
           <Dialog open={showBulk} onOpenChange={v => { if (!v) { bulkEntries.forEach(e => URL.revokeObjectURL(e.preview)); setBulkEntries([]); } setShowBulk(v); }}>
             <DialogTrigger asChild>
@@ -450,6 +454,7 @@ export function CarWarehouseStocktakingPage() {
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                 </div>
+                <div><Label>السعر</Label><Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="0" /></div>
                 <div><Label>ملاحظات</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
                 <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending || !form.car_type || !form.chassis_number}>
                   {addMutation.isPending ? 'جاري الإضافة...' : 'إضافة'}
@@ -481,6 +486,7 @@ export function CarWarehouseStocktakingPage() {
                   <TableHead>رقم الهيكل</TableHead>
                   <TableHead>تاريخ الدخول</TableHead>
                   <TableHead>تاريخ الخروج</TableHead>
+                  <TableHead>السعر</TableHead>
                   <TableHead>الحالة</TableHead>
                   <TableHead>ملاحظات</TableHead>
                   <TableHead>إجراءات</TableHead>
@@ -508,6 +514,7 @@ export function CarWarehouseStocktakingPage() {
                     <TableCell className="font-mono text-xs">{entry.chassis_number}</TableCell>
                     <TableCell>{entry.entry_date}</TableCell>
                     <TableCell>{entry.exit_date || '-'}</TableCell>
+                    <TableCell>{entry.price ? new Intl.NumberFormat('en-SA').format(entry.price) : '-'}</TableCell>
                     <TableCell>
                       <Badge variant={entry.exit_date ? 'secondary' : 'default'}>
                         {entry.exit_date ? 'خرجت' : 'في المستودع'}
