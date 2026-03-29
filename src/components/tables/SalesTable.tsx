@@ -90,8 +90,7 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
   };
 
   const calculateTaxDetails = (salePrice: number, carCondition?: string, purchasePrice?: number) => {
-    const { calcCarTax } = require('@/utils/carTaxHelper');
-    const result = calcCarTax(salePrice, carCondition, 'sale', taxRate, purchasePrice);
+    const { calcCarTax } = await import('@/utils/carTaxHelper');
     return {
       baseAmount: Math.round(result.subtotal * 100) / 100,
       taxAmount: Math.round(result.taxAmount * 100) / 100,
