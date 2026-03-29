@@ -104,16 +104,54 @@ export function CarWarehouseStocktakingPage() {
     setShowAdd(false);
   }
 
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function extractChassisFromImage(file: File): Promise<{ chassis_number: string; car_type: string; car_color: string }> {
+    const base64 = await fileToBase64(file);
+    const { data, error } = await supabase.functions.invoke('extract-chassis', {
+      body: { image_base64: base64 },
+    });
+    if (error) throw error;
+    return data;
+  }
+
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+
+    // Auto-extract chassis info via AI
+    setExtracting(true);
+    try {
+      const result = await extractChassisFromImage(file);
+      if (result.chassis_number || result.car_type || result.car_color) {
+        setForm(p => ({
+          ...p,
+          chassis_number: result.chassis_number || p.chassis_number,
+          car_type: result.car_type || p.car_type,
+          car_color: result.car_color || p.car_color,
+        }));
+        toast.success('تم استخراج البيانات من الصورة');
+      } else {
+        toast.info('لم يتم العثور على رقم هيكل في الصورة');
+      }
+    } catch {
+      toast.error('فشل استخراج البيانات من الصورة');
+    } finally {
+      setExtracting(false);
     }
   }
 
   // ===== Bulk Import =====
-  function handleBulkFilesChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleBulkFilesChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -130,8 +168,25 @@ export function CarWarehouseStocktakingPage() {
     }));
 
     setBulkEntries(prev => [...prev, ...newEntries]);
-    // Reset input so same files can be selected again
     if (bulkFileInputRef.current) bulkFileInputRef.current.value = '';
+
+    // Auto-extract chassis info for each image
+    for (const entry of newEntries) {
+      setBulkExtracting(prev => new Set(prev).add(entry.id));
+      try {
+        const result = await extractChassisFromImage(entry.file);
+        setBulkEntries(prev => prev.map(e => e.id === entry.id ? {
+          ...e,
+          chassis_number: result.chassis_number || e.chassis_number,
+          car_type: result.car_type || e.car_type,
+          car_color: result.car_color || e.car_color,
+        } : e));
+      } catch {
+        // silently continue
+      } finally {
+        setBulkExtracting(prev => { const n = new Set(prev); n.delete(entry.id); return n; });
+      }
+    }
   }
 
   function updateBulkEntry(id: string, field: keyof BulkEntry, value: string) {
