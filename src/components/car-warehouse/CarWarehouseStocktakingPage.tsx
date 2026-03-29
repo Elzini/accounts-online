@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2 } from 'lucide-react';
+import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
