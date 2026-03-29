@@ -7,7 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer, GitCompare } from 'lucide-react';
+import { WarehouseReconciliation } from './WarehouseReconciliation';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -465,12 +467,19 @@ export function CarWarehouseStocktakingPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{entries.length}</div><p className="text-sm text-muted-foreground">إجمالي السيارات</p></CardContent></Card>
-        <Card><CardContent className="pt-4 text-center"><Warehouse className="w-8 h-8 mx-auto mb-2 text-green-600" /><div className="text-2xl font-bold">{inCount}</div><p className="text-sm text-muted-foreground">داخل المستودع</p></CardContent></Card>
-        <Card><CardContent className="pt-4 text-center"><Calendar className="w-8 h-8 mx-auto mb-2 text-orange-600" /><div className="text-2xl font-bold">{outCount}</div><p className="text-sm text-muted-foreground">خرجت من المستودع</p></CardContent></Card>
-      </div>
+      <Tabs defaultValue="inventory" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="inventory" className="gap-2"><Warehouse className="w-4 h-4" />جرد المستودع</TabsTrigger>
+          <TabsTrigger value="reconciliation" className="gap-2"><GitCompare className="w-4 h-4" />مطابقة المخزون</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="inventory" className="space-y-6 mt-4">
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4">
+            <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{entries.length}</div><p className="text-sm text-muted-foreground">إجمالي السيارات</p></CardContent></Card>
+            <Card><CardContent className="pt-4 text-center"><Warehouse className="w-8 h-8 mx-auto mb-2 text-green-600" /><div className="text-2xl font-bold">{inCount}</div><p className="text-sm text-muted-foreground">داخل المستودع</p></CardContent></Card>
+            <Card><CardContent className="pt-4 text-center"><Calendar className="w-8 h-8 mx-auto mb-2 text-orange-600" /><div className="text-2xl font-bold">{outCount}</div><p className="text-sm text-muted-foreground">خرجت من المستودع</p></CardContent></Card>
+          </div>
 
       {/* Table */}
       <Card><CardContent className="pt-6">
@@ -542,6 +551,12 @@ export function CarWarehouseStocktakingPage() {
           </div>
         )}
       </CardContent></Card>
+        </TabsContent>
+
+        <TabsContent value="reconciliation" className="mt-4">
+          <WarehouseReconciliation />
+        </TabsContent>
+      </Tabs>
 
       {/* Image Preview Dialog */}
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
