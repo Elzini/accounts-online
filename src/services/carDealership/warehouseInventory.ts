@@ -12,6 +12,7 @@ export interface WarehouseCarEntry {
   chassis_image_url: string | null;
   entry_date: string;
   exit_date: string | null;
+  price: number | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
