@@ -1,12 +1,15 @@
 /**
  * Sales Invoice - Items Table (Cars & Inventory)
  */
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { X, Car, FileSpreadsheet, ChevronDown, Plus, Package } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { X, Car, FileSpreadsheet, ChevronDown, Plus, Package, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import type { useSalesInvoiceData } from './useSalesInvoiceData';
 
