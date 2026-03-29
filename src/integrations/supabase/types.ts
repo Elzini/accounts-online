@@ -10039,6 +10039,56 @@ export type Database = {
           },
         ]
       }
+      warehouse_car_inventory: {
+        Row: {
+          car_color: string | null
+          car_type: string
+          chassis_image_url: string | null
+          chassis_number: string
+          company_id: string
+          created_at: string
+          entry_date: string
+          exit_date: string | null
+          id: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          car_color?: string | null
+          car_type: string
+          chassis_image_url?: string | null
+          chassis_number: string
+          company_id: string
+          created_at?: string
+          entry_date?: string
+          exit_date?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          car_color?: string | null
+          car_type?: string
+          chassis_image_url?: string | null
+          chassis_number?: string
+          company_id?: string
+          created_at?: string
+          entry_date?: string
+          exit_date?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_car_inventory_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warehouses: {
         Row: {
           address: string | null
