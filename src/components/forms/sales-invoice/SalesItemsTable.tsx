@@ -28,6 +28,8 @@ export function SalesItemsTable({ hook }: SalesItemsTableProps) {
     formatCurrency, t,
   } = hook;
 
+  const [carSearchOpen, setCarSearchOpen] = useState(false);
+
   if (isCarDealership) {
     return (
       <div className="overflow-x-auto">
