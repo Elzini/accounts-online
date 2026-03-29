@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { calcCarTax } from '@/utils/carTaxHelper';
 import { DollarSign, Calendar, TrendingUp, Wallet, Building2, CreditCard, Banknote, User, Car, Hash, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -90,7 +91,6 @@ export function SalesTable({ setActivePage }: SalesTableProps) {
   };
 
   const calculateTaxDetails = (salePrice: number, carCondition?: string, purchasePrice?: number) => {
-    const { calcCarTax } = require('@/utils/carTaxHelper');
     const result = calcCarTax(salePrice, carCondition, 'sale', taxRate, purchasePrice);
     return {
       baseAmount: Math.round(result.subtotal * 100) / 100,

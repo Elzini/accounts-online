@@ -4,6 +4,7 @@
  */
 import { useMemo } from 'react';
 import { SelectedCarItem, SelectedInventoryItem, InvoiceFormData, StoredHeaderTotals } from './types';
+import { calcCarTax } from '@/utils/carTaxHelper';
 
 interface CalcParams {
   selectedCars: SelectedCarItem[];
@@ -39,7 +40,6 @@ export function useSalesInvoiceCalculations({
       const price = parseFloat(car.sale_price) || 0;
       if (car.car_condition === 'used' && taxRate > 0) {
         const quantity = car.quantity || 1;
-        const { calcCarTax } = require('@/utils/carTaxHelper');
         const result = calcCarTax(price * quantity, car.car_condition, 'sale', taxRate, car.purchase_price * quantity);
         subtotal += result.subtotal; totalVAT += result.taxAmount;
         return { ...car, baseAmount: result.subtotal, vatAmount: result.taxAmount, total: result.subtotal + result.taxAmount };
