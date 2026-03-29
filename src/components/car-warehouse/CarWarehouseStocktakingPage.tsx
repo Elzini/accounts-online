@@ -392,17 +392,20 @@ export function CarWarehouseStocktakingPage() {
                   <div><Label>تاريخ الخروج</Label><Input type="date" value={form.exit_date} onChange={e => setForm(p => ({ ...p, exit_date: e.target.value }))} /></div>
                 </div>
                 <div>
-                  <Label>صورة الهيكل</Label>
+                  <Label className="flex items-center gap-2">
+                    صورة الهيكل
+                    {extracting && <span className="flex items-center gap-1 text-xs text-primary"><Loader2 className="w-3 h-3 animate-spin" />جاري استخراج البيانات...</span>}
+                  </Label>
                   <div
-                    className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                    className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors relative"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     {imagePreview ? (
                       <img src={imagePreview} alt="معاينة" className="max-h-32 mx-auto rounded" />
                     ) : (
                       <div className="space-y-2">
-                        <Upload className="w-8 h-8 mx-auto text-muted-foreground/50" />
-                        <p className="text-sm text-muted-foreground">اضغط لرفع صورة الهيكل</p>
+                        <ScanLine className="w-8 h-8 mx-auto text-muted-foreground/50" />
+                        <p className="text-sm text-muted-foreground">اضغط لرفع صورة الهيكل (سيتم استخراج رقم الهيكل تلقائياً)</p>
                       </div>
                     )}
                   </div>
