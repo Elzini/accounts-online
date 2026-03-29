@@ -551,6 +551,12 @@ export function CarWarehouseStocktakingPage() {
           </div>
         )}
       </CardContent></Card>
+        </TabsContent>
+
+        <TabsContent value="reconciliation" className="mt-4">
+          <WarehouseReconciliation />
+        </TabsContent>
+      </Tabs>
 
       {/* Image Preview Dialog */}
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
