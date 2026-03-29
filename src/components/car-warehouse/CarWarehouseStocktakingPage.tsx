@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine } from 'lucide-react';
+import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer } from 'lucide-react';
+import { usePrintReport } from '@/hooks/usePrintReport';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -39,8 +40,9 @@ export function CarWarehouseStocktakingPage() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [form, setForm] = useState({
     car_type: '', car_color: '', chassis_number: '', entry_date: new Date().toISOString().split('T')[0],
-    exit_date: '', notes: '',
+    exit_date: '', price: '', notes: '',
   });
+  const { printReport } = usePrintReport();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
