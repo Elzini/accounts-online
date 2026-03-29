@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2 } from 'lucide-react';
+import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyId } from '@/hooks/useCompanyId';
@@ -46,6 +47,8 @@ export function CarWarehouseStocktakingPage() {
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
   const [bulkEntries, setBulkEntries] = useState<BulkEntry[]>([]);
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [bulkExtracting, setBulkExtracting] = useState<Set<string>>(new Set());
 
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['warehouse-car-inventory', companyId],
@@ -101,16 +104,54 @@ export function CarWarehouseStocktakingPage() {
     setShowAdd(false);
   }
 
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function extractChassisFromImage(file: File): Promise<{ chassis_number: string; car_type: string; car_color: string }> {
+    const base64 = await fileToBase64(file);
+    const { data, error } = await supabase.functions.invoke('extract-chassis', {
+      body: { image_base64: base64 },
+    });
+    if (error) throw error;
+    return data;
+  }
+
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+
+    // Auto-extract chassis info via AI
+    setExtracting(true);
+    try {
+      const result = await extractChassisFromImage(file);
+      if (result.chassis_number || result.car_type || result.car_color) {
+        setForm(p => ({
+          ...p,
+          chassis_number: result.chassis_number || p.chassis_number,
+          car_type: result.car_type || p.car_type,
+          car_color: result.car_color || p.car_color,
+        }));
+        toast.success('تم استخراج البيانات من الصورة');
+      } else {
+        toast.info('لم يتم العثور على رقم هيكل في الصورة');
+      }
+    } catch {
+      toast.error('فشل استخراج البيانات من الصورة');
+    } finally {
+      setExtracting(false);
     }
   }
 
   // ===== Bulk Import =====
-  function handleBulkFilesChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleBulkFilesChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -127,8 +168,25 @@ export function CarWarehouseStocktakingPage() {
     }));
 
     setBulkEntries(prev => [...prev, ...newEntries]);
-    // Reset input so same files can be selected again
     if (bulkFileInputRef.current) bulkFileInputRef.current.value = '';
+
+    // Auto-extract chassis info for each image
+    for (const entry of newEntries) {
+      setBulkExtracting(prev => new Set(prev).add(entry.id));
+      try {
+        const result = await extractChassisFromImage(entry.file);
+        setBulkEntries(prev => prev.map(e => e.id === entry.id ? {
+          ...e,
+          chassis_number: result.chassis_number || e.chassis_number,
+          car_type: result.car_type || e.car_type,
+          car_color: result.car_color || e.car_color,
+        } : e));
+      } catch {
+        // silently continue
+      } finally {
+        setBulkExtracting(prev => { const n = new Set(prev); n.delete(entry.id); return n; });
+      }
+    }
   }
 
   function updateBulkEntry(id: string, field: keyof BulkEntry, value: string) {
@@ -229,9 +287,16 @@ export function CarWarehouseStocktakingPage() {
                         <Card key={entry.id} className="p-3">
                           <div className="flex gap-3">
                             {/* Thumbnail */}
-                            <div className="flex-shrink-0">
+                            <div className="flex-shrink-0 relative">
                               <img src={entry.preview} alt="هيكل" className="w-20 h-20 rounded-lg object-cover border border-border" />
-                              <p className="text-[10px] text-muted-foreground text-center mt-1">سيارة {index + 1}</p>
+                              {bulkExtracting.has(entry.id) && (
+                                <div className="absolute inset-0 bg-background/70 rounded-lg flex items-center justify-center">
+                                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                                </div>
+                              )}
+                              <p className="text-[10px] text-muted-foreground text-center mt-1">
+                                {bulkExtracting.has(entry.id) ? 'جاري القراءة...' : `سيارة ${index + 1}`}
+                              </p>
                             </div>
 
                             {/* Fields */}
@@ -327,17 +392,20 @@ export function CarWarehouseStocktakingPage() {
                   <div><Label>تاريخ الخروج</Label><Input type="date" value={form.exit_date} onChange={e => setForm(p => ({ ...p, exit_date: e.target.value }))} /></div>
                 </div>
                 <div>
-                  <Label>صورة الهيكل</Label>
+                  <Label className="flex items-center gap-2">
+                    صورة الهيكل
+                    {extracting && <span className="flex items-center gap-1 text-xs text-primary"><Loader2 className="w-3 h-3 animate-spin" />جاري استخراج البيانات...</span>}
+                  </Label>
                   <div
-                    className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                    className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors relative"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     {imagePreview ? (
                       <img src={imagePreview} alt="معاينة" className="max-h-32 mx-auto rounded" />
                     ) : (
                       <div className="space-y-2">
-                        <Upload className="w-8 h-8 mx-auto text-muted-foreground/50" />
-                        <p className="text-sm text-muted-foreground">اضغط لرفع صورة الهيكل</p>
+                        <ScanLine className="w-8 h-8 mx-auto text-muted-foreground/50" />
+                        <p className="text-sm text-muted-foreground">اضغط لرفع صورة الهيكل (سيتم استخراج رقم الهيكل تلقائياً)</p>
                       </div>
                     )}
                   </div>
