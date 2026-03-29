@@ -287,7 +287,7 @@ export function CarWarehouseStocktakingPage() {
 
                     <div className="space-y-3">
                       {bulkEntries.map((entry, index) => (
-                        <Card key={entry.id} className="p-3">
+                        <Card key={entry.id} id={`bulk-entry-${entry.id}`} className={`p-3 ${(!entry.car_type.trim() || !entry.chassis_number.trim()) ? 'border-destructive border-2' : ''}`}>
                           <div className="flex gap-3">
                             {/* Thumbnail */}
                             <div className="flex-shrink-0 relative">
