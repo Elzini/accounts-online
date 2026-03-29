@@ -207,6 +207,9 @@ export function CarWarehouseStocktakingPage() {
     const incomplete = bulkEntries.filter(e => !e.car_type.trim() || !e.chassis_number.trim());
     if (incomplete.length > 0) {
       toast.error(`${incomplete.length} سيارة تحتاج نوع السيارة ورقم الهيكل`);
+      // Scroll to first incomplete entry
+      const el = document.getElementById(`bulk-entry-${incomplete[0].id}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
