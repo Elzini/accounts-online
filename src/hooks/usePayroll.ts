@@ -177,7 +177,16 @@ export function useCreatePayroll() {
     mutationFn: async ({ month, year }: { month: number; year: number }) => {
       if (!companyId) throw new Error('Company ID required');
       const payroll = await createPayrollRecord(companyId, month, year);
-      await generatePayrollItems(payroll.id, companyId);
+      try {
+        const items = await generatePayrollItems(payroll.id, companyId);
+        console.log('Generated payroll items:', items?.length || 0);
+        if (!items || items.length === 0) {
+          console.warn('No payroll items generated - check active employees');
+        }
+      } catch (err) {
+        console.error('Failed to generate payroll items:', err);
+        // Don't throw - payroll record is created, items can be regenerated
+      }
       return payroll;
     },
     onSuccess: () => {
