@@ -1,0 +1,1 @@
+UPDATE public.app_settings SET value = 'false' WHERE key = 'system_freeze_mode' AND company_id IS NULL;
