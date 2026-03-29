@@ -207,6 +207,9 @@ export function CarWarehouseStocktakingPage() {
     const incomplete = bulkEntries.filter(e => !e.car_type.trim() || !e.chassis_number.trim());
     if (incomplete.length > 0) {
       toast.error(`${incomplete.length} سيارة تحتاج نوع السيارة ورقم الهيكل`);
+      // Scroll to first incomplete entry
+      const el = document.getElementById(`bulk-entry-${incomplete[0].id}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -284,7 +287,7 @@ export function CarWarehouseStocktakingPage() {
 
                     <div className="space-y-3">
                       {bulkEntries.map((entry, index) => (
-                        <Card key={entry.id} className="p-3">
+                        <Card key={entry.id} id={`bulk-entry-${entry.id}`} className={`p-3 ${(!entry.car_type.trim() || !entry.chassis_number.trim()) ? 'border-destructive border-2' : ''}`}>
                           <div className="flex gap-3">
                             {/* Thumbnail */}
                             <div className="flex-shrink-0 relative">
