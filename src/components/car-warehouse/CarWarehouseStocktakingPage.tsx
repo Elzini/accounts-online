@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer, GitCompare, FileSpreadsheet, MapPin } from 'lucide-react';
 import { WarehouseReconciliation } from './WarehouseReconciliation';
 import { usePartnerDealerships } from '@/hooks/useTransfers';
-import { WarehouseReconciliation } from './WarehouseReconciliation';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
