@@ -14,6 +14,7 @@ export interface WarehouseCarEntry {
   exit_date: string | null;
   price: number | null;
   notes: string | null;
+  location: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -37,6 +38,7 @@ export async function addWarehouseCarEntry(companyId: string, entry: {
   exit_date?: string;
   price?: number;
   notes?: string;
+  location?: string;
 }) {
   const { error } = await (supabase as any)
     .from('warehouse_car_inventory')
@@ -56,6 +58,7 @@ export async function updateWarehouseCarEntry(id: string, updates: Partial<{
   exit_date: string;
   price: number;
   notes: string;
+  location: string;
 }>) {
   const { error } = await (supabase as any)
     .from('warehouse_car_inventory')

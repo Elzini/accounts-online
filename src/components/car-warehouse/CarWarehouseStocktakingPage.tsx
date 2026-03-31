@@ -8,8 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer, GitCompare, FileSpreadsheet } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer, GitCompare, FileSpreadsheet, MapPin } from 'lucide-react';
 import { WarehouseReconciliation } from './WarehouseReconciliation';
+import { usePartnerDealerships } from '@/hooks/useTransfers';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -31,6 +33,7 @@ interface BulkEntry {
   car_color: string;
   chassis_number: string;
   entry_date: string;
+  location: string;
   notes: string;
 }
 
@@ -40,9 +43,10 @@ export function CarWarehouseStocktakingPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const { data: partnerDealerships = [] } = usePartnerDealerships();
   const [form, setForm] = useState({
     car_type: '', car_color: '', chassis_number: '', entry_date: new Date().toISOString().split('T')[0],
-    exit_date: '', price: '', notes: '',
+    exit_date: '', price: '', notes: '', location: 'warehouse',
   });
   const { printReport } = usePrintReport();
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -75,6 +79,7 @@ export function CarWarehouseStocktakingPage() {
         exit_date: form.exit_date || undefined,
         price: form.price ? parseFloat(form.price) : undefined,
         notes: form.notes || undefined,
+        location: form.location || 'warehouse',
       });
     },
     onSuccess: () => {
@@ -103,7 +108,7 @@ export function CarWarehouseStocktakingPage() {
   });
 
   function resetForm() {
-    setForm({ car_type: '', car_color: '', chassis_number: '', entry_date: new Date().toISOString().split('T')[0], exit_date: '', price: '', notes: '' });
+    setForm({ car_type: '', car_color: '', chassis_number: '', entry_date: new Date().toISOString().split('T')[0], exit_date: '', price: '', notes: '', location: 'warehouse' });
     setImageFile(null);
     setImagePreview(null);
     setShowAdd(false);
@@ -113,10 +118,12 @@ export function CarWarehouseStocktakingPage() {
     const { createSimpleExcel, downloadExcelBuffer } = await import('@/lib/excelUtils');
     const fmtCur = (v: number | null) => v ? new Intl.NumberFormat('en-SA').format(v) : '-';
     const rows: any[][] = [
-      ['#', 'نوع السيارة', 'اللون', 'رقم الهيكل', 'تاريخ الدخول', 'تاريخ الخروج', 'اسم المشتري', 'الحالة'],
+      ['#', 'نوع السيارة', 'اللون', 'رقم الهيكل', 'تاريخ الدخول', 'تاريخ الخروج', 'المكان', 'اسم المشتري', 'الحالة'],
       ...entries.map((e, i) => [
         i + 1, e.car_type, e.car_color || '-', e.chassis_number,
-        e.entry_date, e.exit_date || '-', e.price || '-',
+        e.entry_date, e.exit_date || '-',
+        e.location === 'warehouse' || !e.location ? 'المستودع' : e.location,
+        e.price || '-',
         e.exit_date ? 'خرجت' : 'في المستودع',
       ]),
     ];
@@ -137,6 +144,7 @@ export function CarWarehouseStocktakingPage() {
         { header: 'رقم الهيكل', key: 'chassis_number' },
         { header: 'تاريخ الدخول', key: 'entry_date' },
         { header: 'تاريخ الخروج', key: 'exit_date' },
+        { header: 'المكان', key: 'location' },
         { header: 'اسم المشتري', key: 'price' },
         { header: 'الحالة', key: 'status' },
       ],
@@ -147,6 +155,7 @@ export function CarWarehouseStocktakingPage() {
         chassis_number: e.chassis_number,
         entry_date: e.entry_date,
         exit_date: e.exit_date || '-',
+        location: e.location === 'warehouse' || !e.location ? 'المستودع' : e.location,
         price: fmtCur(e.price),
         status: e.exit_date ? 'خرجت' : 'في المستودع',
       })),
@@ -226,6 +235,7 @@ export function CarWarehouseStocktakingPage() {
       car_color: '',
       chassis_number: '',
       entry_date: today,
+      location: 'warehouse',
       notes: '',
     }));
 
@@ -289,6 +299,7 @@ export function CarWarehouseStocktakingPage() {
           chassis_image_url: imageUrl,
           entry_date: entry.entry_date,
           notes: entry.notes || undefined,
+          location: entry.location || 'warehouse',
         });
         successCount++;
       } catch {
@@ -482,6 +493,18 @@ export function CarWarehouseStocktakingPage() {
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                 </div>
+                <div>
+                  <Label className="flex items-center gap-2"><MapPin className="w-4 h-4" />المكان</Label>
+                  <Select value={form.location} onValueChange={v => setForm(p => ({ ...p, location: v }))}>
+                    <SelectTrigger><SelectValue placeholder="اختر المكان" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="warehouse">المستودع</SelectItem>
+                      {partnerDealerships.map((pd: any) => (
+                        <SelectItem key={pd.id} value={pd.dealership_name}>{pd.dealership_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div><Label>اسم المشتري</Label><Input value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="اسم المشتري" /></div>
                 <div><Label>ملاحظات</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
                 <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending || !form.car_type || !form.chassis_number}>
@@ -521,6 +544,7 @@ export function CarWarehouseStocktakingPage() {
                   <TableHead>رقم الهيكل</TableHead>
                   <TableHead>تاريخ الدخول</TableHead>
                   <TableHead>تاريخ الخروج</TableHead>
+                  <TableHead>المكان</TableHead>
                   <TableHead>اسم المشتري</TableHead>
                   <TableHead>الحالة</TableHead>
                   <TableHead>ملاحظات</TableHead>
@@ -549,6 +573,12 @@ export function CarWarehouseStocktakingPage() {
                     <TableCell className="font-mono text-xs">{entry.chassis_number}</TableCell>
                     <TableCell>{entry.entry_date}</TableCell>
                     <TableCell>{entry.exit_date || '-'}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {entry.location === 'warehouse' || !entry.location ? 'المستودع' : entry.location}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{entry.price ? new Intl.NumberFormat('en-SA').format(entry.price) : '-'}</TableCell>
                     <TableCell>
                       <Badge variant={entry.exit_date ? 'secondary' : 'default'}>
