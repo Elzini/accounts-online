@@ -7,7 +7,9 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/hooks/modules/useMiscServices';
+import { useQuery } from '@tanstack/react-query';
 import { useCustomers, useCars, useAddMultiCarSale, useSales, useDeleteSale, useReverseSale, useUpdateSale, useSalesWithItems, useUpdateSaleWithItems, useApproveSale } from '@/hooks/useDatabase';
+import { fetchWarehouseCarInventory } from '@/services/carDealership/warehouseInventory';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
@@ -89,8 +91,30 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   const currency = t.inv_sar;
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
+  // === Warehouse data for location enrichment ===
+  const { data: warehouseEntries = [] } = useQuery({
+    queryKey: ['warehouse-car-inventory', companyId],
+    queryFn: () => fetchWarehouseCarInventory(companyId!),
+    enabled: !!companyId && isCarDealership,
+    staleTime: 1000 * 60 * 2,
+  });
+
   // === Derived data ===
-  const availableCars = useMemo(() => allCars.filter(car => car.status === 'available' || car.status === 'transferred'), [allCars]);
+  const availableCars = useMemo(() => {
+    const filtered = allCars.filter(car => car.status === 'available' || car.status === 'transferred');
+    // Enrich cars with warehouse location
+    const warehouseMap = new Map<string, string>();
+    warehouseEntries
+      .filter(e => !e.exit_date)
+      .forEach(e => {
+        const loc = e.location?.trim() || 'المستودع';
+        warehouseMap.set(e.chassis_number.trim().toUpperCase(), loc);
+      });
+    return filtered.map(car => ({
+      ...car,
+      warehouse_location: warehouseMap.get(car.chassis_number?.trim().toUpperCase()) || null,
+    }));
+  }, [allCars, warehouseEntries]);
 
   useEffect(() => {
     if (!isCarDealership && companyId) {
