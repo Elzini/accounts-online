@@ -216,10 +216,39 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   const handleAddCar = async (carId: string) => {
     const car = availableCars.find(c => c.id === carId);
     if (!car) return;
+    
+    // If this is a warehouse-only car, auto-create it in the cars table first
+    let actualCarId = car.id;
+    if ((car as any)._isWarehouseOnly) {
+      try {
+        if (!companyId) { toast.error('لم يتم العثور على الشركة'); return; }
+        const { data: newCar, error } = await supabase.from('cars').insert({
+          name: car.name,
+          model: car.model || null,
+          chassis_number: car.chassis_number,
+          color: car.color || null,
+          purchase_price: car.purchase_price || 0,
+          purchase_date: car.purchase_date || new Date().toISOString().split('T')[0],
+          car_condition: car.car_condition || 'new',
+          status: 'available',
+          company_id: companyId,
+        }).select().single();
+        if (error) throw error;
+        actualCarId = newCar.id;
+        toast.success(`تمت إضافة "${car.name}" من المستودع إلى المخزون`);
+      } catch (err: any) {
+        console.error('Error auto-creating car from warehouse:', err);
+        toast.error('خطأ في إضافة السيارة من المستودع');
+        return;
+      }
+    }
+    
     let pendingTransfer: CarTransfer | null = null;
-    try { pendingTransfer = await getPendingTransferForCar(carId); } catch (error) { console.error('Error checking pending transfer:', error); }
+    if (!(car as any)._isWarehouseOnly) {
+      try { pendingTransfer = await getPendingTransferForCar(actualCarId); } catch (error) { console.error('Error checking pending transfer:', error); }
+    }
     setSelectedCars([...selectedCars, {
-      id: crypto.randomUUID(), car_id: car.id, sale_price: '',
+      id: crypto.randomUUID(), car_id: actualCarId, sale_price: '',
       purchase_price: Number(car.purchase_price), car_name: car.name,
       model: car.model || '', color: car.color || '', chassis_number: car.chassis_number,
       plate_number: (car as any).plate_number || '', quantity: 1,
