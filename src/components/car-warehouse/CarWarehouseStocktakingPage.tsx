@@ -113,7 +113,7 @@ export function CarWarehouseStocktakingPage() {
     const { createSimpleExcel, downloadExcelBuffer } = await import('@/lib/excelUtils');
     const fmtCur = (v: number | null) => v ? new Intl.NumberFormat('en-SA').format(v) : '-';
     const rows: any[][] = [
-      ['#', 'نوع السيارة', 'اللون', 'رقم الهيكل', 'تاريخ الدخول', 'تاريخ الخروج', 'السعر', 'الحالة'],
+      ['#', 'نوع السيارة', 'اللون', 'رقم الهيكل', 'تاريخ الدخول', 'تاريخ الخروج', 'اسم المشتري', 'الحالة'],
       ...entries.map((e, i) => [
         i + 1, e.car_type, e.car_color || '-', e.chassis_number,
         e.entry_date, e.exit_date || '-', e.price || '-',
@@ -137,7 +137,7 @@ export function CarWarehouseStocktakingPage() {
         { header: 'رقم الهيكل', key: 'chassis_number' },
         { header: 'تاريخ الدخول', key: 'entry_date' },
         { header: 'تاريخ الخروج', key: 'exit_date' },
-        { header: 'السعر', key: 'price' },
+        { header: 'اسم المشتري', key: 'price' },
         { header: 'الحالة', key: 'status' },
       ],
       data: entries.map((e, i) => ({
@@ -482,7 +482,7 @@ export function CarWarehouseStocktakingPage() {
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                 </div>
-                <div><Label>السعر</Label><Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="0" /></div>
+                <div><Label>اسم المشتري</Label><Input value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="اسم المشتري" /></div>
                 <div><Label>ملاحظات</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
                 <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending || !form.car_type || !form.chassis_number}>
                   {addMutation.isPending ? 'جاري الإضافة...' : 'إضافة'}
@@ -521,7 +521,7 @@ export function CarWarehouseStocktakingPage() {
                   <TableHead>رقم الهيكل</TableHead>
                   <TableHead>تاريخ الدخول</TableHead>
                   <TableHead>تاريخ الخروج</TableHead>
-                  <TableHead>السعر</TableHead>
+                  <TableHead>اسم المشتري</TableHead>
                   <TableHead>الحالة</TableHead>
                   <TableHead>ملاحظات</TableHead>
                   <TableHead>إجراءات</TableHead>
