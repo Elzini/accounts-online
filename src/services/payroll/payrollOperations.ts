@@ -178,20 +178,40 @@ export async function approvePayroll(payrollId: string, userId: string, companyI
   if (!updatedPayroll) throw new Error('Payroll not found');
 
   const entryDescription = `مسير رواتب شهر ${updatedPayroll.month}/${updatedPayroll.year}`;
-  // Use ServiceContainer for account resolution and journal creation
   const { getInitializedContainer } = await import('@/core/engine/serviceContainer');
   const container = await getInitializedContainer(companyId);
   const { resolver, journal } = container;
 
-  const cashRef = resolver.resolve('cash');
   const salaryAccount = resolver.resolveFlexible(null, null, '5201');
-  const cashAccount = cashRef;
   const advancesAccount = resolver.resolveFlexible(null, null, '1204');
-  if (!salaryAccount || !cashAccount) throw new Error('Salary or cash account not found');
+  if (!salaryAccount) throw new Error('Salary account not found');
+
+  // Find first active custody for this company to deduct from
+  const { data: activeCustody } = await supabase
+    .from('custodies')
+    .select('id, custody_name, custody_amount, custody_account_id, cash_account_id')
+    .eq('company_id', companyId)
+    .eq('status', 'active')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single();
+
+  // Determine credit account: custody account if available, otherwise fallback to cash
+  let creditAccountId: string;
+  let creditDescription: string;
+  if (activeCustody?.custody_account_id) {
+    creditAccountId = activeCustody.custody_account_id;
+    creditDescription = `صرف رواتب من عهدة: ${activeCustody.custody_name || 'عهدة'}`;
+  } else {
+    const cashRef = resolver.resolve('cash');
+    if (!cashRef) throw new Error('Cash account not found');
+    creditAccountId = cashRef.id;
+    creditDescription = 'صرف الرواتب نقداً';
+  }
 
   const lines: Array<{ account_id: string; description: string; debit: number; credit: number }> = [
     { account_id: salaryAccount.id, description: 'مصروف الرواتب', debit: updatedPayroll.total_net_salaries + updatedPayroll.total_advances, credit: 0 },
-    { account_id: cashAccount.id, description: 'صرف الرواتب نقداً', debit: 0, credit: updatedPayroll.total_net_salaries },
+    { account_id: creditAccountId, description: creditDescription, debit: 0, credit: updatedPayroll.total_net_salaries },
   ];
   if (updatedPayroll.total_advances > 0 && advancesAccount) {
     lines.push({ account_id: advancesAccount.id, description: 'تسوية سلف الموظفين', debit: 0, credit: updatedPayroll.total_advances });
@@ -208,6 +228,23 @@ export async function approvePayroll(payrollId: string, userId: string, companyI
     lines,
   });
 
+  // Deduct net salaries from active custody balance and record transaction
+  if (activeCustody) {
+    const newBalance = Number(activeCustody.custody_amount) - updatedPayroll.total_net_salaries;
+    await supabase.from('custodies').update({ custody_amount: newBalance } as any).eq('id', activeCustody.id);
+    await supabase.from('custody_transactions').insert({
+      custody_id: activeCustody.id,
+      company_id: companyId,
+      transaction_date: new Date().toISOString().split('T')[0],
+      description: entryDescription,
+      amount: -updatedPayroll.total_net_salaries,
+      account_id: salaryAccount.id,
+      journal_entry_id: journalEntry.id,
+      created_by: userId,
+    });
+  }
+
+  // Process advance deductions
   if (updatedPayroll.items) {
     for (const item of updatedPayroll.items) {
       if (item.advances_deducted > 0) {
