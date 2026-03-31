@@ -109,7 +109,7 @@ export function SalesItemsTable({ hook }: SalesItemsTableProps) {
                     {remainingCars.map((car) => (
                       <CommandItem
                         key={car.id}
-                        value={`${car.name} ${car.model} ${car.chassis_number}`}
+                        value={`${car.name} ${car.model} ${car.chassis_number} ${(car as any).warehouse_location || ''}`}
                         onSelect={() => {
                           handleAddCar(car.id);
                           setCarSearchOpen(false);
@@ -118,6 +118,9 @@ export function SalesItemsTable({ hook }: SalesItemsTableProps) {
                       >
                         <Car className="w-3 h-3 ml-2 shrink-0" />
                         <span className="font-medium">{car.name} {car.model}</span>
+                        {(car as any).warehouse_location && (
+                          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">{(car as any).warehouse_location}</span>
+                        )}
                         <span className="text-muted-foreground mr-auto text-[10px]" dir="ltr">{car.chassis_number}</span>
                       </CommandItem>
                     ))}
