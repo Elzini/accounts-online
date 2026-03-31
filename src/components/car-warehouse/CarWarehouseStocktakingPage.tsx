@@ -67,6 +67,11 @@ export function CarWarehouseStocktakingPage() {
 
   const addMutation = useMutation({
     mutationFn: async () => {
+      // Check duplicate chassis number
+      const duplicate = entries.find(e => e.chassis_number === form.chassis_number && !e.exit_date);
+      if (duplicate) {
+        throw new Error('DUPLICATE_CHASSIS');
+      }
       let imageUrl: string | undefined;
       if (imageFile && companyId) {
         imageUrl = await uploadChassisImage(companyId, imageFile);
