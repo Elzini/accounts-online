@@ -320,8 +320,16 @@ export function CarWarehouseStocktakingPage() {
     }
   }
 
-  const inCount = entries.filter(e => !e.exit_date).length;
-  const outCount = entries.filter(e => !!e.exit_date).length;
+  const filteredEntries = entries.filter(e => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (e.chassis_number || '').toLowerCase().includes(term) ||
+           (e.car_type || '').toLowerCase().includes(term) ||
+           (e.car_color || '').toLowerCase().includes(term) ||
+           (e.location || '').toLowerCase().includes(term);
+  });
+  const inCount = filteredEntries.filter(e => !e.exit_date).length;
+  const outCount = filteredEntries.filter(e => !!e.exit_date).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
