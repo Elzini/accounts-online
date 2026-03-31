@@ -295,6 +295,7 @@ export function CarWarehouseStocktakingPage() {
           chassis_image_url: imageUrl,
           entry_date: entry.entry_date,
           notes: entry.notes || undefined,
+          location: entry.location || 'warehouse',
         });
         successCount++;
       } catch {
