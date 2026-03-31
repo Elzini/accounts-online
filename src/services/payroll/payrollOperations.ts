@@ -232,16 +232,15 @@ export async function approvePayroll(payrollId: string, userId: string, companyI
     lines,
   });
 
-  // Deduct net salaries from active custody balance and record transaction
+  // Record payroll as custody expense (transaction only, don't modify custody_amount)
   if (activeCustody) {
-    const newBalance = Number(activeCustody.custody_amount) - updatedPayroll.total_net_salaries;
-    await supabase.from('custodies').update({ custody_amount: newBalance } as any).eq('id', activeCustody.id);
     await supabase.from('custody_transactions').insert({
       custody_id: activeCustody.id,
       company_id: companyId,
       transaction_date: new Date().toISOString().split('T')[0],
       description: entryDescription,
-      amount: -updatedPayroll.total_net_salaries,
+      analysis_category: 'مصروف الرواتب',
+      amount: updatedPayroll.total_net_salaries,
       account_id: salaryAccount.id,
       journal_entry_id: journalEntry.id,
       created_by: userId,
