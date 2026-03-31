@@ -1,0 +1,1 @@
+UPDATE public.payroll_records SET status = 'draft', approved_by = NULL, approved_at = NULL, journal_entry_id = NULL, updated_at = now() WHERE id = '3925032c-0d02-4bc1-91d0-b0a507a755d5';
