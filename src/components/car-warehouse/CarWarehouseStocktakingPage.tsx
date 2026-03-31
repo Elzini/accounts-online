@@ -57,6 +57,7 @@ export function CarWarehouseStocktakingPage() {
   const [bulkSaving, setBulkSaving] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [bulkExtracting, setBulkExtracting] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
 
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['warehouse-car-inventory', companyId],
