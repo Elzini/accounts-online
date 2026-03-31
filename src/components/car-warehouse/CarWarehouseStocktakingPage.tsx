@@ -524,9 +524,19 @@ export function CarWarehouseStocktakingPage() {
         </TabsList>
 
         <TabsContent value="inventory" className="space-y-6 mt-4">
+          {/* Search */}
+          <div className="relative max-w-md">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="بحث برقم الهيكل أو نوع السيارة أو اللون أو المكان..."
+              className="pr-10"
+            />
+          </div>
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4">
-            <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{entries.length}</div><p className="text-sm text-muted-foreground">إجمالي السيارات</p></CardContent></Card>
+            <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{filteredEntries.length}</div><p className="text-sm text-muted-foreground">إجمالي السيارات</p></CardContent></Card>
             <Card><CardContent className="pt-4 text-center"><Warehouse className="w-8 h-8 mx-auto mb-2 text-green-600" /><div className="text-2xl font-bold">{inCount}</div><p className="text-sm text-muted-foreground">داخل المستودع</p></CardContent></Card>
             <Card><CardContent className="pt-4 text-center"><Calendar className="w-8 h-8 mx-auto mb-2 text-orange-600" /><div className="text-2xl font-bold">{outCount}</div><p className="text-sm text-muted-foreground">خرجت من المستودع</p></CardContent></Card>
           </div>
