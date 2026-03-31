@@ -544,7 +544,7 @@ export function CarWarehouseStocktakingPage() {
       {/* Table */}
       <Card><CardContent className="pt-6">
         {isLoading ? <p className="text-center py-8 text-muted-foreground">جاري التحميل...</p> :
-         entries.length === 0 ? <p className="text-center py-8 text-muted-foreground">لا توجد سيارات مسجلة بعد</p> : (
+         filteredEntries.length === 0 ? <p className="text-center py-8 text-muted-foreground">{searchTerm ? 'لا توجد نتائج للبحث' : 'لا توجد سيارات مسجلة بعد'}</p> : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
