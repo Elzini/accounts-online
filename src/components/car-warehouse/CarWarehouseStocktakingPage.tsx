@@ -172,6 +172,13 @@ export function CarWarehouseStocktakingPage() {
         { label: 'إجمالي القيمة', value: fmtCur(entries.reduce((s, e) => s + (e.price || 0), 0)) },
         ...Object.entries(
           entries.reduce<Record<string, number>>((acc, e) => {
+            const loc = (!e.location || e.location === 'warehouse') ? 'المستودع' : e.location.trim();
+            acc[loc] = (acc[loc] || 0) + 1;
+            return acc;
+          }, {})
+        ).map(([loc, count]) => ({ label: loc, value: `${count} سيارة` })),
+        ...Object.entries(
+          entries.reduce<Record<string, number>>((acc, e) => {
             const type = e.car_type?.trim() || 'غير محدد';
             acc[type] = (acc[type] || 0) + 1;
             return acc;
