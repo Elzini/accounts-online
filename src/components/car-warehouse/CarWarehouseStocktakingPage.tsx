@@ -521,7 +521,7 @@ export function CarWarehouseStocktakingPage() {
                   <TableHead>رقم الهيكل</TableHead>
                   <TableHead>تاريخ الدخول</TableHead>
                   <TableHead>تاريخ الخروج</TableHead>
-                  <TableHead>السعر</TableHead>
+                  <TableHead>اسم المشتري</TableHead>
                   <TableHead>الحالة</TableHead>
                   <TableHead>ملاحظات</TableHead>
                   <TableHead>إجراءات</TableHead>
