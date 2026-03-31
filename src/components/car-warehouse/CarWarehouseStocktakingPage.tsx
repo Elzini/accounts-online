@@ -43,9 +43,10 @@ export function CarWarehouseStocktakingPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const { data: partnerDealerships = [] } = usePartnerDealerships();
   const [form, setForm] = useState({
     car_type: '', car_color: '', chassis_number: '', entry_date: new Date().toISOString().split('T')[0],
-    exit_date: '', price: '', notes: '',
+    exit_date: '', price: '', notes: '', location: 'warehouse',
   });
   const { printReport } = usePrintReport();
   const [imageFile, setImageFile] = useState<File | null>(null);
