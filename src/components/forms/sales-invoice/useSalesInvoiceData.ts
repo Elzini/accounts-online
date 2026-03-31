@@ -102,18 +102,45 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   // === Derived data ===
   const availableCars = useMemo(() => {
     const filtered = allCars.filter(car => car.status === 'available' || car.status === 'transferred');
-    // Enrich cars with warehouse location
+    // Build warehouse location map from active entries
     const warehouseMap = new Map<string, string>();
-    warehouseEntries
-      .filter(e => !e.exit_date)
-      .forEach(e => {
-        const loc = e.location?.trim() || 'المستودع';
-        warehouseMap.set(e.chassis_number.trim().toUpperCase(), loc);
-      });
-    return filtered.map(car => ({
+    const activeWarehouseEntries = warehouseEntries.filter(e => !e.exit_date);
+    activeWarehouseEntries.forEach(e => {
+      const loc = e.location?.trim() || 'المستودع';
+      warehouseMap.set(e.chassis_number.trim().toUpperCase(), loc);
+    });
+    // Enrich existing cars with warehouse location
+    const mainCarChassisSet = new Set(allCars.map(c => c.chassis_number?.trim().toUpperCase()));
+    const enrichedCars = filtered.map(car => ({
       ...car,
       warehouse_location: warehouseMap.get(car.chassis_number?.trim().toUpperCase()) || null,
     }));
+    // Add warehouse-only cars (not in main cars table) as synthetic entries
+    const warehouseOnlyCars = activeWarehouseEntries
+      .filter(e => !mainCarChassisSet.has(e.chassis_number.trim().toUpperCase()))
+      .map(e => ({
+        id: `wh-${e.id}`,
+        name: e.car_type || 'سيارة',
+        model: e.car_color || '',
+        chassis_number: e.chassis_number,
+        plate_number: null,
+        status: 'available' as const,
+        purchase_price: e.price || 0,
+        purchase_date: e.entry_date,
+        car_condition: 'new' as const,
+        inventory_number: 0,
+        company_id: e.company_id,
+        created_at: e.created_at,
+        updated_at: e.updated_at,
+        color: e.car_color,
+        supplier_id: null,
+        batch_id: null,
+        fiscal_year_id: null,
+        payment_account_id: null,
+        warehouse_location: e.location?.trim() || 'المستودع',
+        _isWarehouseOnly: true,
+      }));
+    return [...enrichedCars, ...warehouseOnlyCars] as any[];
   }, [allCars, warehouseEntries]);
 
   useEffect(() => {
@@ -189,10 +216,39 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   const handleAddCar = async (carId: string) => {
     const car = availableCars.find(c => c.id === carId);
     if (!car) return;
+    
+    // If this is a warehouse-only car, auto-create it in the cars table first
+    let actualCarId = car.id;
+    if ((car as any)._isWarehouseOnly) {
+      try {
+        if (!companyId) { toast.error('لم يتم العثور على الشركة'); return; }
+        const { data: newCar, error } = await supabase.from('cars').insert({
+          name: car.name,
+          model: car.model || null,
+          chassis_number: car.chassis_number,
+          color: car.color || null,
+          purchase_price: car.purchase_price || 0,
+          purchase_date: car.purchase_date || new Date().toISOString().split('T')[0],
+          car_condition: car.car_condition || 'new',
+          status: 'available',
+          company_id: companyId,
+        }).select().single();
+        if (error) throw error;
+        actualCarId = newCar.id;
+        toast.success(`تمت إضافة "${car.name}" من المستودع إلى المخزون`);
+      } catch (err: any) {
+        console.error('Error auto-creating car from warehouse:', err);
+        toast.error('خطأ في إضافة السيارة من المستودع');
+        return;
+      }
+    }
+    
     let pendingTransfer: CarTransfer | null = null;
-    try { pendingTransfer = await getPendingTransferForCar(carId); } catch (error) { console.error('Error checking pending transfer:', error); }
+    if (!(car as any)._isWarehouseOnly) {
+      try { pendingTransfer = await getPendingTransferForCar(actualCarId); } catch (error) { console.error('Error checking pending transfer:', error); }
+    }
     setSelectedCars([...selectedCars, {
-      id: crypto.randomUUID(), car_id: car.id, sale_price: '',
+      id: crypto.randomUUID(), car_id: actualCarId, sale_price: '',
       purchase_price: Number(car.purchase_price), car_name: car.name,
       model: car.model || '', color: car.color || '', chassis_number: car.chassis_number,
       plate_number: (car as any).plate_number || '', quantity: 1,
