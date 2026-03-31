@@ -102,18 +102,45 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   // === Derived data ===
   const availableCars = useMemo(() => {
     const filtered = allCars.filter(car => car.status === 'available' || car.status === 'transferred');
-    // Enrich cars with warehouse location
+    // Build warehouse location map from active entries
     const warehouseMap = new Map<string, string>();
-    warehouseEntries
-      .filter(e => !e.exit_date)
-      .forEach(e => {
-        const loc = e.location?.trim() || 'المستودع';
-        warehouseMap.set(e.chassis_number.trim().toUpperCase(), loc);
-      });
-    return filtered.map(car => ({
+    const activeWarehouseEntries = warehouseEntries.filter(e => !e.exit_date);
+    activeWarehouseEntries.forEach(e => {
+      const loc = e.location?.trim() || 'المستودع';
+      warehouseMap.set(e.chassis_number.trim().toUpperCase(), loc);
+    });
+    // Enrich existing cars with warehouse location
+    const mainCarChassisSet = new Set(allCars.map(c => c.chassis_number?.trim().toUpperCase()));
+    const enrichedCars = filtered.map(car => ({
       ...car,
       warehouse_location: warehouseMap.get(car.chassis_number?.trim().toUpperCase()) || null,
     }));
+    // Add warehouse-only cars (not in main cars table) as synthetic entries
+    const warehouseOnlyCars = activeWarehouseEntries
+      .filter(e => !mainCarChassisSet.has(e.chassis_number.trim().toUpperCase()))
+      .map(e => ({
+        id: `wh-${e.id}`,
+        name: e.car_type || 'سيارة',
+        model: e.car_color || '',
+        chassis_number: e.chassis_number,
+        plate_number: null,
+        status: 'available' as const,
+        purchase_price: e.price || 0,
+        purchase_date: e.entry_date,
+        car_condition: 'new' as const,
+        inventory_number: 0,
+        company_id: e.company_id,
+        created_at: e.created_at,
+        updated_at: e.updated_at,
+        color: e.car_color,
+        supplier_id: null,
+        batch_id: null,
+        fiscal_year_id: null,
+        payment_account_id: null,
+        warehouse_location: e.location?.trim() || 'المستودع',
+        _isWarehouseOnly: true,
+      }));
+    return [...enrichedCars, ...warehouseOnlyCars] as any[];
   }, [allCars, warehouseEntries]);
 
   useEffect(() => {
