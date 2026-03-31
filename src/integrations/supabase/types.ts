@@ -10050,6 +10050,7 @@ export type Database = {
           entry_date: string
           exit_date: string | null
           id: string
+          location: string | null
           notes: string | null
           price: number | null
           updated_at: string
@@ -10064,6 +10065,7 @@ export type Database = {
           entry_date?: string
           exit_date?: string | null
           id?: string
+          location?: string | null
           notes?: string | null
           price?: number | null
           updated_at?: string
@@ -10078,6 +10080,7 @@ export type Database = {
           entry_date?: string
           exit_date?: string | null
           id?: string
+          location?: string | null
           notes?: string | null
           price?: number | null
           updated_at?: string
