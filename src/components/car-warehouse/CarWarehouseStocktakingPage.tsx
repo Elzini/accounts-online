@@ -33,6 +33,8 @@ interface BulkEntry {
   car_color: string;
   chassis_number: string;
   entry_date: string;
+  location: string;
+  notes: string;
   notes: string;
 }
 
