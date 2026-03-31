@@ -230,6 +230,7 @@ export function CarWarehouseStocktakingPage() {
       car_color: '',
       chassis_number: '',
       entry_date: today,
+      location: 'warehouse',
       notes: '',
     }));
 
