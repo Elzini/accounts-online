@@ -93,7 +93,7 @@ export function CarWarehouseStocktakingPage() {
       toast.success('تمت إضافة السيارة للمستودع');
       resetForm();
     },
-    onError: () => toast.error('حدث خطأ أثناء الإضافة'),
+    onError: (err: any) => toast.error(err?.message === 'DUPLICATE_CHASSIS' ? 'رقم الهيكل موجود بالفعل في المستودع' : 'حدث خطأ أثناء الإضافة'),
   });
 
   const deleteMutation = useMutation({
