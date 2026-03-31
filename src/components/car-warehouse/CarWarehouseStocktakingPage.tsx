@@ -137,7 +137,7 @@ export function CarWarehouseStocktakingPage() {
         { header: 'رقم الهيكل', key: 'chassis_number' },
         { header: 'تاريخ الدخول', key: 'entry_date' },
         { header: 'تاريخ الخروج', key: 'exit_date' },
-        { header: 'السعر', key: 'price' },
+        { header: 'اسم المشتري', key: 'price' },
         { header: 'الحالة', key: 'status' },
       ],
       data: entries.map((e, i) => ({
