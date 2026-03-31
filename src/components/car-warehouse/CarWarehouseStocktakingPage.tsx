@@ -563,7 +563,7 @@ export function CarWarehouseStocktakingPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {entries.map(entry => (
+                {filteredEntries.map(entry => (
                   <TableRow key={entry.id}>
                     <TableCell>
                       {entry.chassis_image_url ? (
