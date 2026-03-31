@@ -489,6 +489,18 @@ export function CarWarehouseStocktakingPage() {
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                 </div>
+                <div>
+                  <Label className="flex items-center gap-2"><MapPin className="w-4 h-4" />المكان</Label>
+                  <Select value={form.location} onValueChange={v => setForm(p => ({ ...p, location: v }))}>
+                    <SelectTrigger><SelectValue placeholder="اختر المكان" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="warehouse">المستودع</SelectItem>
+                      {partnerDealerships.map((pd: any) => (
+                        <SelectItem key={pd.id} value={pd.dealership_name}>{pd.dealership_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div><Label>اسم المشتري</Label><Input value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="اسم المشتري" /></div>
                 <div><Label>ملاحظات</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
                 <Button className="w-full" onClick={() => addMutation.mutate()} disabled={addMutation.isPending || !form.car_type || !form.chassis_number}>
