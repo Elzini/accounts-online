@@ -106,7 +106,7 @@ export function CarWarehouseStocktakingPage() {
   });
 
   const exitMutation = useMutation({
-    mutationFn: (id: string) => updateWarehouseCarEntry(id, { exit_date: new Date().toISOString().split('T')[0] }),
+    mutationFn: ({ id, date }: { id: string; date: string }) => updateWarehouseCarEntry(id, { exit_date: date }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['warehouse-car-inventory'] });
       toast.success('تم تسجيل خروج السيارة');
