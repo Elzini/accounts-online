@@ -196,17 +196,21 @@ export async function approvePayroll(payrollId: string, userId: string, companyI
     .limit(1)
     .single();
 
-  // Determine credit account: custody account if available, otherwise fallback to cash
+  // Determine credit account: custody account > cash account from custody > fallback cash
+  const cashRef = resolver.resolve('cash');
   let creditAccountId: string;
   let creditDescription: string;
   if (activeCustody?.custody_account_id) {
     creditAccountId = activeCustody.custody_account_id;
     creditDescription = `صرف رواتب من عهدة: ${activeCustody.custody_name || 'عهدة'}`;
-  } else {
-    const cashRef = resolver.resolve('cash');
-    if (!cashRef) throw new Error('Cash account not found');
+  } else if (activeCustody?.cash_account_id) {
+    creditAccountId = activeCustody.cash_account_id;
+    creditDescription = `صرف رواتب من عهدة: ${activeCustody.custody_name || 'عهدة'}`;
+  } else if (cashRef) {
     creditAccountId = cashRef.id;
-    creditDescription = 'صرف الرواتب نقداً';
+    creditDescription = activeCustody ? `صرف رواتب من عهدة: ${activeCustody.custody_name || 'عهدة'}` : 'صرف الرواتب نقداً';
+  } else {
+    throw new Error('Cash account not found');
   }
 
   const lines: Array<{ account_id: string; description: string; debit: number; credit: number }> = [
