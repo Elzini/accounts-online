@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer, GitCompare, FileSpreadsheet, MapPin } from 'lucide-react';
+import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer, GitCompare, FileSpreadsheet, MapPin, Search } from 'lucide-react';
 import { WarehouseReconciliation } from './WarehouseReconciliation';
 import { usePartnerDealerships } from '@/hooks/useTransfers';
 import { usePrintReport } from '@/hooks/usePrintReport';
@@ -57,6 +57,7 @@ export function CarWarehouseStocktakingPage() {
   const [bulkSaving, setBulkSaving] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [bulkExtracting, setBulkExtracting] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
 
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['warehouse-car-inventory', companyId],
@@ -319,8 +320,16 @@ export function CarWarehouseStocktakingPage() {
     }
   }
 
-  const inCount = entries.filter(e => !e.exit_date).length;
-  const outCount = entries.filter(e => !!e.exit_date).length;
+  const filteredEntries = entries.filter(e => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (e.chassis_number || '').toLowerCase().includes(term) ||
+           (e.car_type || '').toLowerCase().includes(term) ||
+           (e.car_color || '').toLowerCase().includes(term) ||
+           (e.location || '').toLowerCase().includes(term);
+  });
+  const inCount = filteredEntries.filter(e => !e.exit_date).length;
+  const outCount = filteredEntries.filter(e => !!e.exit_date).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -515,9 +524,19 @@ export function CarWarehouseStocktakingPage() {
         </TabsList>
 
         <TabsContent value="inventory" className="space-y-6 mt-4">
+          {/* Search */}
+          <div className="relative max-w-md">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="بحث برقم الهيكل أو نوع السيارة أو اللون أو المكان..."
+              className="pr-10"
+            />
+          </div>
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4">
-            <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{entries.length}</div><p className="text-sm text-muted-foreground">إجمالي السيارات</p></CardContent></Card>
+            <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{filteredEntries.length}</div><p className="text-sm text-muted-foreground">إجمالي السيارات</p></CardContent></Card>
             <Card><CardContent className="pt-4 text-center"><Warehouse className="w-8 h-8 mx-auto mb-2 text-green-600" /><div className="text-2xl font-bold">{inCount}</div><p className="text-sm text-muted-foreground">داخل المستودع</p></CardContent></Card>
             <Card><CardContent className="pt-4 text-center"><Calendar className="w-8 h-8 mx-auto mb-2 text-orange-600" /><div className="text-2xl font-bold">{outCount}</div><p className="text-sm text-muted-foreground">خرجت من المستودع</p></CardContent></Card>
           </div>
@@ -525,7 +544,7 @@ export function CarWarehouseStocktakingPage() {
       {/* Table */}
       <Card><CardContent className="pt-6">
         {isLoading ? <p className="text-center py-8 text-muted-foreground">جاري التحميل...</p> :
-         entries.length === 0 ? <p className="text-center py-8 text-muted-foreground">لا توجد سيارات مسجلة بعد</p> : (
+         filteredEntries.length === 0 ? <p className="text-center py-8 text-muted-foreground">{searchTerm ? 'لا توجد نتائج للبحث' : 'لا توجد سيارات مسجلة بعد'}</p> : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -544,7 +563,7 @@ export function CarWarehouseStocktakingPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {entries.map(entry => (
+                {filteredEntries.map(entry => (
                   <TableRow key={entry.id}>
                     <TableCell>
                       {entry.chassis_image_url ? (
