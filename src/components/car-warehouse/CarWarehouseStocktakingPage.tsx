@@ -79,6 +79,7 @@ export function CarWarehouseStocktakingPage() {
         exit_date: form.exit_date || undefined,
         price: form.price ? parseFloat(form.price) : undefined,
         notes: form.notes || undefined,
+        location: form.location || 'warehouse',
       });
     },
     onSuccess: () => {
