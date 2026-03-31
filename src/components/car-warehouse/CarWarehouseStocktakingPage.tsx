@@ -35,7 +35,6 @@ interface BulkEntry {
   entry_date: string;
   location: string;
   notes: string;
-  notes: string;
 }
 
 export function CarWarehouseStocktakingPage() {
