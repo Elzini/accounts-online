@@ -107,7 +107,7 @@ export function CarWarehouseStocktakingPage() {
   });
 
   function resetForm() {
-    setForm({ car_type: '', car_color: '', chassis_number: '', entry_date: new Date().toISOString().split('T')[0], exit_date: '', price: '', notes: '' });
+    setForm({ car_type: '', car_color: '', chassis_number: '', entry_date: new Date().toISOString().split('T')[0], exit_date: '', price: '', notes: '', location: 'warehouse' });
     setImageFile(null);
     setImagePreview(null);
     setShowAdd(false);
