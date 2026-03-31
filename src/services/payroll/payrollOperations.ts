@@ -232,19 +232,26 @@ export async function approvePayroll(payrollId: string, userId: string, companyI
     lines,
   });
 
-  // Record payroll as custody expense (transaction only, don't modify custody_amount)
+  // Record payroll as custody expense (only if not already recorded for this payroll)
   if (activeCustody) {
-    await supabase.from('custody_transactions').insert({
-      custody_id: activeCustody.id,
-      company_id: companyId,
-      transaction_date: new Date().toISOString().split('T')[0],
-      description: entryDescription,
-      analysis_category: 'مصروف الرواتب',
-      amount: updatedPayroll.total_net_salaries,
-      account_id: salaryAccount.id,
-      journal_entry_id: journalEntry.id,
-      created_by: userId,
-    });
+    const { data: existing } = await supabase.from('custody_transactions')
+      .select('id')
+      .eq('custody_id', activeCustody.id)
+      .eq('journal_entry_id', journalEntry.id)
+      .limit(1);
+    if (!existing || existing.length === 0) {
+      await supabase.from('custody_transactions').insert({
+        custody_id: activeCustody.id,
+        company_id: companyId,
+        transaction_date: new Date().toISOString().split('T')[0],
+        description: entryDescription,
+        analysis_category: 'مصروف الرواتب',
+        amount: updatedPayroll.total_net_salaries,
+        account_id: salaryAccount.id,
+        journal_entry_id: journalEntry.id,
+        created_by: userId,
+      });
+    }
   }
 
   // Process advance deductions
