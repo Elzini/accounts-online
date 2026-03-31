@@ -67,6 +67,11 @@ export function CarWarehouseStocktakingPage() {
 
   const addMutation = useMutation({
     mutationFn: async () => {
+      // Check duplicate chassis number
+      const duplicate = entries.find(e => e.chassis_number === form.chassis_number && !e.exit_date);
+      if (duplicate) {
+        throw new Error('DUPLICATE_CHASSIS');
+      }
       let imageUrl: string | undefined;
       if (imageFile && companyId) {
         imageUrl = await uploadChassisImage(companyId, imageFile);
@@ -88,7 +93,7 @@ export function CarWarehouseStocktakingPage() {
       toast.success('تمت إضافة السيارة للمستودع');
       resetForm();
     },
-    onError: () => toast.error('حدث خطأ أثناء الإضافة'),
+    onError: (err: any) => toast.error(err?.message === 'DUPLICATE_CHASSIS' ? 'رقم الهيكل موجود بالفعل في المستودع' : 'حدث خطأ أثناء الإضافة'),
   });
 
   const deleteMutation = useMutation({
@@ -283,6 +288,14 @@ export function CarWarehouseStocktakingPage() {
       // Scroll to first incomplete entry
       const el = document.getElementById(`bulk-entry-${incomplete[0].id}`);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    // Check for duplicate chassis numbers
+    const existingChassis = new Set(entries.filter(e => !e.exit_date).map(e => e.chassis_number));
+    const duplicates = bulkEntries.filter(e => existingChassis.has(e.chassis_number));
+    if (duplicates.length > 0) {
+      toast.error(`${duplicates.length} سيارة برقم هيكل موجود بالفعل في المستودع`);
       return;
     }
 
