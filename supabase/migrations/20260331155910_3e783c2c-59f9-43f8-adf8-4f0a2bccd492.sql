@@ -1,0 +1,1 @@
+UPDATE public.payroll_records SET status = 'draft', approved_by = NULL, approved_at = NULL, journal_entry_id = NULL, updated_at = now() WHERE company_id = (SELECT id FROM companies WHERE name ILIKE '%اشبال النمار%' LIMIT 1) AND month = 3 AND year = 2026;
