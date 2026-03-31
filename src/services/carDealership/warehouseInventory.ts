@@ -14,6 +14,7 @@ export interface WarehouseCarEntry {
   exit_date: string | null;
   price: number | null;
   notes: string | null;
+  location: string | null;
   created_at: string;
   updated_at: string;
 }
