@@ -7,7 +7,9 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/hooks/modules/useMiscServices';
+import { useQuery } from '@tanstack/react-query';
 import { useCustomers, useCars, useAddMultiCarSale, useSales, useDeleteSale, useReverseSale, useUpdateSale, useSalesWithItems, useUpdateSaleWithItems, useApproveSale } from '@/hooks/useDatabase';
+import { fetchWarehouseCarInventory } from '@/services/carDealership/warehouseInventory';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
