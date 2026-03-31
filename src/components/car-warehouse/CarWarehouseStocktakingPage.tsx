@@ -569,6 +569,12 @@ export function CarWarehouseStocktakingPage() {
                     <TableCell className="font-mono text-xs">{entry.chassis_number}</TableCell>
                     <TableCell>{entry.entry_date}</TableCell>
                     <TableCell>{entry.exit_date || '-'}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {entry.location === 'warehouse' || !entry.location ? 'المستودع' : entry.location}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{entry.price ? new Intl.NumberFormat('en-SA').format(entry.price) : '-'}</TableCell>
                     <TableCell>
                       <Badge variant={entry.exit_date ? 'secondary' : 'default'}>
