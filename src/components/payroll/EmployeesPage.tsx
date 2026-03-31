@@ -79,7 +79,7 @@ export function EmployeesPage() {
   };
 
   const filtered = employees.filter(emp =>
-    emp.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (emp.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (emp.job_title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (emp.department || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
