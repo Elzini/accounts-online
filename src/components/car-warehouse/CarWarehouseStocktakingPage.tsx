@@ -118,10 +118,12 @@ export function CarWarehouseStocktakingPage() {
     const { createSimpleExcel, downloadExcelBuffer } = await import('@/lib/excelUtils');
     const fmtCur = (v: number | null) => v ? new Intl.NumberFormat('en-SA').format(v) : '-';
     const rows: any[][] = [
-      ['#', 'نوع السيارة', 'اللون', 'رقم الهيكل', 'تاريخ الدخول', 'تاريخ الخروج', 'اسم المشتري', 'الحالة'],
+      ['#', 'نوع السيارة', 'اللون', 'رقم الهيكل', 'تاريخ الدخول', 'تاريخ الخروج', 'المكان', 'اسم المشتري', 'الحالة'],
       ...entries.map((e, i) => [
         i + 1, e.car_type, e.car_color || '-', e.chassis_number,
-        e.entry_date, e.exit_date || '-', e.price || '-',
+        e.entry_date, e.exit_date || '-',
+        e.location === 'warehouse' || !e.location ? 'المستودع' : e.location,
+        e.price || '-',
         e.exit_date ? 'خرجت' : 'في المستودع',
       ]),
     ];
