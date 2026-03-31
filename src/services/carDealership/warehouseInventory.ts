@@ -38,6 +38,7 @@ export async function addWarehouseCarEntry(companyId: string, entry: {
   exit_date?: string;
   price?: number;
   notes?: string;
+  location?: string;
 }) {
   const { error } = await (supabase as any)
     .from('warehouse_car_inventory')
