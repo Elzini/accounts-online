@@ -624,9 +624,27 @@ export function CarWarehouseStocktakingPage() {
                     <TableCell>
                       <div className="flex gap-1">
                         {!entry.exit_date && (
-                          <Button size="sm" variant="outline" onClick={() => exitMutation.mutate(entry.id)} title="تسجيل خروج">
-                            <Calendar className="w-3 h-3" />
-                          </Button>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button size="sm" variant="outline" title="تسجيل خروج">
+                                <LogOut className="w-3 h-3" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <div className="p-2 text-center text-sm font-medium text-muted-foreground">اختر تاريخ الخروج</div>
+                              <CalendarComponent
+                                mode="single"
+                                selected={new Date()}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    exitMutation.mutate({ id: entry.id, date: format(date, 'yyyy-MM-dd') });
+                                  }
+                                }}
+                                initialFocus
+                                className={cn("p-3 pointer-events-auto")}
+                              />
+                            </PopoverContent>
+                          </Popover>
                         )}
                         <Button size="sm" variant="ghost" className="text-destructive" onClick={() => {
                           if (confirm('هل أنت متأكد من الحذف؟')) deleteMutation.mutate(entry.id);
