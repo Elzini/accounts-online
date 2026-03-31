@@ -165,4 +165,23 @@ export async function deleteCar(id: string) {
 export async function updateCarStatus(carId: string, status: 'available' | 'sold') {
   const { error } = await supabase.from('cars').update({ status }).eq('id', carId);
   if (error) throw error;
+
+  // Auto-exit from warehouse when sold (match by chassis number)
+  if (status === 'sold') {
+    try {
+      const { data: car } = await supabase.from('cars').select('chassis_number, company_id').eq('id', carId).single();
+      if (car?.chassis_number && car?.company_id) {
+        const today = new Date().toISOString().split('T')[0];
+        await (supabase as any)
+          .from('warehouse_car_inventory')
+          .update({ exit_date: today })
+          .eq('company_id', car.company_id)
+          .eq('chassis_number', car.chassis_number)
+          .is('exit_date', null);
+      }
+    } catch {
+      // Non-critical: don't block sale if warehouse update fails
+      console.warn('Failed to auto-exit warehouse entry for car', carId);
+    }
+  }
 }
