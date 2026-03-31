@@ -291,6 +291,14 @@ export function CarWarehouseStocktakingPage() {
       return;
     }
 
+    // Check for duplicate chassis numbers
+    const existingChassis = new Set(entries.filter(e => !e.exit_date).map(e => e.chassis_number));
+    const duplicates = bulkEntries.filter(e => existingChassis.has(e.chassis_number));
+    if (duplicates.length > 0) {
+      toast.error(`${duplicates.length} سيارة برقم هيكل موجود بالفعل في المستودع`);
+      return;
+    }
+
     setBulkSaving(true);
     let successCount = 0;
     let errorCount = 0;
