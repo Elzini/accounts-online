@@ -31,7 +31,7 @@ import { createSalesInvoiceActions } from './useSalesInvoiceActions';
 const defaultInvoiceData: InvoiceFormData = {
   invoice_number: '', customer_id: '', sale_date: new Date().toISOString().split('T')[0],
   issue_time: new Date().toTimeString().slice(0, 5), payment_account_id: '', warehouse: 'main',
-  seller_name: '', notes: '', price_includes_tax: true, commission: '', other_expenses: '',
+  seller_name: '', notes: '', price_includes_tax: false, commission: '', other_expenses: '',
   is_installment: false, down_payment: '', number_of_installments: '12', last_payment_date: '',
   first_installment_date: new Date().toISOString().split('T')[0],
 };
