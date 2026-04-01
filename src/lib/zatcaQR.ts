@@ -169,18 +169,18 @@ export function generateZatcaQRData(data: ZatcaQRData): string {
     encodeTLV(5, formatAmount(data.vatAmount)),
   ];
   
-  // Phase 2 Tags (6-9, optional)
+  // Phase 2 Tags (6-9, optional) - encode as raw binary bytes per ZATCA spec
   if (data.invoiceHash) {
-    fields.push(encodeTLV(6, data.invoiceHash));
+    fields.push(encodeTLVBinary(6, base64ToUint8Array(data.invoiceHash)));
   }
   if (data.ecdsaSignature) {
-    fields.push(encodeTLV(7, data.ecdsaSignature));
+    fields.push(encodeTLVBinary(7, base64ToUint8Array(data.ecdsaSignature)));
   }
   if (data.ecdsaPublicKey) {
-    fields.push(encodeTLV(8, data.ecdsaPublicKey));
+    fields.push(encodeTLVBinary(8, base64ToUint8Array(data.ecdsaPublicKey)));
   }
   if (data.certificateSignature) {
-    fields.push(encodeTLV(9, data.certificateSignature));
+    fields.push(encodeTLVBinary(9, base64ToUint8Array(data.certificateSignature)));
   }
   
   const combined = combineTLV(fields);
