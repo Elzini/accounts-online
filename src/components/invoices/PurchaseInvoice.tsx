@@ -97,16 +97,15 @@ export const PurchaseInvoice = forwardRef<HTMLDivElement, PurchaseInvoiceProps>(
         <div className="bg-blue-600 text-white p-6 rounded-t-lg">
           <div className="flex justify-between items-center">
             {/* Left - Company Logo */}
-            <div className="flex items-center">
-              <img 
-                src={displayLogo} 
-                alt="شعار الشركة" 
-                className="h-20 w-auto object-contain bg-white rounded-lg p-2 shadow-md"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = logoImage;
-                }}
-              />
-            </div>
+            {displayLogo && (
+              <div className="flex items-center">
+                <img 
+                  src={displayLogo} 
+                  alt="شعار الشركة" 
+                  className="h-20 w-auto object-contain bg-white rounded-lg p-2 shadow-md"
+                />
+              </div>
+            )}
 
             {/* Center - QR Code */}
             <div className="flex flex-col items-center">

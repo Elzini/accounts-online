@@ -41,9 +41,11 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       {/* Header */}
       <div className="p-4 border-b-2 border-gray-800">
         <div className="flex justify-between items-start">
-          <div className="flex items-center gap-3">
-            <img src={displayLogo} alt="شعار" className="h-16 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).src = logoImage; }} />
-          </div>
+          {displayLogo && (
+            <div className="flex items-center gap-3">
+              <img src={displayLogo} alt="شعار" className="h-16 w-auto object-contain" />
+            </div>
+          )}
           <div className="text-center flex-1">
             <h1 className="text-xl font-bold">{taxSettings?.company_name_ar || sellerName}</h1>
             <p className="text-xs text-gray-600">{sellerAddress}</p>

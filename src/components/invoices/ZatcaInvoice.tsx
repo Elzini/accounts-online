@@ -152,7 +152,7 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
             'justify-between'
           }`}>
             {/* Company Logo */}
-            {settings.show_logo && (
+            {settings.show_logo && displayLogo && (
               <div className={`flex items-center ${
                 settings.logo_position === 'center' ? 'order-1' : ''
               }`}>
@@ -160,9 +160,6 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                   src={displayLogo} 
                   alt="شعار الشركة" 
                   className="h-20 w-auto object-contain bg-white rounded-lg p-2 shadow-md"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = logoImage;
-                  }}
                 />
               </div>
             )}
