@@ -29,6 +29,7 @@ export function SalesItemsTable({ hook }: SalesItemsTableProps) {
   } = hook;
 
   const [carSearchOpen, setCarSearchOpen] = useState(false);
+  const [barcodeInput, setBarcodeInput] = useState('');
 
   if (isCarDealership) {
     return (
