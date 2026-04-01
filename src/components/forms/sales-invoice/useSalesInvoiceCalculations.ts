@@ -71,10 +71,11 @@ export function useDisplayTotals(
   storedHeaderTotals: StoredHeaderTotals | null,
   isViewingExisting: boolean,
   isEditing: boolean,
+  isApproved: boolean = false,
 ) {
   return useMemo(() => {
     // Only use frozen/stored totals for approved invoices that are NOT being edited
-    if (isViewingExisting && !isEditing && storedHeaderTotals && storedHeaderTotals.total > 0 && isApproved) {
+    if (isViewingExisting && !isEditing && isApproved && storedHeaderTotals && storedHeaderTotals.total > 0) {
       return {
         subtotal: storedHeaderTotals.subtotal, totalVAT: storedHeaderTotals.vat_amount,
         finalTotal: storedHeaderTotals.total, discountAmount: storedHeaderTotals.discount_amount,
@@ -84,5 +85,5 @@ export function useDisplayTotals(
       };
     }
     return calculations;
-  }, [calculations, storedHeaderTotals, isViewingExisting, isEditing]);
+  }, [calculations, storedHeaderTotals, isViewingExisting, isEditing, isApproved]);
 }
