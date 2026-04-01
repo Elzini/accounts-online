@@ -268,36 +268,31 @@ export function decodeZatcaQRData(base64Data: string): ZatcaQRData | null {
     while (offset < bytes.length) {
       const tag = bytes[offset];
       const length = bytes[offset + 1];
-      const value = decoder.decode(bytes.slice(offset + 2, offset + 2 + length));
+      const rawValue = bytes.slice(offset + 2, offset + 2 + length);
       
-      switch (tag) {
-        case 1:
-          result.sellerName = value;
-          break;
-        case 2:
-          result.vatNumber = value;
-          break;
-        case 3:
-          result.invoiceDateTime = value;
-          break;
-        case 4:
-          result.invoiceTotal = parseFloat(value);
-          break;
-        case 5:
-          result.vatAmount = parseFloat(value);
-          break;
-        case 6:
-          result.invoiceHash = value;
-          break;
-        case 7:
-          result.ecdsaSignature = value;
-          break;
-        case 8:
-          result.ecdsaPublicKey = value;
-          break;
-        case 9:
-          result.certificateSignature = value;
-          break;
+      // Tags 1-5 are UTF-8 text, Tags 6-9 are raw binary (convert to Base64)
+      if (tag >= 1 && tag <= 5) {
+        const value = decoder.decode(rawValue);
+        switch (tag) {
+          case 1: result.sellerName = value; break;
+          case 2: result.vatNumber = value; break;
+          case 3: result.invoiceDateTime = value; break;
+          case 4: result.invoiceTotal = parseFloat(value); break;
+          case 5: result.vatAmount = parseFloat(value); break;
+        }
+      } else {
+        // Binary tags - convert to Base64 for storage
+        let binStr = '';
+        for (let i = 0; i < rawValue.length; i++) {
+          binStr += String.fromCharCode(rawValue[i]);
+        }
+        const b64Value = btoa(binStr);
+        switch (tag) {
+          case 6: result.invoiceHash = b64Value; break;
+          case 7: result.ecdsaSignature = b64Value; break;
+          case 8: result.ecdsaPublicKey = b64Value; break;
+          case 9: result.certificateSignature = b64Value; break;
+        }
       }
       
       offset += 2 + length;
