@@ -102,8 +102,8 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
       buyer_title: invoiceSettings?.buyer_title || 'معلومات المشتري',
     };
 
-    // Use company logo if available, otherwise fallback to default
-    const displayLogo = companyLogoUrl || logoImage;
+    // Only show logo if company has one uploaded - no fallback
+    const displayLogo = companyLogoUrl || null;
 
     const formattedDate = format(new Date(invoiceDate), 'yyyy/MM/dd', { locale: ar });
     const formattedTime = format(new Date(invoiceDate), 'HH:mm:ss');
