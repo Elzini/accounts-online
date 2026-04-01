@@ -73,7 +73,8 @@ export function useDisplayTotals(
   isEditing: boolean,
 ) {
   return useMemo(() => {
-    if (isViewingExisting && !isEditing && storedHeaderTotals && storedHeaderTotals.total > 0) {
+    // Only use frozen/stored totals for approved invoices that are NOT being edited
+    if (isViewingExisting && !isEditing && storedHeaderTotals && storedHeaderTotals.total > 0 && isApproved) {
       return {
         subtotal: storedHeaderTotals.subtotal, totalVAT: storedHeaderTotals.vat_amount,
         finalTotal: storedHeaderTotals.total, discountAmount: storedHeaderTotals.discount_amount,
