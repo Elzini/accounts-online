@@ -15,7 +15,7 @@ export const InvoiceTemplate3 = forwardRef<HTMLDivElement, Props>(({ data }, ref
     taxSettings, companyLogoUrl, invoiceType, salesmanName, branchName,
   } = data;
 
-  const displayLogo = companyLogoUrl || logoImage;
+  const displayLogo = companyLogoUrl || null;
   const formattedDate = format(new Date(invoiceDate), 'dd-MM-yyyy HH:mm');
   const taxRate = taxSettings?.tax_rate || 15;
   const vatNumber = invoiceType === 'sale' ? (taxSettings?.tax_number || '') : (sellerTaxNumber || '');
@@ -50,9 +50,11 @@ export const InvoiceTemplate3 = forwardRef<HTMLDivElement, Props>(({ data }, ref
             <p className="text-[10px]">VAT NUMBER: {vatNumber}</p>
           </div>
           {/* Logo Center */}
-          <div className="mx-4">
-            <img src={displayLogo} alt="شعار" className="h-16 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).src = logoImage; }} />
-          </div>
+          {displayLogo && (
+            <div className="mx-4">
+              <img src={displayLogo} alt="شعار" className="h-16 w-auto object-contain" />
+            </div>
+          )}
           {/* QR Left */}
           <div className="text-left">
             <QRCodeSVG value={qrData} size={100} level="L" includeMargin={true} />

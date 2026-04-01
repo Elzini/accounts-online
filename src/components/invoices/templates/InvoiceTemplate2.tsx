@@ -16,7 +16,7 @@ export const InvoiceTemplate2 = forwardRef<HTMLDivElement, Props>(({ data }, ref
     sellerCommercialRegister,
   } = data;
 
-  const displayLogo = companyLogoUrl || logoImage;
+  const displayLogo = companyLogoUrl || null;
   const formattedDate = format(new Date(invoiceDate), 'dd/MM/yyyy hh:mm a');
   const taxRate = taxSettings?.tax_rate || 15;
   const vatNumber = invoiceType === 'sale' ? (taxSettings?.tax_number || '') : (sellerTaxNumber || '');
@@ -49,9 +49,11 @@ export const InvoiceTemplate2 = forwardRef<HTMLDivElement, Props>(({ data }, ref
             <h1 className="text-base font-bold">{companyName}</h1>
             <p className="text-[10px] text-gray-500">رقم التسجيل الضريبي: {companyVat}</p>
           </div>
-          <div className="flex items-center">
-            <img src={displayLogo} alt="شعار" className="h-14 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).src = logoImage; }} />
-          </div>
+          {displayLogo && (
+            <div className="flex items-center">
+              <img src={displayLogo} alt="شعار" className="h-14 w-auto object-contain" />
+            </div>
+          )}
           <div className="text-left text-[10px]">
             <p className="font-bold">{companyName}</p>
             <p>VAT Registration No.: {companyVat}</p>
