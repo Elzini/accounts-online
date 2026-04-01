@@ -1,0 +1,1 @@
+UPDATE invoices SET status = 'draft', journal_entry_id = NULL WHERE id = '49e6fa52-a836-4332-af83-e7bdc279ac2f';
