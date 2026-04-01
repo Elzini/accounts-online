@@ -26,12 +26,10 @@ export function useSalesInvoiceCalculations({
 
     const calcItem = (price: number, quantity: number, itemTaxRate?: number) => {
       const effectiveTaxRate = itemTaxRate ?? taxRate;
-      let baseAmount: number, vatAmount: number, total: number;
-      if (invoiceData.price_includes_tax && effectiveTaxRate > 0) {
-        total = price * quantity; baseAmount = total / (1 + effectiveTaxRate / 100); vatAmount = total - baseAmount;
-      } else {
-        baseAmount = price * quantity; vatAmount = baseAmount * (effectiveTaxRate / 100); total = baseAmount + vatAmount;
-      }
+      // Always treat price as tax-exclusive (same as purchase invoices)
+      const baseAmount = price * quantity;
+      const vatAmount = baseAmount * (effectiveTaxRate / 100);
+      const total = baseAmount + vatAmount;
       subtotal += baseAmount; totalVAT += vatAmount;
       return { baseAmount, vatAmount, total };
     };
