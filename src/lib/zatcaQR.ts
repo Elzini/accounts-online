@@ -52,6 +52,33 @@ function encodeTLV(tag: number, value: string): Uint8Array {
 }
 
 /**
+ * Encode a TLV field with raw binary value (for Tags 6-9)
+ */
+function encodeTLVBinary(tag: number, valueBytes: Uint8Array): Uint8Array {
+  const length = valueBytes.length;
+  if (length > 255) {
+    throw new Error(`TLV value too long for tag ${tag}: ${length} bytes`);
+  }
+  const result = new Uint8Array(2 + length);
+  result[0] = tag;
+  result[1] = length;
+  result.set(valueBytes, 2);
+  return result;
+}
+
+/**
+ * Decode Base64 string to Uint8Array (raw binary)
+ */
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/**
  * Combine multiple TLV fields into a single byte array
  */
 function combineTLV(fields: Uint8Array[]): Uint8Array {
