@@ -29,6 +29,7 @@ export function SalesItemsTable({ hook }: SalesItemsTableProps) {
   } = hook;
 
   const [carSearchOpen, setCarSearchOpen] = useState(false);
+  const [barcodeInput, setBarcodeInput] = useState('');
 
   if (isCarDealership) {
     return (
@@ -216,7 +217,38 @@ export function SalesItemsTable({ hook }: SalesItemsTableProps) {
           ))}
         </TableBody>
       </Table>
-      <div className="p-3 border-t flex gap-2 flex-wrap bg-muted/20">
+      <div className="p-3 border-t flex gap-2 flex-wrap bg-muted/20 items-center">
+        <div className="flex items-center gap-1">
+          <Search className="w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="امسح الباركود..."
+            value={barcodeInput}
+            onChange={(e) => setBarcodeInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && barcodeInput.trim()) {
+                const found = (availableInventoryItems as any[]).find((item: any) => 
+                  item.barcode?.trim() === barcodeInput.trim() || item.name?.includes(barcodeInput.trim())
+                );
+                if (found) {
+                  handleAddInventoryItem(found.id);
+                  setBarcodeInput('');
+                } else {
+                  // Check if already added, if so increase quantity
+                  const existing = selectedInventoryItems.find(si => si.barcode?.trim() === barcodeInput.trim());
+                  if (existing) {
+                    handleInventoryItemChange(existing.id, 'quantity', existing.quantity + 1);
+                    setBarcodeInput('');
+                  } else {
+                    toast.error('لم يتم العثور على صنف بهذا الباركود');
+                  }
+                }
+              }
+            }}
+            className="w-[200px] h-9 text-xs font-mono"
+            dir="ltr"
+            disabled={isApproved}
+          />
+        </div>
         <Button type="button" variant="outline" size="sm" className="gap-2 h-9 text-xs rounded-lg" onClick={handleAddManualItem} disabled={isApproved}>
           <Plus className="w-3 h-3" /> {t.inv_add_item || 'إضافة صنف'}
         </Button>
