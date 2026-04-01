@@ -16,7 +16,7 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
     taxSettings, companyLogoUrl, salesmanName, branchName, invoiceType,
   } = data;
 
-  const displayLogo = companyLogoUrl || logoImage;
+  const displayLogo = companyLogoUrl || null;
   const formattedDate = format(new Date(invoiceDate), 'yyyy/MM/dd');
   const taxRate = taxSettings?.tax_rate || 15;
   const vatNumber = invoiceType === 'sale' ? (taxSettings?.tax_number || '') : (sellerTaxNumber || '');
