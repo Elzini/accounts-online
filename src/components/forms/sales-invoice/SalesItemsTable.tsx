@@ -25,7 +25,7 @@ export function SalesItemsTable({ hook }: SalesItemsTableProps) {
     remainingCars, availableInventoryItems, savedTemplates, isApproved,
     handleAddCar, handleRemoveCar, handleCarChange,
     handleAddInventoryItem, handleAddManualItem, handleRemoveInventoryItem, handleInventoryItemChange,
-    formatCurrency, t, allInventoryItems,
+    formatCurrency, t,
   } = hook;
 
   const [carSearchOpen, setCarSearchOpen] = useState(false);
