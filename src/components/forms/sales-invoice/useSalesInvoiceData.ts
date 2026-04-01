@@ -270,7 +270,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
     selectedCars, selectedInventoryItems, invoiceData, taxRate, discount, discountType, isCarDealership,
   });
 
-  const displayTotals = useDisplayTotals(calculations, storedHeaderTotals, isViewingExisting, isEditing);
+  const displayTotals = useDisplayTotals(calculations, storedHeaderTotals, isViewingExisting, isEditing, isApproved);
 
   const formatCurrency = (value: number) => {
     const v = decimals === 0 ? Math.round(value) : value;
