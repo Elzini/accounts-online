@@ -226,21 +226,28 @@ export function SalesItemsTable({ hook }: SalesItemsTableProps) {
             onChange={(e) => setBarcodeInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && barcodeInput.trim()) {
+                const searchVal = barcodeInput.trim();
+                
+                // First check if already in invoice - increase quantity
+                const existing = selectedInventoryItems.find(si => 
+                  si.barcode?.trim() === searchVal
+                );
+                if (existing) {
+                  handleInventoryItemChange(existing.id, 'quantity', existing.quantity + 1);
+                  setBarcodeInput('');
+                  toast.success(`تم زيادة كمية: ${existing.item_name}`);
+                  return;
+                }
+                
+                // Search in available (unselected) items
                 const found = (availableInventoryItems as any[]).find((item: any) => 
-                  item.barcode?.trim() === barcodeInput.trim() || item.name?.includes(barcodeInput.trim())
+                  item.barcode?.trim() === searchVal
                 );
                 if (found) {
                   handleAddInventoryItem(found.id);
                   setBarcodeInput('');
                 } else {
-                  // Check if already added, if so increase quantity
-                  const existing = selectedInventoryItems.find(si => si.barcode?.trim() === barcodeInput.trim());
-                  if (existing) {
-                    handleInventoryItemChange(existing.id, 'quantity', existing.quantity + 1);
-                    setBarcodeInput('');
-                  } else {
-                    toast.error('لم يتم العثور على صنف بهذا الباركود');
-                  }
+                  toast.error('لم يتم العثور على صنف بهذا الباركود');
                 }
               }
             }}
